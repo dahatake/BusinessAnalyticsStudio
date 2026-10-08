@@ -42,11 +42,11 @@
 - 決定状態: 承認済み（依頼 2026-10-09）　出自: 依頼原文　優先度: MUST（依頼原文 Must）
 - 上位: G-003、G-004　出典: SRC-001 §10.2 DR-05
 - 対象エンティティ: 顧客パック、お手本パック　関係する状態: なし　参照パラメータ: なし　関連する既存資産: なし
-- 受入基準 AC-144: 雛形の静的検査で、§10.1 の各 JSON ファイルに対応するスキーマが `schema/` にあり、`examples/` のお手本データがすべてのスキーマで合格する。
+- 受入基準 AC-144: 雛形の静的検査で、FR-119（SRC-001 §10.1）の各 JSON ファイルに対応するスキーマが `schema/` にあり、`examples/` のお手本データがすべてのスキーマで合格する。
   - 検証レベル: integration
 
 #### FR-119 顧客パックのファイル構成
-- 要求: 顧客パックは、`public/data/` の customer・entities・issues・products・plan・architecture・mocks・show・sources の JSON、`public/brand/brand-profile.json`、`assets/brand/`、`assets/audio/`（任意）、`data/customer-research.md`、`brand/BRAND-RESEARCH.md` の構成を持つ（要求定義書 §8 のファイル構成）。
+- 要求: 顧客パックは、`public/data/` の customer・entities・issues・products・plan・architecture・mocks・show・sources の JSON、`public/brand/brand-profile.json`、`assets/brand/`、`assets/audio/`（任意）、`data/customer-research.md`、`brand/BRAND-RESEARCH.md` の構成を持つ（SRC-001 §10.1 のファイル構成）。
 - 決定状態: 承認済み（依頼 2026-10-09）　出自: 依頼原文　優先度: MUST（依頼原文 §10.1）
 - 上位: G-003　出典: SRC-001 §10.1
 - 対象エンティティ: 顧客パック　関係する状態: なし　参照パラメータ: なし　関連する既存資産: なし
