@@ -5,7 +5,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { COMPACT_MAX_PX, isCompactWidth, stackedLeaves } from '../../src/workspace/compact';
 import { defaultLayout, keysOf, split, leaf, type Layout } from '../../src/workspace/layoutModel';
-import { resolveThemeName } from '../../src/theme/resolve';
 import { useTreeStore } from '../../src/store/tree';
 import { deliver } from '../../src/export/deliver';
 import { runSteps, defaultSteps, prepareVerifyDir, type RegressionStep } from '../../scripts/regression';
@@ -109,15 +108,8 @@ describe('NFR-UX-004 エラーの原因と次の行動', () => {
 });
 
 describe('NFR-UX-005 OS と利用者の表示設定への追従', () => {
-  // NFR-UX-005 AC-189
-  it('NFR-UX-005 AC-189 初回（選択が system）は OS の prefers-color-scheme に従い、強制カラーではハイコントラストになる', () => {
-    expect(resolveThemeName('system', true, false)).toBe('dark');
-    expect(resolveThemeName('system', false, false)).toBe('light');
-    expect(resolveThemeName('system', true, true)).toBe('high-contrast');
-  });
-
-  // NFR-UX-005 AC-189
-  it('NFR-UX-005 AC-189 テーマの既定の選択は system（OS に従う）', async () => {
+  // NFR-UX-005 AC-189（resolveThemeName による OS 設定への追従は tests/unit/theme.test.ts の AC-071 で確かめる）
+  it('NFR-UX-005 AC-189 テーマの既定の選択は system（OS の prefers-color-scheme に従う）', async () => {
     const { useSettings } = await import('../../src/store/settings');
     expect(useSettings.getState().themeMode).toBe('system');
   });
