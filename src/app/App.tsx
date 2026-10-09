@@ -1,13 +1,17 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 import { MessageBar, MessageBarBody, MessageBarTitle } from '@fluentui/react-components';
 import { AiStatus } from '../ai/AiStatus';
 import { DiscussionFileActions } from '../discussion/FileActions';
+import { ExportButton, ExportHost } from '../export/ExportButton';
 import { AppShell } from '../components/AppShell';
 import { BrandLockup } from '../components/Brand';
 import { AnimationStatus } from '../motion/AnimationController';
 import { runTransition } from '../motion/fluent';
-import { useAnimation } from '../store/animation';
+import type { Intensity } from '../motion/tone';
+import { useIntensity } from '../motion/useMotion';
+import { usePresentationStore } from '../store/presentation';
+import { prefersReducedMotion, useAnimation } from '../store/animation';
 import { useEffectiveBrand } from '../theme/useBrand';
 import { ErrorView, LoadingView } from '../components/StateViews';
 import { PresentationBar, PresentationButton } from '../presentation/PresentationMode';
@@ -26,7 +30,7 @@ import { Workspace } from '../workspace/Workspace';
 import { Opening } from './Opening';
 import { AudioDirector } from '../audio/AudioDirector';
 import { ShowControlBar } from '../show/ShowControlBar';
-import { currentTopic, usePresentationStore } from '../store/presentation';
+import { currentTopic } from '../store/presentation';
 
 setAvailableComponents(SCREENS.map((s) => s.key));
 
@@ -44,8 +48,10 @@ function openComponent(key: string): void {
  * ナビゲーションの選択。非表示のコンポーネントを出すときだけ View Transition で動かす（FR-070）。
  * すでに表示中のものは見た目が変わらないので、更新を遅らせずにすぐ反映する（遷移の最中に始まった操作を妨げない）。
  */
-function selectComponent(key: string): void {
-  const animate = useAnimation.getState().playing && !isComponentVisible(key);
+function selectComponent(key: string, ctx: { presenting: boolean; intensity: Intensity }): void {
+  // View Transition は、演出の動きが意味を持つときだけ（プレゼンテーションモード中で、演出強度が Executive でなく、停止中でも reduced-motion でもない）。
+  // 通常の操作・Executive・停止中は、遷移を挟まず即時に切り替える（遷移中は当たり判定が実要素に届かず、直後の操作を妨げるため）。
+  const animate = ctx.presenting && ctx.intensity !== 'Executive' && useAnimation.getState().playing && !prefersReducedMotion() && !isComponentVisible(key);
   runTransition(() => (animate ? flushSync(() => openComponent(key)) : openComponent(key)), animate);
 }
 
@@ -57,6 +63,11 @@ export function App() {
   // BGM のシーン: オープニング、プレゼンテーション中は章ごと、それ以外は通常（FR-073）
   const topic = usePresentationStore(currentTopic);
   const scene = !opened ? 'opening' : topic ? `chapter:${topic.chapterId}` : 'workspace';
+  const presenting = usePresentationStore((s) => s.active);
+  const intensity = useIntensity();
+  const motionRef = useRef({ presenting, intensity });
+  motionRef.current = { presenting, intensity };
+  const onSelect = useCallback((key: string) => selectComponent(key, motionRef.current), []);
 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => installEditKeys(), []);
@@ -92,6 +103,7 @@ export function App() {
     <>
       {!opened ? <Opening customerName={name} projectName={projectName} onDone={() => setOpened(true)} /> : null}
       <SelectionController />
+      <ExportHost screens={SCREENS} />
       <SelectionAnnouncer />
       <CommandController screens={SCREENS} />
       <AudioDirector scene={scene} />
@@ -99,9 +111,9 @@ export function App() {
       <AppShell
         title={`${name} ${projectName}`}
         screens={SCREENS}
-        onSelect={selectComponent}
-        headerExtra={<><GlobalSearch /><DiscussionFileActions /><AnimationStatus /><AiStatus /></>}
-        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><ResetLayoutButton /><PresentationButton /></>}
+        onSelect={onSelect}
+        headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><AnimationStatus /><AiStatus /></>}
+        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><ResetLayoutButton />        <PresentationButton /></>}
         dock={<Dock screens={SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
       >

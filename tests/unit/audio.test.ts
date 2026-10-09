@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AudioController } from '../../src/audio/controller';
 import {
   CROSSFADE_SECONDS, DEFAULT_AUDIO_SETTINGS, DUCK_FACTOR, bgmBeatNotes, crossfadeLevels, effectiveBgmVolume,
-  masterLevel, sceneSeed, seTones, selectBgm, wantsSound, type AudioSettings,
+  masterLevel, muteAnnouncement, sceneSeed, seTones, selectBgm, wantsSound, type AudioSettings,
 } from '../../src/audio/model';
 import { isMuteKey } from '../../src/audio/keys';
 import { MOTION_PROFILES } from '../../src/motion/tone';
@@ -176,6 +176,12 @@ describe('FR-074 ミュートと音量の操作', () => {
     expect(snap.settings.seEnabled).toBe(true);
     expect(wantsSound({ ...DEFAULT_AUDIO_SETTINGS, muted: false, bgmEnabled: false })).toBe(true); // 効果音だけで音は出る
     expect(wantsSound({ ...DEFAULT_AUDIO_SETTINGS, muted: false, bgmEnabled: false, seEnabled: false })).toBe(false);
+  });
+
+  // FR-074 NFR-A11Y-002
+  it('M キー・コマンド・ボタンのミュートの切替を、aria-live で「ミュートにしました／ミュートを解除しました」と通知する文言になる', () => {
+    expect(muteAnnouncement(true)).toBe('ミュートにしました');
+    expect(muteAnnouncement(false)).toBe('ミュートを解除しました');
   });
 
   // FR-074 AC-091

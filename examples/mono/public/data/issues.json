@@ -32,7 +32,8 @@
         "cost": { "value": 500, "unit": "万円", "sourceIds": ["src-mono-003"] },
         "roi": { "value": 90, "unit": "%", "sourceIds": ["src-mono-003"] },
         "feasibility": { "value": "中（判断基準の聞き取りが先に必要）", "sourceIds": ["src-mono-002"] },
-        "risk": { "value": "中（熟練者の協力が前提）", "sourceIds": ["src-mono-002"] }
+        "risk": { "value": "中（熟練者の協力が前提）", "sourceIds": ["src-mono-002"] },
+        "scores": { "impact": { "ai": 1, "decided": 2, "sourceIds": ["src-mono-002"] } }
       }
     }
   ],

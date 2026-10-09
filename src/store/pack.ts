@@ -15,12 +15,12 @@ interface PackStore {
   load: () => Promise<void>;
   /**
    * 編集したデータに置き換える（FR-045）。すべてのビューはこのストアの `state.pack.data` を購読しているので、置き換えると即座に反映される。
-   * 画面から直接呼ばず、`src/store/edit.ts` の編集操作を通す（編集モード・元に戻す・変更履歴のため）。
+   * 画面から直接呼ばず、`src/store/edit.ts` の編集操作（`commit` など）を通す（編集モード・元に戻す・変更履歴のため）。
    */
   setData: (data: PackData) => void;
 }
 
-export const usePackStore = create<PackStore>((set) => ({
+export const usePackStore = create<PackStore>((set, get) => ({
   state: { status: 'loading' },
   runtime: {},
   original: null,

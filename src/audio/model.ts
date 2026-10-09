@@ -24,6 +24,11 @@ export const DEFAULT_AUDIO_SETTINGS: AudioSettings = { muted: true, volume: 0.6,
 
 const clamp01 = (v: number): number => (Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : 0);
 
+/** ミュートの切替の通知の文言（スクリーンリーダー向け。NFR-A11Y-002） */
+export function muteAnnouncement(muted: boolean): string {
+  return muted ? 'ミュートにしました' : 'ミュートを解除しました';
+}
+
 /** 全体の音量（ミュートなら 0） */
 export function masterLevel(s: AudioSettings): number {
   return s.muted ? 0 : clamp01(s.volume);

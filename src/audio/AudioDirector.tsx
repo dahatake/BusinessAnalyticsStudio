@@ -8,6 +8,7 @@ import { useSettings } from '../store/settings';
 import { registerTestHook } from '../testing/hook';
 import { audio } from './engine';
 import { isMuteKey } from './keys';
+import { MuteAnnouncer } from './MuteAnnouncer';
 
 /** 設定の変更を、音声制御に渡す */
 function pushSettings(): void {
@@ -84,5 +85,5 @@ export function AudioDirector({ scene }: { scene: string }) {
     snapshot: () => audio.snapshot(),
   }), []);
 
-  return null;
+  return <MuteAnnouncer />;
 }
