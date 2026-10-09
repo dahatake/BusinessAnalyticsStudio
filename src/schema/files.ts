@@ -36,17 +36,46 @@ export const EntitiesSchema = z.looseObject({
   })),
 });
 
+/** 課題の区分（FR-002）。社内向け／社外向けのどちらか（機密区分 classification とは別） */
+export const AUDIENCES = ['internal', 'external'] as const;
+export const AudienceSchema = z.enum(AUDIENCES);
+export type Audience = z.infer<typeof AudienceSchema>;
+
+/** 課題の評価属性（FR-003）。値には出典が必須（FR-115） */
+export const EVALUATION_KEYS = ['priority', 'cost', 'roi', 'feasibility', 'risk'] as const;
+export type EvaluationKey = (typeof EVALUATION_KEYS)[number];
+export const EvaluationValueSchema = z.looseObject({
+  value: z.union([z.number(), z.string().min(1)]),
+  unit: z.string().optional(),
+  sourceIds: z.array(IdSchema).min(1),
+});
+export const EvaluationSchema = z.looseObject({
+  priority: EvaluationValueSchema.optional(),
+  cost: EvaluationValueSchema.optional(),
+  roi: EvaluationValueSchema.optional(),
+  feasibility: EvaluationValueSchema.optional(),
+  risk: EvaluationValueSchema.optional(),
+});
+
 export const IssuesSchema = z.looseObject({
   issues: z.array(entity({
     parentId: IdSchema.nullable().optional(),
     title: z.string().min(1),
     hypothesis: z.string().optional(),
     origin: z.string().optional(),
+    audience: AudienceSchema,
+    personas: z.array(z.string().min(1)).optional(),
+    evaluation: EvaluationSchema.optional(),
   })),
   solutions: z.array(entity({
     issueId: IdSchema,
     title: z.string().min(1),
     productIds: z.array(IdSchema).optional(),
+    /** 製品ごとの適合理由（FR-005）。表示する製品は productIds で決まる */
+    productFits: z.array(z.looseObject({
+      productId: IdSchema,
+      reason: z.string().min(1),
+    })).optional(),
   })),
 });
 
@@ -115,10 +144,23 @@ export const SourcesSchema = z.looseObject({
   })),
 });
 
+/** ブランドの値ごとの出典・確認日・確度（FR-064）。確度が「低」「推定」の値は設定パネルで「推定」と表示する */
+const brandValue = <T extends z.ZodRawShape>(shape: T) => z.looseObject({
+  source: z.string().min(1),
+  retrievedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  confidence: ConfidenceSchema,
+  ...shape,
+});
+
+/** ロゴの利用条件（FR-061）。確認済みのときだけロゴを表示し、不明ならプレースホルダーを表示する */
+export const LOGO_STATUS = ['confirmed', 'unknown'] as const;
+
 export const BrandProfileSchema = z.looseObject({
   name: z.string().min(1),
-  primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-  logo: z.string().optional(),
+  colors: brandValue({ primary: z.string().regex(/^#[0-9a-fA-F]{6}$/) }),
+  logo: brandValue({ status: z.enum(LOGO_STATUS), path: z.string().optional() }),
+  fonts: brandValue({ primary: z.string().min(1) }),
+  tone: brandValue({ value: z.string().min(1) }),
 });
 
 /** `public/data/` の JSON ファイル名（拡張子なし）→ スキーマ */

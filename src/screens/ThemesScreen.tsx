@@ -288,7 +288,7 @@ export function ThemesScreen() {
       description="ToBe に向けた課題を議論テーマにして、選択肢・提言・根拠・決定事項などを記録します。決定は顧客の選択として、AI の提案と区別して残ります。"
     >
       <div className={s.toolbar} role="toolbar" aria-label="議論テーマの操作">
-        <Button appearance="primary" icon={<Add24Regular aria-hidden />} onClick={() => st.addTheme(target.key, { title: '新しいテーマ' })}>テーマを追加</Button>
+        <Button icon={<Add24Regular aria-hidden />} onClick={() => st.addTheme(target.key, { title: '新しいテーマ' })}>テーマを追加</Button>
         <Menu>
           <MenuTrigger disableButtonEnhancement>
             <Button>課題からテーマを作る</Button>
