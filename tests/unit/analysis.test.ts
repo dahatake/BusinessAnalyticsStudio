@@ -3,7 +3,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { archToJson, archVariants, diffArchitecture, modelFor, parseArchitectureJson, sectionsOf, toMermaid, toSvg } from '../../src/analysis/architecture';
+import {
+  archToJson, archVariants, diffArchitecture, modelFor, parseArchitectureJson, sectionsOf, toMermaid, toSvg, validateArchitectureChange,
+} from '../../src/analysis/architecture';
 import { addEdge, addNode, findRecord, removeEdge, removeNode } from '../../src/analysis/graphEdit';
 import { HOP_MAX, HOP_MIN, KIND_STYLE, clampHop, hopDistances, layoutGraph, visibleNodeIds } from '../../src/analysis/graphView';
 import {
@@ -14,7 +16,7 @@ import {
   addChild, buildMockTree, buildPackTree, descendantIds, flattenTree, moveNode, moveTargets, parseAiTree, redecompose, removeTreeNode, renameNode,
   treeToJson, treeToMermaid, treeToSvg, type ThemeLike, type TreeDoc,
 } from '../../src/analysis/tree';
-import { DATA_SCHEMAS, validatePack, type PackData, type PackFiles } from '../../src/schema';
+import { DATA_SCHEMAS, disableInvalidItems, validatePack, type PackData, type PackFiles } from '../../src/schema';
 import { buildEntityGraph, NODE_KINDS } from '../../src/selection/graph';
 import { activeEdited } from '../../src/store/summary';
 
@@ -284,6 +286,62 @@ describe('FR-040 アーキテクチャ図', () => {
     expect(parseArchitectureJson(JSON.stringify({ asis: { elements: [] } }))).toMatchObject({ ok: false });
   });
 
+  // FR-040 AC-050 FR-114
+  it('FR-040 AC-050 FR-114 JSON 編集の適用前検証: 既存の課題などの ID との衝突・存在しない製品や解決策への参照・正しい追加を判定する', () => {
+    const json = JSON.parse(archToJson(variants));
+    const ok = clone(json);
+    ok.tobe.elements.push({ ...ok.tobe.elements[0], id: 'arch-st-050', name: 'ST追加の要素-050', productId: pack.products.products[0]!.id });
+    const okParsed = parseArchitectureJson(JSON.stringify(ok));
+    expect(okParsed.ok).toBe(true);
+    if (okParsed.ok) expect(validateArchitectureChange(pack, okParsed.value)).toEqual([]);
+
+    // 課題の ID と衝突する要素（黙って捨てられる前に拒否する）
+    const clash = clone(json);
+    clash.tobe.elements.push({ ...clash.tobe.elements[0], id: pack.issues.issues[0]!.id, name: '衝突' });
+    const clashParsed = parseArchitectureJson(JSON.stringify(clash));
+    expect(clashParsed.ok).toBe(true);
+    if (clashParsed.ok) {
+      const problems = validateArchitectureChange(pack, clashParsed.value);
+      expect(problems.some((p) => p.includes('重複') && p.includes(pack.issues.issues[0]!.id))).toBe(true);
+    }
+
+    // 存在しない製品・解決策への参照
+    for (const [key, value] of [['productId', 'prod-no-such'], ['solutionIds', ['sol-no-such']]] as const) {
+      const dangling = clone(json);
+      dangling.tobe.elements.push({ ...dangling.tobe.elements[0], id: 'arch-st-dangling', name: '参照切れ', [key]: value });
+      const parsed = parseArchitectureJson(JSON.stringify(dangling));
+      expect(parsed.ok, key).toBe(true);
+      if (parsed.ok) expect(validateArchitectureChange(pack, parsed.value).some((p) => p.includes('存在しない ID')), key).toBe(true);
+    }
+  });
+
+  // FR-040 AC-049 FR-102 AC-124 FR-114
+  it('FR-040 FR-114 部分的な無効化: 存在しない要素への接続（asis.links・tobe.links）と、無効になった要素につながる接続だけが外れる', () => {
+    const files = loadFiles('mono');
+    const arch = (files.architecture as { asis: { links: Array<Record<string, unknown>> }; tobe: { links: Array<Record<string, unknown>>; elements: Array<Record<string, unknown>> } });
+    const keepAsis = arch.asis.links.length;
+    const tobeLinks = arch.tobe.links.length;
+    // 1) 存在しない要素への接続
+    arch.asis.links.push({ from: 'sys-mono-edge', to: 'no-such-element', label: '参照切れ' });
+    const r1 = disableInvalidItems(clone(files));
+    expect(r1.fatal).toBe(false);
+    expect((r1.files.architecture as typeof arch).asis.links).toHaveLength(keepAsis);
+    expect(r1.issues.some((i) => i.code === 'dangling-reference' && i.path.startsWith('asis.links['))).toBe(true);
+    // 2) tobe の要素が不正（無効になる）と、その要素への tobe.links も外れる。ほかは残る
+    arch.asis.links.pop();
+    const broken = arch.tobe.elements.find((e) => e.id === 'sys-mono-tablet')!;
+    broken.name = 123;
+    const r2 = disableInvalidItems(clone(files));
+    expect(r2.fatal).toBe(false);
+    expect(r2.disabledIds).toContain('sys-mono-tablet');
+    const after = r2.files.architecture as typeof arch;
+    expect(after.tobe.elements.some((e) => e.id === 'sys-mono-tablet')).toBe(false);
+    expect(after.tobe.links.some((l) => l.from === 'sys-mono-tablet' || l.to === 'sys-mono-tablet')).toBe(false);
+    expect(after.tobe.links.length).toBeLessThan(tobeLinks);
+    expect(after.tobe.links.length).toBeGreaterThan(0);
+    expect(after.asis.links).toHaveLength(keepAsis);
+  });
+
   // FR-040 AC-049
   it('FR-040 AC-049 お手本パックの AsIs・ToBe は同じ ID を両方に置いても検証を通り、同じ版の中の重複は誤りになる', () => {
     const files = loadFiles('mono');
@@ -325,6 +383,26 @@ describe('FR-041 エグゼクティブサマリー', () => {
     renamed.issues.issues.find((i) => i.id === top.id)!.title = '改名ST';
     expect(contentText(buildSummary('priority', renamed, { weights: AI_WEIGHTS })).evidence).toContain('改名ST');
     expect(fingerprint(buildSummary('priority', renamed, { weights: AI_WEIGHTS }))).not.toBe(fingerprint(c));
+  });
+
+  // FR-041 AC-051
+  it('FR-041 AC-051 コストの合計は出典つきの数値（単位は評価属性の unit）で、出典がなければ出典なしの文字になる', () => {
+    const c = buildSummary('overview', pack, { weights: AI_WEIGHTS });
+    const total = pack.issues.issues.reduce((a, i) => a + (typeof i.evaluation?.cost?.value === 'number' ? i.evaluation.cost.value : 0), 0);
+    const unit = pack.issues.issues.find((i) => i.evaluation?.cost?.unit)?.evaluation?.cost?.unit ?? '';
+    const part = c.evidence.find((p) => typeof p !== 'string');
+    expect(part).toMatchObject({ text: `${total.toLocaleString('ja-JP')}${unit}` });
+    expect((part as unknown as { sourceIds: string[] }).sourceIds.length).toBeGreaterThan(0);
+    expect(contentText(c).evidence).toContain(`${total.toLocaleString('ja-JP')}${unit}`);
+    // 単位が違えばその単位が出る（「万円」の直書きではない）
+    const usd = clone(pack);
+    for (const i of usd.issues.issues) if (i.evaluation?.cost) i.evaluation.cost.unit = 'USD';
+    expect(contentText(buildSummary('overview', usd, { weights: AI_WEIGHTS })).evidence).toContain('USD');
+    expect(contentText(buildSummary('overview', usd, { weights: AI_WEIGHTS })).evidence).not.toContain('万円');
+    // 出典がなければ部分は文字
+    const none = clone(pack);
+    for (const i of none.issues.issues) if (i.evaluation?.cost) delete (i.evaluation.cost as { sourceIds?: unknown }).sourceIds;
+    expect(buildSummary('overview', none, { weights: AI_WEIGHTS }).evidence.every((p) => typeof p === 'string')).toBe(true);
   });
 
   // FR-041 AC-051

@@ -7,7 +7,7 @@ import {
 } from '@fluentui/react-components';
 import { ArrowDownload24Regular, Code24Regular } from '@fluentui/react-icons';
 import {
-  DIFF_LABEL, archToJson, archVariants, modelFor, parseArchitectureJson, sectionsOf, toMermaid, toSvg,
+  DIFF_LABEL, archToJson, archVariants, modelFor, parseArchitectureJson, sectionsOf, toMermaid, toSvg, validateArchitectureChange,
   type ArchSection, type ArchView, type DiffElement, type DiffKind,
 } from '../analysis/architecture';
 import { downloadBlob, downloadText, exportFileName, svgToPng } from '../analysis/exportFile';
@@ -134,6 +134,12 @@ function ArchitectureScreen() {
   const applyJson = () => {
     const r = parseArchitectureJson(jsonText);
     if (!r.ok) { setJsonError(r.reason); return; }
+    // パック全体の検証（ID の一意・参照先・スキーマ）を通してから適用する。既存の ID（課題など）と衝突する要素は適用しない
+    const problems = validateArchitectureChange(state.pack.data, r.value);
+    if (problems.length > 0) {
+      setJsonError(`パック全体の検証に通りません（適用しませんでした）:\n${problems.slice(0, 5).join('\n')}${problems.length > 5 ? `\nほか ${problems.length - 5} 件` : ''}`);
+      return;
+    }
     usePackStore.getState().updateData((d) => ({ ...d, architecture: { ...d.architecture, asis: { elements: r.value.asis.elements as never, links: r.value.asis.links as never }, tobe: { elements: r.value.tobe.elements as never, links: r.value.tobe.links as never } } }));
     setJsonOpen(false);
   };
@@ -219,7 +225,7 @@ function ArchitectureScreen() {
             <DialogContent style={{ display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS }}>
               <Text size={200}>asis・tobe の elements（id・name・kind・layer など）と links（from・to・label）を編集できます。同じ ID を両方に置くと同じ要素の変更になります。</Text>
               <Textarea className={s.json} resize="vertical" aria-label="アーキテクチャの JSON" value={jsonText} onChange={(_, d) => setJsonText(d.value)} rows={16} />
-              {jsonError ? <Text role="alert" style={{ color: tokens.colorPaletteRedForeground1 }}>{jsonError}</Text> : null}
+              {jsonError ? <Text role="alert" style={{ color: tokens.colorPaletteRedForeground1, whiteSpace: 'pre-wrap' }}>{jsonError}</Text> : null}
             </DialogContent>
             <DialogActions>
               <Button appearance="secondary" onClick={() => setJsonOpen(false)}>キャンセル</Button>

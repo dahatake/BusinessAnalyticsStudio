@@ -1,7 +1,7 @@
 // アーキテクチャ図のモデル（FR-040）。画面・ストアを参照しない純粋なモジュール。
 // AsIs／ToBe の差分、グループ分け、Mermaid・SVG の出力、JSON の検証を受け持つ。
-import type { PackData } from '../schema';
-import { ArchElementSchema, ArchLinkSchema, type ArchKind } from '../schema';
+import type { PackData, PackError, PackFiles } from '../schema';
+import { ArchElementSchema, ArchLinkSchema, DATA_FILE_NAMES, formatPackError, validatePack, type ArchKind } from '../schema';
 
 export type ArchElement = {
   id: string;
@@ -141,6 +141,22 @@ export function parseArchitectureJson(text: string): ArchJsonResult {
     out[key] = { elements: elements as ArchElement[], links: links as ArchLink[] };
   }
   return { ok: true, value: out };
+}
+
+/** JSON 編集をパック全体に当てたときに、新しく出る検証の誤り（ID の重複・参照先がない・スキーマ違反）。適用前に呼び、空でなければ適用しない。 */
+export function validateArchitectureChange(data: PackData, next: ArchJson): string[] {
+  const filesOf = (arch: unknown): PackFiles => {
+    const f: Record<string, unknown> = {};
+    for (const name of DATA_FILE_NAMES) f[name] = name === 'architecture' ? arch : (data as unknown as Record<string, unknown>)[name];
+    return f as PackFiles;
+  };
+  const key = (e: PackError): string => `${e.code}|${e.file}|${e.path}|${e.message}`;
+  const before = new Set(validatePack(filesOf(data.architecture)).errors.map(key));
+  const candidate = { ...data.architecture, asis: next.asis, tobe: next.tobe };
+  // brandProfile は architecture に関係しないので渡さない（欠けの報告は除く）
+  return validatePack(filesOf(candidate)).errors
+    .filter((e) => e.code !== 'missing-file' && !before.has(key(e)))
+    .map(formatPackError);
 }
 
 // ---- Mermaid ----

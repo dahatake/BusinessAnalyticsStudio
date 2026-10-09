@@ -123,10 +123,17 @@ export function buildSummary(scope: SummaryScope, data: PackData, ctx: SummaryCo
     default: {
       const rows = buildPriorityRows(issues, ctx.weights);
       const top = rows[0];
-      const totalCost = issues.reduce((a, i) => a + (typeof i.evaluation?.cost?.value === 'number' ? i.evaluation.cost.value : 0), 0);
+      const costs = issues.map((i) => i.evaluation?.cost).filter((c) => typeof c?.value === 'number');
+      const totalCost = costs.reduce((a, c) => a + (c?.value as number), 0);
+      const unit = costs.find((c) => c?.unit)?.unit ?? '';
+      const costSources = [...new Set(costs.flatMap((c) => c?.sourceIds ?? []))];
       return {
         conclusion: top ? `最優先は「${top.title}」で、課題 ${issues.length} 件を重み付きで比べています。` : '課題がまだありません。',
-        evidence: [`根拠: 課題 ${issues.length} 件、解決策 ${solutions.length} 件、コストの合計は ${n(totalCost)} 万円です。`],
+        evidence: [
+          `根拠: 課題 ${issues.length} 件、解決策 ${solutions.length} 件、コストの合計は `,
+          costSources.length > 0 ? { text: `${n(totalCost)}${unit}`, sourceIds: costSources } : `${n(totalCost)}${unit}`,
+          'です。',
+        ],
         action: top ? `「${top.title}」を起点に、重みの前提と実行計画を確認してください。` : '課題を追加してください。',
       };
     }
