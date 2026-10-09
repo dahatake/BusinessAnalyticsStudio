@@ -115,10 +115,23 @@ export const SourcesSchema = z.looseObject({
   })),
 });
 
+/** ブランドの値ごとの出典・確認日・確度（FR-064）。確度が「低」「推定」の値は設定パネルで「推定」と表示する */
+const brandValue = <T extends z.ZodRawShape>(shape: T) => z.looseObject({
+  source: z.string().min(1),
+  retrievedAt: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  confidence: ConfidenceSchema,
+  ...shape,
+});
+
+/** ロゴの利用条件（FR-061）。確認済みのときだけロゴを表示し、不明ならプレースホルダーを表示する */
+export const LOGO_STATUS = ['confirmed', 'unknown'] as const;
+
 export const BrandProfileSchema = z.looseObject({
   name: z.string().min(1),
-  primaryColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-  logo: z.string().optional(),
+  colors: brandValue({ primary: z.string().regex(/^#[0-9a-fA-F]{6}$/) }),
+  logo: brandValue({ status: z.enum(LOGO_STATUS), path: z.string().optional() }),
+  fonts: brandValue({ primary: z.string().min(1) }),
+  tone: brandValue({ value: z.string().min(1) }),
 });
 
 /** `public/data/` の JSON ファイル名（拡張子なし）→ スキーマ */
