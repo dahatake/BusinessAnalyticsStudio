@@ -1,0 +1,6 @@
+{
+  "products": [
+    { "id": "prod-mono-001", "createdBy": "sample", "name": "サンプル予兆検知サービス", "vendor": "架空のベンダー A", "summary": "稼働データから異常の予兆を検知する（合成データ）", "sourceIds": ["src-mono-003"] },
+    { "id": "prod-mono-002", "createdBy": "sample", "name": "サンプル現場入力アプリ", "vendor": "架空のベンダー B", "summary": "タブレットで現場の記録を入力する（合成データ）", "sourceIds": ["src-mono-003"] }
+  ]
+}

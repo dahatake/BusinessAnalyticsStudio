@@ -1,0 +1,15 @@
+{
+  "name": "架空のサービス会社 コトノハ旅行社",
+  "projectName": "コトノハ 顧客体験の改善プロジェクト",
+  "templateVersion": "0.1.0",
+  "locale": "ja",
+  "industryPreset": "service",
+  "createdBy": "sample",
+  "coreObject": {
+    "candidates": [
+      { "id": "core-booking", "label": "予約" },
+      { "id": "core-customer", "label": "顧客" }
+    ],
+    "selectedId": "core-booking"
+  }
+}

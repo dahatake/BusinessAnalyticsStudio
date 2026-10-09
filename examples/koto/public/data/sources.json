@@ -1,0 +1,6 @@
+{
+  "sources": [
+    { "id": "src-koto-001", "createdBy": "sample", "kind": "document", "title": "架空の予約状況の月次報告（合成データ）", "retrievedAt": "2026-10-01", "confidence": "高" },
+    { "id": "src-koto-002", "createdBy": "sample", "kind": "interview", "title": "架空の窓口担当へのヒアリング（合成データ）", "retrievedAt": "2026-10-02", "confidence": "中" }
+  ]
+}

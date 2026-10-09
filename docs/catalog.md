@@ -65,7 +65,7 @@
 | FR-055 | フォローアップ文書の同時生成 | 承認済み | 未実装 | 未実装 | なし |
 | FR-056 | エクスポートした Markdown からの復元 | 承認済み | 未実装 | 未実装 | なし |
 | FR-057 | 演出の設定の保存と復元 | 承認済み | 未実装 | 未実装 | なし |
-| FR-058 | Fluent 2 準拠のテーマ | 承認済み | 未実装 | 未実装 | なし |
+| FR-058 | Fluent 2 準拠のテーマ | 承認済み | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/screens/SettingsScreen.tsx | tests/unit/theme.test.ts | デザイン基盤, 画面の登録, 設定ストア |
 | FR-059 | ブランドランプの生成と適用 | 承認済み | 未実装 | 未実装 | なし |
 | FR-060 | コントラストの自動検証と補正 | 承認済み | 未実装 | 未実装 | なし |
 | FR-061 | ロゴの利用条件とプレースホルダー | 承認済み | 未実装 | 未実装 | なし |
@@ -107,7 +107,7 @@
 | FR-097 | ホワイトボード | 承認済み | 未実装 | 未実装 | なし |
 | FR-098 | アプリのデータのカード配置とリンク | 承認済み | 未実装 | 未実装 | なし |
 | FR-099 | 付箋のクラスタリング・ドット投票・タイマー | 承認済み | 未実装 | 未実装 | なし |
-| FR-100 | 顧客固有情報のコードからの分離 | 承認済み | 未実装 | 未実装 | なし |
+| FR-100 | 顧客固有情報のコードからの分離 | 承認済み | src/data/loader.ts, src/store/pack.ts, vite.config.ts | tests/unit/foundation.test.ts | 顧客パックの読み込み, 顧客パックのスキーマと検証 |
 | FR-101 | 顧客パックの差し替えだけで動くビルド成果物 | 承認済み | 未実装 | 未実装 | なし |
 | FR-102 | 顧客パックの検証と部分的な無効化 | 承認済み | 未実装 | 未実装 | なし |
 | FR-103 | 業種プリセット | 承認済み | 未実装 | 未実装 | なし |
@@ -121,11 +121,11 @@
 | FR-111 | コマンドパレット | 承認済み | 未実装 | 未実装 | なし |
 | FR-112 | ペルソナ別の既定の情報表現と既定のレイアウト | 承認済み | 未実装 | 未実装 | なし |
 | FR-113 | 表現が成り立たないときの代替表示 | 承認済み | 未実装 | 未実装 | なし |
-| FR-114 | 一意の ID と ID による参照 | 承認済み | 未実装 | 未実装 | なし |
+| FR-114 | 一意の ID と ID による参照 | 承認済み | src/schema/validate.ts、src/schema/common.ts | tests/unit/pack.test.ts | 顧客パックのスキーマと検証 |
 | FR-115 | 数値・事実の出典 | 承認済み | 未実装 | 未実装 | なし |
 | FR-116 | 作成者の種別 | 承認済み | 未実装 | 未実装 | なし |
 | FR-117 | WorkIQ 由来情報の機密区分 | 承認済み | 未実装 | 未実装 | なし |
-| FR-118 | スキーマとお手本データの同梱 | 承認済み | 未実装 | 未実装 | なし |
+| FR-118 | スキーマとお手本データの同梱 | 承認済み | schema/customer.json, schema/brand-profile.json, examples/mono/public/data/customer.json, examples/koto/public/data/customer.json, scripts/gen-schema.ts, scripts/check-pack.ts | tests/unit/foundation.test.ts | 顧客パックのスキーマと検証 |
 | FR-119 | 顧客パックのファイル構成 | 承認済み | 未実装 | 未実装 | なし |
 | FR-120 | Skill のコマンド | 承認済み | 未実装 | 未実装 | なし |
 | FR-121 | 事前調査と調査キャッシュ | 承認済み | 未実装 | 未実装 | なし |
@@ -156,7 +156,7 @@
 | NFR-SEC-003 | 調査キャッシュと顧客パックの保護 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-LEGAL-001 | 素材の権利と CREDITS | 承認済み | 未実装 | 未実装 | なし |
 | NFR-LEGAL-002 | サンプル・AI 生成・モックの明示と商標 | 承認済み | 未実装 | 未実装 | なし |
-| NFR-MAINT-001 | 型の厳格さと部品とスキーマの分離 | 承認済み | 未実装 | 未実装 | なし |
+| NFR-MAINT-001 | 型の厳格さと部品とスキーマの分離 | 承認済み | tsconfig.json, src/schema/index.ts | tests/unit/foundation.test.ts | 顧客パックのスキーマと検証 |
 | NFR-MAINT-002 | 雛形の回帰テスト | 承認済み | 未実装 | 未実装 | なし |
 | NFR-MAINT-003 | README | 承認済み | 未実装 | 未実装 | なし |
 | NFR-UX-001 | レイアウト・表現の切替で状態を失わない | 承認済み | 未実装 | 未実装 | なし |
@@ -179,3 +179,8 @@
 
 | 部品名 | ファイル | 用途 | 使っている要求 ID |
 |---|---|---|---|
+| デザイン基盤 | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/components/AppShell.tsx, src/components/Panel.tsx, src/components/StateViews.tsx | Fluent UI v9 のトークン・4px グリッド・Light/Dark/ハイコントラスト、アプリの外枠、読み込み中/0 件/エラーの表示。以降の画面はこれを再利用する | FR-058 |
+| 画面の登録 | src/screens/registry.ts, src/screens/types.ts | 画面を足すときは registry に 1 行足す（nav-key / component-key） | FR-058 |
+| 設定ストア | src/store/settings.ts | Zustand と localStorage の利用者設定（現在はテーマ） | FR-058 |
+| 顧客パックのスキーマと検証 | src/schema/common.ts, src/schema/files.ts, src/schema/validate.ts, scripts/lib/pack-fs.ts | zod のスキーマ、ID の一意・参照・出典の検証。画面の部品を参照しない。schema の JSON は npm run gen:schema で生成 | FR-100, FR-114, FR-118, NFR-MAINT-001 |
+| 顧客パックの読み込み | src/data/loader.ts, src/store/pack.ts | 起動時に data・brand・runtime-config の JSON を読んで検証 | FR-100 |

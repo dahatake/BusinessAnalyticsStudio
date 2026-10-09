@@ -1,0 +1,5 @@
+{
+  "mocks": [
+    { "id": "mock-koto-001", "createdBy": "sample", "title": "予約の変更画面", "featureId": "feat-koto-001" }
+  ]
+}

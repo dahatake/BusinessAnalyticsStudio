@@ -1,0 +1,8 @@
+{
+  "issues": [
+    { "id": "issue-koto-001", "createdBy": "sample", "parentId": null, "title": "変更の問い合わせが電話に集中する", "hypothesis": "オンラインで変更できない", "origin": "interview", "classification": "shareable", "sourceIds": ["src-koto-002"] }
+  ],
+  "solutions": [
+    { "id": "sol-koto-001", "createdBy": "sample", "issueId": "issue-koto-001", "title": "予約の変更をオンラインで受け付ける", "productIds": ["prod-koto-001"], "sourceIds": ["src-koto-002"] }
+  ]
+}

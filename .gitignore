@@ -1,4 +1,7 @@
 # Enterprise App Build Kit: temporary run files (kept 14 days)
 /work/
+node_modules/
+dist/
+*.tsbuildinfo
 
 __pycache__/
