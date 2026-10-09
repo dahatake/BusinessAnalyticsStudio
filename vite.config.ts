@@ -61,5 +61,6 @@ export default defineConfig({
     },
   ],
   build: { outDir: 'dist', sourcemap: false },
-  test: { include: ['tests/unit/**/*.test.ts'], environment: 'node' },
+  // 並列実行（複数の作業役が同じ PC で動くとき）の負荷でも、時間だけで失敗しないよう、1 テストの上限を 60 秒にする（検査の内容は変えない）
+  test: { include: ['tests/unit/**/*.test.ts'], environment: 'node', testTimeout: 60_000, maxWorkers: 4, minWorkers: 1 },
 });

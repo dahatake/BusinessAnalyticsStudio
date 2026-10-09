@@ -1,5 +1,6 @@
 // 雛形の静的検査（統合テスト）: 顧客固有情報の分離、スキーマの同梱、型の厳格さと部品・スキーマの分離
-import { execFileSync } from 'node:child_process';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import fs from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -73,11 +74,12 @@ describe('FR-118 スキーマとお手本データの同梱', () => {
 
 describe('NFR-MAINT-001 型の厳格さと部品とスキーマの分離', () => {
   // NFR-MAINT-001 AC-182
-  it('NFR-MAINT-001 AC-182 strict の設定で型検査のエラーが 0 件', () => {
+  it('NFR-MAINT-001 AC-182 strict の設定で型検査のエラーが 0 件', async () => {
     const tsconfig = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, 'tsconfig.json'), 'utf8'));
     expect(tsconfig.compilerOptions.strict).toBe(true);
     const tsc = path.join(REPO_ROOT, 'node_modules', 'typescript', 'bin', 'tsc');
-    expect(() => execFileSync(process.execPath, [tsc, '--noEmit', '-p', 'tsconfig.json'], { cwd: REPO_ROOT, stdio: 'pipe' })).not.toThrow();
+    // 非同期で実行する（同期だと、負荷が高いときにワーカーが 60 秒を超えて止まり、vitest の通信が時間切れになる）
+    await expect(promisify(execFile)(process.execPath, [tsc, '--noEmit', '-p', 'tsconfig.json'], { cwd: REPO_ROOT, maxBuffer: 64 * 1024 * 1024 })).resolves.toBeDefined();
   }, 120_000);
 
   // NFR-MAINT-001 AC-182
