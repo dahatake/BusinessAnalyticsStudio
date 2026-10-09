@@ -1,4 +1,10 @@
 {
+  "levels": [
+    { "depth": 0, "name": "拠点", "lodThreshold": 100, "description": "工場全体。常に表示する最上位の階層", "color": "#2563eb", "kpi": "月間の生産量", "sourceIds": ["src-mono-001"] },
+    { "depth": 1, "name": "ライン", "lodThreshold": 1.65, "description": "組立ラインの単位。全体を見渡す視点より少し引いた距離まで表示する", "color": "#0891b2", "kpi": "月間の計画外停止", "sourceIds": ["src-mono-001"] },
+    { "depth": 2, "name": "設備", "lodThreshold": 1.15, "description": "ラインの設備。全体を見渡す視点では表示する", "color": "#7c3aed", "kpi": "設備の稼働率", "sourceIds": ["src-mono-001"] },
+    { "depth": 3, "name": "部品", "lodThreshold": 0.8, "description": "設備の部品。カメラが近づくと現れる", "color": "#d97706", "kpi": "部品の交換頻度", "sourceIds": ["src-mono-001"] }
+  ],
   "entities": [
     {
       "id": "ent-mono-line-a", "createdBy": "sample", "type": "site", "name": "第 1 組立ライン", "parentId": "ent-mono-plant", "location": { "lat": 35.083, "lng": 137.156 }, "sourceIds": ["src-mono-001"],

@@ -125,10 +125,15 @@ describe('FR-020 AC-024 / FR-025 AC-030 3D の項目の画面座標・可視・�
   });
   afterEach(() => setUrlAdapter());
 
-  it('ホームの視点では、すべての項目に「隠れずに画面に入る点」があり、その位置は画面の中にある', () => {
+  // FR-031 / FR-036: ホームでは、いちばん下の階層（部品の下の部品）はカメラが近づくまで生成しない。生成している階層の項目は、すべて見える
+  it('ホームの視点では、生成している階層のすべての項目に「隠れずに画面に入る点」があり、その位置は画面の中にある', () => {
     const objs = sceneObjects();
+    const l = twinLayoutOf(loadPack('mono'));
+    const deepest = Math.max(...l.objects.map((o) => o.depth));
     expect(objs.length).toBe(loadPack('mono').entities.entities.length);
     for (const o of objs) {
+      const depth = l.byId.get(o.entityId)!.depth;
+      if (depth === deepest) { expect(o.visible, `${o.entityId} はホームでは生成されない`).toBe(false); continue; }
       expect(o.visible, `${o.entityId} が見えない`).toBe(true);
       expect(o.x).toBeGreaterThan(0);
       expect(o.x).toBeLessThan(960);
@@ -160,10 +165,12 @@ describe('FR-020 AC-024 / FR-025 AC-030 3D の項目の画面座標・可視・�
     try {
       setHome(l, 420 / 700);
       const objs = sceneObjects();
-      expect(objs.every((o) => o.visible), '縦長でも全体が入る').toBe(true);
+      const deepest = Math.max(...l.objects.map((o) => o.depth));
+      // 生成している階層（ホームでは最下位を除く）の全項目が画面に入る
+      expect(objs.filter((o) => l.byId.get(o.entityId)!.depth < deepest).every((o) => o.visible), '縦長でも全体が入る').toBe(true);
       // 横長用のホームのままでは、縦長の画面で収まらない項目がある（ホームが縦横比に依ることの確認）
       setPose(homePose(l, 1.6));
-      expect(sceneObjects().some((o) => !o.visible)).toBe(true);
+      expect(sceneObjects().filter((o) => l.byId.get(o.entityId)!.depth < deepest).some((o) => !o.visible)).toBe(true);
     } finally {
       registerSceneCanvas({ getBoundingClientRect: () => ({ left: 0, top: 0, width: 960, height: 540 }) as DOMRect });
       sceneObjects();
