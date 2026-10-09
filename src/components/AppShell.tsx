@@ -65,15 +65,18 @@ export interface AppShellProps {
   /** ナビゲーションの下のドック（非表示のコンポーネントの再表示） */
   dock?: ReactNode;
   children: ReactNode;
+  /** ヘッダーの右側に出すブランド表示（ロゴ・共創表現） */
+  brand?: ReactNode;
 }
 
-export function AppShell({ title, screens, activeKey, onSelect, headerExtra, actions, dock, children }: AppShellProps) {
+export function AppShell({ title, screens, activeKey, onSelect, headerExtra, actions, dock, children, brand }: AppShellProps) {
   const s = useStyles();
   return (
     <div className={s.root}>
       <header className={s.header}>
         <Text as="h1" size={500} weight="semibold">{title}</Text>
         <div className={s.actions}>
+          {brand ? <div>{brand}</div> : null}
           {headerExtra}
           {actions}
         </div>

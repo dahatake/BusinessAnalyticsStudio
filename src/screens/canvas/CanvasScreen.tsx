@@ -5,7 +5,7 @@ import { Listbox, Option, Text, makeStyles, tokens } from '@fluentui/react-compo
 import { Panel } from '../../components/Panel';
 import { EmptyView } from '../../components/StateViews';
 import { usePackStore } from '../../store/pack';
-import { registerTestHooks } from '../../testHooks';
+import { registerTestHook } from '../../testing/hook';
 import {
   CARD_H, CARD_W, cardOrigin, centerOn, isCenteredOn, keyViewport, panBy, zoomAt, type Viewport,
 } from '../../workspace/viewport';
@@ -92,7 +92,7 @@ export function CanvasScreen() {
     setView(centerOn(viewRef.current, c.x + CARD_W / 2, c.y + CARD_H / 2, w, h));
   }, [cards, setView]);
 
-  useEffect(() => registerTestHooks('canvas', {
+  useEffect(() => registerTestHook('canvas', {
     viewport: () => ({ ...viewRef.current }),
     isCentered: (id: string) => {
       const c = cards.find((k) => k.id === id);

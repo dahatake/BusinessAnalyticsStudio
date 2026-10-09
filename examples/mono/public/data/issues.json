@@ -1,11 +1,47 @@
 {
   "issues": [
-    { "id": "issue-mono-001", "createdBy": "sample", "parentId": null, "title": "設備の計画外停止が多い", "hypothesis": "予兆を捉えられていない", "origin": "interview", "classification": "shareable", "sourceIds": ["src-mono-001"] },
-    { "id": "issue-mono-002", "createdBy": "sample", "parentId": "issue-mono-001", "title": "停止原因の記録が紙で集計できない", "hypothesis": "記録の入力が遅れる", "origin": "interview", "classification": "shareable", "sourceIds": ["src-mono-002"] },
-    { "id": "issue-mono-003", "createdBy": "sample", "parentId": null, "title": "熟練者の判断が属人化している", "hypothesis": "判断基準が共有されていない", "origin": "interview", "classification": "shareable", "sourceIds": ["src-mono-002"] }
+    {
+      "id": "issue-mono-001", "createdBy": "sample", "parentId": null, "title": "設備の計画外停止が多い", "hypothesis": "予兆を捉えられていない", "origin": "interview", "classification": "shareable", "sourceIds": ["src-mono-001"],
+      "audience": "external", "personas": ["経営層", "現場"],
+      "evaluation": {
+        "priority": { "value": 1, "unit": "位", "sourceIds": ["src-mono-001"] },
+        "cost": { "value": 1200, "unit": "万円", "sourceIds": ["src-mono-003"] },
+        "roi": { "value": 180, "unit": "%", "sourceIds": ["src-mono-003"] },
+        "feasibility": { "value": "高（既存の稼働データを活用できる）", "sourceIds": ["src-mono-002"] },
+        "risk": { "value": "中（センサーの追加が必要な設備がある）", "sourceIds": ["src-mono-002"] }
+      }
+    },
+    {
+      "id": "issue-mono-002", "createdBy": "sample", "parentId": "issue-mono-001", "title": "停止原因の記録が紙で集計できない", "hypothesis": "記録の入力が遅れる", "origin": "interview", "classification": "shareable", "sourceIds": ["src-mono-002"],
+      "audience": "internal", "personas": ["現場", "IT"],
+      "evaluation": {
+        "priority": { "value": 2, "unit": "位", "sourceIds": ["src-mono-002"] },
+        "cost": { "value": 300, "unit": "万円", "sourceIds": ["src-mono-003"] },
+        "roi": { "value": 120, "unit": "%", "sourceIds": ["src-mono-003"] },
+        "feasibility": { "value": "高（タブレットを既に配備済み）", "sourceIds": ["src-mono-002"] },
+        "risk": { "value": "低", "sourceIds": ["src-mono-002"] }
+      }
+    },
+    {
+      "id": "issue-mono-003", "createdBy": "sample", "parentId": null, "title": "熟練者の判断が属人化している", "hypothesis": "判断基準が共有されていない", "origin": "interview", "classification": "shareable", "sourceIds": ["src-mono-002"],
+      "audience": "internal", "personas": ["事業部門"],
+      "evaluation": {
+        "priority": { "value": 3, "unit": "位", "sourceIds": ["src-mono-002"] },
+        "cost": { "value": 500, "unit": "万円", "sourceIds": ["src-mono-003"] },
+        "roi": { "value": 90, "unit": "%", "sourceIds": ["src-mono-003"] },
+        "feasibility": { "value": "中（判断基準の聞き取りが先に必要）", "sourceIds": ["src-mono-002"] },
+        "risk": { "value": "中（熟練者の協力が前提）", "sourceIds": ["src-mono-002"] }
+      }
+    }
   ],
   "solutions": [
-    { "id": "sol-mono-001", "createdBy": "sample", "issueId": "issue-mono-001", "title": "設備の稼働データを集めて予兆を検知する", "productIds": ["prod-mono-001"], "sourceIds": ["src-mono-003"] },
-    { "id": "sol-mono-002", "createdBy": "sample", "issueId": "issue-mono-002", "title": "タブレットで停止原因を入力する", "productIds": ["prod-mono-002"], "sourceIds": ["src-mono-002"] }
+    {
+      "id": "sol-mono-001", "createdBy": "sample", "issueId": "issue-mono-001", "title": "設備の稼働データを集めて予兆を検知する", "productIds": ["prod-mono-001"], "sourceIds": ["src-mono-003"],
+      "productFits": [{ "productId": "prod-mono-001", "reason": "稼働データを集めて異常の予兆を検知する機能を備えているため" }]
+    },
+    {
+      "id": "sol-mono-002", "createdBy": "sample", "issueId": "issue-mono-002", "title": "タブレットで停止原因を入力する", "productIds": ["prod-mono-002"], "sourceIds": ["src-mono-002"],
+      "productFits": [{ "productId": "prod-mono-002", "reason": "現場のタブレットで記録を入力でき、紙の集計を不要にできるため" }]
+    }
   ]
 }

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { MessageBar, MessageBarBody, MessageBarTitle } from '@fluentui/react-components';
 import { AiStatus } from '../ai/AiStatus';
 import { AppShell } from '../components/AppShell';
+import { BrandLockup } from '../components/Brand';
+import { useEffectiveBrand } from '../theme/useBrand';
 import { ErrorView, LoadingView } from '../components/StateViews';
 import { SCREENS } from '../screens/registry';
 import { setAvailableComponents, useLayout } from '../store/layout';
@@ -25,6 +27,7 @@ function openComponent(key: string): void {
 export function App() {
   const state = usePackStore((s) => s.state);
   const load = usePackStore((s) => s.load);
+  const brand = useEffectiveBrand();
   const [opened, setOpened] = useState(false);
 
   useEffect(() => { void load(); }, [load]);
@@ -64,6 +67,7 @@ export function App() {
         headerExtra={<AiStatus />}
         actions={<><PersonaMenu /><ResetLayoutButton /></>}
         dock={<Dock screens={SCREENS} />}
+        brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
       >
         {state.warnings.length > 0 ? (
           <div data-testid="pack-errors">

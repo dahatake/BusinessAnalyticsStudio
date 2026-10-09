@@ -1,5 +1,28 @@
 {
   "name": "コトノハ旅行社",
-  "primaryColor": "#1F7A5C",
-  "logo": "/assets/brand/logo.svg"
+  "colors": {
+    "primary": "#1F7A5C",
+    "source": "合成データ（お手本。実在の企業とは無関係）",
+    "retrievedAt": "2026-10-09",
+    "confidence": "高"
+  },
+  "logo": {
+    "status": "unknown",
+    "path": "/assets/brand/logo.svg",
+    "source": "合成データ（架空のロゴ。利用条件は未確認として扱う）",
+    "retrievedAt": "2026-10-09",
+    "confidence": "低"
+  },
+  "fonts": {
+    "primary": "Zen Maru Gothic",
+    "source": "合成データ（オープンライセンス SIL OFL の書体名）",
+    "retrievedAt": "2026-10-09",
+    "confidence": "中"
+  },
+  "tone": {
+    "value": "親しみやすい・やわらかな",
+    "source": "合成データ（お手本）",
+    "retrievedAt": "2026-10-09",
+    "confidence": "推定"
+  }
 }
