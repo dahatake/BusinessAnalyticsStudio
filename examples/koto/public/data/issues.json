@@ -3,6 +3,7 @@
     {
       "id": "issue-koto-001", "createdBy": "sample", "parentId": null, "title": "変更の問い合わせが電話に集中する", "hypothesis": "オンラインで変更できない", "origin": "interview", "classification": "shareable", "sourceIds": ["src-koto-002"],
       "audience": "external", "personas": ["事業部門", "現場"],
+      "causes": [{ "id": "cause-koto-001", "title": "予約の変更がオンラインの画面にない" }],
       "evaluation": {
         "priority": { "value": 1, "unit": "位", "sourceIds": ["src-koto-002"] },
         "cost": { "value": 400, "unit": "万円", "sourceIds": ["src-koto-001"] },
@@ -14,7 +15,10 @@
   ],
   "solutions": [
     {
-      "id": "sol-koto-001", "createdBy": "sample", "issueId": "issue-koto-001", "title": "予約の変更をオンラインで受け付ける", "productIds": ["prod-koto-001"], "sourceIds": ["src-koto-002"],
+      "id": "sol-koto-001", "createdBy": "sample", "issueId": "issue-koto-001", "issueIds": ["issue-koto-001"], "title": "予約の変更をオンラインで受け付ける",
+      "genAiValues": ["chatRag"],
+      "effects": [{ "id": "effect-koto-001", "title": "電話での変更の問い合わせが減る" }],
+      "productIds": ["prod-koto-001"], "sourceIds": ["src-koto-002"],
       "productFits": [{ "productId": "prod-koto-001", "reason": "予約の確認と変更をオンラインで完結できるため" }]
     }
   ]
