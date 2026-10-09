@@ -124,20 +124,20 @@
 | FR-114 | 一意の ID と ID による参照 | 承認済み | src/schema/validate.ts、src/schema/common.ts | tests/unit/pack.test.ts | 顧客パックのスキーマと検証 |
 | FR-115 | 数値・事実の出典 | 承認済み | src/schema/validate.ts, src/schema/files.ts | tests/unit/pack.test.ts (AC-141) | 顧客パックのスキーマと検証 |
 | FR-116 | 作成者の種別 | 承認済み | src/schema/common.ts, src/schema/edit.ts | tests/unit/pack.test.ts, tests/unit/partial.test.ts (AC-142) | 顧客パックのスキーマと検証 |
-| FR-117 | WorkIQ 由来情報の機密区分 | 承認済み | 未実装 | 未実装 | なし |
+| FR-117 | WorkIQ 由来情報の機密区分 | 承認済み | src/schema/anonymize.ts (anonymizeInternal), src/schema/files.ts (SourcesSchema), src/schema/common.ts | tests/unit/anonymize.test.ts, tests/unit/pack.test.ts (AC-143) | 顧客パックのスキーマと検証 |
 | FR-118 | スキーマとお手本データの同梱 | 承認済み | schema/customer.json, schema/brand-profile.json, examples/mono/public/data/customer.json, examples/koto/public/data/customer.json, scripts/gen-schema.ts, scripts/check-pack.ts | tests/unit/foundation.test.ts | 顧客パックのスキーマと検証 |
 | FR-119 | 顧客パックのファイル構成 | 承認済み | src/schema/validate.ts (validateLayout) | tests/unit/pack.test.ts (AC-145) | 顧客パックのスキーマと検証 |
-| FR-120 | Skill のコマンド | 承認済み | 未実装 | 未実装 | なし |
+| FR-120 | Skill のコマンド | 承認済み | scripts/pipeline/cli.ts, scripts/pipeline/pipeline.ts, scripts/pipeline/common.ts, scripts/pipeline/research.ts, scripts/pipeline/launch.ts, package.json (npm run pipeline)。Skill の定義は envisioning-dashboard フォルダーにある | tests/unit/pipeline.test.ts (AC-146) | 生成パイプライン |
 | FR-121 | 事前調査と調査キャッシュ | 承認済み | 未実装 | 未実装 | なし |
 | FR-122 | ブランド調査の出典の優先順位と既定テーマ | 承認済み | 未実装 | 未実装 | なし |
 | FR-123 | 調査キャッシュの有効期限 | 承認済み | 未実装 | 未実装 | なし |
-| FR-124 | 雛形の複製 | 承認済み | 未実装 | 未実装 | なし |
-| FR-125 | 顧客パックの生成 | 承認済み | 未実装 | 未実装 | なし |
+| FR-124 | 雛形の複製 | 承認済み | scripts/pipeline/clone.ts, scripts/pipeline/timing.ts | tests/unit/pipeline.test.ts (AC-151。リンク・コピー・機密の除外) | 生成パイプライン |
+| FR-125 | 顧客パックの生成 | 承認済み | scripts/pipeline/generate.ts, scripts/pipeline/pipeline.ts | tests/unit/pipeline.test.ts (AC-152) | 生成パイプライン, 顧客パックのスキーマと検証 |
 | FR-126 | エラー箇所だけの自己修正 | 承認済み | 未実装 | 未実装 | なし |
 | FR-127 | verify（顧客パックの受け入れ判定） | 承認済み | 未実装 | 未実装 | なし |
 | FR-128 | 起動 | 承認済み | 未実装 | 未実装 | なし |
 | FR-129 | 工程ごとの時間計測 | 承認済み | 未実装 | 未実装 | なし |
-| FR-130 | 入力変数の指定 | 承認済み | 未実装 | 未実装 | なし |
+| FR-130 | 入力変数の指定 | 承認済み | scripts/pipeline/inputs.ts, scripts/pipeline/cli.ts | tests/unit/pipeline.test.ts (AC-158) | 生成パイプライン |
 | FR-131 | 雛形への改善要望の記録 | 承認済み | 未実装 | 未実装 | なし |
 | FR-132 | AI 実接続の明示的な有効化（Q-001 回答までの暫定） | 承認済み | src/ai/AiSettings.tsx, src/ai/useAi.ts, scripts/relay/relay.ts | tests/unit/relay.test.ts | AI 呼び出し口, Copilot SDK 中継プロセス |
 | NFR-PERF-001 | 顧客パックの生成から起動までの時間 | 承認済み | 未実装 | 未実装 | なし |
@@ -192,7 +192,8 @@
 | 設定ストア | src/store/settings.ts | Zustand と localStorage の利用者設定（テーマ、ブランドの Primary 色の上書き、3D 品質） | FR-058, FR-064, FR-069 |
 | AI 呼び出し口 | src/ai/client.ts, src/ai/useAi.ts, src/ai/AiStatus.tsx, src/ai/AiSettings.tsx, src/ai/ChatScreen.tsx | askAi（5 種類の LLM 処理の唯一の入口。既定はモック、実接続は確認後のみ localhost の中継へ）、常時表示の AI 状態、設定の実接続切替、チャットの土台（FR-017 が拡張） | FR-010, FR-011, FR-050, FR-132, NFR-ENV-002, NFR-SEC-002 |
 | Copilot SDK 中継プロセス | scripts/relay/relay.ts, scripts/relay/copilot-adapter.ts, scripts/relay/start.ts | 127.0.0.1 だけで待ち受ける Node.js の中継。`npm run relay` | FR-010, FR-011, FR-132 |
-| 顧客パックのスキーマと検証 | src/schema/common.ts, src/schema/files.ts, src/schema/validate.ts, scripts/lib/pack-fs.ts | zod のスキーマ、ID の一意・参照・出典の検証。画面の部品を参照しない。schema の JSON は npm run gen:schema で生成 | FR-002, FR-003, FR-005, FR-006, FR-007, FR-038, FR-100, FR-102, FR-114, FR-115, FR-116, FR-118, FR-119, NFR-MAINT-001 |
+| 顧客パックのスキーマと検証 | src/schema/common.ts, src/schema/files.ts, src/schema/validate.ts, src/schema/anonymize.ts, scripts/lib/pack-fs.ts | zod のスキーマ、ID の一意・参照・出典の検証、internal の匿名化（anonymizeInternal、A-08）。画面の部品を参照しない。schema の JSON は npm run gen:schema で生成 | FR-002, FR-003, FR-005, FR-006, FR-007, FR-038, FR-100, FR-102, FR-114, FR-115, FR-116, FR-117, FR-118, FR-119, FR-125, NFR-MAINT-001 |
+| 生成パイプライン | scripts/pipeline/cli.ts, scripts/pipeline/pipeline.ts, scripts/pipeline/common.ts, scripts/pipeline/inputs.ts, scripts/pipeline/research.ts, scripts/pipeline/clone.ts, scripts/pipeline/generate.ts, scripts/pipeline/launch.ts, scripts/pipeline/timing.ts | `npm run pipeline -- <research\|build\|all>`（Skill 定義は .github 配下の envisioning-dashboard の SKILL.md）。工程①〜⑦の実行、入力変数、雛形の複製、顧客パックの生成、`logs/timing.json`。接続点: Researcher（調査）・PackGenerator（生成）・Launcher（起動）は差し替え可能（既定は外部に接続しないサンプル・モック） | FR-120, FR-124, FR-125, FR-130 |
 | 顧客パックの読み込み | src/data/loader.ts, src/store/pack.ts | 起動時に data・brand・runtime-config の JSON を読んで検証。`/data/` が空なら dist/example-pack/（vite.config.ts が examples/mono から同梱）のお手本パックで起動（isExample） | FR-100, FR-101, FR-104, NFR-ENV-002 |
 | 部分的な無効化 | src/schema/partial.ts | エラーのある項目（と参照する項目）だけを取り除いて起動を続ける。画面とコンソールに出す | FR-102 |
 | 議論テーマのストア | src/store/discussion.ts, src/discussion/model.ts, src/discussion/usePackTarget.ts | 議論テーマ・決定ステータス・次のアクションの型と Zustand ストア（顧客パックごとに localStorage `edb.discussion` へ保存。元に戻す・やり直し）。課題から作るには `createFromIssue(packKey, {id,title})`（鍵は `usePackTarget().key`）。課題-解決策分析の「議論テーマにする」はこれを呼ぶ | FR-048, FR-049, FR-050 |
