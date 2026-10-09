@@ -1,18 +1,19 @@
 // ボードの描画面（無限キャンバス）。FR-086〜FR-089 / NFR-PERF-004
 // 入力は Pointer Events で統一し、振り分けは input.ts の PointerRouter（ペン=描画、指=パン/ズーム、手のひらは無視）。
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { ClipboardEvent, KeyboardEvent, PointerEvent as ReactPointerEvent } from 'react';
+import type { ClipboardEvent, DragEvent as ReactDragEvent, KeyboardEvent, PointerEvent as ReactPointerEvent, ReactNode } from 'react';
 import { makeStyles, tokens } from '@fluentui/react-components';
-import { hitTest, lassoSelect, pointInBounds, selectionBounds, type Pt } from './geometry';
+import { hitTest, lassoSelect, nodeAt, pointInBounds, selectionBounds, type Pt } from './geometry';
 import { PointerRouter, effectivePressure, pinchDelta } from './input';
 import {
-  boardContentBounds, isShapeTool, makeShape, makeStroke, newId,
+  ENTITY_DRAG_MIME, boardContentBounds, isShapeTool, makeShape, makeStroke, newId,
   type Board, type BoardItem, type InkPoint, type ShapeKind, type ToolId, type ViewState,
 } from './model';
 import { recognizeShape } from './recognize';
 import { TEXT_FONT_SIZE, drawBoard, drawItem, drawLiveStroke, fontFor, setImageLoadListener, STICKY_COLOR, STICKY_TEXT, textHeight } from './render';
 import { selectBoard, useInk } from './store';
 import { centerOn, panView, screenToWorld, worldToScreen, zoomView } from './viewport';
+import { connect, expandGroups, voteItem } from '../whiteboard/ops';
 
 const HOLD_MS = 600;
 const HOLD_SLOP = 4;
@@ -56,6 +57,7 @@ type Gesture =
   | { kind: 'eraseStroke'; pointerId: number; first: boolean }
   | { kind: 'erasePixel'; pointerId: number; at: Pt }
   | { kind: 'place'; pointerId: number; tool: 'text' | 'sticky'; at: Pt; down: Pt }
+  | { kind: 'connect'; pointerId: number; node: string }
   | { kind: 'pan'; pointerId: number; last: Pt }
   | { kind: 'pinch' };
 
@@ -70,12 +72,19 @@ export interface BoardSurfaceProps {
   /** 一時的な注釈（プレゼン中。チャプター移動で消える）として描く */
   temporary?: boolean;
   minimap?: boolean;
+  /** アプリのデータ（エンティティ）をドロップされたとき。at はワールド座標。指定がなければドロップを受けない（FR-098） */
+  onEntityDrop?: (entityId: string, at: Pt) => void;
+  /** データのカードのクリック・ダブルクリック（クリックで元データを選び、ダブルクリックで名前を編集する）。FR-098 */
+  onItemActivate?: (item: BoardItem, how: 'click' | 'dblclick') => void;
+  /** 描画面の上に重ねる部品（文字・付箋の読み上げ用の層など）。 */
+  children?: ReactNode;
 }
 
-export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, overlay = false, active = true, temporary = false, minimap = false }: BoardSurfaceProps) {
+export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, overlay = false, active = true, temporary = false, minimap = false, onEntityDrop, onItemActivate, children }: BoardSurfaceProps) {
   const s = useStyles();
   const board = useInk(useMemo(() => selectBoard(boardId), [boardId]));
   const selection = useInk((st) => st.selection);
+  const connectFrom = useInk((st) => st.connectFrom);
   const rootRef = useRef<HTMLDivElement>(null);
   const staticRef = useRef<HTMLCanvasElement>(null);
   const liveRef = useRef<HTMLCanvasElement>(null);
@@ -85,6 +94,7 @@ export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, ove
   const spaceRef = useRef(false);
   const offsetRef = useRef<{ ids: Set<string>; dx: number; dy: number } | null>(null);
   const hoverRef = useRef<Pt | null>(null);
+  const clickRef = useRef<{ x: number; y: number; id: string } | null>(null);
   const boardRef = useRef<Board | undefined>(board);
   boardRef.current = board;
   const selectionRef = useRef(selection);
@@ -181,6 +191,19 @@ export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, ove
         ctx.restore();
       }
     }
+    // コネクターの接続元に選んだ項目の枠
+    const from = useInk.getState().connectFrom;
+    const fromItem = from ? b.items.find((i) => i.id === from) : undefined;
+    if (fromItem) {
+      const a = worldToScreen(v, fromItem.x, fromItem.y);
+      ctx.save();
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.setLineDash([4, 3]);
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = brandColor(rootRef.current);
+      ctx.strokeRect(a.x - 3, a.y - 3, fromItem.w * v.zoom + 6, fromItem.h * v.zoom + 6);
+      ctx.restore();
+    }
   }, []);
   const scheduleLive = useCallback(() => {
     if (rafLive.current) return;
@@ -217,7 +240,7 @@ export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, ove
   }, [boardId, scheduleStatic, scheduleLive]);
 
   useEffect(() => { scheduleStatic(); }, [board, view.x, view.y, view.zoom, editing, scheduleStatic]);
-  useEffect(() => { scheduleLive(); }, [selection, board, view.x, view.y, view.zoom, scheduleLive]);
+  useEffect(() => { scheduleLive(); }, [selection, connectFrom, board, view.x, view.y, view.zoom, scheduleLive]);
   useEffect(() => () => { cancelAnimationFrame(rafStatic.current); cancelAnimationFrame(rafLive.current); }, []);
 
   // ---- 視点の操作 ----
@@ -337,6 +360,14 @@ export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, ove
     }
 
     const w = world(p);
+    const under = boardRef.current ? nodeAt(boardRef.current, w) : null;
+    clickRef.current = under && under.type === 'card' ? { x: p.x, y: p.y, id: under.id } : null;
+    // ドット投票の最中: 付箋をクリックすると 1 票（Shift か Alt を押していれば 1 票戻す）。ほかの操作はしない
+    if (st.voteMode && !fixed) {
+      const hit = boardRef.current ? nodeAt(boardRef.current, w) : null;
+      if (hit && hit.type === 'sticky') st.updateItems(boardId, (items) => voteItem(items, hit.id, e.shiftKey || e.altKey ? -1 : 1));
+      return;
+    }
     const tool: ToolId = action === 'erase' ? 'eraser-stroke' : st.tool;
     const pressure = effectivePressure(e.nativeEvent);
     switch (tool) {
@@ -366,9 +397,27 @@ export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, ove
           offsetRef.current = { ids: new Set(sel!.ids), dx: 0, dy: 0 };
           gestureRef.current = { kind: 'move', pointerId: e.pointerId, from: w, dx: 0, dy: 0 };
         } else {
-          st.clearSelection();
-          gestureRef.current = { kind: 'lasso', pointerId: e.pointerId, points: [w] };
+          // 付箋・カード・フレームの上で始めたら、それ（とグループの仲間、フレームの中身）を選んで動かす
+          const hit = b ? hitTest(b, w, 4 / viewRef.current.zoom) : null;
+          const it = hit?.kind === 'item' ? b!.items.find((i) => i.id === hit.id) : undefined;
+          if (b && it && (it.type === 'sticky' || it.type === 'card' || it.type === 'frame')) {
+            const base = it.type === 'frame' ? [it.id, ...b.items.filter((i) => i.frameId === it.id).map((i) => i.id)] : [it.id];
+            const ids = expandGroups(b.items, base);
+            st.setSelection(boardId, ids);
+            selectionRef.current = { boardId, ids };
+            offsetRef.current = { ids: new Set(ids), dx: 0, dy: 0 };
+            gestureRef.current = { kind: 'move', pointerId: e.pointerId, from: w, dx: 0, dy: 0 };
+          } else {
+            st.clearSelection();
+            gestureRef.current = { kind: 'lasso', pointerId: e.pointerId, points: [w] };
+          }
         }
+        break;
+      }
+      case 'connector': {
+        const hit = boardRef.current ? nodeAt(boardRef.current, w) : null;
+        if (hit) gestureRef.current = { kind: 'connect', pointerId: e.pointerId, node: hit.id };
+        else st.setConnectFrom(null);
         break;
       }
       case 'text':
@@ -453,6 +502,12 @@ export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, ove
 
   const finish = (e: ReactPointerEvent<HTMLDivElement>, cancelled: boolean) => {
     routerRef.current.up(e.nativeEvent, e.pointerId);
+    const ck = clickRef.current;
+    clickRef.current = null;
+    if (ck && !cancelled && onItemActivate && Math.hypot(local(e).x - ck.x, local(e).y - ck.y) < 5) {
+      const it = boardRef.current?.items.find((i) => i.id === ck.id);
+      if (it) onItemActivate(it, 'click');
+    }
     const wasTouch = touchesRef.current.delete(e.pointerId);
     const g = gestureRef.current;
     if (wasTouch && g?.kind === 'pinch') { if (touchesRef.current.size === 0) gestureRef.current = null; return; }
@@ -473,7 +528,20 @@ export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, ove
             st.addItem(boardId, makeShape(g.shape, g.from.x, g.from.y, g.to.x, g.to.y, st.color, st.size));
           }
           break;
-        case 'lasso': st.setSelection(boardId, lassoSelect(b, g.points)); break;
+        case 'lasso': st.setSelection(boardId, expandGroups(b.items, lassoSelect(b, g.points))); break;
+        case 'connect': {
+          const hit = nodeAt(b, w);
+          const from = st.connectFrom;
+          if (hit && hit.id !== g.node) {
+            // 項目から項目へドラッグ、または接続元を選んだあとで別の項目をクリック
+            st.updateItems(boardId, (items) => connect(items, g.node, hit.id, st.color).items);
+            st.setConnectFrom(null);
+          } else if (hit && hit.id === g.node) {
+            if (from && from !== g.node) { st.updateItems(boardId, (items) => connect(items, from, g.node, st.color).items); st.setConnectFrom(null); }
+            else st.setConnectFrom(from === g.node ? null : g.node);
+          }
+          break;
+        }
         case 'move': {
           const o = offsetRef.current;
           if (o) st.moveObjects(boardId, [...o.ids], g.dx, g.dy);
@@ -499,6 +567,7 @@ export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, ove
     const hit = hitTest(b, world(local(e)), 4 / viewRef.current.zoom);
     const item = hit?.kind === 'item' ? b.items.find((i) => i.id === hit.id) : undefined;
     if (item && (item.type === 'text' || item.type === 'sticky')) startEdit(item.id);
+    else if (item && item.type === 'card') onItemActivate?.(item, 'dblclick');
   };
 
   // ---- キーボード ----
@@ -518,6 +587,8 @@ export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, ove
       st.removeObjects(boardId, selectionRef.current.ids);
     } else if (e.key === 'Escape' && selectionRef.current) {
       e.stopPropagation(); st.clearSelection();
+    } else if (e.key === 'Escape' && st.connectFrom) {
+      e.stopPropagation(); st.setConnectFrom(null);
     } else if (e.key === 'Enter' && !mod && (st.tool === 'text' || st.tool === 'sticky' || isShapeTool(st.tool))) {
       // キーボードだけで、表示範囲の中央に追加する（FR-096）
       e.preventDefault(); e.stopPropagation();
@@ -556,6 +627,19 @@ export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, ove
   const editItem = editing ? board?.items.find((i) => i.id === editing) : undefined;
   const cursor = 'crosshair';
 
+  // アプリのデータ（エンティティ）のドロップ（FR-098）
+  const onDragOver = (e: ReactDragEvent<HTMLDivElement>) => {
+    if (!e.dataTransfer.types.includes(ENTITY_DRAG_MIME)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+  const onDrop = (e: ReactDragEvent<HTMLDivElement>) => {
+    const id = e.dataTransfer.getData(ENTITY_DRAG_MIME);
+    if (!id) return;
+    e.preventDefault();
+    onEntityDrop?.(id, world(local(e)));
+  };
+
   return (
     <div
       ref={rootRef}
@@ -576,9 +660,12 @@ export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, ove
       onKeyDown={onKeyDown}
       onKeyUp={onKeyUp}
       onPaste={onPaste}
+      onDragOver={onEntityDrop ? onDragOver : undefined}
+      onDrop={onEntityDrop ? onDrop : undefined}
     >
       <canvas ref={staticRef} className={s.layer} aria-hidden />
       <canvas ref={liveRef} className={s.layer} aria-hidden />
+      {children}
       {editItem && (
         <textarea
           className={s.editor}
