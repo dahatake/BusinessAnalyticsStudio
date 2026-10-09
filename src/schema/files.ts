@@ -264,6 +264,23 @@ export const ShowSchema = z.looseObject({
     topics: z.array(entity({
       title: z.string().min(1),
       entityIds: z.array(IdSchema).optional(),
+      /** 議題の種類。なければ通常の議題 */
+      type: z.string().min(1).optional(),
+      /** テロップ/ローワーサード（FR-078）。出典 ID を併記する */
+      telop: z.looseObject({ text: z.string().min(1), sourceIds: z.array(IdSchema).optional() }).optional(),
+      /** Before/After の演出（FR-079）。つまみより左が Before、右が After */
+      beforeAfter: z.looseObject({
+        before: z.looseObject({ label: z.string().optional(), text: z.string().min(1) }),
+        after: z.looseObject({ label: z.string().optional(), text: z.string().min(1) }),
+      }).optional(),
+      /** ROI 発表の演出（FR-079）。数値は出典 ID を持つ（FR-115） */
+      roi: z.looseObject({
+        label: z.string().optional(),
+        value: z.number(),
+        unit: z.string().optional(),
+        caption: z.string().optional(),
+        sourceIds: z.array(IdSchema).min(1),
+      }).optional(),
     })).default([]),
   })),
 });
