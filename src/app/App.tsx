@@ -8,6 +8,7 @@ import { useEffectiveBrand } from '../theme/useBrand';
 import { ErrorView, LoadingView } from '../components/StateViews';
 import { PresentationBar, PresentationButton } from '../presentation/PresentationMode';
 import { SCREENS } from '../screens/registry';
+import { SelectionController } from '../selection/SelectionController';
 import { setAvailableComponents, useLayout } from '../store/layout';
 import { usePackStore } from '../store/pack';
 import { checkTemplateVersion, versionWarning } from '../version';
@@ -65,6 +66,7 @@ export function App() {
   return (
     <>
       {!opened ? <Opening customerName={name} projectName={projectName} onDone={() => setOpened(true)} /> : null}
+      <SelectionController />
       <AppShell
         title={`${name} ${projectName}`}
         screens={SCREENS}

@@ -13,6 +13,7 @@
     "relay": "tsx scripts/relay/start.ts",
     "gen:schema": "tsx scripts/gen-schema.ts",
     "check:pack": "tsx scripts/check-pack.ts",
+    "pipeline": "tsx scripts/pipeline/cli.ts",
     "package": "tsx scripts/make-package.ts"
   },
   "dependencies": {

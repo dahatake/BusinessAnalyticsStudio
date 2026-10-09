@@ -4,3 +4,4 @@ export * from './StateViews';
 export * from './AppShell';
 export * from './Brand';
 export * from './UnrenderableNote';
+export * from './highlight';

@@ -31,11 +31,11 @@
 | FR-021 | コトの表現（3D 地球儀/3D マップと流れの粒子） | 承認済み | 未実装 | 未実装 | なし |
 | FR-022 | 工程管理の表現（ガントチャート 2D/2.5D） | 承認済み | 未実装 | 未実装 | なし |
 | FR-023 | フライスルー遷移 | 承認済み | 未実装 | 未実装 | なし |
-| FR-024 | 共通の選択状態とエンティティ関係グラフ | 承認済み | 未実装 | 未実装 | なし |
-| FR-025 | クロスハイライトとカメラ移動 | 承認済み | 未実装 | 未実装 | なし |
-| FR-026 | 選択に応じた自動の絞り込み | 承認済み | 未実装 | 未実装 | なし |
-| FR-027 | ホバー・クリック・Esc の選択操作 | 承認済み | 未実装 | 未実装 | なし |
-| FR-028 | 選択状態の URL への反映と復元 | 承認済み | 未実装 | 未実装 | なし |
+| FR-024 | 共通の選択状態とエンティティ関係グラフ | 承認済み | src/store/selection.ts, src/selection/graph.ts, src/selection/hooks.ts, src/selection/SelectionController.tsx | tests/unit/selection.test.ts (AC-029) | 選択状態とエンティティ関係グラフ |
+| FR-025 | クロスハイライトとカメラ移動 | 承認済み | src/selection/model.ts (highlightTokens), src/selection/hooks.ts (useEntityBinding), src/components/highlight.ts, src/screens/IssueSolutionScreen.tsx, src/screens/TableScreen.tsx | tests/unit/selection.test.ts (AC-030 の関連と通知), tests/system/e2e/views3d.spec.ts (E2E-025) | 選択状態とエンティティ関係グラフ |
+| FR-026 | 選択に応じた自動の絞り込み | 承認済み | src/screens/TableScreen.tsx, src/selection/model.ts (relatedSet, isVisibleInFilter), src/selection/hooks.ts (useSelectionFilter) | tests/unit/selection.test.ts (AC-031), tests/system/e2e/views.spec.ts (E2E-026) | 選択状態とエンティティ関係グラフ, 一覧表 |
+| FR-027 | ホバー・クリック・Esc の選択操作 | 承認済み | src/selection/keys.ts, src/selection/hooks.ts, src/store/selection.ts, src/screens/IssueSolutionScreen.tsx, src/screens/TableScreen.tsx | tests/unit/selection.test.ts (AC-032), tests/system/e2e/views.spec.ts (E2E-027) | 選択状態とエンティティ関係グラフ |
+| FR-028 | 選択状態の URL への反映と復元 | 承認済み | src/store/selection.ts (installUrlSync), src/selection/model.ts (parseSelectionHash, formatSelectionHash) | tests/unit/selection.test.ts (AC-033), tests/system/e2e/views.spec.ts (E2E-028) | 選択状態とエンティティ関係グラフ |
 | FR-029 | キーボード・スクリーンリーダーでの連動 | 承認済み | 未実装 | 未実装 | なし |
 | FR-030 | 階層と LOD のメタデータ | 承認済み | 未実装 | 未実装 | なし |
 | FR-031 | カメラ距離に応じた段階的な表示 | 承認済み | 未実装 | 未実装 | なし |
@@ -120,24 +120,24 @@
 | FR-110 | 既定のレイアウトへの復元 | 承認済み | src/workspace/Controls.tsx, src/store/layout.ts | tests/unit/workspace.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
 | FR-111 | コマンドパレット | 承認済み | 未実装 | 未実装 | なし |
 | FR-112 | ペルソナ別の既定の情報表現と既定のレイアウト | 承認済み | src/workspace/persona.ts, src/workspace/layoutModel.ts, src/store/layout.ts | tests/unit/persona.test.ts, tests/system/e2e/layout.spec.ts (E2E-102, E2E-103) | ワークスペース, ペルソナ別の既定 |
-| FR-113 | 表現が成り立たないときの代替表示 | 承認済み | src/analysis/fallback.ts, src/store/fallback.ts, src/components/UnrenderableNote.tsx | tests/unit/persona.test.ts, tests/system/e2e/views3d.spec.ts (E2E-104) | デザイン基盤, 代替表示 |
+| FR-113 | 表現が成り立たないときの代替表示 | 承認済み | src/analysis/fallback.ts, src/store/fallback.ts, src/components/UnrenderableNote.tsx, src/screens/TableScreen.tsx | tests/unit/persona.test.ts, tests/system/e2e/views3d.spec.ts (E2E-104) | デザイン基盤, 代替表示 |
 | FR-114 | 一意の ID と ID による参照 | 承認済み | src/schema/validate.ts、src/schema/common.ts | tests/unit/pack.test.ts | 顧客パックのスキーマと検証 |
 | FR-115 | 数値・事実の出典 | 承認済み | src/schema/validate.ts, src/schema/files.ts | tests/unit/pack.test.ts (AC-141) | 顧客パックのスキーマと検証 |
 | FR-116 | 作成者の種別 | 承認済み | src/schema/common.ts, src/schema/edit.ts | tests/unit/pack.test.ts, tests/unit/partial.test.ts (AC-142) | 顧客パックのスキーマと検証 |
-| FR-117 | WorkIQ 由来情報の機密区分 | 承認済み | 未実装 | 未実装 | なし |
+| FR-117 | WorkIQ 由来情報の機密区分 | 承認済み | src/schema/anonymize.ts (anonymizeInternal), src/schema/files.ts (SourcesSchema), src/schema/common.ts | tests/unit/anonymize.test.ts, tests/unit/pack.test.ts (AC-143) | 顧客パックのスキーマと検証 |
 | FR-118 | スキーマとお手本データの同梱 | 承認済み | schema/customer.json, schema/brand-profile.json, examples/mono/public/data/customer.json, examples/koto/public/data/customer.json, scripts/gen-schema.ts, scripts/check-pack.ts | tests/unit/foundation.test.ts | 顧客パックのスキーマと検証 |
 | FR-119 | 顧客パックのファイル構成 | 承認済み | src/schema/validate.ts (validateLayout) | tests/unit/pack.test.ts (AC-145) | 顧客パックのスキーマと検証 |
-| FR-120 | Skill のコマンド | 承認済み | 未実装 | 未実装 | なし |
+| FR-120 | Skill のコマンド | 承認済み | scripts/pipeline/cli.ts, scripts/pipeline/pipeline.ts, scripts/pipeline/common.ts, scripts/pipeline/research.ts, scripts/pipeline/launch.ts, package.json (npm run pipeline)。Skill の定義は envisioning-dashboard フォルダーにある | tests/unit/pipeline.test.ts (AC-146) | 生成パイプライン |
 | FR-121 | 事前調査と調査キャッシュ | 承認済み | 未実装 | 未実装 | なし |
 | FR-122 | ブランド調査の出典の優先順位と既定テーマ | 承認済み | 未実装 | 未実装 | なし |
 | FR-123 | 調査キャッシュの有効期限 | 承認済み | 未実装 | 未実装 | なし |
-| FR-124 | 雛形の複製 | 承認済み | 未実装 | 未実装 | なし |
-| FR-125 | 顧客パックの生成 | 承認済み | 未実装 | 未実装 | なし |
+| FR-124 | 雛形の複製 | 承認済み | scripts/pipeline/clone.ts, scripts/pipeline/timing.ts | tests/unit/pipeline.test.ts (AC-151。リンク・コピー・機密の除外) | 生成パイプライン |
+| FR-125 | 顧客パックの生成 | 承認済み | scripts/pipeline/generate.ts, scripts/pipeline/pipeline.ts | tests/unit/pipeline.test.ts (AC-152) | 生成パイプライン, 顧客パックのスキーマと検証 |
 | FR-126 | エラー箇所だけの自己修正 | 承認済み | 未実装 | 未実装 | なし |
 | FR-127 | verify（顧客パックの受け入れ判定） | 承認済み | 未実装 | 未実装 | なし |
 | FR-128 | 起動 | 承認済み | 未実装 | 未実装 | なし |
 | FR-129 | 工程ごとの時間計測 | 承認済み | 未実装 | 未実装 | なし |
-| FR-130 | 入力変数の指定 | 承認済み | 未実装 | 未実装 | なし |
+| FR-130 | 入力変数の指定 | 承認済み | scripts/pipeline/inputs.ts, scripts/pipeline/cli.ts | tests/unit/pipeline.test.ts (AC-158) | 生成パイプライン |
 | FR-131 | 雛形への改善要望の記録 | 承認済み | 未実装 | 未実装 | なし |
 | FR-132 | AI 実接続の明示的な有効化（Q-001 回答までの暫定） | 承認済み | src/ai/AiSettings.tsx, src/ai/useAi.ts, scripts/relay/relay.ts | tests/unit/relay.test.ts | AI 呼び出し口, Copilot SDK 中継プロセス |
 | NFR-PERF-001 | 顧客パックの生成から起動までの時間 | 承認済み | 未実装 | 未実装 | なし |
@@ -192,13 +192,16 @@
 | 設定ストア | src/store/settings.ts | Zustand と localStorage の利用者設定（テーマ、ブランドの Primary 色の上書き、3D 品質） | FR-058, FR-064, FR-069 |
 | AI 呼び出し口 | src/ai/client.ts, src/ai/useAi.ts, src/ai/AiStatus.tsx, src/ai/AiSettings.tsx, src/ai/ChatScreen.tsx | askAi（5 種類の LLM 処理の唯一の入口。既定はモック、実接続は確認後のみ localhost の中継へ）、常時表示の AI 状態、設定の実接続切替、チャットの土台（FR-017 が拡張） | FR-010, FR-011, FR-050, FR-132, NFR-ENV-002, NFR-SEC-002 |
 | Copilot SDK 中継プロセス | scripts/relay/relay.ts, scripts/relay/copilot-adapter.ts, scripts/relay/start.ts | 127.0.0.1 だけで待ち受ける Node.js の中継。`npm run relay` | FR-010, FR-011, FR-132 |
-| 顧客パックのスキーマと検証 | src/schema/common.ts, src/schema/files.ts, src/schema/validate.ts, scripts/lib/pack-fs.ts | zod のスキーマ、ID の一意・参照・出典の検証。画面の部品を参照しない。schema の JSON は npm run gen:schema で生成 | FR-002, FR-003, FR-005, FR-006, FR-007, FR-038, FR-100, FR-102, FR-114, FR-115, FR-116, FR-118, FR-119, NFR-MAINT-001 |
+| 顧客パックのスキーマと検証 | src/schema/common.ts, src/schema/files.ts, src/schema/validate.ts, src/schema/anonymize.ts, scripts/lib/pack-fs.ts | zod のスキーマ、ID の一意・参照・出典の検証、internal の匿名化（anonymizeInternal、A-08）。画面の部品を参照しない。schema の JSON は npm run gen:schema で生成 | FR-002, FR-003, FR-005, FR-006, FR-007, FR-038, FR-100, FR-102, FR-114, FR-115, FR-116, FR-117, FR-118, FR-119, FR-125, NFR-MAINT-001 |
+| 生成パイプライン | scripts/pipeline/cli.ts, scripts/pipeline/pipeline.ts, scripts/pipeline/common.ts, scripts/pipeline/inputs.ts, scripts/pipeline/research.ts, scripts/pipeline/clone.ts, scripts/pipeline/generate.ts, scripts/pipeline/launch.ts, scripts/pipeline/timing.ts | `npm run pipeline -- <research\|build\|all>`（Skill 定義は .github 配下の envisioning-dashboard の SKILL.md）。工程①〜⑦の実行、入力変数、雛形の複製、顧客パックの生成、`logs/timing.json`。接続点: Researcher（調査）・PackGenerator（生成）・Launcher（起動）は差し替え可能（既定は外部に接続しないサンプル・モック） | FR-120, FR-124, FR-125, FR-130 |
 | 顧客パックの読み込み | src/data/loader.ts, src/store/pack.ts | 起動時に data・brand・runtime-config の JSON を読んで検証。`/data/` が空なら dist/example-pack/（vite.config.ts が examples/mono から同梱）のお手本パックで起動（isExample） | FR-100, FR-101, FR-104, NFR-ENV-002 |
 | 部分的な無効化 | src/schema/partial.ts | エラーのある項目（と参照する項目）だけを取り除いて起動を続ける。画面とコンソールに出す | FR-102 |
 | 議論テーマのストア | src/store/discussion.ts, src/discussion/model.ts, src/discussion/usePackTarget.ts | 議論テーマ・決定ステータス・次のアクションの型と Zustand ストア（顧客パックごとに localStorage `edb.discussion` へ保存。元に戻す・やり直し）。課題から作るには `createFromIssue(packKey, {id,title})`（鍵は `usePackTarget().key`）。課題-解決策分析の「議論テーマにする」はこれを呼ぶ | FR-048, FR-049, FR-050 |
 | 議論メモの書き出しと復元 | src/discussion/memo.ts, src/discussion/restore.ts, src/discussion/FileActions.tsx | front matter＋人が読む節＋最初の ```json ブロック（`edb-discussion-memo` v1）。`buildMemoForPack` / `restoreFromMemo`。課題・解決策などのデータは `registerSnapshotSource({key,capture,validate,apply})` で登録するとエクスポートされ、復元される。全量エクスポート（FR-052〜）と編集（FR-044〜）の項目が使う。ヘッダーの「保存」「開く」 | FR-051, FR-056 |
 | オープニング | src/app/Opening.tsx | 顧客名とプロジェクト名の導入画面（Esc で飛ばす） | FR-101 |
-| 課題-解決策分析 | src/screens/IssueSolutionScreen.tsx, src/analysis/model.ts, src/analysis/DetailPanel.tsx, src/analysis/FlowViews.tsx | 課題のイシューツリー／MECE 表／サンキー図／マトリクス、区分の絞り込み、解決策と出典リンク、詳細パネル（原因・効果・生成 AI の価値・評価属性・出典カード・製品と適合理由）。純粋なロジックは model.ts。後続の画面（優先順位分析など）が課題・解決策・出典を扱うときはここを再利用する | FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-009, FR-038 |
+| 課題-解決策分析 | src/screens/IssueSolutionScreen.tsx, src/analysis/model.ts, src/analysis/DetailPanel.tsx, src/analysis/FlowViews.tsx | 課題のイシューツリー／MECE 表／サンキー図／マトリクス、区分の絞り込み、解決策と出典リンク、詳細パネル（原因・効果・生成 AI の価値・評価属性・出典カード・製品と適合理由）。純粋なロジックは model.ts。後続の画面（優先順位分析など）が課題・解決策・出典を扱うときはここを再利用する。選択は共通の選択状態（useEntityBinding）を使う | FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-009, FR-038 |
+| 選択状態とエンティティ関係グラフ | src/store/selection.ts, src/selection/graph.ts, src/selection/model.ts, src/selection/hooks.ts, src/selection/keys.ts, src/selection/SelectionController.tsx, src/components/highlight.ts | 全ビュー共通の選択（Zustand。選択 ID・ホバー・AND/OR・非表示/減光・最後の変更の origin と seq）と、パックの全エンティティの関係グラフ。画面は `useEntityBinding('<画面名>')` で `data-entity-id`・`data-highlight`（selected/hover/related/dimmed）・クリック選択（Ctrl/⌘/Shift で追加）・ホバーを付け、表・リスト・カードは `useSelectionFilter` と `{ filterable: true }` で絞り込む。3D のカメラ移動など選択に反応するビューは `useSelection().seq` と `origin` を購読する（自分が起こした変更では動かない）。URL ハッシュ `#sel=<ID>,<ID>&mode=and&dim=1` への反映（確定は履歴に積む）と、戻る/進む・開き直しでの復元。Esc の解除は A-04 の優先順（ダイアログ・メニュー、パネルの最大化の解除が先）。存在しない ID は捨てる。見た目は useHighlightClass。アプリ直下に SelectionController を 1 つ置く（App.tsx） | FR-024, FR-025, FR-026, FR-027, FR-028 |
+| 一覧表 | src/screens/TableScreen.tsx | パックの全項目の表（種別・名称・ID）。選択に応じて自動で絞り込み、件数バッジ・AND/OR・非表示/減光・フィルター解除を持つ（フィルター解除は選択の解除）。`nav-table` / `component-table` | FR-026 |
 | 数値の出典表示 | src/components/NumericValue.tsx | 数値を包むと、ホバー／フォーカスで出典の種別（WorkIQ・Web・推定）・取得日・確度のツールチップを出す（data-testid="numeric-value"）。数値を表示する画面（優先順位分析・KPI など）はこれで包む | FR-009 |
 | サンプル表示 | src/components/Panel.tsx, src/data/sample.ts | パネルの見出しの横に「サンプル」を出す（顧客パックに createdBy が sample の項目があるとき）。Panel で包んだ画面は自動で対応する。Panel を使わない画面は hasSampleData で判定して同じ表示を出す | FR-008 |
 | ガント画面 | src/screens/GanttScreen.tsx, src/plan/model.ts | Feature ごとの工程のガントチャート（選択の強調、開始日・終了日・担当・作業内容の表示）。純粋なロジックは plan/model.ts。2D/2.5D 切替などの後続の要求はここを拡張する | FR-007 |
