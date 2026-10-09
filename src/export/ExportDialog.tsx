@@ -183,6 +183,11 @@ export function ExportDialog({ screens }: { screens: readonly ExportScreenRef[] 
                 </div>
               </div>
             )}
+            {busy ? (
+              <div role="status" aria-live="polite" aria-busy="true" data-testid="export-progress">
+                <Spinner size="tiny" label="書き出し中…（保存先の指定を取り消すこともできます）" />
+              </div>
+            ) : null}
             {error ? (
               <div role="alert" data-testid="export-error">
                 <MessageBar intent="error" layout="multiline">

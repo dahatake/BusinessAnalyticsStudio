@@ -54,6 +54,7 @@ npm start
 |---|---|
 | 開発サーバー（お手本パックを重ねて配信。`EDB_PACK=koto` で別のお手本） | `npm run dev` |
 | 型検査と単体・結合テスト | `npm run typecheck` / `npm test` |
+| 回帰テスト（依存関係の更新時・リリース時。ビルド → お手本パックでの verify → 単体・結合テストを順に実行。1 つでも失敗すると 0 以外で終了） | `npm run regression` |
 | 中継プロセス（Copilot SDK を使った AI の中継。127.0.0.1 だけで待ち受け） | `npm run relay` |
 | 顧客パックの検証 | `npm run check:pack -- examples/mono` |
 | お手本パックでの受け入れ判定（verify） | `npm run verify:pack -- <作業フォルダー>` |
