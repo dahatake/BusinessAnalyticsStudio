@@ -1,0 +1,21 @@
+{
+  "name": "edb-system-tests",
+  "private": true,
+  "description": "System Test（E2E）: 要求定義書の受入基準から作ったテスト。実行は `node tests/system/run.mjs <AC-ID>`（リポジトリルートから）。",
+  "type": "module",
+  "scripts": {
+    "st": "playwright test",
+    "st:list": "playwright test --list",
+    "typecheck": "tsc --noEmit -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.13.0",
+    "@playwright/test": "1.63.0",
+    "@types/node": "22.20.4",
+    "jszip": "3.10.2",
+    "mermaid": "11.17.2",
+    "pdfjs-dist": "5.7.284",
+    "typescript": "5.9.3"
+  }
+}
+

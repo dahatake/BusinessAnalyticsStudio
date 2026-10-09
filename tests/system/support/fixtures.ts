@@ -1,0 +1,296 @@
+// Playwright のフィクスチャと共通の操作。
+// 画面の操作は利用者と同じ手段（クリック・キー・ドラッグ）で行い、判定は画面に見える振る舞いで行う。
+// 画面の場所は CONTRACT.md の data-testid・ロール・文言で探す（CSS のクラス名には依存しない）。
+import { test as base, expect, type Page, type Locator, type Download } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
+import { startStaticServer, unusedPort, type RunningServer } from './server';
+import { examplePack, Pack, type PackKind } from './packs';
+import { EVIDENCE_DIR } from './paths';
+
+export { expect };
+
+/** 主要画面（要求定義書 §3.5、[ASSUMPTION] A-13）と data-testid のキー */
+export const MAIN_SCREENS = [
+  ['canvas', 'キャンバス'],
+  ['issue-solution', '課題-解決策分析'],
+  ['priority', '優先順位分析'],
+  ['knowledge-graph', 'ナレッジグラフ'],
+  ['architecture', 'アーキテクチャ図'],
+  ['discussion-tree', '議論ツリー'],
+  ['gantt', 'ガントチャート'],
+  ['whiteboard', 'ホワイトボード'],
+  ['settings', '設定パネル'],
+] as const;
+export type ScreenKey = (typeof MAIN_SCREENS)[number][0];
+
+export const PERSONAS = ['経営層', '事業部門', 'IT', '現場'] as const;
+
+export interface StartOptions {
+  /** 'mono'（既定）・'koto'・変種の Pack・null（public/data が空） */
+  pack?: PackKind | Pack | null;
+  /** 既定は「未接続」（使われていないポート） */
+  relayUrl?: string;
+  aiMockDelayMs?: number;
+  /** オープニングを飛ばして本編から始める（既定 true） */
+  skipOpening?: boolean;
+  /** File System Access API を無効にする（既定 true: ダウンロードで受け取る） */
+  disableFileSystemAccess?: boolean;
+  /** URL に付け足すパス・クエリ（`?e2e=1` は常に付く） */
+  path?: string;
+  /** 既存の server を再利用する（再読込・別タブの確認用） */
+  server?: RunningServer;
+}
+
+export interface AppHandle {
+  server: RunningServer;
+  pack: Pack;
+  url: string;
+  /** runtime-config.json で渡した中継プロセスの URL */
+  relayUrl: string;
+  /** 同じ顧客パックのまま、URL を開き直す */
+  reload(opts?: { skipOpening?: boolean }): Promise<void>;
+}
+
+export interface Fixtures {
+  /** 発生したページエラー（uncaught exception）と console.error */
+  pageErrors: string[];
+  /** 失敗した通信の要求 */
+  failedRequests: string[];
+  start: (opts?: StartOptions) => Promise<AppHandle>;
+}
+
+export const test = base.extend<Fixtures>({
+  pageErrors: async ({ page }, use) => {
+    const errors: string[] = [];
+    page.on('pageerror', (e) => errors.push(`pageerror: ${e.message}`));
+    await use(errors);
+  },
+  failedRequests: async ({ page }, use) => {
+    const failed: string[] = [];
+    page.on('requestfailed', (r) => failed.push(`${r.method()} ${r.url()} ${r.failure()?.errorText ?? ''}`));
+    await use(failed);
+  },
+  start: async ({ page, pageErrors: _e, failedRequests: _f }, use) => {
+    const servers: RunningServer[] = [];
+    const factory = async (opts: StartOptions = {}): Promise<AppHandle> => {
+      const pack = opts.pack === null ? null : opts.pack instanceof Pack ? opts.pack : examplePack(opts.pack ?? 'mono');
+      const relayUrl = opts.relayUrl ?? `http://127.0.0.1:${await unusedPort()}`;
+      const server = opts.server ?? (await startStaticServer({
+        pack: { root: pack ? pack.root : null },
+        runtimeConfig: { relayUrl, aiMock: { delayMs: opts.aiMockDelayMs ?? 0 } },
+      }));
+      if (!opts.server) servers.push(server);
+      if (opts.disableFileSystemAccess !== false) await disableFsAccess(page);
+      const url = `${server.url}/${opts.path ?? ''}${(opts.path ?? '').includes('?') ? '&' : '?'}e2e=1`;
+      await page.goto(url);
+      if (opts.skipOpening !== false) await skipOpening(page);
+      const handle: AppHandle = {
+        server,
+        pack: pack ?? examplePack('mono'),
+        url,
+        relayUrl,
+        reload: async (o = {}) => {
+          await page.reload();
+          if (o.skipOpening !== false) await skipOpening(page);
+        },
+      };
+      return handle;
+    };
+    await use(factory);
+    for (const s of servers) await s.close();
+  },
+});
+
+/** File System Access API を無効にしたブラウザー（AC-064 など）。 */
+export async function disableFsAccess(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    for (const k of ['showSaveFilePicker', 'showOpenFilePicker', 'showDirectoryPicker']) {
+      try { delete (window as any)[k]; } catch { /* ignore */ }
+      Object.defineProperty(window, k, { value: undefined, configurable: true });
+    }
+  });
+}
+
+/** 保存先への書き込みが失敗する File System Access API（AC-188）。 */
+export async function failingFsAccess(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const fail = async () => { throw new DOMException('書き込みに失敗しました（テストの差し替え）', 'NotAllowedError'); };
+    const handle = {
+      kind: 'file', name: 'export.md',
+      createWritable: async () => ({ write: fail, close: fail, abort: async () => {} }),
+      queryPermission: async () => 'granted', requestPermission: async () => 'granted',
+    };
+    const dir = {
+      kind: 'directory', name: 'export',
+      getFileHandle: async () => handle, getDirectoryHandle: async () => dir,
+      queryPermission: async () => 'granted', requestPermission: async () => 'granted',
+    };
+    Object.defineProperty(window, 'showSaveFilePicker', { value: async () => handle, configurable: true });
+    Object.defineProperty(window, 'showDirectoryPicker', { value: async () => dir, configurable: true });
+  });
+}
+
+/** オープニングを `Esc` で飛ばし、本編が操作できる状態を待つ。 */
+export async function skipOpening(page: Page): Promise<void> {
+  const opening = page.getByTestId('opening');
+  try {
+    await opening.waitFor({ state: 'visible', timeout: 5_000 });
+    await page.keyboard.press('Escape');
+    await opening.waitFor({ state: 'hidden', timeout: 5_000 });
+  } catch {
+    /* オープニングがない（すでに本編）場合はそのまま */
+  }
+  await expect(page.getByTestId('workspace')).toBeVisible();
+}
+
+/** 画面の切替（ナビゲーション）。CONTRACT.md §4 の `nav-<key>` */
+export async function openScreen(page: Page, key: string): Promise<Locator> {
+  await page.getByTestId(`nav-${key}`).click();
+  const c = component(page, key);
+  await expect(c).toBeVisible();
+  return c;
+}
+
+/** コンポーネント（パネル）。CONTRACT.md §4 の `component-<key>` */
+export function component(page: Page, key: string): Locator {
+  return page.getByTestId(`component-${key}`);
+}
+
+/** コマンドパレット（`Ctrl+K`、[ASSUMPTION] A-05）から操作を実行する。 */
+export async function runCommand(page: Page, text: string, commandName?: string): Promise<void> {
+  await page.keyboard.press('Control+k');
+  const dialog = page.getByRole('dialog', { name: 'コマンドパレット' });
+  await expect(dialog).toBeVisible();
+  await dialog.getByRole('combobox').fill(text);
+  if (commandName) await expect(dialog.getByRole('option', { name: new RegExp(commandName) }).first()).toBeVisible();
+  await page.keyboard.press('Enter');
+}
+
+/** ペルソナの切替メニュー */
+export async function selectPersona(page: Page, persona: string): Promise<void> {
+  await page.getByRole('button', { name: /ペルソナ/ }).click();
+  await page.getByRole('menuitemradio', { name: persona }).click();
+}
+
+/** 編集モードの ON/OFF（FR-047） */
+export async function setEditMode(page: Page, on: boolean): Promise<void> {
+  const sw = page.getByRole('switch', { name: '編集モード' });
+  if ((await sw.isChecked()) !== on) await sw.click();
+  if (on) await expect(sw).toBeChecked();
+  else await expect(sw).not.toBeChecked();
+}
+
+/** 同じ ID の項目（CONTRACT.md §4 の data-entity-id） */
+export function entity(scope: Page | Locator, id: string): Locator {
+  return scope.locator(`[data-entity-id="${id}"]`);
+}
+
+/** 強調の状態（selected／hover／dimmed／related）。CONTRACT.md §4 */
+export async function expectHighlight(loc: Locator, state: 'selected' | 'hover' | 'dimmed' | 'related' | null): Promise<void> {
+  if (state === null) await expect(loc.first()).not.toHaveAttribute('data-highlight', /selected|hover|related/);
+  else await expect(loc.first()).toHaveAttribute('data-highlight', new RegExp(state));
+}
+
+/** テスト用フック（CONTRACT.md §6。`?e2e=1` のときだけ有効） */
+export async function hook<T = any>(page: Page, expr: string, arg?: unknown): Promise<T> {
+  await page.waitForFunction(() => !!(window as any).__edbTest, undefined, { timeout: 10_000 });
+  return page.evaluate(
+    ([e, a]) => {
+      const t = (window as any).__edbTest;
+      // eslint-disable-next-line no-new-func
+      const fn = new Function('t', 'a', `return (${e});`);
+      return fn(t, a);
+    },
+    [expr, arg] as const,
+  );
+}
+
+export interface SceneObject { entityId: string; x: number; y: number; visible: boolean; highlighted: boolean }
+export interface SceneInfo { renderer: string; scene: string; frame: number; quality: string; fps: number; industryPreset: string; objectCount: number }
+
+export const scene = {
+  info: (page: Page) => hook<SceneInfo>(page, 't.scene.info()'),
+  objects: (page: Page) => hook<SceneObject[]>(page, 't.scene.objects()'),
+  camera: (page: Page) => hook<{ position: number[]; target: number[]; moving: boolean }>(page, 't.scene.camera()'),
+};
+
+/** canvas 要素に何かが描かれている（単色でない）ことを、スクリーンショットの画素のばらつきで確かめる。 */
+export async function expectCanvasDrawn(loc: Locator): Promise<void> {
+  const png = await loc.screenshot();
+  // PNG の生データの多様性で簡易に判定（単色の PNG は圧縮後が非常に小さい）
+  expect(png.byteLength, 'canvas が単色（何も描画されていない）').toBeGreaterThan(3_000);
+}
+
+/** ダウンロードを待って中身を返す。 */
+export async function captureDownload(page: Page, action: () => Promise<unknown>, timeout = 30_000): Promise<{ name: string; data: Buffer; download: Download }> {
+  const [download] = await Promise.all([page.waitForEvent('download', { timeout }), action()]);
+  const p = await download.path();
+  const data = fs.readFileSync(p!);
+  return { name: download.suggestedFilename(), data, download };
+}
+
+/** 証跡（スクリーンショット・ファイル）を work/ の下に保存し、テストにも添付する。 */
+export async function saveEvidence(name: string, data: Buffer | string): Promise<string> {
+  fs.mkdirSync(EVIDENCE_DIR, { recursive: true });
+  const p = path.join(EVIDENCE_DIR, name);
+  fs.writeFileSync(p, data);
+  await test.info().attach(name, { path: p });
+  return p;
+}
+
+/** 表（データ表）の本文の行 */
+export function tableRows(scope: Locator): Locator {
+  return scope.getByRole('row').filter({ has: scope.page().getByRole('cell') });
+}
+
+/** 件数バッジ（CONTRACT.md §4 の `count-badge`）の数値 */
+export async function countBadge(scope: Locator): Promise<number> {
+  const t = (await scope.getByTestId('count-badge').innerText()).replace(/[^0-9]/g, '');
+  return Number(t);
+}
+
+/** フレーム時間（ms）の中央値を、requestAnimationFrame の間隔で測る（性能の確認用）。 */
+export async function measureFrameTimes(page: Page, during: () => Promise<void>): Promise<number> {
+  await page.evaluate(() => {
+    const w = window as any;
+    w.__stFrames = [];
+    w.__stRun = true;
+    let last = performance.now();
+    const tick = (t: number) => {
+      w.__stFrames.push(t - last);
+      last = t;
+      if (w.__stRun) requestAnimationFrame(tick);
+    };
+    requestAnimationFrame(tick);
+  });
+  await during();
+  const frames: number[] = await page.evaluate(() => {
+    const w = window as any;
+    w.__stRun = false;
+    return w.__stFrames.slice(1);
+  });
+  frames.sort((a, b) => a - b);
+  return frames[Math.floor(frames.length / 2)] ?? Number.POSITIVE_INFINITY;
+}
+
+/** 計算済みスタイルの色を `rgb(r, g, b)` で比べるための正規化 */
+export function hexToRgb(hex: string): string {
+  const h = hex.replace('#', '');
+  const v = h.length === 3 ? h.split('').map((c) => c + c).join('') : h.slice(0, 6);
+  const n = parseInt(v, 16);
+  return `rgb(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255})`;
+}
+
+/** WCAG の相対輝度とコントラスト比 */
+export function contrastRatio(rgb1: string, rgb2: string): number {
+  const lum = (s: string) => {
+    const [r, g, b] = (s.match(/\d+(\.\d+)?/g) ?? ['0', '0', '0']).slice(0, 3).map(Number).map((c) => {
+      const x = c / 255;
+      return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  };
+  const [a, b] = [lum(rgb1), lum(rgb2)].sort((x, y) => y - x);
+  return (a + 0.05) / (b + 0.05);
+}
