@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Button, Tab, TabList, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
+import { AnnotationControls, AnnotationLayer } from '../ink/AnnotationLayer';
 import { usePane } from '../workspace/PaneContext';
 import { useIndustryPreset, useView3D } from '../store/view3d';
 import { SCENE_KEYS, SCENE_LABELS, type SceneKey } from '../three/presets';
@@ -28,6 +29,7 @@ export function View3DScreen() {
   const notice = useView3D((st) => st.autoNotice);
   const preset = useIndustryPreset();
   const [toBe, setToBe] = useState(false);
+  const [annotating, setAnnotating] = useState(false);
 
   const pane = usePane();
   // ワークスペースのタブで隠れているときは、3D を表示していないものとして扱う（FPS の計測・自動の品質低下の対象にしない）
@@ -47,7 +49,9 @@ export function View3DScreen() {
       </TabList>
       <div className={s.stage}>
         <SceneCanvas toBe={toBe} />
+        <AnnotationLayer viewKey="view3d" label="3D ビュー" active={annotating} />
       </div>
+      <AnnotationControls viewKey="view3d" active={annotating} onToggle={setAnnotating} />
       <div className={s.bar}>
         {scene === 'asis-tobe' && (
           <Button appearance="primary" onClick={() => setToBe((v) => !v)}>{toBe ? 'AsIs に戻す' : 'ToBe へ変形'}</Button>
