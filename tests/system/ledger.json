@@ -367,7 +367,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-013",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -377,6 +377,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T13:40:30+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "依存: I03-canvas の nav-canvas と I06-issues2 の課題-解決策画面。統合後に not_run へ戻す"
         }
       ]
     },
@@ -442,7 +448,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-017",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -452,6 +458,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T13:40:30+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "依存: I06-issues2 の課題-解決策画面(openScreen issue-solution)。統合後に not_run へ戻す"
         }
       ]
     },
@@ -2523,7 +2535,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-124",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2533,6 +2545,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T13:40:29+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "依存: I06-issues2 の課題-解決策画面(FR-038)。統合後に not_run へ戻す"
         }
       ]
     },
@@ -2623,7 +2641,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-135",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2633,6 +2651,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T13:40:31+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "依存: I06-issues2 の課題-解決策画面(component issue-solution)。統合後に not_run へ戻す"
         }
       ]
     },
