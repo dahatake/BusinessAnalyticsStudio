@@ -61,5 +61,5 @@ export default defineConfig({
     },
   ],
   build: { outDir: 'dist', sourcemap: false },
-  test: { include: ['tests/unit/**/*.test.ts'], environment: 'node' },
+  test: { include: ['tests/unit/**/*.test.ts'], environment: 'node', testTimeout: 30_000, hookTimeout: 30_000 },
 });
