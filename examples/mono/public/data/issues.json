@@ -35,6 +35,28 @@
         "risk": { "value": "中（熟練者の協力が前提）", "sourceIds": ["src-mono-002"] },
         "scores": { "impact": { "ai": 1, "decided": 2, "sourceIds": ["src-mono-002"] } }
       }
+    },
+    {
+      "id": "issue-mono-004", "createdBy": "sample", "parentId": null, "title": "品質検査の結果が共有されるまで時間がかかる", "hypothesis": "検査結果が紙で回覧されている", "origin": "interview", "classification": "shareable", "sourceIds": ["src-mono-002"],
+      "audience": "internal", "personas": ["現場", "事業部門"],
+      "evaluation": {
+        "priority": { "value": 4, "unit": "位", "sourceIds": ["src-mono-002"] },
+        "cost": { "value": 400, "unit": "万円", "sourceIds": ["src-mono-003"] },
+        "roi": { "value": 100, "unit": "%", "sourceIds": ["src-mono-003"] },
+        "feasibility": { "value": "高（検査機器の出力を使える）", "sourceIds": ["src-mono-002"] },
+        "risk": { "value": "低", "sourceIds": ["src-mono-002"] }
+      }
+    },
+    {
+      "id": "issue-mono-005", "createdBy": "sample", "parentId": null, "title": "部品の在庫が拠点ごとに把握されていない", "hypothesis": "在庫の更新が月次である", "origin": "document", "classification": "shareable", "sourceIds": ["src-mono-001"],
+      "audience": "internal", "personas": ["事業部門", "IT"],
+      "evaluation": {
+        "priority": { "value": 5, "unit": "位", "sourceIds": ["src-mono-001"] },
+        "cost": { "value": 800, "unit": "万円", "sourceIds": ["src-mono-003"] },
+        "roi": { "value": 70, "unit": "%", "sourceIds": ["src-mono-003"] },
+        "feasibility": { "value": "中（基幹システムとの連携が必要）", "sourceIds": ["src-mono-002"] },
+        "risk": { "value": "中（連携先の改修が前提）", "sourceIds": ["src-mono-002"] }
+      }
     }
   ],
   "solutions": [
