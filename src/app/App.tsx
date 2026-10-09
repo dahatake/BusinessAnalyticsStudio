@@ -30,6 +30,8 @@ import { checkTemplateVersion, versionWarning } from '../version';
 import { Dock, PersonaMenu, ResetLayoutButton } from '../workspace/Controls';
 import { Workspace } from '../workspace/Workspace';
 import { Opening } from './Opening';
+import '../ink/presentationInk'; // プレゼン中の一時的な注釈をチャプターの移動で消す（FR-091）
+import { InkToolbarHost } from '../ink/FloatingInkToolbar';
 
 setAvailableComponents(SCREENS.map((s) => s.key));
 
@@ -108,6 +110,7 @@ export function App() {
       <ExportHost screens={SCREENS} />
       <SelectionAnnouncer />
       <EntityBoardActions />
+      <InkToolbarHost />
       <CommandController screens={SCREENS} />
       <AppShell
         title={`${name} ${projectName}`}

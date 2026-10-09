@@ -1,6 +1,6 @@
 // インクの道具のツールバー。FR-088（ペン・蛍光ペン・消しゴム・投げ縄・図形・テキスト・付箋・画像・元に戻す/やり直し）
 import { useState } from 'react';
-import { Divider, Slider, Text, Toolbar, ToolbarButton, Tooltip, makeStyles, tokens } from '@fluentui/react-components';
+import { Divider, Slider, Text, Toolbar, ToolbarButton, Tooltip, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import {
   ArrowRedo24Regular, ArrowUndo24Regular, ArrowUpRight24Regular, ChatBubblesQuestion24Regular, Circle24Regular, Edit24Regular,
   Eraser24Regular, EraserSegment24Regular, Flow24Regular, Highlight24Regular, ImageAdd24Regular, Lasso24Regular, Line24Regular, Note24Regular,
@@ -49,6 +49,8 @@ const useStyles = makeStyles({
   },
   swatch: { width: '16px', height: '16px', borderRadius: '50%', border: `1px solid ${tokens.colorNeutralStroke1}`, display: 'inline-block' },
   size: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalXS, minWidth: '140px' },
+  compact: { width: '96px', boxSizing: 'border-box' },
+  sizeCompact: { minWidth: '72px', width: '72px' },
   forcedAuto: { forcedColorAdjust: 'auto', '@media (forced-colors: active)': { forcedColorAdjust: 'auto' } },
 });
 
@@ -58,6 +60,8 @@ export interface InkToolbarProps {
   label?: string;
   /** ホワイトボード（付箋をつなぐコネクターの道具を出す） */
   whiteboard?: boolean;
+  /** 狭い縦長の並び（フローティングツールバー用。2 列） */
+  compact?: boolean;
 }
 
 /** クリップボードの画像を、ボードの表示範囲の中央に貼る。 */
@@ -87,7 +91,7 @@ async function pasteClipboardImage(boardId: string): Promise<void> {
   throw new Error('クリップボードに画像がありません');
 }
 
-export function InkToolbar({ boardId, label = 'インクの道具', whiteboard = false }: InkToolbarProps) {
+export function InkToolbar({ boardId, label = 'インクの道具', whiteboard = false, compact = false }: InkToolbarProps) {
   const s = useStyles();
   const tool = useInk((st) => st.tool);
   const color = useInk((st) => st.color);
@@ -113,7 +117,7 @@ export function InkToolbar({ boardId, label = 'インクの道具', whiteboard =
 
   return (
     <div>
-      <Toolbar aria-label={label} className={s.bar} size="small">
+      <Toolbar aria-label={label} className={mergeClasses(s.bar, compact && s.compact)} size="small">
         {TOOLS.filter((t) => whiteboard || !t.whiteboardOnly).map((t) => button(t.id, t.label, t.icon, () => st().setTool(t.id), { pressed: tool === t.id }))}
         {button('image', '画像を貼り付け', ImageAdd24Regular, () => {
           setMessage(null);
@@ -134,9 +138,9 @@ export function InkToolbar({ boardId, label = 'インクの道具', whiteboard =
             />
           </Tooltip>
         ))}
-        <span className={s.size}>
-          <Text size={200}>太さ</Text>
-          <Slider aria-label="線の太さ" min={1} max={12} step={1} value={size} onChange={(_, d) => st().setSize(d.value)} />
+        <span className={mergeClasses(s.size, compact && s.sizeCompact)}>
+          {!compact && <Text size={200}>太さ</Text>}
+          <Slider aria-label="線の太さ" style={compact ? { minWidth: 0, width: 72 } : undefined} min={1} max={12} step={1} value={size} onChange={(_, d) => st().setSize(d.value)} />
         </span>
       </Toolbar>
       {message && <Text role="status" size={200}>{message}</Text>}

@@ -4,9 +4,10 @@
 // - `←`/`→` で前/次の議題へ。キャンバスにフォーカスがあっても、パンではなく議題の移動にする（`↑`/`↓`・`Shift`+矢印はパンのまま）
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Text, makeStyles, mergeClasses, tokens,
+  Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Radio, RadioGroup, Text, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
 import { ChevronLeft20Regular, ChevronRight20Regular, Play20Regular, Stop20Regular } from '@fluentui/react-icons';
+import { usePresentationInk, type AnnotationMode } from '../ink/presentationInk';
 import { countInternal } from '../schema';
 import { usePackStore } from '../store/pack';
 import { currentTopic, usePresentationStore } from '../store/presentation';
@@ -43,6 +44,7 @@ const useStyles = makeStyles({
   now: { color: tokens.colorBrandForeground1, fontWeight: tokens.fontWeightSemibold },
   topic: { display: 'flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS, marginLeft: 'auto', minWidth: 0 },
   topicTitle: { overflowWrap: 'anywhere' },
+  annotate: { display: 'flex', alignItems: 'center' },
 });
 
 /** 顧客パックの show.json から、プレゼンテーションで巡る議題の一覧を作る（パックが読めていなければ空）。 */
@@ -126,6 +128,8 @@ export function PresentationBar() {
   const s = useStyles();
   usePresentationKeys();
   const st = usePresentationStore();
+  const annotateMode = usePresentationInk((s2) => s2.mode);
+  const setAnnotateMode = usePresentationInk((s2) => s2.setMode);
   const cur = currentTopic(st);
   if (!st.active || !cur) return null;
   const chapters = [...new Map(st.topics.map((t) => [t.chapterId, t] as const)).values()];
@@ -147,6 +151,13 @@ export function PresentationBar() {
           );
         })}
       </ol>
+      <div className={s.annotate} role="group" aria-label="プレゼン中の書き込み（FR-091）">
+        <RadioGroup layout="horizontal" aria-label="注釈の扱い" value={annotateMode} onChange={(_, d) => setAnnotateMode(d.value as AnnotationMode)}>
+          <Radio value="off" label="書かない" />
+          <Radio value="temporary" label="一時的な注釈" />
+          <Radio value="saved" label="保存" />
+        </RadioGroup>
+      </div>
       <div className={s.topic}>
         <Button size="small" icon={<ChevronLeft20Regular aria-hidden />} aria-label="前の議題" disabled={st.index === 0} onClick={st.prev} />
         <Text size={200}>議題 {st.index + 1} / {st.topics.length}</Text>

@@ -22,7 +22,13 @@ interface SettingsState {
   /** 利用者が選んだ演出強度。null はブランドトーンの既定値（FR-063）。FR-057 の保存の対象 */
   intensity: Intensity | null;
   setIntensity: (intensity: Intensity | null) => void;
+  /** 利き手。フローティングツールバーを画面のどちら側に置くか（FR-091）。既定は右利き */
+  handedness: Handedness;
+  setHandedness: (h: Handedness) => void;
 }
+
+export type Handedness = 'right' | 'left';
+export const HANDEDNESS: readonly Handedness[] = ['right', 'left'];
 
 export const DEFAULT_VOLUME = 0.6;
 const clamp01 = (v: number) => (Number.isFinite(v) ? Math.min(1, Math.max(0, v)) : DEFAULT_VOLUME);
@@ -40,6 +46,8 @@ export const useSettings = create<SettingsState>()(
       setVolume: (volume) => set({ volume: clamp01(volume) }),
       intensity: null,
       setIntensity: (intensity) => set({ intensity }),
+      handedness: 'right',
+      setHandedness: (handedness) => set({ handedness: handedness === 'left' ? 'left' : 'right' }),
     }),
     { name: 'edb.settings', version: 1 },
   ),

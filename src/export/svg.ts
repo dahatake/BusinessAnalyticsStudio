@@ -60,11 +60,11 @@ export function architectureSvg(nodes: readonly ArchNode[], edges: readonly Arch
 
 const num = (n: number): string => String(Math.round(n * 10) / 10);
 
-/** ホワイトボード 1 枚の画像。内容（線・図形・文字）がなければ null。 */
-export function boardSvg(board: Board): string | null {
-  const bounds = boardContentBounds(board);
+/** ホワイトボード 1 枚の画像。内容（線・図形・文字）がなければ null。rect を渡すと、その範囲（ワールド座標）だけを切り出す（内容がなくても返す）。 */
+export function boardSvg(board: Board, rect?: { x: number; y: number; w: number; h: number }): string | null {
+  const bounds = rect ?? boardContentBounds(board);
   if (!bounds) return null;
-  const m = 24;
+  const m = rect ? 0 : 24;
   const x = bounds.x - m, y = bounds.y - m;
   const w = Math.max(1, bounds.w + m * 2), h = Math.max(1, bounds.h + m * 2);
   const colorOf = (c?: string) => (!c || c === 'auto' ? INK : c);
