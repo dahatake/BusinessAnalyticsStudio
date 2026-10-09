@@ -115,9 +115,12 @@ describe('FR-044 AC-055 追加・複製・削除', () => {
 
   it('削除: 項目を消し、ほかの項目の参照を外す。ほかの項目そのものは消さず、子の課題は親につなぐ', () => {
     const before = mono.data;
-    const r = ok(deleteRecord(before, 'src-mono-001'));
-    expect(r.data.sources.sources.some((s) => s.id === 'src-mono-001')).toBe(false);
-    expect(JSON.stringify(r.data)).not.toContain('"src-mono-001"');
+    const refused = deleteRecord(before, 'src-mono-001');
+    expect(refused.ok).toBe(false); // 数値の唯一の出典を消すと、出典の規則（FR-115）を満たせない
+    if (!refused.ok) expect(refused.details!.join('\n')).toMatch(/sourceIds/);
+    const r = ok(deleteRecord(before, 'feat-mono-002'));
+    expect(r.data.plan.features.some((s) => s.id === 'feat-mono-002')).toBe(false);
+    expect(JSON.stringify(r.data)).not.toContain('"feat-mono-002"');
     // 課題を消しても、その解決策は残る
     const r2 = ok(deleteRecord(before, ISSUE));
     expect(r2.data.issues.issues.some((i) => i.id === ISSUE)).toBe(false);
@@ -135,6 +138,59 @@ describe('FR-044 AC-055 追加・複製・削除', () => {
     if (!edge) return;
     const r = ok(deleteRecord(mono.data, edge.from));
     expect(r.data.architecture.edges.some((e) => e.from === edge.from || e.to === edge.from)).toBe(false);
+  });
+
+  it('異常系: 課題を消しても、唯一の対象課題を失う解決策は別の課題へ付け替わり、参照が壊れない（FR-114）。履歴にも残る', () => {
+    const r = ok(deleteRecord(mono.data, ISSUE));
+    const sol = r.data.issues.solutions.find((s) => s.id === 'sol-mono-001')!;
+    expect(sol.issueId).not.toBe(ISSUE);
+    expect(r.data.issues.issues.some((i) => i.id === sol.issueId)).toBe(true);
+    expect(r.changes.some((c) => c.entityId === 'sol-mono-001' && c.fieldLabel.includes('付け替え'))).toBe(true);
+    expect(validatePack({ ...r.data, brandProfile: mono.brand }).errors).toEqual([]);
+  });
+
+  it('異常系: 付け替え先の課題が 1 つもないとき（最後の課題を、解決策があるまま削除）は、削除を拒否して理由を返す', () => {
+    const koto = readPack('koto');
+    expect(koto.data.issues.issues).toHaveLength(1);
+    const r = deleteRecord(koto.data, koto.data.issues.issues[0]!.id);
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.message).toMatch(/解決策.*削除できません/);
+  });
+
+  it('異常系: 複数の課題に効く解決策は、残る課題へ issueId を移し、削除した課題の参照だけを外す。製品を消すと、その適合理由も消える', () => {
+    const solutions = mono.data.issues.solutions.map((s) => (s.id === 'sol-mono-001' ? { ...s, issueIds: ['issue-mono-002'] } : s));
+    const multi = { ...mono.data, issues: { ...mono.data.issues, solutions } };
+    const r = ok(deleteRecord(multi, ISSUE));
+    const sol = r.data.issues.solutions.find((s) => s.id === 'sol-mono-001')!;
+    expect(sol.issueId).toBe('issue-mono-002');
+    expect(sol.issueIds).toEqual(['issue-mono-002']);
+    const withFit = mono.data.issues.solutions.find((s) => (s.productFits ?? []).length > 0);
+    if (withFit) {
+      const pid = withFit.productFits![0]!.productId;
+      const gone = ok(deleteRecord(mono.data, pid));
+      expect(JSON.stringify(gone.data)).not.toContain(`"${pid}"`);
+      expect(validatePack({ ...gone.data, brandProfile: mono.brand }).errors).toEqual([]);
+    }
+  });
+
+  it('異常系: どの項目を削除しても（拒否される場合を除き）、削除後のデータは検証を通り、JSON のエクスポート→再インポートで内容も警告も変わらない', () => {
+    let deleted = 0;
+    for (const kind of ['mono', 'koto'] as const) {
+      const p = readPack(kind);
+      for (const id of allIds(p.data)) {
+        const r = deleteRecord(p.data, id);
+        if (!r.ok) continue;
+        deleted++;
+        expect(validatePack({ ...r.data, brandProfile: p.brand }).errors, `${kind} ${id} の削除後`).toEqual([]);
+        const back = importJson(exportJson(r.data), p.brand);
+        expect(back.ok, `${kind} ${id}`).toBe(true);
+        if (back.ok) {
+          expect(back.warnings, `${kind} ${id} の再インポート`).toEqual([]);
+          expect(back.data, `${kind} ${id} の往復`).toEqual(r.data);
+        }
+      }
+    }
+    expect(deleted).toBeGreaterThan(20);
   });
 });
 

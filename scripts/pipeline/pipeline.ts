@@ -5,12 +5,13 @@ import { formatPackError, type PackError } from '../../src/schema';
 import { validatePackDir } from '../lib/pack-fs';
 import { cloneTemplate, type CloneMode } from './clone';
 import {
-  COMMAND_STAGES, workDir as workDirOf, researchCacheDir, type Command, type Inputs, type PipelinePaths, type StageId,
+  COMMAND_STAGES, STAGES, isoLocal, workDir as workDirOf, researchCacheDir, type Command, type Inputs, type PipelinePaths, type StageId,
 } from './common';
 import { generatePack, mockGenerator, writePack, type PackGenerator } from './generate';
 import { startStaticServer, type Launched, type Launcher } from './launch';
 import {
-  loadResearchCache, sampleResearcher, saveResearchPart, type ResearchCache, type Researcher,
+  assertGitIgnored, checkResearchFreshness, loadResearchCache, reresearchSuggestion, sampleResearcher, saveResearchPart,
+  type ResearchAttempt, type ResearchCache, type Researcher,
 } from './research';
 import { Recorder } from './timing';
 
@@ -42,6 +43,13 @@ export class PipelineError extends Error {
   }
 }
 
+/** 情報源を切り替えたとき（使えなかった・打ち切った）だけ、理由を 1 行にする */
+function attemptNote(attempts: ResearchAttempt[] | undefined): string {
+  const labels = { used: '使用', unavailable: '利用不可', timeout: '上限で打ち切り', error: 'エラー' } as const;
+  const skipped = (attempts ?? []).filter((a) => a.outcome !== 'used');
+  return skipped.length ? `（切り替え: ${skipped.map((a) => `${a.source}=${labels[a.outcome]}`).join('、')}）` : '';
+}
+
 function validateOrThrow(dir: string): void {
   const r = validatePackDir(dir);
   if (r.errors.length) {
@@ -60,24 +68,29 @@ export async function runPipeline(command: Command, input: Inputs, deps: Pipelin
   const launcher = deps.launcher ?? startStaticServer;
   const now = deps.now ?? (() => new Date());
 
-  const work = workDirOf(paths, input.customer);
-  const rec = new Recorder(path.join(work, 'logs'), command, now);
   const ids = COMMAND_STAGES[command];
+  const work = workDirOf(paths, input.customer);
+  // 調査キャッシュと顧客パックは、コミットされない場所にだけ作る（NFR-SEC-003）。何かを書く前に確かめる
+  if (ids.includes('research-customer')) assertGitIgnored(paths.repoRoot, path.join(researchCacheDir(paths, input.customer), 'meta.json'), '調査キャッシュの保存先');
+  if (ids.includes('generate')) assertGitIgnored(paths.repoRoot, path.join(work, 'data', 'customer.json'), '顧客パックの作成先');
+  const rec = new Recorder(path.join(work, 'logs'), command, now);
   let cache: ResearchCache | undefined;
   let launched: Launched | undefined;
+  // 事前調査の実行日時。①②で同じ日時を記録し、再調査のたびに有効期限（FR-123）を数え直す
+  const researchedAt = isoLocal(now());
 
   const handlers: Record<StageId, () => Promise<Record<string, unknown> | void>> = {
     'research-customer': async () => {
       const r = await researcher.researchCustomer(input);
-      saveResearchPart(paths, input, 'customer', r, now);
-      log(`① 顧客調査: 情報源=${r.source}`);
-      return { source: r.source };
+      saveResearchPart(paths, input, 'customer', r, now, researchedAt);
+      log(`① 顧客調査: 情報源=${r.source}${attemptNote(r.attempts)}`);
+      return { source: r.source, ...(r.attempts ? { attempts: r.attempts } : {}) };
     },
     'research-brand': async () => {
       const r = await researcher.researchBrand(input);
-      saveResearchPart(paths, input, 'brand', r, now);
-      log(`② ブランド調査: 情報源=${r.source}`);
-      return { source: r.source };
+      saveResearchPart(paths, input, 'brand', r, now, researchedAt);
+      log(`② ブランド調査: 情報源=${r.source}${attemptNote(r.attempts)}`);
+      return { source: r.source, ...(r.attempts ? { attempts: r.attempts } : {}) };
     },
     clone: async () => {
       const r = await cloneTemplate({
@@ -91,21 +104,25 @@ export async function runPipeline(command: Command, input: Inputs, deps: Pipelin
       return { method: r.method, limitSec: r.limitSec, withinLimit: r.withinLimit, cloneDurationSec: Math.round(r.durationSec * 100) / 100 };
     },
     generate: async () => {
+      // 期限切れの調査キャッシュは、再調査を提案する（FR-123）。生成は続ける
+      const fresh = checkResearchFreshness(paths, input.customer, now());
+      const suggestion = reresearchSuggestion(input.customer, fresh);
+      for (const line of suggestion) log(line);
       cache = loadResearchCache(paths, input.customer);
       let usedSample = false;
       if (!cache) {
         // 調査キャッシュがないときは、前提を置いたサンプルで続ける（推定として記録する）
         log(`調査キャッシュがありません（${researchCacheDir(paths, input.customer)}）。前提を置いたサンプルで続けます。`);
         const [c, b] = await Promise.all([sampleResearcher.researchCustomer(input), sampleResearcher.researchBrand(input)]);
-        saveResearchPart(paths, input, 'customer', c, now);
-        saveResearchPart(paths, input, 'brand', b, now);
+        saveResearchPart(paths, input, 'customer', c, now, researchedAt);
+        saveResearchPart(paths, input, 'brand', b, now, researchedAt);
         cache = loadResearchCache(paths, input.customer)!;
         usedSample = true;
       }
       const files = await generatePack(generator, input, cache, paths.samplePack);
       const written = writePack(work, files, input);
       log(`④ 顧客パックを生成しました（${written.length} 件）`);
-      return { files: written.length, usedSampleCache: usedSample };
+      return { files: written.length, usedSampleCache: usedSample, ...(suggestion.length ? { cacheExpired: true } : {}) };
     },
     validate: async () => {
       validateOrThrow(work);
@@ -131,7 +148,18 @@ export async function runPipeline(command: Command, input: Inputs, deps: Pipelin
 
   const executed: StageId[] = [];
   try {
-    for (const id of ids) {
+    for (let i = 0; i < ids.length; i++) {
+      const id = ids[i]!;
+      if (id === 'research-customer' && ids[i + 1] === 'research-brand') {
+        // ①顧客調査と②ブランド調査は並行して行う（FR-121）。片方が失敗しても、もう片方は最後まで行ってから失敗を返す
+        const rs = await Promise.allSettled([rec.stage(id, handlers[id]), rec.stage('research-brand', handlers['research-brand'])]);
+        const failed = rs.find((r): r is PromiseRejectedResult => r.status === 'rejected');
+        rec.stages.sort((a, b) => STAGES.findIndex((s) => s.id === a.id) - STAGES.findIndex((s) => s.id === b.id)); // 記録は工程の順にそろえる
+        if (failed) throw failed.reason;
+        executed.push(id, 'research-brand');
+        i++;
+        continue;
+      }
       await rec.stage(id, handlers[id]);
       executed.push(id);
     }

@@ -3,8 +3,8 @@
 // 値を編集したら作成者の種別は human になる（FR-116: applyEdit）。
 import { EVALUATION_LABELS } from '../analysis/model';
 import {
-  DATA_FILE_NAMES, DATA_SCHEMAS, REFERENCE_KEYS, applyEdit, disableInvalidItems, formatPackError,
-  type BrandProfile, type DataFileName, type PackData, type PackFiles,
+  BRAND_PROFILE_PATH, DATA_FILE_NAMES, DATA_SCHEMAS, REFERENCE_KEYS, applyEdit, disableInvalidItems, formatPackError, validatePack,
+  type BrandProfile, type DataFileName, type PackData, type PackError, type PackFiles,
 } from '../schema';
 import { KIND_LABELS, type NodeKind } from '../selection/graph';
 
@@ -311,14 +311,26 @@ export function duplicateRecord(d: PackData, id: string): EditResult {
 
 const REF_KEYS = new Set<string>(REFERENCE_KEYS);
 
+/** 項目の削除の前後で比べる、データ（ブランド以外）の検証エラー */
+function dataErrors(d: PackData): PackError[] {
+  return validatePack({ ...(d as unknown as PackFiles), brandProfile: {} }).errors.filter((e) => e.file !== BRAND_PROFILE_PATH);
+}
+
+interface ScrubTargets {
+  /** 削除した課題の子の課題をつなぐ先（削除した課題の親） */
+  parent?: string;
+  /** 唯一の対象課題を失った解決策をつなぐ先の課題 */
+  issue?: string;
+}
+
 /** 削除した項目への参照を取り除く。削除した課題の子は、その親につなぐ。端点を失った接続は一緒に取り除く */
-function scrub(v: unknown, removed: ReadonlySet<string>, parentOfRemoved: string | undefined): unknown {
+function scrub(v: unknown, removed: ReadonlySet<string>, to: ScrubTargets): unknown {
   if (Array.isArray(v)) {
     let changed = false;
     const out: unknown[] = [];
     for (const x of v) {
       if (isRec(x) && isStr(x.from) && isStr(x.to) && (removed.has(x.from) || removed.has(x.to))) { changed = true; continue; }
-      const y = scrub(x, removed, parentOfRemoved);
+      const y = scrub(x, removed, to);
       if (y !== x) changed = true;
       out.push(y);
     }
@@ -328,6 +340,12 @@ function scrub(v: unknown, removed: ReadonlySet<string>, parentOfRemoved: string
   let changed = false;
   const out: Rec = {};
   for (const [k, x] of Object.entries(v)) {
+    // 製品ごとの適合理由は、製品を消すと意味を失うので項目ごと外す
+    if (k === 'productFits' && Array.isArray(x)) {
+      const kept = x.filter((f) => !(isRec(f) && typeof f.productId === 'string' && removed.has(f.productId)));
+      if (kept.length !== x.length) { changed = true; out[k] = kept; } else out[k] = x;
+      continue;
+    }
     if (REF_KEYS.has(k)) {
       if (Array.isArray(x)) {
         const kept = x.filter((t) => !(typeof t === 'string' && removed.has(t)));
@@ -336,36 +354,74 @@ function scrub(v: unknown, removed: ReadonlySet<string>, parentOfRemoved: string
       }
       if (typeof x === 'string' && removed.has(x)) {
         changed = true;
-        if (k === 'parentId') { out[k] = parentOfRemoved ?? null; continue; }
+        if (k === 'parentId') { out[k] = to.parent ?? null; continue; }
         if (k === 'issueId') {
+          // 複数の課題に効く解決策は残る課題へ、唯一の対象課題だった解決策は付け替え先の課題へつなぐ
           const others = Array.isArray(v.issueIds) ? (v.issueIds as unknown[]).filter((t): t is string => typeof t === 'string' && !removed.has(t)) : [];
-          out[k] = others[0] ?? parentOfRemoved ?? x; // 代わりの課題がなければ参照を残す（取り込み時に、この項目だけが無効になる）
+          out[k] = others[0] ?? to.issue ?? x;
           continue;
         }
         continue; // そのほかの単独の参照は外す
       }
     }
-    const y = scrub(x, removed, parentOfRemoved);
+    const y = scrub(x, removed, to);
     if (y !== x) changed = true;
     out[k] = y;
   }
   return changed ? out : v;
 }
 
-/** 項目を削除する。ほかの項目の参照は取り除くが、ほかの項目そのものは削除しない */
+/**
+ * 項目を削除する。ほかの項目の参照は取り除くが、ほかの項目そのものは削除しない。
+ * 課題を削除すると、唯一の対象課題がその課題だった解決策は、親の課題、なければ削除した課題のすぐ後ろ（なければ前）の課題へ付け替える（FR-114: 参照を壊さない）。
+ * 付け替え先の課題が 1 つもない（最後の課題を、解決策のあるまま削除する）ときは、削除を拒否して理由を返す。
+ */
 export function deleteRecord(d: PackData, id: string): EditResult {
   const loc = locate(d, id);
   if (!loc) return { ok: false, message: `項目が見つかりません: ${id}` };
   const removed = new Set<string>();
   walk(loc.rec, (o) => { if (isStr(o.id)) removed.add(o.id); });
-  const next = mapList(d, loc, (list) => list.filter((_, i) => i !== loc.index));
   const parent = isStr(loc.rec.parentId) ? loc.rec.parentId : undefined;
+  const reassigned: DataChange[] = [];
+  let issueTarget: string | undefined;
+  if (loc.def.kind === 'issue') {
+    const orphans = (d.issues.solutions as Rec[]).filter((s) => {
+      const targets = [s.issueId, ...(Array.isArray(s.issueIds) ? (s.issueIds as unknown[]) : [])].filter(isStr);
+      return targets.length > 0 && targets.every((t) => removed.has(t));
+    });
+    if (orphans.length > 0) {
+      const list = listOf(d, ISSUE_DEF);
+      const pick = (i: Rec | undefined): string | undefined => (i && isStr(i.id) && !removed.has(i.id) ? i.id : undefined);
+      issueTarget = (parent && pick(list.find((i) => i.id === parent)))
+        ?? list.slice(loc.index + 1).map(pick).find(Boolean)
+        ?? list.slice(0, loc.index).reverse().map(pick).find(Boolean);
+      if (!issueTarget) {
+        const names = orphans.map((s) => `「${nameOf(s, 'title')}」`).join('、');
+        return { ok: false, message: `解決策${names}の対象の課題がなくなるため、この課題は削除できません。先に解決策を削除するか、別の課題を追加してください。` };
+      }
+      const targetName = nameOf(list.find((i) => i.id === issueTarget)!, 'title');
+      for (const s of orphans) {
+        reassigned.push({ op: 'update', entityId: s.id as string, entityLabel: nameOf(s, 'title'), fieldLabel: '対象の課題（付け替え）', before: nameOf(loc.rec, 'title'), after: targetName });
+      }
+    }
+  }
+  const next = mapList(d, loc, (list) => list.filter((_, i) => i !== loc.index));
   const scrubbed: Rec = {};
-  for (const name of DATA_FILE_NAMES) scrubbed[name] = scrub(files(next)[name], removed, parent);
+  for (const name of DATA_FILE_NAMES) scrubbed[name] = scrub(files(next)[name], removed, { parent, issue: issueTarget });
   const label = nameOf(loc.rec, loc.def.nameKey);
+  // 削除で、出典（FR-115）・参照（FR-114）の規則を新しく破るときは拒否する（例: 数値の唯一の出典を消す）
+  if (dataErrors(d).length === 0) {
+    const broken = dataErrors(scrubbed as unknown as PackData);
+    if (broken.length > 0) {
+      return { ok: false, message: `「${label}」を削除すると、データの規則を満たせなくなるため削除できません。先に、これを参照している項目を編集してください。`, details: broken.slice(0, 5).map(formatPackError) };
+    }
+  }
   return {
     ok: true, data: scrubbed as unknown as PackData,
-    changes: [{ op: 'delete', entityId: id, entityLabel: label, fieldLabel: `${KIND_LABELS[loc.def.kind]}の削除`, before: label, after: '（削除）' }],
+    changes: [
+      { op: 'delete', entityId: id, entityLabel: label, fieldLabel: `${KIND_LABELS[loc.def.kind]}の削除`, before: label, after: '（削除）' },
+      ...reassigned,
+    ],
   };
 }
 
