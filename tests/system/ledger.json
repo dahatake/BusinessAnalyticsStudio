@@ -367,7 +367,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-013",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -377,6 +377,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T13:40:30+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "依存: I03-canvas の nav-canvas と I06-issues2 の課題-解決策画面。統合後に not_run へ戻す"
         }
       ]
     },
@@ -442,7 +448,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-017",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -452,6 +458,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T13:40:30+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "依存: I06-issues2 の課題-解決策画面(openScreen issue-solution)。統合後に not_run へ戻す"
         }
       ]
     },
@@ -1593,9 +1605,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "d768e92",
-      "last_run_at": "2026-10-09T13:02:05+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-059-202610091301.log",
+      "last_commit": "62715d0",
+      "last_run_at": "2026-10-09T13:41:54+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-059-202610091341.log",
       "history": [
         {
           "at": "2026-10-09T12:17:42+09:00",
@@ -2498,10 +2510,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-123",
       "canary": false,
-      "status": "not_run",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "62715d0",
+      "last_run_at": "2026-10-09T13:41:59+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-095-202610091341.log",
       "history": [
         {
           "at": "2026-10-09T12:18:28+09:00",
@@ -2523,7 +2535,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-124",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2533,6 +2545,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T13:40:29+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "依存: I06-issues2 の課題-解決策画面(FR-038)。統合後に not_run へ戻す"
         }
       ]
     },
@@ -2623,7 +2641,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-135",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2633,6 +2651,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T13:40:31+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "依存: I06-issues2 の課題-解決策画面(component issue-solution)。統合後に not_run へ戻す"
         }
       ]
     },

@@ -5,3 +5,5 @@ dist/
 *.tsbuildinfo
 
 __pycache__/
+.env
+.env.*
