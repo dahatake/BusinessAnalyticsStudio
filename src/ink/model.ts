@@ -27,7 +27,8 @@ export interface Stroke {
 }
 
 export type ShapeKind = 'line' | 'arrow' | 'rect' | 'ellipse' | 'callout';
-export type ItemType = 'shape' | 'text' | 'sticky' | 'image';
+/** frame / connector / card はホワイトボード（FR-097・FR-098）の部品。card はアプリのデータ（課題など）とリンクする。 */
+export type ItemType = 'shape' | 'text' | 'sticky' | 'image' | 'frame' | 'connector' | 'card';
 export interface BoardItem {
   id: string;
   type: ItemType;
@@ -48,6 +49,19 @@ export interface BoardItem {
   src?: string;
   groupId?: string | null;
   frameId?: string | null;
+  /** connector: つなぐ 2 つの項目の ID（向きは from → to）。x1..y2 と外接矩形は項目の位置から導出して保つ */
+  from?: string;
+  to?: string;
+  /** frame の見出し、card の表示名（元データの名前の写し。画面では元データの最新の名前を出す） */
+  label?: string;
+  /** card: 元データの種類の表示名（課題・解決策など） */
+  sub?: string;
+  /** card: リンク先の元データの ID（エンティティ関係グラフの節 ID） */
+  sourceEntityId?: string;
+  /** sticky: ドット投票の票数 */
+  votes?: number;
+  /** AI が作った項目（クラスタリングのフレーム）。画面に「AI 生成」と出す */
+  author?: 'ai';
 }
 
 export interface ViewState { x: number; y: number; zoom: number }
@@ -69,7 +83,10 @@ export interface Board {
 
 export type ToolId =
   | 'pen' | 'highlighter' | 'eraser-stroke' | 'eraser-pixel' | 'lasso'
-  | 'line' | 'arrow' | 'rect' | 'ellipse' | 'callout' | 'text' | 'sticky';
+  | 'line' | 'arrow' | 'rect' | 'ellipse' | 'callout' | 'text' | 'sticky' | 'connector';
+
+/** アプリのデータ（エンティティ）をボードへドラッグ&ドロップするときの、DataTransfer の種類 */
+export const ENTITY_DRAG_MIME = 'application/x-edb-entity';
 
 export const SHAPE_TOOLS: ReadonlyArray<ToolId> = ['line', 'arrow', 'rect', 'ellipse', 'callout'];
 export const isShapeTool = (t: ToolId): t is ShapeKind => (SHAPE_TOOLS as readonly string[]).includes(t);

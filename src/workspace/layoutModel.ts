@@ -106,17 +106,23 @@ export function activate(layout: Layout, key: string): Layout {
 }
 
 /** 再表示する（FR-014）。横の分割の末尾に足す。すでに表示中ならそのタブを前面にする。 */
+/** 画面を新しく表示するときに、全体に対して取る幅の割合。載せていない画面は既定（横に並ぶ分割へ足すとき 0.25、そうでなければ 0.3）。描く面のように広さがほしい画面は大きくする。 */
+export const SHOW_SHARE: Readonly<Record<string, number>> = { whiteboard: 0.5 };
+
 export function show(layout: Layout, key: string): Layout {
   if (!layout) return leaf(key);
   if (isVisible(layout, key)) return activate(layout, key);
+  const share = SHOW_SHARE[key];
   if (layout.kind === 'split' && layout.dir === 'row') {
     const n = layout.children.length;
+    const s = share ?? 0.25;
     return {
       kind: 'split', dir: 'row', children: [...clone(layout.children), leaf(key)],
-      sizes: normalizeSizes([...layout.sizes.map((s) => s * 0.75), 0.25], n + 1),
+      sizes: normalizeSizes([...layout.sizes.map((x) => x * (1 - s)), s], n + 1),
     };
   }
-  return split('row', [clone(layout), leaf(key)], [0.7, 0.3]);
+  const s = share ?? 0.3;
+  return split('row', [clone(layout), leaf(key)], [1 - s, s]);
 }
 
 function removeNode(root: LayoutNode, target: LayoutNode): Layout {
