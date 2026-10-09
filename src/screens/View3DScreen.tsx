@@ -10,6 +10,7 @@ import { useIndustryPreset, useView3D } from '../store/view3d';
 import { cameraPathPoses, flyPath, goHome, useCameraRig } from '../three/cameraRig';
 import { SCENE_KEYS, SCENE_LABELS, type SceneKey } from '../three/presets';
 import { SceneCanvas } from '../three/SceneCanvas';
+import { Breadcrumb, Minimap, useLodNavigation } from '../three/LodNavigator';
 import { useTwinLayout, twinTableRows } from '../three/twin';
 import { sceneObjects } from '../three/twinProbe';
 
@@ -36,6 +37,7 @@ export function View3DScreen() {
   const [toBe, setToBe] = useState(false);
   const [annotating, setAnnotating] = useState(false);
   const layout = useTwinLayout();
+  const lod = useLodNavigation();
   const moving = useCameraRig((st) => st.moving);
   // 「表で見る」（NFR-A11Y-003）: 表にした時点で 3D ビューに見えていた項目（ほかの項目に隠れる・画面の外の項目は除く）
   const [asTable, setAsTable] = useState(false);
@@ -78,8 +80,10 @@ export function View3DScreen() {
         )
       ) : (
         <>
+          {scene === 'hero' && lod.layout && lod.layout.objects.length > 0 && <Breadcrumb chain={lod.chain} />}
           <div className={s.stage}>
             <SceneCanvas toBe={toBe} />
+            {scene === 'hero' && lod.layout && lod.layout.objects.length > 0 && <Minimap layout={lod.layout} chain={lod.chain} />}
             <AnnotationLayer viewKey="view3d" label="3D ビュー" active={annotating} />
           </div>
           <AnnotationControls viewKey="view3d" active={annotating} onToggle={setAnnotating} />

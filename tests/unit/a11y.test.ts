@@ -5,7 +5,7 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { isSelectedHighlight, rovingTarget } from '../../src/components/roving';
 import { siteTableRows, type MapSite } from '../../src/map/data';
-import { isOverlayOpen } from '../../src/selection/keys';
+import { isOverlayOpen, shouldClearSelectionOnEscape } from '../../src/selection/keys';
 import { buildTwinLayout } from '../../src/three/entityLayout';
 import { twinTableRows } from '../../src/three/twin';
 import { parseWeight } from '../../src/analysis/priority';
@@ -65,15 +65,36 @@ describe('NFR-A11Y-001 AC-169 表の行の aria-selected', () => {
 });
 
 describe('NFR-A11Y-001 Esc とポップアップ', () => {
-  // NFR-A11Y-001 AC-170: 開いている選択肢の一覧・展開中の combobox は、Esc で自分を閉じる（選択の解除は起こさない）
-  it('NFR-A11Y-001 AC-170 listbox と展開中の combobox を「開いているポップアップ」として数える', () => {
-    let selector = '';
-    const root = { querySelector: (s: string) => { selector = s; return null; } } as unknown as ParentNode;
+  type El = Record<string, string>;
+  /** CSS セレクターのうち `[属性="値"]` / `[属性]` の連なりを、カンマで区切って判定する最小の root */
+  const rootOf = (els: El[]): ParentNode => ({
+    querySelector: (sel: string) => {
+      const ok = sel.split(',').some((part) => {
+        const conds = [...part.matchAll(/\[([a-z-]+)(?:="([^"]*)")?\]/g)];
+        return els.some((el) => conds.every((c) => (c[2] === undefined ? c[1]! in el : el[c[1]!] === c[2])));
+      });
+      return ok ? {} : null;
+    },
+  }) as unknown as ParentNode;
+  const escapeCtx = (overlayOpen: boolean) => ({ key: 'Escape', defaultPrevented: false, overlayOpen, editable: false, hasSelection: true });
+
+  // NFR-A11Y-001 AC-170: 展開中の combobox（Dropdown・Combobox・コマンドパレット）は、Esc で自分を閉じるので、選択の解除は起こさない
+  it('NFR-A11Y-001 AC-170 展開中の combobox・ダイアログ・メニューは「開いているポップアップ」、閉じた combobox は数えない', () => {
+    expect(isOverlayOpen(rootOf([{ role: 'combobox', 'aria-expanded': 'true' }]))).toBe(true);
+    expect(isOverlayOpen(rootOf([{ role: 'combobox', 'aria-expanded': 'false' }]))).toBe(false);
+    expect(isOverlayOpen(rootOf([{ role: 'dialog' }]))).toBe(true);
+    expect(isOverlayOpen(rootOf([{ role: 'menu' }]))).toBe(true);
+    expect(isOverlayOpen(rootOf([]))).toBe(false);
+  });
+
+  // FR-027 AC-032 / NFR-A11Y-001 AC-170: キャンバスの「議題の一覧」（常時表示の listbox）が開いていても、Esc で選択を解除できる
+  it('FR-027 AC-032 議題の一覧（常時表示の listbox）を開いた状態で Esc を押すと、選択が解除される', () => {
+    const root = rootOf([{ role: 'listbox', 'aria-label': '議題' }]);
     expect(isOverlayOpen(root)).toBe(false);
-    expect(selector).toContain('[role="listbox"]');
-    expect(selector).toContain('[role="combobox"][aria-expanded="true"]');
-    expect(selector).toContain('[role="dialog"]');
-    expect(selector).toContain('[role="menu"]');
+    expect(shouldClearSelectionOnEscape(escapeCtx(isOverlayOpen(root)))).toBe(true);
+    // 比較: 展開中の combobox があれば解除しない
+    const open = rootOf([{ role: 'listbox', 'aria-label': '議題' }, { role: 'combobox', 'aria-expanded': 'true' }]);
+    expect(shouldClearSelectionOnEscape(escapeCtx(isOverlayOpen(open)))).toBe(false);
   });
 });
 
