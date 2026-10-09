@@ -357,10 +357,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-006",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "2c6298c",
+      "last_run_at": "2026-10-09T17:37:05+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-006-202610091737.log",
       "history": [
         {
           "at": "2026-10-09T12:15:51+09:00",
@@ -373,6 +373,12 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: I05-issues(issue-solution,詳細パネル) I06-issues2()。I06-issues2 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T17:36:54+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
         }
       ]
     },
@@ -388,10 +394,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-007",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "2c6298c",
+      "last_run_at": "2026-10-09T17:37:12+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-007-202610091737.log",
       "history": [
         {
           "at": "2026-10-09T12:15:57+09:00",
@@ -404,6 +410,12 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: I06-issues2(gantt)。I06-issues2 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T17:36:55+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
         }
       ]
     },
@@ -481,10 +493,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-013",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "2c6298c",
+      "last_run_at": "2026-10-09T17:37:27+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-010-202610091737.log",
       "history": [
         {
           "at": "2026-10-09T12:16:04+09:00",
@@ -497,6 +509,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "依存: I03-canvas の nav-canvas と I06-issues2 の課題-解決策画面。統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T17:36:58+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "I06(課題-解決策分析)統合後に再開"
         }
       ]
     },
@@ -538,9 +556,9 @@
       "command": "node tests/system/run.mjs AC-016",
       "canary": false,
       "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "last_commit": "2c6298c",
+      "last_run_at": "2026-10-09T17:40:35+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-012-202610091739.log",
       "history": [
         {
           "at": "2026-10-09T12:16:08+09:00",
@@ -553,6 +571,18 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: I06-issues2(gantt) I03-canvas()。I06-issues2 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T17:36:56+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
+        },
+        {
+          "at": "2026-10-09T17:40:58+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: グローバル検索(I08)。統合後に not_run へ戻す"
         }
       ]
     },
@@ -1269,10 +1299,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-046",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "2c6298c",
+      "last_run_at": "2026-10-09T17:37:17+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-036-202610091737.log",
       "history": [
         {
           "at": "2026-10-09T12:17:03+09:00",
@@ -1285,6 +1315,12 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: I05-issues(issue-solution) I06-issues2()。I06-issues2 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T17:36:56+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
         }
       ]
     },
@@ -3087,10 +3123,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-124",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "2c6298c",
+      "last_run_at": "2026-10-09T17:37:21+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-096-202610091737.log",
       "history": [
         {
           "at": "2026-10-09T12:18:29+09:00",
@@ -3103,6 +3139,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "依存: I06-issues2 の課題-解決策画面(FR-038)。統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T17:36:57+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "I06(課題-解決策分析)統合後に再開"
         }
       ]
     },
@@ -3200,9 +3242,9 @@
       "command": "node tests/system/run.mjs AC-135",
       "canary": false,
       "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "last_commit": "2c6298c",
+      "last_run_at": "2026-10-09T17:39:01+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-100-202610091737.log",
       "history": [
         {
           "at": "2026-10-09T12:18:34+09:00",
@@ -3215,6 +3257,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "依存: I06-issues2 の課題-解決策画面(component issue-solution)。統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T17:36:59+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "I06(課題-解決策分析)統合後に再開"
+        },
+        {
+          "at": "2026-10-09T17:40:57+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: 各画面(ranking等, I14)。統合後に not_run へ戻す"
         }
       ]
     },
