@@ -31,11 +31,11 @@
 | FR-021 | コトの表現（3D 地球儀/3D マップと流れの粒子） | 承認済み | 未実装 | 未実装 | なし |
 | FR-022 | 工程管理の表現（ガントチャート 2D/2.5D） | 承認済み | 未実装 | 未実装 | なし |
 | FR-023 | フライスルー遷移 | 承認済み | 未実装 | 未実装 | なし |
-| FR-024 | 共通の選択状態とエンティティ関係グラフ | 承認済み | 未実装 | 未実装 | なし |
-| FR-025 | クロスハイライトとカメラ移動 | 承認済み | 未実装 | 未実装 | なし |
-| FR-026 | 選択に応じた自動の絞り込み | 承認済み | 未実装 | 未実装 | なし |
-| FR-027 | ホバー・クリック・Esc の選択操作 | 承認済み | 未実装 | 未実装 | なし |
-| FR-028 | 選択状態の URL への反映と復元 | 承認済み | 未実装 | 未実装 | なし |
+| FR-024 | 共通の選択状態とエンティティ関係グラフ | 承認済み | src/store/selection.ts, src/selection/graph.ts, src/selection/hooks.ts, src/selection/SelectionController.tsx | tests/unit/selection.test.ts (AC-029) | 選択状態とエンティティ関係グラフ |
+| FR-025 | クロスハイライトとカメラ移動 | 承認済み | src/selection/model.ts (highlightTokens), src/selection/hooks.ts (useEntityBinding), src/components/highlight.ts, src/screens/IssueSolutionScreen.tsx, src/screens/TableScreen.tsx | tests/unit/selection.test.ts (AC-030 の関連と通知), tests/system/e2e/views3d.spec.ts (E2E-025) | 選択状態とエンティティ関係グラフ |
+| FR-026 | 選択に応じた自動の絞り込み | 承認済み | src/screens/TableScreen.tsx, src/selection/model.ts (relatedSet, isVisibleInFilter), src/selection/hooks.ts (useSelectionFilter) | tests/unit/selection.test.ts (AC-031), tests/system/e2e/views.spec.ts (E2E-026) | 選択状態とエンティティ関係グラフ, 一覧表 |
+| FR-027 | ホバー・クリック・Esc の選択操作 | 承認済み | src/selection/keys.ts, src/selection/hooks.ts, src/store/selection.ts, src/screens/IssueSolutionScreen.tsx, src/screens/TableScreen.tsx | tests/unit/selection.test.ts (AC-032), tests/system/e2e/views.spec.ts (E2E-027) | 選択状態とエンティティ関係グラフ |
+| FR-028 | 選択状態の URL への反映と復元 | 承認済み | src/store/selection.ts (installUrlSync), src/selection/model.ts (parseSelectionHash, formatSelectionHash) | tests/unit/selection.test.ts (AC-033), tests/system/e2e/views.spec.ts (E2E-028) | 選択状態とエンティティ関係グラフ |
 | FR-029 | キーボード・スクリーンリーダーでの連動 | 承認済み | 未実装 | 未実装 | なし |
 | FR-030 | 階層と LOD のメタデータ | 承認済み | 未実装 | 未実装 | なし |
 | FR-031 | カメラ距離に応じた段階的な表示 | 承認済み | 未実装 | 未実装 | なし |
@@ -198,7 +198,9 @@
 | 議論テーマのストア | src/store/discussion.ts, src/discussion/model.ts, src/discussion/usePackTarget.ts | 議論テーマ・決定ステータス・次のアクションの型と Zustand ストア（顧客パックごとに localStorage `edb.discussion` へ保存。元に戻す・やり直し）。課題から作るには `createFromIssue(packKey, {id,title})`（鍵は `usePackTarget().key`）。課題-解決策分析の「議論テーマにする」はこれを呼ぶ | FR-048, FR-049, FR-050 |
 | 議論メモの書き出しと復元 | src/discussion/memo.ts, src/discussion/restore.ts, src/discussion/FileActions.tsx | front matter＋人が読む節＋最初の ```json ブロック（`edb-discussion-memo` v1）。`buildMemoForPack` / `restoreFromMemo`。課題・解決策などのデータは `registerSnapshotSource({key,capture,validate,apply})` で登録するとエクスポートされ、復元される。全量エクスポート（FR-052〜）と編集（FR-044〜）の項目が使う。ヘッダーの「保存」「開く」 | FR-051, FR-056 |
 | オープニング | src/app/Opening.tsx | 顧客名とプロジェクト名の導入画面（Esc で飛ばす） | FR-101 |
-| 課題-解決策分析 | src/screens/IssueSolutionScreen.tsx, src/analysis/model.ts, src/analysis/DetailPanel.tsx, src/analysis/FlowViews.tsx | 課題のイシューツリー／MECE 表／サンキー図／マトリクス、区分の絞り込み、解決策と出典リンク、詳細パネル（原因・効果・生成 AI の価値・評価属性・出典カード・製品と適合理由）。純粋なロジックは model.ts。後続の画面（優先順位分析など）が課題・解決策・出典を扱うときはここを再利用する | FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-009, FR-038 |
+| 課題-解決策分析 | src/screens/IssueSolutionScreen.tsx, src/analysis/model.ts, src/analysis/DetailPanel.tsx, src/analysis/FlowViews.tsx | 課題のイシューツリー／MECE 表／サンキー図／マトリクス、区分の絞り込み、解決策と出典リンク、詳細パネル（原因・効果・生成 AI の価値・評価属性・出典カード・製品と適合理由）。純粋なロジックは model.ts。後続の画面（優先順位分析など）が課題・解決策・出典を扱うときはここを再利用する。選択は共通の選択状態（useEntityBinding）を使う | FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-009, FR-038 |
+| 選択状態とエンティティ関係グラフ | src/store/selection.ts, src/selection/graph.ts, src/selection/model.ts, src/selection/hooks.ts, src/selection/keys.ts, src/selection/SelectionController.tsx, src/components/highlight.ts | 全ビュー共通の選択（Zustand。選択 ID・ホバー・AND/OR・非表示/減光・最後の変更の origin と seq）と、パックの全エンティティの関係グラフ。画面は `useEntityBinding('<画面名>')` で `data-entity-id`・`data-highlight`（selected/hover/related/dimmed）・クリック選択（Ctrl/⌘/Shift で追加）・ホバーを付け、表・リスト・カードは `useSelectionFilter` と `{ filterable: true }` で絞り込む。3D のカメラ移動など選択に反応するビューは `useSelection().seq` と `origin` を購読する（自分が起こした変更では動かない）。URL ハッシュ `#sel=<ID>,<ID>&mode=and&dim=1` への反映（確定は履歴に積む）と、戻る/進む・開き直しでの復元。Esc の解除は A-04 の優先順（ダイアログ・メニュー、パネルの最大化の解除が先）。存在しない ID は捨てる。見た目は useHighlightClass。アプリ直下に SelectionController を 1 つ置く（App.tsx） | FR-024, FR-025, FR-026, FR-027, FR-028 |
+| 一覧表 | src/screens/TableScreen.tsx | パックの全項目の表（種別・名称・ID）。選択に応じて自動で絞り込み、件数バッジ・AND/OR・非表示/減光・フィルター解除を持つ（フィルター解除は選択の解除）。`nav-table` / `component-table` | FR-026 |
 | 数値の出典表示 | src/components/NumericValue.tsx | 数値を包むと、ホバー／フォーカスで出典の種別（WorkIQ・Web・推定）・取得日・確度のツールチップを出す（data-testid="numeric-value"）。数値を表示する画面（優先順位分析・KPI など）はこれで包む | FR-009 |
 | サンプル表示 | src/components/Panel.tsx, src/data/sample.ts | パネルの見出しの横に「サンプル」を出す（顧客パックに createdBy が sample の項目があるとき）。Panel で包んだ画面は自動で対応する。Panel を使わない画面は hasSampleData で判定して同じ表示を出す | FR-008 |
 | ガント画面 | src/screens/GanttScreen.tsx, src/plan/model.ts | Feature ごとの工程のガントチャート（選択の強調、開始日・終了日・担当・作業内容の表示）。純粋なロジックは plan/model.ts。2D/2.5D 切替などの後続の要求はここを拡張する | FR-007 |
