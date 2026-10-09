@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Dropdown, Field, Input, Option, Radio, RadioGroup, Switch, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
 import { AiSettings } from '../ai/AiSettings';
-import { THEME_MODES, useSettings, type ThemeMode } from '../store/settings';
+import { THEME_MODES, useSettings, type Handedness, type ThemeMode } from '../store/settings';
 import { INDUSTRY_PRESETS, useIndustryPreset, useView3D } from '../store/view3d';
 import { QUALITIES, type Quality } from '../three/quality';
 import { PresetIcon } from '../three/presetIcons';
@@ -62,6 +62,8 @@ export function SettingsScreen() {
   const s = useStyles();
   const mode = useSettings((st) => st.themeMode);
   const setMode = useSettings((st) => st.setThemeMode);
+  const handedness = useSettings((st) => st.handedness);
+  const setHandedness = useSettings((st) => st.setHandedness);
   const override = useSettings((st) => st.brandPrimaryOverride);
   const setOverride = useSettings((st) => st.setBrandPrimaryOverride);
   const bgmEnabled = useSettings((st) => st.bgmEnabled);
@@ -106,6 +108,12 @@ export function SettingsScreen() {
       <Field label="テーマ">
         <RadioGroup layout="horizontal" value={mode} onChange={(_, d) => setMode(d.value as ThemeMode)}>
           {THEME_MODES.map((m) => <Radio key={m} value={m} label={LABELS[m]} />)}
+        </RadioGroup>
+      </Field>
+      <Field label="利き手（インクのツールバーを置く側）">
+        <RadioGroup layout="horizontal" value={handedness} onChange={(_, d) => setHandedness(d.value as Handedness)}>
+          <Radio value="right" label="右利き" />
+          <Radio value="left" label="左利き" />
         </RadioGroup>
       </Field>
       <div role="group" aria-labelledby="audio-settings-title">

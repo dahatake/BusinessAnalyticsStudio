@@ -5,20 +5,22 @@
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import {
-  Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, DialogTrigger, Dropdown, Field, Menu, MenuItem, MenuList,
+  Badge, Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, DialogTrigger, Dropdown, Field, Menu, MenuItem, MenuList,
   MenuPopover, MenuTrigger, Option, SpinButton, Tab, TabList, Text, makeStyles, tokens,
 } from '@fluentui/react-components';
 import {
-  Add20Regular, AlignTop20Regular, Frame20Regular, Group20Regular, GroupDismiss20Regular, Link20Regular, Sparkle20Regular,
-  Timer20Regular, VoteRegular, ZoomFit20Regular, ZoomIn20Regular, ZoomOut20Regular,
+  Add20Regular, AlignTop20Regular, DocumentPdf20Regular, Frame20Regular, Group20Regular, GroupDismiss20Regular, Link20Regular, Sparkle20Regular,
+  TaskListSquareLtr20Regular, Timer20Regular, VoteRegular, ZoomFit20Regular, ZoomIn20Regular, ZoomOut20Regular,
 } from '@fluentui/react-icons';
 import { useAi } from '../../ai/useAi';
 import { Panel } from '../../components/Panel';
 import { usePackTarget } from '../../discussion/usePackTarget';
+import { BoardPdfDialog } from '../../export/BoardPdfDialog';
 import { usePane } from '../../workspace/PaneContext';
 import { BoardSurface } from '../../ink/BoardSurface';
-import { InkToolbar } from '../../ink/InkToolbar';
+import { RECOGNIZED_LABEL, recognizeHandwriting } from '../../ink/handwriting';
 import { BACKGROUNDS, type Background, type BoardItem } from '../../ink/model';
+import { KIND_LABEL, useRecognized, type RecognizedKind } from '../../ink/recognized';
 import { useInk } from '../../ink/store';
 import { zoomView } from '../../ink/viewport';
 import { useDiscussionStore } from '../../store/discussion';
@@ -36,7 +38,9 @@ const useStyles = makeStyles({
   controls: { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalS },
   organize: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalS, rowGap: tokens.spacingVerticalS },
   forcedAuto: { forcedColorAdjust: 'auto', '@media (forced-colors: active)': { forcedColorAdjust: 'auto' } },
-  stage: { height: 'clamp(420px, 62vh, 900px)', minHeight: 0 },
+  stage: { position: 'relative', height: 'clamp(420px, 62vh, 900px)', minHeight: 0 },
+  recognized: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS, margin: 0, paddingLeft: tokens.spacingHorizontalXL },
+  recognizedItem: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalS },
   status: { height: '1.4em', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' },
   clock: { fontVariantNumeric: 'tabular-nums', fontSize: tokens.fontSizeHero700, fontWeight: tokens.fontWeightSemibold },
   timerBody: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM, alignItems: 'flex-start' },
@@ -137,6 +141,9 @@ export function WhiteboardScreen() {
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
   const [timerOpen, setTimerOpen] = useState(false);
+  const [pdfOpen, setPdfOpen] = useState(false);
+  const [recBusy, setRecBusy] = useState(false);
+  const recognized = useRecognized((st) => st.items);
   const timerEndsAt = useTimer((st) => st.endsAt);
   const timerPaused = useTimer((st) => st.pausedMs);
   const timerDuration = useTimer((st) => st.durationSec);
@@ -162,6 +169,34 @@ export function WhiteboardScreen() {
   const grouped = selItems.some((i) => i.groupId);
   const alignable = active ? alignTargets(active.items, selSet).length : 0;
   const nodes = selItems.filter(isNode);
+  const selStrokes = useMemo(() => (active ? active.strokes.filter((k) => selSet.has(k.id) && !k.temporary) : []), [active, selSet]);
+
+  // ---- 手書き文字の認識（FR-090）。選んだ手書きを認識して、決定事項・次のアクションに反映する。元の手書きは残す ----
+  const reflect = async (kind: RecognizedKind) => {
+    if (!active || selStrokes.length === 0 || recBusy) return;
+    setRecBusy(true);
+    setStatus('手書きを認識しています…');
+    try {
+      const r = await recognizeHandwriting(selStrokes);
+      if (!r) { setStatus('認識できる手書きがありません。'); return; }
+      useRecognized.getState().add({ kind, text: r.text, boardId: active.id, strokeIds: selStrokes.map((k) => k.id), mock: r.mock });
+      // 議論の記録（議題）があれば、そこにもラベルつきで書き足す
+      if (target && topicId) {
+        const store = useDiscussionStore.getState();
+        const theme = store.byPack[target.key]?.themes.find((t) => t.id === topicId);
+        const line = `${r.text}（${RECOGNIZED_LABEL}）`;
+        if (theme && kind === 'decision') store.update(target.key, topicId, { decisions: theme.decisions.trim() === '' ? line : `${theme.decisions}\n${line}` });
+        else if (theme) { const act = store.addAction(target.key, topicId); store.patchAction(target.key, topicId, act.id, { text: line }); }
+      }
+      setStatus(`${KIND_LABEL[kind]}に反映しました（${RECOGNIZED_LABEL}${r.mock ? '・モック' : ''}）。元の手書きはボードに残っています。`);
+    } catch (err) {
+      setStatus(err instanceof Error ? `手書きを認識できませんでした（${err.message}）` : '手書きを認識できませんでした。');
+    } finally {
+      setRecBusy(false);
+    }
+  };
+  const mineIds = new Set(mine.map((b) => b.id));
+  const shownRecognized = recognized.filter((i) => mineIds.has(i.boardId));
 
   const frameIt = () => {
     if (!active || framable === 0) return;
@@ -270,6 +305,7 @@ export function WhiteboardScreen() {
         <Button icon={<ZoomFit20Regular aria-hidden />} onClick={() => active && fitBoard(active.id)}>全体表示</Button>
         <Button icon={<ZoomOut20Regular aria-hidden />} aria-label="縮小" onClick={() => zoomBy(1 / 1.25)} />
         <Button icon={<ZoomIn20Regular aria-hidden />} aria-label="拡大" onClick={() => zoomBy(1.25)} />
+        <Button icon={<DocumentPdf20Regular aria-hidden />} disabled={!active} onClick={() => setPdfOpen(true)}>PDF 出力</Button>
       </div>
       <TabList
         size="small"
@@ -280,7 +316,6 @@ export function WhiteboardScreen() {
         {mine.map((b) => <Tab key={b.id} value={b.id}>{b.name}</Tab>)}
       </TabList>
       <div onKeyDown={onKeyDown} style={{ display: 'contents' }}>
-        {active && <InkToolbar boardId={active.id} whiteboard />}
         <div className={s.organize} role="group" aria-label="付箋の整理">
           <Button size="small" icon={<Frame20Regular aria-hidden />} disabled={framable === 0} onClick={frameIt}>フレームで囲む</Button>
           <Button size="small" icon={<Group20Regular aria-hidden />} disabled={groupable < 2} onClick={groupIt}>グループにする</Button>
@@ -299,6 +334,8 @@ export function WhiteboardScreen() {
           </Menu>
           <Button size="small" icon={<Link20Regular aria-hidden />} disabled={nodes.length !== 2} onClick={connectIt}>つなぐ</Button>
           <Button size="small" icon={<Sparkle20Regular aria-hidden />} disabled={busy} onClick={() => { void runCluster(); }}>クラスタリング</Button>
+          <Button size="small" icon={<Sparkle20Regular aria-hidden />} disabled={selStrokes.length === 0 || recBusy} onClick={() => { void reflect('decision'); }}>決定事項に反映</Button>
+          <Button size="small" icon={<TaskListSquareLtr20Regular aria-hidden />} disabled={selStrokes.length === 0 || recBusy} onClick={() => { void reflect('action'); }}>次のアクションに反映</Button>
           <Button size="small" icon={<VoteRegular aria-hidden />} appearance={voteMode ? 'primary' : 'secondary'} className={s.forcedAuto} aria-pressed={voteMode} onClick={toggleVote}>ドット投票</Button>
           {voteMode && votes > 0 ? <Button size="small" onClick={() => { if (active) useInk.getState().updateItems(active.id, resetVotes); }}>票をリセット</Button> : null}
           <TimerDialog open={timerOpen} onOpenChange={setTimerOpen} />
@@ -315,6 +352,25 @@ export function WhiteboardScreen() {
             </BoardSurface>
           </div>
         )}
+        {(['decision', 'action'] as const).map((kind) => {
+          const list = shownRecognized.filter((i) => i.kind === kind);
+          if (list.length === 0) return null;
+          return (
+            <section key={kind} aria-label={`手書きから反映した${KIND_LABEL[kind]}`}>
+              <Text as="h3" size={300} weight="semibold">手書きから反映した{KIND_LABEL[kind]}</Text>
+              <ul className={s.recognized} data-testid={kind === 'decision' ? 'decisions' : 'next-actions'}>
+                {list.map((i) => (
+                  <li key={i.id} className={s.recognizedItem}>
+                    <Text>{i.text}</Text>
+                    <Badge appearance="tint" color="informative" size="small">{i.label}</Badge>
+                    <Button size="small" appearance="subtle" onClick={() => useRecognized.getState().remove(i.id)}>一覧から外す</Button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })}
+        {active && <BoardPdfDialog boardId={active.id} open={pdfOpen} onOpenChange={setPdfOpen} onResult={setStatus} />}
       </div>
     </Panel>
   );
