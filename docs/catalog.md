@@ -141,7 +141,7 @@
 | FR-131 | 雛形への改善要望の記録 | 承認済み | 未実装 | 未実装 | なし |
 | FR-132 | AI 実接続の明示的な有効化（Q-001 回答までの暫定） | 承認済み | 未実装 | 未実装 | なし |
 | NFR-PERF-001 | 顧客パックの生成から起動までの時間 | 承認済み | 未実装 | 未実装 | なし |
-| NFR-PERF-002 | 4K 表示での描画性能 | 承認済み | src/three/quality.ts, src/three/SceneCanvas.tsx, src/screens/SettingsScreen.tsx | docs/manual-tests.md（手動の AC-162） | 3D 基盤 |
+| NFR-PERF-002 | 4K 表示での描画性能 | 承認済み | src/three/quality.ts, src/three/SceneCanvas.tsx, src/screens/SettingsScreen.tsx | docs/manual-tests.md | 3D 基盤 |
 | NFR-PERF-003 | 初回表示の時間 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-PERF-004 | インクの描画遅延 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-ENV-001 | 対応ブラウザーと端末 | 承認済み | 未実装 | 未実装 | なし |
@@ -179,9 +179,9 @@
 
 | 部品名 | ファイル | 用途 | 使っている要求 ID |
 |---|---|---|---|
-| デザイン基盤 | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/components/AppShell.tsx, src/components/Panel.tsx, src/components/StateViews.tsx | Fluent UI v9 のトークン・4px グリッド・Light/Dark/ハイコントラスト、アプリの外枠、読み込み中/0 件/エラーの表示。以降の画面はこれを再利用する | FR-058 |
-| 画面の登録 | src/screens/registry.ts, src/screens/types.ts | 画面を足すときは registry に 1 行足す（nav-key / component-key） | FR-058 |
-| 設定ストア | src/store/settings.ts | Zustand と localStorage の利用者設定（現在はテーマ） | FR-058 |
+| デザイン基盤 | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/components/AppShell.tsx, src/components/Panel.tsx, src/components/StateViews.tsx | Fluent UI v9 のトークン・4px グリッド・Light/Dark/ハイコントラスト、アプリの外枠、読み込み中/0 件/エラーの表示。以降の画面はこれを再利用する | FR-058, FR-065, FR-066 |
+| 画面の登録 | src/screens/registry.ts, src/screens/types.ts | 画面を足すときは registry に 1 行足す（nav-key / component-key） | FR-058, FR-065, FR-066 |
+| 設定ストア | src/store/settings.ts | Zustand と localStorage の利用者設定（現在はテーマ） | FR-058, FR-069 |
 | 顧客パックのスキーマと検証 | src/schema/common.ts, src/schema/files.ts, src/schema/validate.ts, scripts/lib/pack-fs.ts | zod のスキーマ、ID の一意・参照・出典の検証。画面の部品を参照しない。schema の JSON は npm run gen:schema で生成 | FR-100, FR-114, FR-118, NFR-MAINT-001 |
 | 顧客パックの読み込み | src/data/loader.ts, src/store/pack.ts | 起動時に data・brand・runtime-config の JSON を読んで検証 | FR-100 |
 | 3D 基盤 | src/three/quality.ts, src/three/presets.ts, src/three/SceneCanvas.tsx, src/store/view3d.ts, src/store/animation.ts, src/testing/hook.ts | R3F + drei の描画（WebGPU 優先・WebGL2 フォールバック）、手続き生成の 4 シーン、品質プリセットと FPS 監視、テスト用フック登録（registerTestHook） | FR-065, FR-066, FR-068, FR-069, NFR-PERF-002 |
