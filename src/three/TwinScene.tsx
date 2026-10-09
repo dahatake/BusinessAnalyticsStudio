@@ -5,10 +5,12 @@ import { useFrame, useThree } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { useSelection } from '../selection/hooks';
+import { useLod } from '../store/lod';
 import { currentPose, rehomeIfPristine, syncFromCanvas, useCameraRig } from './cameraRig';
 import type { TwinLayout, TwinObject, TwinTone } from './entityLayout';
 import type { IndustryPreset } from './presets';
 import { registerSceneCanvas, viewportAspect } from './sceneViewport';
+import { buildDrawables, disposeDrawables, entityIdOfHit, planDraw, setDrawOpacity } from './twinDraw';
 import { twinGeometry, twinScale } from './twinGeometry';
 
 const ORIGIN = 'view3d';
@@ -20,14 +22,15 @@ export function toneColor(tone: TwinTone, preset: IndustryPreset, platform: bool
   return `#${new THREE.Color(base).lerp(new THREE.Color('#1a202c'), 0.45).getHexString()}`;
 }
 
-interface Look { emissive: number; opacity: number }
+/** 選択があるとき、関連しない項目を薄くする不透明度 */
+const DIM_OPACITY = 0.38;
 
-/** 強調の度合い。選択＞ホバー＞関連。選択があるとき、関連しない項目は薄くする */
-function lookOf(o: TwinObject, selected: ReadonlySet<string>, related: ReadonlySet<string> | null, hover: string | null): Look {
-  if (selected.has(o.entityId)) return { emissive: 1, opacity: 1 };
-  if (hover === o.entityId) return { emissive: 0.55, opacity: 1 };
-  if (related?.has(o.entityId)) return { emissive: 0.3, opacity: 1 };
-  return { emissive: 0, opacity: related ? 0.38 : 1 };
+/** 強調の度合い。選択＞ホバー＞関連。強調しない項目は 0 */
+function emissiveOf(id: string, selected: ReadonlySet<string>, related: ReadonlySet<string> | null, hover: string | null): number {
+  if (selected.has(id)) return 1;
+  if (hover === id) return 0.55;
+  if (related?.has(id)) return 0.3;
+  return 0;
 }
 
 const labelStyle: CSSProperties = {
@@ -42,64 +45,105 @@ const labelStyle: CSSProperties = {
   border: '1px solid rgba(255, 255, 255, 0.35)',
 };
 
-function TwinMesh({ o, preset, look, hovered, bind }: {
-  o: TwinObject;
-  preset: IndustryPreset;
-  look: Look;
-  hovered: boolean;
-  bind: { select: (id: string, additive: boolean) => void; hover: (id: string | null) => void };
-}) {
-  const color = toneColor(o.tone, preset, o.platform);
-  // 名前の表示: 上位の台（拠点・ラインなど）と、選択・ホバー中の項目だけ（全部出すと重なって読めない）
-  const label = (o.platform && o.depth <= 1) || look.emissive >= 1 || hovered;
+type HitEvent = { object: THREE.Object3D; instanceId?: number; shiftKey: boolean; ctrlKey: boolean; metaKey: boolean; stopPropagation: () => void };
+
+/** 強調する項目（選択・ホバー・関連）の重ね描き。元の形のすぐ外側に、光る同じ形を置く。当たり判定はもたない（元の形が受ける） */
+function Highlight({ o, preset, emissive, opacity }: { o: TwinObject; preset: IndustryPreset; emissive: number; opacity: number }) {
+  const s = twinScale(o.shape, o.size);
   return (
-    <group>
-      <mesh
-        geometry={twinGeometry(o.shape)}
-        position={o.position}
-        scale={twinScale(o.shape, o.size)}
-        castShadow
-        receiveShadow
-        userData={{ entityId: o.entityId }}
-        onClick={(e) => { e.stopPropagation(); bind.select(o.entityId, e.shiftKey || e.ctrlKey || e.metaKey); }}
-        onPointerOver={(e) => { e.stopPropagation(); bind.hover(o.entityId); }}
-        onPointerOut={() => bind.hover(null)}
-      >
-        <meshStandardMaterial
-          color={color}
-          roughness={0.45}
-          metalness={0.15}
-          emissive={look.emissive > 0 ? preset.accent : '#000000'}
-          emissiveIntensity={look.emissive * 0.9}
-          transparent={look.opacity < 1}
-          opacity={look.opacity}
-        />
-      </mesh>
-      {label && (
-        <Html
-          position={[o.position[0], o.top + 0.25, o.platform ? o.position[2] + o.size[2] / 2 - 0.3 : o.position[2]]}
-          center
-          zIndexRange={[5, 0]}
-          style={{ pointerEvents: 'none' }}
-        >
-          <div style={labelStyle}>{o.name}</div>
-        </Html>
-      )}
-    </group>
+    <mesh
+      geometry={twinGeometry(o.shape)}
+      position={o.position}
+      scale={[s[0] * 1.004, s[1] * 1.004, s[2] * 1.004]}
+      raycast={() => null}
+      renderOrder={1}
+    >
+      <meshStandardMaterial
+        color={toneColor(o.tone, preset, o.platform)}
+        roughness={0.45}
+        metalness={0.15}
+        emissive={preset.accent}
+        emissiveIntensity={emissive * 0.9}
+        transparent={opacity < 1}
+        opacity={opacity}
+        polygonOffset
+        polygonOffsetFactor={-1}
+      />
+    </mesh>
   );
 }
 
-/** パックのエンティティの 3D 表現。形・位置は layout（entityLayout）に従い、選択の状態は共通のストアから読む。 */
+/**
+ * パックのエンティティの 3D 表現。形・位置は layout（entityLayout）に従い、選択の状態は共通のストアから読む。
+ * 表示中のレベルの項目だけを作り（FR-036）、同じ形・色・階層はインスタンス描画にまとめる。レベルの現れ方はクロスフェード（FR-031）。
+ */
 export function EntityTwin({ layout, preset }: { layout: TwinLayout; preset: IndustryPreset }) {
   const { selectedIds, related, hoverId, select, setHover } = useSelection();
   const selected = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const invalidate = useThree((s) => s.invalidate);
+  const key = useLod((s) => s.key);
+  const levels = useLod((s) => s.levels);
   const bind = useMemo(() => ({
     select: (id: string, additive: boolean) => select(id, { origin: ORIGIN, additive }),
     hover: (id: string | null) => setHover(id),
   }), [select, setHover]);
+
+  const groups = useMemo(
+    () => planDraw(layout, (o) => toneColor(o.tone, preset, o.platform), (d) => key[d] === '1'),
+    [layout, preset, key],
+  );
+  const root = useMemo(() => buildDrawables(layout, groups), [layout, groups]);
+  useEffect(() => () => disposeDrawables(root), [root]);
+
+  // レベルの不透明度（フェード）を材質に反映する。選択があるとき、関連しない項目は薄くする
+  const dim = related ? DIM_OPACITY : 1;
+  useEffect(() => {
+    const apply = (): void => {
+      const lv = useLod.getState().levels;
+      setDrawOpacity(root, (d) => lv[d]?.opacity ?? 0, dim);
+      invalidate();
+    };
+    apply();
+    return useLod.subscribe(apply);
+  }, [root, dim, invalidate]);
+
+  const onClick = (e: HitEvent): void => {
+    const id = entityIdOfHit(e.object, e.instanceId);
+    if (!id) return;
+    e.stopPropagation();
+    bind.select(id, e.shiftKey || e.ctrlKey || e.metaKey);
+  };
+  const onOver = (e: HitEvent): void => {
+    const id = entityIdOfHit(e.object, e.instanceId);
+    if (!id) return;
+    e.stopPropagation();
+    bind.hover(id);
+  };
+
+  const shown = layout.objects.filter((o) => key[o.depth] === '1');
+  const lit = shown.map((o) => ({ o, emissive: emissiveOf(o.entityId, selected, related, hoverId) })).filter((x) => x.emissive > 0);
   return (
     <group name="entity-twin">
-      {layout.objects.map((o) => <TwinMesh key={o.entityId} o={o} preset={preset} look={lookOf(o, selected, related, hoverId)} hovered={hoverId === o.entityId} bind={bind} />)}
+      <primitive object={root} onClick={onClick} onPointerOver={onOver} onPointerOut={() => bind.hover(null)} />
+      {lit.map(({ o, emissive }) => (
+        <Highlight key={o.entityId} o={o} preset={preset} emissive={emissive} opacity={levels[o.depth]?.opacity ?? 0} />
+      ))}
+      {shown.map((o) => {
+        // 名前の表示: 上位の台（拠点・ラインなど）と、選択・ホバー中の項目だけ（全部出すと重なって読めない）
+        const label = (o.platform && o.depth <= 1) || selected.has(o.entityId) || hoverId === o.entityId;
+        if (!label) return null;
+        return (
+          <Html
+            key={o.entityId}
+            position={[o.position[0], o.top + 0.25, o.platform ? o.position[2] + o.size[2] / 2 - 0.3 : o.position[2]]}
+            center
+            zIndexRange={[5, 0]}
+            style={{ pointerEvents: 'none' }}
+          >
+            <div style={labelStyle}>{o.name}</div>
+          </Html>
+        );
+      })}
     </group>
   );
 }

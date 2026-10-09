@@ -61,5 +61,6 @@ export default defineConfig({
     },
   ],
   build: { outDir: 'dist', sourcemap: false },
-  test: { include: ['tests/unit/**/*.test.ts'], environment: 'node' },
+  // 負荷時（並列実行・統合の verify）でも、ファイル走査や起動を含むテストが既定の 5 秒でタイムアウトしないようにする
+  test: { include: ['tests/unit/**/*.test.ts'], environment: 'node', testTimeout: 60_000, hookTimeout: 60_000 },
 });

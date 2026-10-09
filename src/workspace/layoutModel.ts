@@ -108,6 +108,9 @@ export function activate(layout: Layout, key: string): Layout {
 /** 再表示する（FR-014）。横の分割の末尾に足す。すでに表示中ならそのタブを前面にする。 */
 /** 画面を新しく表示するときに、全体に対して取る幅の割合。載せていない画面は既定（横に並ぶ分割へ足すとき 0.25、そうでなければ 0.3）。描く面のように広さがほしい画面は大きくする。 */
 export const SHOW_SHARE: Readonly<Record<string, number>> = { whiteboard: 0.5 };
+/** 横一列の列数がこれを超えたら、各列に平均の COLUMN_FLOOR 倍の幅を最低限残す */
+const MANY_COLUMNS = 6;
+const COLUMN_FLOOR = 0.8;
 
 export function show(layout: Layout, key: string): Layout {
   if (!layout) return leaf(key);
@@ -116,9 +119,11 @@ export function show(layout: Layout, key: string): Layout {
   if (layout.kind === 'split' && layout.dir === 'row') {
     const n = layout.children.length;
     const s = share ?? 0.25;
+    // 列が増えても、先にあった列が見えない幅まで縮まないよう、1 列あたりの下限を設ける（NFR-LEGAL-002 AC-180: 多くの画面を開いたあとでも各画面を操作できる）
+    const floor = n + 1 > MANY_COLUMNS ? COLUMN_FLOOR / (n + 1) : 0;
     return {
       kind: 'split', dir: 'row', children: [...clone(layout.children), leaf(key)],
-      sizes: normalizeSizes([...layout.sizes.map((x) => x * (1 - s)), s], n + 1),
+      sizes: normalizeSizes([...layout.sizes.map((x) => Math.max(x * (1 - s), floor)), s], n + 1),
     };
   }
   const s = share ?? 0.3;
