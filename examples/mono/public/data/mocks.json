@@ -1,0 +1,5 @@
+{
+  "mocks": [
+    { "id": "mock-mono-001", "createdBy": "sample", "title": "停止原因の入力画面", "featureId": "feat-mono-001" }
+  ]
+}

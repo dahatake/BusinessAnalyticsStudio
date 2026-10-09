@@ -1,0 +1,9 @@
+{
+  "nodes": [
+    { "id": "arch-koto-web", "createdBy": "sample", "label": "予約サイト", "layer": "アプリ" },
+    { "id": "arch-koto-booking", "createdBy": "sample", "label": "予約管理", "layer": "業務", "productId": "prod-koto-001" }
+  ],
+  "edges": [
+    { "id": "edge-koto-001", "createdBy": "sample", "from": "arch-koto-web", "to": "arch-koto-booking", "label": "変更の依頼" }
+  ]
+}

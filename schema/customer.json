@@ -1,0 +1,75 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "minLength": 1
+    },
+    "projectName": {
+      "type": "string",
+      "minLength": 1
+    },
+    "templateVersion": {
+      "type": "string",
+      "minLength": 1
+    },
+    "locale": {
+      "default": "ja",
+      "type": "string"
+    },
+    "industryPreset": {
+      "type": "string"
+    },
+    "createdBy": {
+      "type": "string",
+      "enum": [
+        "ai",
+        "human",
+        "sample"
+      ]
+    },
+    "coreObject": {
+      "type": "object",
+      "properties": {
+        "candidates": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]*$"
+              },
+              "label": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "id",
+              "label"
+            ],
+            "additionalProperties": {}
+          }
+        },
+        "selectedId": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        }
+      },
+      "required": [
+        "candidates"
+      ],
+      "additionalProperties": {}
+    }
+  },
+  "required": [
+    "name",
+    "projectName",
+    "templateVersion",
+    "createdBy",
+    "coreObject"
+  ],
+  "additionalProperties": {}
+}

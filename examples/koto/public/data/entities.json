@@ -1,0 +1,10 @@
+{
+  "entities": [
+    {
+      "id": "ent-koto-counter", "createdBy": "sample", "type": "site", "name": "駅前の窓口", "sourceIds": ["src-koto-001"],
+      "metrics": [
+        { "label": "月間の電話での問い合わせ", "value": 820, "unit": "件", "sourceIds": ["src-koto-001"] }
+      ]
+    }
+  ]
+}

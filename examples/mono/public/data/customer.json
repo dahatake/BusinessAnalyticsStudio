@@ -1,0 +1,15 @@
+{
+  "name": "架空の製造会社 ミズホ精機株式会社",
+  "projectName": "ミズホ 現場データ活用プロジェクト",
+  "templateVersion": "0.1.0",
+  "locale": "ja",
+  "industryPreset": "manufacturing",
+  "createdBy": "sample",
+  "coreObject": {
+    "candidates": [
+      { "id": "core-work-order", "label": "製造指図" },
+      { "id": "core-equipment", "label": "設備" }
+    ],
+    "selectedId": "core-work-order"
+  }
+}

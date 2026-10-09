@@ -1,0 +1,7 @@
+{
+  "sources": [
+    { "id": "src-mono-001", "createdBy": "sample", "kind": "document", "title": "架空の工場の月次生産報告（合成データ）", "retrievedAt": "2026-10-01", "confidence": "高" },
+    { "id": "src-mono-002", "createdBy": "sample", "kind": "interview", "title": "架空の現場リーダーへのヒアリング（合成データ）", "retrievedAt": "2026-10-02", "confidence": "中" },
+    { "id": "src-mono-003", "createdBy": "sample", "kind": "web", "title": "架空の業界調査の公開資料（合成データ）", "url": "https://example.invalid/mono-report", "retrievedAt": "2026-10-03", "confidence": "推定" }
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "chapters": [
+    {
+      "id": "chap-mono-001", "createdBy": "sample", "title": "現状の課題",
+      "topics": [
+        { "id": "topic-mono-001", "createdBy": "sample", "title": "計画外停止", "entityIds": ["issue-mono-001", "ent-mono-line-a"] },
+        { "id": "topic-mono-002", "createdBy": "sample", "title": "記録の遅れ", "entityIds": ["issue-mono-002"] }
+      ]
+    },
+    {
+      "id": "chap-mono-002", "createdBy": "sample", "title": "解決の方向",
+      "topics": [
+        { "id": "topic-mono-003", "createdBy": "sample", "title": "予兆検知と現場入力", "entityIds": ["sol-mono-001", "sol-mono-002"] }
+      ]
+    }
+  ]
+}

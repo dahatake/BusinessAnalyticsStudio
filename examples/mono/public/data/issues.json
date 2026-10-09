@@ -1,0 +1,11 @@
+{
+  "issues": [
+    { "id": "issue-mono-001", "createdBy": "sample", "parentId": null, "title": "設備の計画外停止が多い", "hypothesis": "予兆を捉えられていない", "origin": "interview", "classification": "shareable", "sourceIds": ["src-mono-001"] },
+    { "id": "issue-mono-002", "createdBy": "sample", "parentId": "issue-mono-001", "title": "停止原因の記録が紙で集計できない", "hypothesis": "記録の入力が遅れる", "origin": "interview", "classification": "shareable", "sourceIds": ["src-mono-002"] },
+    { "id": "issue-mono-003", "createdBy": "sample", "parentId": null, "title": "熟練者の判断が属人化している", "hypothesis": "判断基準が共有されていない", "origin": "interview", "classification": "shareable", "sourceIds": ["src-mono-002"] }
+  ],
+  "solutions": [
+    { "id": "sol-mono-001", "createdBy": "sample", "issueId": "issue-mono-001", "title": "設備の稼働データを集めて予兆を検知する", "productIds": ["prod-mono-001"], "sourceIds": ["src-mono-003"] },
+    { "id": "sol-mono-002", "createdBy": "sample", "issueId": "issue-mono-002", "title": "タブレットで停止原因を入力する", "productIds": ["prod-mono-002"], "sourceIds": ["src-mono-002"] }
+  ]
+}

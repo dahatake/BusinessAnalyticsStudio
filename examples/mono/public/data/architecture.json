@@ -1,0 +1,11 @@
+{
+  "nodes": [
+    { "id": "arch-mono-edge", "createdBy": "sample", "label": "設備のゲートウェイ", "layer": "現場" },
+    { "id": "arch-mono-app", "createdBy": "sample", "label": "現場入力アプリ", "layer": "アプリ", "productId": "prod-mono-002" },
+    { "id": "arch-mono-analytics", "createdBy": "sample", "label": "予兆検知", "layer": "分析", "productId": "prod-mono-001" }
+  ],
+  "edges": [
+    { "id": "edge-mono-001", "createdBy": "sample", "from": "arch-mono-edge", "to": "arch-mono-analytics", "label": "稼働データ" },
+    { "id": "edge-mono-002", "createdBy": "sample", "from": "arch-mono-app", "to": "arch-mono-analytics", "label": "停止原因" }
+  ]
+}

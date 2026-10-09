@@ -1,0 +1,11 @@
+{
+  "entities": [
+    {
+      "id": "ent-mono-line-a", "createdBy": "sample", "type": "site", "name": "第 1 組立ライン", "sourceIds": ["src-mono-001"],
+      "metrics": [
+        { "label": "月間の計画外停止", "value": 14, "unit": "回", "sourceIds": ["src-mono-001"] }
+      ]
+    },
+    { "id": "ent-mono-leader", "createdBy": "sample", "type": "role", "name": "現場リーダー", "sourceIds": ["src-mono-002"] }
+  ]
+}

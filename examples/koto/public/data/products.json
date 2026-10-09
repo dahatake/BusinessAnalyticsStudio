@@ -1,0 +1,5 @@
+{
+  "products": [
+    { "id": "prod-koto-001", "createdBy": "sample", "name": "サンプル予約管理サービス", "vendor": "架空のベンダー C", "summary": "予約の確認と変更をオンラインで行う（合成データ）", "sourceIds": ["src-koto-002"] }
+  ]
+}

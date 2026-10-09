@@ -1,0 +1,9 @@
+{
+  "features": [
+    { "id": "feat-koto-001", "createdBy": "sample", "title": "予約のオンライン変更", "issueIds": ["issue-koto-001"], "sourceIds": ["src-koto-002"] }
+  ],
+  "tasks": [
+    { "id": "task-koto-001", "createdBy": "sample", "title": "変更の手順の整理", "featureId": "feat-koto-001", "start": "2026-11-02", "end": "2026-11-13" },
+    { "id": "task-koto-002", "createdBy": "sample", "title": "変更画面の試作", "featureId": "feat-koto-001", "start": "2026-11-16", "end": "2026-12-04", "dependsOn": ["task-koto-001"] }
+  ]
+}

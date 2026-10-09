@@ -1,0 +1,10 @@
+{
+  "chapters": [
+    {
+      "id": "chap-koto-001", "createdBy": "sample", "title": "現状の課題",
+      "topics": [
+        { "id": "topic-koto-001", "createdBy": "sample", "title": "電話への集中", "entityIds": ["issue-koto-001", "ent-koto-counter"] }
+      ]
+    }
+  ]
+}
