@@ -151,7 +151,7 @@
 | NFR-A11Y-002 | 演出をすべて OFF にしたときの利用 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-A11Y-003 | 視覚的な表現の代替 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-A11Y-004 | ドラッグ以外の操作手段 | 承認済み | 未実装 | 未実装 | なし |
-| NFR-SEC-001 | API キーの管理 | 承認済み | .env.example | tests/unit/secrets.test.ts | なし |
+| NFR-SEC-001 | API キーの管理 | 承認済み | .env.example, tests/unit/secrets.test.ts | tests/unit/secrets.test.ts | なし |
 | NFR-SEC-002 | 外部への通信の限定と明示 | 承認済み | src/ai/ChatScreen.tsx, src/ai/AiStatus.tsx, src/ai/client.ts | tests/system/e2e/quality.spec.ts (IT-010) | AI 呼び出し口 |
 | NFR-SEC-003 | 調査キャッシュと顧客パックの保護 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-LEGAL-001 | 素材の権利と CREDITS | 承認済み | 未実装 | 未実装 | なし |
