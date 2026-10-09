@@ -8,6 +8,7 @@ import {
   type Background, type Board, type BoardItem, type InkPoint, type Stroke, type ToolId, type ViewState,
 } from './model';
 import { fitView } from './viewport';
+import { refreshConnectors } from '../whiteboard/ops';
 
 interface Snapshot { strokes: Stroke[]; items: BoardItem[] }
 interface History { undo: Snapshot[]; redo: Snapshot[] }
@@ -23,7 +24,17 @@ interface InkState {
   size: number;
   selection: { boardId: string; ids: string[] } | null;
   history: Record<string, History>;
+  /** ホワイトボード: ドット投票の最中か（付箋をクリックすると 1 票入る）。FR-099 */
+  voteMode: boolean;
+  /** ホワイトボード: コネクターの接続元に選んだ項目の ID（次にクリックした項目へつなぐ）。FR-097 */
+  connectFrom: string | null;
 
+  setVoteMode: (on: boolean) => void;
+  setConnectFrom: (id: string | null) => void;
+  /** 項目の並びを関数で入れ替える（「元に戻す」1 回分）。同じ配列を返せば何もしない。 */
+  updateItems: (id: string, fn: (items: BoardItem[]) => BoardItem[]) => void;
+  /** 保存したボードを読み込む（起動時）。 */
+  restoreBoards: (boards: Board[], activeBoardId: string) => void;
   setTool: (t: ToolId) => void;
   setColor: (c: string) => void;
   setSize: (n: number) => void;
@@ -75,7 +86,8 @@ export const useInk = create<InkState>()((set, get) => {
     set((s) => {
       const board = s.boards.find((b) => b.id === id);
       if (!board) return s;
-      const patch = fn(board);
+      const raw = fn(board);
+      const patch = raw.items ? { ...raw, items: refreshConnectors(raw.items) } : raw;
       return {
         boards: mapBoard(s.boards, id, (b) => ({ ...b, ...patch })),
         history: withHistory(s.history, board),
@@ -91,8 +103,23 @@ export const useInk = create<InkState>()((set, get) => {
     size: 3,
     selection: null,
     history: {},
+    voteMode: false,
+    connectFrom: null,
 
-    setTool: (tool) => set({ tool }),
+    setVoteMode: (voteMode) => set({ voteMode }),
+    setConnectFrom: (connectFrom) => set({ connectFrom }),
+    updateItems: (id, fn) => {
+      const b = get().boards.find((x) => x.id === id);
+      if (!b) return;
+      const next = fn(b.items);
+      if (next !== b.items) edit(id, () => ({ items: next }));
+    },
+    restoreBoards: (boards, activeBoardId) => set((s) => {
+      if (boards.length === 0) return s;
+      const active = boards.some((b) => b.id === activeBoardId && b.kind === 'board') ? activeBoardId : (boards.find((b) => b.kind === 'board')?.id ?? s.activeBoardId);
+      return { boards, activeBoardId: active, selection: null, history: {}, connectFrom: null };
+    }),
+    setTool: (tool) => set({ tool, connectFrom: null }),
     setColor: (color) => set({ color }),
     setSize: (size) => set({ size }),
 
@@ -138,7 +165,13 @@ export const useInk = create<InkState>()((set, get) => {
     },
     removeObjects: (id, ids, record = true) => {
       const set_ = new Set(ids);
-      const apply = (b: Board): Partial<Board> => ({ strokes: b.strokes.filter((s) => !set_.has(s.id)), items: b.items.filter((i) => !set_.has(i.id)) });
+      // 項目を消すと、その項目につながっていたコネクターも消える
+      const board = get().boards.find((b) => b.id === id);
+      for (const i of board?.items ?? []) if (i.type === 'connector' && ((i.from && set_.has(i.from)) || (i.to && set_.has(i.to)))) set_.add(i.id);
+      const apply = (b: Board): Partial<Board> => ({
+        strokes: b.strokes.filter((s) => !set_.has(s.id)),
+        items: b.items.filter((i) => !set_.has(i.id)).map((i) => (i.frameId && set_.has(i.frameId) ? { ...i, frameId: null } : i)),
+      });
       if (record) edit(id, apply);
       else set((s) => ({ boards: mapBoard(s.boards, id, (b) => ({ ...b, ...apply(b) })) }));
       set((s) => (s.selection ? { selection: { ...s.selection, ids: s.selection.ids.filter((x) => !set_.has(x)) } } : s));
@@ -237,6 +270,7 @@ registerTestHook('board', {
         strokes: b.strokes.map((k) => ({ id: k.id, tool: k.tool, temporary: k.temporary ?? false, bounds: k.bounds })),
         items: b.items.map((i) => ({
           id: i.id, type: i.type, text: i.text, x: i.x, y: i.y, w: i.w, h: i.h, groupId: i.groupId ?? null, frameId: i.frameId ?? null,
+          from: i.from, to: i.to, votes: i.votes ?? 0, sourceEntityId: i.sourceEntityId, label: i.label, author: i.author,
         })),
       })),
       viewport: { x: v.x, y: v.y, width: size.w / v.zoom, height: size.h / v.zoom, zoom: v.zoom },

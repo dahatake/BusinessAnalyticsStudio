@@ -16,6 +16,7 @@ import { SelectionController } from '../selection/SelectionController';
 import { EditModeSwitch, HistoryButton, ResetSampleButton } from '../edit/EditControls';
 import { installEditKeys } from '../edit/useEditKeys';
 import { SelectionAnnouncer } from '../selection/Announcer';
+import { EntityBoardActions } from '../whiteboard/entityActions';
 import { CommandController } from '../commands/CommandPalette';
 import { GlobalSearch } from '../search/GlobalSearch';
 import { isComponentVisible, setAvailableComponents, useLayout } from '../store/layout';
@@ -87,6 +88,7 @@ export function App() {
       {!opened ? <Opening customerName={name} projectName={projectName} onDone={() => setOpened(true)} /> : null}
       <SelectionController />
       <SelectionAnnouncer />
+      <EntityBoardActions />
       <CommandController screens={SCREENS} />
       <AppShell
         title={`${name} ${projectName}`}
