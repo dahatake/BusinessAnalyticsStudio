@@ -3,7 +3,10 @@
     {
       "id": "chap-mono-001", "createdBy": "sample", "title": "現状の課題",
       "topics": [
-        { "id": "topic-mono-001", "createdBy": "sample", "title": "計画外停止", "entityIds": ["issue-mono-001", "ent-mono-line-a"] },
+        {
+          "id": "topic-mono-001", "createdBy": "sample", "title": "計画外停止", "entityIds": ["issue-mono-001", "ent-mono-line-a"],
+          "telop": { "text": "設備の計画外停止が、生産計画の大きな乱れにつながっています", "sourceIds": ["src-mono-001"] }
+        },
         { "id": "topic-mono-002", "createdBy": "sample", "title": "記録の遅れ", "entityIds": ["issue-mono-002"] }
       ]
     },
@@ -11,6 +14,23 @@
       "id": "chap-mono-002", "createdBy": "sample", "title": "解決の方向",
       "topics": [
         { "id": "topic-mono-003", "createdBy": "sample", "title": "予兆検知と現場入力", "entityIds": ["sol-mono-001", "sol-mono-002"] }
+      ]
+    },
+    {
+      "id": "chap-mono-003", "createdBy": "sample", "title": "効果と優先順位",
+      "topics": [
+        {
+          "id": "topic-mono-004", "createdBy": "sample", "title": "停止原因の集計の変化", "type": "before-after",
+          "beforeAfter": {
+            "before": { "label": "Before", "text": "停止原因は紙に記録し、終業後にまとめて入力するため、集計に数日かかる" },
+            "after": { "label": "After", "text": "現場のタブレットで停止の直後に入力し、集計は即日で終わる" }
+          }
+        },
+        { "id": "topic-mono-005", "createdBy": "sample", "title": "優先順位 TOP5", "type": "ranking" },
+        {
+          "id": "topic-mono-006", "createdBy": "sample", "title": "ROI の発表", "type": "roi",
+          "roi": { "label": "予兆検知の ROI", "value": 180, "unit": "%", "caption": "稼働データの予兆検知による、計画外停止の削減効果の見込み", "sourceIds": ["src-mono-003"] }
+        }
       ]
     }
   ]

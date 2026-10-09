@@ -10,7 +10,7 @@ import { useExportUi } from './ui';
 
 const useStyles = makeStyles({
   notice: {
-    position: 'fixed', top: tokens.spacingVerticalXXL, right: tokens.spacingHorizontalXXL, width: 'min(520px, calc(100vw - 32px))',
+    position: 'fixed', bottom: tokens.spacingVerticalXXL, right: tokens.spacingHorizontalXXL, width: 'min(520px, calc(100vw - 32px))',
     zIndex: 900, boxShadow: tokens.shadow16,
   },
 });

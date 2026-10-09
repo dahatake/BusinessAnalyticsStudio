@@ -75,11 +75,15 @@ export function pdfSource(board: Board, range: PdfRange): string | null {
 
 export interface PdfContents { stickies: number; texts: number; shapes: number; strokes: number }
 
-/** プレビューに「何が入るか」を数えて示す。 */
-export function countContents(board: Board): PdfContents {
-  const strokes = board.strokes.filter((k) => !k.temporary).length;
+/** プレビューに「何が入るか」を数えて示す。range が 'view' のときは、その範囲に（一部でも）かかるものだけを数える。 */
+export function countContents(board: Board, range: PdfRange = 'board'): PdfContents {
+  const r = rangeRect(board, range);
+  const inside = (b: { x: number; y: number; w: number; h: number }): boolean =>
+    !r || (b.x <= r.x + r.w && b.x + b.w >= r.x && b.y <= r.y + r.h && b.y + b.h >= r.y);
+  const strokes = board.strokes.filter((k) => !k.temporary && inside(k.bounds)).length;
   const c: PdfContents = { stickies: 0, texts: 0, shapes: 0, strokes };
   for (const i of board.items) {
+    if (!inside(i)) continue;
     if (i.type === 'sticky') c.stickies += 1;
     else if (i.type === 'text') c.texts += 1;
     else if (i.type === 'shape') c.shapes += 1;

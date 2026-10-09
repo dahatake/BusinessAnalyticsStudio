@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { MessageBar, MessageBarBody, MessageBarTitle } from '@fluentui/react-components';
 import { AiStatus } from '../ai/AiStatus';
@@ -29,9 +29,15 @@ import { usePackStore } from '../store/pack';
 import { checkTemplateVersion, versionWarning } from '../version';
 import { Dock, PersonaMenu, ResetLayoutButton } from '../workspace/Controls';
 import { Workspace } from '../workspace/Workspace';
+import { IntensityIndicator } from '../show/IntensityIndicator';
+import { ShowStage } from '../show/ShowStage';
+import { useOpening } from '../store/opening';
 import { Opening } from './Opening';
 import '../ink/presentationInk'; // プレゼン中の一時的な注釈をチャプターの移動で消す（FR-091）
 import { InkToolbarHost } from '../ink/FloatingInkToolbar';
+import { AudioDirector } from '../audio/AudioDirector';
+import { ShowControlBar } from '../show/ShowControlBar';
+import { currentTopic } from '../store/presentation';
 
 setAvailableComponents(SCREENS.map((s) => s.key));
 
@@ -60,7 +66,11 @@ export function App() {
   const state = usePackStore((s) => s.state);
   const load = usePackStore((s) => s.load);
   const brand = useEffectiveBrand();
-  const [opened, setOpened] = useState(false);
+  const opened = useOpening((s) => s.opened);
+  const finishOpening = useOpening((s) => s.finish);
+  // BGM のシーン: オープニング、プレゼンテーション中は章ごと、それ以外は通常（FR-073）
+  const topic = usePresentationStore(currentTopic);
+  const scene = !opened ? 'opening' : topic ? `chapter:${topic.chapterId}` : 'workspace';
   const presenting = usePresentationStore((s) => s.active);
   const intensity = useIntensity();
   const motionRef = useRef({ presenting, intensity });
@@ -70,10 +80,10 @@ export function App() {
   useEffect(() => { void load(); }, [load]);
   // 顧客パックの読み込み中に Esc が押されたら、オープニングを飛ばす（読み込みが終わってから出るオープニングが、先の Esc を取りこぼさない）
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpened(true); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') finishOpening(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [finishOpening]);
   useEffect(() => installEditKeys(), []);
 
   const customer = state.status === 'ready' ? state.pack.data.customer : undefined;
@@ -105,18 +115,20 @@ export function App() {
   const version = checkTemplateVersion(state.pack.data.customer.templateVersion);
   return (
     <>
-      {!opened ? <Opening customerName={name} projectName={projectName} onDone={() => setOpened(true)} /> : null}
+      {!opened ? <Opening customerName={name} projectName={projectName} onDone={finishOpening} /> : null}
       <SelectionController />
       <ExportHost screens={SCREENS} />
       <SelectionAnnouncer />
       <EntityBoardActions />
       <InkToolbarHost />
       <CommandController screens={SCREENS} />
+      <AudioDirector scene={scene} />
+      <ShowControlBar />
       <AppShell
         title={`${name} ${projectName}`}
         screens={SCREENS}
         onSelect={onSelect}
-        headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><TimeAxis /><AnimationStatus /><AiStatus /></>}
+        headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><TimeAxis /><AnimationStatus /><IntensityIndicator /><AiStatus /></>}
         actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><ResetLayoutButton /><PresentationButton /></>}
         dock={<Dock screens={SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
@@ -152,6 +164,7 @@ export function App() {
           </div>
         ) : null}
         <PresentationBar />
+        <ShowStage />
         <Workspace screens={SCREENS} />
       </AppShell>
     </>

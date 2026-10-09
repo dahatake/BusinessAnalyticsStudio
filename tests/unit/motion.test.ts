@@ -94,6 +94,9 @@ describe('FR-071 グローバルのアニメーション停止', () => {
   it('FR-071 AC-087 P は入力欄の中と修飾キー付きでは受けない', () => {
     const input = { tagName: 'INPUT', isContentEditable: false } as unknown as EventTarget;
     const body = { tagName: 'BODY', isContentEditable: false } as unknown as EventTarget;
+    // FR-074: 音量のスライダー（range）の上にフォーカスがあっても、P は受ける
+    const slider = { tagName: 'INPUT', type: 'range', isContentEditable: false } as unknown as EventTarget;
+    expect(isShortcutTarget({ target: slider, ctrlKey: false, metaKey: false, altKey: false })).toBe(true);
     expect(isShortcutTarget({ target: body, ctrlKey: false, metaKey: false, altKey: false })).toBe(true);
     expect(isShortcutTarget({ target: input, ctrlKey: false, metaKey: false, altKey: false })).toBe(false);
     expect(isShortcutTarget({ target: body, ctrlKey: true, metaKey: false, altKey: false })).toBe(false);

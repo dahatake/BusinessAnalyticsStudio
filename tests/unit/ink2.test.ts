@@ -285,6 +285,9 @@ describe('FR-096 AC-118 エクスポートのプレビューと PDF', () => {
     b.size = { w: 200, h: 200 };
     const view = pdfSource(b, 'view')!;
     expect(view).toContain('viewBox="0 0 200 200"');
+    // 表示中の範囲の件数は、その範囲にかかるものだけ（テキスト x=300 と図形 y=300 は範囲外）
+    expect(countContents(b, 'view')).toEqual({ stickies: 1, texts: 0, shapes: 0, strokes: 1 });
+    expect(countContents(b, 'board')).toEqual({ stickies: 1, texts: 1, shapes: 1, strokes: 1 });
     expect(boardSvg(createBoard('空'))).toBeNull();
     expect(pdfSource(createBoard('空'), 'board')).toBeNull();
   });

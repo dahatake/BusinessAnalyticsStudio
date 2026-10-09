@@ -49,7 +49,7 @@ export function BoardPdfDialog({ boardId, open, onOpenChange, onResult }: BoardP
   const [error, setError] = useState<string | null>(null);
 
   const svg = useMemo(() => (open && board ? pdfSource(board, range) : null), [open, board, range]);
-  const counts = useMemo(() => (board ? countContents(board) : null), [board]);
+  const counts = useMemo(() => (board ? countContents(board, range) : null), [board, range]);
   const page = pageSize(paper, orientation);
 
   const run = async () => {

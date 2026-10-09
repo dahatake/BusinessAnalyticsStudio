@@ -1,6 +1,6 @@
 // 設定パネル（テーマ、ブランドの確認と上書き、3D の品質・業種プリセット、AI）。FR-058、FR-059、FR-060、FR-064、FR-065、FR-066、FR-069
 import { useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Dropdown, Field, Input, Option, Radio, RadioGroup, Text, makeStyles, tokens } from '@fluentui/react-components';
+import { Badge, Button, Dropdown, Field, Input, Option, Radio, RadioGroup, Switch, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
 import { AiSettings } from '../ai/AiSettings';
 import { THEME_MODES, useSettings, type Handedness, type ThemeMode } from '../store/settings';
@@ -66,6 +66,10 @@ export function SettingsScreen() {
   const setHandedness = useSettings((st) => st.setHandedness);
   const override = useSettings((st) => st.brandPrimaryOverride);
   const setOverride = useSettings((st) => st.setBrandPrimaryOverride);
+  const bgmEnabled = useSettings((st) => st.bgmEnabled);
+  const setBgmEnabled = useSettings((st) => st.setBgmEnabled);
+  const seEnabled = useSettings((st) => st.seEnabled);
+  const setSeEnabled = useSettings((st) => st.setSeEnabled);
   const packState = usePackStore((st) => st.state);
   const brand = useEffectiveBrand();
   const primary = brand?.colors.primary;
@@ -112,6 +116,12 @@ export function SettingsScreen() {
           <Radio value="left" label="左利き" />
         </RadioGroup>
       </Field>
+      <div role="group" aria-labelledby="audio-settings-title">
+        <Text id="audio-settings-title" as="p" weight="semibold">音声</Text>
+        <Switch label="BGM" checked={bgmEnabled} onChange={(_, d) => setBgmEnabled(d.checked)} />
+        <Switch label="効果音" checked={seEnabled} onChange={(_, d) => setSeEnabled(d.checked)} />
+        <Text as="p" size={200}>ミュートと音量は、画面下のショーコントロールバー（M キー）で操作します。</Text>
+      </div>
       <Field label="3D の品質">
         <RadioGroup layout="horizontal" value={quality} onChange={(_, d) => setQuality(d.value as Quality)}>
           {QUALITIES.map((q) => <Radio key={q} value={q} label={q} />)}

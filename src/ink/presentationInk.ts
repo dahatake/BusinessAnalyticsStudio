@@ -63,6 +63,8 @@ export function startPresentationInkWatch(): void {
       widened = false;
     }
   });
+  // 注釈中に Esc などで最大化が外れたら、「広げた」状態も解く（次に書き始めたとき、また広げられるように）
+  useLayout.subscribe((l) => { if (widened && l.maximized !== 'canvas') widened = false; });
 }
 
 startPresentationInkWatch();
