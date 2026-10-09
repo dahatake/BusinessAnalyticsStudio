@@ -23,7 +23,9 @@ async function surface(page: Page): Promise<Locator> {
   return s;
 }
 async function tool(page: Page, name: string | RegExp) {
-  await page.getByRole('toolbar', { name: 'インクの道具' }).getByRole('button', { name }).click();
+  // 文字列は完全一致（「ペン」が「蛍光ペン」に当たる strict mode 違反を避ける）。曖昧な指定は RegExp で渡す
+  const opt = typeof name === 'string' ? { name, exact: true } : { name };
+  await page.getByRole('toolbar', { name: 'インクの道具' }).getByRole('button', opt).click();
 }
 async function drawLine(page: Page, s: Locator, from: [number, number], to: [number, number]) {
   const b = (await s.boundingBox())!;
@@ -367,7 +369,7 @@ test.describe('FR-096 キーボードだけでの作成', () => {
     const n0 = (await active(page)).items.length;
     const tb = page.getByRole('toolbar', { name: 'インクの道具' });
     for (const [name, text] of [['付箋', '付箋KB'], ['テキスト', 'テキストKB'], ['矩形', '']] as const) {
-      await tb.getByRole('button', { name }).focus();
+      await tb.getByRole('button', { name, exact: true }).focus();
       await page.keyboard.press('Enter');
       // 道具を選んだ状態で Enter を押すと、ボードの表示範囲の中央に追加される
       await component(page, 'whiteboard').getByTestId('board-surface').focus();

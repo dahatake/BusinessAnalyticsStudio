@@ -250,28 +250,78 @@ export async function countBadge(scope: Locator): Promise<number> {
   return Number(t);
 }
 
-/** フレーム時間（ms）の中央値を、requestAnimationFrame の間隔で測る（性能の確認用）。 */
-export async function measureFrameTimes(page: Page, during: () => Promise<void>): Promise<number> {
-  await page.evaluate(() => {
-    const w = window as any;
-    w.__stFrames = [];
-    w.__stRun = true;
-    let last = performance.now();
-    const tick = (t: number) => {
-      w.__stFrames.push(t - last);
-      last = t;
-      if (w.__stRun) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  });
+const median = (xs: number[]): number => {
+  const s = [...xs].sort((a, b) => a - b);
+  return s[Math.floor(s.length / 2)];
+};
+
+/**
+ * 入力のあったフレームの処理時間（ms）の中央値を測る（性能の確認用。AC-117）。
+ * 60Hz の rAF の周期（約 16.7ms）は実装の速さではなく表示の周期なので、rAF の間隔は測らない。
+ * 1 フレームの処理時間 = 入力イベントの発生（event.timeStamp）から、そのフレームの描画更新の後（rAF の直後に
+ * MessageChannel で戻る最初のタスク）までの時間。入力のなかったフレームは数えない。
+ * ウォームアップとして `during` を 1 回流して捨て、その後 `rounds` 回（既定 3）測って、各回の中央値の中央値を返す。
+ * どの回も計測が 20 件未満なら、計測できていないので失敗にする（未計測を合格にしない）。
+ * `during` は繰り返し実行できる操作にすること。
+ */
+export async function measureFrameTimes(page: Page, during: () => Promise<void>, rounds = 3): Promise<number> {
+  const MIN_SAMPLES = 20;
+  const start = () =>
+    page.evaluate(() => {
+      const w = window as any;
+      w.__stWork = [];
+      w.__stRun = true;
+      let lastInput: number | null = null;
+      const onInput = (e: Event) => { lastInput = e.timeStamp; };
+      for (const type of ['pointerdown', 'pointermove', 'pointerup', 'wheel']) {
+        window.addEventListener(type, onInput, { capture: true, passive: true });
+      }
+      w.__stStop = () => {
+        for (const type of ['pointerdown', 'pointermove', 'pointerup', 'wheel']) {
+          window.removeEventListener(type, onInput, { capture: true } as EventListenerOptions);
+        }
+      };
+      const ch = new MessageChannel();
+      let t0: number | null = null;
+      ch.port1.onmessage = () => {
+        if (t0 !== null) w.__stWork.push(performance.now() - t0);
+        t0 = null;
+      };
+      const tick = () => {
+        if (lastInput !== null) {
+          t0 = lastInput;
+          lastInput = null;
+          ch.port2.postMessage(0);
+        }
+        if (w.__stRun) requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+  const stop = () =>
+    page.evaluate(async () => {
+      const w = window as any;
+      await new Promise((r) => setTimeout(r, 100));
+      w.__stRun = false;
+      w.__stStop();
+      return w.__stWork as number[];
+    });
+
+  // ウォームアップ（結果は捨てる）
+  await start();
   await during();
-  const frames: number[] = await page.evaluate(() => {
-    const w = window as any;
-    w.__stRun = false;
-    return w.__stFrames.slice(1);
-  });
-  frames.sort((a, b) => a - b);
-  return frames[Math.floor(frames.length / 2)] ?? Number.POSITIVE_INFINITY;
+  await stop();
+
+  const medians: number[] = [];
+  for (let i = 0; i < rounds; i++) {
+    await start();
+    await during();
+    const work = await stop();
+    if (work.length < MIN_SAMPLES) {
+      throw new Error(`フレーム処理時間の計測が ${work.length} 件（${MIN_SAMPLES} 件未満）で、性能を判定できない（${i + 1} 回目）`);
+    }
+    medians.push(median(work));
+  }
+  return median(medians);
 }
 
 /** 計算済みスタイルの色を `rgb(r, g, b)` で比べるための正規化 */
