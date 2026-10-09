@@ -152,6 +152,18 @@
           "by": "test-designer",
           "change": "canary: True -> False",
           "reason": "AC-001 は I05 で実装。実装済みの AC-071 へ canary を移す"
+        },
+        {
+          "at": "2026-10-09T16:35:28+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I05-issues(issue-solution)。I05-issues 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T16:36:41+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "I05 実装済み"
         }
       ]
     },
@@ -177,6 +189,18 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:29+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I05-issues(issue-solution)。I05-issues 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T16:36:41+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "I05 実装済み"
         }
       ]
     },
@@ -202,6 +226,18 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:30+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I05-issues(issue-solution,詳細パネル)。I05-issues 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T16:36:42+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "I05 実装済み"
         }
       ]
     },
@@ -227,6 +263,18 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:30+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I05-issues(issue-solution,詳細パネル)。I05-issues 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T16:36:42+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "I05 実装済み"
         }
       ]
     },
@@ -252,6 +300,18 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:31+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I05-issues(issue-solution,詳細パネル)。I05-issues 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T16:36:42+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "I05 実装済み"
         }
       ]
     },
@@ -267,7 +327,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-006",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -277,6 +337,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:32+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I05-issues(issue-solution,詳細パネル) I06-issues2()。I06-issues2 統合後に not_run へ戻す"
         }
       ]
     },
@@ -292,7 +358,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-007",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -302,6 +368,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:32+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I06-issues2(gantt)。I06-issues2 統合後に not_run へ戻す"
         }
       ]
     },
@@ -317,7 +389,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-008",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -327,6 +399,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:33+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I26-whiteboard(全画面) I06-issues2()。I26-whiteboard 統合後に not_run へ戻す"
         }
       ]
     },
@@ -342,7 +420,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-009",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -352,6 +430,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:33+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I14-analysis(priority) I06-issues2()。I14-analysis 統合後に not_run へ戻す"
         }
       ]
     },
@@ -423,7 +507,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-016",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -433,6 +517,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:34+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I06-issues2(gantt) I03-canvas()。I06-issues2 統合後に not_run へ戻す"
         }
       ]
     },
@@ -479,7 +569,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-018",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -489,6 +579,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:35+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I05-issues(issue-solution) I07-selection(table) I04-persona()。I07-selection 統合後に not_run へ戻す"
         }
       ]
     },
@@ -504,7 +600,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-019",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -514,6 +610,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:36+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I04-persona()。I04-persona 統合後に not_run へ戻す"
         }
       ]
     },
@@ -529,7 +631,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-192",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -539,6 +641,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:36+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I03-canvas(canvas) I04-persona()。I04-persona 統合後に not_run へ戻す"
         }
       ]
     },
@@ -554,7 +662,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-020",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -564,6 +672,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:37+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I08-search(グローバル検索)。I08-search 統合後に not_run へ戻す"
         }
       ]
     },
@@ -604,7 +718,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-022",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -614,6 +728,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:38+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I08-search(core-object)。I08-search 統合後に not_run へ戻す"
         }
       ]
     },
@@ -629,7 +749,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-023",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -639,6 +759,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:38+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I08-search(レンズ)。I08-search 統合後に not_run へ戻す"
         }
       ]
     },
@@ -654,7 +780,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-024",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -664,6 +790,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:39+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I11-3dviews(drawing2d)。I11-3dviews 統合後に not_run へ戻す"
         }
       ]
     },
@@ -679,7 +811,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-025",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -689,6 +821,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:40+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I11-3dviews(map)。I11-3dviews 統合後に not_run へ戻す"
         }
       ]
     },
@@ -704,7 +842,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-026",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -714,6 +852,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:40+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I06-issues2(gantt) I13-lod2()。I13-lod2 統合後に not_run へ戻す"
         }
       ]
     },
@@ -729,7 +873,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-027",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -739,6 +883,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:41+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I07-selection(table) I11-3dviews()。I11-3dviews 統合後に not_run へ戻す"
         }
       ]
     },
@@ -754,7 +904,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-030",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -764,6 +914,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:42+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I07-selection(table)。I07-selection 統合後に not_run へ戻す"
         }
       ]
     },
@@ -779,7 +935,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-031",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -789,6 +945,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:43+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I05-issues(issue-solution) I07-selection(table)。I07-selection 統合後に not_run へ戻す"
         }
       ]
     },
@@ -804,7 +966,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-032",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -814,6 +976,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:44+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I14-analysis(discussion-tree) I06-issues2(gantt) I05-issues(issue-solution) I07-selection()。I14-analysis 統合後に not_run へ戻す"
         }
       ]
     },
@@ -829,7 +997,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-033",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -839,6 +1007,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:44+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I05-issues(issue-solution) I07-selection()。I07-selection 統合後に not_run へ戻す"
         }
       ]
     },
@@ -854,7 +1028,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-034",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -864,6 +1038,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:45+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I07-selection(table) I08-search()。I08-search 統合後に not_run へ戻す"
         }
       ]
     },
@@ -879,7 +1059,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-035",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -889,6 +1069,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:46+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I07-selection(table) I08-search()。I08-search 統合後に not_run へ戻す"
         }
       ]
     },
@@ -904,7 +1090,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-040",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -914,6 +1100,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:47+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I03-canvas(canvas) I07-selection(table) I12-lod()。I12-lod 統合後に not_run へ戻す"
         }
       ]
     },
@@ -954,7 +1146,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-042",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -964,6 +1156,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:47+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I06-issues2(gantt) I07-selection(table) I13-lod2()。I13-lod2 統合後に not_run へ戻す"
         }
       ]
     },
@@ -979,7 +1177,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-044",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -989,6 +1187,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:48+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I14-analysis(knowledge-graph)。I14-analysis 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1004,7 +1208,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-045",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1014,6 +1218,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:49+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I15-edit(編集モード) I05-issues(issue-solution) I14-analysis(knowledge-graph) I07-selection(table)。I15-edit 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1029,7 +1239,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-046",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1039,6 +1249,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:50+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I05-issues(issue-solution) I06-issues2()。I06-issues2 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1054,7 +1270,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-047",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1064,6 +1280,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:50+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I14-analysis(priority,priority/matrix,priority/ranking)。I14-analysis 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1079,7 +1301,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-049",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1089,6 +1311,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:51+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I14-analysis(architecture)。I14-analysis 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1104,7 +1332,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-050",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1114,6 +1342,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:52+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I15-edit(編集モード) I14-analysis(architecture)。I15-edit 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1129,7 +1363,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-051",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1139,6 +1373,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:53+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I15-edit(編集モード) I14-analysis(priority,summary)。I15-edit 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1154,7 +1394,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-052",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1164,6 +1404,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:54+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I14-analysis(discussion-tree)。I14-analysis 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1179,7 +1425,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-053",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1189,6 +1435,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:54+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I15-edit(編集モード) I14-analysis(discussion-tree)。I15-edit 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1204,7 +1456,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-054",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1214,6 +1466,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:55+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I05-issues(issue-solution) I15-edit(mock)。I15-edit 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1229,7 +1487,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-055",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1239,6 +1497,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:56+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I15-edit(編集モード) I05-issues(詳細パネル) I07-selection(table)。I15-edit 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1254,7 +1518,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-056",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1264,6 +1528,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:56+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I15-edit(編集モード) I14-analysis(priority,summary) I07-selection(table)。I15-edit 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1279,7 +1549,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-057",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1289,6 +1559,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:57+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I15-edit(編集モード) I05-issues(詳細パネル) I07-selection(table)。I15-edit 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1304,7 +1580,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-058",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1314,6 +1590,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:58+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I15-edit(編集モード) I07-selection(table)。I15-edit 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1329,7 +1611,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-059",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1339,6 +1621,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:58+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I15-edit(編集モード) I05-issues(詳細パネル) I07-selection(table)。I15-edit 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1354,7 +1642,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-060",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1364,6 +1652,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:59+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I15-edit(編集モード) I16-discussion()。I16-discussion 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1379,7 +1673,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-061",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1389,6 +1683,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:59+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I15-edit(編集モード) I16-discussion(themes)。I16-discussion 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1404,7 +1704,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-062",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1414,6 +1714,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:00+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I15-edit(編集モード) I16-discussion(themes)。I16-discussion 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1429,7 +1735,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-063",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1439,6 +1745,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:01+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I16-discussion(themes)。I16-discussion 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1454,7 +1766,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-064",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1464,6 +1776,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:01+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I17-export()。I17-export 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1479,7 +1797,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-066",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1489,6 +1807,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:02+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I17-export()。I17-export 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1504,7 +1828,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-067",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1514,6 +1838,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:03+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I17-export()。I17-export 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1529,7 +1859,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-068",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1539,6 +1869,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:03+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I17-export()。I17-export 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1554,7 +1890,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-069",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1564,6 +1900,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:04+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I07-selection(table) I16-discussion(themes)。I16-discussion 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1579,7 +1921,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-070",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1589,6 +1931,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:04+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I22-show2(コントロールバー) I19-motion()。I22-show2 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1635,7 +1983,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-073",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1645,6 +1993,18 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:35:19+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: 全画面(後続項目)。統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T16:36:05+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I03-canvas(canvas) I18-brand()。I18-brand 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1660,7 +2020,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-075",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1670,6 +2030,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:06+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I26-whiteboard(全画面) I18-brand()。I26-whiteboard 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1710,7 +2076,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-077",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1720,6 +2086,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:06+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I14-analysis(priority) I18-brand()。I18-brand 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1835,7 +2207,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-087",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1845,6 +2217,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:07+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I15-edit(編集モード) I07-selection(table) I19-motion()。I19-motion 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1885,7 +2263,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-091",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1895,6 +2273,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:07+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I20-audio()。I20-audio 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1910,7 +2294,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-193",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1920,6 +2304,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:08+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I20-audio()。I20-audio 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1960,7 +2350,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-094",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1970,6 +2360,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:09+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I21-show()。I21-show 統合後に not_run へ戻す"
         }
       ]
     },
@@ -1985,7 +2381,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-095",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -1995,6 +2391,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:10+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I21-show()。I21-show 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2010,7 +2412,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-096",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2020,6 +2422,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:11+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I14-analysis(priority) I21-show()。I21-show 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2035,7 +2443,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-097",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2045,6 +2453,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:11+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I22-show2()。I22-show2 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2060,7 +2474,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-099",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2070,6 +2484,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:12+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I22-show2()。I22-show2 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2085,7 +2505,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-100",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2095,6 +2515,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:12+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I22-show2()。I22-show2 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2110,7 +2536,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-101",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2120,6 +2546,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:13+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I21-show()。I21-show 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2135,7 +2567,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-102",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2145,6 +2577,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:13+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I22-show2(コントロールバー)。I22-show2 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2160,7 +2598,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-103",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2170,6 +2608,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:14+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I22-show2()。I22-show2 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2185,7 +2629,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-104",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2195,6 +2639,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:14+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I26-whiteboard(whiteboard) I06-issues2(gantt) I23-ink()。I26-whiteboard 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2210,7 +2660,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-107",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2220,6 +2670,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:15+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I23-ink()。I23-ink 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2235,7 +2691,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-109",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2245,6 +2701,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:16+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I24-ink2()。I24-ink2 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2260,7 +2722,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-111",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2270,6 +2732,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:16+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I03-canvas(canvas) I24-ink2()。I24-ink2 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2285,7 +2753,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-112",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2295,6 +2763,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:17+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I26-whiteboard(whiteboard) I25-inkexport()。I26-whiteboard 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2310,7 +2784,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-114",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2320,6 +2794,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:17+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I26-whiteboard(whiteboard) I25-inkexport()。I26-whiteboard 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2335,7 +2815,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-115",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2345,6 +2825,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:18+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I25-inkexport()。I25-inkexport 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2360,7 +2846,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-116",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2370,6 +2856,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:19+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I26-whiteboard(whiteboard) I24-ink2()。I26-whiteboard 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2385,7 +2877,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-117",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2395,6 +2887,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:19+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I24-ink2()。I24-ink2 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2410,7 +2908,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-118",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2420,6 +2918,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:20+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I26-whiteboard(whiteboard) I24-ink2()。I26-whiteboard 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2435,7 +2939,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-119",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2445,6 +2949,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:20+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I26-whiteboard()。I26-whiteboard 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2460,7 +2970,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-120",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2470,6 +2980,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:21+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I15-edit(編集モード) I05-issues(issue-solution) I26-whiteboard(whiteboard) I14-analysis(knowledge-graph) I07-selection(table)。I26-whiteboard 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2485,7 +3001,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-121",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2495,6 +3011,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:21+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I26-whiteboard(whiteboard)。I26-whiteboard 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2616,7 +3138,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-134",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2626,6 +3148,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:22+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I04-persona(ペルソナ切替) I14-analysis(discussion-tree) I06-issues2(gantt) I03-canvas()。I14-analysis 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2672,7 +3200,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-136",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2682,6 +3210,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:22+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I08-search(コマンドパレット) I14-analysis(priority/ranking)。I14-analysis 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2697,7 +3231,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-137",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2707,6 +3241,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:23+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I04-persona(ペルソナ切替)。I04-persona 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2722,7 +3262,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-138",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2732,6 +3272,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:23+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I04-persona(ペルソナ切替) I08-search(グローバル検索)。I08-search 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2747,7 +3293,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-139",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2757,6 +3303,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:24+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I07-selection(table) I11-3dviews(map) I04-persona()。I11-3dviews 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2797,7 +3349,7 @@
       "layer": "nonfunctional",
       "command": "node tests/system/run.mjs AC-165",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2807,6 +3359,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:24+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I26-whiteboard(全画面) I28-setup()。I28-setup 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2822,7 +3380,7 @@
       "layer": "nonfunctional",
       "command": "node tests/system/run.mjs AC-167",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2832,6 +3390,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:25+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I26-whiteboard(全画面) I22-show2(コントロールバー) I27-presets()。I27-presets 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2847,7 +3411,7 @@
       "layer": "nonfunctional",
       "command": "node tests/system/run.mjs AC-168",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2857,6 +3421,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:25+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I26-whiteboard(全画面) I32-nfr()。I32-nfr 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2872,7 +3442,7 @@
       "layer": "nonfunctional",
       "command": "node tests/system/run.mjs AC-169",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2882,6 +3452,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:26+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I26-whiteboard(全画面) I33-a11y()。I33-a11y 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2897,7 +3473,7 @@
       "layer": "nonfunctional",
       "command": "node tests/system/run.mjs AC-170",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2907,6 +3483,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:26+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I33-a11y()。I33-a11y 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2922,7 +3504,7 @@
       "layer": "nonfunctional",
       "command": "node tests/system/run.mjs AC-172",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2932,6 +3514,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:27+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I20-audio()。I20-audio 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2947,7 +3535,7 @@
       "layer": "nonfunctional",
       "command": "node tests/system/run.mjs AC-173",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2957,6 +3545,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:28+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I33-a11y()。I33-a11y 統合後に not_run へ戻す"
         }
       ]
     },
@@ -2972,7 +3566,7 @@
       "layer": "nonfunctional",
       "command": "node tests/system/run.mjs AC-174",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -2982,6 +3576,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:28+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I04-persona(ペルソナ切替) I15-edit(編集モード) I06-issues2(gantt) I05-issues(issue-solution) I14-analysis(knowledge-graph,priority) I26-whiteboard(whiteboard) I33-a11y()。I33-a11y 統合後に not_run へ戻す"
         }
       ]
     },
@@ -3022,7 +3622,7 @@
       "layer": "nonfunctional",
       "command": "node tests/system/run.mjs AC-178",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -3032,6 +3632,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:29+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I30-research()。I30-research 統合後に not_run へ戻す"
         }
       ]
     },
@@ -3047,7 +3653,7 @@
       "layer": "nonfunctional",
       "command": "node tests/system/run.mjs AC-180",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -3057,6 +3663,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:29+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I26-whiteboard(全画面) I14-analysis(discussion-tree,priority,summary) I05-issues(issue-solution) I15-edit(mock) I16-discussion(themes) I32-nfr()。I32-nfr 統合後に not_run へ戻す"
         }
       ]
     },
@@ -3072,7 +3684,7 @@
       "layer": "nonfunctional",
       "command": "node tests/system/run.mjs AC-185",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -3082,6 +3694,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:30+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I04-persona(ペルソナ切替) I05-issues(issue-solution,詳細パネル) I07-selection(table) I06-issues2(gantt)。I07-selection 統合後に not_run へ戻す"
         }
       ]
     },
@@ -3097,7 +3715,7 @@
       "layer": "nonfunctional",
       "command": "node tests/system/run.mjs AC-186",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -3107,6 +3725,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:30+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I26-whiteboard(全画面) I34-ux()。I34-ux 統合後に not_run へ戻す"
         }
       ]
     },
@@ -3122,7 +3746,7 @@
       "layer": "nonfunctional",
       "command": "node tests/system/run.mjs AC-187",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -3132,6 +3756,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:31+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I15-edit(編集モード) I03-canvas(canvas) I14-analysis(discussion-tree) I05-issues(issue-solution) I34-ux()。I34-ux 統合後に not_run へ戻す"
         }
       ]
     },
@@ -3147,7 +3777,7 @@
       "layer": "nonfunctional",
       "command": "node tests/system/run.mjs AC-188",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -3157,6 +3787,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:31+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I16-discussion(themes) I34-ux()。I34-ux 統合後に not_run へ戻す"
         }
       ]
     },
@@ -3172,7 +3808,7 @@
       "layer": "nonfunctional",
       "command": "node tests/system/run.mjs AC-189",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -3182,6 +3818,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T16:36:31+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: I26-whiteboard(全画面) I34-ux()。I34-ux 統合後に not_run へ戻す"
         }
       ]
     }
