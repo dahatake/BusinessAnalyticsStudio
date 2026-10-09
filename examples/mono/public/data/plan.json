@@ -4,8 +4,8 @@
     { "id": "feat-mono-002", "createdBy": "sample", "title": "予兆の検知と通知", "issueIds": ["issue-mono-001"], "sourceIds": ["src-mono-003"] }
   ],
   "tasks": [
-    { "id": "task-mono-001", "createdBy": "sample", "title": "現場の記録項目の整理", "featureId": "feat-mono-001", "start": "2026-11-02", "end": "2026-11-13" },
-    { "id": "task-mono-002", "createdBy": "sample", "title": "入力アプリの試作", "featureId": "feat-mono-001", "start": "2026-11-16", "end": "2026-12-11", "dependsOn": ["task-mono-001"] },
-    { "id": "task-mono-003", "createdBy": "sample", "title": "稼働データの収集", "featureId": "feat-mono-002", "start": "2026-11-16", "end": "2026-12-25" }
+    { "id": "task-mono-001", "createdBy": "sample", "owner": "現場リーダー", "work": "現場の記録項目を洗い出して整理する", "title": "現場の記録項目の整理", "featureId": "feat-mono-001", "start": "2026-11-02", "end": "2026-11-13" },
+    { "id": "task-mono-002", "createdBy": "sample", "owner": "IT 担当", "work": "タブレット用の入力アプリを試作して現場で試す", "title": "入力アプリの試作", "featureId": "feat-mono-001", "start": "2026-11-16", "end": "2026-12-11", "dependsOn": ["task-mono-001"] },
+    { "id": "task-mono-003", "createdBy": "sample", "owner": "IT 担当", "work": "設備の稼働データを収集する仕組みをつくる", "title": "稼働データの収集", "featureId": "feat-mono-002", "start": "2026-11-16", "end": "2026-12-25" }
   ]
 }

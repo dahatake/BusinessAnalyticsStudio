@@ -1,7 +1,10 @@
 // 画面のパネルの共通の外枠（見出し・説明）。画面はこれで包み、見た目の体系をそろえる。
 // ワークスペースの中では、フォーカス・最大化（Shift+F／ダブルクリック）・非表示（H）・メニューを受け持つ（FR-013/FR-109）。
+// 顧客パックにサンプルの項目があるときは、見出しの横に「サンプル」を明記する（FR-008）。
 import type { KeyboardEvent, ReactNode } from 'react';
-import { Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { Badge, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { hasSampleData } from '../data/sample';
+import { usePackStore } from '../store/pack';
 import { ComponentMenu, usePane } from '../workspace/PaneContext';
 import { isEditableTarget, panelKeyAction, runPanelKeyAction, titleDoubleClick, type KeyLike } from './panelKeys';
 
@@ -29,12 +32,16 @@ const useStyles = makeStyles({
   maximized: { position: 'absolute', inset: 0, zIndex: 10, height: 'auto' },
   head: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS },
   headRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', columnGap: tokens.spacingHorizontalS },
+  titleRow: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalM },
+  sample: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS },
 });
 
 export interface PanelProps {
   testId: string;
   title: string;
   description?: string;
+  /** 外枠の最大の幅（既定は 960px）。表や図で広く使う画面が指定する */
+  maxWidth?: string;
   children: ReactNode;
 }
 
@@ -45,9 +52,11 @@ function toKeyLike(e: KeyboardEvent<HTMLElement>): KeyLike {
   };
 }
 
-export function Panel({ testId, title, description, children }: PanelProps) {
+export function Panel({ testId, title, description, maxWidth, children }: PanelProps) {
   const s = useStyles();
   const pane = usePane();
+  const state = usePackStore((st) => st.state);
+  const sample = state.status === 'ready' && hasSampleData(state.pack.data);
 
   const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {
     const action = panelKeyAction(toKeyLike(e), pane);
@@ -58,6 +67,7 @@ export function Panel({ testId, title, description, children }: PanelProps) {
     <section
       data-testid={testId}
       className={mergeClasses(s.root, pane ? s.pane : undefined, pane?.maximized ? s.maximized : undefined)}
+      style={maxWidth && !pane ? { maxWidth } : undefined}
       aria-label={title}
       tabIndex={pane ? 0 : undefined}
       onKeyDown={onKeyDown}
@@ -65,9 +75,17 @@ export function Panel({ testId, title, description, children }: PanelProps) {
     >
       <div className={s.head}>
         <div className={s.headRow}>
-          <Text as="h2" size={600} weight="semibold" block onDoubleClick={titleDoubleClick(pane)}>
-            {title}
-          </Text>
+          <div className={s.titleRow}>
+            <Text as="h2" size={600} weight="semibold" block onDoubleClick={titleDoubleClick(pane)}>
+              {title}
+            </Text>
+            {sample ? (
+              <span className={s.sample} data-testid="sample-badge">
+                <Badge appearance="filled" color="warning" size="large">サンプル</Badge>
+                <Text size={200}>架空のサンプルデータを表示しています</Text>
+              </span>
+            ) : null}
+          </div>
           {pane ? <ComponentMenu pane={pane} title={title} /> : null}
         </div>
         {description ? <Text size={300}>{description}</Text> : null}

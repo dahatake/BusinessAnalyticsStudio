@@ -98,6 +98,14 @@
           "end": {
             "type": "string"
           },
+          "owner": {
+            "type": "string",
+            "minLength": 1
+          },
+          "work": {
+            "type": "string",
+            "minLength": 1
+          },
           "dependsOn": {
             "type": "array",
             "items": {
