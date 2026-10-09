@@ -1,25 +1,28 @@
 // 生成パイプラインの本体（FR-120）。コマンドごとの工程を順に実行し、工程ごとの時間を記録する。
-import fs from 'node:fs';
 import path from 'node:path';
 import { formatPackError, type PackError } from '../../src/schema';
-import { validatePackDir } from '../lib/pack-fs';
 import { cloneTemplate, type CloneMode } from './clone';
 import {
-  COMMAND_STAGES, STAGES, isoLocal, workDir as workDirOf, researchCacheDir, type Command, type Inputs, type PipelinePaths, type StageId,
+  COMMAND_STAGES, PARAMS, STAGES, isoLocal, workDir as workDirOf, researchCacheDir, type Command, type Inputs, type PipelinePaths, type StageId,
 } from './common';
-import { generatePack, mockGenerator, writePack, type PackGenerator } from './generate';
+import { generatePack, mockGenerator, readMaterials, readSample, writePack, type PackGenerator } from './generate';
+import { IMPROVEMENT_FILE, extractImprovementRequests, recordImprovementRequests, supportedScreens } from './improvements';
 import { startStaticServer, type Launched, type Launcher } from './launch';
 import {
   assertGitIgnored, checkResearchFreshness, loadResearchCache, reresearchSuggestion, sampleResearcher, saveResearchPart,
   type ResearchAttempt, type ResearchCache, type Researcher,
 } from './research';
+import { validateWithRepair } from './repair';
 import { Recorder } from './timing';
+import { formatVerifyReport, verifyPack, type SmokeRunner } from './verify';
 
 export interface PipelineDeps {
   paths: PipelinePaths;
   researcher?: Researcher;
   generator?: PackGenerator;
   launcher?: Launcher;
+  /** ⑥ verify のブラウザー検査（接続点）。既定は Playwright（Chromium）。`mockSmoke` はブラウザーを使わない */
+  smoke?: SmokeRunner;
   /** ③の方式。既定 link（node_modules と dist をリンクで共有）、copy はフルコピー */
   cloneMode?: CloneMode;
   log?: (line: string) => void;
@@ -50,14 +53,8 @@ function attemptNote(attempts: ResearchAttempt[] | undefined): string {
   return skipped.length ? `（切り替え: ${skipped.map((a) => `${a.source}=${labels[a.outcome]}`).join('、')}）` : '';
 }
 
-function validateOrThrow(dir: string): void {
-  const r = validatePackDir(dir);
-  if (r.errors.length) {
-    throw new PipelineError(
-      `顧客パックの検証でエラーが ${r.errors.length} 件ありました:\n${r.errors.map((e) => `  ${formatPackError(e)}`).join('\n')}`,
-      r.errors,
-    );
-  }
+function errorList(errors: readonly PackError[]): string {
+  return errors.map((e) => `  ${formatPackError(e)}`).join('\n');
 }
 
 export async function runPipeline(command: Command, input: Inputs, deps: PipelineDeps): Promise<PipelineResult> {
@@ -122,21 +119,47 @@ export async function runPipeline(command: Command, input: Inputs, deps: Pipelin
       const files = await generatePack(generator, input, cache, paths.samplePack);
       const written = writePack(work, files, input);
       log(`④ 顧客パックを生成しました（${written.length} 件）`);
-      return { files: written.length, usedSampleCache: usedSample, ...(suggestion.length ? { cacheExpired: true } : {}) };
+      // 顧客パックとしてサポートしない要望は、生成では実装せず、雛形への改善要望として記録する（FR-131）
+      const requests = extractImprovementRequests(readMaterials(input.materials), supportedScreens(paths.template));
+      let recorded = 0;
+      if (requests.length > 0) {
+        const file = path.join(paths.workspace, IMPROVEMENT_FILE);
+        assertGitIgnored(paths.repoRoot, file, '雛形への改善要望の記録先');
+        recorded = recordImprovementRequests(file, input.customer, requests, now()).length;
+        log(`雛形への改善要望を ${requests.length} 件見つけました（新たに記録 ${recorded} 件。顧客パックでは実装しません）: ${file}`);
+      }
+      return {
+        files: written.length, usedSampleCache: usedSample, ...(suggestion.length ? { cacheExpired: true } : {}),
+        ...(requests.length ? { improvementRequests: requests.length } : {}),
+      };
     },
     validate: async () => {
-      validateOrThrow(work);
-      log('⑤ スキーマ検証: エラー 0 件');
+      // エラーがあれば、エラーの箇所だけを再生成して直す（最大 PARAM-006 回。FR-126）。上限に達したら、エラーの一覧を出して止まる
+      const c = cache ?? loadResearchCache(paths, input.customer);
+      if (!c) throw new PipelineError('スキーマ検証: 調査キャッシュがないため、自己修正の再生成ができません');
+      const r = await validateWithRepair({
+        workDir: work, generator, input, cache: c, sample: readSample(paths.samplePack), materials: readMaterials(input.materials),
+        maxRounds: PARAMS.selfRepairMax, log,
+      });
+      if (r.errors.length) {
+        throw new PipelineError(
+          `顧客パックの検証でエラーが ${r.errors.length} 件残りました（自己修正 ${r.rounds} 回、上限 ${PARAMS.selfRepairMax} 回）:\n${errorList(r.errors)}`,
+          r.errors,
+        );
+      }
+      log(`⑤ スキーマ検証: エラー 0 件${r.rounds ? `（自己修正 ${r.rounds} 回、${r.repaired.length} 箇所を再生成）` : ''}`);
+      return { repairRounds: r.rounds, repairRequests: r.requests, repaired: r.repaired.map((x) => `${x.file}${x.path ? ` ${x.path}` : ''}`) };
     },
     verify: async () => {
-      // 受け入れ判定の入口。パックの検証と、起動に必要な成果物・入力の反映を確かめる
-      validateOrThrow(work);
-      if (!fs.existsSync(path.join(work, 'dist', 'index.html'))) throw new PipelineError('verify: dist/index.html がありません');
-      const customer = JSON.parse(fs.readFileSync(path.join(work, 'public', 'data', 'customer.json'), 'utf8')) as { name?: string; projectName?: string };
-      if (customer.name !== input.customer || customer.projectName !== input.projectName) {
-        throw new PipelineError('verify: customer.json の顧客名・Project 名が入力と一致しません');
+      // 受け入れ判定（9 項目。FR-127）。不合格なら、原因と対処を出して止まる
+      const r = await verifyPack({ workDir: work, customer: input.customer, projectName: input.projectName, ...(deps.smoke ? { smoke: deps.smoke } : {}) });
+      const report = formatVerifyReport(r);
+      for (const line of report) log(line);
+      if (!r.ok) {
+        // 9 項目の結果・原因・対処は、上で画面に出した。止まる理由は不合格の項目だけを挙げる
+        throw new PipelineError(`⑥ verify が不合格でした（${r.items.filter((i) => !i.ok).map((i) => i.name).join('、')}）。原因と対処は上の出力を見てください。`);
       }
-      log('⑥ verify: 合格');
+      return { items: r.items.length, warnings: r.warnings.length, limitSec: r.limitSec };
     },
     launch: async () => {
       rec.recordCommand(`serve ${path.join(work, 'dist')} (127.0.0.1)`);
