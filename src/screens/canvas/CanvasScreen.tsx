@@ -5,6 +5,9 @@ import { Button, Listbox, Option, Text, makeStyles, tokens } from '@fluentui/rea
 import { Panel } from '../../components/Panel';
 import { EmptyView } from '../../components/StateViews';
 import { CoreObjectPanel } from '../../coreobject/CoreObjectPanel';
+import { BoardSurface } from '../../ink/BoardSurface';
+import { PRESENTATION_BOARD_ID, PRESENTATION_VIEW_KEY, usePresentationInk } from '../../ink/presentationInk';
+import { useInk } from '../../ink/store';
 import { LensView } from '../../lens/LensView';
 import { useCoreObject } from '../../store/coreObject';
 import { usePackStore } from '../../store/pack';
@@ -65,6 +68,7 @@ const useStyles = makeStyles({
     borderRadius: tokens.borderRadiusLarge,
     boxShadow: tokens.shadow4,
   },
+  stage: { position: 'relative', flex: '1 1 0', minWidth: 0, minHeight: '200px', display: 'flex' },
   zoomInfo: { position: 'absolute', right: tokens.spacingHorizontalS, bottom: tokens.spacingVerticalS, pointerEvents: 'none' },
 });
 
@@ -122,6 +126,12 @@ export function CanvasScreen() {
   // プレゼンテーション中は、現在の議題の位置へ移動する（FR-016）
   const presenting = usePresentationStore((st) => currentTopic(st)?.id ?? null);
   useEffect(() => { if (presenting) goTo(presenting); }, [presenting, goTo]);
+
+  // プレゼン中の書き込み（FR-091）。ボードの上に透明な描画面を重ね、「一時的な注釈」か「保存」を選んだ間だけ入力を受ける
+  const annotateMode = usePresentationInk((st) => st.mode);
+  const ensureAnnotationBoard = useInk((st) => st.ensureAnnotationBoard);
+  useEffect(() => { ensureAnnotationBoard(PRESENTATION_VIEW_KEY); }, [ensureAnnotationBoard]);
+  const annotating = presenting !== null && annotateMode !== 'off';
 
   useEffect(() => registerTestHook('canvas', {
     viewport: () => ({ ...viewRef.current }),
@@ -200,6 +210,7 @@ export function CanvasScreen() {
           ) : (
             <Button className={s.list} onClick={() => setTopicsActive(true)}>議題の一覧を開く</Button>
           )}
+          <div className={s.stage}>
           <div
             ref={surface}
             data-testid="canvas-surface"
@@ -242,6 +253,15 @@ export function CanvasScreen() {
               ))}
             </div>
             <Text className={s.zoomInfo} size={200} aria-live="off">{Math.round(view.zoom * 100)}%</Text>
+          </div>
+          <BoardSurface
+            boardId={PRESENTATION_BOARD_ID}
+            testId="presentation-ink"
+            ariaLabel="プレゼン中の注釈"
+            overlay
+            active={annotating}
+            temporary={annotateMode === 'temporary'}
+          />
           </div>
         </div>
       )}

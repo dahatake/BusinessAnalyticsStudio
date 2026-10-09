@@ -5,9 +5,9 @@ import { registerTestHook } from '../testing/hook';
 import { QUALITIES, QualityMonitor, QUALITY_PROFILES, type Quality } from '../three/quality';
 import { INDUSTRY_PRESETS, objectCount, resolvePreset, type IndustryPreset, type SceneKey } from '../three/presets';
 import { startCameraFollow, useCameraRig } from '../three/cameraRig';
-import { getTwinLayout } from '../three/twin';
 import { sceneObjects } from '../three/twinProbe';
 import { useAnimation } from './animation';
+import { generatedObjectCount, syncLod } from './lod';
 import { usePackStore } from './pack';
 
 export type RendererKind = 'WebGPU' | 'WebGL2' | '判定中';
@@ -122,7 +122,7 @@ registerTestHook('scene', {
       quality: s.quality,
       fps: s.fps,
       industryPreset: currentPreset().label,
-      objectCount: objectCount(s.scene, currentPreset(), QUALITY_PROFILES[s.quality].particles, getTwinLayout()?.objects.length ?? 0),
+      objectCount: objectCount(s.scene, currentPreset(), QUALITY_PROFILES[s.quality].particles, (syncLod(), generatedObjectCount())),
       // 実際に描いているシネマティック表現（FR-067）
       effects: { ...s.effects },
     };

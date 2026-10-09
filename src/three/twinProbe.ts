@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { getEntityGraph } from '../selection/hooks';
 import { relatedSet } from '../selection/model';
 import { useSelectionStore } from '../store/selection';
+import { syncLod, useLod } from '../store/lod';
 import { CAMERA_FOV, useCameraRig } from './cameraRig';
 import { pickPoints, type TwinLayout } from './entityLayout';
 import { viewportRect, type ViewportRect } from './sceneViewport';
@@ -25,15 +26,16 @@ export interface SceneObjectInfo {
   related: boolean;
 }
 
-interface Probe { layout: TwinLayout; meshes: THREE.Mesh[] }
+interface Probe { layout: TwinLayout; key: string; meshes: THREE.Mesh[] }
 let probe: Probe | null = null;
 const camera = new THREE.PerspectiveCamera(CAMERA_FOV, 16 / 9, 0.1, 1000);
 const raycaster = new THREE.Raycaster();
 
-function ensureProbe(layout: TwinLayout): Probe {
-  if (probe && probe.layout === layout) return probe;
+/** 投影の対象は、今生成している（表示中のレベルの）項目だけ。下位のレベルは、カメラが近づくまで生成しない（FR-036） */
+function ensureProbe(layout: TwinLayout, key: string): Probe {
+  if (probe && probe.layout === layout && probe.key === key) return probe;
   const mat = new THREE.MeshBasicMaterial();
-  const meshes = layout.objects.map((o) => {
+  const meshes = layout.objects.filter((o) => key[o.depth] === '1').map((o) => {
     const m = new THREE.Mesh(twinGeometry(o.shape), mat);
     m.position.set(...o.position);
     m.scale.set(...twinScale(o.shape, o.size));
@@ -41,7 +43,7 @@ function ensureProbe(layout: TwinLayout): Probe {
     m.updateMatrixWorld(true);
     return m;
   });
-  probe = { layout, meshes };
+  probe = { layout, key, meshes };
   return probe;
 }
 
@@ -63,7 +65,9 @@ const dir = new THREE.Vector3();
 export function sceneObjects(): SceneObjectInfo[] {
   const layout = getTwinLayout();
   if (!layout) return [];
-  const { meshes } = ensureProbe(layout);
+  syncLod();
+  const key = useLod.getState().key;
+  const { meshes } = ensureProbe(layout, key);
   const rect = viewportRect();
   syncCamera(rect);
   const sel = useSelectionStore.getState();
@@ -74,7 +78,9 @@ export function sceneObjects(): SceneObjectInfo[] {
   for (const o of layout.objects) {
     let found: { x: number; y: number } | null = null;
     let first: { x: number; y: number } | null = null;
-    for (const p of pickPoints(o)) {
+    // 生成していないレベルの項目は、画面にない（visible=false）
+    const generated = key[o.depth] === '1';
+    for (const p of generated ? pickPoints(o) : []) {
       v.set(p[0], p[1], p[2]).project(camera);
       const x = rect.left + ((v.x + 1) / 2) * rect.width;
       const y = rect.top + ((1 - v.y) / 2) * rect.height;

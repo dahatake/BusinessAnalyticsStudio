@@ -9,6 +9,7 @@ import { useIndustryPreset, useView3D } from '../store/view3d';
 import { cameraPathPoses, flyPath, goHome, useCameraRig } from '../three/cameraRig';
 import { SCENE_KEYS, SCENE_LABELS, type SceneKey } from '../three/presets';
 import { SceneCanvas } from '../three/SceneCanvas';
+import { Breadcrumb, Minimap, useLodNavigation } from '../three/LodNavigator';
 import { useTwinLayout } from '../three/twin';
 
 const useStyles = makeStyles({
@@ -34,6 +35,7 @@ export function View3DScreen() {
   const [toBe, setToBe] = useState(false);
   const [annotating, setAnnotating] = useState(false);
   const layout = useTwinLayout();
+  const lod = useLodNavigation();
   const moving = useCameraRig((st) => st.moving);
 
   const pane = usePane();
@@ -52,8 +54,10 @@ export function View3DScreen() {
       <TabList className={s.tabs} selectedValue={scene} onTabSelect={(_, d) => setScene(d.value as SceneKey)} aria-label="3D シーン">
         {SCENE_KEYS.map((k) => <Tab key={k} value={k}>{SCENE_LABELS[k]}</Tab>)}
       </TabList>
+      {scene === 'hero' && lod.layout && lod.layout.objects.length > 0 && <Breadcrumb chain={lod.chain} />}
       <div className={s.stage}>
         <SceneCanvas toBe={toBe} />
+        {scene === 'hero' && lod.layout && lod.layout.objects.length > 0 && <Minimap layout={lod.layout} chain={lod.chain} />}
         <AnnotationLayer viewKey="view3d" label="3D ビュー" active={annotating} />
       </div>
       <AnnotationControls viewKey="view3d" active={annotating} onToggle={setAnnotating} />

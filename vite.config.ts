@@ -61,6 +61,6 @@ export default defineConfig({
     },
   ],
   build: { outDir: 'dist', sourcemap: false },
-  // 並列実行（複数の作業役が同じ PC で動くとき）の負荷でも、時間だけで失敗しないよう、1 テストの上限を 60 秒にする（検査の内容は変えない）
-  test: { include: ['tests/unit/**/*.test.ts'], environment: 'node', testTimeout: 60_000, maxWorkers: 4, minWorkers: 1 },
+  // 負荷時（並列実行・統合の verify）でも、ファイル走査や起動を含むテストが既定の 5 秒でタイムアウトしないようにする。並列のワーカー数も抑える
+  test: { include: ['tests/unit/**/*.test.ts'], environment: 'node', testTimeout: 60_000, hookTimeout: 60_000, maxWorkers: 4, minWorkers: 1 },
 });
