@@ -9,7 +9,7 @@ import { COMMANDS, InputError, defaultPaths, type Command, type PipelinePaths } 
 import { parseArgs, resolveInputs, type Ask } from './inputs';
 import { runPipeline, type PipelineDeps } from './pipeline';
 import { mockGenerator, type PackGenerator } from './generate';
-import { sampleResearcher, type Researcher } from './research';
+import { chainResearcher, type ResearchSourceEntry, type Researcher } from './research';
 
 export interface CliDeps {
   paths?: Partial<PipelinePaths>;
@@ -35,6 +35,23 @@ async function loadModule<T>(spec: string, exportName: string): Promise<T> {
   const factory = mod[exportName] ?? (mod['default'] as Record<string, unknown> | undefined)?.[exportName];
   if (typeof factory !== 'function') throw new InputError(`${spec} は ${exportName}() を公開していません`);
   return (factory as () => T)();
+}
+
+/** 既定の調査。WorkIQ・Web の差し替え部品がないので「利用不可」として切り替え、前提を置いたサンプルで成功する（FR-121） */
+function defaultResearcher(): Researcher {
+  return chainResearcher([{ source: 'WorkIQ' }, { source: 'Web' }]);
+}
+
+/**
+ * `--researcher` のモジュールを読む。`createResearchSources()`（優先順位つきの情報源: WorkIQ → Web）があれば、
+ * 上限時間（PARAM-003）で切り替える調査にする。なければ `createResearcher()`（1 つの調査）をそのまま使う。
+ */
+async function loadResearcher(spec: string): Promise<Researcher> {
+  const mod = (await import(pathToFileURL(path.resolve(spec)).href)) as Record<string, unknown>;
+  const pick = (name: string): unknown => mod[name] ?? (mod['default'] as Record<string, unknown> | undefined)?.[name];
+  const sources = pick('createResearchSources');
+  if (typeof sources === 'function') return chainResearcher(await (sources as () => Promise<ResearchSourceEntry[]> | ResearchSourceEntry[])());
+  return loadModule<Researcher>(spec, 'createResearcher');
 }
 
 function terminalAsk(): { ask: Ask; close(): void } {
@@ -76,7 +93,7 @@ export async function main(argv: readonly string[], deps: CliDeps = {}): Promise
     const g = args.options['generator']?.[0];
     const r = args.options['researcher']?.[0];
     const generator = deps.generator ?? (g && g !== 'mock' ? await loadModule<PackGenerator>(g, 'createGenerator') : mockGenerator);
-    const researcher = deps.researcher ?? (r && r !== 'sample' ? await loadModule<Researcher>(r, 'createResearcher') : sampleResearcher);
+    const researcher = deps.researcher ?? (r && r !== 'sample' ? await loadResearcher(r) : defaultResearcher());
 
     const pdeps: PipelineDeps = { paths, generator, researcher, log, cloneMode: args.flags.has('copy') ? 'copy' : 'link' };
     const result = await runPipeline(command, input, pdeps);
