@@ -4,10 +4,17 @@ import { persist } from 'zustand/middleware';
 import { registerTestHook } from '../testing/hook';
 import { QUALITIES, QualityMonitor, QUALITY_PROFILES, type Quality } from '../three/quality';
 import { INDUSTRY_PRESETS, objectCount, resolvePreset, type IndustryPreset, type SceneKey } from '../three/presets';
+import { startCameraFollow, useCameraRig } from '../three/cameraRig';
+import { getTwinLayout } from '../three/twin';
+import { sceneObjects } from '../three/twinProbe';
 import { useAnimation } from './animation';
 import { usePackStore } from './pack';
 
 export type RendererKind = 'WebGPU' | 'WebGL2' | '判定中';
+
+/** 実際に描いているシネマティック表現（FR-067）。WebGPU では後処理（ブルーム・被写界深度・HDRI）が使えず、グリッドとホログラムだけになる */
+export interface ActiveEffects { bloom: boolean; dof: boolean; hdri: boolean; grid: boolean; hologram: boolean }
+const NO_EFFECTS: ActiveEffects = { bloom: false, dof: false, hdri: false, grid: false, hologram: false };
 
 interface View3DState {
   quality: Quality;
@@ -21,11 +28,13 @@ interface View3DState {
   active: boolean;
   /** 自動で品質を下げたことの表示 */
   autoNotice: string | null;
+  effects: ActiveEffects;
   setQuality: (q: Quality) => void;
   setIndustry: (id: string) => void;
   setScene: (s: SceneKey) => void;
   setRenderer: (r: RendererKind) => void;
   setActive: (a: boolean) => void;
+  setEffects: (e: ActiveEffects) => void;
 }
 
 export const useView3D = create<View3DState>()(
@@ -39,11 +48,13 @@ export const useView3D = create<View3DState>()(
       frame: 0,
       active: false,
       autoNotice: null,
+      effects: NO_EFFECTS,
       setQuality: (quality) => set({ quality, autoNotice: null }),
       setIndustry: (industryId) => set({ industryId }),
       setScene: (scene) => set({ scene }),
       setRenderer: (renderer) => set({ renderer }),
       setActive: (active) => set({ active }),
+      setEffects: (effects) => set((s) => (JSON.stringify(s.effects) === JSON.stringify(effects) ? s : { effects })),
     }),
     { name: 'edb.view3d', version: 1, partialize: (s) => ({ quality: s.quality, industryId: s.industryId }) },
   ),
@@ -111,12 +122,20 @@ registerTestHook('scene', {
       quality: s.quality,
       fps: s.fps,
       industryPreset: currentPreset().label,
-      objectCount: objectCount(s.scene, currentPreset(), QUALITY_PROFILES[s.quality].particles),
+      objectCount: objectCount(s.scene, currentPreset(), QUALITY_PROFILES[s.quality].particles, getTwinLayout()?.objects.length ?? 0),
+      // 実際に描いているシネマティック表現（FR-067）
+      effects: { ...s.effects },
     };
   },
-  objects: () => [],
-  camera: () => ({ position: [0, 0, 0], target: [0, 0, 0], moving: false }),
+  // デジタルツインの各項目の、画面上の位置・可視・強調（FR-020）。ヒーローのシーンだけ
+  objects: () => (useView3D.getState().scene === 'hero' ? sceneObjects() : []),
+  // カメラ（FR-023）。moving は遷移の途中
+  camera: () => {
+    const c = useCameraRig.getState();
+    return { position: [...c.position], target: [...c.target], moving: c.moving };
+  },
 });
 
 export { QUALITIES, INDUSTRY_PRESETS };
 startFpsMeter();
+startCameraFollow();

@@ -1,16 +1,20 @@
 // 3D シーンの描画（React Three Fiber + drei）。WebGPU を優先し、使えなければ WebGL2 に切り替える。FR-065 / FR-066
 // モデルは外部から取得せず、すべて手続き生成する（FR-068）。
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import { useAnimation } from '../store/animation';
 import { countFrame, useIndustryPreset, useView3D } from '../store/view3d';
+import { goHome, setPose } from './cameraRig';
+import { Cinematic, Hologram } from './Cinematic';
 import {
   MORPH_COUNT, SINK_NODE, SOURCE_NODES, heroObjects, kpiTowerObjects, morphLayouts, particlePosition,
   type IndustryPreset, type ObjectSpec, type SceneKey,
 } from './presets';
 import { QUALITY_PROFILES, type Quality } from './quality';
+import { useTwinLayout } from './twin';
+import { CameraSync, EntityTwin } from './TwinScene';
 
 type Kind = 'trying-webgpu' | 'webgl2';
 type WebGPUModule = { WebGPURenderer: new (p: Record<string, unknown>) => { init(): Promise<unknown> } & Record<string, unknown> };
@@ -49,10 +53,10 @@ function Objects({ specs }: { specs: ObjectSpec[] }) {
   );
 }
 
-function Ground({ color }: { color: string }) {
+function Ground({ color, size = 24 }: { color: string; size?: number }) {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-      <planeGeometry args={[24, 24]} />
+      <planeGeometry args={[size, size]} />
       <meshStandardMaterial color={color} roughness={1} />
     </mesh>
   );
@@ -127,50 +131,67 @@ function FrameCounter() {
   return null;
 }
 
-/** 業種プリセットのカメラパスの先頭を初期の視点にする。業種が変わったときだけ視点を置き直す（FR-103）。 */
-function CameraRig({ preset }: { preset: IndustryPreset }) {
-  const camera = useThree((s) => s.camera);
-  const controls = useThree((s) => s.controls) as unknown as { target: THREE.Vector3; update(): void } | null;
+/**
+ * 業種が変わったときだけ、視点を置き直す（FR-103）。デジタルツインがあれば全体を見渡す視点、なければ業種プリセットのカメラパスの先頭。
+ * 最初の描画ではパック読み込み後のホーム（cameraRig）のままにする。
+ */
+function PresetHome({ preset, scene, hasTwin }: { preset: IndustryPreset; scene: SceneKey; hasTwin: boolean }) {
   const placed = useRef<string | null>(null);
   useEffect(() => {
-    if (placed.current === preset.id) return;
+    const key = `${preset.id}|${scene}|${hasTwin}`;
+    if (placed.current === key) return;
     const first = preset.cameraPath[0];
-    if (!first) return;
-    // 最初の描画（既定の視点）では動かさず、業種を切り替えたときだけ置き直す
     if (placed.current !== null) {
-      camera.position.set(...first.position);
-      if (controls) { controls.target.set(...first.target); controls.update(); } else camera.lookAt(...first.target);
+      if (hasTwin) goHome();
+      else if (first) setPose({ position: [...first.position], target: [...first.target] });
     }
-    placed.current = preset.id;
-  }, [preset, camera, controls]);
+    placed.current = key;
+  }, [preset, scene, hasTwin]);
   return null;
 }
 
 function SceneContent({ scene, preset, quality, toBe }: { scene: SceneKey; preset: IndustryPreset; quality: Quality; toBe: boolean }) {
   const profile = QUALITY_PROFILES[quality];
+  const layout = useTwinLayout();
+  const twin = scene === 'hero' && layout !== null && layout.objects.length > 0;
+  // 装飾の街並み・設備（業種プリセット）は、デジタルツインの後ろに置く（ツインを隠さない）
+  const backZ = twin && layout ? layout.min[2] - 8 : 0;
+  const groundSize = twin && layout ? Math.max(24, (Math.abs(backZ) + 8) * 2, (layout.radius + 10) * 2) : 24;
+  const decor = scene === 'hero' ? heroObjects(preset) : [];
+  const core = decor.find((o) => o.id === 'hero-core');
   return (
     <>
       <color attach="background" args={[preset.scene.background]} />
       <ambientLight intensity={0.6} />
       <directionalLight position={[6, 10, 6]} intensity={1.6} castShadow={profile.shadows} shadow-mapSize={[1024, 1024]} />
-      <Ground color={preset.scene.ground} />
-      {scene === 'hero' && <Objects specs={heroObjects(preset)} />}
+      <Ground color={preset.scene.ground} size={groundSize} />
+      {scene === 'hero' && (
+        <group position={[0, 0, backZ]}>
+          <Objects specs={decor.filter((o) => o.id !== 'hero-core')} />
+          {core && <Hologram spec={core} accent={preset.accent} />}
+        </group>
+      )}
+      {twin && layout && <EntityTwin layout={layout} preset={preset} />}
       {scene === 'kpi-tower' && <Objects specs={kpiTowerObjects(preset)} />}
       {scene === 'dataflow' && <Particles count={profile.particles} preset={preset} />}
       {scene === 'asis-tobe' && <Morph toBe={toBe} preset={preset} />}
       <OrbitControls makeDefault enableDamping={false} maxPolarAngle={Math.PI / 2.05} />
-      <CameraRig preset={preset} />
+      <CameraSync />
+      <PresetHome preset={preset} scene={scene} hasTwin={twin} />
+      <Cinematic preset={preset} quality={quality} gridSize={groundSize} />
       <FrameCounter />
     </>
   );
 }
 
-export function SceneCanvas({ toBe }: { toBe: boolean }) {
-  const scene = useView3D((s) => s.scene);
+/**
+ * 描画方式（WebGPU → WebGL2）の選択と Canvas。3D ビューと地図（src/map）が共有する。
+ * children は Canvas の中身（シーン）。アニメーション停止中は、必要なときだけ描く（frameloop=demand。FR-071）。
+ */
+export function RenderCanvas({ children, cameraPosition, fov = 45, paused = false }: { children: ReactNode; cameraPosition: [number, number, number]; fov?: number; paused?: boolean }) {
   const quality = useView3D((s) => s.quality);
   const setRenderer = useView3D((s) => s.setRenderer);
   const playing = useAnimation((s) => s.playing);
-  const preset = useIndustryPreset();
   const [kind, setKind] = useState<Kind | null>(null);
   const [ready, setReady] = useState(false);
   const gpuModule = useRef<WebGPUModule | null>(null);
@@ -216,13 +237,22 @@ export function SceneCanvas({ toBe }: { toBe: boolean }) {
       gl={glFactory as never}
       shadows={profile.shadows}
       dpr={Math.min(typeof window === 'undefined' ? 1 : window.devicePixelRatio, profile.maxDpr)}
-      frameloop={ready && playing ? 'always' : ready ? 'demand' : 'never'}
-      camera={{ position: preset.cameraPath[0]?.position ?? [7, 6, 9], fov: 45 }}
+      frameloop={ready && !paused ? (playing ? 'always' : 'demand') : 'never'}
+      camera={{ position: cameraPosition, fov }}
       style={{ width: '100%', height: '100%', display: 'block' }}
     >
-      <Suspense fallback={null}>
-        <SceneContent scene={scene} preset={preset} quality={quality} toBe={toBe} />
-      </Suspense>
+      <Suspense fallback={null}>{children}</Suspense>
     </Canvas>
+  );
+}
+
+export function SceneCanvas({ toBe }: { toBe: boolean }) {
+  const scene = useView3D((s) => s.scene);
+  const quality = useView3D((s) => s.quality);
+  const preset = useIndustryPreset();
+  return (
+    <RenderCanvas cameraPosition={preset.cameraPath[0]?.position ?? [7, 6, 9]}>
+      <SceneContent scene={scene} preset={preset} quality={quality} toBe={toBe} />
+    </RenderCanvas>
   );
 }

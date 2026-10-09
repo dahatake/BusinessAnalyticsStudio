@@ -1,8 +1,18 @@
 // インクの幾何計算（当たり判定・投げ縄・消しゴム）。純粋な関数だけ。
 import type { Board, BoardItem, Bounds, InkPoint, Stroke } from './model';
 import { boundsOfPoints, newId } from './model';
+import { FRAME_TITLE, isNode } from '../whiteboard/ops';
 
 export interface Pt { x: number; y: number }
+
+/** 点 p の下にある、いちばん手前の「つなげる項目」（付箋・データのカード・文字・画像）。 */
+export function nodeAt(board: Pick<Board, 'items'>, p: Pt, tol = 0): BoardItem | null {
+  for (let k = board.items.length - 1; k >= 0; k--) {
+    const i = board.items[k]!;
+    if (isNode(i) && pointInBounds(p, i, tol)) return i;
+  }
+  return null;
+}
 
 export function distToSegment(p: Pt, a: Pt, b: Pt): number {
   const dx = b.x - a.x, dy = b.y - a.y;
@@ -40,6 +50,14 @@ export function strokeHit(s: Stroke, p: Pt, tol: number): boolean {
 }
 
 export function itemHit(i: BoardItem, p: Pt, tol: number): boolean {
+  if (i.type === 'connector') {
+    return distToSegment(p, { x: i.x1 ?? 0, y: i.y1 ?? 0 }, { x: i.x2 ?? 0, y: i.y2 ?? 0 }) <= tol + (i.size ?? 2);
+  }
+  if (i.type === 'frame') {
+    // 見出しの帯と枠線の近くだけ（中は付箋などを置くので、中をクリックしても反応しない）
+    const inner = pointInBounds(p, { x: i.x + 8, y: i.y + FRAME_TITLE, w: i.w - 16, h: i.h - FRAME_TITLE - 8 });
+    return pointInBounds(p, i, tol) && !inner;
+  }
   if (i.type === 'shape' && (i.shape === 'line' || i.shape === 'arrow')) {
     return distToSegment(p, { x: i.x1 ?? 0, y: i.y1 ?? 0 }, { x: i.x2 ?? 0, y: i.y2 ?? 0 }) <= tol + (i.size ?? 2);
   }

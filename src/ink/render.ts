@@ -2,6 +2,7 @@
 // 小さく見えるストロークは 1 本の直線に簡略化して、色ごとにまとめて描く。
 import type { Board, BoardItem, Bounds, Stroke, ViewState } from './model';
 import { strokeOutline } from './outline';
+import { FRAME_TITLE, connectorLine } from '../whiteboard/ops';
 
 export const STICKY_COLOR = '#fff3a3';
 export const STICKY_TEXT = '#1f1f1f';
@@ -179,6 +180,57 @@ export function drawItem(ctx: CanvasRenderingContext2D, item: BoardItem, fg: str
       }
       break;
     }
+    case 'frame': {
+      // フレーム: 角丸の枠と薄い塗り、左上に見出し（AI が作ったものは「AI 生成」を添える）
+      const r = 10;
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(item.x, item.y, item.w, item.h, r);
+      ctx.globalAlpha = 0.07;
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.globalAlpha = 0.8;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.setLineDash(item.author === 'ai' ? [8, 4] : []);
+      ctx.stroke();
+      ctx.restore();
+      const head = [item.label ?? '', item.author === 'ai' ? 'AI 生成' : ''].filter(Boolean).join('  ・');
+      if (head) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(item.x, item.y, item.w, FRAME_TITLE);
+        ctx.clip();
+        ctx.fillStyle = color;
+        ctx.font = `600 14px ${fontFor().replace(/^\d+px /, '')}`;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(head, item.x + 12, item.y + FRAME_TITLE / 2);
+        ctx.restore();
+      }
+      break;
+    }
+    case 'card': {
+      // データのカード: 元データの種類（課題など）と名前
+      ctx.save();
+      ctx.beginPath();
+      ctx.roundRect(item.x, item.y, item.w, item.h, 8);
+      ctx.globalAlpha = 0.1;
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.clip();
+      ctx.fillStyle = color;
+      ctx.globalAlpha = 0.75;
+      ctx.font = fontFor(12);
+      ctx.textBaseline = 'top';
+      if (item.sub) ctx.fillText(item.sub, item.x + 12, item.y + 8);
+      ctx.restore();
+      wrappedText(ctx, item.label ?? '', item.x + 4, item.y + 22, item.w - 8, item.h - 22, color);
+      break;
+    }
     case 'sticky':
       ctx.save();
       ctx.shadowColor = 'rgba(0,0,0,0.25)';
@@ -188,6 +240,20 @@ export function drawItem(ctx: CanvasRenderingContext2D, item: BoardItem, fg: str
       ctx.fillRect(item.x, item.y, item.w, item.h);
       ctx.restore();
       if (item.text) wrappedText(ctx, item.text, item.x, item.y, item.w, item.h, STICKY_TEXT);
+      if (item.votes) {
+        // ドット投票の票数: 右上の丸に数字
+        ctx.save();
+        ctx.fillStyle = '#c50f1f';
+        ctx.beginPath();
+        ctx.arc(item.x + item.w - 6, item.y + 6, 14, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = `700 13px ${fontFor().replace(/^\d+px /, '')}`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(item.votes), item.x + item.w - 6, item.y + 6);
+        ctx.restore();
+      }
       break;
     case 'text':
       if (item.text) wrappedText(ctx, item.text, item.x, item.y, item.w, item.h, color);
@@ -263,12 +329,24 @@ export function drawBoard(ctx: CanvasRenderingContext2D, board: Pick<Board, 'str
     if (moved) ctx.restore();
   }
 
-  for (const i of board.items) {
-    if (o.hideIds?.has(i.id) || !intersects(i, vis, (i.size ?? 2) * 4)) continue;
-    const moved = off?.ids.has(i.id);
-    if (moved) { ctx.save(); ctx.translate(off!.dx, off!.dy); }
-    drawItem(ctx, i, fg);
-    if (moved) ctx.restore();
+  // フレーム → コネクター → そのほかの順に描く（フレームは付箋の下、コネクターは付箋の端でとまる）
+  const hasConnector = board.items.some((i) => i.type === 'connector');
+  const byId = hasConnector ? new Map(board.items.map((i) => [i.id, i])) : null;
+  const order = (i: BoardItem): number => (i.type === 'frame' ? 0 : i.type === 'connector' ? 1 : 2);
+  for (const pass of [0, 1, 2]) {
+    for (const i of board.items) {
+      if (order(i) !== pass || o.hideIds?.has(i.id) || !intersects(i, vis, (i.size ?? 2) * 4 + 16)) continue;
+      const moved = off?.ids.has(i.id);
+      if (i.type === 'connector') {
+        // つないだ項目が動いている間は、線も一緒に動かす
+        const l = (byId && connectorLine(i, byId, off)) || { x1: i.x1 ?? 0, y1: i.y1 ?? 0, x2: i.x2 ?? 0, y2: i.y2 ?? 0 };
+        drawItem(ctx, { ...i, type: 'shape', shape: 'arrow', ...l }, fg);
+        continue;
+      }
+      if (moved) { ctx.save(); ctx.translate(off!.dx, off!.dy); }
+      drawItem(ctx, i, fg);
+      if (moved) ctx.restore();
+    }
   }
 }
 

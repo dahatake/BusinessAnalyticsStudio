@@ -3,14 +3,14 @@ import { useState } from 'react';
 import { Divider, Slider, Text, Toolbar, ToolbarButton, Tooltip, makeStyles, tokens } from '@fluentui/react-components';
 import {
   ArrowRedo24Regular, ArrowUndo24Regular, ArrowUpRight24Regular, ChatBubblesQuestion24Regular, Circle24Regular, Edit24Regular,
-  Eraser24Regular, EraserSegment24Regular, Highlight24Regular, ImageAdd24Regular, Lasso24Regular, Line24Regular, Note24Regular,
+  Eraser24Regular, EraserSegment24Regular, Flow24Regular, Highlight24Regular, ImageAdd24Regular, Lasso24Regular, Line24Regular, Note24Regular,
   RectangleLandscape24Regular, TextT24Regular,
 } from '@fluentui/react-icons';
 import type { FluentIcon } from '@fluentui/react-icons';
 import { newId, type ToolId } from './model';
 import { selectCanRedo, selectCanUndo, selectBoard, useInk } from './store';
 
-interface ToolDef { id: ToolId; label: string; icon: FluentIcon }
+interface ToolDef { id: ToolId; label: string; icon: FluentIcon; whiteboardOnly?: boolean }
 const TOOLS: ReadonlyArray<ToolDef> = [
   { id: 'pen', label: 'ペン', icon: Edit24Regular },
   { id: 'highlighter', label: '蛍光ペン', icon: Highlight24Regular },
@@ -24,6 +24,7 @@ const TOOLS: ReadonlyArray<ToolDef> = [
   { id: 'callout', label: '吹き出し', icon: ChatBubblesQuestion24Regular },
   { id: 'text', label: 'テキスト', icon: TextT24Regular },
   { id: 'sticky', label: '付箋', icon: Note24Regular },
+  { id: 'connector', label: 'コネクター', icon: Flow24Regular, whiteboardOnly: true },
 ];
 
 export const INK_COLORS: ReadonlyArray<{ value: string; label: string; swatch: string }> = [
@@ -55,6 +56,8 @@ export interface InkToolbarProps {
   boardId: string;
   /** ツールバーのアクセシブルな名前（同じ画面に 2 つ出るときは区別する） */
   label?: string;
+  /** ホワイトボード（付箋をつなぐコネクターの道具を出す） */
+  whiteboard?: boolean;
 }
 
 /** クリップボードの画像を、ボードの表示範囲の中央に貼る。 */
@@ -84,7 +87,7 @@ async function pasteClipboardImage(boardId: string): Promise<void> {
   throw new Error('クリップボードに画像がありません');
 }
 
-export function InkToolbar({ boardId, label = 'インクの道具' }: InkToolbarProps) {
+export function InkToolbar({ boardId, label = 'インクの道具', whiteboard = false }: InkToolbarProps) {
   const s = useStyles();
   const tool = useInk((st) => st.tool);
   const color = useInk((st) => st.color);
@@ -111,7 +114,7 @@ export function InkToolbar({ boardId, label = 'インクの道具' }: InkToolbar
   return (
     <div>
       <Toolbar aria-label={label} className={s.bar} size="small">
-        {TOOLS.map((t) => button(t.id, t.label, t.icon, () => st().setTool(t.id), { pressed: tool === t.id }))}
+        {TOOLS.filter((t) => whiteboard || !t.whiteboardOnly).map((t) => button(t.id, t.label, t.icon, () => st().setTool(t.id), { pressed: tool === t.id }))}
         {button('image', '画像を貼り付け', ImageAdd24Regular, () => {
           setMessage(null);
           pasteClipboardImage(boardId).catch((e: unknown) => setMessage(e instanceof Error ? e.message : '画像を貼り付けられませんでした'));

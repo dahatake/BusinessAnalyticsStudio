@@ -6,6 +6,7 @@ import { DiscussionFileActions } from '../discussion/FileActions';
 import { ExportButton, ExportHost } from '../export/ExportButton';
 import { AppShell } from '../components/AppShell';
 import { BrandLockup } from '../components/Brand';
+import { TimeAxis } from '../components/TimeAxis';
 import { AnimationStatus } from '../motion/AnimationController';
 import { runTransition } from '../motion/fluent';
 import type { Intensity } from '../motion/tone';
@@ -20,6 +21,7 @@ import { SelectionController } from '../selection/SelectionController';
 import { EditModeSwitch, HistoryButton, ResetSampleButton } from '../edit/EditControls';
 import { installEditKeys } from '../edit/useEditKeys';
 import { SelectionAnnouncer } from '../selection/Announcer';
+import { EntityBoardActions } from '../whiteboard/entityActions';
 import { CommandController } from '../commands/CommandPalette';
 import { GlobalSearch } from '../search/GlobalSearch';
 import { isComponentVisible, setAvailableComponents, useLayout } from '../store/layout';
@@ -70,6 +72,12 @@ export function App() {
   const onSelect = useCallback((key: string) => selectComponent(key, motionRef.current), []);
 
   useEffect(() => { void load(); }, [load]);
+  // 顧客パックの読み込み中に Esc が押されたら、オープニングを飛ばす（読み込みが終わってから出るオープニングが、先の Esc を取りこぼさない）
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpened(true); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
   useEffect(() => installEditKeys(), []);
 
   const customer = state.status === 'ready' ? state.pack.data.customer : undefined;
@@ -105,6 +113,7 @@ export function App() {
       <SelectionController />
       <ExportHost screens={SCREENS} />
       <SelectionAnnouncer />
+      <EntityBoardActions />
       <CommandController screens={SCREENS} />
       <AudioDirector scene={scene} />
       <ShowControlBar />
@@ -112,8 +121,8 @@ export function App() {
         title={`${name} ${projectName}`}
         screens={SCREENS}
         onSelect={onSelect}
-        headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><AnimationStatus /><AiStatus /></>}
-        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><ResetLayoutButton />        <PresentationButton /></>}
+        headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><TimeAxis /><AnimationStatus /><AiStatus /></>}
+        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><ResetLayoutButton /><PresentationButton /></>}
         dock={<Dock screens={SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
       >
