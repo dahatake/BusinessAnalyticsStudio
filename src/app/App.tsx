@@ -3,6 +3,7 @@ import { flushSync } from 'react-dom';
 import { MessageBar, MessageBarBody, MessageBarTitle } from '@fluentui/react-components';
 import { AiStatus } from '../ai/AiStatus';
 import { DiscussionFileActions } from '../discussion/FileActions';
+import { ExportButton, ExportHost } from '../export/ExportButton';
 import { AppShell } from '../components/AppShell';
 import { BrandLockup } from '../components/Brand';
 import { AnimationStatus } from '../motion/AnimationController';
@@ -97,6 +98,7 @@ export function App() {
     <>
       {!opened ? <Opening customerName={name} projectName={projectName} onDone={() => setOpened(true)} /> : null}
       <SelectionController />
+      <ExportHost screens={SCREENS} />
       <SelectionAnnouncer />
       <EntityBoardActions />
       <CommandController screens={SCREENS} />
@@ -104,8 +106,8 @@ export function App() {
         title={`${name} ${projectName}`}
         screens={SCREENS}
         onSelect={onSelect}
-        headerExtra={<><GlobalSearch /><DiscussionFileActions /><AnimationStatus /><AiStatus /></>}
-        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><ResetLayoutButton /><PresentationButton /></>}
+        headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><AnimationStatus /><AiStatus /></>}
+        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><ResetLayoutButton />        <PresentationButton /></>}
         dock={<Dock screens={SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
       >

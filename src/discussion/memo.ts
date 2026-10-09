@@ -55,6 +55,8 @@ export interface BuildMemoInput {
   themes: readonly Theme[];
   /** 全量エクスポートで足すデータ */
   data?: Record<string, unknown>;
+  /** 指定すると、議論テーマの節の代わりにこの本文（見出しは `##` 以下）を書く。全量エクスポート（FR-053）が 15 種類の節を渡す */
+  body?: string;
   now?: Date;
 }
 
@@ -81,8 +83,12 @@ export function buildDiscussionMemo(input: BuildMemoInput): string {
     `# ${input.customerName} ${input.projectName} 議論メモ`,
     '',
   ];
-  if (input.themes.length === 0) out.push('議論テーマはまだありません。', '');
-  for (const t of input.themes) out.push(themeToMarkdown(t), '');
+  if (input.body !== undefined) {
+    out.push(input.body.trimEnd(), '');
+  } else {
+    if (input.themes.length === 0) out.push('議論テーマはまだありません。', '');
+    for (const t of input.themes) out.push(themeToMarkdown(t), '');
+  }
   out.push(
     '## 機械可読データ',
     '',
