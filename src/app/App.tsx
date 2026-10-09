@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { AiStatus } from '../ai/AiStatus';
 import { AppShell } from '../components/AppShell';
 import { ErrorView, LoadingView } from '../components/StateViews';
 import { SCREENS } from '../screens/registry';
@@ -24,7 +25,7 @@ export function App() {
 
   const Screen = SCREENS.find((s) => s.key === active)?.component;
   return (
-    <AppShell title={state.pack.data.customer.projectName} screens={SCREENS} activeKey={active} onSelect={setActive}>
+    <AppShell title={state.pack.data.customer.projectName} screens={SCREENS} activeKey={active} onSelect={setActive} headerExtra={<AiStatus />}>
       {Screen ? <Screen /> : null}
     </AppShell>
   );

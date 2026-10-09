@@ -49,15 +49,18 @@ export interface AppShellProps {
   screens: readonly ScreenDefinition[];
   activeKey: string;
   onSelect: (key: string) => void;
+  /** ヘッダーの右側に常時出す要素（AI 接続状態など） */
+  headerExtra?: ReactNode;
   children: ReactNode;
 }
 
-export function AppShell({ title, screens, activeKey, onSelect, children }: AppShellProps) {
+export function AppShell({ title, screens, activeKey, onSelect, headerExtra, children }: AppShellProps) {
   const s = useStyles();
   return (
     <div className={s.root}>
       <header className={s.header}>
-        <Text as="h1" size={500} weight="semibold">{title}</Text>
+        <Text as="h1" size={500} weight="semibold" style={{ flexGrow: 1 }}>{title}</Text>
+        {headerExtra}
       </header>
       <nav className={s.nav} aria-label="画面">
         {screens.map((sc) => {
