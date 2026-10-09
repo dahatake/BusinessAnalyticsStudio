@@ -8,11 +8,11 @@
 
 | 要求 ID | 題名 | 決定状態 | 実装ファイル | テスト | 使っている共通部品 |
 |---|---|---|---|---|---|
-| FR-001 | 課題の構造化表示 | 承認済み | 未実装 | 未実装 | なし |
-| FR-002 | 社内向け・社外向けの区分 | 承認済み | 未実装 | 未実装 | なし |
-| FR-003 | 課題の評価属性 | 承認済み | 未実装 | 未実装 | なし |
-| FR-004 | 出典付きの実現手段 | 承認済み | 未実装 | 未実装 | なし |
-| FR-005 | Microsoft 製品と適合理由 | 承認済み | 未実装 | 未実装 | なし |
+| FR-001 | 課題の構造化表示 | 承認済み | src/screens/IssueSolutionScreen.tsx, src/analysis/model.ts (buildTreeRows, buildMeceGroups), src/schema/files.ts, examples/mono/public/data/issues.json | tests/unit/issues.test.ts (AC-001), tests/system/e2e/analysis.spec.ts (E2E-001) | デザイン基盤, 画面の登録, 課題-解決策分析 |
+| FR-002 | 社内向け・社外向けの区分 | 承認済み | src/screens/IssueSolutionScreen.tsx, src/analysis/model.ts (filterIssues), src/schema/files.ts (AudienceSchema), src/schema/validate.ts | tests/unit/issues.test.ts (AC-002), tests/system/e2e/analysis.spec.ts (E2E-002) | デザイン基盤, 課題-解決策分析, 顧客パックのスキーマと検証 |
+| FR-003 | 課題の評価属性 | 承認済み | src/analysis/DetailPanel.tsx, src/analysis/model.ts (evaluationItems), src/schema/files.ts (EvaluationSchema) | tests/unit/issues.test.ts (AC-003), tests/system/e2e/analysis.spec.ts (E2E-003) | 課題-解決策分析, 顧客パックのスキーマと検証 |
+| FR-004 | 出典付きの実現手段 | 承認済み | src/analysis/DetailPanel.tsx (SourceCard), src/analysis/model.ts (safeHttpUrl) | tests/unit/issues.test.ts (AC-004), tests/system/e2e/analysis.spec.ts (E2E-004) | 課題-解決策分析 |
+| FR-005 | Microsoft 製品と適合理由 | 承認済み | src/analysis/DetailPanel.tsx, src/analysis/model.ts (productFits), src/schema/files.ts (productFits) | tests/unit/issues.test.ts (AC-005), tests/system/e2e/analysis.spec.ts (E2E-005) | 課題-解決策分析, 顧客パックのスキーマと検証 |
 | FR-006 | 生成 AI の価値の明示 | 承認済み | 未実装 | 未実装 | なし |
 | FR-007 | Feature ごとの工程 | 承認済み | 未実装 | 未実装 | なし |
 | FR-008 | サンプルデータの明示 | 承認済み | 未実装 | 未実装 | なし |
@@ -182,12 +182,13 @@
 
 | 部品名 | ファイル | 用途 | 使っている要求 ID |
 |---|---|---|---|
-| デザイン基盤 | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/components/AppShell.tsx, src/components/Panel.tsx, src/components/StateViews.tsx | Fluent UI v9 のトークン・4px グリッド・Light/Dark/ハイコントラスト、アプリの外枠、読み込み中/0 件/エラーの表示。以降の画面はこれを再利用する | FR-011, FR-058 |
-| 画面の登録 | src/screens/registry.ts, src/screens/types.ts | 画面を足すときは registry に 1 行足す（nav-key / component-key） | FR-058 |
+| デザイン基盤 | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/components/AppShell.tsx, src/components/Panel.tsx, src/components/StateViews.tsx | Fluent UI v9 のトークン・4px グリッド・Light/Dark/ハイコントラスト、アプリの外枠、読み込み中/0 件/エラーの表示。以降の画面はこれを再利用する | FR-001, FR-002, FR-011, FR-058 |
+| 画面の登録 | src/screens/registry.ts, src/screens/types.ts | 画面を足すときは registry に 1 行足す（nav-key / component-key） | FR-001, FR-058 |
 | 設定ストア | src/store/settings.ts | Zustand と localStorage の利用者設定（現在はテーマ） | FR-058 |
 | AI 呼び出し口 | src/ai/client.ts, src/ai/useAi.ts, src/ai/AiStatus.tsx, src/ai/AiSettings.tsx, src/ai/ChatScreen.tsx | askAi（5 種類の LLM 処理の唯一の入口。既定はモック、実接続は確認後のみ localhost の中継へ）、常時表示の AI 状態、設定の実接続切替、チャットの土台（FR-017 が拡張） | FR-010, FR-011, FR-132, NFR-SEC-002 |
 | Copilot SDK 中継プロセス | scripts/relay/relay.ts, scripts/relay/copilot-adapter.ts, scripts/relay/start.ts | 127.0.0.1 だけで待ち受ける Node.js の中継。`npm run relay` | FR-010, FR-011, FR-132 |
-| 顧客パックのスキーマと検証 | src/schema/common.ts, src/schema/files.ts, src/schema/validate.ts, scripts/lib/pack-fs.ts | zod のスキーマ、ID の一意・参照・出典の検証。画面の部品を参照しない。schema の JSON は npm run gen:schema で生成 | FR-100, FR-102, FR-114, FR-115, FR-116, FR-118, FR-119, NFR-MAINT-001 |
+| 顧客パックのスキーマと検証 | src/schema/common.ts, src/schema/files.ts, src/schema/validate.ts, scripts/lib/pack-fs.ts | zod のスキーマ、ID の一意・参照・出典の検証。画面の部品を参照しない。schema の JSON は npm run gen:schema で生成 | FR-002, FR-003, FR-005, FR-100, FR-102, FR-114, FR-115, FR-116, FR-118, FR-119, NFR-MAINT-001 |
 | 顧客パックの読み込み | src/data/loader.ts, src/store/pack.ts | 起動時に data・brand・runtime-config の JSON を読んで検証 | FR-100, FR-101 |
 | 部分的な無効化 | src/schema/partial.ts | エラーのある項目（と参照する項目）だけを取り除いて起動を続ける。画面とコンソールに出す | FR-102 |
 | オープニング | src/app/Opening.tsx | 顧客名とプロジェクト名の導入画面（Esc で飛ばす） | FR-101 |
+| 課題-解決策分析 | src/screens/IssueSolutionScreen.tsx, src/analysis/model.ts, src/analysis/DetailPanel.tsx | 課題のイシューツリー／MECE 表、区分の絞り込み、解決策、詳細パネル（評価属性・出典カード・製品と適合理由）。純粋なロジックは model.ts。後続の画面（優先順位分析など）が課題・解決策・出典を扱うときはここを再利用する | FR-001, FR-002, FR-003, FR-004, FR-005 |
