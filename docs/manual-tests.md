@@ -10,6 +10,14 @@
 4. 品質を Low / Medium / High / Ultra に切り替え、それぞれの FPS を記録する（`work/runs/<run-id>/evidence/` に保存）。
 5. 性能の低い PC では、FPS が 45 fps 未満で 2 秒続くと品質が 1 段階下がり、その表示が出ることも確かめる（FR-069）。
 
+## FR-070 AC-086 Fluent 2 のモーション
+
+1. GPU 搭載 PC で、アプリを開く（OS の「視差効果を減らす」は無効）。
+2. 画面の切り替えでフェードの遷移（View Transitions API）が入り、オープニングのタイトルがフェードしながら上がることを確かめる。
+3. KPI の数値（`data-testid="kpi-value"` を CountUpValue で表示した画面）が 0 から最終値までカウントアップし、チャートが描画の動き（useDrawProgress）を伴って表示されることを確かめる。KPI やチャートを持つ画面が揃った時点で行う。
+4. `P` を押してアニメーションを停止し、画面を切り替えて、KPI の数値とチャートが動きなしに最終値で即座に表示されることを確かめる。
+5. 結果を `work/runs/<run-id>/evidence/` に保存する。
+
 ## FR-105 AC-128 配布パッケージのオフラインでの起動
 
 1. ネットワークのある PC で `npm ci`、`npm run build`、`npm run package` を実行し、`work/package/` の .tgz を作る（手順は `docs/distribution.md`）。

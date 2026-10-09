@@ -3,7 +3,6 @@ import { useEffect, useState } from 'react';
 import { Button, Tab, TabList, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
 import { usePane } from '../workspace/PaneContext';
-import { useAnimation } from '../store/animation';
 import { useIndustryPreset, useView3D } from '../store/view3d';
 import { SCENE_KEYS, SCENE_LABELS, type SceneKey } from '../three/presets';
 import { SceneCanvas } from '../three/SceneCanvas';
@@ -27,8 +26,6 @@ export function View3DScreen() {
   const setScene = useView3D((st) => st.setScene);
   const setActive = useView3D((st) => st.setActive);
   const notice = useView3D((st) => st.autoNotice);
-  const playing = useAnimation((st) => st.playing);
-  const toggle = useAnimation((st) => st.toggle);
   const preset = useIndustryPreset();
   const [toBe, setToBe] = useState(false);
 
@@ -41,16 +38,7 @@ export function View3DScreen() {
     return () => setActive(false);
   }, [setActive, visible]);
 
-  // P キーでアニメーションの再生／停止
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement | null;
-      if (t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))) return;
-      if (e.key === 'p' || e.key === 'P') toggle();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [toggle]);
+  // P キーの再生／停止と「アニメーション: 再生中／停止中」の表示は、アプリ全体で 1 つ（src/motion/AnimationController.tsx。FR-071）
 
   return (
     <Panel testId="component-view3d" title="3D ビュー" description={`業種プリセット: ${preset.label}。ドラッグで回転、ホイールで拡大縮小できます。`}>
@@ -64,7 +52,6 @@ export function View3DScreen() {
         {scene === 'asis-tobe' && (
           <Button appearance="primary" onClick={() => setToBe((v) => !v)}>{toBe ? 'AsIs に戻す' : 'ToBe へ変形'}</Button>
         )}
-        <Text data-testid="animation-state">アニメーション: {playing ? '再生中' : '停止中'}（P キーで切替）</Text>
         {notice && <Text role="status" data-testid="quality-notice">{notice}</Text>}
       </div>
     </Panel>
