@@ -100,3 +100,21 @@
 2. iPad の Safari で、README の「iPad 実機での確認手順」に従って開く。ホワイトボードで、Apple Pencil の描画（筆圧で太さが変わる）、指 1 本のドラッグでのパン、2 本指でのパンとズームができ、指では線が描かれないこと（FR-087）を確かめる。
 3. iPad の Safari で、Markdown を出力して保存できることを確かめる。
 4. 結果（ブラウザーの版・端末・画面の録画）を `work/runs/<run-id>/evidence/` に保存する。
+
+## NFR-PERF-001 AC-161 実際の生成での 2 社分の build の所要時間
+
+前提: 顧客情報を Copilot に送ってよい条件が未決定（Q-001）のため、条件が決まるまで実施しない（BLOCKED）。条件が決まったら、次の手順で確かめる。
+
+1. Copilot を使える PC で、README の手順どおりに雛形のビルド（`npm ci`、`npm run build`）を済ませる。
+2. 調査済み（`/research` を実行済み）の 2 社分について、`/build`（`npm run pipeline -- build --customer <顧客名>`）を実際の生成（モックでない生成器）で 1 社ずつ実行する。
+3. それぞれの作業フォルダーの `logs/timing.json` の `totalMs` を読み、どちらも PARAM-001（6 分 = 360,000 ms）以内であることを確かめる。2 社の中央値が PARAM-002（4 分）以内かも記録する。
+4. `logs/timing.json` と `logs/commands.json` を `work/runs/<run-id>/evidence/` に保存する。
+
+## NFR-LEGAL-002 AC-181 お手本パックの人物名・企業名・ロゴが架空であること
+
+リリースの前に、次を目視で確かめる。
+
+1. `examples/mono/` と `examples/koto/` の `public/data/*.json`、`data/customer-research.md`、`brand/BRAND-RESEARCH.md` を開き、人物名・企業名・製品名が架空で、実在の企業・人物・商標と一致しないことを確かめる（社名が実在しないか、検索で確かめる）。
+2. `examples/*/assets/brand/logo.svg` を開き、実在の企業のロゴの複製や模倣でないことを確かめる。`CREDITS.md` の「ロゴ」の表に行があり、権利の種別が「自作」であることを確かめる。
+3. アプリを起動し、お手本パックの画面（ヘッダー・オープニング・サマリー）で、架空であることを示す表記（「架空の」「サンプル」「LOGO（要許諾確認）」など）が出ていることを確かめる。
+4. 結果（確認した社名・人物名の一覧と検索の結果）を `work/runs/<run-id>/evidence/` に保存する。
