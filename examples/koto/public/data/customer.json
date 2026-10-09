@@ -7,9 +7,19 @@
   "createdBy": "sample",
   "coreObject": {
     "candidates": [
-      { "id": "core-booking", "label": "予約" },
-      { "id": "core-customer", "label": "顧客" }
+      { "id": "core-booking", "label": "予約", "name": "予約", "summary": "旅行の申込みから出発までを 1 件として扱う単位", "scores": { "crit-flow": "高: 問い合わせから精算までの流れの中心", "crit-data": "高: 顧客・手配・問い合わせを紐づけられる", "crit-reuse": "中: 商品ごとに項目が異なる" } },
+      { "id": "core-customer", "label": "顧客", "name": "顧客", "summary": "旅行を申し込む個人・団体", "scores": { "crit-flow": "中: 申込みごとに流れが分かれる", "crit-data": "高: 履歴を 1 人に集約できる", "crit-reuse": "高: どの事業にも共通" } }
     ],
-    "selectedId": "core-booking"
-  }
+    "selectedId": "core-booking",
+    "criteria": [
+      { "id": "crit-flow", "label": "業務の流れの中心か" },
+      { "id": "crit-data", "label": "データを紐づけられるか" },
+      { "id": "crit-reuse", "label": "他の事業へ広げやすいか" }
+    ],
+    "reason": "予約は問い合わせ・手配・精算を 1 本につなげられるため、議論の中心に置く（合成データ）。"
+  },
+  "glossary": [
+    { "term": "予約", "definition": "旅行の申込みを受け付けて手配を確定した状態の 1 件。" },
+    { "term": "顧客体験", "definition": "問い合わせから旅行後までに顧客が受ける印象の全体。" }
+  ]
 }
