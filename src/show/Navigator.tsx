@@ -11,7 +11,7 @@ const useStyles = makeStyles({
   nav: {
     position: 'fixed',
     right: tokens.spacingHorizontalL,
-    top: '110px',
+    bottom: '72px',
     zIndex: 25,
     width: 'min(340px, calc(100vw - 32px))',
     display: 'flex',

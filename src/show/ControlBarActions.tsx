@@ -104,8 +104,8 @@ export function ShowControlActions() {
 const useStyles = makeStyles({
   presenter: {
     position: 'fixed',
-    left: tokens.spacingHorizontalL,
-    top: '110px',
+    right: tokens.spacingHorizontalL,
+    bottom: '260px',
     zIndex: 25,
     width: 'min(360px, calc(100vw - 32px))',
     display: 'flex',
