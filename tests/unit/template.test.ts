@@ -1,7 +1,10 @@
 // 雛形の配布・起動・業種に関する検査（FR-103 / FR-104 / FR-105 / FR-106 / NFR-ENV-002）
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
+import { execFileSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
+import { collectPackageFiles, createPackage } from '../../scripts/lib/package';
 import { loadPack, EXAMPLE_PACK_PREFIX, type FetchLike } from '../../src/data/loader';
 import { INDUSTRY_PRESETS, heroObjects, resolvePreset } from '../../src/three/presets';
 import { TEMPLATE_VERSION, checkTemplateVersion, versionWarning } from '../../src/version';
@@ -105,6 +108,44 @@ describe('FR-105 オフラインで動く配布パッケージ', () => {
     const root = lock.packages[''];
     expect({ ...root.dependencies, ...root.devDependencies }).toEqual(all);
     for (const name of Object.keys(all)) expect(lock.packages[`node_modules/${name}`]?.version, `${name} がロックされていない`).toBe(all[name]);
+  });
+
+  // FR-105 AC-127（配布パッケージの中身）
+  it('FR-105 AC-127 配布パッケージは、.env・顧客パックを含まず、実行に必要なものを含む（実際に tar を作って一覧を検査）', () => {
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'edb-pkg-'));
+    try {
+      const put = (rel: string, body = 'x') => {
+        fs.mkdirSync(path.dirname(path.join(tmp, rel)), { recursive: true });
+        fs.writeFileSync(path.join(tmp, rel), body);
+      };
+      // 含めるもの
+      for (const f of ['package.json', 'package-lock.json', 'vite.config.ts', 'index.html', '.env.example', 'docs/distribution.md', 'public/data/README.txt',
+        'dist/index.html', 'dist/assets/index-abc.js', 'dist/example-pack/data/customer.json', 'dist/example-pack/brand/brand-profile.json',
+        'node_modules/zod/package.json', 'src/main.tsx', 'schema/customer.json', 'examples/mono/public/data/customer.json',
+        'scripts/relay/start.ts', 'scripts/lib/pack-fs.ts', 'scripts/make-package.ts', 'dist/data/README.txt']) put(f);
+      // 含めないもの
+      const secret = ['.env', '.env.local', '.env.production', 'examples/mono/.env', 'node_modules/foo/.env'];
+      const customer = ['public/data/customer.json', 'public/brand/brand-profile.json', 'assets/brand/logo.svg',
+        'dist/data/customer.json', 'dist/brand/brand-profile.json', 'dist/assets/brand/logo.svg', 'dist/assets/audio/bgm.mp3'];
+      const others = ['work/package/old.tgz', '.git/config', 'tests/system/ledger.json', 'scripts/verify.py', 'docs/catalog.md', 'unlisted.txt'];
+      for (const f of [...secret, ...customer, ...others]) put(f, 'SECRET-OR-CUSTOMER');
+
+      const listed = collectPackageFiles(tmp);
+      for (const f of [...secret, ...customer, ...others]) expect(listed, `${f} が同梱の一覧に入っている`).not.toContain(f);
+      for (const f of ['package.json', '.env.example', 'dist/index.html', 'dist/example-pack/data/customer.json', 'public/data/README.txt', 'node_modules/zod/package.json', 'scripts/relay/start.ts']) {
+        expect(listed, `${f} が同梱されない`).toContain(f);
+      }
+
+      // 実際に .tgz を作り、中身の一覧で確かめる
+      const out = path.join(tmp, 'work', 'package', 'edb.tgz');
+      createPackage(tmp, out);
+      const names = execFileSync('tar', ['-tzf', out], { encoding: 'utf8' }).split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+      expect(names.sort()).toEqual([...listed].sort());
+      expect(names.filter((n) => /(^|\/)\.env($|\.(?!example$))/.test(n))).toEqual([]);
+      expect(names.some((n) => /^(\.\/)?(work|\.git|tests)\//.test(n))).toBe(false);
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
   });
 
   // FR-105 AC-127（配布の手順）

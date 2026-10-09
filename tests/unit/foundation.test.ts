@@ -17,7 +17,7 @@ function listFiles(dir: string, filter: (f: string) => boolean = () => true): st
 
 describe('FR-100 顧客固有情報のコードからの分離', () => {
   // FR-100 AC-122
-  it('FR-100 AC-122 ソースコードとビルド成果物に、お手本パックの顧客名・Project 名・ブランド色が含まれない', () => {
+  it('FR-100 AC-122 ソースコードとビルド成果物のコードに、お手本パックの顧客名・Project 名・ブランド色が直書きされていない（dist/example-pack/ のお手本データは対象外）', () => {
     const needles: string[] = [];
     for (const kind of fs.readdirSync(path.join(REPO_ROOT, 'examples'))) {
       const dataDir = path.join(REPO_ROOT, 'examples', kind, 'public');

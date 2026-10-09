@@ -1,6 +1,9 @@
 // 画面のパネルの共通の外枠（見出し・説明）。画面はこれで包み、見た目の体系をそろえる。
-import type { ReactNode } from 'react';
-import { Text, makeStyles, tokens } from '@fluentui/react-components';
+// ワークスペースの中では、フォーカス・最大化（Shift+F／ダブルクリック）・非表示（H）・メニューを受け持つ（FR-013/FR-109）。
+import type { KeyboardEvent, ReactNode } from 'react';
+import { Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { ComponentMenu, usePane } from '../workspace/PaneContext';
+import { isEditableTarget, panelKeyAction, runPanelKeyAction, titleDoubleClick, type KeyLike } from './panelKeys';
 
 const useStyles = makeStyles({
   root: {
@@ -10,7 +13,22 @@ const useStyles = makeStyles({
     padding: tokens.spacingHorizontalXXL,
     maxWidth: '960px',
   },
+  pane: {
+    maxWidth: 'none',
+    boxSizing: 'border-box',
+    height: '100%',
+    minWidth: 0,
+    minHeight: 0,
+    overflow: 'auto',
+    rowGap: tokens.spacingVerticalM,
+    padding: tokens.spacingHorizontalL,
+    backgroundColor: tokens.colorNeutralBackground1,
+    color: tokens.colorNeutralForeground1,
+    ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`, outlineOffset: '-2px' },
+  },
+  maximized: { position: 'absolute', inset: 0, zIndex: 10, height: 'auto' },
   head: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS },
+  headRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', columnGap: tokens.spacingHorizontalS },
 });
 
 export interface PanelProps {
@@ -20,12 +38,38 @@ export interface PanelProps {
   children: ReactNode;
 }
 
+function toKeyLike(e: KeyboardEvent<HTMLElement>): KeyLike {
+  return {
+    key: e.key, shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey, defaultPrevented: e.defaultPrevented,
+    insidePanel: e.currentTarget.contains(e.target as Node), editable: isEditableTarget(e.target),
+  };
+}
+
 export function Panel({ testId, title, description, children }: PanelProps) {
   const s = useStyles();
+  const pane = usePane();
+
+  const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {
+    const action = panelKeyAction(toKeyLike(e), pane);
+    if (action && pane && runPanelKeyAction(action, pane)) e.preventDefault();
+  };
+
   return (
-    <section data-testid={testId} className={s.root} aria-label={title}>
+    <section
+      data-testid={testId}
+      className={mergeClasses(s.root, pane ? s.pane : undefined, pane?.maximized ? s.maximized : undefined)}
+      aria-label={title}
+      tabIndex={pane ? 0 : undefined}
+      onKeyDown={onKeyDown}
+      data-display={pane ? (pane.maximized ? 'maximized' : 'normal') : undefined}
+    >
       <div className={s.head}>
-        <Text as="h2" size={600} weight="semibold" block>{title}</Text>
+        <div className={s.headRow}>
+          <Text as="h2" size={600} weight="semibold" block onDoubleClick={titleDoubleClick(pane)}>
+            {title}
+          </Text>
+          {pane ? <ComponentMenu pane={pane} title={title} /> : null}
+        </div>
         {description ? <Text size={300}>{description}</Text> : null}
       </div>
       {children}

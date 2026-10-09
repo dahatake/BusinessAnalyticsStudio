@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Button, Tab, TabList, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
+import { usePane } from '../workspace/PaneContext';
 import { useAnimation } from '../store/animation';
 import { useIndustryPreset, useView3D } from '../store/view3d';
 import { SCENE_KEYS, SCENE_LABELS, type SceneKey } from '../three/presets';
@@ -31,10 +32,14 @@ export function View3DScreen() {
   const preset = useIndustryPreset();
   const [toBe, setToBe] = useState(false);
 
+  const pane = usePane();
+  // ワークスペースのタブで隠れているときは、3D を表示していないものとして扱う（FPS の計測・自動の品質低下の対象にしない）
+  const visible = pane ? pane.visible : true;
+
   useEffect(() => {
-    setActive(true);
+    setActive(visible);
     return () => setActive(false);
-  }, [setActive]);
+  }, [setActive, visible]);
 
   // P キーでアニメーションの再生／停止
   useEffect(() => {

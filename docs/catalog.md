@@ -19,9 +19,9 @@
 | FR-009 | 調査データの出典と確度の確認 | 承認済み | 未実装 | 未実装 | なし |
 | FR-010 | LLM 処理のローカル実行 | 承認済み | scripts/relay/relay.ts, scripts/relay/copilot-adapter.ts, scripts/relay/start.ts, src/ai/client.ts, src/ai/useAi.ts, src/ai/AiStatus.tsx, src/ai/AiSettings.tsx, src/ai/ChatScreen.tsx | tests/unit/relay.test.ts | AI 呼び出し口, Copilot SDK 中継プロセス |
 | FR-011 | Copilot SDK 中継プロセスとモック | 承認済み | scripts/relay/relay.ts, scripts/relay/copilot-adapter.ts, scripts/relay/start.ts, src/ai/client.ts, src/ai/useAi.ts, src/ai/AiStatus.tsx, src/ai/AiSettings.tsx, src/ai/ChatScreen.tsx, .env.example | tests/unit/relay.test.ts, tests/system/e2e/analysis.spec.ts (E2E-010), tests/unit/secrets.test.ts | AI 呼び出し口, Copilot SDK 中継プロセス, デザイン基盤 |
-| FR-012 | 議題間を移動できるキャンバス | 承認済み | 未実装 | 未実装 | なし |
-| FR-013 | コンポーネントの最大化・通常表示・非表示 | 承認済み | 未実装 | 未実装 | なし |
-| FR-014 | ドックからの再表示とペルソナ別レイアウトの保存 | 承認済み | 未実装 | 未実装 | なし |
+| FR-012 | 議題間を移動できるキャンバス | 承認済み | src/screens/canvas/CanvasScreen.tsx, src/workspace/viewport.ts | tests/unit/workspace.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース, テスト用フック |
+| FR-013 | コンポーネントの最大化・通常表示・非表示 | 承認済み | src/components/Panel.tsx, src/components/panelKeys.ts, src/workspace/PaneContext.tsx, src/workspace/Workspace.tsx | tests/unit/workspace.test.ts, tests/unit/layoutStore.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
+| FR-014 | ドックからの再表示とペルソナ別レイアウトの保存 | 承認済み | src/store/layout.ts, src/workspace/Controls.tsx, src/workspace/layoutModel.ts | tests/unit/workspace.test.ts, tests/unit/layoutStore.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
 | FR-015 | ペルソナ別ビューの切替 | 承認済み | 未実装 | 未実装 | なし |
 | FR-016 | プレゼンテーションモード | 承認済み | 未実装 | 未実装 | なし |
 | FR-017 | 検索と Copilot 風チャット | 承認済み | 未実装 | 未実装 | なし |
@@ -112,12 +112,12 @@
 | FR-102 | 顧客パックの検証と部分的な無効化 | 承認済み | src/schema/partial.ts, src/data/loader.ts, src/store/pack.ts, src/app/App.tsx | tests/unit/partial.test.ts (AC-124), tests/system/e2e/brand-settings.spec.ts | 顧客パックのスキーマと検証, 部分的な無効化 |
 | FR-103 | 業種プリセット | 承認済み | src/three/presets.ts, src/three/presetIcons.tsx, src/three/SceneCanvas.tsx, src/screens/SettingsScreen.tsx | tests/unit/template.test.ts (AC-125) | 3D 基盤, 業種プリセット |
 | FR-104 | お手本パックでの起動 | 承認済み | src/data/loader.ts, src/app/App.tsx, vite.config.ts | tests/unit/template.test.ts (AC-126), tests/system/e2e/brand-settings.spec.ts (AC-126) | 顧客パックの読み込み |
-| FR-105 | オフラインで動く配布パッケージ | 承認済み | package.json, package-lock.json, scripts/make-package.ts, docs/distribution.md, docs/manual-tests.md | tests/unit/template.test.ts (AC-127), docs/manual-tests.md (AC-128) | なし |
+| FR-105 | オフラインで動く配布パッケージ | 承認済み | package.json, package-lock.json, scripts/make-package.ts, scripts/lib/package.ts, docs/distribution.md, docs/manual-tests.md | tests/unit/template.test.ts (AC-127), docs/manual-tests.md (AC-128) | なし |
 | FR-106 | 雛形のバージョン | 承認済み | src/version.ts, src/app/App.tsx, src/screens/SettingsScreen.tsx | tests/unit/template.test.ts (AC-129), tests/system/e2e/brand-settings.spec.ts (AC-129) | 雛形のバージョン |
 | FR-107 | セットアップスクリプト | 承認済み | 未実装 | 未実装 | なし |
 | FR-108 | セットアップスクリプトの安全性 | 承認済み | 未実装 | 未実装 | なし |
-| FR-109 | コンポーネントの移動・大きさの変更・タブ化 | 承認済み | 未実装 | 未実装 | なし |
-| FR-110 | 既定のレイアウトへの復元 | 承認済み | 未実装 | 未実装 | なし |
+| FR-109 | コンポーネントの移動・大きさの変更・タブ化 | 承認済み | src/workspace/Workspace.tsx, src/workspace/PaneContext.tsx, src/workspace/layoutModel.ts | tests/unit/workspace.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
+| FR-110 | 既定のレイアウトへの復元 | 承認済み | src/workspace/Controls.tsx, src/store/layout.ts | tests/unit/workspace.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
 | FR-111 | コマンドパレット | 承認済み | 未実装 | 未実装 | なし |
 | FR-112 | ペルソナ別の既定の情報表現と既定のレイアウト | 承認済み | 未実装 | 未実装 | なし |
 | FR-113 | 表現が成り立たないときの代替表示 | 承認済み | 未実装 | 未実装 | なし |
@@ -184,7 +184,9 @@
 |---|---|---|---|
 | ブランドテーマ | src/theme/brand.ts, src/theme/brandTheme.ts, src/theme/useBrand.ts | ブランドランプ（16 段階）の生成、コントラストの検証と補正（補正は記録）、Light/Dark のテーマへの適用、フォントの順、Primary 色の上書き | FR-059, FR-060, FR-062, FR-064 |
 | ブランド表示部品 | src/components/Brand.tsx | ロゴ（確認済みのみ）とプレースホルダー、「顧客名 × Microsoft」、等幅数字の KpiValue（KPI の数値はこれで表示する） | FR-061, FR-062 |
-| デザイン基盤 | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/components/AppShell.tsx, src/components/Panel.tsx, src/components/StateViews.tsx | Fluent UI v9 のトークン・4px グリッド・Light/Dark/ハイコントラスト、アプリの外枠、読み込み中/0 件/エラーの表示。以降の画面はこれを再利用する | FR-001, FR-002, FR-011, FR-058, FR-059, FR-065, FR-066 |
+| デザイン基盤 | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/components/AppShell.tsx, src/components/Panel.tsx, src/components/panelKeys.ts, src/components/StateViews.tsx | Fluent UI v9 のトークン・4px グリッド・Light/Dark/ハイコントラスト、アプリの外枠、読み込み中/0 件/エラーの表示。以降の画面はこれを再利用する | FR-001, FR-002, FR-011, FR-012, FR-013, FR-014, FR-058, FR-059, FR-065, FR-066, FR-109, FR-110 |
+| ワークスペース | src/workspace/layoutModel.ts, src/workspace/Workspace.tsx, src/workspace/PaneContext.tsx, src/workspace/Controls.tsx, src/store/layout.ts | レイアウトの木（分割とタブ）、ペルソナ別の保存、最大化/非表示/移動/タブ化、ドック、ペルソナ切替、既定に戻す。画面は Panel で包めば自動で対応する。registry に登録したキーが対象。画面はキーごとの描画先にポータルで描くので、移動・タブ切替でも状態が残る。既定が空なら登録済みの画面を並べる（暫定） | FR-012, FR-013, FR-014, FR-109, FR-110 |
+| テスト用フック | src/testing/hook.ts | `?e2e=1` のときだけ window.__edbTest に名前空間ごとのフックを足す（registerTestHook。キャンバスと 3D が共通で使う 1 つの入口） | FR-012 |
 | 画面の登録 | src/screens/registry.ts, src/screens/types.ts | 画面を足すときは registry に 1 行足す（nav-key / component-key） | FR-001, FR-058, FR-065, FR-066 |
 | 設定ストア | src/store/settings.ts | Zustand と localStorage の利用者設定（テーマ、ブランドの Primary 色の上書き、3D 品質） | FR-058, FR-064, FR-069 |
 | AI 呼び出し口 | src/ai/client.ts, src/ai/useAi.ts, src/ai/AiStatus.tsx, src/ai/AiSettings.tsx, src/ai/ChatScreen.tsx | askAi（5 種類の LLM 処理の唯一の入口。既定はモック、実接続は確認後のみ localhost の中継へ）、常時表示の AI 状態、設定の実接続切替、チャットの土台（FR-017 が拡張） | FR-010, FR-011, FR-132, NFR-ENV-002, NFR-SEC-002 |
