@@ -555,7 +555,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-016",
       "canary": false,
-      "status": "fail",
+      "status": "blocked",
       "last_commit": "6b9a4f8",
       "last_run_at": "2026-10-09T19:32:12+09:00",
       "evidence": "work/runs/202610090557/logs/system-test/E2E-012-202610091932.log",
@@ -583,6 +583,12 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: グローバル検索(I08)。統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T20:11:12+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: 既定レイアウトで gantt 全面/他画面(I14等)。統合後に再確認"
         }
       ]
     },
@@ -1203,7 +1209,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-035",
       "canary": false,
-      "status": "fail",
+      "status": "blocked",
       "last_commit": "6b9a4f8",
       "last_run_at": "2026-10-09T19:32:05+09:00",
       "evidence": "work/runs/202610090557/logs/system-test/E2E-030-202610091931.log",
@@ -1225,6 +1231,12 @@
           "by": "conductor",
           "change": "status -> not_run",
           "reason": "依存の画面が統合されたため再開"
+        },
+        {
+          "at": "2026-10-09T20:11:11+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: 3D scene.objects(I11)。統合後に再確認"
         }
       ]
     },
