@@ -1,6 +1,6 @@
 // 顧客パックの読み込み（FR-100）。顧客固有の情報はコードに持たず、起動時に `/data/*.json` と `/brand/brand-profile.json` から読む。
 import {
-  DATA_FILE_NAMES, formatPackError, validatePack,
+  DATA_FILE_NAMES, disableInvalidItems, formatPackError,
   type BrandProfile, type DataFileName, type PackData, type PackError, type PackFiles,
 } from '../schema';
 
@@ -14,6 +14,9 @@ export type FetchLike = (url: string) => Promise<{ ok: boolean; status: number; 
 export interface LoadedPack {
   data: PackData;
   brand: BrandProfile;
+  /** 無効にした項目の理由（ファイル名・位置・内容）。なければ空 */
+  issues: PackError[];
+  disabledIds: string[];
 }
 
 export class PackLoadError extends Error {
@@ -57,7 +60,13 @@ export async function loadPack(fetchFn: FetchLike): Promise<LoadedPack> {
   } catch {
     /* 同上 */
   }
-  const { errors } = validatePack(files);
-  if (errors.length > 0) throw new PackLoadError(errors);
-  return { data: files as unknown as PackData, brand: files.brandProfile as BrandProfile };
+  // FR-102: 問題のある項目だけを無効にして起動を続ける。特定できない誤り（ファイルの欠けなど）は起動しない。
+  const r = disableInvalidItems(files);
+  if (r.fatal) throw new PackLoadError(r.issues);
+  return {
+    data: r.files as unknown as PackData,
+    brand: r.files.brandProfile as BrandProfile,
+    issues: r.issues,
+    disabledIds: r.disabledIds,
+  };
 }
