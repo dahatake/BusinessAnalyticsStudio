@@ -7,17 +7,22 @@ import {
 } from '@fluentui/react-components';
 import { ChevronDown16Regular, ChevronRight16Regular, Lightbulb24Regular } from '@fluentui/react-icons';
 import { DetailPanel } from '../analysis/DetailPanel';
-import { MatrixView, SankeyView, SourceLinks } from '../analysis/FlowViews';
+import { MatrixView, SankeyView, SourceLinks, type FlowSelection } from '../analysis/FlowViews';
 import {
   AUDIENCE_LABELS, buildFlow, buildMatrix, buildMeceGroups, buildTreeRows, filterIssues, filterSolutions, solutionIssueIds,
   type AudienceFilter, type Issue,
 } from '../analysis/model';
+import { useHighlightClass } from '../components/highlight';
 import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
+import { onEntityKey, useEntityBinding, useSelection } from '../selection/hooks';
 import { usePackStore } from '../store/pack';
+import { useSelectionStore } from '../store/selection';
 
 type ViewMode = 'tree' | 'mece' | 'sankey' | 'matrix';
-type Selection = { kind: 'issue' | 'solution'; id: string };
+
+/** 選択状態は、すべてのビューと共通のストア（FR-024）。選択を起こしたビューとして、この名前を記録する */
+const ORIGIN = 'issue-solution';
 
 const useStyles = makeStyles({
   toolbar: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalXL, rowGap: tokens.spacingVerticalS },
@@ -42,7 +47,6 @@ const useStyles = makeStyles({
     ':hover': { backgroundColor: tokens.colorNeutralBackground1Hover },
     ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}` },
   },
-  rowSelected: { backgroundColor: tokens.colorBrandBackground2, ':hover': { backgroundColor: tokens.colorBrandBackground2Hover } },
   chevron: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', flexShrink: 0 },
   rowBody: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXXS, minWidth: 0 },
   badges: { display: 'flex', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalXS, rowGap: tokens.spacingVerticalXXS },
@@ -72,9 +76,14 @@ function IssueSolutionScreen() {
   const [mode, setMode] = useState<ViewMode>('tree');
   const [filter, setFilter] = useState<AudienceFilter>('all');
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
-  const [selection, setSelection] = useState<Selection | undefined>();
-  const [sourceId, setSourceId] = useState<string | undefined>();
+  // 出典カードは、開いた時点の選択（owner）が主の選択のままのときだけ表示する（選択が変わったら閉じる）
+  const [sourceRef, setSourceRef] = useState<{ owner: string | undefined; id: string } | undefined>();
   const treeRef = useRef<HTMLDivElement>(null);
+  const hl = useHighlightClass();
+  const bind = useEntityBinding(ORIGIN);
+  const { primaryId } = useSelection();
+  const sourceId = sourceRef && sourceRef.owner === primaryId ? sourceRef.id : undefined;
+  const setSourceId = (id: string | undefined) => setSourceRef(id ? { owner: primaryId, id } : undefined);
 
   const data = state.status === 'ready' ? state.pack.data : undefined;
   const allIssues = useMemo(() => data?.issues.issues ?? [], [data]);
@@ -87,11 +96,12 @@ function IssueSolutionScreen() {
   const flow = useMemo(() => buildFlow(visible, solutions, products ?? []), [visible, solutions, products]);
   const matrix = useMemo(() => buildMatrix(visible, solutions, products ?? []), [visible, solutions, products]);
 
-  if (!data) return <LoadingView label="課題を読み込み中" />;
+  if (!data) return <LoadingView label="課題を読み込み中" />
 
   const issueById = new Map(allIssues.map((i) => [i.id, i]));
-  const selectedIssue = selection?.kind === 'issue' ? issueById.get(selection.id) : undefined;
-  const selectedSolution = selection?.kind === 'solution' ? allSolutions.find((x) => x.id === selection.id) : undefined;
+  // 詳細は、共通の選択のうち最後に選んだ項目（課題または解決策のとき）を表示する
+  const selectedIssue = primaryId ? issueById.get(primaryId) : undefined;
+  const selectedSolution = primaryId ? allSolutions.find((x) => x.id === primaryId) : undefined;
   const detailSelection = selectedIssue
     ? ({ kind: 'issue', issue: selectedIssue } as const)
     : selectedSolution
@@ -101,17 +111,23 @@ function IssueSolutionScreen() {
       } as const)
       : undefined;
 
-  const select = (sel: Selection) => { setSelection(sel); setSourceId(undefined); };
-  const openSolutionSource = (solutionId: string, srcId: string) => { setSelection({ kind: 'solution', id: solutionId }); setSourceId(srcId); };
+  const openSolutionSource = (solutionId: string, srcId: string) => {
+    useSelectionStore.getState().select(solutionId, { origin: ORIGIN });
+    setSourceRef({ owner: solutionId, id: srcId });
+  };
   const sourceMap = new Map(data.sources.sources.map((x) => [x.id, x]));
   const solutionMap = new Map(allSolutions.map((x) => [x.id, x]));
   const stacked = mode === 'sankey' || mode === 'matrix';
+  // サンキー図・マトリクスは自前の強調を持つので、共通の選択のうち主の選択（課題または解決策）を渡す
+  const flowSelection: FlowSelection | undefined = selectedIssue
+    ? { kind: 'issue', id: selectedIssue.id }
+    : selectedSolution ? { kind: 'solution', id: selectedSolution.id } : undefined;
   const flowProps = {
-    selection,
+    selection: flowSelection,
     solutions: solutionMap,
     sources: sourceMap,
-    onSelectIssue: (id: string) => select({ kind: 'issue', id }),
-    onSelectSolution: (id: string) => select({ kind: 'solution', id }),
+    onSelectIssue: (id: string) => useSelectionStore.getState().select(id, { origin: ORIGIN }),
+    onSelectSolution: (id: string) => useSelectionStore.getState().select(id, { origin: ORIGIN }),
     onOpenSource: openSolutionSource,
   };
   const toggle = (id: string) => setCollapsed((prev) => {
@@ -129,17 +145,16 @@ function IssueSolutionScreen() {
   const onRowKey = (e: KeyboardEvent<HTMLDivElement>, row: (typeof rows)[number]) => {
     const items = Array.from(treeRef.current?.querySelectorAll<HTMLElement>('[role="treeitem"]') ?? []);
     const at = items.indexOf(e.currentTarget);
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select({ kind: 'issue', id: row.issue.id }); }
-    else if (e.key === 'ArrowDown') { e.preventDefault(); items[at + 1]?.focus(); }
+    if (onEntityKey(e, row.issue.id, ORIGIN)) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); items[at + 1]?.focus(); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); items[at - 1]?.focus(); }
     else if (e.key === 'ArrowRight' && row.hasChildren) { e.preventDefault(); setExpanded(row.issue.id, true); }
     else if (e.key === 'ArrowLeft' && row.hasChildren) { e.preventDefault(); setExpanded(row.issue.id, false); }
   };
 
-  const selectedId = selection?.id;
   const firstRowId = rows[0]?.issue.id;
   // 選択中の課題が見えている（rows にある）ときだけその行を Tab の入口にし、見えないときは先頭行にする
-  const tabStopId = selection?.kind === 'issue' && rows.some((r) => r.issue.id === selection.id) ? selection.id : firstRowId;
+  const tabStopId = primaryId && rows.some((r) => r.issue.id === primaryId) ? primaryId : firstRowId;
 
   return (
     <Panel
@@ -181,21 +196,21 @@ function IssueSolutionScreen() {
             <div role="tree" aria-label="イシューツリー" className={s.tree} ref={treeRef}>
               {rows.map((row) => {
                 const id = row.issue.id;
-                const isSelected = selectedId === id && selection?.kind === 'issue';
+                const props = bind(id);
+                const isSelected = props['data-highlight']?.includes('selected') ?? false;
                 return (
                   <div
                     key={id}
                     role="treeitem"
-                    data-entity-id={id}
-                    data-highlight={isSelected ? 'selected' : undefined}
+                    {...props}
                     aria-level={row.level + 1}
                     aria-expanded={row.hasChildren ? row.expanded : undefined}
                     aria-selected={isSelected}
                     tabIndex={id === tabStopId ? 0 : -1}
-                    className={mergeClasses(s.row, isSelected && s.rowSelected)}
+                    className={mergeClasses(s.row, hl(props['data-highlight']))}
                     style={{ marginInlineStart: `calc(${row.level} * ${tokens.spacingHorizontalXXL})` }}
-                    onClick={() => {
-                      select({ kind: 'issue', id });
+                    onClick={(e) => {
+                      props.onClick?.(e);
                       if (row.hasChildren && !row.expanded) setExpanded(id, true);
                     }}
                     onKeyDown={(e) => onRowKey(e, row)}
@@ -222,24 +237,25 @@ function IssueSolutionScreen() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {g.members.map((m) => (
-                      <TableRow key={m.issue.id}>
-                        <TableCell>
-                          <div
-                            role="button"
-                            tabIndex={0}
-                            data-entity-id={m.issue.id}
-                            data-highlight={selection?.kind === 'issue' && selectedId === m.issue.id ? 'selected' : undefined}
-                            className={s.row}
-                            style={{ marginInlineStart: `calc(${m.level} * ${tokens.spacingHorizontalXXL})` }}
-                            onClick={() => select({ kind: 'issue', id: m.issue.id })}
-                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select({ kind: 'issue', id: m.issue.id }); } }}
-                          >
-                            <IssueSummary issue={m.issue} />
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {g.members.map((m) => {
+                      const props = bind(m.issue.id);
+                      return (
+                        <TableRow key={m.issue.id}>
+                          <TableCell>
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              {...props}
+                              className={mergeClasses(s.row, hl(props['data-highlight']))}
+                              style={{ marginInlineStart: `calc(${m.level} * ${tokens.spacingHorizontalXXL})` }}
+                              onKeyDown={(e) => { onEntityKey(e, m.issue.id, ORIGIN); }}
+                            >
+                              <IssueSummary issue={m.issue} />
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               ))}
@@ -252,21 +268,16 @@ function IssueSolutionScreen() {
             {solutions.length === 0 ? <Text>該当する解決策はありません。</Text> : (
               <ul className={s.solutions}>
                 {solutions.map((sol) => {
-                  const on = selection?.kind === 'solution' && selectedId === sol.id;
+                  const props = bind(sol.id);
+                  const on = props['data-highlight']?.includes('selected') ?? false;
                   return (
-                    <li
-                      key={sol.id}
-                      className={s.solutionItem}
-                      data-entity-id={sol.id}
-                      data-highlight={on ? 'selected' : undefined}
-                      onClick={() => select({ kind: 'solution', id: sol.id })}
-                    >
+                    <li key={sol.id} className={mergeClasses(s.solutionItem, hl(props['data-highlight']))} {...props}>
                       <Button
                         className={s.solutionButton}
                         appearance={on ? 'primary' : 'outline'}
                         icon={<Lightbulb24Regular aria-hidden />}
                         aria-pressed={on}
-                        onClick={(e) => { e.stopPropagation(); select({ kind: 'solution', id: sol.id }); }}
+                        onClick={(e) => { e.stopPropagation(); props.onClick?.(e); }}
                       >
                         {sol.title}
                       </Button>
