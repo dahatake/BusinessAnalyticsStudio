@@ -20,11 +20,17 @@ export function applyAnimationState(playing: boolean, doc: Document = document):
   }
 }
 
-/** キー入力が、P などの 1 文字のショートカットを受けてよい状態か（入力欄の中、修飾キー付きは受けない） */
+/** 文字を入力しない INPUT（スライダー・チェックボックスなど）。この上にフォーカスがあっても、1 文字のショートカットは受ける */
+const NON_TEXT_INPUT_TYPES = new Set(['range', 'checkbox', 'radio', 'button', 'submit', 'reset', 'image', 'file', 'color']);
+
+/** キー入力が、P などの 1 文字のショートカットを受けてよい状態か（文字を入力する欄の中、修飾キー付きは受けない） */
 export function isShortcutTarget(e: Pick<KeyboardEvent, 'target' | 'ctrlKey' | 'metaKey' | 'altKey'>): boolean {
   if (e.ctrlKey || e.metaKey || e.altKey) return false;
-  const t = e.target as HTMLElement | null;
-  return !(t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)));
+  const t = e.target as (HTMLElement & { type?: string }) | null;
+  if (!t) return true;
+  if (t.isContentEditable) return false;
+  if (t.tagName === 'INPUT') return NON_TEXT_INPUT_TYPES.has((t.type ?? '').toLowerCase());
+  return !/^(TEXTAREA|SELECT)$/.test(t.tagName);
 }
 
 /**
