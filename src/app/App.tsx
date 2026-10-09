@@ -1,13 +1,27 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { AppShell } from '../components/AppShell';
 import { ErrorView, LoadingView } from '../components/StateViews';
 import { SCREENS } from '../screens/registry';
+import { setAvailableComponents, useLayout } from '../store/layout';
 import { usePackStore } from '../store/pack';
+import { Dock, PersonaMenu, ResetLayoutButton } from '../workspace/Controls';
+import { Workspace } from '../workspace/Workspace';
+
+setAvailableComponents(SCREENS.map((s) => s.key));
+
+/** ナビゲーションの選択: 非表示なら再表示し、そのコンポーネントへフォーカスを移す。 */
+function openComponent(key: string): void {
+  useLayout.getState().showComponent(key);
+  window.setTimeout(() => {
+    const el = document.querySelector<HTMLElement>(`[data-testid="component-${key}"]`);
+    el?.scrollIntoView?.({ block: 'nearest' });
+    el?.focus({ preventScroll: true });
+  }, 0);
+}
 
 export function App() {
   const state = usePackStore((s) => s.state);
   const load = usePackStore((s) => s.load);
-  const [active, setActive] = useState<string>(SCREENS[0]?.key ?? '');
 
   useEffect(() => { void load(); }, [load]);
 
@@ -22,10 +36,15 @@ export function App() {
     );
   }
 
-  const Screen = SCREENS.find((s) => s.key === active)?.component;
   return (
-    <AppShell title={state.pack.data.customer.projectName} screens={SCREENS} activeKey={active} onSelect={setActive}>
-      {Screen ? <Screen /> : null}
+    <AppShell
+      title={state.pack.data.customer.projectName}
+      screens={SCREENS}
+      onSelect={openComponent}
+      actions={<><PersonaMenu /><ResetLayoutButton /></>}
+      dock={<Dock screens={SCREENS} />}
+    >
+      <Workspace screens={SCREENS} />
     </AppShell>
   );
 }
