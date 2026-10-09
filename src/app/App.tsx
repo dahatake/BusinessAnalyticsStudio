@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { MessageBar, MessageBarBody, MessageBarTitle } from '@fluentui/react-components';
 import { AiStatus } from '../ai/AiStatus';
+import { DiscussionFileActions } from '../discussion/FileActions';
 import { AppShell } from '../components/AppShell';
 import { BrandLockup } from '../components/Brand';
 import { useEffectiveBrand } from '../theme/useBrand';
@@ -67,7 +68,7 @@ export function App() {
         title={`${name} ${projectName}`}
         screens={SCREENS}
         onSelect={openComponent}
-        headerExtra={<AiStatus />}
+        headerExtra={<><DiscussionFileActions /><AiStatus /></>}
         actions={<><PersonaMenu /><ResetLayoutButton /></>}
         dock={<Dock screens={SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
