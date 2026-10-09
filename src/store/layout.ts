@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
-  DEFAULT_PERSONA, PERSONAS, activate, defaultLayout, hide, isLayout, isVisible, mergeIntoTabs, move, prune, resize, show,
+  DEFAULT_PERSONA, PERSONAS, activate, arrangeAll, defaultLayout, hide, isLayout, isVisible, mergeIntoTabs, move, prune, resize, show,
   splitFromTabs, toggleDirection, type Layout, type Move, type Path, type Persona,
 } from '../workspace/layoutModel';
 
@@ -35,7 +35,10 @@ interface LayoutState {
 /** 表示するレイアウト（使えないコンポーネントを除く）。 */
 export function effectiveLayout(s: Pick<LayoutState, 'persona' | 'layouts'>): Layout {
   const stored = s.layouts[s.persona];
-  return prune(stored !== undefined ? stored : defaultLayout(s.persona), available);
+  if (stored === null) return null; // 利用者が全部を非表示にした状態はそのまま（ドックから再表示できる）
+  // 既定、または保存値の画面が 1 つも残らないとき: §7 の既定、それも空なら登録済みの画面を並べる（暫定）
+  const kept = stored !== undefined ? prune(stored, available) : null;
+  return kept ?? prune(defaultLayout(s.persona), available) ?? arrangeAll([...available]);
 }
 
 export const useLayout = create<LayoutState>()(

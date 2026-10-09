@@ -7,6 +7,8 @@ import type { Move } from './layoutModel';
 export interface PaneInfo {
   key: string;
   maximized: boolean;
+  /** 画面に見えているか（タブのまとまりで前面でないタブは false。描画は保つが隠している） */
+  visible: boolean;
   /** 同じタブのまとまりに入っているか */
   inTabs: boolean;
   /** タブにまとめられる相手（表示中の別のコンポーネント） */

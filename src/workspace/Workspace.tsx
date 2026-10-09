@@ -1,5 +1,6 @@
 // ワークスペース: レイアウトの木（分割とタブ）を描く。境界はドラッグでもキーボードでも動かせる（FR-109、NFR-A11Y-004）。
-import { useCallback, useMemo, useRef, type KeyboardEvent, type PointerEvent } from 'react';
+import { createPortal } from 'react-dom';
+import { useCallback, useLayoutEffect, useMemo, useRef, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react';
 import { Tab, TabList, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import type { ScreenDefinition } from '../screens/types';
 import { effectiveLayout, useLayout } from '../store/layout';
@@ -22,11 +23,26 @@ const useStyles = makeStyles({
   sepV: { width: '8px', cursor: 'col-resize' },
   sepH: { height: '8px', cursor: 'row-resize' },
   tabs: { display: 'flex', flexDirection: 'column', flex: '1 1 0', minWidth: 0, minHeight: 0 },
-  tabBody: { flex: '1 1 0', minHeight: 0, minWidth: 0 },
+  tabBody: { display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0, minWidth: 0 },
   empty: { padding: tokens.spacingHorizontalXXL },
 });
 
 const KEY_STEP = 0.02;
+
+const FILL: CSSProperties = { display: 'flex', flexDirection: 'column', flex: '1 1 0', minWidth: 0, minHeight: 0 };
+
+/**
+ * 画面の描画先。画面ごとに 1 つの「ホスト」要素を持ち、画面はそこへポータルで描く（Workspace が所有）。
+ * 木の中の位置（スロット）が変わっても、ホストを差し替えるだけなので、画面は再マウントされず useState の状態が残る。
+ */
+function Slot({ host, hidden }: { host: HTMLElement; hidden?: boolean }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (el && host.parentElement !== el) el.appendChild(host);
+  });
+  return <div ref={ref} style={hidden ? { display: 'none' } : FILL} />;
+}
 
 function Separator({ path, index, dir, size }: { path: Path; index: number; dir: 'row' | 'col'; size: number }) {
   const s = useStyles();
@@ -89,12 +105,13 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   const actions = useLayout.getState;
   const byKey = useCallback((k: string) => screens.find((sc) => sc.key === k), [screens]);
 
-  const pane = (key: string, group: string[]): PaneInfo => {
+  const pane = (key: string, group: string[], active: string): PaneInfo => {
     const a = actions();
     const isMax = maximized === key;
     return {
       key,
       maximized: isMax,
+      visible: group.length === 1 || active === key,
       inTabs: group.length > 1,
       peers: keysOf(layout).filter((k) => !group.includes(k)).map((k) => ({ key: k, label: byKey(k)?.label ?? k })),
       toggleMaximize: () => actions().setMaximized(actions().maximized === key ? null : key),
@@ -107,15 +124,33 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     };
   };
 
-  const renderLeaf = (key: string, group: string[]) => {
-    const Screen = byKey(key)?.component;
-    if (!Screen) return null;
-    return <PaneContext.Provider key={key} value={pane(key, group)}><Screen /></PaneContext.Provider>;
+  const hosts = useRef(new Map<string, HTMLElement>());
+  const hostOf = (key: string): HTMLElement => {
+    let h = hosts.current.get(key);
+    if (!h) {
+      h = document.createElement('div');
+      h.dataset.host = key;
+      Object.assign(h.style, { display: 'flex', flexDirection: 'column', flex: '1 1 0', minWidth: '0', minHeight: '0' });
+      hosts.current.set(key, h);
+    }
+    return h;
+  };
+  /** 画面のキー → 同じタブのまとまり（portal に渡す文脈用） */
+  const groups = new Map<string, { tabs: string[]; active: string }>();
+  const collect = (n: LayoutNode): void => {
+    if (n.kind === 'tabs') n.tabs.forEach((k) => groups.set(k, { tabs: n.tabs, active: n.active }));
+    else n.children.forEach(collect);
+  };
+  if (layout) collect(layout);
+
+  const renderLeaf = (key: string, hidden = false) => {
+    if (!byKey(key)?.component) return null;
+    return <Slot key={key} host={hostOf(key)} hidden={hidden} />;
   };
 
   const render = (node: LayoutNode, path: Path): JSX.Element => {
     if (node.kind === 'tabs') {
-      if (node.tabs.length === 1) return <div className={s.tabs} key={path.join('.')}>{renderLeaf(node.tabs[0]!, node.tabs)}</div>;
+      if (node.tabs.length === 1) return <div className={s.tabs} key={path.join('.')}>{renderLeaf(node.tabs[0]!)}</div>;
       return (
         <div className={s.tabs} key={path.join('.')}>
           <TabList
@@ -125,7 +160,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
           >
             {node.tabs.map((k) => <Tab key={k} value={k}>{byKey(k)?.label ?? k}</Tab>)}
           </TabList>
-          <div className={s.tabBody}>{renderLeaf(node.active, node.tabs)}</div>
+          {/* 非表示のタブも描画したまま display で隠し、タブを切り替えても状態を保つ */}
+          <div className={s.tabBody}>{node.tabs.map((k) => renderLeaf(k, k !== node.active))}</div>
         </div>
       );
     }
@@ -152,6 +188,11 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       {layout ? render(layout, []) : (
         <Text className={s.empty} size={400}>表示中のコンポーネントがありません。左のドックから再表示してください。</Text>
       )}
+      {[...groups.entries()].map(([key, g]) => {
+        const Screen = byKey(key)?.component;
+        if (!Screen) return null;
+        return createPortal(<PaneContext.Provider value={pane(key, g.tabs, g.active)}><Screen /></PaneContext.Provider>, hostOf(key), key);
+      })}
     </div>
   );
 }

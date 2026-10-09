@@ -3,6 +3,7 @@
 import type { KeyboardEvent, ReactNode } from 'react';
 import { Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { ComponentMenu, usePane } from '../workspace/PaneContext';
+import { isEditableTarget, panelKeyAction, runPanelKeyAction, titleDoubleClick, type KeyLike } from './panelKeys';
 
 const useStyles = makeStyles({
   root: {
@@ -37,11 +38,11 @@ export interface PanelProps {
   children: ReactNode;
 }
 
-function isEditable(t: EventTarget | null): boolean {
-  const el = t as HTMLElement | null;
-  if (!el || !el.tagName) return false;
-  const role = el.getAttribute('role');
-  return el.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName) || role === 'textbox' || role === 'searchbox';
+function toKeyLike(e: KeyboardEvent<HTMLElement>): KeyLike {
+  return {
+    key: e.key, shiftKey: e.shiftKey, ctrlKey: e.ctrlKey, metaKey: e.metaKey, altKey: e.altKey, defaultPrevented: e.defaultPrevented,
+    insidePanel: e.currentTarget.contains(e.target as Node), editable: isEditableTarget(e.target),
+  };
 }
 
 export function Panel({ testId, title, description, children }: PanelProps) {
@@ -49,10 +50,8 @@ export function Panel({ testId, title, description, children }: PanelProps) {
   const pane = usePane();
 
   const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {
-    if (!pane || e.defaultPrevented || !e.currentTarget.contains(e.target as Node) || isEditable(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
-    if (e.key === 'F' && e.shiftKey) { e.preventDefault(); pane.toggleMaximize(); return; }
-    if (e.key === 'Escape' && pane.maximized) { e.preventDefault(); pane.restore(); return; }
-    if ((e.key === 'h' || e.key === 'H') && !e.shiftKey) { e.preventDefault(); pane.hide(); }
+    const action = panelKeyAction(toKeyLike(e), pane);
+    if (action && pane && runPanelKeyAction(action, pane)) e.preventDefault();
   };
 
   return (
@@ -66,7 +65,7 @@ export function Panel({ testId, title, description, children }: PanelProps) {
     >
       <div className={s.head}>
         <div className={s.headRow}>
-          <Text as="h2" size={600} weight="semibold" block onDoubleClick={pane ? pane.toggleMaximize : undefined}>
+          <Text as="h2" size={600} weight="semibold" block onDoubleClick={titleDoubleClick(pane)}>
             {title}
           </Text>
           {pane ? <ComponentMenu pane={pane} title={title} /> : null}

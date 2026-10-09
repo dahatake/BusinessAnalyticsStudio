@@ -231,3 +231,14 @@ export function defaultLayout(persona: Persona): Layout {
       return split('col', [split('row', [leaf('view3d'), leaf('mock')], [0.65, 0.35]), leaf('gantt')], [0.7, 0.3]);
   }
 }
+
+/**
+ * 既定のレイアウトに登録済みの画面が 1 つも残らないときの退避（後続の画面が揃うまでの暫定）。
+ * 登録済みのキーを 1 つのタブのまとまりに並べ、先頭を前面にする（登録が増えて §7 の既定が残れば、そちらが優先される）。
+ * 全部を同時に分割して見せると、3D など常時動く画面が他の画面の表示を書き換え続けるため、タブにする。
+ */
+export function arrangeAll(keys: readonly string[]): Layout {
+  const uniq = [...new Set(keys)];
+  if (uniq.length === 0) return null;
+  return { kind: 'tabs', tabs: uniq, active: uniq[0]! };
+}

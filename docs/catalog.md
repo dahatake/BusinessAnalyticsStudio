@@ -20,8 +20,8 @@
 | FR-010 | LLM 処理のローカル実行 | 承認済み | scripts/relay/relay.ts, scripts/relay/copilot-adapter.ts, scripts/relay/start.ts, src/ai/client.ts, src/ai/useAi.ts, src/ai/AiStatus.tsx, src/ai/AiSettings.tsx, src/ai/ChatScreen.tsx | tests/unit/relay.test.ts | AI 呼び出し口, Copilot SDK 中継プロセス |
 | FR-011 | Copilot SDK 中継プロセスとモック | 承認済み | scripts/relay/relay.ts, scripts/relay/copilot-adapter.ts, scripts/relay/start.ts, src/ai/client.ts, src/ai/useAi.ts, src/ai/AiStatus.tsx, src/ai/AiSettings.tsx, src/ai/ChatScreen.tsx, .env.example | tests/unit/relay.test.ts, tests/system/e2e/analysis.spec.ts (E2E-010), tests/unit/secrets.test.ts | AI 呼び出し口, Copilot SDK 中継プロセス, デザイン基盤 |
 | FR-012 | 議題間を移動できるキャンバス | 承認済み | src/screens/canvas/CanvasScreen.tsx, src/workspace/viewport.ts | tests/unit/workspace.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース, テスト用フック |
-| FR-013 | コンポーネントの最大化・通常表示・非表示 | 承認済み | src/components/Panel.tsx, src/workspace/PaneContext.tsx, src/workspace/Workspace.tsx | tests/unit/workspace.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
-| FR-014 | ドックからの再表示とペルソナ別レイアウトの保存 | 承認済み | src/store/layout.ts, src/workspace/Controls.tsx, src/workspace/layoutModel.ts | tests/unit/workspace.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
+| FR-013 | コンポーネントの最大化・通常表示・非表示 | 承認済み | src/components/Panel.tsx, src/components/panelKeys.ts, src/workspace/PaneContext.tsx, src/workspace/Workspace.tsx | tests/unit/workspace.test.ts, tests/unit/layoutStore.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
+| FR-014 | ドックからの再表示とペルソナ別レイアウトの保存 | 承認済み | src/store/layout.ts, src/workspace/Controls.tsx, src/workspace/layoutModel.ts | tests/unit/workspace.test.ts, tests/unit/layoutStore.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
 | FR-015 | ペルソナ別ビューの切替 | 承認済み | 未実装 | 未実装 | なし |
 | FR-016 | プレゼンテーションモード | 承認済み | 未実装 | 未実装 | なし |
 | FR-017 | 検索と Copilot 風チャット | 承認済み | 未実装 | 未実装 | なし |
@@ -182,8 +182,8 @@
 
 | 部品名 | ファイル | 用途 | 使っている要求 ID |
 |---|---|---|---|
-| デザイン基盤 | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/components/AppShell.tsx, src/components/Panel.tsx, src/components/StateViews.tsx | Fluent UI v9 のトークン・4px グリッド・Light/Dark/ハイコントラスト、アプリの外枠、読み込み中/0 件/エラーの表示。以降の画面はこれを再利用する | FR-011, FR-012, FR-013, FR-014, FR-058, FR-065, FR-066, FR-109, FR-110 |
-| ワークスペース | src/workspace/layoutModel.ts, src/workspace/Workspace.tsx, src/workspace/PaneContext.tsx, src/workspace/Controls.tsx, src/store/layout.ts | レイアウトの木（分割とタブ）、ペルソナ別の保存、最大化/非表示/移動/タブ化、ドック、ペルソナ切替、既定に戻す。画面は Panel で包めば自動で対応する。registry に登録したキーが対象 | FR-012, FR-013, FR-014, FR-109, FR-110 |
+| デザイン基盤 | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/components/AppShell.tsx, src/components/Panel.tsx, src/components/panelKeys.ts, src/components/StateViews.tsx | Fluent UI v9 のトークン・4px グリッド・Light/Dark/ハイコントラスト、アプリの外枠、読み込み中/0 件/エラーの表示。以降の画面はこれを再利用する | FR-011, FR-012, FR-013, FR-014, FR-058, FR-065, FR-066, FR-109, FR-110 |
+| ワークスペース | src/workspace/layoutModel.ts, src/workspace/Workspace.tsx, src/workspace/PaneContext.tsx, src/workspace/Controls.tsx, src/store/layout.ts | レイアウトの木（分割とタブ）、ペルソナ別の保存、最大化/非表示/移動/タブ化、ドック、ペルソナ切替、既定に戻す。画面は Panel で包めば自動で対応する。registry に登録したキーが対象。画面はキーごとの描画先にポータルで描くので、移動・タブ切替でも状態が残る。既定が空なら登録済みの画面を並べる（暫定） | FR-012, FR-013, FR-014, FR-109, FR-110 |
 | テスト用フック | src/testHooks.ts | `?e2e=1` のときだけ window.__edbTest に名前空間ごとのフックを足す（registerTestHooks） | FR-012 |
 | 画面の登録 | src/screens/registry.ts, src/screens/types.ts | 画面を足すときは registry に 1 行足す（nav-key / component-key） | FR-058, FR-065, FR-066 |
 | 設定ストア | src/store/settings.ts | Zustand と localStorage の利用者設定（現在はテーマ） | FR-058, FR-069 |
