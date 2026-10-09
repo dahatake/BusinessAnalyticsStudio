@@ -144,6 +144,20 @@ export function countInternal(value: unknown): number {
   return n;
 }
 
+/** 機密区分 `internal` の項目の ID。 */
+function collectInternalIds(value: unknown): Set<string> {
+  const ids = new Set<string>();
+  const walk = (v: unknown): void => {
+    if (Array.isArray(v)) { v.forEach(walk); return; }
+    if (typeof v !== 'object' || v === null) return;
+    const o = v as Rec;
+    if (o.classification === 'internal' && typeof o.id === 'string') ids.add(o.id);
+    for (const x of Object.values(o)) walk(x);
+  };
+  walk(value);
+  return ids;
+}
+
 /** 機密区分 `internal` の課題から作ったテーマは、本文を置き換える（利用者が書いた内容も、元の課題の機密を引き継ぐ）。 */
 function maskThemes(themes: readonly Theme[], internalIssueIds: ReadonlySet<string>): { themes: Theme[]; maskedIds: Set<string> } {
   const maskedIds = new Set<string>();
@@ -438,10 +452,11 @@ export function buildExport(input: ExportInput, options: ExportOptions): ExportR
   const now = input.now ?? new Date();
   const internalIssueIds = new Set(input.data.issues.issues.filter((i) => rec(i).classification === 'internal').map((i) => i.id));
   const internalCount = countInternal(input.data);
+  const internalIds = collectInternalIds(input.data);
   const anonymize = options.anonymize;
   const data = anonymize ? anonymizeInternal(input.data) : input.data;
   const masked = anonymize ? maskThemes(input.themes, internalIssueIds) : { themes: [...input.themes], maskedIds: new Set<string>() };
-  const changes = (input.changes ?? []).map((e) => (masked.maskedIds.has(e.targetId) ? { ...e, target: ANONYMIZED_LABEL, detail: ANONYMIZED_LABEL } : e));
+  const changes = (input.changes ?? []).map((e) => (masked.maskedIds.has(e.targetId) || internalIds.has(e.targetId) ? { ...e, target: ANONYMIZED_LABEL, detail: ANONYMIZED_LABEL } : e));
   const snapshotData = anonymize && input.snapshotData ? anonymizeInternal(input.snapshotData) : input.snapshotData;
 
   const scopeThemes = options.scope === 'theme' ? masked.themes.filter((t) => t.id === options.themeId) : masked.themes;

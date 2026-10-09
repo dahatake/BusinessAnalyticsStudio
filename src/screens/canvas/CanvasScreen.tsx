@@ -133,6 +133,19 @@ export function CanvasScreen() {
     },
   }), [cards]);
 
+  // 議題の一覧は、このパネルが操作されるまで（フォーカスが入るまで）は開かない。経営層の既定では、キャンバスは背景の全体図として小さく残るだけなので、
+  // ほかのパネルの選択肢（設定の業種プリセットなど）と一覧の項目が混ざらないようにする（§7）。一度開いたら開いたままにする。
+  const [topicsActive, setTopicsActive] = useState(false);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const section = bodyRef.current?.closest('[data-testid="component-canvas"]');
+    if (!section) return;
+    const on = (e: Event) => { if (e.target instanceof Node && section.contains(e.target)) setTopicsActive(true); };
+    document.addEventListener('focusin', on);
+    if (section.contains(document.activeElement)) setTopicsActive(true);
+    return () => document.removeEventListener('focusin', on);
+  }, [cards.length]);
+
   const onPointerDown = (e: PointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
     drag.current = { x: e.clientX, y: e.clientY };
@@ -173,16 +186,20 @@ export function CanvasScreen() {
       {cards.length === 0 ? (
         <EmptyView message="議題がありません。顧客パックの show.json に議題を追加してください。" />
       ) : (
-        <div className={s.body}>
-          <Listbox
-            className={s.list}
-            aria-label="議題"
-            selectedOptions={selected ? [selected] : []}
-          >
-            {cards.map((c) => (
-              <Option key={c.id} value={c.id} text={c.title} onClick={() => goTo(c.id)}>{c.title}</Option>
-            ))}
-          </Listbox>
+        <div className={s.body} ref={bodyRef}>
+          {topicsActive ? (
+            <Listbox
+              className={s.list}
+              aria-label="議題"
+              selectedOptions={selected ? [selected] : []}
+            >
+              {cards.map((c) => (
+                <Option key={c.id} value={c.id} text={c.title} onClick={() => goTo(c.id)}>{c.title}</Option>
+              ))}
+            </Listbox>
+          ) : (
+            <Button className={s.list} onClick={() => setTopicsActive(true)}>議題の一覧を開く</Button>
+          )}
           <div
             ref={surface}
             data-testid="canvas-surface"

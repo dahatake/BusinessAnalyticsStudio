@@ -6,6 +6,7 @@ import { createTheme, type Theme } from '../../src/discussion/model';
 import { buildExport, countInternal, NOT_APPLICABLE, SECTIONS, type ExportOptions, type ExportInput } from '../../src/export/build';
 import { diffThemes } from '../../src/export/changelog';
 import { isExportShortcut } from '../../src/export/commands';
+import { editToChange, validatePackSnapshot } from '../../src/export/snapshot';
 import { parsePreview } from '../../src/export/MarkdownPreview';
 import { createZip, readZip } from '../../src/export/zip';
 import { createBoard } from '../../src/ink/model';
@@ -218,6 +219,37 @@ describe('FR-055 フォローアップ文書', () => {
 });
 
 describe('FR-053 変更履歴', () => {
+  // FR-053 AC-065
+  it('FR-053 AC-065 データの編集の変更履歴の 1 行を、エクスポートの変更履歴に変換する', () => {
+    const c = editToChange({ op: 'update', entityId: 'issue-1', entityLabel: '設備停止', fieldLabel: '優先度', before: '1', after: '2', at: '2026-10-09T01:00:00.000Z', actor: 'human' });
+    expect(c).toMatchObject({ kind: 'changed', targetId: 'issue-1', target: '設備停止', by: 'human' });
+    expect(c.detail).toContain('優先度「1」→「2」');
+    expect(editToChange({ op: 'delete', entityId: 'x', entityLabel: 'L', fieldLabel: '', before: '', after: '', at: 'a', actor: 'ai' })).toMatchObject({ kind: 'removed', by: 'ai' });
+  });
+
+  // FR-054 AC-066
+  it('FR-054 AC-066 internal の項目の編集履歴は、匿名化で対象と内容が置き換わる', () => {
+    const data = withInternal();
+    const change = editToChange({ op: 'update', entityId: 'issue-ut-internal-001', entityLabel: `社内課題 ${TOKEN}`, fieldLabel: '仮説', before: TOKEN, after: `${TOKEN}-2`, at: '2026-10-09T01:00:00.000Z', actor: 'human' });
+    const r = buildExport(input({ data, changes: [change] }), opts({ anonymize: true }));
+    expect(r.markdown).not.toContain(TOKEN);
+  });
+
+  // FR-056 AC-069
+  it('FR-056 AC-069 編集した顧客パックのデータは全量の JSON ブロックに入り、検証を通ると復元できる', () => {
+    const md = buildExport(input({ snapshotData: { pack: mono } }), opts()).markdown;
+    const r = parseDiscussionMemo(md);
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const value = (r.snapshot.data as Record<string, unknown>).pack as Record<string, unknown>;
+    expect(Object.keys(value)).toContain('issues');
+    expect(validatePackSnapshot(value)).toEqual([]);
+    const broken = clone(value) as { issues: { issues: Array<Record<string, unknown>> } };
+    broken.issues.issues[0]!.parentId = 'issue-no-such';
+    expect(validatePackSnapshot(broken).length).toBeGreaterThan(0);
+    expect(validatePackSnapshot('x')).toHaveLength(1);
+  });
+
   // FR-053 AC-065
   it('FR-053 AC-065 テーマの追加・変更・削除を差から記録する', () => {
     const changed: Theme = { ...decided, status: 'on-hold', title: '導入方針（改）' };

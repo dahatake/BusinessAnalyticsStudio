@@ -1,10 +1,13 @@
 // プレゼンテーションモードの操作と進行バー（FR-016）。
-// - 開始/終了のボタン（ヘッダー）
+// - 開始/終了のボタン（ヘッダー）。`internal` の項目を含むパックでは、開始の前に件数と確認の画面を出す（NFR-SEC-003）
 // - 進行バー: チャプターを順に並べ、現在のチャプターを文字（「現在」）でも示す。現在の議題と、前/次のボタン
 // - `←`/`→` で前/次の議題へ。キャンバスにフォーカスがあっても、パンではなく議題の移動にする（`↑`/`↓`・`Shift`+矢印はパンのまま）
-import { useEffect } from 'react';
-import { Button, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Text, makeStyles, mergeClasses, tokens,
+} from '@fluentui/react-components';
 import { ChevronLeft20Regular, ChevronRight20Regular, Play20Regular, Stop20Regular } from '@fluentui/react-icons';
+import { countInternal } from '../schema';
 import { usePackStore } from '../store/pack';
 import { currentTopic, usePresentationStore } from '../store/presentation';
 import { flattenTopics, presentationKeyAction, type PresentationTopic } from './model';
@@ -48,16 +51,53 @@ function usePackTopics(): PresentationTopic[] {
   return state.status === 'ready' ? flattenTopics(state.pack.data.show?.chapters ?? []) : [];
 }
 
-/** ヘッダーの開始/終了ボタン。 */
+/** 顧客パックの中の、機密区分が `internal` の項目の件数（パックが読めていなければ 0）。 */
+function useInternalCount(): number {
+  const state = usePackStore((s) => s.state);
+  return useMemo(() => (state.status === 'ready' ? countInternal(state.pack.data) : 0), [state]);
+}
+
+/** ヘッダーの開始/終了ボタン。`internal` の項目を含むパックでは、開始の前に機密の確認（件数と確認の画面）を行う（NFR-SEC-003）。 */
 export function PresentationButton() {
   const topics = usePackTopics();
+  const internalCount = useInternalCount();
   const active = usePresentationStore((s) => s.active);
   const start = usePresentationStore((s) => s.start);
   const end = usePresentationStore((s) => s.end);
-  return active ? (
-    <Button icon={<Stop20Regular aria-hidden />} onClick={end}>プレゼンテーションを終了</Button>
-  ) : (
-    <Button icon={<Play20Regular aria-hidden />} disabled={topics.length === 0} onClick={() => start(topics)}>プレゼンテーションを開始</Button>
+  const [confirming, setConfirming] = useState(false);
+  if (active) return <Button icon={<Stop20Regular aria-hidden />} onClick={end}>プレゼンテーションを終了</Button>;
+  return (
+    <>
+      <Button
+        icon={<Play20Regular aria-hidden />}
+        disabled={topics.length === 0}
+        onClick={() => (internalCount > 0 ? setConfirming(true) : start(topics))}
+      >
+        プレゼンテーションを開始
+      </Button>
+      <Dialog open={confirming} modalType="alert" onOpenChange={(_, d) => setConfirming(d.open)}>
+        <DialogSurface aria-label="機密情報の確認">
+          <DialogBody>
+            <DialogTitle>機密情報の確認</DialogTitle>
+            <DialogContent>
+              <Text as="p" block data-testid="confidential-count">
+                このデータには、機密区分が「社内向け（internal）」の項目が {internalCount} 件含まれています。
+              </Text>
+              <Text as="p" block>顧客に見せてよい内容かを確認してから、プレゼンテーションを開始してください。</Text>
+            </DialogContent>
+            <DialogActions>
+              <Button appearance="secondary" onClick={() => setConfirming(false)}>キャンセル</Button>
+              <Button
+                appearance="primary"
+                onClick={() => { setConfirming(false); start(topics); }}
+              >
+                確認して開始
+              </Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
+    </>
   );
 }
 

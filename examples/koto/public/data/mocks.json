@@ -1,5 +1,27 @@
 {
   "mocks": [
-    { "id": "mock-koto-001", "createdBy": "sample", "title": "予約の変更画面", "featureId": "feat-koto-001" }
+    {
+      "id": "mock-koto-001",
+      "createdBy": "sample",
+      "title": "予約の変更画面",
+      "featureId": "feat-koto-001",
+      "solutionId": "sol-koto-001",
+      "screens": [
+        {
+          "title": "予約の変更",
+          "description": "変更したい日時を選びます。",
+          "fields": [
+            { "label": "予約番号", "kind": "text", "value": "R-1024" },
+            { "label": "新しい日付", "kind": "date", "value": "" },
+            { "label": "人数", "kind": "number", "value": "2" }
+          ]
+        },
+        {
+          "title": "変更の確認",
+          "description": "内容を確かめて確定します。",
+          "items": ["予約番号: R-1024", "人数: 2 名"]
+        }
+      ]
+    }
   ]
 }

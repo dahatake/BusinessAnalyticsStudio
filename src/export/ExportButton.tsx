@@ -3,6 +3,7 @@ import { useEffect } from 'react';
 import { Button, MessageBar, MessageBarActions, MessageBarBody, MessageBarTitle, makeStyles, tokens } from '@fluentui/react-components';
 import { ArrowExport24Regular, Dismiss24Regular } from '@fluentui/react-icons';
 import { installDiscussionChangeLog } from './changelog';
+import { registerEditChangeLog, registerPackSnapshot } from './snapshot';
 import { useExportShortcuts } from './commands';
 import { ExportDialog, type ExportScreenRef } from './ExportDialog';
 import { useExportUi } from './ui';
@@ -29,6 +30,8 @@ export function ExportHost({ screens }: { screens: readonly ExportScreenRef[] })
   const setNotice = useExportUi((u) => u.setNotice);
   useExportShortcuts();
   useEffect(() => installDiscussionChangeLog(), []);
+  useEffect(() => registerPackSnapshot(), []);
+  useEffect(() => registerEditChangeLog(), []);
   return (
     <>
       <ExportDialog screens={screens} />

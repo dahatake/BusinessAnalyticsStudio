@@ -1,6 +1,15 @@
 // 課題・解決策の詳細パネルと出典カード（FR-003 評価属性、FR-004 出典、FR-005 Microsoft 製品と適合理由）。
+// 編集モードが ON のときは、名前・評価属性の値をその場で編集でき、選んだ項目の追加・複製・削除ができる（FR-044・FR-046・FR-047）。
+import { useEffect, useState } from 'react';
 import { Badge, Button, Link, Text, makeStyles, tokens } from '@fluentui/react-components';
+import { Edit16Regular } from '@fluentui/react-icons';
+import { InlineInput } from '../edit/InlineInput';
+import { EditToolbar } from '../edit/EditControls';
 import { NumericValue } from '../components/NumericValue';
+import { KIND_LABELS, type NodeKind } from '../selection/graph';
+import { useDetailHost } from '../store/detailHost';
+import { usePane } from '../workspace/PaneContext';
+import { useEditStore } from '../store/edit';
 import {
   AUDIENCE_LABELS, causesOf, effectsOf, evaluationItems, genAiValueItems, productFits, safeHttpUrl, solutionsOfIssue,
   type Issue, type Product, type Solution, type Source,
@@ -28,6 +37,8 @@ const useStyles = makeStyles({
     borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke3}`,
   },
   attrSources: { gridColumn: '2', display: 'flex', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalM },
+  attrValue: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalS, minWidth: 0 },
+  titleRow: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalS, minWidth: 0 },
   list: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS, margin: 0, padding: 0, listStyle: 'none' },
   product: {
     display: 'flex',
@@ -50,7 +61,12 @@ const useStyles = makeStyles({
 });
 
 export interface DetailProps {
-  selection: { kind: 'issue'; issue: Issue } | { kind: 'solution'; solution: Solution; issue?: Issue; issues?: readonly Issue[] } | undefined;
+  selection:
+    | { kind: 'issue'; issue: Issue }
+    | { kind: 'solution'; solution: Solution; issue?: Issue; issues?: readonly Issue[] }
+    /** 課題・解決策以外の項目（製品・タスクなど）。名前の編集と追加・複製・削除だけを持つ */
+    | { kind: 'entity'; id: string; nodeKind: NodeKind; label: string }
+    | undefined;
   /** 課題を選んだときに、その課題の解決策・効果・製品を示すための、表示中の解決策 */
   solutions?: readonly Solution[];
   products: readonly Product[];
@@ -58,20 +74,57 @@ export interface DetailProps {
   sourceId: string | undefined;
   onOpenSource: (id: string) => void;
   onCloseSource: () => void;
+  /**
+   * この詳細パネルを置く画面の優先度（既定 1）。詳細パネルは同時に 1 つだけ出す。専用の置き場を持つ画面（課題-解決策分析）は 1、
+   * 一覧表のように「その場で編集する」ために補う画面は 0（専用の置き場が出ているときは出さない）。
+   */
+  hostPriority?: number;
 }
 
-export function DetailPanel({ selection, solutions = [], products, sources, sourceId, onOpenSource, onCloseSource }: DetailProps) {
+/** 名前（見出し）と、編集モードが ON のときの名前の編集 */
+function EditableTitle({ id, title }: { id: string; title: string }) {
+  const s = useStyles();
+  const editMode = useEditStore((st) => st.editMode);
+  const rename = useEditStore((st) => st.rename);
+  const [editing, setEditing] = useState(false);
+  useEffect(() => { if (!editMode) setEditing(false); }, [editMode]);
+  if (editing) {
+    return <InlineInput initial={title} label="名前" onClose={() => setEditing(false)} onSubmit={(t) => { const r = rename(id, t); return r.ok ? undefined : r.message; }} />;
+  }
+  return (
+    <div className={s.titleRow}>
+      <Text as="h3" size={500} weight="semibold">{title}</Text>
+      <Button size="small" appearance="subtle" icon={<Edit16Regular aria-hidden />} aria-label="名前を編集" disabled={!editMode} onClick={() => setEditing(true)} />
+    </div>
+  );
+}
+
+export function DetailPanel({ hostPriority = 1, ...props }: DetailProps) {
+  // タブで隠れている画面の詳細パネルは出さない（隠れた置き場が、見えている置き場の詳細を押しのけないように）
+  const pane = usePane();
+  const visible = !pane || pane.visible;
+  const active = useDetailHost(hostPriority, visible);
+  return visible && active ? <DetailBody {...props} /> : null;
+}
+
+function DetailBody({ selection, solutions = [], products, sources, sourceId, onOpenSource, onCloseSource }: DetailProps) {
   const s = useStyles();
   const sourceById = new Map(sources.map((x) => [x.id, x]));
   const source = sourceId ? sourceById.get(sourceId) : undefined;
   return (
     <aside className={s.root} data-testid="component-detail" aria-label="詳細">
+      <EditToolbar />
       {!selection ? (
-        <Text>課題または解決策を選ぶと、詳細を表示します。</Text>
+        <Text>項目を選ぶと、詳細を表示します。</Text>
       ) : selection.kind === 'issue' ? (
         <IssueDetail issue={selection.issue} solutions={solutions} products={products} sourceById={sourceById} onOpenSource={onOpenSource} />
-      ) : (
+      ) : selection.kind === 'solution' ? (
         <SolutionDetail solution={selection.solution} issue={selection.issue} issues={selection.issues} products={products} sourceById={sourceById} onOpenSource={onOpenSource} />
+      ) : (
+        <div className={s.section}>
+          <EditableTitle id={selection.id} title={selection.label} />
+          <Badge appearance="tint" color="informative">{KIND_LABELS[selection.nodeKind]}</Badge>
+        </div>
       )}
       {source ? <SourceCard source={source} onClose={onCloseSource} /> : null}
     </aside>
@@ -79,6 +132,56 @@ export function DetailPanel({ selection, solutions = [], products, sources, sour
 }
 
 type SourceMap = Map<string, Source>;
+
+/** 評価属性 1 つ（ラベル・値・出典）。値が設定されていれば、編集モードが ON のときに数値・文字をその場で編集できる */
+function EvaluationAttr({ issue, item, sourceById, onOpenSource }: {
+  issue: Issue; item: ReturnType<typeof evaluationItems>[number]; sourceById: SourceMap; onOpenSource: (id: string) => void;
+}) {
+  const s = useStyles();
+  const editMode = useEditStore((st) => st.editMode);
+  const update = useEditStore((st) => st.update);
+  const [editing, setEditing] = useState(false);
+  useEffect(() => { if (!editMode) setEditing(false); }, [editMode]);
+  const ev = (issue.evaluation ?? {})[item.key] as { value: number | string; unit?: string } | undefined;
+  return (
+    <div className={s.attr} data-testid={`attr-${item.key}`}>
+      <Text weight="semibold">{item.label}</Text>
+      {editing && ev ? (
+        <div className={s.attrValue}>
+          <InlineInput
+            initial={String(ev.value)}
+            label={`${item.label}の値`}
+            numeric={typeof ev.value === 'number'}
+            onClose={() => setEditing(false)}
+            onSubmit={(t) => { const r = update(issue.id, ['evaluation', item.key, 'value'], t); return r.ok ? undefined : r.message; }}
+          />
+          {ev.unit ? <Text>{ev.unit}</Text> : null}
+        </div>
+      ) : (
+        <div className={s.attrValue}>
+          <Text data-testid="attr-value">
+            {item.display ? <NumericValue sourceIds={item.sourceIds}>{item.display}</NumericValue> : '未設定'}
+          </Text>
+          {ev ? <Button size="small" appearance="subtle" icon={<Edit16Regular aria-hidden />} disabled={!editMode} onClick={() => setEditing(true)}>編集</Button> : null}
+        </div>
+      )}
+      <div className={s.attrSources}>
+        {item.sourceIds.map((id) => {
+          const src = sourceById.get(id);
+          return (
+            <Link
+              key={id}
+              href={`#${id}`}
+              onClick={(e) => { e.preventDefault(); onOpenSource(id); }}
+            >
+              {src ? src.title : id}
+            </Link>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 function IssueDetail({ issue, solutions, products, sourceById, onOpenSource }: {
   issue: Issue; solutions: readonly Solution[]; products: readonly Product[]; sourceById: SourceMap; onOpenSource: (id: string) => void;
@@ -90,7 +193,7 @@ function IssueDetail({ issue, solutions, products, sourceById, onOpenSource }: {
   return (
     <>
       <div className={s.section}>
-        <Text as="h3" size={500} weight="semibold">{issue.title}</Text>
+        <EditableTitle id={issue.id} title={issue.title} />
         <div className={s.badges}>
           <Badge appearance="tint" color={issue.audience === 'external' ? 'brand' : 'informative'}>{AUDIENCE_LABELS[issue.audience]}</Badge>
           {(issue.personas ?? []).map((p) => <Badge key={p} appearance="outline">{p}</Badge>)}
@@ -120,26 +223,7 @@ function IssueDetail({ issue, solutions, products, sourceById, onOpenSource }: {
       <div className={s.section}>
         <Text as="h4" weight="semibold">評価属性</Text>
         {evaluationItems(issue).map((item) => (
-          <div key={item.key} className={s.attr} data-testid={`attr-${item.key}`}>
-            <Text weight="semibold">{item.label}</Text>
-            <Text data-testid="attr-value">
-              {item.display ? <NumericValue sourceIds={item.sourceIds}>{item.display}</NumericValue> : '未設定'}
-            </Text>
-            <div className={s.attrSources}>
-              {item.sourceIds.map((id) => {
-                const src = sourceById.get(id);
-                return (
-                  <Link
-                    key={id}
-                    href={`#${id}`}
-                    onClick={(e) => { e.preventDefault(); onOpenSource(id); }}
-                  >
-                    {src ? src.title : id}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
+          <EvaluationAttr key={item.key} issue={issue} item={item} sourceById={sourceById} onOpenSource={onOpenSource} />
         ))}
       </div>
     </>
@@ -157,7 +241,7 @@ function SolutionDetail({ solution, issue, issues, products, sourceById, onOpenS
   return (
     <>
       <div className={s.section}>
-        <Text as="h3" size={500} weight="semibold">{solution.title}</Text>
+        <EditableTitle id={solution.id} title={solution.title} />
         {targets.length > 0 ? <Text>対象の課題: {targets.map((i) => i.title).join('、')}</Text> : null}
       </div>
       <div className={s.section}>

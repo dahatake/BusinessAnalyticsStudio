@@ -9,7 +9,8 @@ import { COMMANDS, InputError, defaultPaths, type Command, type PipelinePaths } 
 import { parseArgs, resolveInputs, type Ask } from './inputs';
 import { runPipeline, type PipelineDeps } from './pipeline';
 import { mockGenerator, type PackGenerator } from './generate';
-import { sampleResearcher, type Researcher } from './research';
+import { chainResearcher, type ResearchSourceEntry, type Researcher } from './research';
+import { mockSmoke, type SmokeRunner } from './verify';
 
 export interface CliDeps {
   paths?: Partial<PipelinePaths>;
@@ -20,13 +21,16 @@ export interface CliDeps {
   /** 差し替え（テスト用）。指定がなければ --generator / --researcher の指定、なければ同梱のモック */
   generator?: PackGenerator;
   researcher?: Researcher;
+  /** ⑥ verify のブラウザー検査の差し替え（テスト用）。指定がなければ --smoke の指定、なければ Playwright */
+  smoke?: SmokeRunner;
 }
 
 const USAGE = `使い方: npm run pipeline -- <${COMMANDS.join('|')}> [--customer 顧客名] [--project Project名]
   [--intensity Executive|Showcase|Entertainment] [--bgm BGMフォルダー] [--material 追加資料]...
   [--workspace 作業フォルダーの親] [--template 雛形] [--sample お手本パック]
-  [--generator mock|モジュールのパス] [--researcher sample|モジュールのパス] [--copy] [--no-keep]
+  [--generator mock|モジュールのパス] [--researcher sample|モジュールのパス] [--smoke playwright|mock] [--copy] [--no-keep]
   research=①②（事前調査）、build=③〜⑦（複製・生成・検証・起動）、all=①〜⑦。顧客名を省くと対話形式で尋ねる。
+  --smoke: ⑥ verify のブラウザー検査。既定は playwright（Chromium）、mock はブラウザーを使わずに合格とする。
   --copy: ③で node_modules と dist をフルコピーする（既定は読み取り専用のリンクで共有）。
   --no-keep: ⑦で起動を確かめたら、サーバーを止めて終了する。`;
 
@@ -35,6 +39,23 @@ async function loadModule<T>(spec: string, exportName: string): Promise<T> {
   const factory = mod[exportName] ?? (mod['default'] as Record<string, unknown> | undefined)?.[exportName];
   if (typeof factory !== 'function') throw new InputError(`${spec} は ${exportName}() を公開していません`);
   return (factory as () => T)();
+}
+
+/** 既定の調査。WorkIQ・Web の差し替え部品がないので「利用不可」として切り替え、前提を置いたサンプルで成功する（FR-121） */
+function defaultResearcher(): Researcher {
+  return chainResearcher([{ source: 'WorkIQ' }, { source: 'Web' }]);
+}
+
+/**
+ * `--researcher` のモジュールを読む。`createResearchSources()`（優先順位つきの情報源: WorkIQ → Web）があれば、
+ * 上限時間（PARAM-003）で切り替える調査にする。なければ `createResearcher()`（1 つの調査）をそのまま使う。
+ */
+async function loadResearcher(spec: string): Promise<Researcher> {
+  const mod = (await import(pathToFileURL(path.resolve(spec)).href)) as Record<string, unknown>;
+  const pick = (name: string): unknown => mod[name] ?? (mod['default'] as Record<string, unknown> | undefined)?.[name];
+  const sources = pick('createResearchSources');
+  if (typeof sources === 'function') return chainResearcher(await (sources as () => Promise<ResearchSourceEntry[]> | ResearchSourceEntry[])());
+  return loadModule<Researcher>(spec, 'createResearcher');
 }
 
 function terminalAsk(): { ask: Ask; close(): void } {
@@ -76,9 +97,15 @@ export async function main(argv: readonly string[], deps: CliDeps = {}): Promise
     const g = args.options['generator']?.[0];
     const r = args.options['researcher']?.[0];
     const generator = deps.generator ?? (g && g !== 'mock' ? await loadModule<PackGenerator>(g, 'createGenerator') : mockGenerator);
-    const researcher = deps.researcher ?? (r && r !== 'sample' ? await loadModule<Researcher>(r, 'createResearcher') : sampleResearcher);
+    const researcher = deps.researcher ?? (r && r !== 'sample' ? await loadResearcher(r) : defaultResearcher());
+    const sm = args.options['smoke']?.[0];
+    if (sm !== undefined && sm !== 'mock' && sm !== 'playwright') throw new InputError(`--smoke は mock か playwright を指定してください: ${sm}`);
+    const smoke = deps.smoke ?? (sm === 'mock' ? mockSmoke : undefined);
 
-    const pdeps: PipelineDeps = { paths, generator, researcher, log, cloneMode: args.flags.has('copy') ? 'copy' : 'link' };
+    const pdeps: PipelineDeps = {
+      paths, generator, researcher, log, cloneMode: args.flags.has('copy') ? 'copy' : 'link',
+      ...(smoke ? { smoke } : {}),
+    };
     const result = await runPipeline(command, input, pdeps);
     if (result.launched) {
       if (args.flags.has('no-keep')) await result.launched.close();
