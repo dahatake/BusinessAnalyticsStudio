@@ -9,6 +9,7 @@ import { annotationBoardId, useInk } from './store';
 const useStyles = makeStyles({
   bar: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS, marginTop: tokens.spacingVerticalS },
   row: { display: 'flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS },
+  forcedAuto: { forcedColorAdjust: 'auto', '@media (forced-colors: active)': { forcedColorAdjust: 'auto' } },
 });
 
 function useAnnotationBoard(viewKey: string): string {
@@ -35,7 +36,7 @@ export function AnnotationControls({ viewKey, active, onToggle }: { viewKey: str
   return (
     <div className={s.bar}>
       <div className={s.row}>
-        <Button appearance={active ? 'primary' : 'secondary'} aria-pressed={active} onClick={() => onToggle(!active)}>注釈を書く</Button>
+        <Button className={s.forcedAuto} appearance={active ? 'primary' : 'secondary'} aria-pressed={active} onClick={() => onToggle(!active)}>注釈を書く</Button>
         {count > 0 && (
           <Button
             appearance="subtle"

@@ -48,6 +48,7 @@ const useStyles = makeStyles({
   },
   swatch: { width: '16px', height: '16px', borderRadius: '50%', border: `1px solid ${tokens.colorNeutralStroke1}`, display: 'inline-block' },
   size: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalXS, minWidth: '140px' },
+  forcedAuto: { forcedColorAdjust: 'auto', '@media (forced-colors: active)': { forcedColorAdjust: 'auto' } },
 });
 
 export interface InkToolbarProps {
@@ -96,6 +97,7 @@ export function InkToolbar({ boardId, label = 'インクの道具' }: InkToolbar
   const button = (id: string, text: string, Icon: FluentIcon, onClick: () => void, opts: { pressed?: boolean; disabled?: boolean } = {}) => (
     <Tooltip key={id} content={text} relationship="label" withArrow>
       <ToolbarButton
+        className={s.forcedAuto}
         data-testid={`ink-tool-${id}`}
         appearance={opts.pressed ? 'primary' : 'subtle'}
         aria-pressed={opts.pressed === undefined ? undefined : opts.pressed}
@@ -121,6 +123,7 @@ export function InkToolbar({ boardId, label = 'インクの道具' }: InkToolbar
         {INK_COLORS.map((c) => (
           <Tooltip key={c.value} content={`色: ${c.label}`} relationship="label" withArrow>
             <ToolbarButton
+              className={s.forcedAuto}
               appearance={color === c.value ? 'primary' : 'subtle'}
               aria-pressed={color === c.value}
               icon={<span className={s.swatch} style={{ backgroundColor: c.swatch }} aria-hidden />}

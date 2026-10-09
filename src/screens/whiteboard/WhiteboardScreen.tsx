@@ -15,6 +15,7 @@ import { useDiscussionStore } from '../../store/discussion';
 
 const useStyles = makeStyles({
   controls: { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalS },
+  forcedAuto: { forcedColorAdjust: 'auto', '@media (forced-colors: active)': { forcedColorAdjust: 'auto' } },
   stage: { height: 'clamp(420px, 62vh, 900px)', minHeight: 0 },
 });
 
@@ -51,7 +52,7 @@ export function WhiteboardScreen() {
       maxWidth="1280px"
     >
       <div className={s.controls}>
-        <Button appearance="primary" icon={<Add20Regular aria-hidden />} onClick={() => addBoard(topicId)}>ボードを追加</Button>
+        <Button className={s.forcedAuto} appearance="primary" icon={<Add20Regular aria-hidden />} onClick={() => addBoard(topicId)}>ボードを追加</Button>
         <Field label="背景" size="small">
           <Dropdown
             value={bg.label}
