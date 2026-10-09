@@ -1592,10 +1592,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
-      "status": "not_run",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "d768e92",
+      "last_run_at": "2026-10-09T13:02:05+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-059-202610091301.log",
       "history": [
         {
           "at": "2026-10-09T12:17:42+09:00",
