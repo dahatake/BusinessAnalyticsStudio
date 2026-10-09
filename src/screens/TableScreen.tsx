@@ -1,17 +1,21 @@
 // 一覧表（FR-026）。パックのすべての項目を、選択に応じて自動で絞り込む表。
 // 選択はすべてのビューと共通の状態（src/store/selection.ts）で、この表の行のクリック・ホバーも同じ状態を使う（FR-024〜FR-027）。
 // 件数バッジ・AND/OR の切替・「非表示/減光」の選択・フィルター解除を備える。
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Badge, Button, Field, MessageBar, MessageBarActions, MessageBarBody, MessageBarTitle, Radio, RadioGroup, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
   makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
 import { FilterDismiss24Regular } from '@fluentui/react-icons';
+import { SelectionDetail } from '../analysis/SelectionDetail';
 import { useHighlightClass } from '../components/highlight';
 import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
+import { DataTransferButtons } from '../edit/EditControls';
+import { InlineInput } from '../edit/InlineInput';
 import { KIND_LABELS, type GraphNode } from '../selection/graph';
 import { onEntityKey, useEntityBinding, useSelection, useSelectionFilter } from '../selection/hooks';
+import { useEditStore } from '../store/edit';
 import { useFallbackStore } from '../store/fallback';
 
 const ORIGIN = 'table';
@@ -19,6 +23,7 @@ const ORIGIN = 'table';
 const useStyles = makeStyles({
   toolbar: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalXL, rowGap: tokens.spacingVerticalS },
   summary: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalS, rowGap: tokens.spacingVerticalXS },
+  summarySlot: { minHeight: tokens.spacingVerticalXXXL, display: 'flex', alignItems: 'center' },
   row: {
     cursor: 'pointer',
     ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`, outlineOffset: '-2px' },
@@ -30,11 +35,51 @@ const useStyles = makeStyles({
 
 const idOf = (n: GraphNode): string => n.id;
 
+/**
+ * 名称のセル。編集モードが ON のとき、ダブルクリックまたは Enter でその場の編集になる（FR-044）。OFF のときは編集状態にならない（FR-047）。
+ * role="gridcell" は、操作できるセルであることを伝える。
+ */
+function NameCell({ node, className }: { node: GraphNode; className: string }) {
+  const editMode = useEditStore((st) => st.editMode);
+  const rename = useEditStore((st) => st.rename);
+  const [editing, setEditing] = useState(false);
+  useEffect(() => { if (!editMode) setEditing(false); }, [editMode]);
+  return (
+    <TableCell
+      role="gridcell"
+      className={className}
+      tabIndex={0}
+      onDoubleClick={() => { if (editMode) setEditing(true); }}
+      onKeyDown={(e) => {
+        if (editMode && !editing && e.key === 'Enter' && e.target === e.currentTarget) {
+          e.preventDefault();
+          e.stopPropagation();
+          setEditing(true);
+        }
+      }}
+    >
+      {editing ? (
+        <>
+          {/* 編集中も、セルの文字（元の名称）を残す。表の行・セルを名称で特定する操作（検索・テスト）が、編集の開始で外れないようにするため */}
+          <span hidden aria-hidden="true">{node.label}</span>
+          <InlineInput
+            initial={node.label}
+            label={`${KIND_LABELS[node.kind]}の名称`}
+            onClose={() => setEditing(false)}
+            onSubmit={(t) => { const r = rename(node.id, t); return r.ok ? undefined : r.message; }}
+          />
+        </>
+      ) : node.label}
+    </TableCell>
+  );
+}
+
 function TableScreen() {
   const s = useStyles();
   const hl = useHighlightClass();
-  const { graph, selectedIds, mode, unrelated, setMode, setUnrelated, clear } = useSelection();
+  const { graph, selectedIds, related, mode, unrelated, setMode, setUnrelated, clear } = useSelection();
   const bind = useEntityBinding(ORIGIN);
+  const editMode = useEditStore((st) => st.editMode);
   // FR-113: 表現が成り立たない項目（位置情報なしなど）を「表で見る」要求があるときは、その項目だけを出す
   const fallback = useFallbackStore((st) => st.request);
   const clearFallback = useFallbackStore((st) => st.clear);
@@ -45,7 +90,8 @@ function TableScreen() {
     const ids = new Set(fallback.ids);
     return nodes.filter((n) => ids.has(n.id));
   }, [fallback, nodes]);
-  const visible = fallbackNodes ?? filtered;
+  // 編集モードでは、選択で行を隠さない（編集した行・追加した行が見えなくならないように、関連しない行は減光で残す）
+  const visible = fallbackNodes ?? (editMode ? nodes : filtered);
   const count = fallbackNodes ? fallbackNodes.length : filteredCount;
   const selected = useMemo(() => new Set(selectedIds), [selectedIds]);
 
@@ -88,13 +134,17 @@ function TableScreen() {
           フィルター解除
         </Button>
       </div>
+      <DataTransferButtons />
 
-      {selectedIds.length > 0 ? (
-        <div className={s.summary} role="status">
-          <Text weight="semibold">選択中:</Text>
-          {selectedIds.map((id) => <Badge key={id} appearance="tint" color="brand">{graph.node(id)?.label ?? id}</Badge>)}
-        </div>
-      ) : null}
+      {/* 編集モードでは、選択の表示の出入りで表がずれない（ダブルクリックが別の行に当たらない）ように、1 行分の場所を常に確保する */}
+      <div className={editMode ? s.summarySlot : undefined}>
+        {selectedIds.length > 0 ? (
+          <div className={s.summary} role="status">
+            <Text weight="semibold">選択中:</Text>
+            {selectedIds.map((id) => <Badge key={id} appearance="tint" color="brand">{graph.node(id)?.label ?? id}</Badge>)}
+          </div>
+        ) : null}
+      </div>
 
       {visible.length === 0 ? (
         <EmptyView message="選択に関連する項目はありません。「フィルター解除」で全件に戻せます。" />
@@ -112,18 +162,22 @@ function TableScreen() {
             {visible.map((n) => {
               const props = bind(n.id, { filterable: true });
               const state = selected.has(n.id) ? '選択中' : props['data-highlight']?.includes('related') ? '関連' : '';
+              // 編集モードでは関連しない行を隠さないので、減光（dimmed）で示す
+              const dimmed = editMode && !fallbackNodes && related !== null && !related.has(n.id) && !props['data-highlight']?.includes('dimmed');
+              const highlight = dimmed ? [props['data-highlight'], 'dimmed'].filter(Boolean).join(' ') : props['data-highlight'];
               return (
                 <TableRow
                   key={n.id}
                   role="row"
                   {...props}
+                  data-highlight={highlight}
                   tabIndex={0}
-                  className={mergeClasses(s.row, hl(props['data-highlight']))}
+                  className={mergeClasses(s.row, hl(highlight))}
                   onKeyDown={(e) => { onEntityKey(e, n.id, ORIGIN); }}
                 >
                   <TableCell className={s.cell}>{state ? <Badge appearance="outline" color={state === '選択中' ? 'brand' : 'informative'}>{state}</Badge> : null}</TableCell>
                   <TableCell className={s.cell}>{KIND_LABELS[n.kind]}{n.type ? `（${n.type}）` : ''}</TableCell>
-                  <TableCell className={s.cell}>{n.label}</TableCell>
+                  <NameCell node={n} className={s.cell} />
                   <TableCell className={mergeClasses(s.cell, s.idCell, s.hideNarrow)}>{n.id}</TableCell>
                 </TableRow>
               );
@@ -131,6 +185,7 @@ function TableScreen() {
           </TableBody>
         </Table>
       )}
+      <SelectionDetail />
     </Panel>
   );
 }

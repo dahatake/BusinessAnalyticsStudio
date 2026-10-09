@@ -1,9 +1,10 @@
-import { Chat24Regular, CommentMultiple24Regular, Cube24Regular, DataBarHorizontal24Regular, Settings24Regular, Table24Regular, TaskListSquareLtr24Regular, Whiteboard24Regular, Window24Regular } from '@fluentui/react-icons';
+import { Chat24Regular, CommentMultiple24Regular, Cube24Regular, DataBarHorizontal24Regular, PhoneDesktop24Regular, Settings24Regular, Table24Regular, TaskListSquareLtr24Regular, Whiteboard24Regular, Window24Regular } from '@fluentui/react-icons';
 import type { ScreenDefinition } from './types';
 import { SettingsScreen } from './SettingsScreen';
 import { ThemesScreen } from './ThemesScreen';
 import { CanvasScreen } from './canvas/CanvasScreen';
 import { IssueSolutionScreen } from './IssueSolutionScreen';
+import { MockAppScreen } from './MockAppScreen';
 import { TableScreen } from './TableScreen';
 import { GanttScreen } from './GanttScreen';
 import { View3DScreen } from './View3DScreen';
@@ -17,6 +18,7 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'table', label: '一覧表', icon: Table24Regular, component: TableScreen },
   { key: 'gantt', label: 'ガントチャート', icon: DataBarHorizontal24Regular, component: GanttScreen },
   { key: 'view3d', label: '3D ビュー', icon: Cube24Regular, component: View3DScreen },
+  { key: 'mock-app', label: 'ミニ・モックアプリ', icon: PhoneDesktop24Regular, component: MockAppScreen },
   { key: 'whiteboard', label: 'ホワイトボード', icon: Whiteboard24Regular, component: WhiteboardScreen },
   { key: 'themes', label: '議論テーマ', icon: CommentMultiple24Regular, component: ThemesScreen },
   { key: 'settings', label: '設定パネル', icon: Settings24Regular, component: SettingsScreen },

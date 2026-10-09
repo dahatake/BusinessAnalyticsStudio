@@ -13,6 +13,8 @@ import { ErrorView, LoadingView } from '../components/StateViews';
 import { PresentationBar, PresentationButton } from '../presentation/PresentationMode';
 import { SCREENS } from '../screens/registry';
 import { SelectionController } from '../selection/SelectionController';
+import { EditModeSwitch, HistoryButton, ResetSampleButton } from '../edit/EditControls';
+import { installEditKeys } from '../edit/useEditKeys';
 import { SelectionAnnouncer } from '../selection/Announcer';
 import { CommandController } from '../commands/CommandPalette';
 import { GlobalSearch } from '../search/GlobalSearch';
@@ -51,6 +53,7 @@ export function App() {
   const [opened, setOpened] = useState(false);
 
   useEffect(() => { void load(); }, [load]);
+  useEffect(() => installEditKeys(), []);
 
   const customer = state.status === 'ready' ? state.pack.data.customer : undefined;
   useEffect(() => {
@@ -90,7 +93,7 @@ export function App() {
         screens={SCREENS}
         onSelect={selectComponent}
         headerExtra={<><GlobalSearch /><DiscussionFileActions /><AnimationStatus /><AiStatus /></>}
-        actions={<><PersonaMenu /><ResetLayoutButton /><PresentationButton /></>}
+        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><ResetLayoutButton /><PresentationButton /></>}
         dock={<Dock screens={SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
       >
