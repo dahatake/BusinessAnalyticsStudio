@@ -5,6 +5,8 @@ import { Listbox, Option, Text, makeStyles, tokens } from '@fluentui/react-compo
 import { Panel } from '../../components/Panel';
 import { EmptyView } from '../../components/StateViews';
 import { usePackStore } from '../../store/pack';
+import { currentTopic, usePresentationStore } from '../../store/presentation';
+import { useRetainedState } from '../../store/retained';
 import { registerTestHook } from '../../testing/hook';
 import {
   CARD_H, CARD_W, cardOrigin, centerOn, isCenteredOn, keyViewport, panBy, zoomAt, type Viewport,
@@ -59,10 +61,11 @@ export function CanvasScreen() {
   );
 
   const surface = useRef<HTMLDivElement>(null);
-  const [view, setViewState] = useState<Viewport>({ x: 40, y: 40, zoom: 1 });
+  // 視点と選択は、ペルソナの切替などで画面が作り直されても保つ（NFR-UX-001）
+  const [view, setViewState] = useRetainedState<Viewport>('canvas.view', { x: 40, y: 40, zoom: 1 });
   const viewRef = useRef(view);
-  const setView = useCallback((v: Viewport) => { viewRef.current = v; setViewState(v); }, []);
-  const [selected, setSelected] = useState<string | null>(null);
+  const setView = useCallback((v: Viewport) => { viewRef.current = v; setViewState(v); }, [setViewState]);
+  const [selected, setSelected] = useRetainedState<string | null>('canvas.selected', null);
   const [dragging, setDragging] = useState(false);
   const drag = useRef<{ x: number; y: number } | null>(null);
 
@@ -90,7 +93,11 @@ export function CanvasScreen() {
     setSelected(id);
     const { w, h } = size();
     setView(centerOn(viewRef.current, c.x + CARD_W / 2, c.y + CARD_H / 2, w, h));
-  }, [cards, setView]);
+  }, [cards, setView, setSelected]);
+
+  // プレゼンテーション中は、現在の議題の位置へ移動する（FR-016）
+  const presenting = usePresentationStore((st) => currentTopic(st)?.id ?? null);
+  useEffect(() => { if (presenting) goTo(presenting); }, [presenting, goTo]);
 
   useEffect(() => registerTestHook('canvas', {
     viewport: () => ({ ...viewRef.current }),
