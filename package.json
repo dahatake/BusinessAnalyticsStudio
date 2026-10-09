@@ -9,6 +9,7 @@
     "build": "tsc --noEmit -p tsconfig.json && vite build",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
+    "relay": "tsx scripts/relay/start.ts",
     "gen:schema": "tsx scripts/gen-schema.ts",
     "check:pack": "tsx scripts/check-pack.ts"
   },

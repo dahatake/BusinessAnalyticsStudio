@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { MessageBar, MessageBarBody, MessageBarTitle } from '@fluentui/react-components';
+import { AiStatus } from '../ai/AiStatus';
 import { AppShell } from '../components/AppShell';
 import { ErrorView, LoadingView } from '../components/StateViews';
 import { SCREENS } from '../screens/registry';
@@ -43,7 +44,7 @@ export function App() {
   return (
     <>
       {!opened ? <Opening customerName={name} projectName={projectName} onDone={() => setOpened(true)} /> : null}
-      <AppShell title={`${name} ${projectName}`} screens={SCREENS} activeKey={active} onSelect={setActive}>
+      <AppShell title={`${name} ${projectName}`} screens={SCREENS} activeKey={active}       onSelect={setActive} headerExtra={<AiStatus />}>
         {state.warnings.length > 0 ? (
           <div data-testid="pack-errors">
             <MessageBar intent="warning" layout="multiline">

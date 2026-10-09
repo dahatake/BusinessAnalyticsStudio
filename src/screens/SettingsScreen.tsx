@@ -1,6 +1,7 @@
 // 設定パネル（テーマ・3D の品質・業種プリセット）。FR-058 / FR-065 / FR-066 / FR-069
 import { Dropdown, Field, Option, Radio, RadioGroup, Text } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
+import { AiSettings } from '../ai/AiSettings';
 import { THEME_MODES, useSettings, type ThemeMode } from '../store/settings';
 import { INDUSTRY_PRESETS, useIndustryPreset, useView3D } from '../store/view3d';
 import { QUALITIES, type Quality } from '../three/quality';
@@ -42,6 +43,7 @@ export function SettingsScreen() {
       <Text as="p" data-testid="fps">FPS: {fps.toFixed(1)} fps</Text>
       <Text as="p" data-testid="renderer">描画方式: {renderer}</Text>
       {notice && <Text as="p" role="status">{notice}</Text>}
+      <AiSettings />
     </Panel>
   );
 }
