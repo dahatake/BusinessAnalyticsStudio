@@ -135,7 +135,7 @@
       "title": "AC-001 標準の検証条件で、課題-解決策分析ビューを開いたとき、お手本パックの全課題がイシューツリーの階層（上位課題→下位課題）と",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-001",
-      "canary": true,
+      "canary": false,
       "status": "not_run",
       "last_commit": null,
       "last_run_at": null,
@@ -146,6 +146,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T12:59:49+09:00",
+          "by": "test-designer",
+          "change": "canary: True -> False",
+          "reason": "AC-001 は I05 で実装。実装済みの AC-071 へ canary を移す"
         }
       ]
     },
@@ -1585,7 +1591,7 @@
       "title": "AC-071 標準の検証条件で、Light と Dark を切り替えると全画面の背景と文字の色が切り替わる。ブラウザーの強制カラー（ハ",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-071",
-      "canary": false,
+      "canary": true,
       "status": "not_run",
       "last_commit": null,
       "last_run_at": null,
@@ -1596,6 +1602,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-09T12:59:50+09:00",
+          "by": "test-designer",
+          "change": "canary: False -> True",
+          "reason": "I01 で実装済みのテーマ切替を canary にする"
         }
       ]
     },
