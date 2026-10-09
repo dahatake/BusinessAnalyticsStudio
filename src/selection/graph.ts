@@ -96,6 +96,9 @@ export function buildEntityGraph(data: PackData): EntityGraph {
   add('task', data.plan.tasks);
   add('architecture', data.architecture.nodes);
   add('architecture', data.architecture.edges);
+  // FR-040: ToBe の要素と、ToBe にない AsIs の要素（同じ ID は先の ToBe を使う）
+  add('architecture', data.architecture.tobe?.elements);
+  add('architecture', data.architecture.asis?.elements);
   add('mock', data.mocks.mocks);
   add('chapter', data.show.chapters);
   add('source', data.sources.sources);
@@ -126,6 +129,9 @@ export function buildEntityGraph(data: PackData): EntityGraph {
   for (const [id, rec] of records) collect(id, rec, new Set(['topics']));
   for (const [parent, child] of containEdges) link(parent, child, 'contain');
   for (const rec of relationRecords) link(rec.from as string, rec.to as string, 'relation', isStr(rec.label) ? rec.label : undefined);
+  for (const variant of [data.architecture.tobe, data.architecture.asis]) {
+    for (const l of variant?.links ?? []) link(l.from, l.to, 'relation', isStr(l.label) ? l.label : undefined);
+  }
 
   const adjacency = new Map<string, Set<string>>();
   const touch = (a: string, b: string): void => {

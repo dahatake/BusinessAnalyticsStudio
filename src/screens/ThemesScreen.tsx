@@ -18,7 +18,9 @@ import {
 } from '../discussion/model';
 import { hasThemeFor, usePackTarget } from '../discussion/usePackTarget';
 import { selectCanRedo, selectCanUndo, selectSelectedId, selectThemes, useDiscussionStore } from '../store/discussion';
+import { useLayout } from '../store/layout';
 import { usePackStore } from '../store/pack';
+import { useTreeStore } from '../store/tree';
 
 const useStyles = makeStyles({
   toolbar: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalS, rowGap: tokens.spacingVerticalS },
@@ -177,9 +179,20 @@ function ThemeDetail({ packKey, theme }: { packKey: string; theme: Theme }) {
   const s = useStyles();
   const store = useDiscussionStore;
   const status = theme.status;
+  const { ask } = useAi();
+  const packData = usePackStore((st) => (st.state.status === 'ready' ? st.state.pack.data : undefined));
+  /** 議論の記録から、議論ツリー（系統ツリー）を生成する（FR-042）。議論ツリーの画面を開き、進行表示と「取り消し」はそちらに出る。 */
+  const generateTree = () => {
+    if (!packData) return;
+    void useTreeStore.getState().generate(packKey, theme, packData, (kind, prompt) => ask(kind, prompt));
+    useLayout.getState().showComponent('discussion-tree');
+  };
   return (
     <div className={s.detail} data-testid="theme-detail" data-entity-id={theme.id}>
       <Text as="h3" size={500} weight="semibold">{theme.title}</Text>
+      <div>
+        <Button icon={<Sparkle24Regular aria-hidden />} onClick={generateTree}>ツリーを生成</Button>
+      </div>
 
       <div className={s.statusRow}>
         <Text>決定ステータス:</Text>

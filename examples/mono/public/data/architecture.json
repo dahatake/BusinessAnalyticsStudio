@@ -7,5 +7,41 @@
   "edges": [
     { "id": "edge-mono-001", "createdBy": "sample", "from": "arch-mono-edge", "to": "arch-mono-analytics", "label": "稼働データ" },
     { "id": "edge-mono-002", "createdBy": "sample", "from": "arch-mono-app", "to": "arch-mono-analytics", "label": "停止原因" }
-  ]
+  ],
+  "asis": {
+    "elements": [
+      { "id": "cap-mono-maintenance", "createdBy": "sample", "name": "設備保全", "kind": "capability", "layer": "Capability Map" },
+      { "id": "cap-mono-production", "createdBy": "sample", "name": "生産管理", "kind": "capability", "layer": "Capability Map" },
+      { "id": "cap-mono-quality", "createdBy": "sample", "name": "品質検査", "kind": "capability", "layer": "Capability Map" },
+      { "id": "vs-mono-plan", "createdBy": "sample", "name": "計画", "kind": "stream", "layer": "バリューストリーム" },
+      { "id": "vs-mono-run", "createdBy": "sample", "name": "稼働", "kind": "stream", "layer": "バリューストリーム" },
+      { "id": "vs-mono-stop", "createdBy": "sample", "name": "停止対応", "kind": "stream", "layer": "バリューストリーム" },
+      { "id": "sys-mono-paper", "createdBy": "sample", "name": "紙の停止記録", "kind": "app", "layer": "アプリ" },
+      { "id": "sys-mono-edge", "createdBy": "sample", "name": "設備のゲートウェイ", "kind": "system", "layer": "現場" },
+      { "id": "sys-mono-mes", "createdBy": "sample", "name": "生産管理システム", "kind": "system", "layer": "基幹" }
+    ],
+    "links": [
+      { "from": "sys-mono-edge", "to": "sys-mono-mes", "label": "稼働実績" },
+      { "from": "sys-mono-paper", "to": "sys-mono-mes", "label": "停止原因（翌日入力）" }
+    ]
+  },
+  "tobe": {
+    "elements": [
+      { "id": "cap-mono-maintenance", "createdBy": "sample", "name": "設備保全（予兆ベース）", "kind": "capability", "layer": "Capability Map" },
+      { "id": "cap-mono-production", "createdBy": "sample", "name": "生産管理", "kind": "capability", "layer": "Capability Map" },
+      { "id": "cap-mono-predict", "createdBy": "sample", "name": "予兆検知", "kind": "capability", "layer": "Capability Map", "solutionIds": ["sol-mono-001"] },
+      { "id": "vs-mono-plan", "createdBy": "sample", "name": "計画", "kind": "stream", "layer": "バリューストリーム" },
+      { "id": "vs-mono-run", "createdBy": "sample", "name": "稼働", "kind": "stream", "layer": "バリューストリーム" },
+      { "id": "vs-mono-stop", "createdBy": "sample", "name": "停止対応", "kind": "stream", "layer": "バリューストリーム" },
+      { "id": "sys-mono-tablet", "createdBy": "sample", "name": "現場入力アプリ", "kind": "app", "layer": "アプリ", "productId": "prod-mono-002", "solutionIds": ["sol-mono-002"] },
+      { "id": "sys-mono-edge", "createdBy": "sample", "name": "設備のゲートウェイ", "kind": "system", "layer": "現場" },
+      { "id": "sys-mono-analytics", "createdBy": "sample", "name": "予兆検知サービス", "kind": "system", "layer": "分析", "productId": "prod-mono-001", "solutionIds": ["sol-mono-001"] },
+      { "id": "sys-mono-mes", "createdBy": "sample", "name": "生産管理システム", "kind": "system", "layer": "基幹" }
+    ],
+    "links": [
+      { "from": "sys-mono-edge", "to": "sys-mono-analytics", "label": "稼働データ" },
+      { "from": "sys-mono-tablet", "to": "sys-mono-analytics", "label": "停止原因（即時入力）" },
+      { "from": "sys-mono-analytics", "to": "sys-mono-mes", "label": "保全の計画" }
+    ]
+  }
 }
