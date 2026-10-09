@@ -8,6 +8,9 @@ import { useEffectiveBrand } from '../theme/useBrand';
 import { ErrorView, LoadingView } from '../components/StateViews';
 import { SCREENS } from '../screens/registry';
 import { SelectionController } from '../selection/SelectionController';
+import { SelectionAnnouncer } from '../selection/Announcer';
+import { CommandController } from '../commands/CommandPalette';
+import { GlobalSearch } from '../search/GlobalSearch';
 import { setAvailableComponents, useLayout } from '../store/layout';
 import { usePackStore } from '../store/pack';
 import { checkTemplateVersion, versionWarning } from '../version';
@@ -66,11 +69,13 @@ export function App() {
     <>
       {!opened ? <Opening customerName={name} projectName={projectName} onDone={() => setOpened(true)} /> : null}
       <SelectionController />
+      <SelectionAnnouncer />
+      <CommandController screens={SCREENS} />
       <AppShell
         title={`${name} ${projectName}`}
         screens={SCREENS}
         onSelect={openComponent}
-        headerExtra={<><DiscussionFileActions /><AiStatus /></>}
+        headerExtra={<><GlobalSearch /><DiscussionFileActions /><AiStatus /></>}
         actions={<><PersonaMenu /><ResetLayoutButton /></>}
         dock={<Dock screens={SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
