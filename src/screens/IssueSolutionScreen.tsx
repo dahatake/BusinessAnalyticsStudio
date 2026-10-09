@@ -1,5 +1,5 @@
-// 課題-解決策分析（FR-001 構造化表示、FR-002 区分、FR-003〜FR-005 の詳細）。
-// 左に課題（イシューツリー／MECE 表）と解決策、右に詳細パネルを置く。狭い画面では縦に積む。
+// 課題-解決策分析（FR-001 構造化表示、FR-002 区分、FR-003〜FR-005 の詳細、FR-006 生成 AI の価値、FR-038 サンキー図・マトリクス）。
+// 左に課題（イシューツリー／MECE 表）と解決策、右に詳細パネルを置く。サンキー図・マトリクスは広く使うため詳細を下に置く。狭い画面では縦に積む。
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import {
   Badge, Button, Field, Radio, RadioGroup, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
@@ -7,15 +7,16 @@ import {
 } from '@fluentui/react-components';
 import { ChevronDown16Regular, ChevronRight16Regular, Lightbulb24Regular } from '@fluentui/react-icons';
 import { DetailPanel } from '../analysis/DetailPanel';
+import { MatrixView, SankeyView, SourceLinks } from '../analysis/FlowViews';
 import {
-  AUDIENCE_LABELS, buildMeceGroups, buildTreeRows, filterIssues, filterSolutions,
+  AUDIENCE_LABELS, buildFlow, buildMatrix, buildMeceGroups, buildTreeRows, filterIssues, filterSolutions, solutionIssueIds,
   type AudienceFilter, type Issue,
 } from '../analysis/model';
 import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
 import { usePackStore } from '../store/pack';
 
-type ViewMode = 'tree' | 'mece';
+type ViewMode = 'tree' | 'mece' | 'sankey' | 'matrix';
 type Selection = { kind: 'issue' | 'solution'; id: string };
 
 const useStyles = makeStyles({
@@ -27,6 +28,7 @@ const useStyles = makeStyles({
     alignItems: 'start',
     '@media (max-width: 720px)': { gridTemplateColumns: 'minmax(0, 1fr)', rowGap: tokens.spacingVerticalL },
   },
+  layoutStacked: { gridTemplateColumns: 'minmax(0, 1fr)', rowGap: tokens.spacingVerticalL },
   column: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalL, minWidth: 0 },
   tree: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXXS },
   row: {
@@ -46,7 +48,8 @@ const useStyles = makeStyles({
   badges: { display: 'flex', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalXS, rowGap: tokens.spacingVerticalXXS },
   group: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS },
   solutions: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS, margin: 0, padding: 0, listStyle: 'none' },
-  solutionButton: { justifyContent: 'flex-start', height: 'auto', textAlign: 'start', whiteSpace: 'normal', minHeight: '32px' },
+  solutionItem: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalXXS, cursor: 'pointer' },
+  solutionButton: { justifyContent: 'flex-start', height: 'auto', textAlign: 'start', whiteSpace: 'normal', minHeight: '32px', flexGrow: 1 },
 });
 
 function IssueSummary({ issue }: { issue: Issue }) {
@@ -80,6 +83,9 @@ function IssueSolutionScreen() {
   const solutions = useMemo(() => filterSolutions(allSolutions, visible), [allSolutions, visible]);
   const rows = useMemo(() => buildTreeRows(allIssues, visible, collapsed), [allIssues, visible, collapsed]);
   const groups = useMemo(() => buildMeceGroups(allIssues, visible), [allIssues, visible]);
+  const products = data?.products.products;
+  const flow = useMemo(() => buildFlow(visible, solutions, products ?? []), [visible, solutions, products]);
+  const matrix = useMemo(() => buildMatrix(visible, solutions, products ?? []), [visible, solutions, products]);
 
   if (!data) return <LoadingView label="課題を読み込み中" />;
 
@@ -89,10 +95,25 @@ function IssueSolutionScreen() {
   const detailSelection = selectedIssue
     ? ({ kind: 'issue', issue: selectedIssue } as const)
     : selectedSolution
-      ? ({ kind: 'solution', solution: selectedSolution, issue: issueById.get(selectedSolution.issueId) } as const)
+      ? ({
+        kind: 'solution', solution: selectedSolution, issue: issueById.get(selectedSolution.issueId),
+        issues: solutionIssueIds(selectedSolution).map((id) => issueById.get(id)).filter((i): i is Issue => i !== undefined),
+      } as const)
       : undefined;
 
   const select = (sel: Selection) => { setSelection(sel); setSourceId(undefined); };
+  const openSolutionSource = (solutionId: string, srcId: string) => { setSelection({ kind: 'solution', id: solutionId }); setSourceId(srcId); };
+  const sourceMap = new Map(data.sources.sources.map((x) => [x.id, x]));
+  const solutionMap = new Map(allSolutions.map((x) => [x.id, x]));
+  const stacked = mode === 'sankey' || mode === 'matrix';
+  const flowProps = {
+    selection,
+    solutions: solutionMap,
+    sources: sourceMap,
+    onSelectIssue: (id: string) => select({ kind: 'issue', id }),
+    onSelectSolution: (id: string) => select({ kind: 'solution', id }),
+    onOpenSource: openSolutionSource,
+  };
   const toggle = (id: string) => setCollapsed((prev) => {
     const next = new Set(prev);
     if (next.has(id)) next.delete(id); else next.add(id);
@@ -124,13 +145,16 @@ function IssueSolutionScreen() {
     <Panel
       testId="component-issue-solution"
       title="課題-解決策分析"
-      description="課題をイシューツリー・MECE の形で整理し、仮説・評価属性・解決策・出典・Microsoft 製品を確かめます。"
+      description="課題をイシューツリー・MECE 表・サンキー図・マトリクスで整理し、原因・仮説・評価属性・解決策・効果・出典・Microsoft 製品を確かめます。"
+      maxWidth="1200px"
     >
       <div className={s.toolbar}>
         <Field label="表示の形">
           <RadioGroup layout="horizontal" value={mode} onChange={(_, d) => setMode(d.value as ViewMode)}>
             <Radio value="tree" label="イシューツリー" />
             <Radio value="mece" label="MECE 表" />
+            <Radio value="sankey" label="サンキー図" />
+            <Radio value="matrix" label="マトリクス" />
           </RadioGroup>
         </Field>
         <Field label="区分">
@@ -145,10 +169,14 @@ function IssueSolutionScreen() {
         </Badge>
       </div>
 
-      <div className={s.layout}>
+      <div className={mergeClasses(s.layout, stacked && s.layoutStacked)}>
         <div className={s.column}>
           {visible.length === 0 ? (
             <EmptyView message="該当する課題はありません。" />
+          ) : mode === 'sankey' ? (
+            <SankeyView flow={flow} {...flowProps} />
+          ) : mode === 'matrix' ? (
+            <MatrixView matrix={matrix} {...flowProps} />
           ) : mode === 'tree' ? (
             <div role="tree" aria-label="イシューツリー" className={s.tree} ref={treeRef}>
               {rows.map((row) => {
@@ -218,31 +246,43 @@ function IssueSolutionScreen() {
             </div>
           )}
 
+          {stacked ? null : (
           <section aria-label="解決策" className={s.group}>
             <Text as="h3" size={500} weight="semibold">解決策</Text>
             {solutions.length === 0 ? <Text>該当する解決策はありません。</Text> : (
               <ul className={s.solutions}>
-                {solutions.map((sol) => (
-                  <li key={sol.id}>
-                    <Button
-                      className={s.solutionButton}
-                      appearance={selection?.kind === 'solution' && selectedId === sol.id ? 'primary' : 'outline'}
-                      icon={<Lightbulb24Regular aria-hidden />}
+                {solutions.map((sol) => {
+                  const on = selection?.kind === 'solution' && selectedId === sol.id;
+                  return (
+                    <li
+                      key={sol.id}
+                      className={s.solutionItem}
                       data-entity-id={sol.id}
-                      data-highlight={selection?.kind === 'solution' && selectedId === sol.id ? 'selected' : undefined}
+                      data-highlight={on ? 'selected' : undefined}
                       onClick={() => select({ kind: 'solution', id: sol.id })}
                     >
-                      {sol.title}
-                    </Button>
-                  </li>
-                ))}
+                      <Button
+                        className={s.solutionButton}
+                        appearance={on ? 'primary' : 'outline'}
+                        icon={<Lightbulb24Regular aria-hidden />}
+                        aria-pressed={on}
+                        onClick={(e) => { e.stopPropagation(); select({ kind: 'solution', id: sol.id }); }}
+                      >
+                        {sol.title}
+                      </Button>
+                      <SourceLinks solution={sol} sources={sourceMap} onOpen={openSolutionSource} />
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </section>
+          )}
         </div>
 
         <DetailPanel
           selection={detailSelection}
+          solutions={allSolutions}
           products={data.products.products}
           sources={data.sources.sources}
           sourceId={sourceId}

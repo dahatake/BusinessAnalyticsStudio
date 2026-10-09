@@ -57,6 +57,16 @@ export const EvaluationSchema = z.looseObject({
   risk: EvaluationValueSchema.optional(),
 });
 
+/** 生成 AI の価値（FR-006）。解決策が `genAiValues` で指定したものだけを表示する */
+export const GENAI_VALUE_KEYS = ['parameter', 'fusion', 'chatRag', 'workflow'] as const;
+export type GenAiValueKey = (typeof GENAI_VALUE_KEYS)[number];
+
+/** 原因・効果（FR-038）。課題の原因、解決策の効果。ID はパック全体で一意 */
+export const NamedItemSchema = z.looseObject({
+  id: IdSchema,
+  title: z.string().min(1),
+});
+
 export const IssuesSchema = z.looseObject({
   issues: z.array(entity({
     parentId: IdSchema.nullable().optional(),
@@ -66,10 +76,15 @@ export const IssuesSchema = z.looseObject({
     audience: AudienceSchema,
     personas: z.array(z.string().min(1)).optional(),
     evaluation: EvaluationSchema.optional(),
+    causes: z.array(NamedItemSchema).optional(),
   })),
   solutions: z.array(entity({
     issueId: IdSchema,
+    /** 1 つの解決策が複数の課題に効く場合の課題（`issueId` に加えて参照する） */
+    issueIds: z.array(IdSchema).optional(),
     title: z.string().min(1),
+    effects: z.array(NamedItemSchema).optional(),
+    genAiValues: z.array(z.enum(GENAI_VALUE_KEYS)).optional(),
     productIds: z.array(IdSchema).optional(),
     /** 製品ごとの適合理由（FR-005）。表示する製品は productIds で決まる */
     productFits: z.array(z.looseObject({
@@ -98,6 +113,9 @@ export const PlanSchema = z.looseObject({
     featureId: IdSchema.optional(),
     start: z.string().optional(),
     end: z.string().optional(),
+    /** 担当（誰が）と作業内容（何を）（FR-007） */
+    owner: z.string().min(1).optional(),
+    work: z.string().min(1).optional(),
     dependsOn: z.array(IdSchema).optional(),
   })),
 });

@@ -233,6 +233,27 @@
               }
             },
             "additionalProperties": {}
+          },
+          "causes": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9][a-z0-9-]*$"
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "id",
+                "title"
+              ],
+              "additionalProperties": {}
+            }
           }
         },
         "required": [
@@ -279,9 +300,49 @@
             "type": "string",
             "pattern": "^[a-z0-9][a-z0-9-]*$"
           },
+          "issueIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]*$"
+            }
+          },
           "title": {
             "type": "string",
             "minLength": 1
+          },
+          "effects": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9][a-z0-9-]*$"
+                },
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "required": [
+                "id",
+                "title"
+              ],
+              "additionalProperties": {}
+            }
+          },
+          "genAiValues": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "enum": [
+                "parameter",
+                "fusion",
+                "chatRag",
+                "workflow"
+              ]
+            }
           },
           "productIds": {
             "type": "array",

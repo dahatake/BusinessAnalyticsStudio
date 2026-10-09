@@ -3,6 +3,7 @@
     {
       "id": "issue-mono-001", "createdBy": "sample", "parentId": null, "title": "設備の計画外停止が多い", "hypothesis": "予兆を捉えられていない", "origin": "interview", "classification": "shareable", "sourceIds": ["src-mono-001"],
       "audience": "external", "personas": ["経営層", "現場"],
+      "causes": [{ "id": "cause-mono-001", "title": "設備の稼働データが保全に使われていない" }, { "id": "cause-mono-002", "title": "異常の兆候を見つける基準がない" }],
       "evaluation": {
         "priority": { "value": 1, "unit": "位", "sourceIds": ["src-mono-001"] },
         "cost": { "value": 1200, "unit": "万円", "sourceIds": ["src-mono-003"] },
@@ -14,6 +15,7 @@
     {
       "id": "issue-mono-002", "createdBy": "sample", "parentId": "issue-mono-001", "title": "停止原因の記録が紙で集計できない", "hypothesis": "記録の入力が遅れる", "origin": "interview", "classification": "shareable", "sourceIds": ["src-mono-002"],
       "audience": "internal", "personas": ["現場", "IT"],
+      "causes": [{ "id": "cause-mono-003", "title": "記録の入力が紙で、現場の終業後になる" }],
       "evaluation": {
         "priority": { "value": 2, "unit": "位", "sourceIds": ["src-mono-002"] },
         "cost": { "value": 300, "unit": "万円", "sourceIds": ["src-mono-003"] },
@@ -36,11 +38,16 @@
   ],
   "solutions": [
     {
-      "id": "sol-mono-001", "createdBy": "sample", "issueId": "issue-mono-001", "title": "設備の稼働データを集めて予兆を検知する", "productIds": ["prod-mono-001"], "sourceIds": ["src-mono-003"],
+      "id": "sol-mono-001", "createdBy": "sample", "issueId": "issue-mono-001", "issueIds": ["issue-mono-001"], "title": "設備の稼働データを集めて予兆を検知する",
+      "genAiValues": ["fusion", "workflow"],
+      "effects": [{ "id": "effect-mono-001", "title": "計画外停止の件数が減る" }, { "id": "effect-mono-002", "title": "保全の作業を計画的に組める" }],
+      "productIds": ["prod-mono-001"], "sourceIds": ["src-mono-003"],
       "productFits": [{ "productId": "prod-mono-001", "reason": "稼働データを集めて異常の予兆を検知する機能を備えているため" }]
     },
     {
-      "id": "sol-mono-002", "createdBy": "sample", "issueId": "issue-mono-002", "title": "タブレットで停止原因を入力する", "productIds": ["prod-mono-002"], "sourceIds": ["src-mono-002"],
+      "id": "sol-mono-002", "createdBy": "sample", "issueId": "issue-mono-002", "issueIds": ["issue-mono-002"], "title": "タブレットで停止原因を入力する",
+      "effects": [{ "id": "effect-mono-003", "title": "停止原因の集計が即日で終わる" }],
+      "productIds": ["prod-mono-002"], "sourceIds": ["src-mono-002"],
       "productFits": [{ "productId": "prod-mono-002", "reason": "現場のタブレットで記録を入力でき、紙の集計を不要にできるため" }]
     }
   ]
