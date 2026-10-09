@@ -2,8 +2,9 @@
 // キーボードだけで開いて（ボタンに Enter）、選んで、出力できる。
 import { useMemo, useState } from 'react';
 import {
-  Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Radio, RadioGroup, Text, makeStyles, tokens,
+  Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Text, makeStyles, tokens,
 } from '@fluentui/react-components';
+import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { useInk, selectBoard } from '../ink/store';
 import { downloadBlob } from './deliver';
 import {
