@@ -2,7 +2,7 @@
 // 操作にショートカットがあれば、操作名の横に表示する。? でショートカット一覧を開く。
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from 'react';
 import {
-  Dialog, DialogBody, DialogContent, DialogSurface, DialogTitle, Input, Table, TableBody, TableCell, TableHeader,
+  Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, DialogTrigger, Input, Table, TableBody, TableCell, TableHeader,
   TableHeaderCell, TableRow, Text, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
 import { isEditableTarget } from '../components/panelKeys';
@@ -148,6 +148,12 @@ export function ShortcutDialog() {
               </TableBody>
             </Table>
           </DialogContent>
+          {/* フォーカスできる操作が 1 つもないモーダルは、フォーカス管理（Tabster）が後から aria-hidden にしてしまうため、閉じるボタンを置く */}
+          <DialogActions>
+            <DialogTrigger disableButtonEnhancement>
+              <Button appearance="primary">閉じる</Button>
+            </DialogTrigger>
+          </DialogActions>
         </DialogBody>
       </DialogSurface>
     </Dialog>
