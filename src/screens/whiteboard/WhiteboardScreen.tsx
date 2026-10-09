@@ -15,6 +15,7 @@ import {
 import { useAi } from '../../ai/useAi';
 import { Panel } from '../../components/Panel';
 import { usePackTarget } from '../../discussion/usePackTarget';
+import { usePane } from '../../workspace/PaneContext';
 import { BoardSurface } from '../../ink/BoardSurface';
 import { InkToolbar } from '../../ink/InkToolbar';
 import { BACKGROUNDS, type Background, type BoardItem } from '../../ink/model';
@@ -36,7 +37,7 @@ const useStyles = makeStyles({
   organize: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalS, rowGap: tokens.spacingVerticalS },
   forcedAuto: { forcedColorAdjust: 'auto', '@media (forced-colors: active)': { forcedColorAdjust: 'auto' } },
   stage: { height: 'clamp(420px, 62vh, 900px)', minHeight: 0 },
-  status: { minHeight: '1.4em' },
+  status: { height: '1.4em', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' },
   clock: { fontVariantNumeric: 'tabular-nums', fontSize: tokens.fontSizeHero700, fontWeight: tokens.fontWeightSemibold },
   timerBody: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM, alignItems: 'flex-start' },
 });
@@ -118,6 +119,7 @@ function TimerDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: 
 
 export function WhiteboardScreen() {
   const s = useStyles();
+  const pane = usePane();
   const target = usePackTarget();
   const ai = useAi();
   const topicId = useDiscussionStore((st) => (target ? (st.byPack[target.key]?.selectedId ?? null) : null));
@@ -226,6 +228,8 @@ export function WhiteboardScreen() {
     }
     const result = clusters ?? clusterTexts(texts);
     useInk.getState().updateItems(active.id, (items) => applyClusters(items, stickies.map((i) => i.id), result));
+    // 並べ替えた結果が全部見えるように、全体表示にする
+    useInk.getState().fitBoard(active.id);
     setBusy(false);
     setStatus(`付箋を ${result.length} つのグループに分けました（AI 生成${mock ? '・モック' : ''}）。「元に戻す」で取り消せます。`);
   };
@@ -249,7 +253,7 @@ export function WhiteboardScreen() {
     <Panel
       testId="component-whiteboard"
       title="ホワイトボード"
-      description="議題ごとに複数のボードを持てる無限キャンバスです。ペンで描き、2 本指またはホイールでパン、Ctrl+ホイールで拡大縮小します。"
+      description={pane ? undefined : '議題ごとに複数のボードを持てる無限キャンバスです。ペンで描き、2 本指またはホイールでパン、Ctrl+ホイールで拡大縮小します。'}
       maxWidth="1280px"
     >
       <div className={s.controls}>

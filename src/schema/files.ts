@@ -62,12 +62,20 @@ export const EvaluationValueSchema = z.looseObject({
   unit: z.string().optional(),
   sourceIds: z.array(IdSchema).min(1),
 });
+/** 優先順位分析の評価値 1〜5（FR-039）。AI の提案値（ai）と顧客の決定値（decided）は別の値として持つ */
+export const PriorityScoreSchema = z.looseObject({
+  ai: z.number().min(1).max(5).optional(),
+  decided: z.number().min(1).max(5).optional(),
+  sourceIds: z.array(IdSchema).optional(),
+});
 export const EvaluationSchema = z.looseObject({
   priority: EvaluationValueSchema.optional(),
   cost: EvaluationValueSchema.optional(),
   roi: EvaluationValueSchema.optional(),
   feasibility: EvaluationValueSchema.optional(),
   risk: EvaluationValueSchema.optional(),
+  /** 優先順位分析の評価値（impact・roi・feasibility・risk・costEff）。なければ上の属性から AI の提案値を導く */
+  scores: z.record(z.string(), PriorityScoreSchema).optional(),
 });
 
 /** 生成 AI の価値（FR-006）。解決策が `genAiValues` で指定したものだけを表示する */
@@ -133,6 +141,30 @@ export const PlanSchema = z.looseObject({
   })),
 });
 
+/** アーキテクチャ図の要素の種別（FR-040）。capability=Capability Map、stream=バリューストリームの段階、ほかはアプリ/システムの層の要素 */
+export const ARCH_KINDS = ['capability', 'stream', 'app', 'system', 'data', 'external'] as const;
+export type ArchKind = (typeof ARCH_KINDS)[number];
+
+/** AsIs／ToBe の図の要素。同じ ID を AsIs と ToBe の両方に置くと「同じ要素の変更」として差分になる */
+export const ArchElementSchema = z.looseObject({
+  id: IdSchema,
+  createdBy: CreatedBySchema,
+  name: z.string().min(1),
+  kind: z.enum(ARCH_KINDS).optional(),
+  layer: z.string().optional(),
+  productId: IdSchema.optional(),
+  solutionIds: z.array(IdSchema).optional(),
+});
+export const ArchLinkSchema = z.looseObject({
+  from: IdSchema,
+  to: IdSchema,
+  label: z.string().optional(),
+});
+export const ArchVariantSchema = z.looseObject({
+  elements: z.array(ArchElementSchema),
+  links: z.array(ArchLinkSchema).optional(),
+});
+
 export const ArchitectureSchema = z.looseObject({
   nodes: z.array(entity({
     label: z.string().min(1),
@@ -140,6 +172,9 @@ export const ArchitectureSchema = z.looseObject({
     productId: IdSchema.optional(),
   })),
   edges: z.array(entity({ from: IdSchema, to: IdSchema, label: z.string().optional() })),
+  /** 現状（AsIs）と将来（ToBe）の図（FR-040）。なければ nodes・edges を両方に使う */
+  asis: ArchVariantSchema.optional(),
+  tobe: ArchVariantSchema.optional(),
 });
 
 /** ミニ・モックアプリの入力欄（FR-043）。画面の中に並べる、動くフォームの部品 */

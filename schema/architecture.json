@@ -104,6 +104,182 @@
         ],
         "additionalProperties": {}
       }
+    },
+    "asis": {
+      "type": "object",
+      "properties": {
+        "elements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]*$"
+              },
+              "createdBy": {
+                "type": "string",
+                "enum": [
+                  "ai",
+                  "human",
+                  "sample"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "capability",
+                  "stream",
+                  "app",
+                  "system",
+                  "data",
+                  "external"
+                ]
+              },
+              "layer": {
+                "type": "string"
+              },
+              "productId": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]*$"
+              },
+              "solutionIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9][a-z0-9-]*$"
+                }
+              }
+            },
+            "required": [
+              "id",
+              "createdBy",
+              "name"
+            ],
+            "additionalProperties": {}
+          }
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]*$"
+              },
+              "to": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]*$"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "from",
+              "to"
+            ],
+            "additionalProperties": {}
+          }
+        }
+      },
+      "required": [
+        "elements"
+      ],
+      "additionalProperties": {}
+    },
+    "tobe": {
+      "type": "object",
+      "properties": {
+        "elements": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]*$"
+              },
+              "createdBy": {
+                "type": "string",
+                "enum": [
+                  "ai",
+                  "human",
+                  "sample"
+                ]
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1
+              },
+              "kind": {
+                "type": "string",
+                "enum": [
+                  "capability",
+                  "stream",
+                  "app",
+                  "system",
+                  "data",
+                  "external"
+                ]
+              },
+              "layer": {
+                "type": "string"
+              },
+              "productId": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]*$"
+              },
+              "solutionIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "pattern": "^[a-z0-9][a-z0-9-]*$"
+                }
+              }
+            },
+            "required": [
+              "id",
+              "createdBy",
+              "name"
+            ],
+            "additionalProperties": {}
+          }
+        },
+        "links": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "from": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]*$"
+              },
+              "to": {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]*$"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "from",
+              "to"
+            ],
+            "additionalProperties": {}
+          }
+        }
+      },
+      "required": [
+        "elements"
+      ],
+      "additionalProperties": {}
     }
   },
   "required": [

@@ -34,7 +34,7 @@ function findItem(root: Json, path: string): { array: Json[]; item: unknown } | 
   for (const seg of parsePath(path)) {
     parent = cur;
     cur = isObj(cur) ? cur[String(seg)] : Array.isArray(cur) && typeof seg === 'number' ? cur[seg] : undefined;
-    if (typeof seg === 'number' && Array.isArray(parent) && isObj(cur) && typeof cur.id === 'string') {
+    if (typeof seg === 'number' && Array.isArray(parent) && isObj(cur) && (typeof cur.id === 'string' || ('from' in cur && 'to' in cur))) {
       found = { array: parent, item: cur };
     }
     if (cur === undefined) break;
@@ -71,7 +71,8 @@ export function disableInvalidItems(input: PackFiles): PartialResult {
       const i = t.array.indexOf(t.item);
       if (i >= 0) {
         t.array.splice(i, 1);
-        disabledIds.push((t.item as { id: string }).id);
+        const id = (t.item as { id?: unknown }).id;
+        if (typeof id === 'string') disabledIds.push(id);
       }
     }
   }

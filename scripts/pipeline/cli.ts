@@ -10,6 +10,7 @@ import { parseArgs, resolveInputs, type Ask } from './inputs';
 import { runPipeline, type PipelineDeps } from './pipeline';
 import { mockGenerator, type PackGenerator } from './generate';
 import { chainResearcher, type ResearchSourceEntry, type Researcher } from './research';
+import { mockSmoke, type SmokeRunner } from './verify';
 
 export interface CliDeps {
   paths?: Partial<PipelinePaths>;
@@ -20,13 +21,16 @@ export interface CliDeps {
   /** 差し替え（テスト用）。指定がなければ --generator / --researcher の指定、なければ同梱のモック */
   generator?: PackGenerator;
   researcher?: Researcher;
+  /** ⑥ verify のブラウザー検査の差し替え（テスト用）。指定がなければ --smoke の指定、なければ Playwright */
+  smoke?: SmokeRunner;
 }
 
 const USAGE = `使い方: npm run pipeline -- <${COMMANDS.join('|')}> [--customer 顧客名] [--project Project名]
   [--intensity Executive|Showcase|Entertainment] [--bgm BGMフォルダー] [--material 追加資料]...
   [--workspace 作業フォルダーの親] [--template 雛形] [--sample お手本パック]
-  [--generator mock|モジュールのパス] [--researcher sample|モジュールのパス] [--copy] [--no-keep]
+  [--generator mock|モジュールのパス] [--researcher sample|モジュールのパス] [--smoke playwright|mock] [--copy] [--no-keep]
   research=①②（事前調査）、build=③〜⑦（複製・生成・検証・起動）、all=①〜⑦。顧客名を省くと対話形式で尋ねる。
+  --smoke: ⑥ verify のブラウザー検査。既定は playwright（Chromium）、mock はブラウザーを使わずに合格とする。
   --copy: ③で node_modules と dist をフルコピーする（既定は読み取り専用のリンクで共有）。
   --no-keep: ⑦で起動を確かめたら、サーバーを止めて終了する。`;
 
@@ -94,8 +98,14 @@ export async function main(argv: readonly string[], deps: CliDeps = {}): Promise
     const r = args.options['researcher']?.[0];
     const generator = deps.generator ?? (g && g !== 'mock' ? await loadModule<PackGenerator>(g, 'createGenerator') : mockGenerator);
     const researcher = deps.researcher ?? (r && r !== 'sample' ? await loadResearcher(r) : defaultResearcher());
+    const sm = args.options['smoke']?.[0];
+    if (sm !== undefined && sm !== 'mock' && sm !== 'playwright') throw new InputError(`--smoke は mock か playwright を指定してください: ${sm}`);
+    const smoke = deps.smoke ?? (sm === 'mock' ? mockSmoke : undefined);
 
-    const pdeps: PipelineDeps = { paths, generator, researcher, log, cloneMode: args.flags.has('copy') ? 'copy' : 'link' };
+    const pdeps: PipelineDeps = {
+      paths, generator, researcher, log, cloneMode: args.flags.has('copy') ? 'copy' : 'link',
+      ...(smoke ? { smoke } : {}),
+    };
     const result = await runPipeline(command, input, pdeps);
     if (result.launched) {
       if (args.flags.has('no-keep')) await result.launched.close();

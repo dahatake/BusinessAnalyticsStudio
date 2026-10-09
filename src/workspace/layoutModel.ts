@@ -106,17 +106,23 @@ export function activate(layout: Layout, key: string): Layout {
 }
 
 /** 再表示する（FR-014）。横の分割の末尾に足す。すでに表示中ならそのタブを前面にする。 */
+/** 画面を新しく表示するときに、全体に対して取る幅の割合。載せていない画面は既定（横に並ぶ分割へ足すとき 0.25、そうでなければ 0.3）。描く面のように広さがほしい画面は大きくする。 */
+export const SHOW_SHARE: Readonly<Record<string, number>> = { whiteboard: 0.5 };
+
 export function show(layout: Layout, key: string): Layout {
   if (!layout) return leaf(key);
   if (isVisible(layout, key)) return activate(layout, key);
+  const share = SHOW_SHARE[key];
   if (layout.kind === 'split' && layout.dir === 'row') {
     const n = layout.children.length;
+    const s = share ?? 0.25;
     return {
       kind: 'split', dir: 'row', children: [...clone(layout.children), leaf(key)],
-      sizes: normalizeSizes([...layout.sizes.map((s) => s * 0.75), 0.25], n + 1),
+      sizes: normalizeSizes([...layout.sizes.map((x) => x * (1 - s)), s], n + 1),
     };
   }
-  return split('row', [clone(layout), leaf(key)], [0.7, 0.3]);
+  const s = share ?? 0.3;
+  return split('row', [clone(layout), leaf(key)], [1 - s, s]);
 }
 
 function removeNode(root: LayoutNode, target: LayoutNode): Layout {
@@ -221,8 +227,8 @@ export const DEFAULT_PERSONA: Persona = '経営層';
 /** ペルソナ別の既定のレイアウト（要求定義書 §7）。 */
 export function defaultLayout(persona: Persona): Layout {
   switch (persona) {
-    case '経営層': // 上段にサマリー、主領域に 2×2 マトリクス、横にランキング表
-      return split('col', [leaf('summary'), split('row', [leaf('matrix'), leaf('ranking')], [0.7, 0.3])], [0.25, 0.75]);
+    case '経営層': // 上段にサマリー、主領域に 2×2 マトリクス、横にランキング表。キャンバスは背景の全体図として小さく残す（§7 の表）
+      return split('col', [leaf('summary'), split('row', [leaf('matrix'), leaf('ranking'), leaf('canvas')], [0.45, 0.2, 0.35])], [0.25, 0.75]);
     case '事業部門': // 主領域に課題-解決策分析、横に議論ツリー、下にガント
       return split('col', [split('row', [leaf('issue-solution'), leaf('discussion-tree')], [0.65, 0.35]), leaf('gantt')], [0.7, 0.3]);
     case 'IT': // 主領域にアーキテクチャ図、横にナレッジグラフ、下に製品の一覧
