@@ -14,7 +14,7 @@ class MemoryStorage {
   clear() { this.m.clear(); }
 }
 
-const ALL = ['summary', 'matrix', 'ranking', 'issue-solution', 'discussion-tree', 'gantt', 'architecture', 'knowledge-graph', 'products', 'view3d', 'mock'];
+const ALL = ['canvas', 'summary', 'matrix', 'ranking', 'issue-solution', 'discussion-tree', 'gantt', 'architecture', 'knowledge-graph', 'products', 'view3d', 'mock-app'];
 
 /** 新しいストアを、保存値（あれば）を読んだ状態で作る。 */
 async function freshStore(available: readonly string[], saved?: unknown) {
@@ -123,36 +123,44 @@ describe('FR-014 AC-017 / FR-110 AC-135 レイアウトのストア', () => {
 });
 
 describe('FR-012 FR-014 AC-017 既定が空になるときの退避（暫定）', () => {
-  // FR-014 AC-017
+  // FR-014 AC-017（§7 の既定に含まれない画面だけが登録されている状態。経営層の既定にはキャンバスも含まれるので、ホワイトボードで代用する）
   it('FR-014 AC-017 既定の画面が 1 つも登録されていなければ、登録済みの画面を並べる（初回起動で空にならない）', async () => {
-    const { useLayout, effectiveLayout } = await freshStore(['canvas', 'settings', 'chat']);
+    const { useLayout, effectiveLayout } = await freshStore(['whiteboard', 'settings', 'chat']);
     const l = effectiveLayout(useLayout.getState());
     expect(l).not.toBeNull();
-    expect(keysOf(l).sort()).toEqual(['canvas', 'chat', 'settings']);
+    expect(keysOf(l).sort()).toEqual(['chat', 'settings', 'whiteboard']);
   });
 
   // FR-110 AC-135
   it('FR-110 AC-135 既定に戻した直後も空にならず、退避の並びになる', async () => {
-    const { useLayout, effectiveLayout } = await freshStore(['canvas', 'settings']);
-    useLayout.getState().hideComponent('canvas');
+    const { useLayout, effectiveLayout } = await freshStore(['whiteboard', 'settings']);
+    useLayout.getState().hideComponent('whiteboard');
     useLayout.getState().hideComponent('settings');
     expect(effectiveLayout(useLayout.getState())).toBeNull(); // 利用者が全部を非表示にした
     useLayout.getState().resetLayout();
-    expect(keysOf(effectiveLayout(useLayout.getState())).sort()).toEqual(['canvas', 'settings']);
+    expect(keysOf(effectiveLayout(useLayout.getState())).sort()).toEqual(['settings', 'whiteboard']);
   });
 
   // FR-014 AC-017
   it('FR-014 AC-017 登録が増えて §7 の既定の画面が 1 つでも残れば、既定（§7）が優先される', async () => {
-    const { useLayout, effectiveLayout } = await freshStore(['canvas', 'settings', 'summary', 'matrix']);
+    const { useLayout, effectiveLayout } = await freshStore(['whiteboard', 'settings', 'summary', 'matrix']);
     const l = effectiveLayout(useLayout.getState());
     expect(keysOf(l).sort()).toEqual(['matrix', 'summary']);
+  });
+
+  // FR-012 FR-112 経営層の既定にはキャンバスが背景の全体図として残る（§7 の表）
+  it('FR-112 §7 経営層の既定のレイアウトにはキャンバスが含まれ、2×2 マトリクスが最大の領域になる', () => {
+    const l = defaultLayout('経営層');
+    expect(keysOf(l)).toEqual(['summary', 'matrix', 'ranking', 'canvas']);
+    const row = (l as { children: Array<{ sizes: number[] }> }).children[1]!;
+    expect(row.sizes[0]).toBeGreaterThan(Math.max(...row.sizes.slice(1)));
   });
 
   // FR-014 AC-017
   it('FR-014 AC-017 保存したレイアウトの画面がすべて無くなったときも、空にならず既定へ戻る', async () => {
     const saved = { state: { persona: '経営層', layouts: { 経営層: arrangeAll(['gone-a', 'gone-b']) } }, version: 1 };
-    const { useLayout, effectiveLayout } = await freshStore(['canvas', 'settings'], saved);
-    expect(keysOf(effectiveLayout(useLayout.getState())).sort()).toEqual(['canvas', 'settings']);
+    const { useLayout, effectiveLayout } = await freshStore(['whiteboard', 'settings'], saved);
+    expect(keysOf(effectiveLayout(useLayout.getState())).sort()).toEqual(['settings', 'whiteboard']);
   });
 
   it('arrangeAll は 0 件で null、1 件で単独、2 件以上は先頭を前面にした 1 つのタブのまとまりにする', () => {

@@ -6,6 +6,7 @@ import path from 'node:path';
 import { BRAND_PROFILE_PATH, DATA_FILE_NAMES, dataFilePath, type DataFileName } from '../../src/schema';
 import { readPackFiles } from '../lib/pack-fs';
 import type { Inputs } from './common';
+import { getAt, parsePath } from './jsonpath';
 import type { ResearchCache } from './research';
 
 /** 生成するファイル（FR-119）。JSON は値、Markdown は文字列を返す */
@@ -22,6 +23,16 @@ export function packFilePath(key: PackFileKey): string {
 
 export interface Material { name: string; text: string }
 
+/** 自己修正（FR-126）の再生成の対象。ファイル全体ではなく、エラーの出た 1 か所だけを指す */
+export interface GenerateTarget {
+  /** ファイル内の位置（例: `issues[2].parentId`）。空はファイル全体 */
+  path: string;
+  /** その箇所のエラー（原因の文）。生成器はこれを直す値を返す */
+  errors: string[];
+  /** その箇所の今の値（ファイルがない・項目がないときは undefined） */
+  current: unknown;
+}
+
 export interface GenerateRequest {
   key: PackFileKey;
   input: Inputs;
@@ -30,6 +41,11 @@ export interface GenerateRequest {
   sample: unknown;
   /** 追加資料（商談メモなど）の本文 */
   materials: Material[];
+  /**
+   * 指定があるときは、ファイル全体ではなく `target` の位置だけを再生成し、その位置に入れる値を返す（FR-126）。
+   * 指定がなければ、ファイル全体を返す（従来どおり）。
+   */
+  target?: GenerateTarget;
 }
 
 /** 生成の接続点。実際の LLM は、この形で差し替える（`--generator <モジュールのパス>`） */
@@ -40,24 +56,30 @@ export interface PackGenerator {
 const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v)) as T;
 
 export const mockGenerator: PackGenerator = {
-  async generate({ key, input, cache, sample }) {
-    switch (key) {
-      case 'customerResearch': return cache.customerResearch;
-      case 'brandResearch': return cache.brandResearch;
-      case 'customer': {
-        const c = clone(sample) as Record<string, unknown>;
-        return { ...c, name: input.customer, projectName: input.projectName, createdBy: 'sample', defaultIntensity: input.intensity };
-      }
-      case 'brandProfile': {
-        const b = clone(sample) as Record<string, any>;
-        // ロゴのファイルは顧客ごとに別のため、お手本のパスは引き継がない（利用条件が不明なのでプレースホルダー表示）
-        const { path: _p, ...logo } = (b.logo ?? {}) as Record<string, unknown>;
-        return { ...b, name: input.customer, logo: { ...logo, status: 'unknown' } };
-      }
-      default: return clone(sample);
-    }
+  async generate(req) {
+    const full = await generateWhole(req);
+    // 自己修正の再生成（FR-126）: ファイル全体を作り直したうえで、指定された位置の値だけを返す
+    return req.target ? getAt(full, parsePath(req.target.path)) : full;
   },
 };
+
+async function generateWhole({ key, input, cache, sample }: GenerateRequest): Promise<unknown> {
+  switch (key) {
+    case 'customerResearch': return cache.customerResearch;
+    case 'brandResearch': return cache.brandResearch;
+    case 'customer': {
+      const c = clone(sample) as Record<string, unknown>;
+      return { ...c, name: input.customer, projectName: input.projectName, createdBy: 'sample', defaultIntensity: input.intensity };
+    }
+    case 'brandProfile': {
+      const b = clone(sample) as Record<string, any>;
+      // ロゴのファイルは顧客ごとに別のため、お手本のパスは引き継がない（利用条件が不明なのでプレースホルダー表示）
+      const { path: _p, ...logo } = (b.logo ?? {}) as Record<string, unknown>;
+      return { ...b, name: input.customer, logo: { ...logo, status: 'unknown' } };
+    }
+    default: return clone(sample);
+  }
+}
 
 /** お手本パックの中身を、生成の入力にする形で読む */
 export function readSample(samplePack: string): Record<PackFileKey, unknown> {
@@ -70,7 +92,7 @@ export function readSample(samplePack: string): Record<PackFileKey, unknown> {
   return out as unknown as Record<PackFileKey, unknown>;
 }
 
-function readMaterials(files: readonly string[]): Material[] {
+export function readMaterials(files: readonly string[]): Material[] {
   return files.map((f) => ({ name: path.basename(f), text: fs.readFileSync(f, 'utf8') }));
 }
 

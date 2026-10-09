@@ -21,7 +21,7 @@ class MemoryStorage {
   clear() { this.m.clear(); }
 }
 
-const ALL = ['summary', 'matrix', 'ranking', 'issue-solution', 'discussion-tree', 'gantt', 'architecture', 'knowledge-graph', 'products', 'view3d', 'mock', 'table'];
+const ALL = ['summary', 'matrix', 'ranking', 'issue-solution', 'discussion-tree', 'gantt', 'architecture', 'knowledge-graph', 'products', 'view3d', 'mock-app', 'table'];
 
 async function freshLayout(available: readonly string[]) {
   vi.resetModules();
