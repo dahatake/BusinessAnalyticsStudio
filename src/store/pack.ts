@@ -5,7 +5,7 @@ import { formatPackError } from '../schema';
 export type PackState =
   | { status: 'loading' }
   | { status: 'error'; messages: string[] }
-  | { status: 'ready'; pack: LoadedPack };
+  | { status: 'ready'; pack: LoadedPack; warnings: string[] };
 
 interface PackStore {
   state: PackState;
@@ -22,7 +22,7 @@ export const usePackStore = create<PackStore>((set) => ({
     const runtime = await loadRuntimeConfig(fetchFn);
     try {
       const pack = await loadPack(fetchFn);
-      set({ runtime, state: { status: 'ready', pack } });
+      set({ runtime, state: { status: 'ready', pack, warnings: pack.issues.map(formatPackError) } });
     } catch (e) {
       const messages = e instanceof PackLoadError ? e.errors.map(formatPackError) : [String(e)];
       set({ runtime, state: { status: 'error', messages } });

@@ -58,6 +58,8 @@ export interface AppShellProps {
   screens: readonly ScreenDefinition[];
   activeKey?: string;
   onSelect: (key: string) => void;
+  /** ヘッダーの右側に常時出す要素（AI 接続状態など） */
+  headerExtra?: ReactNode;
   /** ヘッダー右側の操作（ペルソナの切替、既定のレイアウトに戻す など） */
   actions?: ReactNode;
   /** ナビゲーションの下のドック（非表示のコンポーネントの再表示） */
@@ -65,13 +67,16 @@ export interface AppShellProps {
   children: ReactNode;
 }
 
-export function AppShell({ title, screens, activeKey, onSelect, actions, dock, children }: AppShellProps) {
+export function AppShell({ title, screens, activeKey, onSelect, headerExtra, actions, dock, children }: AppShellProps) {
   const s = useStyles();
   return (
     <div className={s.root}>
       <header className={s.header}>
         <Text as="h1" size={500} weight="semibold">{title}</Text>
-        {actions ? <div className={s.actions}>{actions}</div> : null}
+        <div className={s.actions}>
+          {headerExtra}
+          {actions}
+        </div>
       </header>
       <nav className={s.nav} aria-label="画面">
         {screens.map((sc) => {

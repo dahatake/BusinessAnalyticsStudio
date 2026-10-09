@@ -1,6 +1,7 @@
 // 設定パネル（テーマの切替）。FR-058
 import { Field, Radio, RadioGroup } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
+import { AiSettings } from '../ai/AiSettings';
 import { THEME_MODES, useSettings, type ThemeMode } from '../store/settings';
 
 const LABELS: Record<ThemeMode, string> = { light: 'Light', dark: 'Dark', system: 'システムに合わせる' };
@@ -15,6 +16,7 @@ export function SettingsScreen() {
           {THEME_MODES.map((m) => <Radio key={m} value={m} label={LABELS[m]} />)}
         </RadioGroup>
       </Field>
+      <AiSettings />
     </Panel>
   );
 }

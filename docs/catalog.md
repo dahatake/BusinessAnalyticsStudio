@@ -17,8 +17,8 @@
 | FR-007 | Feature ごとの工程 | 承認済み | 未実装 | 未実装 | なし |
 | FR-008 | サンプルデータの明示 | 承認済み | 未実装 | 未実装 | なし |
 | FR-009 | 調査データの出典と確度の確認 | 承認済み | 未実装 | 未実装 | なし |
-| FR-010 | LLM 処理のローカル実行 | 承認済み | 未実装 | 未実装 | なし |
-| FR-011 | Copilot SDK 中継プロセスとモック | 承認済み | 未実装 | 未実装 | なし |
+| FR-010 | LLM 処理のローカル実行 | 承認済み | scripts/relay/relay.ts, scripts/relay/copilot-adapter.ts, scripts/relay/start.ts, src/ai/client.ts, src/ai/useAi.ts, src/ai/AiStatus.tsx, src/ai/AiSettings.tsx, src/ai/ChatScreen.tsx | tests/unit/relay.test.ts | AI 呼び出し口, Copilot SDK 中継プロセス |
+| FR-011 | Copilot SDK 中継プロセスとモック | 承認済み | scripts/relay/relay.ts, scripts/relay/copilot-adapter.ts, scripts/relay/start.ts, src/ai/client.ts, src/ai/useAi.ts, src/ai/AiStatus.tsx, src/ai/AiSettings.tsx, src/ai/ChatScreen.tsx, .env.example | tests/unit/relay.test.ts, tests/system/e2e/analysis.spec.ts (E2E-010), tests/unit/secrets.test.ts | AI 呼び出し口, Copilot SDK 中継プロセス, デザイン基盤 |
 | FR-012 | 議題間を移動できるキャンバス | 承認済み | src/screens/canvas/CanvasScreen.tsx, src/workspace/viewport.ts | tests/unit/workspace.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース, テスト用フック |
 | FR-013 | コンポーネントの最大化・通常表示・非表示 | 承認済み | src/components/Panel.tsx, src/workspace/PaneContext.tsx, src/workspace/Workspace.tsx | tests/unit/workspace.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
 | FR-014 | ドックからの再表示とペルソナ別レイアウトの保存 | 承認済み | src/store/layout.ts, src/workspace/Controls.tsx, src/workspace/layoutModel.ts | tests/unit/workspace.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
@@ -108,8 +108,8 @@
 | FR-098 | アプリのデータのカード配置とリンク | 承認済み | 未実装 | 未実装 | なし |
 | FR-099 | 付箋のクラスタリング・ドット投票・タイマー | 承認済み | 未実装 | 未実装 | なし |
 | FR-100 | 顧客固有情報のコードからの分離 | 承認済み | src/data/loader.ts, src/store/pack.ts, vite.config.ts | tests/unit/foundation.test.ts | 顧客パックの読み込み, 顧客パックのスキーマと検証 |
-| FR-101 | 顧客パックの差し替えだけで動くビルド成果物 | 承認済み | 未実装 | 未実装 | なし |
-| FR-102 | 顧客パックの検証と部分的な無効化 | 承認済み | 未実装 | 未実装 | なし |
+| FR-101 | 顧客パックの差し替えだけで動くビルド成果物 | 承認済み | src/app/App.tsx, src/app/Opening.tsx, src/data/loader.ts | tests/system/e2e/brand-settings.spec.ts (AC-123) | 顧客パックの読み込み, オープニング |
+| FR-102 | 顧客パックの検証と部分的な無効化 | 承認済み | src/schema/partial.ts, src/data/loader.ts, src/store/pack.ts, src/app/App.tsx | tests/unit/partial.test.ts (AC-124), tests/system/e2e/brand-settings.spec.ts | 顧客パックのスキーマと検証, 部分的な無効化 |
 | FR-103 | 業種プリセット | 承認済み | 未実装 | 未実装 | なし |
 | FR-104 | お手本パックでの起動 | 承認済み | 未実装 | 未実装 | なし |
 | FR-105 | オフラインで動く配布パッケージ | 承認済み | 未実装 | 未実装 | なし |
@@ -122,11 +122,11 @@
 | FR-112 | ペルソナ別の既定の情報表現と既定のレイアウト | 承認済み | 未実装 | 未実装 | なし |
 | FR-113 | 表現が成り立たないときの代替表示 | 承認済み | 未実装 | 未実装 | なし |
 | FR-114 | 一意の ID と ID による参照 | 承認済み | src/schema/validate.ts、src/schema/common.ts | tests/unit/pack.test.ts | 顧客パックのスキーマと検証 |
-| FR-115 | 数値・事実の出典 | 承認済み | 未実装 | 未実装 | なし |
-| FR-116 | 作成者の種別 | 承認済み | 未実装 | 未実装 | なし |
+| FR-115 | 数値・事実の出典 | 承認済み | src/schema/validate.ts, src/schema/files.ts | tests/unit/pack.test.ts (AC-141) | 顧客パックのスキーマと検証 |
+| FR-116 | 作成者の種別 | 承認済み | src/schema/common.ts, src/schema/edit.ts | tests/unit/pack.test.ts, tests/unit/partial.test.ts (AC-142) | 顧客パックのスキーマと検証 |
 | FR-117 | WorkIQ 由来情報の機密区分 | 承認済み | 未実装 | 未実装 | なし |
 | FR-118 | スキーマとお手本データの同梱 | 承認済み | schema/customer.json, schema/brand-profile.json, examples/mono/public/data/customer.json, examples/koto/public/data/customer.json, scripts/gen-schema.ts, scripts/check-pack.ts | tests/unit/foundation.test.ts | 顧客パックのスキーマと検証 |
-| FR-119 | 顧客パックのファイル構成 | 承認済み | 未実装 | 未実装 | なし |
+| FR-119 | 顧客パックのファイル構成 | 承認済み | src/schema/validate.ts (validateLayout) | tests/unit/pack.test.ts (AC-145) | 顧客パックのスキーマと検証 |
 | FR-120 | Skill のコマンド | 承認済み | 未実装 | 未実装 | なし |
 | FR-121 | 事前調査と調査キャッシュ | 承認済み | 未実装 | 未実装 | なし |
 | FR-122 | ブランド調査の出典の優先順位と既定テーマ | 承認済み | 未実装 | 未実装 | なし |
@@ -139,7 +139,7 @@
 | FR-129 | 工程ごとの時間計測 | 承認済み | 未実装 | 未実装 | なし |
 | FR-130 | 入力変数の指定 | 承認済み | 未実装 | 未実装 | なし |
 | FR-131 | 雛形への改善要望の記録 | 承認済み | 未実装 | 未実装 | なし |
-| FR-132 | AI 実接続の明示的な有効化（Q-001 回答までの暫定） | 承認済み | 未実装 | 未実装 | なし |
+| FR-132 | AI 実接続の明示的な有効化（Q-001 回答までの暫定） | 承認済み | src/ai/AiSettings.tsx, src/ai/useAi.ts, scripts/relay/relay.ts | tests/unit/relay.test.ts | AI 呼び出し口, Copilot SDK 中継プロセス |
 | NFR-PERF-001 | 顧客パックの生成から起動までの時間 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-PERF-002 | 4K 表示での描画性能 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-PERF-003 | 初回表示の時間 | 承認済み | 未実装 | 未実装 | なし |
@@ -151,8 +151,8 @@
 | NFR-A11Y-002 | 演出をすべて OFF にしたときの利用 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-A11Y-003 | 視覚的な表現の代替 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-A11Y-004 | ドラッグ以外の操作手段 | 承認済み | 未実装 | 未実装 | なし |
-| NFR-SEC-001 | API キーの管理 | 承認済み | 未実装 | 未実装 | なし |
-| NFR-SEC-002 | 外部への通信の限定と明示 | 承認済み | 未実装 | 未実装 | なし |
+| NFR-SEC-001 | API キーの管理 | 承認済み | .env.example | tests/unit/secrets.test.ts | なし |
+| NFR-SEC-002 | 外部への通信の限定と明示 | 承認済み | src/ai/ChatScreen.tsx, src/ai/AiStatus.tsx, src/ai/client.ts | tests/system/e2e/quality.spec.ts (IT-010) | AI 呼び出し口 |
 | NFR-SEC-003 | 調査キャッシュと顧客パックの保護 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-LEGAL-001 | 素材の権利と CREDITS | 承認済み | 未実装 | 未実装 | なし |
 | NFR-LEGAL-002 | サンプル・AI 生成・モックの明示と商標 | 承認済み | 未実装 | 未実装 | なし |
@@ -169,6 +169,9 @@
 
 | 名前 | 定義ファイル | 関連する要求 ID |
 |---|---|---|
+| POST /ask（中継プロセス） | scripts/relay/relay.ts | FR-010, FR-011, FR-132 |
+| POST /connection（中継プロセス） | scripts/relay/relay.ts | FR-132 |
+| GET /health（中継プロセス） | scripts/relay/relay.ts | FR-011 |
 
 ## テーブル
 
@@ -179,10 +182,14 @@
 
 | 部品名 | ファイル | 用途 | 使っている要求 ID |
 |---|---|---|---|
-| デザイン基盤 | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/components/AppShell.tsx, src/components/Panel.tsx, src/components/StateViews.tsx | Fluent UI v9 のトークン・4px グリッド・Light/Dark/ハイコントラスト、アプリの外枠、読み込み中/0 件/エラーの表示。以降の画面はこれを再利用する | FR-012, FR-013, FR-014, FR-058, FR-109, FR-110 |
+| デザイン基盤 | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/components/AppShell.tsx, src/components/Panel.tsx, src/components/StateViews.tsx | Fluent UI v9 のトークン・4px グリッド・Light/Dark/ハイコントラスト、アプリの外枠、読み込み中/0 件/エラーの表示。以降の画面はこれを再利用する | FR-011, FR-012, FR-013, FR-014, FR-058, FR-109, FR-110 |
 | ワークスペース | src/workspace/layoutModel.ts, src/workspace/Workspace.tsx, src/workspace/PaneContext.tsx, src/workspace/Controls.tsx, src/store/layout.ts | レイアウトの木（分割とタブ）、ペルソナ別の保存、最大化/非表示/移動/タブ化、ドック、ペルソナ切替、既定に戻す。画面は Panel で包めば自動で対応する。registry に登録したキーが対象 | FR-012, FR-013, FR-014, FR-109, FR-110 |
 | テスト用フック | src/testHooks.ts | `?e2e=1` のときだけ window.__edbTest に名前空間ごとのフックを足す（registerTestHooks） | FR-012 |
 | 画面の登録 | src/screens/registry.ts, src/screens/types.ts | 画面を足すときは registry に 1 行足す（nav-key / component-key） | FR-058 |
 | 設定ストア | src/store/settings.ts | Zustand と localStorage の利用者設定（現在はテーマ） | FR-058 |
-| 顧客パックのスキーマと検証 | src/schema/common.ts, src/schema/files.ts, src/schema/validate.ts, scripts/lib/pack-fs.ts | zod のスキーマ、ID の一意・参照・出典の検証。画面の部品を参照しない。schema の JSON は npm run gen:schema で生成 | FR-100, FR-114, FR-118, NFR-MAINT-001 |
-| 顧客パックの読み込み | src/data/loader.ts, src/store/pack.ts | 起動時に data・brand・runtime-config の JSON を読んで検証 | FR-100 |
+| AI 呼び出し口 | src/ai/client.ts, src/ai/useAi.ts, src/ai/AiStatus.tsx, src/ai/AiSettings.tsx, src/ai/ChatScreen.tsx | askAi（5 種類の LLM 処理の唯一の入口。既定はモック、実接続は確認後のみ localhost の中継へ）、常時表示の AI 状態、設定の実接続切替、チャットの土台（FR-017 が拡張） | FR-010, FR-011, FR-132, NFR-SEC-002 |
+| Copilot SDK 中継プロセス | scripts/relay/relay.ts, scripts/relay/copilot-adapter.ts, scripts/relay/start.ts | 127.0.0.1 だけで待ち受ける Node.js の中継。`npm run relay` | FR-010, FR-011, FR-132 |
+| 顧客パックのスキーマと検証 | src/schema/common.ts, src/schema/files.ts, src/schema/validate.ts, scripts/lib/pack-fs.ts | zod のスキーマ、ID の一意・参照・出典の検証。画面の部品を参照しない。schema の JSON は npm run gen:schema で生成 | FR-100, FR-102, FR-114, FR-115, FR-116, FR-118, FR-119, NFR-MAINT-001 |
+| 顧客パックの読み込み | src/data/loader.ts, src/store/pack.ts | 起動時に data・brand・runtime-config の JSON を読んで検証 | FR-100, FR-101 |
+| 部分的な無効化 | src/schema/partial.ts | エラーのある項目（と参照する項目）だけを取り除いて起動を続ける。画面とコンソールに出す | FR-102 |
+| オープニング | src/app/Opening.tsx | 顧客名とプロジェクト名の導入画面（Esc で飛ばす） | FR-101 |
