@@ -12,3 +12,13 @@ glTF のファイル（`.gltf`／`.glb`）を足すときは、同じ変更で�
 | 3D KPI タワー | `src/three/presets.ts` の `kpiTowerObjects` | 手続き生成 | 箱 |
 | データフローの粒子 | `src/three/presets.ts` の `particlePosition` | 手続き生成 | 点群 |
 | AsIs → ToBe のモーフィング | `src/three/presets.ts` の `morphLayouts` | 手続き生成 | 箱の補間 |
+
+## 音源の権利（FR-073、NFR-LEGAL-001）
+
+BGM と効果音は、外部から音源を取得せず、すべて Web Audio API（オシレーター）でその場で生成します（音声ファイルは同梱しません）。
+顧客が assets/audio/ に音源を置いた場合は、その顧客の責任で権利を確認し、この表に行を足してください。
+
+| 音源 | 場所 | 権利の種別 | 備考 |
+|---|---|---|---|
+| BGM（静かなアンビエント・先進的なエレクトロニック・温かなアコースティックの 3 曲調。シーンごとに調が変わる） | `src/audio/model.ts` の `bgmBeatNotes` | 手続き生成 | サイン波・三角波・矩形波の合成。乱数ではなくシーン名のハッシュで決まる |
+| 効果音（ミュート解除・選択・議題の移動・確認） | `src/audio/model.ts` の `seTones` | 手続き生成 | 短い正弦波・三角波の音の並び |

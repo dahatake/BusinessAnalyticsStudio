@@ -24,6 +24,9 @@ import { checkTemplateVersion, versionWarning } from '../version';
 import { Dock, PersonaMenu, ResetLayoutButton } from '../workspace/Controls';
 import { Workspace } from '../workspace/Workspace';
 import { Opening } from './Opening';
+import { AudioDirector } from '../audio/AudioDirector';
+import { ShowControlBar } from '../show/ShowControlBar';
+import { currentTopic, usePresentationStore } from '../store/presentation';
 
 setAvailableComponents(SCREENS.map((s) => s.key));
 
@@ -51,6 +54,9 @@ export function App() {
   const load = usePackStore((s) => s.load);
   const brand = useEffectiveBrand();
   const [opened, setOpened] = useState(false);
+  // BGM のシーン: オープニング、プレゼンテーション中は章ごと、それ以外は通常（FR-073）
+  const topic = usePresentationStore(currentTopic);
+  const scene = !opened ? 'opening' : topic ? `chapter:${topic.chapterId}` : 'workspace';
 
   useEffect(() => { void load(); }, [load]);
   useEffect(() => installEditKeys(), []);
@@ -88,6 +94,8 @@ export function App() {
       <SelectionController />
       <SelectionAnnouncer />
       <CommandController screens={SCREENS} />
+      <AudioDirector scene={scene} />
+      <ShowControlBar />
       <AppShell
         title={`${name} ${projectName}`}
         screens={SCREENS}
