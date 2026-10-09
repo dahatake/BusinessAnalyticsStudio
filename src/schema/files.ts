@@ -47,7 +47,34 @@ export const LocationSchema = z.looseObject({
   lng: z.number().min(-180).max(180),
 });
 
+/**
+ * 階層のレベルごとのメタデータ（FR-030）。深さ 0 が最上位（例: 拠点 > 建屋 > 部屋 > 項目）。
+ * LOD のしきい値・説明・色・KPI・出典のどれが欠けても検証エラーにする（レベルを書くなら全部書く）。
+ * `lodThreshold` は、全体を見渡す視点（ホーム）のカメラ距離に対する倍率。カメラ距離がこの倍率より近づくと、そのレベルの項目を表示する
+ * （縦横比や項目の大きさが違うパックでも同じ値で通用する）。FR-031 / FR-032
+ */
+export const LevelSchema = z.looseObject({
+  depth: z.number().int().min(0),
+  name: z.string().min(1).optional(),
+  lodThreshold: z.number().positive(),
+  description: z.string().min(1),
+  /** 色（#rgb または #rrggbb） */
+  color: z.string().regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, '色は #rgb または #rrggbb で書く'),
+  /** そのレベルで見る KPI の名前 */
+  kpi: z.string().min(1),
+  sourceIds: z.array(IdSchema).min(1),
+});
+export type HierarchyLevel = z.infer<typeof LevelSchema>;
+
 export const EntitiesSchema = z.looseObject({
+  /** 階層のレベルごとの LOD のしきい値とメタデータ（FR-030）。なければ階層の深さから既定のしきい値を求める */
+  levels: z.array(LevelSchema).optional().superRefine((levels, ctx) => {
+    const seen = new Set<number>();
+    (levels ?? []).forEach((l, i) => {
+      if (seen.has(l.depth)) ctx.addIssue({ code: 'custom', path: [i, 'depth'], message: `階層の深さ ${l.depth} が重複しています` });
+      seen.add(l.depth);
+    });
+  }),
   entities: z.array(entity({
     type: z.string().min(1),
     name: z.string().min(1),
@@ -237,6 +264,23 @@ export const ShowSchema = z.looseObject({
     topics: z.array(entity({
       title: z.string().min(1),
       entityIds: z.array(IdSchema).optional(),
+      /** 議題の種類。なければ通常の議題 */
+      type: z.string().min(1).optional(),
+      /** テロップ/ローワーサード（FR-078）。出典 ID を併記する */
+      telop: z.looseObject({ text: z.string().min(1), sourceIds: z.array(IdSchema).optional() }).optional(),
+      /** Before/After の演出（FR-079）。つまみより左が Before、右が After */
+      beforeAfter: z.looseObject({
+        before: z.looseObject({ label: z.string().optional(), text: z.string().min(1) }),
+        after: z.looseObject({ label: z.string().optional(), text: z.string().min(1) }),
+      }).optional(),
+      /** ROI 発表の演出（FR-079）。数値は出典 ID を持つ（FR-115） */
+      roi: z.looseObject({
+        label: z.string().optional(),
+        value: z.number(),
+        unit: z.string().optional(),
+        caption: z.string().optional(),
+        sourceIds: z.array(IdSchema).min(1),
+      }).optional(),
     })).default([]),
   })),
 });
