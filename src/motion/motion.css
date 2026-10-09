@@ -17,3 +17,12 @@ html[data-animation='paused'] *::after {
   animation-duration: calc(200ms * var(--edb-tempo, 1));
   animation-timing-function: cubic-bezier(0, 0, 0, 1);
 }
+
+/* 遷移中も操作を受ける: View Transitions の擬似要素がポインター操作を奪わないようにする（キャンバスのドラッグなどが遷移の最中に始まっても効く） */
+::view-transition,
+::view-transition-group(*),
+::view-transition-image-pair(*),
+::view-transition-old(*),
+::view-transition-new(*) {
+  pointer-events: none;
+}

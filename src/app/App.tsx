@@ -12,7 +12,7 @@ import { useEffectiveBrand } from '../theme/useBrand';
 import { ErrorView, LoadingView } from '../components/StateViews';
 import { SCREENS } from '../screens/registry';
 import { SelectionController } from '../selection/SelectionController';
-import { setAvailableComponents, useLayout } from '../store/layout';
+import { isComponentVisible, setAvailableComponents, useLayout } from '../store/layout';
 import { usePackStore } from '../store/pack';
 import { checkTemplateVersion, versionWarning } from '../version';
 import { Dock, PersonaMenu, ResetLayoutButton } from '../workspace/Controls';
@@ -29,6 +29,15 @@ function openComponent(key: string): void {
     el?.scrollIntoView?.({ block: 'nearest' });
     el?.focus({ preventScroll: true });
   }, 0);
+}
+
+/**
+ * ナビゲーションの選択。非表示のコンポーネントを出すときだけ View Transition で動かす（FR-070）。
+ * すでに表示中のものは見た目が変わらないので、更新を遅らせずにすぐ反映する（遷移の最中に始まった操作を妨げない）。
+ */
+function selectComponent(key: string): void {
+  const animate = useAnimation.getState().playing && !isComponentVisible(key);
+  runTransition(() => (animate ? flushSync(() => openComponent(key)) : openComponent(key)), animate);
 }
 
 export function App() {
@@ -73,7 +82,7 @@ export function App() {
       <AppShell
         title={`${name} ${projectName}`}
         screens={SCREENS}
-        onSelect={(key) => runTransition(() => flushSync(() => openComponent(key)), useAnimation.getState().playing)}
+        onSelect={selectComponent}
         headerExtra={<><DiscussionFileActions /><AnimationStatus /><AiStatus /></>}
         actions={<><PersonaMenu /><ResetLayoutButton /></>}
         dock={<Dock screens={SCREENS} />}
