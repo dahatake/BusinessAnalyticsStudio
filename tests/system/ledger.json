@@ -630,9 +630,9 @@
       "command": "node tests/system/run.mjs AC-018",
       "canary": false,
       "status": "blocked",
-      "last_commit": "43ae272",
-      "last_run_at": "2026-10-09T18:25:52+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-014-202610091825.log",
+      "last_commit": "3bc5dd5",
+      "last_run_at": "2026-10-09T18:53:46+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-014-202610091853.log",
       "history": [
         {
           "at": "2026-10-09T12:16:11+09:00",
@@ -657,6 +657,18 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: I04(ペルソナ切替)。統合後に not_run へ"
+        },
+        {
+          "at": "2026-10-09T18:53:24+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "I04/I07 統合後に再確認"
+        },
+        {
+          "at": "2026-10-09T18:55:33+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: selection-indicator/matrix 等(I14,I08)。統合後に再確認"
         }
       ]
     },
@@ -672,10 +684,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-019",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "3bc5dd5",
+      "last_run_at": "2026-10-09T18:53:28+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-015-202610091853.log",
       "history": [
         {
           "at": "2026-10-09T12:16:13+09:00",
@@ -688,6 +700,12 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: I04-persona()。I04-persona 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T18:53:09+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
         }
       ]
     },
@@ -703,10 +721,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-192",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "3bc5dd5",
+      "last_run_at": "2026-10-09T18:53:32+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-016-202610091853.log",
       "history": [
         {
           "at": "2026-10-09T12:16:15+09:00",
@@ -719,6 +737,12 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: I03-canvas(canvas) I04-persona()。I04-persona 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T18:53:10+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
         }
       ]
     },
@@ -3367,6 +3391,18 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: I04-persona(ペルソナ切替)。I04-persona 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T18:53:10+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
+        },
+        {
+          "at": "2026-10-09T18:53:24+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: matrix 等(I14)。統合後に not_run へ"
         }
       ]
     },
@@ -3805,9 +3841,9 @@
       "command": "node tests/system/run.mjs AC-185",
       "canary": false,
       "status": "blocked",
-      "last_commit": "43ae272",
-      "last_run_at": "2026-10-09T18:28:05+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/IT-013-202610091826.log",
+      "last_commit": "3bc5dd5",
+      "last_run_at": "2026-10-09T18:55:19+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/IT-013-202610091853.log",
       "history": [
         {
           "at": "2026-10-09T12:18:55+09:00",
@@ -3832,6 +3868,18 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: I04(ペルソナ/状態保持)。統合後に not_run へ"
+        },
+        {
+          "at": "2026-10-09T18:53:24+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "I04/I07 統合後に再確認"
+        },
+        {
+          "at": "2026-10-09T18:55:33+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: 他画面(I08/I14)。統合後に再確認"
         }
       ]
     },
