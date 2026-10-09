@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { MessageBar, MessageBarBody, MessageBarTitle } from '@fluentui/react-components';
 import { AiStatus } from '../ai/AiStatus';
 import { AppShell } from '../components/AppShell';
 import { BrandLockup } from '../components/Brand';
+import { AnimationStatus } from '../motion/AnimationController';
+import { runTransition } from '../motion/fluent';
+import { useAnimation } from '../store/animation';
 import { useEffectiveBrand } from '../theme/useBrand';
 import { ErrorView, LoadingView } from '../components/StateViews';
 import { SCREENS } from '../screens/registry';
@@ -51,8 +55,8 @@ export function App() {
         title={`${name} ${projectName}`}
         screens={SCREENS}
         activeKey={active}
-        onSelect={setActive}
-        headerExtra={<AiStatus />}
+        onSelect={(key) => runTransition(() => flushSync(() => setActive(key)), useAnimation.getState().playing)}
+        headerExtra={<><AnimationStatus /><AiStatus /></>}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
       >
         {state.warnings.length > 0 ? (

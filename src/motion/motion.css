@@ -1,0 +1,19 @@
+/* グローバルのアニメーション停止（FR-071）。停止中（html[data-animation="paused"]）は、CSS のアニメーションを最終の状態にして終わらせ、トランジションも止める。
+   値は止まるだけで、操作（選択・編集・エクスポート）には影響しない。 */
+html[data-animation='paused'] *,
+html[data-animation='paused'] *::before,
+html[data-animation='paused'] *::after {
+  animation-duration: 0s !important;
+  animation-delay: 0s !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0s !important;
+  transition-delay: 0s !important;
+  scroll-behavior: auto !important;
+}
+
+/* 画面遷移（View Transitions API）。Fluent 2 の時間（Normal 200ms）とイージング（Decelerate）。テンポは --edb-tempo で伸縮する */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: calc(200ms * var(--edb-tempo, 1));
+  animation-timing-function: cubic-bezier(0, 0, 0, 1);
+}
