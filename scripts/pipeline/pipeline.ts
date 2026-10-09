@@ -3,7 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { formatPackError, type PackError } from '../../src/schema';
 import { validatePackDir } from '../lib/pack-fs';
-import { cloneTemplate } from './clone';
+import { cloneTemplate, type CloneMode } from './clone';
 import {
   COMMAND_STAGES, workDir as workDirOf, researchCacheDir, type Command, type Inputs, type PipelinePaths, type StageId,
 } from './common';
@@ -19,6 +19,8 @@ export interface PipelineDeps {
   researcher?: Researcher;
   generator?: PackGenerator;
   launcher?: Launcher;
+  /** ③の方式。既定 link（node_modules と dist をリンクで共有）、copy はフルコピー */
+  cloneMode?: CloneMode;
   log?: (line: string) => void;
   now?: () => Date;
 }
@@ -79,13 +81,14 @@ export async function runPipeline(command: Command, input: Inputs, deps: Pipelin
     },
     clone: async () => {
       const r = await cloneTemplate({
-        template: paths.template, dest: work, exclude: [paths.workspace], rec,
+        template: paths.template, dest: work, exclude: [paths.workspace], rec, mode: deps.cloneMode ?? 'link',
       });
-      log(`③ 雛形を複製しました（${r.durationSec.toFixed(2)} 秒、上限 ${r.limitSec} 秒）`);
+      log(`③ 雛形を用意しました（方式: ${r.method}、${r.durationSec.toFixed(2)} 秒、上限 ${r.limitSec} 秒）`);
+      if (r.fallbackReason) log(`注意: ${r.fallbackReason}`);
       if (!r.withinLimit) {
-        log(`警告: 雛形の複製が上限（${r.limitSec} 秒）を超えました。ウイルス対策ソフトの除外設定や、雛形の node_modules の削減（不要な devDependencies の除外）を検討してください。`);
+        log(`警告: 雛形の複製が上限（${r.limitSec} 秒）を超えました。--copy を使っている場合は、既定のリンク方式に戻してください。`);
       }
-      return { limitSec: r.limitSec, withinLimit: r.withinLimit, cloneDurationSec: Math.round(r.durationSec * 100) / 100 };
+      return { method: r.method, limitSec: r.limitSec, withinLimit: r.withinLimit, cloneDurationSec: Math.round(r.durationSec * 100) / 100 };
     },
     generate: async () => {
       cache = loadResearchCache(paths, input.customer);

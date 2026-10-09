@@ -9,3 +9,10 @@
 3. 設定パネルの FPS 表示が PARAM-007 の値を保つことを確かめる。
 4. 品質を Low / Medium / High / Ultra に切り替え、それぞれの FPS を記録する（`work/runs/<run-id>/evidence/` に保存）。
 5. 性能の低い PC では、FPS が 45 fps 未満で 2 秒続くと品質が 1 段階下がり、その表示が出ることも確かめる（FR-069）。
+
+## FR-105 AC-128 配布パッケージのオフラインでの起動
+
+1. ネットワークのある PC で `npm ci`、`npm run build`、`npm run package` を実行し、`work/package/` の .tgz を作る（手順は `docs/distribution.md`）。
+2. ネットワークを切った PC（Wi-Fi・有線をオフにし、プロキシなし）に .tgz を展開する。Node.js は入っていること。
+3. 展開したフォルダーで `npm start` を実行し、表示された URL を Chromium 系ブラウザーで開く。`public/data/` が空のまま、お手本パックで起動すること（「お手本パックで起動しています」の表示）を確かめる。
+4. 全画面（キャンバス・課題-解決策・優先度・ナレッジグラフ・アーキテクチャ・議論ツリー・ガント・ホワイトボード・設定・3D ビュー）を開き、すべて表示されることを確かめる（結果は `work/runs/<run-id>/evidence/` に保存）。

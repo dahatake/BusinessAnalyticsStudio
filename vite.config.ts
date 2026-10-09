@@ -13,9 +13,33 @@ const OVERLAYS: Array<[string, string]> = [
   ['/assets/brand/', 'assets/brand/'],
 ];
 
+function listFiles(dir: string): string[] {
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
+    const p = path.join(dir, e.name);
+    return e.isDirectory() ? listFiles(p) : [p];
+  });
+}
+
 export default defineConfig({
   plugins: [
     react(),
+    {
+      // FR-104: 顧客パックがない（public/data が空）ときに起動するお手本パック（架空企業）を、dist/example-pack/ に同梱する。
+      // 顧客固有のデータではないので同梱してよい（FR-100）。顧客パックは配信側が `/data/` に重ねて返す。
+      name: 'edb-example-pack',
+      apply: 'build',
+      generateBundle() {
+        const example = path.resolve(__dirname, 'examples', 'mono');
+        for (const [, sub] of OVERLAYS) {
+          const base = path.join(example, sub);
+          for (const file of listFiles(base)) {
+            const rel = path.relative(base, file).split(path.sep).join('/');
+            this.emitFile({ type: 'asset', fileName: `example-pack/${sub.replace(/^public\//, '')}${rel}`, source: fs.readFileSync(file) });
+          }
+        }
+      },
+    },
     {
       name: 'edb-dev-pack-overlay',
       apply: 'serve',

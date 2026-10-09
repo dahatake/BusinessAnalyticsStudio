@@ -3,7 +3,7 @@
     { "id": "feat-koto-001", "createdBy": "sample", "title": "予約のオンライン変更", "issueIds": ["issue-koto-001"], "sourceIds": ["src-koto-002"] }
   ],
   "tasks": [
-    { "id": "task-koto-001", "createdBy": "sample", "title": "変更の手順の整理", "featureId": "feat-koto-001", "start": "2026-11-02", "end": "2026-11-13" },
-    { "id": "task-koto-002", "createdBy": "sample", "title": "変更画面の試作", "featureId": "feat-koto-001", "start": "2026-11-16", "end": "2026-12-04", "dependsOn": ["task-koto-001"] }
+    { "id": "task-koto-001", "createdBy": "sample", "owner": "窓口担当", "work": "予約の変更手順を洗い出して整理する", "title": "変更の手順の整理", "featureId": "feat-koto-001", "start": "2026-11-02", "end": "2026-11-13" },
+    { "id": "task-koto-002", "createdBy": "sample", "owner": "IT 担当", "work": "オンラインの予約変更画面を試作する", "title": "変更画面の試作", "featureId": "feat-koto-001", "start": "2026-11-16", "end": "2026-12-04", "dependsOn": ["task-koto-001"] }
   ]
 }

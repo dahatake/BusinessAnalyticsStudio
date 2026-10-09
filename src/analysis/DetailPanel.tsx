@@ -1,6 +1,10 @@
 // 課題・解決策の詳細パネルと出典カード（FR-003 評価属性、FR-004 出典、FR-005 Microsoft 製品と適合理由）。
 import { Badge, Button, Link, Text, makeStyles, tokens } from '@fluentui/react-components';
-import { AUDIENCE_LABELS, evaluationItems, productFits, safeHttpUrl, type Issue, type Product, type Solution, type Source } from './model';
+import { NumericValue } from '../components/NumericValue';
+import {
+  AUDIENCE_LABELS, causesOf, effectsOf, evaluationItems, genAiValueItems, productFits, safeHttpUrl, solutionsOfIssue,
+  type Issue, type Product, type Solution, type Source,
+} from './model';
 
 const useStyles = makeStyles({
   root: {
@@ -46,7 +50,9 @@ const useStyles = makeStyles({
 });
 
 export interface DetailProps {
-  selection: { kind: 'issue'; issue: Issue } | { kind: 'solution'; solution: Solution; issue?: Issue } | undefined;
+  selection: { kind: 'issue'; issue: Issue } | { kind: 'solution'; solution: Solution; issue?: Issue; issues?: readonly Issue[] } | undefined;
+  /** 課題を選んだときに、その課題の解決策・効果・製品を示すための、表示中の解決策 */
+  solutions?: readonly Solution[];
   products: readonly Product[];
   sources: readonly Source[];
   sourceId: string | undefined;
@@ -54,7 +60,7 @@ export interface DetailProps {
   onCloseSource: () => void;
 }
 
-export function DetailPanel({ selection, products, sources, sourceId, onOpenSource, onCloseSource }: DetailProps) {
+export function DetailPanel({ selection, solutions = [], products, sources, sourceId, onOpenSource, onCloseSource }: DetailProps) {
   const s = useStyles();
   const sourceById = new Map(sources.map((x) => [x.id, x]));
   const source = sourceId ? sourceById.get(sourceId) : undefined;
@@ -63,9 +69,9 @@ export function DetailPanel({ selection, products, sources, sourceId, onOpenSour
       {!selection ? (
         <Text>課題または解決策を選ぶと、詳細を表示します。</Text>
       ) : selection.kind === 'issue' ? (
-        <IssueDetail issue={selection.issue} sourceById={sourceById} onOpenSource={onOpenSource} />
+        <IssueDetail issue={selection.issue} solutions={solutions} products={products} sourceById={sourceById} onOpenSource={onOpenSource} />
       ) : (
-        <SolutionDetail solution={selection.solution} issue={selection.issue} products={products} sourceById={sourceById} onOpenSource={onOpenSource} />
+        <SolutionDetail solution={selection.solution} issue={selection.issue} issues={selection.issues} products={products} sourceById={sourceById} onOpenSource={onOpenSource} />
       )}
       {source ? <SourceCard source={source} onClose={onCloseSource} /> : null}
     </aside>
@@ -74,8 +80,13 @@ export function DetailPanel({ selection, products, sources, sourceId, onOpenSour
 
 type SourceMap = Map<string, Source>;
 
-function IssueDetail({ issue, sourceById, onOpenSource }: { issue: Issue; sourceById: SourceMap; onOpenSource: (id: string) => void }) {
+function IssueDetail({ issue, solutions, products, sourceById, onOpenSource }: {
+  issue: Issue; solutions: readonly Solution[]; products: readonly Product[]; sourceById: SourceMap; onOpenSource: (id: string) => void;
+}) {
   const s = useStyles();
+  const causes = causesOf(issue);
+  const mine = solutionsOfIssue(issue.id, solutions);
+  const productName = new Map(products.map((p) => [p.id, p.name]));
   return (
     <>
       <div className={s.section}>
@@ -86,12 +97,34 @@ function IssueDetail({ issue, sourceById, onOpenSource }: { issue: Issue; source
         </div>
         {issue.hypothesis ? <Text>仮説: {issue.hypothesis}</Text> : null}
       </div>
+      <div className={s.section} data-testid="issue-causes">
+        <Text as="h4" weight="semibold">原因</Text>
+        {causes.length === 0 ? <Text>原因は未設定です</Text> : (
+          <ul className={s.list}>{causes.map((c) => <li key={c.id}><Text>{c.title}</Text></li>)}</ul>
+        )}
+      </div>
+      <div className={s.section} data-testid="issue-solutions">
+        <Text as="h4" weight="semibold">解決策・効果・Microsoft 製品</Text>
+        {mine.length === 0 ? <Text>解決策は未設定です</Text> : (
+          <ul className={s.list}>
+            {mine.map((sol) => (
+              <li key={sol.id} className={s.product}>
+                <Text weight="semibold">{sol.title}</Text>
+                <Text size={200}>効果: {effectsOf(sol).map((e) => e.title).join('、') || '未設定'}</Text>
+                <Text size={200}>製品: {(sol.productIds ?? []).map((id) => productName.get(id) ?? id).join('、') || '製品の関連付けなし'}</Text>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
       <div className={s.section}>
         <Text as="h4" weight="semibold">評価属性</Text>
         {evaluationItems(issue).map((item) => (
           <div key={item.key} className={s.attr} data-testid={`attr-${item.key}`}>
             <Text weight="semibold">{item.label}</Text>
-            <Text data-testid="attr-value">{item.display ?? '未設定'}</Text>
+            <Text data-testid="attr-value">
+              {item.display ? <NumericValue sourceIds={item.sourceIds}>{item.display}</NumericValue> : '未設定'}
+            </Text>
             <div className={s.attrSources}>
               {item.sourceIds.map((id) => {
                 const src = sourceById.get(id);
@@ -113,16 +146,38 @@ function IssueDetail({ issue, sourceById, onOpenSource }: { issue: Issue; source
   );
 }
 
-function SolutionDetail({ solution, issue, products, sourceById, onOpenSource }: {
-  solution: Solution; issue?: Issue; products: readonly Product[]; sourceById: SourceMap; onOpenSource: (id: string) => void;
+function SolutionDetail({ solution, issue, issues, products, sourceById, onOpenSource }: {
+  solution: Solution; issue?: Issue; issues?: readonly Issue[]; products: readonly Product[]; sourceById: SourceMap; onOpenSource: (id: string) => void;
 }) {
   const s = useStyles();
   const fits = productFits(solution, products);
+  const effects = effectsOf(solution);
+  const genAi = genAiValueItems(solution);
+  const targets = issues && issues.length > 0 ? issues : issue ? [issue] : [];
   return (
     <>
       <div className={s.section}>
         <Text as="h3" size={500} weight="semibold">{solution.title}</Text>
-        {issue ? <Text>対象の課題: {issue.title}</Text> : null}
+        {targets.length > 0 ? <Text>対象の課題: {targets.map((i) => i.title).join('、')}</Text> : null}
+      </div>
+      <div className={s.section}>
+        <Text as="h4" weight="semibold">効果</Text>
+        {effects.length === 0 ? <Text>効果は未設定です</Text> : (
+          <ul className={s.list}>{effects.map((e) => <li key={e.id}><Text>{e.title}</Text></li>)}</ul>
+        )}
+      </div>
+      <div className={s.section}>
+        <Text as="h4" weight="semibold">生成 AI の価値</Text>
+        {genAi.length === 0 ? <Text>生成 AI の価値の指定なし</Text> : (
+          <ul className={s.list}>
+            {genAi.map((v) => (
+              <li key={v.key} className={s.product} data-testid="genai-value">
+                <Text weight="semibold">{v.label}</Text>
+                <Text>{v.description}</Text>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
       <div className={s.section}>
         <Text as="h4" weight="semibold">出典</Text>

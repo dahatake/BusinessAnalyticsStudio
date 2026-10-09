@@ -45,6 +45,18 @@ beforeEach(() => {
 });
 afterEach(() => { fs.rmSync(tmp, { recursive: true, force: true }); });
 
+/** フォルダー全体（リンクは辿らない）のパス・大きさ・更新時刻。書き込みがあれば変わる */
+function snapshot(root: string, rel = ''): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const e of fs.readdirSync(path.join(root, rel), { withFileTypes: true })) {
+    const r = rel ? `${rel}/${e.name}` : e.name;
+    const st = fs.lstatSync(path.join(root, r));
+    out[r] = `${st.size}:${st.mtimeMs}`;
+    if (e.isDirectory()) Object.assign(out, snapshot(root, r));
+  }
+  return out;
+}
+
 const readTiming = (customer: string) =>
   JSON.parse(fs.readFileSync(path.join(workDir(paths(), customer), 'logs', 'timing.json'), 'utf8')) as {
     totalMs: number; stages: Array<{ id: string; startedAt: string; finishedAt: string; durationMs: number; step: string }>;
@@ -138,6 +150,131 @@ describe('FR-124 雛形の複製', () => {
     await cloneTemplate({ template, dest: path.join(inner, 'cust'), exclude: [inner] });
     expect(fs.existsSync(path.join(inner, 'cust', 'ws2'))).toBe(false);
     expect(fs.existsSync(path.join(inner, 'cust', 'dist', 'index.html'))).toBe(true);
+  });
+});
+
+describe('FR-124 雛形の用意（リンク・コピー）と機密', () => {
+  /** 雛形に、秘密と前の顧客のデータを置く */
+  function addSensitive(root: string): void {
+    const w = (rel: string, text: string): void => {
+      fs.mkdirSync(path.dirname(path.join(root, rel)), { recursive: true });
+      fs.writeFileSync(path.join(root, rel), text);
+    };
+    w('.env', 'EDB_AI_API_KEY=TOP-SECRET');
+    w('.env.local', 'TOP-SECRET');
+    w('.env.example', 'EDB_AI_API_KEY=');
+    w('src/.env', 'TOP-SECRET');
+    w('public/data/customer.json', '{"name":"PREV-CUSTOMER"}');
+    w('public/brand/brand-profile.json', '{"name":"PREV-CUSTOMER"}');
+    w('assets/brand/logo.svg', 'PREV-CUSTOMER');
+    w('assets/audio/bgm.mp3', 'PREV-CUSTOMER');
+    w('assets/shared.txt', 'keep');
+    w('data/customer-research.md', 'PREV-CUSTOMER');
+    w('brand/BRAND-RESEARCH.md', 'PREV-CUSTOMER');
+    w('research-cache/PREV/meta.json', 'PREV-CUSTOMER');
+    w('logs/timing.json', 'PREV-CUSTOMER');
+  }
+
+  /** フォルダー内の全ファイル（リンクは辿らない）の相対パス→内容 */
+  function walkFiles(root: string, rel = ''): Record<string, string> {
+    const out: Record<string, string> = {};
+    for (const e of fs.readdirSync(path.join(root, rel), { withFileTypes: true })) {
+      const r = rel ? `${rel}/${e.name}` : e.name;
+      if (e.isSymbolicLink()) out[r] = '<link>';
+      else if (e.isDirectory()) Object.assign(out, walkFiles(root, r));
+      else out[r] = fs.readFileSync(path.join(root, r), 'utf8');
+    }
+    return out;
+  }
+
+  // FR-124 AC-151 / AC-152（機密）
+  it.each(['link', 'copy'] as const)('FR-124 AC-151 %s: 複製先に .env 系（.env.example 以外）と雛形の顧客データ・調査キャッシュを入れない', async (mode) => {
+    addSensitive(template);
+    const dest = path.join(tmp, `out-${mode}`);
+    await cloneTemplate({ template, dest, mode });
+    const files = walkFiles(dest);
+    const names = Object.keys(files).filter((n) => !n.startsWith('node_modules/') && !n.startsWith('dist/'));
+    expect(names).toContain('.env.example');
+    expect(names).toContain('package.json');
+    expect(names).toContain('public/data/README.txt');
+    expect(names).toContain('assets/shared.txt');
+    for (const bad of ['.env', '.env.local', 'src/.env', 'public/data/customer.json', 'public/brand/brand-profile.json',
+      'assets/brand/logo.svg', 'assets/audio/bgm.mp3', 'data/customer-research.md', 'brand/BRAND-RESEARCH.md',
+      'research-cache/PREV/meta.json', 'logs/timing.json']) {
+      expect(names, bad).not.toContain(bad);
+    }
+    for (const [n, text] of Object.entries(files)) {
+      if (n.startsWith('node_modules/') || n.startsWith('dist/')) continue;
+      expect(text, n).not.toMatch(/TOP-SECRET|PREV-CUSTOMER/);
+    }
+  });
+
+  // FR-124 AC-152 / FR-125 AC-152（機密）
+  it('FR-125 AC-152 build の作業フォルダー全体に、雛形の秘密と前の顧客の情報が残らない', async () => {
+    addSensitive(template);
+    for (const extra of [[], ['--copy']]) {
+      const code = await main(['build', '--customer', '新顧客', '--no-keep', '--workspace', workspace, '--template', template, ...extra], { log });
+      expect(code, logs.join('\n')).toBe(0);
+      const files = walkFiles(workDir(paths(), '新顧客'));
+      for (const [n, text] of Object.entries(files)) {
+        if (n.startsWith('node_modules/') || n.startsWith('dist/')) continue;
+        expect(text, n).not.toMatch(/TOP-SECRET|PREV-CUSTOMER/);
+      }
+      expect(Object.keys(files)).not.toContain('.env');
+    }
+  });
+
+  // FR-124 AC-151
+  it('FR-124 AC-151 既定は node_modules と dist をリンクで共有し、方式（link）を timing.json に記録する。--copy はフルコピー（copy）', async () => {
+    const wd = workDir(paths(), 'F社');
+    expect(await main(['build', '--customer', 'F社', '--no-keep', '--workspace', workspace, '--template', template], { log })).toBe(0);
+    for (const n of ['node_modules', 'dist']) {
+      expect(fs.lstatSync(path.join(wd, n)).isSymbolicLink(), n).toBe(true);
+      expect(fs.realpathSync(path.join(wd, n))).toBe(fs.realpathSync(path.join(template, n)));
+    }
+    expect(fs.existsSync(path.join(wd, 'node_modules', 'pkg-a', 'index.js'))).toBe(true);
+    const stage = (): { method: string } => readTiming('F社').stages.find((s) => s.id === 'clone') as unknown as { method: string };
+    expect(stage().method).toBe('link');
+    expect(fs.readFileSync(path.join(wd, 'logs', 'commands.json'), 'utf8')).toMatch(/link node_modules, dist/);
+
+    // 同じ作業フォルダーで --copy にすると、前回のリンクを外してコピーする（雛形には書き込まない）
+    const before = snapshot(template);
+    expect(await main(['build', '--customer', 'F社', '--copy', '--no-keep', '--workspace', workspace, '--template', template], { log })).toBe(0);
+    for (const n of ['node_modules', 'dist']) {
+      expect(fs.lstatSync(path.join(wd, n)).isSymbolicLink(), n).toBe(false);
+      expect(fs.existsSync(path.join(wd, n))).toBe(true);
+    }
+    expect(stage().method).toBe('copy');
+    expect(snapshot(template)).toEqual(before);
+
+    // もう一度リンクにしても、コピーを入れ替えるだけで雛形は無事
+    expect(await main(['build', '--customer', 'F社', '--no-keep', '--workspace', workspace, '--template', template], { log })).toBe(0);
+    expect(fs.lstatSync(path.join(wd, 'dist')).isSymbolicLink()).toBe(true);
+    expect(snapshot(template)).toEqual(before);
+  });
+
+  // FR-124 AC-151
+  it('FR-124 AC-151 リンク方式の build は、雛形の node_modules と dist に何も書き込まない（npm install も dist の書き換えもしない）', async () => {
+    const before = snapshot(template);
+    expect(await main(['all', '--customer', 'G社', '--no-keep', '--workspace', workspace, '--template', template], { log })).toBe(0);
+    expect(snapshot(template)).toEqual(before);
+    // 顧客パックは作業フォルダー側にだけ書かれ、リンク先の dist には入らない
+    expect(fs.existsSync(path.join(template, 'dist', 'data', 'customer.json'))).toBe(false);
+    expect(fs.existsSync(path.join(template, 'public', 'data', 'customer.json'))).toBe(false);
+    const commands = fs.readFileSync(path.join(workDir(paths(), 'G社'), 'logs', 'commands.json'), 'utf8');
+    expect(commands).not.toMatch(/npm (install|i\b|ci|run build)|vite build/);
+  });
+
+  it('FR-124 AC-151 リンクの作成に失敗したときは、コピーに切り替えて理由を返す', async () => {
+    const orig = fs.symlinkSync;
+    (fs as { symlinkSync: unknown }).symlinkSync = () => { throw new Error('EPERM'); };
+    try {
+      const r = await cloneTemplate({ template, dest: path.join(tmp, 'out-fb') });
+      expect(r.method).toBe('copy');
+      expect(r.fallbackReason).toContain('EPERM');
+      expect(fs.lstatSync(path.join(tmp, 'out-fb', 'dist')).isSymbolicLink()).toBe(false);
+      expect(fs.existsSync(path.join(tmp, 'out-fb', 'node_modules', 'pkg-a', 'index.js'))).toBe(true);
+    } finally { (fs as { symlinkSync: unknown }).symlinkSync = orig; }
   });
 });
 

@@ -25,8 +25,9 @@ export interface CliDeps {
 const USAGE = `使い方: npm run pipeline -- <${COMMANDS.join('|')}> [--customer 顧客名] [--project Project名]
   [--intensity Executive|Showcase|Entertainment] [--bgm BGMフォルダー] [--material 追加資料]...
   [--workspace 作業フォルダーの親] [--template 雛形] [--sample お手本パック]
-  [--generator mock|モジュールのパス] [--researcher sample|モジュールのパス] [--no-keep]
+  [--generator mock|モジュールのパス] [--researcher sample|モジュールのパス] [--copy] [--no-keep]
   research=①②（事前調査）、build=③〜⑦（複製・生成・検証・起動）、all=①〜⑦。顧客名を省くと対話形式で尋ねる。
+  --copy: ③で node_modules と dist をフルコピーする（既定は読み取り専用のリンクで共有）。
   --no-keep: ⑦で起動を確かめたら、サーバーを止めて終了する。`;
 
 async function loadModule<T>(spec: string, exportName: string): Promise<T> {
@@ -77,7 +78,7 @@ export async function main(argv: readonly string[], deps: CliDeps = {}): Promise
     const generator = deps.generator ?? (g && g !== 'mock' ? await loadModule<PackGenerator>(g, 'createGenerator') : mockGenerator);
     const researcher = deps.researcher ?? (r && r !== 'sample' ? await loadModule<Researcher>(r, 'createResearcher') : sampleResearcher);
 
-    const pdeps: PipelineDeps = { paths, generator, researcher, log };
+    const pdeps: PipelineDeps = { paths, generator, researcher, log, cloneMode: args.flags.has('copy') ? 'copy' : 'link' };
     const result = await runPipeline(command, input, pdeps);
     if (result.launched) {
       if (args.flags.has('no-keep')) await result.launched.close();
