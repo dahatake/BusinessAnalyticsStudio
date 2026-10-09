@@ -27,7 +27,7 @@ export type Classification = z.infer<typeof ClassificationSchema>;
 export const REFERENCE_KEYS = [
   'parentId', 'issueId', 'issueIds', 'solutionIds', 'featureId', 'featureIds',
   'productId', 'productIds', 'entityId', 'entityIds', 'sourceIds', 'dependsOn',
-  'from', 'to', 'taskId', 'selectedId', 'relatedIds', 'chapterId',
+  'from', 'to', 'taskId', 'selectedId', 'relatedIds', 'chapterId', 'solutionId',
 ] as const;
 
 /** すべてのエンティティが持つ共通の項目。個別の項目は各スキーマで足す。 */
