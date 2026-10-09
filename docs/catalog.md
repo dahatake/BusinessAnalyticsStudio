@@ -31,11 +31,11 @@
 | FR-021 | コトの表現（3D 地球儀/3D マップと流れの粒子） | 承認済み | 未実装 | 未実装 | なし |
 | FR-022 | 工程管理の表現（ガントチャート 2D/2.5D） | 承認済み | 未実装 | 未実装 | なし |
 | FR-023 | フライスルー遷移 | 承認済み | 未実装 | 未実装 | なし |
-| FR-024 | 共通の選択状態とエンティティ関係グラフ | 承認済み | 未実装 | 未実装 | なし |
-| FR-025 | クロスハイライトとカメラ移動 | 承認済み | 未実装 | 未実装 | なし |
-| FR-026 | 選択に応じた自動の絞り込み | 承認済み | 未実装 | 未実装 | なし |
-| FR-027 | ホバー・クリック・Esc の選択操作 | 承認済み | 未実装 | 未実装 | なし |
-| FR-028 | 選択状態の URL への反映と復元 | 承認済み | 未実装 | 未実装 | なし |
+| FR-024 | 共通の選択状態とエンティティ関係グラフ | 承認済み | src/store/selection.ts, src/selection/graph.ts, src/selection/hooks.ts, src/selection/SelectionController.tsx | tests/unit/selection.test.ts (AC-029) | 選択状態とエンティティ関係グラフ |
+| FR-025 | クロスハイライトとカメラ移動 | 承認済み | src/selection/model.ts (highlightTokens), src/selection/hooks.ts (useEntityBinding), src/components/highlight.ts, src/screens/IssueSolutionScreen.tsx, src/screens/TableScreen.tsx | tests/unit/selection.test.ts (AC-030 の関連と通知), tests/system/e2e/views3d.spec.ts (E2E-025) | 選択状態とエンティティ関係グラフ |
+| FR-026 | 選択に応じた自動の絞り込み | 承認済み | src/screens/TableScreen.tsx, src/selection/model.ts (relatedSet, isVisibleInFilter), src/selection/hooks.ts (useSelectionFilter) | tests/unit/selection.test.ts (AC-031), tests/system/e2e/views.spec.ts (E2E-026) | 選択状態とエンティティ関係グラフ, 一覧表 |
+| FR-027 | ホバー・クリック・Esc の選択操作 | 承認済み | src/selection/keys.ts, src/selection/hooks.ts, src/store/selection.ts, src/screens/IssueSolutionScreen.tsx, src/screens/TableScreen.tsx | tests/unit/selection.test.ts (AC-032), tests/system/e2e/views.spec.ts (E2E-027) | 選択状態とエンティティ関係グラフ |
+| FR-028 | 選択状態の URL への反映と復元 | 承認済み | src/store/selection.ts (installUrlSync), src/selection/model.ts (parseSelectionHash, formatSelectionHash) | tests/unit/selection.test.ts (AC-033), tests/system/e2e/views.spec.ts (E2E-028) | 選択状態とエンティティ関係グラフ |
 | FR-029 | キーボード・スクリーンリーダーでの連動 | 承認済み | 未実装 | 未実装 | なし |
 | FR-030 | 階層と LOD のメタデータ | 承認済み | 未実装 | 未実装 | なし |
 | FR-031 | カメラ距離に応じた段階的な表示 | 承認済み | 未実装 | 未実装 | なし |
@@ -197,3 +197,5 @@
 | オープニング | src/app/Opening.tsx | 顧客名とプロジェクト名の導入画面（Esc で飛ばす） | FR-101 |
 | 課題-解決策分析 | src/screens/IssueSolutionScreen.tsx, src/analysis/model.ts, src/analysis/DetailPanel.tsx | 課題のイシューツリー／MECE 表、区分の絞り込み、解決策、詳細パネル（評価属性・出典カード・製品と適合理由）。純粋なロジックは model.ts。後続の画面（優先順位分析など）が課題・解決策・出典を扱うときはここを再利用する | FR-001, FR-002, FR-003, FR-004, FR-005 |
 | 3D 基盤 | src/three/quality.ts, src/three/presets.ts, src/three/SceneCanvas.tsx, src/store/view3d.ts, src/store/animation.ts, src/testing/hook.ts | R3F + drei の描画（WebGPU 優先・WebGL2 フォールバック）、手続き生成の 4 シーン、品質プリセットと FPS 監視、テスト用フック登録（registerTestHook） | FR-065, FR-066, FR-068, FR-069, NFR-PERF-002 |
+| 選択状態とエンティティ関係グラフ | src/store/selection.ts, src/selection/graph.ts, src/selection/model.ts, src/selection/hooks.ts, src/selection/keys.ts, src/selection/SelectionController.tsx, src/components/highlight.ts | 全ビュー共通の選択（Zustand。選択 ID・ホバー・AND/OR・非表示/減光・最後の変更の origin と seq）と、パックの全エンティティの関係グラフ。画面は `useEntityBinding('<画面名>')` で `data-entity-id`・`data-highlight`（selected/hover/related/dimmed）・クリック選択（Ctrl/⌘/Shift で追加）・ホバーを付け、表・リスト・カードは `useSelectionFilter` と `{ filterable: true }` で絞り込む。3D のカメラ移動など選択に反応するビューは `useSelection().seq` と `origin` を購読する（自分が起こした変更では動かない）。URL ハッシュ `#sel=<ID>,<ID>&mode=and&dim=1` への反映（確定は履歴に積む）と、戻る/進む・開き直しでの復元。Esc の解除は A-04 の優先順（ダイアログ・メニュー、パネルの最大化の解除が先）。存在しない ID は捨てる。見た目は useHighlightClass。アプリ直下に SelectionController を 1 つ置く（App.tsx） | FR-024, FR-025, FR-026, FR-027, FR-028 |
+| 一覧表 | src/screens/TableScreen.tsx | パックの全項目の表（種別・名称・ID）。選択に応じて自動で絞り込み、件数バッジ・AND/OR・非表示/減光・フィルター解除を持つ（フィルター解除は選択の解除）。`nav-table` / `component-table` | FR-026 |

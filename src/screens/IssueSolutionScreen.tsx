@@ -1,6 +1,6 @@
 // 課題-解決策分析（FR-001 構造化表示、FR-002 区分、FR-003〜FR-005 の詳細）。
 // 左に課題（イシューツリー／MECE 表）と解決策、右に詳細パネルを置く。狭い画面では縦に積む。
-import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import {
   Badge, Button, Field, Radio, RadioGroup, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
   makeStyles, mergeClasses, tokens,
@@ -11,12 +11,16 @@ import {
   AUDIENCE_LABELS, buildMeceGroups, buildTreeRows, filterIssues, filterSolutions,
   type AudienceFilter, type Issue,
 } from '../analysis/model';
+import { useHighlightClass } from '../components/highlight';
 import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
+import { onEntityKey, useEntityBinding, useSelection } from '../selection/hooks';
 import { usePackStore } from '../store/pack';
 
 type ViewMode = 'tree' | 'mece';
-type Selection = { kind: 'issue' | 'solution'; id: string };
+
+/** 選択状態は、すべてのビューと共通のストア（FR-024）。選択を起こしたビューとして、この名前を記録する */
+const ORIGIN = 'issue-solution';
 
 const useStyles = makeStyles({
   toolbar: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalXL, rowGap: tokens.spacingVerticalS },
@@ -40,7 +44,6 @@ const useStyles = makeStyles({
     ':hover': { backgroundColor: tokens.colorNeutralBackground1Hover },
     ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}` },
   },
-  rowSelected: { backgroundColor: tokens.colorBrandBackground2, ':hover': { backgroundColor: tokens.colorBrandBackground2Hover } },
   chevron: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', flexShrink: 0 },
   rowBody: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXXS, minWidth: 0 },
   badges: { display: 'flex', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalXS, rowGap: tokens.spacingVerticalXXS },
@@ -69,9 +72,11 @@ function IssueSolutionScreen() {
   const [mode, setMode] = useState<ViewMode>('tree');
   const [filter, setFilter] = useState<AudienceFilter>('all');
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
-  const [selection, setSelection] = useState<Selection | undefined>();
   const [sourceId, setSourceId] = useState<string | undefined>();
   const treeRef = useRef<HTMLDivElement>(null);
+  const hl = useHighlightClass();
+  const bind = useEntityBinding(ORIGIN);
+  const { primaryId } = useSelection();
 
   const data = state.status === 'ready' ? state.pack.data : undefined;
   const allIssues = useMemo(() => data?.issues.issues ?? [], [data]);
@@ -81,18 +86,21 @@ function IssueSolutionScreen() {
   const rows = useMemo(() => buildTreeRows(allIssues, visible, collapsed), [allIssues, visible, collapsed]);
   const groups = useMemo(() => buildMeceGroups(allIssues, visible), [allIssues, visible]);
 
+  // 選択が変わったら、開いていた出典カードは閉じる
+  useEffect(() => { setSourceId(undefined); }, [primaryId]);
+
   if (!data) return <LoadingView label="課題を読み込み中" />;
 
   const issueById = new Map(allIssues.map((i) => [i.id, i]));
-  const selectedIssue = selection?.kind === 'issue' ? issueById.get(selection.id) : undefined;
-  const selectedSolution = selection?.kind === 'solution' ? allSolutions.find((x) => x.id === selection.id) : undefined;
+  // 詳細は、共通の選択のうち最後に選んだ項目（課題または解決策のとき）を表示する
+  const selectedIssue = primaryId ? issueById.get(primaryId) : undefined;
+  const selectedSolution = primaryId ? allSolutions.find((x) => x.id === primaryId) : undefined;
   const detailSelection = selectedIssue
     ? ({ kind: 'issue', issue: selectedIssue } as const)
     : selectedSolution
       ? ({ kind: 'solution', solution: selectedSolution, issue: issueById.get(selectedSolution.issueId) } as const)
       : undefined;
 
-  const select = (sel: Selection) => { setSelection(sel); setSourceId(undefined); };
   const toggle = (id: string) => setCollapsed((prev) => {
     const next = new Set(prev);
     if (next.has(id)) next.delete(id); else next.add(id);
@@ -108,17 +116,16 @@ function IssueSolutionScreen() {
   const onRowKey = (e: KeyboardEvent<HTMLDivElement>, row: (typeof rows)[number]) => {
     const items = Array.from(treeRef.current?.querySelectorAll<HTMLElement>('[role="treeitem"]') ?? []);
     const at = items.indexOf(e.currentTarget);
-    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select({ kind: 'issue', id: row.issue.id }); }
-    else if (e.key === 'ArrowDown') { e.preventDefault(); items[at + 1]?.focus(); }
+    if (onEntityKey(e, row.issue.id, ORIGIN)) return;
+    if (e.key === 'ArrowDown') { e.preventDefault(); items[at + 1]?.focus(); }
     else if (e.key === 'ArrowUp') { e.preventDefault(); items[at - 1]?.focus(); }
     else if (e.key === 'ArrowRight' && row.hasChildren) { e.preventDefault(); setExpanded(row.issue.id, true); }
     else if (e.key === 'ArrowLeft' && row.hasChildren) { e.preventDefault(); setExpanded(row.issue.id, false); }
   };
 
-  const selectedId = selection?.id;
   const firstRowId = rows[0]?.issue.id;
   // 選択中の課題が見えている（rows にある）ときだけその行を Tab の入口にし、見えないときは先頭行にする
-  const tabStopId = selection?.kind === 'issue' && rows.some((r) => r.issue.id === selection.id) ? selection.id : firstRowId;
+  const tabStopId = primaryId && rows.some((r) => r.issue.id === primaryId) ? primaryId : firstRowId;
 
   return (
     <Panel
@@ -153,21 +160,21 @@ function IssueSolutionScreen() {
             <div role="tree" aria-label="イシューツリー" className={s.tree} ref={treeRef}>
               {rows.map((row) => {
                 const id = row.issue.id;
-                const isSelected = selectedId === id && selection?.kind === 'issue';
+                const props = bind(id);
+                const isSelected = props['data-highlight']?.includes('selected') ?? false;
                 return (
                   <div
                     key={id}
                     role="treeitem"
-                    data-entity-id={id}
-                    data-highlight={isSelected ? 'selected' : undefined}
+                    {...props}
                     aria-level={row.level + 1}
                     aria-expanded={row.hasChildren ? row.expanded : undefined}
                     aria-selected={isSelected}
                     tabIndex={id === tabStopId ? 0 : -1}
-                    className={mergeClasses(s.row, isSelected && s.rowSelected)}
+                    className={mergeClasses(s.row, hl(props['data-highlight']))}
                     style={{ marginInlineStart: `calc(${row.level} * ${tokens.spacingHorizontalXXL})` }}
-                    onClick={() => {
-                      select({ kind: 'issue', id });
+                    onClick={(e) => {
+                      props.onClick?.(e);
                       if (row.hasChildren && !row.expanded) setExpanded(id, true);
                     }}
                     onKeyDown={(e) => onRowKey(e, row)}
@@ -194,24 +201,25 @@ function IssueSolutionScreen() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {g.members.map((m) => (
-                      <TableRow key={m.issue.id}>
-                        <TableCell>
-                          <div
-                            role="button"
-                            tabIndex={0}
-                            data-entity-id={m.issue.id}
-                            data-highlight={selection?.kind === 'issue' && selectedId === m.issue.id ? 'selected' : undefined}
-                            className={s.row}
-                            style={{ marginInlineStart: `calc(${m.level} * ${tokens.spacingHorizontalXXL})` }}
-                            onClick={() => select({ kind: 'issue', id: m.issue.id })}
-                            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select({ kind: 'issue', id: m.issue.id }); } }}
-                          >
-                            <IssueSummary issue={m.issue} />
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
+                    {g.members.map((m) => {
+                      const props = bind(m.issue.id);
+                      return (
+                        <TableRow key={m.issue.id}>
+                          <TableCell>
+                            <div
+                              role="button"
+                              tabIndex={0}
+                              {...props}
+                              className={mergeClasses(s.row, hl(props['data-highlight']))}
+                              style={{ marginInlineStart: `calc(${m.level} * ${tokens.spacingHorizontalXXL})` }}
+                              onKeyDown={(e) => { onEntityKey(e, m.issue.id, ORIGIN); }}
+                            >
+                              <IssueSummary issue={m.issue} />
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               ))}
@@ -222,20 +230,22 @@ function IssueSolutionScreen() {
             <Text as="h3" size={500} weight="semibold">解決策</Text>
             {solutions.length === 0 ? <Text>該当する解決策はありません。</Text> : (
               <ul className={s.solutions}>
-                {solutions.map((sol) => (
-                  <li key={sol.id}>
-                    <Button
-                      className={s.solutionButton}
-                      appearance={selection?.kind === 'solution' && selectedId === sol.id ? 'primary' : 'outline'}
-                      icon={<Lightbulb24Regular aria-hidden />}
-                      data-entity-id={sol.id}
-                      data-highlight={selection?.kind === 'solution' && selectedId === sol.id ? 'selected' : undefined}
-                      onClick={() => select({ kind: 'solution', id: sol.id })}
-                    >
-                      {sol.title}
-                    </Button>
-                  </li>
-                ))}
+                {solutions.map((sol) => {
+                  const props = bind(sol.id);
+                  const isSelected = props['data-highlight']?.includes('selected') ?? false;
+                  return (
+                    <li key={sol.id}>
+                      <Button
+                        className={mergeClasses(s.solutionButton, hl(props['data-highlight']))}
+                        appearance={isSelected ? 'primary' : 'outline'}
+                        icon={<Lightbulb24Regular aria-hidden />}
+                        {...props}
+                      >
+                        {sol.title}
+                      </Button>
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </section>
