@@ -8,15 +8,21 @@ import { REPO_ROOT } from '../../scripts/lib/pack-fs';
 import {
   BRAND_SOURCE_PRIORITY, DEFAULT_BRAND_THEME, defaultBrandProfile, selectBrandSource, type BrandSourceCandidate,
 } from '../../scripts/pipeline/brand-sources';
-import { main } from '../../scripts/pipeline/cli';
+import { main as cliMain, type CliDeps } from '../../scripts/pipeline/cli';
 import { PARAMS, defaultPaths, researchCacheDir, workDir, type Inputs } from '../../scripts/pipeline/common';
 import { mockGenerator } from '../../scripts/pipeline/generate';
-import { runPipeline } from '../../scripts/pipeline/pipeline';
+import { runPipeline as runPipelineImpl, type PipelineDeps } from '../../scripts/pipeline/pipeline';
+import { mockSmoke } from '../../scripts/pipeline/verify';
 import {
   SourceUnavailableError, assertGitIgnored, chainResearcher, checkResearchFreshness, reresearchSuggestion,
   saveResearchPart, sampleResearcher, type ResearchMeta, type ResearchPart, type Researcher,
 } from '../../scripts/pipeline/research';
 import { BrandProfileSchema } from '../../src/schema';
+
+// この試験の雛形は小さな代用のフォルダー（実際のアプリがない）ので、⑥ verify のブラウザー検査は差し替え部品（モック）にする
+const main = (argv: readonly string[], deps: CliDeps = {}) => cliMain(argv, { smoke: mockSmoke, ...deps });
+const runPipeline = (cmd: Parameters<typeof runPipelineImpl>[0], input: Parameters<typeof runPipelineImpl>[1], deps: PipelineDeps) =>
+  runPipelineImpl(cmd, input, { smoke: mockSmoke, ...deps });
 
 let tmp: string;
 let workspace: string;

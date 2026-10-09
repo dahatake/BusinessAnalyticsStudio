@@ -56,9 +56,14 @@ npm run pipeline -- all --customer "<顧客名>"
 | `--template` | 雛形（`node_modules` と `dist` を含むビルド済みのアプリ） | リポジトリのルート |
 | `--copy` | ③で `node_modules` と `dist` をフルコピーする（既定は、読み取り専用のリンクで共有して瞬時に用意する） | リンク |
 | `--no-keep` | ⑦で起動を確かめたら、サーバーを止めて終了する | 起動したままにする |
+| `--smoke` | ⑥verify のブラウザー検査（`playwright`／`mock`。`mock` はブラウザーを使わず合格とする検証用） | `playwright` |
 
 ## 規則
 
+- ⑤スキーマ検証でエラーが出たら、エラーの箇所だけを再生成して直します（自己修正。FR-126）。全体は再生成しません。最大 3 回（PARAM-006）で、上限に達したらエラーの一覧を出して止まります。
+- ⑥verify は、顧客パックの受け入れを 9 項目（スキーマ検証エラー 0 件・起動時のページエラー 0 件・Primary 色の反映と AA コントラスト・タイトルとオープニングの顧客名・Project 名・出典のない数値項目 0 件・主要画面の「サンプル」「AI 生成」の表示・`P`/`M`/`Esc` の動作・Markdown の保存と復元・所要時間）で判定します。1 分（PARAM-020）以内に行い、不合格の項目は原因と対処を出して止まります。ブラウザー検査は `tests/system` の Playwright（Chromium）を使うので、`tests/system` で `npm install` と `npx playwright install chromium` を済ませておきます。単独では `npm run verify:pack -- <作業フォルダー>` で実行できます。
+- ⑦起動は、127.0.0.1 だけで待ち受ける静的サーバーで `dist` と顧客パックを配信し、URL を表示します。ポートが使用中なら別のポートで起動します。
+- 追加資料（`--material`）に、雛形が持たない画面種別の要望（行頭に `画面種別: ○○`）や、`雛形への要望: ○○` の行があれば、顧客パックでは実装せず、作業フォルダーの親の `template-improvement-requests.md` に「雛形への改善要望」として追記します（FR-131。コミットしません）。
 - 雛形の用意（③）は 30 秒以内に行い、`npm install` とビルドを実行しません。雛形は、事前に 1 度だけ `npm install` と `npm run build` を済ませておきます。
   既定では `node_modules` と `dist` をリンク（Windows はディレクトリ・ジャンクション）で共有します。複製先で `npm install` を実行したり `dist` を書き換えたりしないでください（雛形に及びます。必要なら `--copy`）。
   `.env`（`.env.example` を除く）と、雛形に残った顧客のデータ（`public/data`・`public/brand`・`assets/brand`・`assets/audio`）は複製しません。

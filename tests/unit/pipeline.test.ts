@@ -5,13 +5,20 @@ import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { REPO_ROOT, validatePackDir } from '../../scripts/lib/pack-fs';
 import { cloneTemplate, TemplateNotBuiltError } from '../../scripts/pipeline/clone';
-import { main } from '../../scripts/pipeline/cli';
+import { main as cliMain, type CliDeps } from '../../scripts/pipeline/cli';
 import { COMMAND_STAGES, defaultPaths, researchCacheDir, workDir } from '../../scripts/pipeline/common';
 import { PACK_FILE_KEYS, mockGenerator, packFilePath, type PackGenerator } from '../../scripts/pipeline/generate';
 import { parseArgs, resolveInputs } from '../../scripts/pipeline/inputs';
-import { runPipeline } from '../../scripts/pipeline/pipeline';
+import { runPipeline as runPipelineImpl, type PipelineDeps } from '../../scripts/pipeline/pipeline';
 import { startStaticServer } from '../../scripts/pipeline/launch';
+import { mockSmoke } from '../../scripts/pipeline/verify';
 import { InputError } from '../../scripts/pipeline/common';
+
+// この試験の雛形は小さな代用のフォルダー（実際のアプリがない）ので、⑥ verify のブラウザー検査は差し替え部品（モック）にする。
+// 実際のブラウザー検査は tests/unit/verify.test.ts が確かめる
+const main = (argv: readonly string[], deps: CliDeps = {}) => cliMain(argv, { smoke: mockSmoke, ...deps });
+const runPipeline = (cmd: Parameters<typeof runPipelineImpl>[0], input: Parameters<typeof runPipelineImpl>[1], deps: PipelineDeps) =>
+  runPipelineImpl(cmd, input, { smoke: mockSmoke, ...deps });
 
 let tmp: string;
 let template: string;

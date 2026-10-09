@@ -18,7 +18,7 @@ export interface ParsedArgs {
 /** 値を取る引数の名前。ここにないものは値を取らないフラグとして扱う */
 const VALUE_OPTIONS = new Set([
   'customer', 'project', 'intensity', 'bgm', 'material', 'workspace', 'template', 'sample',
-  'generator', 'researcher',
+  'generator', 'researcher', 'smoke',
 ]);
 
 export function parseArgs(argv: readonly string[]): ParsedArgs {
