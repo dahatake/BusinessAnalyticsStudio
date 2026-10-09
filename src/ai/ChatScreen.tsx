@@ -16,6 +16,8 @@ const useStyles = makeStyles({
     display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS,
   },
   pre: { whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontFamily: tokens.fontFamilyMonospace, fontSize: tokens.fontSizeBase200 },
+  // 強制カラー（ハイコントラスト）では OS の色で描く。主ボタンの色の固定を外す（FR-058 AC-071）
+  osColors: { '@media (forced-colors: active)': { forcedColorAdjust: 'auto' } },
 });
 
 interface Entry { question: string; result: AiResult }
@@ -48,7 +50,7 @@ export function ChatScreen() {
       <div className={s.row}>
         <Input aria-label="質問" placeholder="質問を入力" value={text} onChange={(_, d) => setText(d.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') void send(); }} style={{ flexGrow: 1 }} />
-        <Button appearance="primary" onClick={() => void send()} disabled={!!pending}>送信</Button>
+        <Button appearance="primary" className={s.osColors} onClick={() => void send()} disabled={!!pending}>送信</Button>
       </div>
       {pending ? (
         <div data-testid="sending-indicator" role="status" className={s.answer}>

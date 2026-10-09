@@ -1,18 +1,33 @@
 import { useEffect, useState } from 'react';
 import { MessageBar, MessageBarBody, MessageBarTitle } from '@fluentui/react-components';
 import { AiStatus } from '../ai/AiStatus';
+import { DiscussionFileActions } from '../discussion/FileActions';
 import { AppShell } from '../components/AppShell';
 import { BrandLockup } from '../components/Brand';
 import { useEffectiveBrand } from '../theme/useBrand';
 import { ErrorView, LoadingView } from '../components/StateViews';
 import { SCREENS } from '../screens/registry';
+import { setAvailableComponents, useLayout } from '../store/layout';
 import { usePackStore } from '../store/pack';
+import { Dock, PersonaMenu, ResetLayoutButton } from '../workspace/Controls';
+import { Workspace } from '../workspace/Workspace';
 import { Opening } from './Opening';
+
+setAvailableComponents(SCREENS.map((s) => s.key));
+
+/** ナビゲーションの選択: 非表示なら再表示し、そのコンポーネントへフォーカスを移す。 */
+function openComponent(key: string): void {
+  useLayout.getState().showComponent(key);
+  window.setTimeout(() => {
+    const el = document.querySelector<HTMLElement>(`[data-testid="component-${key}"]`);
+    el?.scrollIntoView?.({ block: 'nearest' });
+    el?.focus({ preventScroll: true });
+  }, 0);
+}
 
 export function App() {
   const state = usePackStore((s) => s.state);
   const load = usePackStore((s) => s.load);
-  const [active, setActive] = useState<string>(SCREENS[0]?.key ?? '');
   const brand = useEffectiveBrand();
   const [opened, setOpened] = useState(false);
 
@@ -42,7 +57,6 @@ export function App() {
     );
   }
 
-  const Screen = SCREENS.find((s) => s.key === active)?.component;
   const { name, projectName } = state.pack.data.customer;
   return (
     <>
@@ -50,9 +64,10 @@ export function App() {
       <AppShell
         title={`${name} ${projectName}`}
         screens={SCREENS}
-        activeKey={active}
-        onSelect={setActive}
-        headerExtra={<AiStatus />}
+        onSelect={openComponent}
+        headerExtra={<><DiscussionFileActions /><AiStatus /></>}
+        actions={<><PersonaMenu /><ResetLayoutButton /></>}
+        dock={<Dock screens={SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
       >
         {state.warnings.length > 0 ? (
@@ -65,7 +80,7 @@ export function App() {
             </MessageBar>
           </div>
         ) : null}
-        {Screen ? <Screen /> : null}
+        <Workspace screens={SCREENS} />
       </AppShell>
     </>
   );
