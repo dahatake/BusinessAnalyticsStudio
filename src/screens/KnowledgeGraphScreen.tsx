@@ -30,7 +30,7 @@ const useStyles = makeStyles({
   toolbar: { display: 'flex', flexWrap: 'wrap', alignItems: 'end', columnGap: tokens.spacingHorizontalXL, rowGap: tokens.spacingVerticalS },
   hop: { display: 'flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS },
   range: { width: '160px', height: '24px', accentColor: tokens.colorBrandBackground, cursor: 'pointer' },
-  filters: { display: 'flex', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalM },
+  filters: { display: 'flex', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalS },
   svg: { width: '100%', height: 'auto', maxHeight: '70vh', minHeight: '320px', flexShrink: 0, display: 'block', backgroundColor: tokens.colorNeutralBackground2, borderRadius: tokens.borderRadiusMedium },
   node: { cursor: 'pointer', outline: 'none', ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}` } },
   nodeLabel: {

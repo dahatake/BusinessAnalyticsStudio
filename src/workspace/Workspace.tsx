@@ -1,11 +1,12 @@
 // ワークスペース: レイアウトの木（分割とタブ）を描く。境界はドラッグでもキーボードでも動かせる（FR-109、NFR-A11Y-004）。
 import { createPortal } from 'react-dom';
-import { useCallback, useLayoutEffect, useMemo, useRef, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react';
+import { useCallback, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type PointerEvent } from 'react';
 import { Tab, TabList, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import type { ScreenDefinition } from '../screens/types';
 import { effectiveLayout, useLayout } from '../store/layout';
 import { keysOf, type LayoutNode, type Path, type SplitNode } from './layoutModel';
 import { PaneContext, type PaneInfo } from './PaneContext';
+import { COMPACT_CELL_HEIGHT, isCompactWidth, stackedLeaves } from './compact';
 
 const useStyles = makeStyles({
   root: { position: 'relative', display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0, minWidth: 0 },
@@ -25,6 +26,10 @@ const useStyles = makeStyles({
   tabs: { display: 'flex', flexDirection: 'column', flex: '1 1 0', minWidth: 0, minHeight: 0 },
   tabBody: { display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0, minWidth: 0 },
   empty: { padding: tokens.spacingHorizontalXXL },
+  // 狭い画面・高い拡大率: 分割を縦に積み、全体を縦にスクロールする（NFR-UX-002、NFR-UX-005）
+  rootCompact: { flex: '1 0 auto' },
+  stack: { display: 'flex', flexDirection: 'column', flex: '0 0 auto', minWidth: 0, rowGap: tokens.spacingVerticalS },
+  stackCell: { display: 'flex', flexDirection: 'column', flex: '0 0 auto', minWidth: 0, height: COMPACT_CELL_HEIGHT },
 });
 
 const KEY_STEP = 0.02;
@@ -125,6 +130,19 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   };
 
   const hosts = useRef(new Map<string, HTMLElement>());
+  // 幅が狭い（または拡大率が高い）ときは、分割を縦に積む。レイアウトの木は変えず、描き方だけを替える。
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [compact, setCompact] = useState(false);
+  useLayoutEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+    const measure = () => setCompact(isCompactWidth(el.getBoundingClientRect().width));
+    measure();
+    if (typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
   const hostOf = (key: string): HTMLElement => {
     let h = hosts.current.get(key);
     if (!h) {
@@ -183,9 +201,19 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     </div>
   );
 
+  const renderStack = (root: LayoutNode): JSX.Element => (
+    <div className={s.stack}>
+      {stackedLeaves(root).map((leafNode, i) => (
+        <div key={`k${leafNode.tabs.join('+')}`} className={s.stackCell} data-stacked={i}>
+          {render(leafNode, [i])}
+        </div>
+      ))}
+    </div>
+  );
+
   return (
-    <div className={s.root}>
-      {layout ? render(layout, []) : (
+    <div ref={rootRef} className={mergeClasses(s.root, compact ? s.rootCompact : undefined)} data-layout={compact ? 'stacked' : 'split'}>
+      {layout ? (compact ? renderStack(layout) : render(layout, [])) : (
         <Text className={s.empty} size={400}>表示中のコンポーネントがありません。左のドックから再表示してください。</Text>
       )}
       {[...groups.entries()].map(([key, g]) => {

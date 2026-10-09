@@ -15,6 +15,7 @@
     "check:pack": "tsx scripts/check-pack.ts",
     "pipeline": "tsx scripts/pipeline/cli.ts",
     "verify:pack": "tsx scripts/pipeline/verify.ts",
+    "regression": "tsx scripts/regression.ts",
     "package": "tsx scripts/make-package.ts"
   },
   "dependencies": {
