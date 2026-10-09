@@ -137,9 +137,9 @@
       "command": "node tests/system/run.mjs AC-001",
       "canary": false,
       "status": "pass",
-      "last_commit": "76ed73e",
-      "last_run_at": "2026-10-09T16:42:36+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-001-202610091642.log",
+      "last_commit": "e895ee6",
+      "last_run_at": "2026-10-09T16:43:24+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-001-202610091643.log",
       "history": [
         {
           "at": "2026-10-09T12:15:37+09:00",
@@ -164,6 +164,12 @@
           "by": "conductor",
           "change": "status -> not_run",
           "reason": "I05 実装済み"
+        },
+        {
+          "at": "2026-10-09T16:43:12+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
         }
       ]
     },
@@ -180,9 +186,9 @@
       "command": "node tests/system/run.mjs AC-002",
       "canary": false,
       "status": "pass",
-      "last_commit": "76ed73e",
-      "last_run_at": "2026-10-09T16:42:39+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-002-202610091642.log",
+      "last_commit": "e895ee6",
+      "last_run_at": "2026-10-09T16:43:26+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-002-202610091643.log",
       "history": [
         {
           "at": "2026-10-09T12:15:39+09:00",
@@ -201,6 +207,12 @@
           "by": "conductor",
           "change": "status -> not_run",
           "reason": "I05 実装済み"
+        },
+        {
+          "at": "2026-10-09T16:43:12+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
         }
       ]
     },
@@ -217,9 +229,9 @@
       "command": "node tests/system/run.mjs AC-003",
       "canary": false,
       "status": "pass",
-      "last_commit": "76ed73e",
-      "last_run_at": "2026-10-09T16:42:41+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-003-202610091642.log",
+      "last_commit": "e895ee6",
+      "last_run_at": "2026-10-09T16:43:29+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-003-202610091643.log",
       "history": [
         {
           "at": "2026-10-09T12:15:40+09:00",
@@ -238,6 +250,12 @@
           "by": "conductor",
           "change": "status -> not_run",
           "reason": "I05 実装済み"
+        },
+        {
+          "at": "2026-10-09T16:43:12+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
         }
       ]
     },
@@ -254,9 +272,9 @@
       "command": "node tests/system/run.mjs AC-004",
       "canary": false,
       "status": "pass",
-      "last_commit": "76ed73e",
-      "last_run_at": "2026-10-09T16:42:43+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-004-202610091642.log",
+      "last_commit": "e895ee6",
+      "last_run_at": "2026-10-09T16:43:31+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-004-202610091643.log",
       "history": [
         {
           "at": "2026-10-09T12:15:42+09:00",
@@ -275,6 +293,12 @@
           "by": "conductor",
           "change": "status -> not_run",
           "reason": "I05 実装済み"
+        },
+        {
+          "at": "2026-10-09T16:43:13+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
         }
       ]
     },
@@ -291,9 +315,9 @@
       "command": "node tests/system/run.mjs AC-005",
       "canary": false,
       "status": "pass",
-      "last_commit": "76ed73e",
-      "last_run_at": "2026-10-09T16:42:45+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-005-202610091642.log",
+      "last_commit": "e895ee6",
+      "last_run_at": "2026-10-09T16:43:33+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-005-202610091643.log",
       "history": [
         {
           "at": "2026-10-09T12:15:45+09:00",
@@ -312,6 +336,12 @@
           "by": "conductor",
           "change": "status -> not_run",
           "reason": "I05 実装済み"
+        },
+        {
+          "at": "2026-10-09T16:43:13+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
         }
       ]
     },
