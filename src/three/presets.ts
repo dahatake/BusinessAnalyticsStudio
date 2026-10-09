@@ -1,22 +1,103 @@
 // 業種プリセットと、3D シーンの手続き生成の定義。外部のモデルは使わない（FR-068）。
+export type Shape = 'box' | 'cylinder' | 'sphere' | 'cone';
+
+/** カメラパスの 1 点（位置と注視点） */
+export interface CameraKeyframe {
+  position: [number, number, number];
+  target: [number, number, number];
+}
+
+/** 業種ごとの 3D シーンの見た目（背景・地面） */
+export interface SceneStyle {
+  background: string;
+  ground: string;
+  /** ヒーローシーンの説明（設定パネルに出す） */
+  description: string;
+}
+
+/** 中核オブジェクト（顧客パックの coreObject）の 3D 表現 */
+export interface CoreObjectStyle {
+  shape: Shape;
+  position: [number, number, number];
+  size: [number, number, number];
+}
+
+export type PresetIconKey = 'bank' | 'factory' | 'cart' | 'truck' | 'government';
+
 export interface IndustryPreset {
   id: string;
   label: string;
   color: string;
   accent: string;
+  /** 3D シーン（FR-103 AC-125） */
+  scene: SceneStyle;
+  /** カメラパス（2 点以上。先頭が初期の視点） */
+  cameraPath: readonly CameraKeyframe[];
+  /** アイコンの種類（src/three/presetIcons.tsx が Fluent のアイコンに対応付ける） */
+  icon: PresetIconKey;
+  /** 中核オブジェクトの表現 */
+  core: CoreObjectStyle;
 }
 
 /** FR-103 の 5 業種（金融・製造・小売・物流・公共） */
 export const INDUSTRY_PRESETS: readonly IndustryPreset[] = [
-  { id: 'finance', label: '金融', color: '#2b6cb0', accent: '#90cdf4' },
-  { id: 'manufacturing', label: '製造', color: '#dd6b20', accent: '#fbd38d' },
-  { id: 'retail', label: '小売', color: '#d53f8c', accent: '#fbb6ce' },
-  { id: 'logistics', label: '物流', color: '#2f855a', accent: '#9ae6b4' },
-  { id: 'public', label: '公共', color: '#6b46c1', accent: '#d6bcfa' },
+  {
+    id: 'finance', label: '金融', color: '#2b6cb0', accent: '#90cdf4', icon: 'bank',
+    scene: { background: '#0b1b33', ground: '#16263f', description: '高層ビル群の街並み' },
+    cameraPath: [
+      { position: [9, 7, 10], target: [0, 2, 0] },
+      { position: [-8, 5, 9], target: [0, 2.5, 0] },
+      { position: [0, 11, 11], target: [0, 1.5, 0] },
+    ],
+    core: { shape: 'cylinder', position: [0, 5.2, 0], size: [0.9, 0.5, 0.9] },
+  },
+  {
+    id: 'manufacturing', label: '製造', color: '#dd6b20', accent: '#fbd38d', icon: 'factory',
+    scene: { background: '#0f172a', ground: '#1e293b', description: '工場の建屋・煙突・ライン' },
+    cameraPath: [
+      { position: [7, 6, 9], target: [0, 0.5, 0] },
+      { position: [-7, 5, 8], target: [0, 1, 0] },
+      { position: [0, 9, 6], target: [0, 0.5, 1] },
+    ],
+    core: { shape: 'box', position: [0, 3.4, 0], size: [0.9, 0.9, 0.9] },
+  },
+  {
+    id: 'retail', label: '小売', color: '#d53f8c', accent: '#fbb6ce', icon: 'cart',
+    scene: { background: '#2a1020', ground: '#3b1a2e', description: '商品の陳列棚' },
+    cameraPath: [
+      { position: [6, 5, 8], target: [0, 0.5, 0] },
+      { position: [-6, 4, 7], target: [0, 0.5, 0] },
+      { position: [0, 8, 5], target: [0, 0.4, 0] },
+    ],
+    core: { shape: 'sphere', position: [0, 2.2, 0], size: [0.8, 0.8, 0.8] },
+  },
+  {
+    id: 'logistics', label: '物流', color: '#2f855a', accent: '#9ae6b4', icon: 'truck',
+    scene: { background: '#0b2218', ground: '#14352a', description: 'コンテナの積み上げ' },
+    cameraPath: [
+      { position: [8, 5, 8], target: [0, 1, 0] },
+      { position: [-8, 4, 7], target: [0, 1, 0] },
+      { position: [0, 8, 9], target: [0, 0.8, 0] },
+    ],
+    core: { shape: 'box', position: [0, 3.2, 0], size: [1.4, 0.6, 0.7] },
+  },
+  {
+    id: 'public', label: '公共', color: '#6b46c1', accent: '#d6bcfa', icon: 'government',
+    scene: { background: '#1b1233', ground: '#2a1d4a', description: '列柱と屋根の庁舎' },
+    cameraPath: [
+      { position: [7, 5, 10], target: [0, 1.6, 0] },
+      { position: [-7, 4, 9], target: [0, 1.8, 0] },
+      { position: [0, 9, 10], target: [0, 1.5, 0] },
+    ],
+    core: { shape: 'cone', position: [0, 4.2, 0], size: [0.8, 0.8, 0.8] },
+  },
 ];
 
+/** 既定のプリセット（業種が未指定・不明のとき） */
+export const DEFAULT_PRESET_ID = 'manufacturing';
+
 export function resolvePreset(idOrLabel: string | undefined | null): IndustryPreset {
-  return INDUSTRY_PRESETS.find((p) => p.id === idOrLabel || p.label === idOrLabel) ?? (INDUSTRY_PRESETS[1] as IndustryPreset);
+  return INDUSTRY_PRESETS.find((p) => p.id === idOrLabel || p.label === idOrLabel) ?? (INDUSTRY_PRESETS.find((p) => p.id === DEFAULT_PRESET_ID) as IndustryPreset);
 }
 
 export const SCENE_KEYS = ['hero', 'kpi-tower', 'dataflow', 'asis-tobe'] as const;
@@ -28,7 +109,6 @@ export const SCENE_LABELS: Record<SceneKey, string> = {
   'asis-tobe': 'AsIs → ToBe',
 };
 
-export type Shape = 'box' | 'cylinder' | 'sphere' | 'cone';
 export interface ObjectSpec {
   id: string;
   shape: Shape;
@@ -65,6 +145,8 @@ export function heroObjects(p: IndustryPreset): ObjectSpec[] {
       add('box', [0, 2.15, 0], [5.6, 0.3, 1.6]);
       add('cone', [0, 3.0, 0], [1.4, 1.4, 1.4]);
   }
+  // 中核オブジェクト（FR-103）。業種ごとに形と位置が変わる浮遊するマーカー
+  out.push({ id: 'hero-core', shape: p.core.shape, position: p.core.position, size: p.core.size, color: '#ffffff' });
   return out;
 }
 
