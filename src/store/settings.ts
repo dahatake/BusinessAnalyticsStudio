@@ -19,6 +19,12 @@ interface SettingsState {
   /** 音量 0〜1。FR-057 の保存の対象 */
   volume: number;
   setVolume: (volume: number) => void;
+  /** BGM の ON/OFF（既定は ON。FR-074）。効果音とは別に切り替える */
+  bgmEnabled: boolean;
+  setBgmEnabled: (enabled: boolean) => void;
+  /** 効果音の ON/OFF（既定は ON。FR-074） */
+  seEnabled: boolean;
+  setSeEnabled: (enabled: boolean) => void;
   /** 利用者が選んだ演出強度。null はブランドトーンの既定値（FR-063）。FR-057 の保存の対象 */
   intensity: Intensity | null;
   setIntensity: (intensity: Intensity | null) => void;
@@ -38,6 +44,10 @@ export const useSettings = create<SettingsState>()(
       setMuted: (muted) => set({ muted }),
       volume: DEFAULT_VOLUME,
       setVolume: (volume) => set({ volume: clamp01(volume) }),
+      bgmEnabled: true,
+      setBgmEnabled: (bgmEnabled) => set({ bgmEnabled }),
+      seEnabled: true,
+      setSeEnabled: (seEnabled) => set({ seEnabled }),
       intensity: null,
       setIntensity: (intensity) => set({ intensity }),
     }),
