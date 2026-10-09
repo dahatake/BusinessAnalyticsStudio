@@ -6,6 +6,7 @@ import { AppShell } from '../components/AppShell';
 import { BrandLockup } from '../components/Brand';
 import { useEffectiveBrand } from '../theme/useBrand';
 import { ErrorView, LoadingView } from '../components/StateViews';
+import { PresentationBar, PresentationButton } from '../presentation/PresentationMode';
 import { SCREENS } from '../screens/registry';
 import { SelectionController } from '../selection/SelectionController';
 import { setAvailableComponents, useLayout } from '../store/layout';
@@ -71,7 +72,7 @@ export function App() {
         screens={SCREENS}
         onSelect={openComponent}
         headerExtra={<><DiscussionFileActions /><AiStatus /></>}
-        actions={<><PersonaMenu /><ResetLayoutButton /></>}
+        actions={<><PersonaMenu /><ResetLayoutButton /><PresentationButton /></>}
         dock={<Dock screens={SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
       >
@@ -105,6 +106,7 @@ export function App() {
             </MessageBar>
           </div>
         ) : null}
+        <PresentationBar />
         <Workspace screens={SCREENS} />
       </AppShell>
     </>
