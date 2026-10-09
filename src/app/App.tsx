@@ -7,6 +7,7 @@ import { useEffectiveBrand } from '../theme/useBrand';
 import { ErrorView, LoadingView } from '../components/StateViews';
 import { SCREENS } from '../screens/registry';
 import { usePackStore } from '../store/pack';
+import { checkTemplateVersion, versionWarning } from '../version';
 import { Opening } from './Opening';
 
 export function App() {
@@ -44,6 +45,8 @@ export function App() {
 
   const Screen = SCREENS.find((s) => s.key === active)?.component;
   const { name, projectName } = state.pack.data.customer;
+  // FR-106: 顧客パックの対応する雛形のバージョンが、雛形のバージョンと互換でないときの警告
+  const version = checkTemplateVersion(state.pack.data.customer.templateVersion);
   return (
     <>
       {!opened ? <Opening customerName={name} projectName={projectName} onDone={() => setOpened(true)} /> : null}
@@ -55,6 +58,26 @@ export function App() {
         headerExtra={<AiStatus />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
       >
+        {state.pack.isExample ? (
+          <div data-testid="example-pack-notice">
+            <MessageBar intent="info" layout="multiline">
+              <MessageBarBody>
+                <MessageBarTitle>お手本パックで起動しています。</MessageBarTitle>
+                架空企業のデモ用データです。顧客のデータは public/data/ と public/brand/ に置くと切り替わります。
+              </MessageBarBody>
+            </MessageBar>
+          </div>
+        ) : null}
+        {!version.compatible ? (
+          <div data-testid="version-warning">
+            <MessageBar intent="warning" layout="multiline">
+              <MessageBarBody>
+                <MessageBarTitle>雛形のバージョンが合っていません。</MessageBarTitle>
+                {versionWarning(version)}
+              </MessageBarBody>
+            </MessageBar>
+          </div>
+        ) : null}
         {state.warnings.length > 0 ? (
           <div data-testid="pack-errors">
             <MessageBar intent="warning" layout="multiline">

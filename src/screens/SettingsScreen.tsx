@@ -6,6 +6,8 @@ import { AiSettings } from '../ai/AiSettings';
 import { THEME_MODES, useSettings, type ThemeMode } from '../store/settings';
 import { INDUSTRY_PRESETS, useIndustryPreset, useView3D } from '../store/view3d';
 import { QUALITIES, type Quality } from '../three/quality';
+import { PresetIcon } from '../three/presetIcons';
+import { TEMPLATE_VERSION } from '../version';
 import { usePackStore } from '../store/pack';
 import { isHexColor } from '../theme/brand';
 import { buildBrandTheme } from '../theme/brandTheme';
@@ -113,9 +115,11 @@ export function SettingsScreen() {
           selectedOptions={[preset.id]}
           onOptionSelect={(_, d) => { if (d.optionValue) setIndustry(d.optionValue); }}
         >
-          {INDUSTRY_PRESETS.map((p) => <Option key={p.id} value={p.id}>{p.label}</Option>)}
+          {INDUSTRY_PRESETS.map((p) => <Option key={p.id} value={p.id} text={p.label}><PresetIcon preset={p} /> {p.label}</Option>)}
         </Dropdown>
       </Field>
+      <Text as="p" data-testid="preset-description"><PresetIcon preset={preset} /> {preset.label}: {preset.scene.description}</Text>
+      <Text as="p" data-testid="template-version">雛形のバージョン: {TEMPLATE_VERSION}</Text>
       <Text as="p" data-testid="quality-current">現在の品質: {quality}</Text>
       <Text as="p" data-testid="fps">FPS: {fps.toFixed(1)} fps（3D 表示中の最後の計測値）</Text>
       <Text as="p" data-testid="renderer">描画方式: {renderer}</Text>

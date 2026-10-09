@@ -26,10 +26,13 @@ describe('FR-100 顧客固有情報のコードからの分離', () => {
       needles.push(customer.name, customer.projectName, brand.name, brand.colors.primary);
     }
     expect(needles.length).toBeGreaterThanOrEqual(8);
+    const examplePackDir = path.join(REPO_ROOT, 'dist', 'example-pack') + path.sep;
     const targets = [
       ...listFiles(path.join(REPO_ROOT, 'src')),
       ...listFiles(path.join(REPO_ROOT, 'public')),
-      ...listFiles(path.join(REPO_ROOT, 'dist')),
+      // FR-104: 顧客パックがないときに起動するお手本パックは、データとして dist/example-pack/ に同梱する（コードには含めない）。
+      // 同梱の中身が examples/mono と一致することは tests/unit/template.test.ts で確かめる。
+      ...listFiles(path.join(REPO_ROOT, 'dist'), (f) => !f.startsWith(examplePackDir)),
       path.join(REPO_ROOT, 'index.html'),
     ];
     const hits: string[] = [];
