@@ -114,8 +114,8 @@
 | FR-104 | お手本パックでの起動 | 承認済み | src/data/loader.ts, src/app/App.tsx, vite.config.ts | tests/unit/template.test.ts (AC-126), tests/system/e2e/brand-settings.spec.ts (AC-126) | 顧客パックの読み込み |
 | FR-105 | オフラインで動く配布パッケージ | 承認済み | package.json, package-lock.json, scripts/make-package.ts, scripts/lib/package.ts, docs/distribution.md, docs/manual-tests.md | tests/unit/template.test.ts (AC-127), docs/manual-tests.md (AC-128) | なし |
 | FR-106 | 雛形のバージョン | 承認済み | src/version.ts, src/app/App.tsx, src/screens/SettingsScreen.tsx | tests/unit/template.test.ts (AC-129), tests/system/e2e/brand-settings.spec.ts (AC-129) | 雛形のバージョン |
-| FR-107 | セットアップスクリプト | 承認済み | 未実装 | 未実装 | なし |
-| FR-108 | セットアップスクリプトの安全性 | 承認済み | 未実装 | 未実装 | なし |
+| FR-107 | セットアップスクリプト | 承認済み | scripts/setup.ps1, scripts/setup.sh, scripts/setup/helper.mjs, README.md | tests/unit/setup.test.ts (AC-130), docs/manual-tests.md (AC-131) | セットアップスクリプト |
+| FR-108 | セットアップスクリプトの安全性 | 承認済み | scripts/setup.ps1, scripts/setup.sh, scripts/setup/helper.mjs | tests/unit/setup.test.ts (AC-132, AC-133) | セットアップスクリプト |
 | FR-109 | コンポーネントの移動・大きさの変更・タブ化 | 承認済み | src/workspace/Workspace.tsx, src/workspace/PaneContext.tsx, src/workspace/layoutModel.ts | tests/unit/workspace.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
 | FR-110 | 既定のレイアウトへの復元 | 承認済み | src/workspace/Controls.tsx, src/store/layout.ts | tests/unit/workspace.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
 | FR-111 | コマンドパレット | 承認済み | src/commands/registry.ts, src/commands/builtin.ts, src/commands/ui.ts, src/commands/CommandPalette.tsx, src/app/App.tsx | tests/unit/commands.test.ts (AC-136), tests/system/e2e/layout.spec.ts (E2E-101) | コマンドの登録簿, ワークスペース, デザイン基盤 |
@@ -144,7 +144,7 @@
 | NFR-PERF-002 | 4K 表示での描画性能 | 承認済み | src/three/quality.ts, src/three/SceneCanvas.tsx, src/screens/SettingsScreen.tsx | docs/manual-tests.md | 3D 基盤 |
 | NFR-PERF-003 | 初回表示の時間 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-PERF-004 | インクの描画遅延 | 承認済み | src/ink/render.ts, src/ink/BoardSurface.tsx, src/ink/store.ts | tests/unit/ink.test.ts (AC-164 の前提の合成データ。AC-164 は手動。自動の計測は FR-095 の AC-117) | インク・ボード基盤 |
-| NFR-ENV-001 | 対応ブラウザーと端末 | 承認済み | 未実装 | 未実装 | なし |
+| NFR-ENV-001 | 対応ブラウザーと端末 | 承認済み | README.md, docs/manual-tests.md | tests/system/e2e/quality.spec.ts (AC-165), docs/manual-tests.md (AC-166) | なし |
 | NFR-ENV-002 | 外部サーバーなし・オフラインでの動作 | 承認済み | src/data/loader.ts, src/ai/client.ts, vite.config.ts | tests/unit/template.test.ts (AC-167), tests/system/e2e/quality.spec.ts (AC-167) | 顧客パックの読み込み, AI 呼び出し口 |
 | NFR-L10N-001 | 日本語の UI | 承認済み | 未実装 | 未実装 | なし |
 | NFR-A11Y-001 | WCAG 2.2 AA・キーボード・スクリーンリーダー・字幕 | 承認済み | 未実装 | 未実装 | なし |
@@ -158,7 +158,7 @@
 | NFR-LEGAL-002 | サンプル・AI 生成・モックの明示と商標 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-MAINT-001 | 型の厳格さと部品とスキーマの分離 | 承認済み | tsconfig.json, src/schema/index.ts | tests/unit/foundation.test.ts | 顧客パックのスキーマと検証 |
 | NFR-MAINT-002 | 雛形の回帰テスト | 承認済み | 未実装 | 未実装 | なし |
-| NFR-MAINT-003 | README | 承認済み | 未実装 | 未実装 | なし |
+| NFR-MAINT-003 | README | 承認済み | README.md | tests/unit/setup.test.ts (README の案内), docs/manual-tests.md (AC-184) | なし |
 | NFR-UX-001 | レイアウト・表現の切替で状態を失わない | 承認済み | src/store/retained.ts, src/screens/canvas/CanvasScreen.tsx, src/workspace/Workspace.tsx | tests/unit/persona.test.ts, tests/system/e2e/layout.spec.ts (IT-013) | ワークスペース, 状態の保持 |
 | NFR-UX-002 | 狭い画面と高い拡大率での縮退 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-UX-003 | 時間のかかる処理の進行表示 | 承認済み | 未実装 | 未実装 | なし |
@@ -227,6 +227,7 @@
 | 演出の動き | src/motion/tone.ts, src/motion/fluent.ts, src/motion/control.ts, src/motion/AnimationController.tsx, src/motion/useMotion.ts, src/motion/CountUp.tsx, src/motion/useDrawProgress.ts, src/motion/motion.css, src/store/animation.ts | ブランドトーン→演出の設定（演出強度の既定値・BGM の曲調・テンポ・テロップの文体）、Fluent 2 の時間とイージング、カウントアップ・チャート描画の進み、P キーでのグローバル停止（CSS・動画・3D）、動きを減らす設定での起動、アニメーション状態の表示（data-testid=animation-state）。動きの部品はこれを使い、停止中は最終値を即座に出す | FR-057, FR-063, FR-070, FR-071, FR-072, NFR-A11Y-002 |
 | 業種プリセット | src/three/presets.ts, src/three/presetIcons.tsx | 5 業種（金融・製造・小売・物流・公共）の 3D シーン・カメラパス・アイコン・中核オブジェクトの表現。resolvePreset(customer.industryPreset) で選ぶ | FR-103 |
 | 雛形のバージョン | src/version.ts | TEMPLATE_VERSION（package.json の version）と、顧客パックの templateVersion との互換の判定（checkTemplateVersion） | FR-106 |
+| セットアップスクリプト | scripts/setup.ps1, scripts/setup.sh, scripts/setup/helper.mjs | Windows（PowerShell）と macOS（シェル）の導入の自動化。段階ごとに「導入済み」を判定して不足分だけを導入し、冪等・管理者権限なし・実行前の一覧表示・`-DryRun`/`--dry-run`（表示だけ）・失敗時の原因と対処・`logs/setup.log`。判定の補助（依存・SDK・Chromium・dist の新しさ・中継の疎通・お手本パックの verify 用フォルダー）は helper.mjs に集約 | FR-107, FR-108 |
 | プレゼンテーションモード | src/presentation/model.ts, src/presentation/PresentationMode.tsx, src/store/presentation.ts | show.json の章・議題の順に巡るプレゼンテーション（開始/終了ボタン、進行バー `progress-bar`・`chapter`・`current-topic`、`←`/`→` で前/次。`↑`/`↓`・`Shift`+矢印・入力欄・メニューでは奪わない）。`internal` の項目を含むパックでは、開始の前に件数と確認の画面（`alertdialog`「機密情報の確認」）を出し、確認するまで開始しない（NFR-SEC-003）。画面は `usePresentationStore` / `currentTopic` を読んで現在の議題に追従する（キャンバスが実装済み）。番組構成（FR-077）の次の予告カード・テロップ・ショーコントロールバーは、この進行バーとストアを拡張する | FR-016, NFR-SEC-003 |
 | 代替表示 | src/analysis/fallback.ts, src/store/fallback.ts, src/components/UnrenderableNote.tsx | 表現に必要な属性がない項目の扱い。`partitionRenderable` で分け、`<UnrenderableNote source reason items>` が「位置情報なし: N 件」を出す。選ぶと `useFallbackStore.request`（該当 ID）を立て、`table` コンポーネントがあれば再表示する（表は request を読んで該当項目を出す）。`table` 画面が未登録のときは一覧をその場に出す。地図・3D・ガントの画面が使う | FR-021, FR-113 |
 | 状態の保持 | src/store/retained.ts | `useRetainedState(key, initial)`。入力中の内容・絞り込み・視点など、画面の作り直し（ペルソナの切替・非表示と再表示）をまたいで保ちたい一時的な状態を、`<画面のキー>.<名前>` で画面の外に持つ（保存はしない）。選択は共通選択状態ストア側 | NFR-UX-001 |
