@@ -41,3 +41,15 @@ export function anonymizeInternal<T>(value: T): T {
   };
   return walk(value) as T;
 }
+
+/**
+ * 値を深く辿り、機密区分が `internal` の項目の件数を数える（NFR-SEC-003。顧客に見せる前の機密確認に使う）。
+ * `internal` の項目の中にさらに `internal` の項目があれば、それも数える。入力は変更しない。
+ */
+export function countInternal(value: unknown): number {
+  if (Array.isArray(value)) return value.reduce<number>((n, v) => n + countInternal(v), 0);
+  if (!isObj(value)) return 0;
+  let n = value.classification === 'internal' ? 1 : 0;
+  for (const v of Object.values(value)) n += countInternal(v);
+  return n;
+}

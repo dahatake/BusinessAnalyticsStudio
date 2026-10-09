@@ -44,6 +44,10 @@ export interface Inputs {
 export const PARAMS = {
   /** PARAM-005 雛形の複製の上限（秒） */
   cloneLimitSec: 30,
+  /** PARAM-003 事前調査の上限（秒。10 分） */
+  researchLimitSec: 600,
+  /** PARAM-004 調査キャッシュの有効期限（日） */
+  cacheValidityDays: 30,
 } as const;
 
 export interface PipelinePaths {
