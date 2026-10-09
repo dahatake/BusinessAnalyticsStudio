@@ -137,9 +137,9 @@
       "command": "node tests/system/run.mjs AC-001",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:09:25+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-001-202610091909.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:17:04+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-001-202610091917.log",
       "history": [
         {
           "at": "2026-10-09T12:15:37+09:00",
@@ -186,9 +186,9 @@
       "command": "node tests/system/run.mjs AC-002",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:09:29+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-002-202610091909.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:17:08+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-002-202610091917.log",
       "history": [
         {
           "at": "2026-10-09T12:15:39+09:00",
@@ -229,9 +229,9 @@
       "command": "node tests/system/run.mjs AC-003",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:09:33+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-003-202610091909.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:17:11+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-003-202610091917.log",
       "history": [
         {
           "at": "2026-10-09T12:15:40+09:00",
@@ -272,9 +272,9 @@
       "command": "node tests/system/run.mjs AC-004",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:09:36+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-004-202610091909.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:17:14+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-004-202610091917.log",
       "history": [
         {
           "at": "2026-10-09T12:15:42+09:00",
@@ -315,9 +315,9 @@
       "command": "node tests/system/run.mjs AC-005",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:09:39+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-005-202610091909.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:17:17+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-005-202610091917.log",
       "history": [
         {
           "at": "2026-10-09T12:15:45+09:00",
@@ -358,9 +358,9 @@
       "command": "node tests/system/run.mjs AC-006",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:09:42+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-006-202610091909.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:17:19+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-006-202610091917.log",
       "history": [
         {
           "at": "2026-10-09T12:15:51+09:00",
@@ -395,9 +395,9 @@
       "command": "node tests/system/run.mjs AC-007",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:09:46+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-007-202610091909.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:17:22+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-007-202610091917.log",
       "history": [
         {
           "at": "2026-10-09T12:15:57+09:00",
@@ -494,9 +494,9 @@
       "command": "node tests/system/run.mjs AC-013",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:09:51+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-010-202610091909.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:17:26+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-010-202610091917.log",
       "history": [
         {
           "at": "2026-10-09T12:16:04+09:00",
@@ -531,9 +531,9 @@
       "command": "node tests/system/run.mjs AC-015",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:09:54+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-011-202610091909.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:17:29+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-011-202610091917.log",
       "history": [
         {
           "at": "2026-10-09T12:16:06+09:00",
@@ -685,9 +685,9 @@
       "command": "node tests/system/run.mjs AC-019",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:09:58+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-015-202610091909.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:17:32+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-015-202610091917.log",
       "history": [
         {
           "at": "2026-10-09T12:16:13+09:00",
@@ -722,9 +722,9 @@
       "command": "node tests/system/run.mjs AC-192",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:10:01+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-016-202610091909.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:17:36+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-016-202610091917.log",
       "history": [
         {
           "at": "2026-10-09T12:16:15+09:00",
@@ -1044,9 +1044,9 @@
       "command": "node tests/system/run.mjs AC-031",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:10:05+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-026-202610091910.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:17:40+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-026-202610091917.log",
       "history": [
         {
           "at": "2026-10-09T12:16:42+09:00",
@@ -1112,9 +1112,9 @@
       "command": "node tests/system/run.mjs AC-033",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:10:09+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-028-202610091910.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:17:45+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-028-202610091917.log",
       "history": [
         {
           "at": "2026-10-09T12:16:46+09:00",
@@ -1360,9 +1360,9 @@
       "command": "node tests/system/run.mjs AC-046",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:10:12+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-036-202610091910.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:17:48+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-036-202610091917.log",
       "history": [
         {
           "at": "2026-10-09T12:17:03+09:00",
@@ -2079,9 +2079,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:09:21+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-059-202610091909.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:17:01+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-059-202610091916.log",
       "history": [
         {
           "at": "2026-10-09T12:17:42+09:00",
@@ -2178,9 +2178,9 @@
       "command": "node tests/system/run.mjs AC-076",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:10:15+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-062-202610091910.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:17:51+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-062-202610091917.log",
       "history": [
         {
           "at": "2026-10-09T12:17:48+09:00",
@@ -2234,9 +2234,9 @@
       "command": "node tests/system/run.mjs AC-079",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:10:20+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-064-202610091910.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:17:56+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-064-202610091917.log",
       "history": [
         {
           "at": "2026-10-09T12:17:50+09:00",
@@ -2259,9 +2259,9 @@
       "command": "node tests/system/run.mjs AC-080",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:10:25+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-065-202610091910.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:18:00+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-065-202610091917.log",
       "history": [
         {
           "at": "2026-10-09T12:17:51+09:00",
@@ -2284,9 +2284,9 @@
       "command": "node tests/system/run.mjs AC-081",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:10:33+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-066-202610091910.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:18:11+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-066-202610091918.log",
       "history": [
         {
           "at": "2026-10-09T12:17:52+09:00",
@@ -2309,9 +2309,9 @@
       "command": "node tests/system/run.mjs AC-085",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:10:36+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-067-202610091910.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:18:19+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-067-202610091918.log",
       "history": [
         {
           "at": "2026-10-09T12:17:54+09:00",
@@ -2377,9 +2377,9 @@
       "command": "node tests/system/run.mjs AC-088",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:10:38+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-069-202610091910.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:18:22+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-069-202610091918.log",
       "history": [
         {
           "at": "2026-10-09T12:17:56+09:00",
@@ -3171,9 +3171,9 @@
       "command": "node tests/system/run.mjs AC-123",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:10:41+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-095-202610091910.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:18:25+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-095-202610091918.log",
       "history": [
         {
           "at": "2026-10-09T12:18:28+09:00",
@@ -3196,9 +3196,9 @@
       "command": "node tests/system/run.mjs AC-124",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:10:44+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-096-202610091910.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:18:28+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-096-202610091918.log",
       "history": [
         {
           "at": "2026-10-09T12:18:29+09:00",
@@ -3233,9 +3233,9 @@
       "command": "node tests/system/run.mjs AC-126",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:10:47+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-097-202610091910.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:18:31+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-097-202610091918.log",
       "history": [
         {
           "at": "2026-10-09T12:18:30+09:00",
@@ -3258,9 +3258,9 @@
       "command": "node tests/system/run.mjs AC-129",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:10:49+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/E2E-098-202610091910.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:18:34+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-098-202610091918.log",
       "history": [
         {
           "at": "2026-10-09T12:18:31+09:00",
@@ -3766,9 +3766,9 @@
       "command": "node tests/system/run.mjs AC-176",
       "canary": false,
       "status": "pass",
-      "last_commit": "09e1d66",
-      "last_run_at": "2026-10-09T19:10:57+09:00",
-      "evidence": "work/runs/202610090557/logs/system-test/IT-010-202610091910.log",
+      "last_commit": "04549f3",
+      "last_run_at": "2026-10-09T19:18:42+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/IT-010-202610091918.log",
       "history": [
         {
           "at": "2026-10-09T12:18:50+09:00",
