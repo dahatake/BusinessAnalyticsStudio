@@ -71,7 +71,14 @@ function parseWith(schema: ZodType, value: unknown, file: string, errors: PackEr
   const r = schema.safeParse(value);
   if (r.success) return;
   for (const issue of r.error.issues) {
-    errors.push({ code: 'schema', file, path: fmtPath(issue.path), message: issue.message });
+    // 誤りのある項目を特定できるよう、位置をたどって最も内側の ID を付ける
+    let id: string | undefined;
+    let cur: Json = value;
+    for (const seg of issue.path) {
+      cur = isObj(cur) ? cur[String(seg)] : Array.isArray(cur) && typeof seg === 'number' ? cur[seg] : undefined;
+      if (isObj(cur) && typeof cur.id === 'string') id = cur.id;
+    }
+    errors.push({ code: 'schema', file, path: fmtPath(issue.path), ...(id ? { id } : {}), message: issue.message });
   }
 }
 
