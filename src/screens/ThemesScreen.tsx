@@ -58,6 +58,7 @@ const useStyles = makeStyles({
     backgroundColor: tokens.colorNeutralBackground3,
     display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS,
   },
+  proposalBody: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS },
   proposalText: { whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' },
   action: {
     display: 'grid',
@@ -211,16 +212,19 @@ function ThemeDetail({ packKey, theme }: { packKey: string; theme: Theme }) {
         </Dropdown>
       </div>
 
-      <div className={s.proposal} data-testid="ai-proposal">
+      <div className={s.proposal}>
+        {/* 見出しの文字のラベルは欄の外に置き、欄（ai-proposal）には AI の提案の本文だけを入れる */}
         <Text weight="semibold">AI の提案（決定しても残ります）</Text>
-        {theme.aiProposal.trim() !== '' ? (
-          <>
-            <Text className={s.proposalText}>{theme.aiProposal}</Text>
-            <Text size={200}>{theme.aiMode === 'connected' ? REAL_LABEL : MOCK_LABEL}</Text>
-          </>
-        ) : (
-          <Text size={200}>このテーマに AI の提案はありません。</Text>
-        )}
+        <div className={s.proposalBody} data-testid="ai-proposal">
+          {theme.aiProposal.trim() !== '' ? (
+            <>
+              <Text className={s.proposalText}>{theme.aiProposal}</Text>
+              <Text size={200}>{theme.aiMode === 'connected' ? REAL_LABEL : MOCK_LABEL}</Text>
+            </>
+          ) : (
+            <Text size={200}>このテーマに AI の提案はありません。</Text>
+          )}
+        </div>
       </div>
 
       {RECORD_FIELDS.map((f) => (
