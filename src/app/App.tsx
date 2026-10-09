@@ -33,6 +33,8 @@ import { IntensityIndicator } from '../show/IntensityIndicator';
 import { ShowStage } from '../show/ShowStage';
 import { useOpening } from '../store/opening';
 import { Opening } from './Opening';
+import '../ink/presentationInk'; // プレゼン中の一時的な注釈をチャプターの移動で消す（FR-091）
+import { InkToolbarHost } from '../ink/FloatingInkToolbar';
 import { AudioDirector } from '../audio/AudioDirector';
 import { ShowControlBar } from '../show/ShowControlBar';
 import { currentTopic } from '../store/presentation';
@@ -118,6 +120,7 @@ export function App() {
       <ExportHost screens={SCREENS} />
       <SelectionAnnouncer />
       <EntityBoardActions />
+      <InkToolbarHost />
       <CommandController screens={SCREENS} />
       <AudioDirector scene={scene} />
       <ShowControlBar />

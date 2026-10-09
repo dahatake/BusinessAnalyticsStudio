@@ -36,7 +36,7 @@ describe('FR-011 AC-014 NFR-SEC-001 AC-175 API キーの形の文字列がない
       for (const re of KEY_PATTERNS) if (re.test(text)) hits.push(`${path.relative(REPO_ROOT, f)} : ${re}`);
     }
     expect(hits).toEqual([]);
-  });
+  }, 30_000); // ビルド成果物（約 2MB の JS）を 7 本の正規表現で走査するため、並列実行の負荷で 5 秒を超えることがある。検査の内容は変えない
 
   it('.env.example があり、キー・トークン・シークレットの値が空である', () => {
     const p = path.join(REPO_ROOT, '.env.example');
