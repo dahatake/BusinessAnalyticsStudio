@@ -127,19 +127,39 @@ function FrameCounter() {
   return null;
 }
 
+/** 業種プリセットのカメラパスの先頭を初期の視点にする。業種が変わったときだけ視点を置き直す（FR-103）。 */
+function CameraRig({ preset }: { preset: IndustryPreset }) {
+  const camera = useThree((s) => s.camera);
+  const controls = useThree((s) => s.controls) as unknown as { target: THREE.Vector3; update(): void } | null;
+  const placed = useRef<string | null>(null);
+  useEffect(() => {
+    if (placed.current === preset.id) return;
+    const first = preset.cameraPath[0];
+    if (!first) return;
+    // 最初の描画（既定の視点）では動かさず、業種を切り替えたときだけ置き直す
+    if (placed.current !== null) {
+      camera.position.set(...first.position);
+      if (controls) { controls.target.set(...first.target); controls.update(); } else camera.lookAt(...first.target);
+    }
+    placed.current = preset.id;
+  }, [preset, camera, controls]);
+  return null;
+}
+
 function SceneContent({ scene, preset, quality, toBe }: { scene: SceneKey; preset: IndustryPreset; quality: Quality; toBe: boolean }) {
   const profile = QUALITY_PROFILES[quality];
   return (
     <>
-      <color attach="background" args={['#0f172a']} />
+      <color attach="background" args={[preset.scene.background]} />
       <ambientLight intensity={0.6} />
       <directionalLight position={[6, 10, 6]} intensity={1.6} castShadow={profile.shadows} shadow-mapSize={[1024, 1024]} />
-      <Ground color="#1e293b" />
+      <Ground color={preset.scene.ground} />
       {scene === 'hero' && <Objects specs={heroObjects(preset)} />}
       {scene === 'kpi-tower' && <Objects specs={kpiTowerObjects(preset)} />}
       {scene === 'dataflow' && <Particles count={profile.particles} preset={preset} />}
       {scene === 'asis-tobe' && <Morph toBe={toBe} preset={preset} />}
       <OrbitControls makeDefault enableDamping={false} maxPolarAngle={Math.PI / 2.05} />
+      <CameraRig preset={preset} />
       <FrameCounter />
     </>
   );
@@ -197,7 +217,7 @@ export function SceneCanvas({ toBe }: { toBe: boolean }) {
       shadows={profile.shadows}
       dpr={Math.min(typeof window === 'undefined' ? 1 : window.devicePixelRatio, profile.maxDpr)}
       frameloop={ready && playing ? 'always' : ready ? 'demand' : 'never'}
-      camera={{ position: [7, 6, 9], fov: 45 }}
+      camera={{ position: preset.cameraPath[0]?.position ?? [7, 6, 9], fov: 45 }}
       style={{ width: '100%', height: '100%', display: 'block' }}
     >
       <Suspense fallback={null}>

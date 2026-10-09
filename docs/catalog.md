@@ -110,10 +110,10 @@
 | FR-100 | 顧客固有情報のコードからの分離 | 承認済み | src/data/loader.ts, src/store/pack.ts, vite.config.ts | tests/unit/foundation.test.ts | 顧客パックの読み込み, 顧客パックのスキーマと検証 |
 | FR-101 | 顧客パックの差し替えだけで動くビルド成果物 | 承認済み | src/app/App.tsx, src/app/Opening.tsx, src/data/loader.ts | tests/system/e2e/brand-settings.spec.ts (AC-123) | 顧客パックの読み込み, オープニング |
 | FR-102 | 顧客パックの検証と部分的な無効化 | 承認済み | src/schema/partial.ts, src/data/loader.ts, src/store/pack.ts, src/app/App.tsx | tests/unit/partial.test.ts (AC-124), tests/system/e2e/brand-settings.spec.ts | 顧客パックのスキーマと検証, 部分的な無効化 |
-| FR-103 | 業種プリセット | 承認済み | 未実装 | 未実装 | なし |
-| FR-104 | お手本パックでの起動 | 承認済み | 未実装 | 未実装 | なし |
-| FR-105 | オフラインで動く配布パッケージ | 承認済み | 未実装 | 未実装 | なし |
-| FR-106 | 雛形のバージョン | 承認済み | 未実装 | 未実装 | なし |
+| FR-103 | 業種プリセット | 承認済み | src/three/presets.ts, src/three/presetIcons.tsx, src/three/SceneCanvas.tsx, src/screens/SettingsScreen.tsx | tests/unit/template.test.ts (AC-125) | 3D 基盤, 業種プリセット |
+| FR-104 | お手本パックでの起動 | 承認済み | src/data/loader.ts, src/app/App.tsx, vite.config.ts | tests/unit/template.test.ts (AC-126), tests/system/e2e/brand-settings.spec.ts (AC-126) | 顧客パックの読み込み |
+| FR-105 | オフラインで動く配布パッケージ | 承認済み | package.json, package-lock.json, scripts/make-package.ts, scripts/lib/package.ts, docs/distribution.md, docs/manual-tests.md | tests/unit/template.test.ts (AC-127), docs/manual-tests.md (AC-128) | なし |
+| FR-106 | 雛形のバージョン | 承認済み | src/version.ts, src/app/App.tsx, src/screens/SettingsScreen.tsx | tests/unit/template.test.ts (AC-129), tests/system/e2e/brand-settings.spec.ts (AC-129) | 雛形のバージョン |
 | FR-107 | セットアップスクリプト | 承認済み | 未実装 | 未実装 | なし |
 | FR-108 | セットアップスクリプトの安全性 | 承認済み | 未実装 | 未実装 | なし |
 | FR-109 | コンポーネントの移動・大きさの変更・タブ化 | 承認済み | src/workspace/Workspace.tsx, src/workspace/PaneContext.tsx, src/workspace/layoutModel.ts | tests/unit/workspace.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
@@ -145,7 +145,7 @@
 | NFR-PERF-003 | 初回表示の時間 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-PERF-004 | インクの描画遅延 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-ENV-001 | 対応ブラウザーと端末 | 承認済み | 未実装 | 未実装 | なし |
-| NFR-ENV-002 | 外部サーバーなし・オフラインでの動作 | 承認済み | 未実装 | 未実装 | なし |
+| NFR-ENV-002 | 外部サーバーなし・オフラインでの動作 | 承認済み | src/data/loader.ts, src/ai/client.ts, vite.config.ts | tests/unit/template.test.ts (AC-167), tests/system/e2e/quality.spec.ts (AC-167) | 顧客パックの読み込み, AI 呼び出し口 |
 | NFR-L10N-001 | 日本語の UI | 承認済み | 未実装 | 未実装 | なし |
 | NFR-A11Y-001 | WCAG 2.2 AA・キーボード・スクリーンリーダー・字幕 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-A11Y-002 | 演出をすべて OFF にしたときの利用 | 承認済み | 未実装 | 未実装 | なし |
@@ -190,10 +190,10 @@
 | テスト用フック | src/testing/hook.ts | `?e2e=1` のときだけ window.__edbTest に名前空間ごとのフックを足す（registerTestHook。キャンバスと 3D が共通で使う 1 つの入口） | FR-012 |
 | 画面の登録 | src/screens/registry.ts, src/screens/types.ts | 画面を足すときは registry に 1 行足す（nav-key / component-key） | FR-001, FR-007, FR-048, FR-058, FR-065, FR-066 |
 | 設定ストア | src/store/settings.ts | Zustand と localStorage の利用者設定（テーマ、ブランドの Primary 色の上書き、3D 品質） | FR-058, FR-064, FR-069 |
-| AI 呼び出し口 | src/ai/client.ts, src/ai/useAi.ts, src/ai/AiStatus.tsx, src/ai/AiSettings.tsx, src/ai/ChatScreen.tsx | askAi（5 種類の LLM 処理の唯一の入口。既定はモック、実接続は確認後のみ localhost の中継へ）、常時表示の AI 状態、設定の実接続切替、チャットの土台（FR-017 が拡張） | FR-010、FR-011、FR-050、FR-132、NFR-SEC-002 |
+| AI 呼び出し口 | src/ai/client.ts, src/ai/useAi.ts, src/ai/AiStatus.tsx, src/ai/AiSettings.tsx, src/ai/ChatScreen.tsx | askAi（5 種類の LLM 処理の唯一の入口。既定はモック、実接続は確認後のみ localhost の中継へ）、常時表示の AI 状態、設定の実接続切替、チャットの土台（FR-017 が拡張） | FR-010, FR-011, FR-050, FR-132, NFR-ENV-002, NFR-SEC-002 |
 | Copilot SDK 中継プロセス | scripts/relay/relay.ts, scripts/relay/copilot-adapter.ts, scripts/relay/start.ts | 127.0.0.1 だけで待ち受ける Node.js の中継。`npm run relay` | FR-010, FR-011, FR-132 |
 | 顧客パックのスキーマと検証 | src/schema/common.ts, src/schema/files.ts, src/schema/validate.ts, scripts/lib/pack-fs.ts | zod のスキーマ、ID の一意・参照・出典の検証。画面の部品を参照しない。schema の JSON は npm run gen:schema で生成 | FR-002, FR-003, FR-005, FR-006, FR-007, FR-038, FR-100, FR-102, FR-114, FR-115, FR-116, FR-118, FR-119, NFR-MAINT-001 |
-| 顧客パックの読み込み | src/data/loader.ts, src/store/pack.ts | 起動時に data・brand・runtime-config の JSON を読んで検証 | FR-100, FR-101 |
+| 顧客パックの読み込み | src/data/loader.ts, src/store/pack.ts | 起動時に data・brand・runtime-config の JSON を読んで検証。`/data/` が空なら dist/example-pack/（vite.config.ts が examples/mono から同梱）のお手本パックで起動（isExample） | FR-100, FR-101, FR-104, NFR-ENV-002 |
 | 部分的な無効化 | src/schema/partial.ts | エラーのある項目（と参照する項目）だけを取り除いて起動を続ける。画面とコンソールに出す | FR-102 |
 | 議論テーマのストア | src/store/discussion.ts, src/discussion/model.ts, src/discussion/usePackTarget.ts | 議論テーマ・決定ステータス・次のアクションの型と Zustand ストア（顧客パックごとに localStorage `edb.discussion` へ保存。元に戻す・やり直し）。課題から作るには `createFromIssue(packKey, {id,title})`（鍵は `usePackTarget().key`）。課題-解決策分析の「議論テーマにする」はこれを呼ぶ | FR-048, FR-049, FR-050 |
 | 議論メモの書き出しと復元 | src/discussion/memo.ts, src/discussion/restore.ts, src/discussion/FileActions.tsx | front matter＋人が読む節＋最初の ```json ブロック（`edb-discussion-memo` v1）。`buildMemoForPack` / `restoreFromMemo`。課題・解決策などのデータは `registerSnapshotSource({key,capture,validate,apply})` で登録するとエクスポートされ、復元される。全量エクスポート（FR-052〜）と編集（FR-044〜）の項目が使う。ヘッダーの「保存」「開く」 | FR-051, FR-056 |
@@ -204,4 +204,6 @@
 | 数値の出典表示 | src/components/NumericValue.tsx | 数値を包むと、ホバー／フォーカスで出典の種別（WorkIQ・Web・推定）・取得日・確度のツールチップを出す（data-testid="numeric-value"）。数値を表示する画面（優先順位分析・KPI など）はこれで包む | FR-009 |
 | サンプル表示 | src/components/Panel.tsx, src/data/sample.ts | パネルの見出しの横に「サンプル」を出す（顧客パックに createdBy が sample の項目があるとき）。Panel で包んだ画面は自動で対応する。Panel を使わない画面は hasSampleData で判定して同じ表示を出す | FR-008 |
 | ガント画面 | src/screens/GanttScreen.tsx, src/plan/model.ts | Feature ごとの工程のガントチャート（選択の強調、開始日・終了日・担当・作業内容の表示）。純粋なロジックは plan/model.ts。2D/2.5D 切替などの後続の要求はここを拡張する | FR-007 |
-| 3D 基盤 | src/three/quality.ts, src/three/presets.ts, src/three/SceneCanvas.tsx, src/store/view3d.ts, src/store/animation.ts, src/testing/hook.ts | R3F + drei の描画（WebGPU 優先・WebGL2 フォールバック）、手続き生成の 4 シーン、品質プリセットと FPS 監視、テスト用フック登録（registerTestHook） | FR-065、FR-066、FR-068、FR-069、NFR-PERF-002 |
+| 3D 基盤 | src/three/quality.ts, src/three/presets.ts, src/three/SceneCanvas.tsx, src/store/view3d.ts, src/store/animation.ts, src/testing/hook.ts | R3F + drei の描画（WebGPU 優先・WebGL2 フォールバック）、手続き生成の 4 シーン、品質プリセットと FPS 監視、テスト用フック登録（registerTestHook） | FR-065, FR-066, FR-068, FR-069, FR-103, NFR-PERF-002 |
+| 業種プリセット | src/three/presets.ts, src/three/presetIcons.tsx | 5 業種（金融・製造・小売・物流・公共）の 3D シーン・カメラパス・アイコン・中核オブジェクトの表現。resolvePreset(customer.industryPreset) で選ぶ | FR-103 |
+| 雛形のバージョン | src/version.ts | TEMPLATE_VERSION（package.json の version）と、顧客パックの templateVersion との互換の判定（checkTemplateVersion） | FR-106 |

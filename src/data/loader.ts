@@ -17,6 +17,8 @@ export interface LoadedPack {
   /** 無効にした項目の理由（ファイル名・位置・内容）。なければ空 */
   issues: PackError[];
   disabledIds: string[];
+  /** 同梱のお手本パック（架空企業）で起動したか（FR-104） */
+  isExample: boolean;
 }
 
 export class PackLoadError extends Error {
@@ -41,13 +43,17 @@ export async function loadRuntimeConfig(fetchFn: FetchLike): Promise<RuntimeConf
   }
 }
 
-/** 顧客パックを読み、検証して返す。誤りがあれば PackLoadError（ファイル名・位置・ID つき） */
-export async function loadPack(fetchFn: FetchLike): Promise<LoadedPack> {
+const DATA_PREFIX = '/data/';
+const BRAND_URL = '/brand/brand-profile.json';
+/** お手本パック（架空企業）の置き場所。ビルドが examples/mono から dist/example-pack/ に複製する（FR-104） */
+export const EXAMPLE_PACK_PREFIX = '/example-pack';
+
+async function readFiles(fetchFn: FetchLike, prefix: string): Promise<PackFiles> {
   const files: PackFiles = {};
   await Promise.all(
     DATA_FILE_NAMES.map(async (name: DataFileName) => {
       try {
-        const json = await getJson(fetchFn, `/data/${name}.json`);
+        const json = await getJson(fetchFn, `${prefix}/data/${name}.json`);
         if (json !== undefined) files[name] = json;
       } catch {
         /* 読めないファイルは「欠けている」として検証が報告する */
@@ -55,10 +61,40 @@ export async function loadPack(fetchFn: FetchLike): Promise<LoadedPack> {
     }),
   );
   try {
-    const b = await getJson(fetchFn, '/brand/brand-profile.json');
+    const b = await getJson(fetchFn, `${prefix}/brand/brand-profile.json`);
     if (b !== undefined) files.brandProfile = b;
   } catch {
     /* 同上 */
+  }
+  return files;
+}
+
+/** 顧客パックの JSON が 1 つもない（public/data が空）か */
+function isEmptyPack(files: PackFiles): boolean {
+  return Object.keys(files).length === 0;
+}
+
+/** お手本パックのロゴ等は、お手本パックの置き場所から読む */
+function relocateBrandAssets(files: PackFiles): void {
+  const b = files.brandProfile as { logo?: { path?: unknown } } | undefined;
+  const p = b?.logo?.path;
+  if (typeof p === 'string' && p.startsWith('/assets/brand/')) (b as { logo: { path: string } }).logo.path = `${EXAMPLE_PACK_PREFIX}${p}`;
+}
+
+/**
+ * 顧客パックを読み、検証して返す。誤りがあれば PackLoadError（ファイル名・位置・ID つき）。
+ * `/data/` が空（1 つも JSON がない）ときは、同梱のお手本パックで起動する（FR-104）。
+ */
+export async function loadPack(fetchFn: FetchLike): Promise<LoadedPack> {
+  let files = await readFiles(fetchFn, '');
+  let isExample = false;
+  if (isEmptyPack(files)) {
+    const example = await readFiles(fetchFn, EXAMPLE_PACK_PREFIX);
+    if (!isEmptyPack(example)) {
+      files = example;
+      relocateBrandAssets(files);
+      isExample = true;
+    }
   }
   // FR-102: 問題のある項目だけを無効にして起動を続ける。特定できない誤り（ファイルの欠けなど）は起動しない。
   const r = disableInvalidItems(files);
@@ -68,5 +104,6 @@ export async function loadPack(fetchFn: FetchLike): Promise<LoadedPack> {
     brand: r.files.brandProfile as BrandProfile,
     issues: r.issues,
     disabledIds: r.disabledIds,
+    isExample,
   };
 }
