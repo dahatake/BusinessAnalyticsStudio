@@ -17,7 +17,7 @@ function listFiles(dir: string, filter: (f: string) => boolean = () => true): st
 
 describe('FR-100 顧客固有情報のコードからの分離', () => {
   // FR-100 AC-122
-  it('FR-100 AC-122 ソースコードとビルド成果物に、お手本パックの顧客名・Project 名・ブランド色が含まれない', () => {
+  it('FR-100 AC-122 ソースコードとビルド成果物のコードに、お手本パックの顧客名・Project 名・ブランド色が直書きされていない（dist/example-pack/ のお手本データは対象外）', () => {
     const needles: string[] = [];
     for (const kind of fs.readdirSync(path.join(REPO_ROOT, 'examples'))) {
       const dataDir = path.join(REPO_ROOT, 'examples', kind, 'public');
@@ -26,10 +26,13 @@ describe('FR-100 顧客固有情報のコードからの分離', () => {
       needles.push(customer.name, customer.projectName, brand.name, brand.colors.primary);
     }
     expect(needles.length).toBeGreaterThanOrEqual(8);
+    const examplePackDir = path.join(REPO_ROOT, 'dist', 'example-pack') + path.sep;
     const targets = [
       ...listFiles(path.join(REPO_ROOT, 'src')),
       ...listFiles(path.join(REPO_ROOT, 'public')),
-      ...listFiles(path.join(REPO_ROOT, 'dist')),
+      // FR-104: 顧客パックがないときに起動するお手本パックは、データとして dist/example-pack/ に同梱する（コードには含めない）。
+      // 同梱の中身が examples/mono と一致することは tests/unit/template.test.ts で確かめる。
+      ...listFiles(path.join(REPO_ROOT, 'dist'), (f) => !f.startsWith(examplePackDir)),
       path.join(REPO_ROOT, 'index.html'),
     ];
     const hits: string[] = [];
