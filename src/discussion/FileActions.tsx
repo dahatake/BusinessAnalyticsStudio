@@ -14,7 +14,7 @@ const useStyles = makeStyles({
   row: { display: 'flex', columnGap: tokens.spacingHorizontalS, alignItems: 'center' },
   notice: {
     position: 'fixed',
-    top: tokens.spacingVerticalXXL,
+    bottom: tokens.spacingVerticalXXL,
     right: tokens.spacingHorizontalXXL,
     width: 'min(520px, calc(100vw - 32px))',
     zIndex: 900,
