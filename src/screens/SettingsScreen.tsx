@@ -1,9 +1,11 @@
-// 設定パネル（テーマの切替、ブランドの確認と上書き）。FR-058、FR-059、FR-060、FR-064
+// 設定パネル（テーマ、ブランドの確認と上書き、3D の品質・業種プリセット、AI）。FR-058、FR-059、FR-060、FR-064、FR-065、FR-066、FR-069
 import { useEffect, useMemo, useState } from 'react';
-import { Badge, Button, Field, Input, Radio, RadioGroup, Text, makeStyles, tokens } from '@fluentui/react-components';
+import { Badge, Button, Dropdown, Field, Input, Option, Radio, RadioGroup, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
 import { AiSettings } from '../ai/AiSettings';
 import { THEME_MODES, useSettings, type ThemeMode } from '../store/settings';
+import { INDUSTRY_PRESETS, useIndustryPreset, useView3D } from '../store/view3d';
+import { QUALITIES, type Quality } from '../three/quality';
 import { usePackStore } from '../store/pack';
 import { isHexColor } from '../theme/brand';
 import { buildBrandTheme } from '../theme/brandTheme';
@@ -86,6 +88,13 @@ export function SettingsScreen() {
 
   const packPrimary = packState.status === 'ready' ? packState.pack.brand.colors.primary : undefined;
 
+  const quality = useView3D((st) => st.quality);
+  const setQuality = useView3D((st) => st.setQuality);
+  const renderer = useView3D((st) => st.renderer);
+  const fps = useView3D((st) => st.fps);
+  const notice = useView3D((st) => st.autoNotice);
+  const setIndustry = useView3D((st) => st.setIndustry);
+  const preset = useIndustryPreset();
   return (
     <Panel testId="component-settings" title="設定パネル" description="表示の設定です。ハイコントラストは OS の設定に従います。">
       <Field label="テーマ">
@@ -93,6 +102,24 @@ export function SettingsScreen() {
           {THEME_MODES.map((m) => <Radio key={m} value={m} label={LABELS[m]} />)}
         </RadioGroup>
       </Field>
+      <Field label="3D の品質">
+        <RadioGroup layout="horizontal" value={quality} onChange={(_, d) => setQuality(d.value as Quality)}>
+          {QUALITIES.map((q) => <Radio key={q} value={q} label={q} />)}
+        </RadioGroup>
+      </Field>
+      <Field label="業種プリセット">
+        <Dropdown
+          value={preset.label}
+          selectedOptions={[preset.id]}
+          onOptionSelect={(_, d) => { if (d.optionValue) setIndustry(d.optionValue); }}
+        >
+          {INDUSTRY_PRESETS.map((p) => <Option key={p.id} value={p.id}>{p.label}</Option>)}
+        </Dropdown>
+      </Field>
+      <Text as="p" data-testid="quality-current">現在の品質: {quality}</Text>
+      <Text as="p" data-testid="fps">FPS: {fps.toFixed(1)} fps（3D 表示中の最後の計測値）</Text>
+      <Text as="p" data-testid="renderer">描画方式: {renderer}</Text>
+      {notice && <Text as="p" role="status">{notice}</Text>}
 
       {brand ? (
         <section className={s.section} aria-label="ブランド">
