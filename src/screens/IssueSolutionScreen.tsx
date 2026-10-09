@@ -117,6 +117,8 @@ function IssueSolutionScreen() {
 
   const selectedId = selection?.id;
   const firstRowId = rows[0]?.issue.id;
+  // 選択中の課題が見えている（rows にある）ときだけその行を Tab の入口にし、見えないときは先頭行にする
+  const tabStopId = selection?.kind === 'issue' && rows.some((r) => r.issue.id === selection.id) ? selection.id : firstRowId;
 
   return (
     <Panel
@@ -161,7 +163,7 @@ function IssueSolutionScreen() {
                     aria-level={row.level + 1}
                     aria-expanded={row.hasChildren ? row.expanded : undefined}
                     aria-selected={isSelected}
-                    tabIndex={isSelected || (!selection && id === firstRowId) ? 0 : -1}
+                    tabIndex={id === tabStopId ? 0 : -1}
                     className={mergeClasses(s.row, isSelected && s.rowSelected)}
                     style={{ marginInlineStart: `calc(${row.level} * ${tokens.spacingHorizontalXXL})` }}
                     onClick={() => {

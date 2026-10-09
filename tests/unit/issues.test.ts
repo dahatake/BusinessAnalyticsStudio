@@ -6,7 +6,7 @@ import {
   buildMeceGroups, buildTreeRows, evaluationItems, filterIssues, filterSolutions, productFits, safeHttpUrl,
   type Issue, type Product, type Solution,
 } from '../../src/analysis/model';
-import { validatePack, type PackFiles } from '../../src/schema';
+import { disableInvalidItems, validatePack, type PackFiles } from '../../src/schema';
 
 const EXAMPLE = path.resolve(__dirname, '../../examples/mono/public');
 const readPack = (): PackFiles => {
@@ -76,6 +76,42 @@ describe('FR-002 AC-002 区分', () => {
     expect(validatePack(files).errors).toEqual([]);
     const audiences = new Set((files.issues as { issues: Issue[] }).issues.map((i) => i.audience));
     expect(audiences).toEqual(new Set(['internal', 'external']));
+  });
+});
+
+describe('FR-002 AC-002 / FR-102 AC-124 区分のない課題の部分的な無効化', () => {
+  const load = () => {
+    const files = JSON.parse(JSON.stringify(readPack())) as PackFiles;
+    return { files, list: (files.issues as { issues: Array<Record<string, any>> }).issues, sols: (files.issues as { solutions: Array<Record<string, any>> }).solutions };
+  };
+
+  // FR-002 AC-002, FR-102 AC-124
+  it('FR-002 AC-002 末尾の課題の audience がなくても、その課題だけが無効になり、他の課題と解決策は残る', () => {
+    const { files, list, sols } = load();
+    const bad = list[list.length - 1]!;
+    delete bad.audience;
+    const r = disableInvalidItems(files);
+    expect(r.fatal).toBe(false);
+    expect(r.issues[0]).toMatchObject({ file: 'public/data/issues.json', path: `issues[${list.length - 1}].audience`, id: bad.id });
+    expect(r.disabledIds).toEqual([bad.id]);
+    const rest = r.files.issues as { issues: Array<{ id: string }>; solutions: Array<{ id: string }> };
+    expect(rest.issues.map((i) => i.id)).toEqual(list.slice(0, -1).map((i) => i.id));
+    expect(rest.solutions.map((s) => s.id)).toEqual(sols.map((s) => s.id));
+  });
+
+  // FR-002 AC-002, FR-102 AC-124（現状の仕様の固定。要求との食い違いは CONFLICTS として報告済み）
+  it('FR-002 AC-002 上位課題の audience がないと、その課題を参照する下位課題と解決策も連鎖で無効になる', () => {
+    const { files, list } = load();
+    const parent = list.find((i) => i.parentId === null && list.some((c) => c.parentId === i.id))!;
+    delete parent.audience;
+    const r = disableInvalidItems(files);
+    const children = list.filter((c) => c.parentId === parent.id).map((c) => c.id);
+    expect(r.disabledIds).toEqual(expect.arrayContaining([parent.id, ...children]));
+    // 無関係な課題は残る
+    const unrelated = list.filter((i) => i.id !== parent.id && !children.includes(i.id)).map((i) => i.id);
+    const rest = (r.files.issues as { issues: Array<{ id: string }> }).issues.map((i) => i.id);
+    expect(unrelated.length).toBeGreaterThan(0);
+    for (const id of unrelated) expect(rest).toContain(id);
   });
 });
 
