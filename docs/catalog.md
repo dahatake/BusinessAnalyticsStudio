@@ -108,8 +108,8 @@
 | FR-098 | アプリのデータのカード配置とリンク | 承認済み | 未実装 | 未実装 | なし |
 | FR-099 | 付箋のクラスタリング・ドット投票・タイマー | 承認済み | 未実装 | 未実装 | なし |
 | FR-100 | 顧客固有情報のコードからの分離 | 承認済み | src/data/loader.ts, src/store/pack.ts, vite.config.ts | tests/unit/foundation.test.ts | 顧客パックの読み込み, 顧客パックのスキーマと検証 |
-| FR-101 | 顧客パックの差し替えだけで動くビルド成果物 | 承認済み | 未実装 | 未実装 | なし |
-| FR-102 | 顧客パックの検証と部分的な無効化 | 承認済み | 未実装 | 未実装 | なし |
+| FR-101 | 顧客パックの差し替えだけで動くビルド成果物 | 承認済み | src/app/App.tsx, src/app/Opening.tsx, src/data/loader.ts | tests/system/e2e/brand-settings.spec.ts (AC-123) | 顧客パックの読み込み, オープニング |
+| FR-102 | 顧客パックの検証と部分的な無効化 | 承認済み | src/schema/partial.ts, src/data/loader.ts, src/store/pack.ts, src/app/App.tsx | tests/unit/partial.test.ts (AC-124), tests/system/e2e/brand-settings.spec.ts | 顧客パックのスキーマと検証, 部分的な無効化 |
 | FR-103 | 業種プリセット | 承認済み | 未実装 | 未実装 | なし |
 | FR-104 | お手本パックでの起動 | 承認済み | 未実装 | 未実装 | なし |
 | FR-105 | オフラインで動く配布パッケージ | 承認済み | 未実装 | 未実装 | なし |
@@ -122,11 +122,11 @@
 | FR-112 | ペルソナ別の既定の情報表現と既定のレイアウト | 承認済み | 未実装 | 未実装 | なし |
 | FR-113 | 表現が成り立たないときの代替表示 | 承認済み | 未実装 | 未実装 | なし |
 | FR-114 | 一意の ID と ID による参照 | 承認済み | src/schema/validate.ts、src/schema/common.ts | tests/unit/pack.test.ts | 顧客パックのスキーマと検証 |
-| FR-115 | 数値・事実の出典 | 承認済み | 未実装 | 未実装 | なし |
-| FR-116 | 作成者の種別 | 承認済み | 未実装 | 未実装 | なし |
+| FR-115 | 数値・事実の出典 | 承認済み | src/schema/validate.ts, src/schema/files.ts | tests/unit/pack.test.ts (AC-141) | 顧客パックのスキーマと検証 |
+| FR-116 | 作成者の種別 | 承認済み | src/schema/common.ts, src/schema/edit.ts | tests/unit/pack.test.ts, tests/unit/partial.test.ts (AC-142) | 顧客パックのスキーマと検証 |
 | FR-117 | WorkIQ 由来情報の機密区分 | 承認済み | 未実装 | 未実装 | なし |
 | FR-118 | スキーマとお手本データの同梱 | 承認済み | schema/customer.json, schema/brand-profile.json, examples/mono/public/data/customer.json, examples/koto/public/data/customer.json, scripts/gen-schema.ts, scripts/check-pack.ts | tests/unit/foundation.test.ts | 顧客パックのスキーマと検証 |
-| FR-119 | 顧客パックのファイル構成 | 承認済み | 未実装 | 未実装 | なし |
+| FR-119 | 顧客パックのファイル構成 | 承認済み | src/schema/validate.ts (validateLayout) | tests/unit/pack.test.ts (AC-145) | 顧客パックのスキーマと検証 |
 | FR-120 | Skill のコマンド | 承認済み | 未実装 | 未実装 | なし |
 | FR-121 | 事前調査と調査キャッシュ | 承認済み | 未実装 | 未実装 | なし |
 | FR-122 | ブランド調査の出典の優先順位と既定テーマ | 承認済み | 未実装 | 未実装 | なし |
@@ -182,5 +182,7 @@
 | デザイン基盤 | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/components/AppShell.tsx, src/components/Panel.tsx, src/components/StateViews.tsx | Fluent UI v9 のトークン・4px グリッド・Light/Dark/ハイコントラスト、アプリの外枠、読み込み中/0 件/エラーの表示。以降の画面はこれを再利用する | FR-058 |
 | 画面の登録 | src/screens/registry.ts, src/screens/types.ts | 画面を足すときは registry に 1 行足す（nav-key / component-key） | FR-058 |
 | 設定ストア | src/store/settings.ts | Zustand と localStorage の利用者設定（現在はテーマ） | FR-058 |
-| 顧客パックのスキーマと検証 | src/schema/common.ts, src/schema/files.ts, src/schema/validate.ts, scripts/lib/pack-fs.ts | zod のスキーマ、ID の一意・参照・出典の検証。画面の部品を参照しない。schema の JSON は npm run gen:schema で生成 | FR-100, FR-114, FR-118, NFR-MAINT-001 |
-| 顧客パックの読み込み | src/data/loader.ts, src/store/pack.ts | 起動時に data・brand・runtime-config の JSON を読んで検証 | FR-100 |
+| 顧客パックのスキーマと検証 | src/schema/common.ts, src/schema/files.ts, src/schema/validate.ts, scripts/lib/pack-fs.ts | zod のスキーマ、ID の一意・参照・出典の検証。画面の部品を参照しない。schema の JSON は npm run gen:schema で生成 | FR-100, FR-102, FR-114, FR-115, FR-116, FR-118, FR-119, NFR-MAINT-001 |
+| 顧客パックの読み込み | src/data/loader.ts, src/store/pack.ts | 起動時に data・brand・runtime-config の JSON を読んで検証 | FR-100, FR-101 |
+| 部分的な無効化 | src/schema/partial.ts | エラーのある項目（と参照する項目）だけを取り除いて起動を続ける。画面とコンソールに出す | FR-102 |
+| オープニング | src/app/Opening.tsx | 顧客名とプロジェクト名の導入画面（Esc で飛ばす） | FR-101 |
