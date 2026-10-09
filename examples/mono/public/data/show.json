@@ -7,13 +7,15 @@
           "id": "topic-mono-001", "createdBy": "sample", "title": "計画外停止", "entityIds": ["issue-mono-001", "ent-mono-line-a"],
           "telop": { "text": "設備の計画外停止が、生産計画の大きな乱れにつながっています", "sourceIds": ["src-mono-001"] }
         },
-        { "id": "topic-mono-002", "createdBy": "sample", "title": "記録の遅れ", "entityIds": ["issue-mono-002"] }
+        { "id": "topic-mono-002", "createdBy": "sample", "title": "記録の遅れ", "entityIds": ["issue-mono-002"],
+          "narration": "停止の原因は、終業後にまとめて入力されるため、記録が遅れがちです。記録が遅れると、停止の傾向を早く見つけにくくなります。" }
       ]
     },
     {
       "id": "chap-mono-002", "createdBy": "sample", "title": "解決の方向",
       "topics": [
-        { "id": "topic-mono-003", "createdBy": "sample", "title": "予兆検知と現場入力", "entityIds": ["sol-mono-001", "sol-mono-002"] }
+        { "id": "topic-mono-003", "createdBy": "sample", "title": "予兆検知と現場入力", "entityIds": ["sol-mono-001", "sol-mono-002"],
+          "narration": "稼働データから停止の予兆を見つけ、現場のタブレットで停止の直後に入力できるようにします。" }
       ]
     },
     {
@@ -30,6 +32,44 @@
         {
           "id": "topic-mono-006", "createdBy": "sample", "title": "ROI の発表", "type": "roi",
           "roi": { "label": "予兆検知の ROI", "value": 180, "unit": "%", "caption": "稼働データの予兆検知による、計画外停止の削減効果の見込み", "sourceIds": ["src-mono-003"] }
+        },
+        {
+          "id": "topic-mono-007", "createdBy": "sample", "title": "AI 成熟度クイズ", "type": "quiz",
+          "quiz": {
+            "title": "AI 成熟度クイズ",
+            "questions": [
+              {
+                "id": "q1", "text": "設備の稼働データは、どのように集めていますか。",
+                "options": [
+                  { "label": "紙や手入力が中心", "score": 0 },
+                  { "label": "一部の設備で自動収集している", "score": 1 },
+                  { "label": "ほとんどの設備で自動収集している", "score": 2 }
+                ]
+              },
+              {
+                "id": "q2", "text": "停止の予兆の検知に、データ分析や AI を使っていますか。",
+                "options": [
+                  { "label": "使っていない", "score": 0 },
+                  { "label": "試験的に使っている", "score": 1 },
+                  { "label": "日常の業務で使っている", "score": 2 }
+                ]
+              },
+              {
+                "id": "q3", "text": "AI の活用を進める体制はありますか。",
+                "options": [
+                  { "label": "まだない", "score": 0 },
+                  { "label": "担当者がいる", "score": 1 },
+                  { "label": "部門をまたぐ推進体制がある", "score": 2 }
+                ]
+              }
+            ],
+            "levels": [
+              { "minScore": 0, "label": "レベル 1: 検討前", "description": "まずは稼働データの収集から始めましょう。" },
+              { "minScore": 2, "label": "レベル 2: 試行中", "description": "一部の設備で試しています。効果の測り方を決めましょう。" },
+              { "minScore": 4, "label": "レベル 3: 展開中", "description": "複数の設備で活用しています。標準化で広げましょう。" },
+              { "minScore": 6, "label": "レベル 4: 定着", "description": "業務の基盤として定着しています。" }
+            ]
+          }
         }
       ]
     }

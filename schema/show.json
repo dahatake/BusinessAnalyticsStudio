@@ -146,6 +146,88 @@
                   ],
                   "additionalProperties": {}
                 },
+                "narration": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "quiz": {
+                  "type": "object",
+                  "properties": {
+                    "title": {
+                      "type": "string"
+                    },
+                    "questions": {
+                      "minItems": 1,
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "text": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "options": {
+                            "minItems": 1,
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "label": {
+                                  "type": "string",
+                                  "minLength": 1
+                                },
+                                "score": {
+                                  "type": "number"
+                                }
+                              },
+                              "required": [
+                                "label",
+                                "score"
+                              ],
+                              "additionalProperties": {}
+                            }
+                          }
+                        },
+                        "required": [
+                          "text",
+                          "options"
+                        ],
+                        "additionalProperties": {}
+                      }
+                    },
+                    "levels": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "minScore": {
+                            "type": "number"
+                          },
+                          "label": {
+                            "type": "string",
+                            "minLength": 1
+                          },
+                          "description": {
+                            "type": "string"
+                          }
+                        },
+                        "required": [
+                          "minScore",
+                          "label"
+                        ],
+                        "additionalProperties": {}
+                      }
+                    }
+                  },
+                  "required": [
+                    "questions"
+                  ],
+                  "additionalProperties": {}
+                },
                 "roi": {
                   "type": "object",
                   "properties": {

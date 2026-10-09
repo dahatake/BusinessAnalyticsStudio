@@ -1,10 +1,10 @@
-// ショーコントロールバー（FR-084）の枠。ミュートボタンとミュートの状態の表示・音量（FR-074）は、常に表示する。
-// 自動で隠れるのは、FR-084 が children として足す他の操作（再生/停止・演出強度・3D 品質など）だけ。
-// 操作がない状態が PARAM-026（3 秒）続くと children を隠し、ポインターの動き・フォーカス・Tab で再表示する。バーの中にフォーカスがある間は隠れない。
-// children がなければ、隠す処理は動かない。`autoHide={false}` で children も常に表示する。
+// ショーコントロールバー（FR-084）。再生/停止・ミュート/音量・演出強度・3D 品質・Light/Dark・全画面・プレゼンタービュー・レーザーポインター・オープニングの再生を並べる。
+// 操作がない状態が PARAM-026（3 秒）続くと、バー（操作部）は見えなくなる。ポインターの動き・フォーカス・Tab で再表示し、バーの中にフォーカスがある間は隠れない。
+// バーが隠れている間も、ミュートのボタン（FR-074: 常に表示）だけは小さく出し続ける（`show-mute-dock`）。
+// children がなければ、隠す処理は動かない（ミュート/音量だけの枠）。`autoHide={false}` で隠さない。
 import { useEffect, useRef, useState, type ReactNode } from 'react';
-import { makeStyles, tokens } from '@fluentui/react-components';
-import { AudioControls } from '../audio/AudioControls';
+import { makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { AudioControls, MuteButton } from '../audio/AudioControls';
 
 /** PARAM-026: ショーコントロールバーの（常時表示でない）操作が自動で隠れるまでの時間（秒） */
 export const SHOW_BAR_HIDE_SECONDS = 3;
@@ -30,8 +30,32 @@ const useStyles = makeStyles({
     borderRadius: tokens.borderRadiusLarge,
     boxShadow: tokens.shadow16,
   },
-  extra: { display: 'contents' },
-  extraHidden: { display: 'none' },
+  // 隠れているとき: 大きさを 0 にして見えなくする（display:none にしない。キーボードのフォーカスで届き、再表示できるようにするため）
+  barHidden: {
+    width: 0,
+    height: 0,
+    padding: 0,
+    columnGap: 0,
+    rowGap: 0,
+    overflow: 'hidden',
+    flexWrap: 'nowrap',
+    border: 'none',
+    boxShadow: 'none',
+  },
+  // バーが隠れている間も出し続ける、ミュートだけの小さな表示（FR-074: ミュートボタンは常に表示する）
+  dock: {
+    position: 'fixed',
+    left: '50%',
+    bottom: tokens.spacingVerticalM,
+    transform: 'translateX(-50%)',
+    zIndex: 20,
+    padding: `0 ${tokens.spacingHorizontalS}`,
+    backgroundColor: tokens.colorNeutralBackground1,
+    color: tokens.colorNeutralForeground1,
+    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`,
+    borderRadius: tokens.borderRadiusLarge,
+    boxShadow: tokens.shadow8,
+  },
 });
 
 export function ShowControlBar({ children, autoHide = true }: { children?: ReactNode; autoHide?: boolean }) {
@@ -72,10 +96,14 @@ export function ShowControlBar({ children, autoHide = true }: { children?: React
     };
   }, [autoHide, hasExtra]);
 
+  const hidden = hasExtra && !extraVisible;
   return (
-    <div ref={ref} className={s.bar} data-testid="show-control-bar" role="toolbar" aria-label="ショーコントロールバー">
-      <AudioControls />
-      {hasExtra ? <div className={extraVisible ? s.extra : s.extraHidden} data-testid="show-control-bar-extra">{children}</div> : null}
-    </div>
+    <>
+      <div ref={ref} className={mergeClasses(s.bar, hidden && s.barHidden)} data-testid="show-control-bar" role="toolbar" aria-label="ショーコントロールバー">
+        <AudioControls />
+        {hasExtra ? <>{children}</> : null}
+      </div>
+      {hidden ? <div className={s.dock} data-testid="show-mute-dock"><MuteButton /></div> : null}
+    </>
   );
 }

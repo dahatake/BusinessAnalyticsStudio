@@ -273,6 +273,18 @@ export const ShowSchema = z.looseObject({
         before: z.looseObject({ label: z.string().optional(), text: z.string().min(1) }),
         after: z.looseObject({ label: z.string().optional(), text: z.string().min(1) }),
       }).optional(),
+      /** AI ナビゲーターの台本（FR-080）。字幕で表示し、AI 生成のラベルを付ける */
+      narration: z.string().min(1).optional(),
+      /** AI 成熟度クイズ（FR-082。type は quiz）。質問ごとの選択肢の点を合計し、levels の minScore 以上で最も高いレベルを結果にする */
+      quiz: z.looseObject({
+        title: z.string().optional(),
+        questions: z.array(z.looseObject({
+          id: z.string().min(1).optional(),
+          text: z.string().min(1),
+          options: z.array(z.looseObject({ label: z.string().min(1), score: z.number() })).min(1),
+        })).min(1),
+        levels: z.array(z.looseObject({ minScore: z.number(), label: z.string().min(1), description: z.string().optional() })).optional(),
+      }).optional(),
       /** ROI 発表の演出（FR-079）。数値は出典 ID を持つ（FR-115） */
       roi: z.looseObject({
         label: z.string().optional(),
