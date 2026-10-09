@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Button, Checkbox, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, MessageBar, MessageBarBody, MessageBarTitle,
-  Radio, RadioGroup, Select, Spinner, Text, makeStyles, tokens,
+  Select, Spinner, Text, makeStyles, tokens,
 } from '@fluentui/react-components';
+import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { ArrowDownload24Regular, ArrowExport24Regular, Dismiss24Regular } from '@fluentui/react-icons';
 import { packKeyOf } from '../discussion/model';
 import { captureSnapshotData } from '../discussion/restore';
@@ -182,6 +183,11 @@ export function ExportDialog({ screens }: { screens: readonly ExportScreenRef[] 
                 </div>
               </div>
             )}
+            {busy ? (
+              <div role="status" aria-live="polite" aria-busy="true" data-testid="export-progress">
+                <Spinner size="tiny" label="書き出し中…（保存先の指定を取り消すこともできます）" />
+              </div>
+            ) : null}
             {error ? (
               <div role="alert" data-testid="export-error">
                 <MessageBar intent="error" layout="multiline">

@@ -1,5 +1,6 @@
 // 中核オブジェクトの選定理由パネル（FR-018）。候補すべて・比較の観点・選定理由を示し、別の候補に変更できる。
-import { Radio, RadioGroup, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, tokens } from '@fluentui/react-components';
+import { Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, tokens } from '@fluentui/react-components';
+import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { GlossaryText } from '../glossary/GlossaryText';
 import { useCoreObject } from '../store/coreObject';
 

@@ -3,11 +3,12 @@
 // 件数バッジ・AND/OR の切替・「非表示/減光」の選択・フィルター解除を備える。
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Badge, Button, Field, MessageBar, MessageBarActions, MessageBarBody, MessageBarTitle, Radio, RadioGroup, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
+  Badge, Button, Field, MessageBar, MessageBarActions, MessageBarBody, MessageBarTitle, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
   makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
 import { FilterDismiss24Regular } from '@fluentui/react-icons';
 import { SelectionDetail } from '../analysis/SelectionDetail';
+import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { useHighlightClass } from '../components/highlight';
 import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
@@ -171,6 +172,7 @@ function TableScreen() {
                   role="row"
                   {...props}
                   data-highlight={highlight}
+                  aria-selected={selected.has(n.id)}
                   tabIndex={0}
                   className={mergeClasses(s.row, hl(highlight))}
                   onKeyDown={(e) => { onEntityKey(e, n.id, ORIGIN); }}

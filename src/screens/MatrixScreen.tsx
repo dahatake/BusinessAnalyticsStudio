@@ -2,13 +2,12 @@
 // 軸の値は、その軸に属する観点の重み付き平均（インパクト側=インパクト・ROI、実現性側=実現性・リスク低減）。
 // 位置・大きさだけに頼らず、「表で見る」で同じ値を表にして読める（NFR-A11Y-003）。
 import { useState, type SVGProps } from 'react';
-import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
-import { Table24Regular, ArrowLeft24Regular } from '@fluentui/react-icons';
+import { Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { QUADRANT_LABEL } from '../analysis/priority';
 import { usePriority } from '../analysis/usePriority';
-import { useHighlightClass } from '../components/highlight';
 import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
+import { ViewAsTableButton, ViewTable } from '../components/ViewTable';
 import { onEntityKey, useEntityBinding } from '../selection/hooks';
 
 const ORIGIN = 'matrix';
@@ -37,12 +36,10 @@ const useStyles = makeStyles({
   selected: { strokeWidth: 4, fill: tokens.colorBrandBackground },
   related: { strokeWidth: 3 },
   hover: { strokeDasharray: '4 3' },
-  scroll: { overflowX: 'auto' },
 });
 
 function MatrixScreen() {
   const s = useStyles();
-  const hl = useHighlightClass();
   const bind = useEntityBinding(ORIGIN);
   const { ready, points } = usePriority();
   const [asTable, setAsTable] = useState(false);
@@ -59,41 +56,17 @@ function MatrixScreen() {
       maxWidth="1200px"
     >
       <div className={s.bar}>
-        <Button
-          icon={asTable ? <ArrowLeft24Regular aria-hidden /> : <Table24Regular aria-hidden />}
-          onClick={() => setAsTable((v) => !v)}
-        >{asTable ? '元の表示に戻る' : '表で見る'}</Button>
+        <ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} />
       </div>
       {points.length === 0 ? (
         <EmptyView message="配置する課題がありません。" />
       ) : asTable ? (
-        <div className={s.scroll}>
-          <Table aria-label="2×2 マトリクスの値" size="small">
-            <TableHeader>
-              <TableRow>
-                <TableHeaderCell>課題</TableHeaderCell>
-                <TableHeaderCell>実現性（軸）</TableHeaderCell>
-                <TableHeaderCell>インパクト（軸）</TableHeaderCell>
-                <TableHeaderCell>コスト（万円）</TableHeaderCell>
-                <TableHeaderCell>象限</TableHeaderCell>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {points.map((p) => {
-                const props = bind(p.id);
-                return (
-                  <TableRow key={p.id} {...props} tabIndex={0} className={hl(props['data-highlight'])} onKeyDown={(e) => { onEntityKey(e, p.id, ORIGIN); }}>
-                    <TableCell>{p.title}</TableCell>
-                    <TableCell>{p.x.toFixed(1)}</TableCell>
-                    <TableCell>{p.y.toFixed(1)}</TableCell>
-                    <TableCell>{p.cost.toLocaleString('ja-JP')}</TableCell>
-                    <TableCell>{QUADRANT_LABEL[p.quadrant]}</TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+        <ViewTable
+          label="2×2 マトリクスの値"
+          origin={ORIGIN}
+          columns={['課題', '実現性（軸）', 'インパクト（軸）', 'コスト（万円）', '象限']}
+          rows={points.map((p) => ({ id: p.id, cells: [p.title, p.x.toFixed(1), p.y.toFixed(1), p.cost.toLocaleString('ja-JP'), QUADRANT_LABEL[p.quadrant]] }))}
+        />
       ) : (
         <svg viewBox={`0 0 ${W} ${H}`} className={s.svg} role="group" aria-label="インパクト×実現性の 2×2 マトリクス">
           <line className={s.axis} x1={L} y1={H - B} x2={W - R} y2={H - B} />

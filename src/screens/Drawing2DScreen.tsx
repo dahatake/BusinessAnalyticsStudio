@@ -4,6 +4,7 @@
 import { useMemo } from 'react';
 import { Badge, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { useHighlightClass } from '../components/highlight';
+import { isSelectedHighlight } from '../components/roving';
 import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
 import { onEntityKey, useEntityBinding } from '../selection/hooks';
@@ -119,6 +120,7 @@ export function Drawing2DScreen() {
                       key={o.entityId}
                       role="row"
                       {...props}
+                      aria-selected={isSelectedHighlight(props['data-highlight'])}
                       tabIndex={0}
                       className={mergeClasses(s.row, hl(props['data-highlight']))}
                       onKeyDown={(e) => { onEntityKey(e, o.entityId, ORIGIN); }}

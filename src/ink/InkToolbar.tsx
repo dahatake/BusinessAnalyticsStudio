@@ -1,6 +1,6 @@
 // インクの道具のツールバー。FR-088（ペン・蛍光ペン・消しゴム・投げ縄・図形・テキスト・付箋・画像・元に戻す/やり直し）
 import { useState } from 'react';
-import { Divider, Slider, Text, Toolbar, ToolbarButton, Tooltip, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { Button, Divider, Slider, Text, Tooltip, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import {
   ArrowRedo24Regular, ArrowUndo24Regular, ArrowUpRight24Regular, ChatBubblesQuestion24Regular, Circle24Regular, Edit24Regular,
   Eraser24Regular, EraserSegment24Regular, Flow24Regular, Highlight24Regular, ImageAdd24Regular, Lasso24Regular, Line24Regular, Note24Regular,
@@ -103,8 +103,9 @@ export function InkToolbar({ boardId, label = 'インクの道具', whiteboard =
 
   const button = (id: string, text: string, Icon: FluentIcon, onClick: () => void, opts: { pressed?: boolean; disabled?: boolean } = {}) => (
     <Tooltip key={id} content={text} relationship="label" withArrow>
-      <ToolbarButton
+      <Button
         className={s.forcedAuto}
+        size="small"
         data-testid={`ink-tool-${id}`}
         appearance={opts.pressed ? 'primary' : 'subtle'}
         aria-pressed={opts.pressed === undefined ? undefined : opts.pressed}
@@ -117,7 +118,7 @@ export function InkToolbar({ boardId, label = 'インクの道具', whiteboard =
 
   return (
     <div>
-      <Toolbar aria-label={label} className={mergeClasses(s.bar, compact && s.compact)} size="small">
+      <div role="toolbar" aria-label={label} className={mergeClasses(s.bar, compact && s.compact)}>
         {TOOLS.filter((t) => whiteboard || !t.whiteboardOnly).map((t) => button(t.id, t.label, t.icon, () => st().setTool(t.id), { pressed: tool === t.id }))}
         {button('image', '画像を貼り付け', ImageAdd24Regular, () => {
           setMessage(null);
@@ -129,8 +130,9 @@ export function InkToolbar({ boardId, label = 'インクの道具', whiteboard =
         <Divider vertical style={{ height: 24 }} />
         {INK_COLORS.map((c) => (
           <Tooltip key={c.value} content={`色: ${c.label}`} relationship="label" withArrow>
-            <ToolbarButton
+            <Button
               className={s.forcedAuto}
+              size="small"
               appearance={color === c.value ? 'primary' : 'subtle'}
               aria-pressed={color === c.value}
               icon={<span className={s.swatch} style={{ backgroundColor: c.swatch }} aria-hidden />}
@@ -142,7 +144,7 @@ export function InkToolbar({ boardId, label = 'インクの道具', whiteboard =
           {!compact && <Text size={200}>太さ</Text>}
           <Slider aria-label="線の太さ" style={compact ? { minWidth: 0, width: 72 } : undefined} min={1} max={12} step={1} value={size} onChange={(_, d) => st().setSize(d.value)} />
         </span>
-      </Toolbar>
+      </div>
       {message && <Text role="status" size={200}>{message}</Text>}
     </div>
   );

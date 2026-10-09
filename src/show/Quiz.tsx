@@ -2,7 +2,8 @@
 // クイズ: 議題の quiz（show.json）の質問に答え、全問に答えると「結果を見る」で成熟度のレベルを出す。
 // リアクション: プレゼンテーション中、画面の端にボタンを出す。押すと反応の表示が出て、件数が増える（件数は画面を開いている間だけ持つ）。
 import { useEffect, useMemo, useState } from 'react';
-import { Button, Card, Field, Radio, RadioGroup, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { Button, Card, Field, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { usePlaying } from '../motion/useMotion';
 import { useShowUi } from '../store/show';
 import { REACTIONS, scoreQuiz, type Quiz, type ReactionId } from './extras';

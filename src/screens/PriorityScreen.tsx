@@ -149,7 +149,7 @@ function PriorityScreen() {
 
       <section aria-label="感度分析">
         <Text as="h3" size={500} weight="semibold" block>感度分析（各重みを ±1 したときの順位の変化）</Text>
-        <div className={s.scroll}>
+        <div className={s.scroll} tabIndex={0} role="region" aria-label="感度分析の表（横にスクロールできます）">
           <Table aria-label="感度分析" size="small">
             <TableHeader>
               <TableRow>

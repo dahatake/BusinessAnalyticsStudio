@@ -4,8 +4,9 @@
 // - `←`/`→` で前/次の議題へ。キャンバスにフォーカスがあっても、パンではなく議題の移動にする（`↑`/`↓`・`Shift`+矢印はパンのまま）
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Radio, RadioGroup, Text, makeStyles, mergeClasses, tokens,
+  Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Text, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
+import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { ChevronLeft20Regular, ChevronRight20Regular, Play20Regular, Stop20Regular } from '@fluentui/react-icons';
 import { usePresentationInk, type AnnotationMode } from '../ink/presentationInk';
 import { countInternal } from '../schema';

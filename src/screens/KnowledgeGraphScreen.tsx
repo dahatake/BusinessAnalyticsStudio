@@ -3,19 +3,20 @@
 import { useEffect, useMemo, useRef, useState, type SVGProps } from 'react';
 import {
   Badge, Button, Checkbox, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Dropdown, Field, Input, Option,
-  Radio, RadioGroup, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, mergeClasses, tokens,
+  Text, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
-import { Add24Regular, ArrowLeft24Regular, Delete24Regular, Link24Regular, Table24Regular } from '@fluentui/react-icons';
+import { Radio, RadioGroup } from '../components/ChoiceRadio';
+import { Add24Regular, Delete24Regular, Link24Regular } from '@fluentui/react-icons';
 import { ADDABLE_KINDS, addEdge, addNode, removeEdge, removeNode, type AddableKind } from '../analysis/graphEdit';
 import {
   EDGE_STYLE, HOP_DEFAULT, HOP_MAX, HOP_MIN, KIND_FILTER_LABEL, KIND_STYLE, clampHop, layoutGraph, shapePath, visibleNodeIds,
 } from '../analysis/graphView';
 import { KIND_ICON } from '../analysis/kindIcons';
 import { ExecutiveSummary } from '../components/ExecutiveSummary';
-import { useHighlightClass } from '../components/highlight';
 import { Panel } from '../components/Panel';
 import { RelatedMini } from '../components/RelatedMini';
 import { EmptyView, LoadingView } from '../components/StateViews';
+import { ViewAsTableButton, ViewTable } from '../components/ViewTable';
 import { KIND_LABELS, NODE_KINDS, type GraphEdge, type GraphNode, type NodeKind } from '../selection/graph';
 import { onEntityKey, useEntityBinding, useSelection } from '../selection/hooks';
 import { useAnimation } from '../store/animation';
@@ -30,7 +31,7 @@ const useStyles = makeStyles({
   toolbar: { display: 'flex', flexWrap: 'wrap', alignItems: 'end', columnGap: tokens.spacingHorizontalXL, rowGap: tokens.spacingVerticalS },
   hop: { display: 'flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS },
   range: { width: '160px', height: '24px', accentColor: tokens.colorBrandBackground, cursor: 'pointer' },
-  filters: { display: 'flex', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalM },
+  filters: { display: 'flex', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalS },
   svg: { width: '100%', height: 'auto', maxHeight: '70vh', minHeight: '320px', flexShrink: 0, display: 'block', backgroundColor: tokens.colorNeutralBackground2, borderRadius: tokens.borderRadiusMedium },
   node: { cursor: 'pointer', outline: 'none', ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}` } },
   nodeLabel: {
@@ -43,7 +44,6 @@ const useStyles = makeStyles({
   edgeOn: { stroke: tokens.colorBrandStroke1 },
   edgeSel: { stroke: tokens.colorPaletteRedForeground1 },
   legend: { display: 'flex', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalL, rowGap: tokens.spacingVerticalXS },
-  scroll: { overflowX: 'auto' },
 });
 
 type Pt = { x: number; y: number };
@@ -225,7 +225,6 @@ function EdgeDialog({ open, nodes, onClose, onAdd }: {
 
 function KnowledgeGraphScreen() {
   const s = useStyles();
-  const hl = useHighlightClass();
   const bind = useEntityBinding(ORIGIN);
   const state = usePackStore((st) => st.state);
   const editEnabled = useEditStore((st) => st.editMode);
@@ -329,9 +328,7 @@ function KnowledgeGraphScreen() {
           />
         </Field>
         {query.trim() !== '' ? <Badge appearance="tint" color="warning" role="status">{matches.size} 件一致</Badge> : null}
-        <Button icon={asTable ? <ArrowLeft24Regular aria-hidden /> : <Table24Regular aria-hidden />} onClick={() => setAsTable((v) => !v)}>
-          {asTable ? '元の表示に戻る' : '表で見る'}
-        </Button>
+        <ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} />
       </div>
 
       <div className={s.filters} role="group" aria-label="種別フィルター">
@@ -354,25 +351,12 @@ function KnowledgeGraphScreen() {
       {nodes.length === 0 ? (
         <EmptyView message="表示するノードがありません。種別フィルターやホップ数を見直してください。" />
       ) : asTable ? (
-        <div className={s.scroll}>
-          <Table aria-label="ナレッジグラフのノード" size="small">
-            <TableHeader>
-              <TableRow><TableHeaderCell>種別</TableHeaderCell><TableHeaderCell>名称</TableHeaderCell><TableHeaderCell>ID</TableHeaderCell></TableRow>
-            </TableHeader>
-            <TableBody>
-              {nodes.map((n) => {
-                const props = bind(n.id);
-                return (
-                  <TableRow key={n.id} {...props} tabIndex={0} className={hl(props['data-highlight'])} onKeyDown={(e) => { onEntityKey(e, n.id, ORIGIN); }}>
-                    <TableCell>{KIND_LABELS[n.kind]}</TableCell>
-                    <TableCell>{n.label}</TableCell>
-                    <TableCell>{n.id}</TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        </div>
+        <ViewTable
+          label="ナレッジグラフのノード"
+          origin={ORIGIN}
+          columns={['種別', '名称', 'ID']}
+          rows={nodes.map((n) => ({ id: n.id, cells: [KIND_LABELS[n.kind], n.label, n.id] }))}
+        />
       ) : view === '2d' ? (
         <Graph2D
           nodes={nodes} edges={edges} pos={pos} size={layout} selected={new Set(selectedIds)} related={related} matches={matches}
