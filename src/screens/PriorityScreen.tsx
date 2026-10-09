@@ -14,6 +14,7 @@ import { Panel } from '../components/Panel';
 import { RelatedMini } from '../components/RelatedMini';
 import { LoadingView } from '../components/StateViews';
 import { usePriorityStore } from '../store/priority';
+import { topFive } from '../show/model';
 
 const useStyles = makeStyles({
   kpis: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalM },
@@ -34,6 +35,9 @@ const useStyles = makeStyles({
   range: { width: '100%', height: '24px', minWidth: 0, accentColor: tokens.colorBrandBackground, cursor: 'pointer' },
   error: { color: tokens.colorPaletteRedForeground1, gridColumn: '1 / -1' },
   scroll: { overflowX: 'auto' },
+  top5: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS, margin: 0, padding: 0, listStyleType: 'none' },
+  top5Row: { display: 'flex', alignItems: 'baseline', columnGap: tokens.spacingHorizontalM },
+  top5Rank: { minWidth: '1.5em', fontWeight: tokens.fontWeightBold, color: tokens.colorBrandForeground1 },
 });
 
 function WeightRow({ criterion, label }: { criterion: CriterionKey; label: string }) {
@@ -121,6 +125,19 @@ function PriorityScreen() {
           </Text>
         </div>
       </div>
+
+      <section aria-label="現在の上位 5 件">
+        <Text as="h3" size={500} weight="semibold" block>現在の上位 5 件</Text>
+        <ol className={s.top5}>
+          {topFive(rows).map((r) => (
+            <li key={r.id} className={s.top5Row} data-testid="ranking-row">
+              <span className={s.top5Rank}>{r.rank}</span>
+              <span>{r.title}</span>
+              <span><KpiValue>{r.score.toFixed(1)}</KpiValue></span>
+            </li>
+          ))}
+        </ol>
+      </section>
 
       <fieldset className={s.weights} aria-label="観点の重み">
         <legend><Text as="h3" size={500} weight="semibold">観点の重み（{WEIGHT_MIN}〜{WEIGHT_MAX}）</Text></legend>
