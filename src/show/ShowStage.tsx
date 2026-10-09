@@ -14,6 +14,9 @@ import { DURATION, EASING, scaledDuration } from '../motion/fluent';
 import { useCountUp } from '../motion/CountUp';
 import { useIntensity, useMotionProfile, usePlaying } from '../motion/useMotion';
 import { usePackStore } from '../store/pack';
+import { Navigator } from './Navigator';
+import { QuizView, Reactions } from './Quiz';
+import { readNarration, readQuiz } from './extras';
 import { currentTopic, usePresentationStore } from '../store/presentation';
 import {
   clampSlider, nextChapterOf, readBeforeAfter, readRoi, readTelop, showsConfetti, topFive, topicTypeOf, usesEnterMotion,
@@ -308,8 +311,10 @@ export function ShowStage() {
   const enterStyle = animate ? { animationDuration: `${scaledDuration(DURATION.slower, tempo, true)}ms`, animationTimingFunction: EASING.decelerateMid } : undefined;
   const ba = type === 'before-after' ? readBeforeAfter(topic) : null;
   const roi = type === 'roi' ? readRoi(topic) : null;
+  const quiz = type === 'quiz' ? readQuiz(topic) : null;
+  const narration = readNarration(topic);
 
-  const hasFlow = next !== null || ba !== null || type === 'ranking' || roi !== null;
+  const hasFlow = next !== null || ba !== null || type === 'ranking' || roi !== null || quiz !== null;
 
   return (
     <>
@@ -322,6 +327,7 @@ export function ShowStage() {
           <Text weight="semibold">{next.chapterTitle}</Text>
         </Card>
       ) : null}
+      {quiz ? <div key={`quiz-${cur.id}`}><QuizView quiz={quiz} /></div> : null}
       {ba || type === 'ranking' || roi ? (
         <div key={cur.id} className={enter} style={enterStyle}>
           <Text as="h2" size={500} weight="semibold" className={s.heading} block>{cur.title}</Text>
@@ -332,6 +338,8 @@ export function ShowStage() {
       ) : null}
     </section>
       ) : null}
+      {narration ? <Navigator script={narration} topicId={cur.id} /> : null}
+      <Reactions />
       {telop ? <TelopView text={telop.text} sourceIds={telop.sourceIds} topicId={cur.id} /> : null}
       {showsConfetti(type, intensity) ? <Confetti key={cur.id} /> : null}
     </>

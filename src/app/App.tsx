@@ -35,6 +35,8 @@ import { useOpening } from '../store/opening';
 import { Opening } from './Opening';
 import { AudioDirector } from '../audio/AudioDirector';
 import { ShowControlBar } from '../show/ShowControlBar';
+import { LaserPointer, PresenterView, ShowControlActions, ShowShortcuts } from '../show/ControlBarActions';
+import { ShortVideoButton, ShortVideoDialog } from '../show/ShortVideo';
 import { currentTopic } from '../store/presentation';
 
 setAvailableComponents(SCREENS.map((s) => s.key));
@@ -120,13 +122,17 @@ export function App() {
       <EntityBoardActions />
       <CommandController screens={SCREENS} />
       <AudioDirector scene={scene} />
-      <ShowControlBar />
+      <ShowControlBar><ShowControlActions /></ShowControlBar>
+      <ShowShortcuts />
+      <PresenterView />
+      <LaserPointer />
+      <ShortVideoDialog />
       <AppShell
         title={`${name} ${projectName}`}
         screens={SCREENS}
         onSelect={onSelect}
         headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><TimeAxis /><AnimationStatus /><IntensityIndicator /><AiStatus /></>}
-        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><ResetLayoutButton /><PresentationButton /></>}
+        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /></>}
         dock={<Dock screens={SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
       >
