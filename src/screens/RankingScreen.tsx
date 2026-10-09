@@ -5,6 +5,7 @@ import { CRITERIA } from '../analysis/priority';
 import { usePriority } from '../analysis/usePriority';
 import { KpiValue } from '../components/Brand';
 import { useHighlightClass } from '../components/highlight';
+import { isSelectedHighlight } from '../components/roving';
 import { NumericValue } from '../components/NumericValue';
 import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
@@ -55,6 +56,7 @@ function RankingScreen() {
                 return (
                   <TableRow
                     key={r.id} {...props} tabIndex={0}
+                    aria-selected={isSelectedHighlight(props['data-highlight'])}
                     className={mergeClasses(s.row, hl(props['data-highlight']))}
                     onKeyDown={(e) => { onEntityKey(e, r.id, ORIGIN); }}
                   >

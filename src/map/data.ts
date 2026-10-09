@@ -52,6 +52,11 @@ export function mapDataOf(data: PackData): MapData {
   return m;
 }
 
+/** 地図の拠点を表（「表で見る」）の行にする。列は 名称・種別・緯度・経度（NFR-A11Y-003 AC-173）。 */
+export function siteTableRows(sites: readonly MapSite[]): Array<{ id: string; cells: Array<string | number> }> {
+  return sites.map((s) => ({ id: s.id, cells: [s.name, s.type, s.lat, s.lng] }));
+}
+
 export function getMapData(): MapData | null {
   const st = usePackStore.getState().state;
   return st.status === 'ready' ? mapDataOf(st.pack.data) : null;

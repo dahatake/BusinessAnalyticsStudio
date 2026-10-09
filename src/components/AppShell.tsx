@@ -1,8 +1,9 @@
 // アプリの外枠: ヘッダー（顧客名・操作）、ナビゲーション、ドック、ワークスペース。
 // 広い画面では左にナビゲーション、狭い画面では上に横並びに組み替える（横スクロールを強いない）。
-import type { ReactNode } from 'react';
+import { useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Button, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import type { ScreenDefinition } from '../screens/types';
+import { rovingTarget } from './roving';
 
 const useStyles = makeStyles({
   root: {
@@ -71,6 +72,28 @@ export interface AppShellProps {
 
 export function AppShell({ title, screens, activeKey, onSelect, headerExtra, actions, dock, children, brand }: AppShellProps) {
   const s = useStyles();
+  // ナビゲーションは、Tab の停止位置を 1 つにする（roving tabindex）。矢印キーで項目を移り、Tab で、その項目のコンポーネントへ入る。
+  // （WAI-ARIA のタブの作法。17 個の項目と非表示のドックを Tab で通り抜けなくても、選んだ画面へすぐ届く）
+  const [roving, setRoving] = useState<string | undefined>(activeKey);
+  const current = screens.some((sc) => sc.key === roving) ? roving : screens.some((sc) => sc.key === activeKey) ? activeKey : screens[0]?.key;
+  const onNavKey = (e: KeyboardEvent<HTMLElement>, key: string): void => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    const keys = screens.map((sc) => sc.key);
+    const next = rovingTarget(e.key, keys.indexOf(key), keys.length);
+    if (next !== null) {
+      e.preventDefault();
+      const nextKey = keys[next];
+      if (nextKey === undefined) return;
+      setRoving(nextKey);
+      e.currentTarget.parentElement?.querySelector<HTMLElement>(`[data-testid="nav-${nextKey}"]`)?.focus();
+      return;
+    }
+    if (e.key === 'Tab' && !e.shiftKey) {
+      // 表示中のコンポーネントがあれば、そこへ（なければ、通常の Tab の順）
+      const target = document.querySelector<HTMLElement>(`[data-testid="component-${key}"]`);
+      if (target) { e.preventDefault(); target.focus(); }
+    }
+  };
   return (
     <div className={s.root}>
       <header className={s.header}>
@@ -93,6 +116,9 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
               appearance={active ? 'secondary' : 'subtle'}
               icon={<Icon aria-hidden />}
               aria-current={active ? 'page' : undefined}
+              tabIndex={sc.key === current ? 0 : -1}
+              onFocus={() => setRoving(sc.key)}
+              onKeyDown={(e) => onNavKey(e, sc.key)}
               onClick={() => onSelect(sc.key)}
             >
               {sc.label}

@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Button, Checkbox, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, MessageBar, MessageBarBody, MessageBarTitle,
-  Radio, RadioGroup, Select, Spinner, Text, makeStyles, tokens,
+  Select, Spinner, Text, makeStyles, tokens,
 } from '@fluentui/react-components';
+import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { ArrowDownload24Regular, ArrowExport24Regular, Dismiss24Regular } from '@fluentui/react-icons';
 import { packKeyOf } from '../discussion/model';
 import { captureSnapshotData } from '../discussion/restore';

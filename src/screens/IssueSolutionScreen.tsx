@@ -2,11 +2,12 @@
 // 左に課題（イシューツリー／MECE 表）と解決策、右に詳細パネルを置く。サンキー図・マトリクスは広く使うため詳細を下に置く。狭い画面では縦に積む。
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import {
-  Badge, Button, Field, Radio, RadioGroup, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
+  Badge, Button, Field, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
   makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
 import { ChevronDown16Regular, ChevronRight16Regular, CommentMultiple24Regular, Lightbulb24Regular } from '@fluentui/react-icons';
 import { DetailPanel } from '../analysis/DetailPanel';
+import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { ExecutiveSummary } from '../components/ExecutiveSummary';
 import { RelatedMini } from '../components/RelatedMini';
 import { packKeyOf } from '../discussion/model';
