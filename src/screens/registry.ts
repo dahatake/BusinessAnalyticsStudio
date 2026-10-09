@@ -1,7 +1,7 @@
 import {
   Chat24Regular, CommentMultiple24Regular, Cube24Regular, DataBarHorizontal24Regular, DataScatter24Regular, DocumentBulletList24Regular, Layer24Regular,
   Organization24Regular, Settings24Regular, Table24Regular, TaskListSquareLtr24Regular, TextBulletListTree24Regular, TextNumberListLtr24Regular, Trophy24Regular,
-  Window24Regular,
+  Whiteboard24Regular, Window24Regular,
 } from '@fluentui/react-icons';
 import type { ScreenDefinition } from './types';
 import { SettingsScreen } from './SettingsScreen';
@@ -18,7 +18,9 @@ import { SummaryScreen } from './SummaryScreen';
 import { KnowledgeGraphScreen } from './KnowledgeGraphScreen';
 import { ArchitectureScreen } from './ArchitectureScreen';
 import { DiscussionTreeScreen } from './DiscussionTreeScreen';
+import { WhiteboardScreen } from './whiteboard/WhiteboardScreen';
 import { ChatScreen } from '../ai/ChatScreen';
+import '../analysis/commands';
 
 /** 画面の一覧（ナビゲーションの並び順）。 */
 export const SCREENS: readonly ScreenDefinition[] = [
@@ -34,6 +36,7 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'table', label: '一覧表', icon: Table24Regular, component: TableScreen },
   { key: 'gantt', label: 'ガントチャート', icon: DataBarHorizontal24Regular, component: GanttScreen },
   { key: 'view3d', label: '3D ビュー', icon: Cube24Regular, component: View3DScreen },
+  { key: 'whiteboard', label: 'ホワイトボード', icon: Whiteboard24Regular, component: WhiteboardScreen },
   { key: 'themes', label: '議論テーマ', icon: CommentMultiple24Regular, component: ThemesScreen },
   { key: 'settings', label: '設定パネル', icon: Settings24Regular, component: SettingsScreen },
   { key: 'chat', label: 'チャット', icon: Chat24Regular, component: ChatScreen },

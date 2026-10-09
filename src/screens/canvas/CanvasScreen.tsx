@@ -1,16 +1,37 @@
 // キャンバス: パン/ズームで議題間を移動する広い面（FR-012）。
 // マウスのドラッグ・ホイール・キーボード（矢印キーと +/-）で動かし、議題の一覧から選ぶとその議題の位置へ移動する。
 import { useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
-import { Listbox, Option, Text, makeStyles, tokens } from '@fluentui/react-components';
+import { Button, Listbox, Option, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Panel } from '../../components/Panel';
 import { EmptyView } from '../../components/StateViews';
+import { CoreObjectPanel } from '../../coreobject/CoreObjectPanel';
+import { LensView } from '../../lens/LensView';
+import { useCoreObject } from '../../store/coreObject';
 import { usePackStore } from '../../store/pack';
+import { currentTopic, usePresentationStore } from '../../store/presentation';
+import { useRetainedState } from '../../store/retained';
 import { registerTestHook } from '../../testing/hook';
 import {
-  CARD_H, CARD_W, cardOrigin, centerOn, isCenteredOn, keyViewport, panBy, zoomAt, type Viewport,
+  CARD_H, CARD_W, GAP_X, GAP_Y, cardOrigin, centerOn, isCenteredOn, keyViewport, panBy, zoomAt, type Viewport,
 } from '../../workspace/viewport';
 
 const useStyles = makeStyles({
+  tools: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalS },
+  core: {
+    position: 'absolute',
+    boxSizing: 'border-box',
+    width: `${CARD_W}px`,
+    height: `${CARD_H}px`,
+    padding: tokens.spacingHorizontalM,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    rowGap: tokens.spacingVerticalXS,
+    backgroundColor: tokens.colorBrandBackground2,
+    border: `${tokens.strokeWidthThick} solid ${tokens.colorBrandStroke1}`,
+    borderRadius: tokens.borderRadiusXLarge,
+    boxShadow: tokens.shadow8,
+  },
   body: { display: 'flex', flex: '1 1 0', minHeight: '240px', columnGap: tokens.spacingHorizontalM, '@media (max-width: 720px)': { flexDirection: 'column', rowGap: tokens.spacingVerticalM } },
   list: { flex: '0 0 220px', maxHeight: '100%', overflowY: 'auto', '@media (max-width: 720px)': { flex: '0 0 auto', maxHeight: '160px' } },
   surface: {
@@ -59,10 +80,16 @@ export function CanvasScreen() {
   );
 
   const surface = useRef<HTMLDivElement>(null);
-  const [view, setViewState] = useState<Viewport>({ x: 40, y: 40, zoom: 1 });
-  const viewRef = useRef(view);
-  const setView = useCallback((v: Viewport) => { viewRef.current = v; setViewState(v); }, []);
-  const [selected, setSelected] = useState<string | null>(null);
+  // 議題の格子の上に、中核オブジェクトを中央に置く（FR-018）。初期の視点は、それが見える位置から始める
+  const columns = Math.max(1, ...chapters.map((c) => (c.topics ?? []).length));
+  const coreX = (columns * (CARD_W + GAP_X) - GAP_X) / 2 - CARD_W / 2;
+  const coreY = -(CARD_H + GAP_Y);
+  const { selected: core } = useCoreObject();
+  const [showReason, setShowReason] = useState(false);
+  // 視点と選択は、ペルソナの切替などで画面が作り直されても保つ（NFR-UX-001）
+  const [view, setViewState] = useRetainedState<Viewport>('canvas.view', { x: 40, y: 40 + CARD_H + GAP_Y, zoom: 1 });  const viewRef = useRef(view);
+  const setView = useCallback((v: Viewport) => { viewRef.current = v; setViewState(v); }, [setViewState]);
+  const [selected, setSelected] = useRetainedState<string | null>('canvas.selected', null);
   const [dragging, setDragging] = useState(false);
   const drag = useRef<{ x: number; y: number } | null>(null);
 
@@ -90,7 +117,11 @@ export function CanvasScreen() {
     setSelected(id);
     const { w, h } = size();
     setView(centerOn(viewRef.current, c.x + CARD_W / 2, c.y + CARD_H / 2, w, h));
-  }, [cards, setView]);
+  }, [cards, setView, setSelected]);
+
+  // プレゼンテーション中は、現在の議題の位置へ移動する（FR-016）
+  const presenting = usePresentationStore((st) => currentTopic(st)?.id ?? null);
+  useEffect(() => { if (presenting) goTo(presenting); }, [presenting, goTo]);
 
   useEffect(() => registerTestHook('canvas', {
     viewport: () => ({ ...viewRef.current }),
@@ -128,6 +159,17 @@ export function CanvasScreen() {
 
   return (
     <Panel testId="component-canvas" title="キャンバス" description="ドラッグで移動、ホイールまたは +/- で拡大縮小、矢印キーで移動できます。議題を選ぶとその位置へ移動します。">
+      <div className={s.tools}>
+        <Button
+          aria-expanded={showReason}
+          aria-controls="core-object-reason"
+          onClick={() => setShowReason((v) => !v)}
+        >
+          選定理由
+        </Button>
+        <Text size={200}>中核オブジェクト: {core?.name ?? '未設定'}</Text>
+      </div>
+      <div id="core-object-reason">{showReason ? <CoreObjectPanel /> : null}</div>
       {cards.length === 0 ? (
         <EmptyView message="議題がありません。顧客パックの show.json に議題を追加してください。" />
       ) : (
@@ -156,6 +198,19 @@ export function CanvasScreen() {
             onKeyDown={onKeyDown}
           >
             <div className={s.world} style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.zoom})` }}>
+              {core ? (
+                <div
+                  data-testid="core-object"
+                  data-entity-id={core.id}
+                  className={s.core}
+                  style={{ left: coreX, top: coreY }}
+                  role="group"
+                  aria-label={`中核オブジェクト: ${core.name}`}
+                >
+                  <Text size={200}>中核オブジェクト</Text>
+                  <Text weight="semibold" size={500}>{core.name}</Text>
+                </div>
+              ) : null}
               {cards.map((c) => (
                 <div
                   key={c.id}
@@ -173,6 +228,7 @@ export function CanvasScreen() {
           </div>
         </div>
       )}
+      <LensView />
     </Panel>
   );
 }

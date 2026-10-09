@@ -3,7 +3,7 @@
 // 件数バッジ・AND/OR の切替・「非表示/減光」の選択・フィルター解除を備える。
 import { useMemo } from 'react';
 import {
-  Badge, Button, Field, Radio, RadioGroup, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
+  Badge, Button, Field, MessageBar, MessageBarActions, MessageBarBody, MessageBarTitle, Radio, RadioGroup, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
   makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
 import { FilterDismiss24Regular } from '@fluentui/react-icons';
@@ -12,6 +12,7 @@ import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
 import { KIND_LABELS, type GraphNode } from '../selection/graph';
 import { onEntityKey, useEntityBinding, useSelection, useSelectionFilter } from '../selection/hooks';
+import { useFallbackStore } from '../store/fallback';
 
 const ORIGIN = 'table';
 
@@ -34,8 +35,18 @@ function TableScreen() {
   const hl = useHighlightClass();
   const { graph, selectedIds, mode, unrelated, setMode, setUnrelated, clear } = useSelection();
   const bind = useEntityBinding(ORIGIN);
+  // FR-113: 表現が成り立たない項目（位置情報なしなど）を「表で見る」要求があるときは、その項目だけを出す
+  const fallback = useFallbackStore((st) => st.request);
+  const clearFallback = useFallbackStore((st) => st.clear);
   const nodes = useMemo(() => graph?.nodes ?? [], [graph]);
-  const { visible, count } = useSelectionFilter(nodes, idOf);
+  const { visible: filtered, count: filteredCount } = useSelectionFilter(nodes, idOf);
+  const fallbackNodes = useMemo(() => {
+    if (!fallback) return null;
+    const ids = new Set(fallback.ids);
+    return nodes.filter((n) => ids.has(n.id));
+  }, [fallback, nodes]);
+  const visible = fallbackNodes ?? filtered;
+  const count = fallbackNodes ? fallbackNodes.length : filteredCount;
   const selected = useMemo(() => new Set(selectedIds), [selectedIds]);
 
   if (!graph) return <LoadingView label="一覧を読み込み中" />;
@@ -46,6 +57,17 @@ function TableScreen() {
       title="一覧表"
       description="すべての項目を一覧にします。他のビューで項目を選ぶと、関連する行に自動で絞り込まれます。"
     >
+      {fallback ? (
+        <MessageBar intent="info" layout="multiline" data-testid="fallback-notice">
+          <MessageBarBody>
+            <MessageBarTitle>{fallback.reason}の項目を表示しています</MessageBarTitle>
+            {fallback.source} の表現に必要な属性がないため、地図などには表示できない項目です（{fallbackNodes?.length ?? 0} 件）。
+          </MessageBarBody>
+          <MessageBarActions>
+            <Button size="small" onClick={clearFallback}>すべての項目に戻す</Button>
+          </MessageBarActions>
+        </MessageBar>
+      ) : null}
       <div className={s.toolbar}>
         <Field label="選択の組み合わせ">
           <RadioGroup layout="horizontal" value={mode} onChange={(_, d) => setMode(d.value as 'AND' | 'OR')}>

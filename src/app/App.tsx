@@ -1,14 +1,22 @@
 import { useEffect, useState } from 'react';
+import { flushSync } from 'react-dom';
 import { MessageBar, MessageBarBody, MessageBarTitle } from '@fluentui/react-components';
 import { AiStatus } from '../ai/AiStatus';
 import { DiscussionFileActions } from '../discussion/FileActions';
 import { AppShell } from '../components/AppShell';
 import { BrandLockup } from '../components/Brand';
+import { AnimationStatus } from '../motion/AnimationController';
+import { runTransition } from '../motion/fluent';
+import { useAnimation } from '../store/animation';
 import { useEffectiveBrand } from '../theme/useBrand';
 import { ErrorView, LoadingView } from '../components/StateViews';
+import { PresentationBar, PresentationButton } from '../presentation/PresentationMode';
 import { SCREENS } from '../screens/registry';
 import { SelectionController } from '../selection/SelectionController';
-import { setAvailableComponents, useLayout } from '../store/layout';
+import { SelectionAnnouncer } from '../selection/Announcer';
+import { CommandController } from '../commands/CommandPalette';
+import { GlobalSearch } from '../search/GlobalSearch';
+import { isComponentVisible, setAvailableComponents, useLayout } from '../store/layout';
 import { usePackStore } from '../store/pack';
 import { checkTemplateVersion, versionWarning } from '../version';
 import { Dock, PersonaMenu, ResetLayoutButton } from '../workspace/Controls';
@@ -25,6 +33,15 @@ function openComponent(key: string): void {
     el?.scrollIntoView?.({ block: 'nearest' });
     el?.focus({ preventScroll: true });
   }, 0);
+}
+
+/**
+ * ナビゲーションの選択。非表示のコンポーネントを出すときだけ View Transition で動かす（FR-070）。
+ * すでに表示中のものは見た目が変わらないので、更新を遅らせずにすぐ反映する（遷移の最中に始まった操作を妨げない）。
+ */
+function selectComponent(key: string): void {
+  const animate = useAnimation.getState().playing && !isComponentVisible(key);
+  runTransition(() => (animate ? flushSync(() => openComponent(key)) : openComponent(key)), animate);
 }
 
 export function App() {
@@ -66,12 +83,14 @@ export function App() {
     <>
       {!opened ? <Opening customerName={name} projectName={projectName} onDone={() => setOpened(true)} /> : null}
       <SelectionController />
+      <SelectionAnnouncer />
+      <CommandController screens={SCREENS} />
       <AppShell
         title={`${name} ${projectName}`}
         screens={SCREENS}
-        onSelect={openComponent}
-        headerExtra={<><DiscussionFileActions /><AiStatus /></>}
-        actions={<><PersonaMenu /><ResetLayoutButton /></>}
+        onSelect={selectComponent}
+        headerExtra={<><GlobalSearch /><DiscussionFileActions /><AnimationStatus /><AiStatus /></>}
+        actions={<><PersonaMenu /><ResetLayoutButton /><PresentationButton /></>}
         dock={<Dock screens={SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
       >
@@ -105,6 +124,7 @@ export function App() {
             </MessageBar>
           </div>
         ) : null}
+        <PresentationBar />
         <Workspace screens={SCREENS} />
       </AppShell>
     </>

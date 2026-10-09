@@ -92,3 +92,8 @@ export const useLayout = create<LayoutState>()(
 export function isComponentVisible(key: string): boolean {
   return isVisible(effectiveLayout(useLayout.getState()), key);
 }
+
+/** 画面として登録されているか（表のように、後の項目で登録される画面の有無を見分けるため）。 */
+export function isComponentAvailable(key: string): boolean {
+  return available.has(key);
+}
