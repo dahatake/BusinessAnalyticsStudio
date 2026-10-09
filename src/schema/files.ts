@@ -23,9 +23,22 @@ export const CustomerSchema = z.looseObject({
   industryPreset: z.string().optional(),
   createdBy: CreatedBySchema,
   coreObject: z.looseObject({
-    candidates: z.array(z.looseObject({ id: IdSchema, label: z.string().min(1) })),
+    /** 中核オブジェクトの候補（FR-018）。表示名は `name`、なければ `label`。`scores` は比較の観点 ID → 評価 */
+    candidates: z.array(z.looseObject({
+      id: IdSchema,
+      label: z.string().min(1),
+      name: z.string().min(1).optional(),
+      summary: z.string().optional(),
+      scores: z.record(z.string(), z.string()).optional(),
+    })),
     selectedId: IdSchema.optional(),
+    /** 候補を比べた観点（FR-018） */
+    criteria: z.array(z.looseObject({ id: IdSchema, label: z.string().min(1) })).optional(),
+    /** 選定した理由（FR-018） */
+    reason: z.string().optional(),
   }),
+  /** 用語集（FR-019）。専門用語とその定義 */
+  glossary: z.array(z.looseObject({ term: z.string().min(1), definition: z.string().min(1) })).optional(),
 });
 
 export const EntitiesSchema = z.looseObject({

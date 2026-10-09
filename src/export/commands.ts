@@ -1,19 +1,25 @@
 // エクスポートのコマンドとショートカット（FR-052）。
-// コマンドの登録簿（I08 の `src/commands/registry.ts`）が統合されたら、`EXPORT_COMMANDS` をその `registerCommands` に渡して載せ替える。
-// それまでは `useExportShortcuts` が同じ定義からキーボードのショートカットを登録する（Ctrl+S／Ctrl+Shift+E。Mac は Cmd）。
+// コマンドは共通の登録簿（`src/commands/registry.ts`）に載せ、コマンドパレットとショートカット一覧に出す。
+// キーの束縛は登録簿が行わない（表示だけ）ので、Ctrl+S／Ctrl+Shift+E の入力はここの `useExportShortcuts` が 1 か所で受ける（二重に発火しない）。
 import { useEffect } from 'react';
+import { registerCommands, type Command } from '../commands/registry';
 import { openExportDialog } from './ui';
 
-export interface ExportCommand {
-  id: string;
-  title: string;
-  /** 表示用のキー（例: `Ctrl+Shift+E`） */
-  keys: readonly string[];
-  run: () => void;
-}
-
-export const EXPORT_COMMANDS: readonly ExportCommand[] = [
-  { id: 'export.open', title: 'エクスポート（全量の Markdown）', keys: ['Ctrl+Shift+E', 'Ctrl+S'], run: openExportDialog },
+export const EXPORT_COMMANDS: readonly Command[] = [
+  {
+    id: 'export.open',
+    label: 'エクスポートする（全量の Markdown）',
+    keywords: ['エクスポート', '書き出し', '出力', 'export', 'markdown', 'zip'],
+    shortcut: 'Ctrl+Shift+E',
+    run: openExportDialog,
+  },
+  {
+    id: 'export.save',
+    label: '保存する（全量の Markdown をエクスポート）',
+    keywords: ['保存', 'エクスポート', 'save', 'export'],
+    shortcut: 'Ctrl+S',
+    run: openExportDialog,
+  },
 ];
 
 /** キー入力が、エクスポートを開くショートカットか。 */
@@ -23,13 +29,14 @@ export function isExportShortcut(e: Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'met
   return (k === 's' && !e.shiftKey) || (k === 'e' && e.shiftKey);
 }
 
-/** ショートカットを登録する。ブラウザーの「名前を付けて保存」は抑止する。 */
+/** コマンドを登録簿に載せ、ショートカットを登録する。ブラウザーの「名前を付けて保存」は抑止する。 */
 export function useExportShortcuts(): void {
+  useEffect(() => registerCommands(() => [...EXPORT_COMMANDS]), []);
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.isComposing || !isExportShortcut(e)) return;
       e.preventDefault();
-      if (!e.repeat) EXPORT_COMMANDS[0]?.run();
+      if (!e.repeat) openExportDialog();
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

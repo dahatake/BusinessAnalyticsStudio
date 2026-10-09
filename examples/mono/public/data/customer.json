@@ -7,9 +7,20 @@
   "createdBy": "sample",
   "coreObject": {
     "candidates": [
-      { "id": "core-work-order", "label": "製造指図" },
-      { "id": "core-equipment", "label": "設備" }
+      { "id": "core-work-order", "label": "製造指図", "name": "製造指図", "summary": "何を・いつ・どれだけ作るかを現場へ伝える指示", "scores": { "crit-flow": "高: 計画から実績までの流れが 1 つにつながる", "crit-data": "高: 稼働・停止の記録を紐づけられる", "crit-reuse": "中: 工程の違いに合わせた調整が要る" } },
+      { "id": "core-equipment", "label": "設備", "name": "設備", "summary": "生産に使う機械・ライン", "scores": { "crit-flow": "中: 計画との対応は間接的", "crit-data": "高: 稼働データの発生源", "crit-reuse": "高: 他の拠点にも置き換えやすい" } }
     ],
-    "selectedId": "core-work-order"
-  }
+    "selectedId": "core-work-order",
+    "criteria": [
+      { "id": "crit-flow", "label": "業務の流れの中心か" },
+      { "id": "crit-data", "label": "データを紐づけられるか" },
+      { "id": "crit-reuse", "label": "他の拠点へ広げやすいか" }
+    ],
+    "reason": "製造指図は計画・実績・停止の記録を 1 本につなげられるため、議論の中心に置く（合成データ）。"
+  },
+  "glossary": [
+    { "term": "計画外停止", "definition": "予定していない設備の停止。生産計画の遅れや保全の手戻りにつながる。" },
+    { "term": "予兆検知", "definition": "故障や停止の前触れを稼働データから見つけること。" },
+    { "term": "ゲートウェイ", "definition": "現場の設備とクラウドなどの外部システムをつなぐ中継装置。" }
+  ]
 }
