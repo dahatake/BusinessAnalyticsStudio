@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { MessageBar, MessageBarBody, MessageBarTitle } from '@fluentui/react-components';
 import { AiStatus } from '../ai/AiStatus';
 import { AppShell } from '../components/AppShell';
+import { BrandLockup } from '../components/Brand';
+import { useEffectiveBrand } from '../theme/useBrand';
 import { ErrorView, LoadingView } from '../components/StateViews';
 import { SCREENS } from '../screens/registry';
 import { usePackStore } from '../store/pack';
@@ -11,6 +13,7 @@ export function App() {
   const state = usePackStore((s) => s.state);
   const load = usePackStore((s) => s.load);
   const [active, setActive] = useState<string>(SCREENS[0]?.key ?? '');
+  const brand = useEffectiveBrand();
   const [opened, setOpened] = useState(false);
 
   useEffect(() => { void load(); }, [load]);
@@ -44,7 +47,14 @@ export function App() {
   return (
     <>
       {!opened ? <Opening customerName={name} projectName={projectName} onDone={() => setOpened(true)} /> : null}
-      <AppShell title={`${name} ${projectName}`} screens={SCREENS} activeKey={active}       onSelect={setActive} headerExtra={<AiStatus />}>
+      <AppShell
+        title={`${name} ${projectName}`}
+        screens={SCREENS}
+        activeKey={active}
+        onSelect={setActive}
+        headerExtra={<AiStatus />}
+        brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
+      >
         {state.warnings.length > 0 ? (
           <div data-testid="pack-errors">
             <MessageBar intent="warning" layout="multiline">
