@@ -21,7 +21,7 @@ import { EmptyView, LoadingView } from '../components/StateViews';
 import { packKeyOf } from '../discussion/model';
 import { onEntityKey, useEntityBinding, useSelection } from '../selection/hooks';
 import { useDiscussionStore } from '../store/discussion';
-import { useEditMode } from '../store/editMode';
+import { useEditStore } from '../store/edit';
 import { useLayout } from '../store/layout';
 import { usePackStore } from '../store/pack';
 import { useTreeStore } from '../store/tree';
@@ -42,8 +42,8 @@ const KIND_TOKEN: Record<TreeKind, string> = {
 
 const useStyles = makeStyles({
   toolbar: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalS, rowGap: tokens.spacingVerticalS },
-  viewport: { overflow: 'auto', maxHeight: '60vh', border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium, cursor: 'grab', touchAction: 'pan-x pan-y' },
-  tree: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS, padding: tokens.spacingHorizontalM, transformOrigin: 'top left', width: 'max-content', minWidth: '100%' },
+  viewport: { overflow: 'auto', flexShrink: 0, minHeight: '240px', maxHeight: '60vh', border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium, cursor: 'grab', touchAction: 'pan-x pan-y' },
+  tree: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS, padding: tokens.spacingHorizontalM, transformOrigin: 'top left', boxSizing: 'border-box', width: '100%' },
   row: {
     display: 'flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS, flexWrap: 'wrap',
     padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalS}`, minHeight: '32px',
@@ -63,7 +63,6 @@ function RationaleLink({ r }: { r: Rationale }) {
   const target = usePackStore((st) => st.state);
   const open = (e: { preventDefault(): void; stopPropagation(): void }) => {
     e.preventDefault();
-    e.stopPropagation();
     if (r.kind === 'source') select(r.refId, { origin: ORIGIN });
     else if (target.status === 'ready') {
       const key = packKeyOf(target.pack.data.customer.name, target.pack.data.customer.projectName);
@@ -79,7 +78,7 @@ function DiscussionTreeScreen() {
   const hl = useHighlightClass();
   const bind = useEntityBinding(ORIGIN);
   const state = usePackStore((st) => st.state);
-  const editEnabled = useEditMode((st) => st.enabled);
+  const editEnabled = useEditStore((st) => st.editMode);
   const data = state.status === 'ready' ? state.pack.data : undefined;
   const key = data ? packKeyOf(data.customer.name, data.customer.projectName) : '';
   const doc = useTreeStore((st) => st.docs[key]);

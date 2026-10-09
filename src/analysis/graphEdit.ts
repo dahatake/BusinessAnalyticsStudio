@@ -1,5 +1,6 @@
 // ナレッジグラフの編集（FR-037 AC-045）。ノード・エッジの追加と削除を、顧客パックのデータの書き換えとして行う。
 // 結果は新しいパックのデータで、表・課題-解決策分析など他のビューがそのまま読む。画面・ストアを参照しない純粋なモジュール。
+import type { DataChange } from '../edit/model';
 import { REFERENCE_KEYS, type PackData } from '../schema';
 import type { GraphEdge, NodeKind } from '../selection/graph';
 
@@ -12,7 +13,7 @@ export const ADDABLE_KINDS: ReadonlyArray<{ kind: Extract<NodeKind, 'issue' | 's
 ];
 export type AddableKind = (typeof ADDABLE_KINDS)[number]['kind'];
 
-export type EditResult = { ok: true; data: PackData; id?: string } | { ok: false; reason: string };
+export type EditResult = { ok: true; data: PackData; id?: string; changes: DataChange[] } | { ok: false; reason: string };
 
 type Rec = Record<string, unknown>;
 const isRec = (v: unknown): v is Rec => typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -72,7 +73,7 @@ export function addNode(data: PackData, kind: AddableKind, name: string, linkTo?
       next.entities.entities.push({ id, createdBy: 'human', type: 'other', name: label });
       break;
   }
-  return { ok: true, data: next, id };
+  return { ok: true, data: next, id, changes: [{ op: 'add', entityId: id, entityLabel: label, fieldLabel: 'ノード', before: '', after: label }] };
 }
 
 /** エッジを追加する。始点のレコードの `relatedIds` に終点を足す（グラフの辺は ID の参照から作られる）。 */
@@ -85,7 +86,8 @@ export function addEdge(data: PackData, from: string, to: string): EditResult {
   const cur = Array.isArray(rec.relatedIds) ? (rec.relatedIds as string[]) : [];
   if (cur.includes(to)) return { ok: false, reason: 'そのエッジはすでにあります。' };
   rec.relatedIds = [...cur, to];
-  return { ok: true, data: next };
+  const nameOf = (id: string): string => String(findRecord(next, id)?.title ?? findRecord(next, id)?.name ?? findRecord(next, id)?.label ?? id);
+  return { ok: true, data: next, changes: [{ op: 'update', entityId: from, entityLabel: nameOf(from), fieldLabel: 'エッジ（関連）', before: '', after: `→ ${nameOf(to)}` }] };
 }
 
 /** 削除すると壊れる必須の参照（解決策の issueId など） */
@@ -124,19 +126,23 @@ export function removeNode(data: PackData, id: string): EditResult {
     }
     return out;
   };
-  return { ok: true, data: strip(next) as PackData };
+  const label0 = String(findRecord(next, id)?.title ?? findRecord(next, id)?.name ?? findRecord(next, id)?.label ?? id);
+  const stripped = strip(next) as PackData;
+  return { ok: true, data: stripped, changes: [{ op: 'delete', entityId: id, entityLabel: label0, fieldLabel: 'ノード', before: label0, after: '' }] };
 }
 
 /** エッジを削除する。参照の辺はその参照を取り除き、アーキテクチャの接続は接続を取り除く。包含や必須の参照は削除できない。 */
 export function removeEdge(data: PackData, edge: Pick<GraphEdge, 'from' | 'to' | 'kind' | 'label'>): EditResult {
   const next = clone(data);
+  const nameOf = (id: string): string => String(findRecord(next, id)?.title ?? findRecord(next, id)?.name ?? findRecord(next, id)?.label ?? id);
+  const changes: DataChange[] = [{ op: 'delete', entityId: edge.from, entityLabel: nameOf(edge.from), fieldLabel: 'エッジ（関連）', before: `→ ${nameOf(edge.to)}`, after: '' }];
   if (edge.kind === 'contain') return { ok: false, reason: '章と議題の包含は、エッジとしては削除できません。議題のノードを削除してください。' };
   if (edge.kind === 'relation') {
     const keep = <T extends { from: string; to: string }>(l: T[] | undefined): T[] | undefined =>
       l?.filter((e) => !(e.from === edge.from && e.to === edge.to));
     next.architecture.edges = keep(next.architecture.edges as Array<{ from: string; to: string }>) as typeof next.architecture.edges;
     for (const v of [next.architecture.asis, next.architecture.tobe]) if (v) v.links = keep(v.links);
-    return { ok: true, data: next };
+    return { ok: true, data: next, changes };
   }
   const key = edge.label ?? '';
   if (REQUIRED_SCALAR.has(key)) return { ok: false, reason: `「${key}」は必須の参照のため、エッジだけを削除できません。ノードを削除してください。` };
@@ -159,5 +165,5 @@ export function removeEdge(data: PackData, edge: Pick<GraphEdge, 'from' | 'to' |
     walk(rec);
     if (!removed) return { ok: false, reason: '選んだエッジが見つかりません。' };
   }
-  return { ok: true, data: next };
+  return { ok: true, data: next, changes };
 }

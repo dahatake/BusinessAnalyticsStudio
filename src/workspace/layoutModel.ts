@@ -228,7 +228,7 @@ export function defaultLayout(persona: Persona): Layout {
     case 'IT': // 主領域にアーキテクチャ図、横にナレッジグラフ、下に製品の一覧
       return split('col', [split('row', [leaf('architecture'), leaf('knowledge-graph')], [0.65, 0.35]), leaf('products')], [0.7, 0.3]);
     case '現場': // 主領域に 3D/地図、横にミニ・モックアプリ、下にガント
-      return split('col', [split('row', [leaf('view3d'), leaf('mock')], [0.65, 0.35]), leaf('gantt')], [0.7, 0.3]);
+      return split('col', [split('row', [leaf('view3d'), leaf('mock-app')], [0.65, 0.35]), leaf('gantt')], [0.7, 0.3]);
   }
 }
 

@@ -19,7 +19,7 @@ import { EmptyView, LoadingView } from '../components/StateViews';
 import { KIND_LABELS, NODE_KINDS, type GraphEdge, type GraphNode, type NodeKind } from '../selection/graph';
 import { onEntityKey, useEntityBinding, useSelection } from '../selection/hooks';
 import { useAnimation } from '../store/animation';
-import { useEditMode } from '../store/editMode';
+import { useEditStore } from '../store/edit';
 import { usePackStore } from '../store/pack';
 import { registerTestHook } from '../testing/hook';
 import { Graph3D } from '../three/Graph3D';
@@ -228,7 +228,7 @@ function KnowledgeGraphScreen() {
   const hl = useHighlightClass();
   const bind = useEntityBinding(ORIGIN);
   const state = usePackStore((st) => st.state);
-  const editEnabled = useEditMode((st) => st.enabled);
+  const editEnabled = useEditStore((st) => st.editMode);
   const { graph, selectedIds, primaryId, related, select } = useSelection();
 
   const [view, setView] = useState<'2d' | '3d'>('2d');
@@ -278,8 +278,9 @@ function KnowledgeGraphScreen() {
   const onMove = (id: string, dx: number, dy: number) => setOffsets((o) => ({ ...o, [id]: { x: (o[id]?.x ?? 0) + dx, y: (o[id]?.y ?? 0) + dy } }));
   const apply = (r: ReturnType<typeof addNode>): string | null => {
     if (!r.ok) return r.reason;
-    usePackStore.getState().updateData(() => r.data);
-    return null;
+    // 編集は共通の編集ストア（編集モードの確認・元に戻す・変更履歴）を通す。すべてのビューへ即座に反映される
+    const c = useEditStore.getState().commit({ ok: true, data: r.data, changes: r.changes });
+    return c.ok ? null : c.message;
   };
   const data = state.pack.data;
 

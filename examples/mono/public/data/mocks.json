@@ -1,5 +1,33 @@
 {
   "mocks": [
-    { "id": "mock-mono-001", "createdBy": "sample", "title": "停止原因の入力画面", "featureId": "feat-mono-001" }
+    {
+      "id": "mock-mono-001",
+      "createdBy": "sample",
+      "title": "停止原因の入力画面",
+      "featureId": "feat-mono-001",
+      "solutionId": "sol-mono-002",
+      "screens": [
+        {
+          "title": "停止原因の入力",
+          "description": "停止した設備を選び、原因を選んで記録します。",
+          "fields": [
+            { "label": "設備", "kind": "select", "options": ["プレス 1 号機", "プレス 2 号機", "搬送ライン A"], "value": "プレス 1 号機" },
+            { "label": "停止した時刻", "kind": "text", "value": "09:40" },
+            { "label": "停止原因", "kind": "select", "options": ["金型の不具合", "材料の詰まり", "センサーの異常", "その他"], "value": "材料の詰まり" },
+            { "label": "メモ", "kind": "textarea", "value": "" }
+          ]
+        },
+        {
+          "title": "入力内容の確認",
+          "description": "入力した内容を確かめてから送信します。",
+          "items": ["設備: プレス 1 号機", "停止した時刻: 09:40", "停止原因: 材料の詰まり"]
+        },
+        {
+          "title": "送信の完了",
+          "description": "停止原因を記録しました。集計は自動で更新されます。",
+          "items": ["今月の停止原因の件数が 1 件増えました"]
+        }
+      ]
+    }
   ]
 }

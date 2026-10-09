@@ -72,6 +72,7 @@ function GanttScreen() {
   if (!data) return <LoadingView label="工程を読み込み中" />;
 
   const featureTitle = new Map(data.plan.features.map((f) => [f.id, f.title]));
+  const issueTitle = new Map(data.issues.issues.map((i) => [i.id, i.title]));
   const selectedTasks = model.groups.find((g) => g.feature.id === featureId)?.tasks ?? [];
   const allGanttTasks = [...model.groups.flatMap((g) => g.tasks), ...model.orphans];
   const byId = new Map(allGanttTasks.map((g) => [g.task.id, g]));
@@ -149,6 +150,9 @@ function GanttScreen() {
                         {g.feature.title}
                       </Button>
                       <Text size={200}>{g.tasks.length} 件の工程</Text>
+                      {(g.feature.issueIds ?? []).length > 0 ? (
+                        <Text size={200}>課題: {(g.feature.issueIds ?? []).map((id) => issueTitle.get(id) ?? id).join('、')}</Text>
+                      ) : null}
                     </div>
                     {g.tasks.map(taskRow)}
                   </div>

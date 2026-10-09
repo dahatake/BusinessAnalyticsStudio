@@ -10,7 +10,7 @@ import {
   buildSummary, contentText, fingerprint, partText, type SummaryContent, type SummaryScope, type SummaryText,
 } from '../analysis/summary';
 import { packKeyOf } from '../discussion/model';
-import { useEditMode } from '../store/editMode';
+import { useEditStore } from '../store/edit';
 import { usePackStore } from '../store/pack';
 import { usePriorityStore } from '../store/priority';
 import { activeEdited, useSummaryStore } from '../store/summary';
@@ -41,7 +41,7 @@ export function ExecutiveSummary({ scope }: ExecutiveSummaryProps) {
   const s = useStyles();
   const state = usePackStore((st) => st.state);
   const weights = usePriorityStore((st) => st.weights);
-  const editEnabled = useEditMode((st) => st.enabled);
+  const editEnabled = useEditStore((st) => st.editMode);
   const { mode, ask } = useAi();
   const data = state.status === 'ready' ? state.pack.data : undefined;
   const key = data ? packKeyOf(data.customer.name, data.customer.projectName) : '';

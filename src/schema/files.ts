@@ -177,10 +177,34 @@ export const ArchitectureSchema = z.looseObject({
   tobe: ArchVariantSchema.optional(),
 });
 
+/** ミニ・モックアプリの入力欄（FR-043）。画面の中に並べる、動くフォームの部品 */
+export const MOCK_FIELD_KINDS = ['text', 'number', 'select', 'date', 'textarea'] as const;
+export const MockFieldSchema = z.looseObject({
+  label: z.string().min(1),
+  kind: z.enum(MOCK_FIELD_KINDS).optional(),
+  value: z.string().optional(),
+  options: z.array(z.string().min(1)).optional(),
+});
+
+/** モックの 1 画面（FR-043）。画面間の遷移は、他の画面の `title` を名前にしたボタンで行う */
+export const MockScreenSchema = z.looseObject({
+  title: z.string().min(1),
+  description: z.string().optional(),
+  fields: z.array(MockFieldSchema).optional(),
+  /** 一覧の行（文字列） */
+  items: z.array(z.string().min(1)).optional(),
+});
+
+/** モックの画面数の上限（PARAM-022: 1〜3 画面） */
+export const MOCK_SCREENS_MAX = 3;
+
 export const MocksSchema = z.looseObject({
   mocks: z.array(entity({
     title: z.string().min(1),
     featureId: IdSchema.optional(),
+    /** このモックを見せる解決策。解決策の選択と連動して表示する（FR-043） */
+    solutionId: IdSchema.optional(),
+    screens: z.array(MockScreenSchema).min(1).max(MOCK_SCREENS_MAX).optional(),
   })),
 });
 

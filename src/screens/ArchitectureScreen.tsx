@@ -17,7 +17,7 @@ import { Panel } from '../components/Panel';
 import { RelatedMini } from '../components/RelatedMini';
 import { EmptyView, LoadingView } from '../components/StateViews';
 import { onEntityKey, useEntityBinding, useSelection } from '../selection/hooks';
-import { useEditMode } from '../store/editMode';
+import { useEditStore } from '../store/edit';
 import { usePackStore } from '../store/pack';
 import { ArchitectureStack } from '../three/ArchitectureStack';
 
@@ -92,7 +92,7 @@ function ArchitectureScreen() {
   const s = useStyles();
   const { select } = useSelection();
   const state = usePackStore((st) => st.state);
-  const editEnabled = useEditMode((st) => st.enabled);
+  const editEnabled = useEditStore((st) => st.editMode);
   const [view, setView] = useState<ArchView>('tobe');
   const [dim, setDim] = useState<'2d' | '3d'>('2d');
   const [scope, setScope] = useState<'all' | 'business' | 'app'>('all');
@@ -112,6 +112,21 @@ function ArchitectureScreen() {
   const names = useMemo(() => new Map((model?.elements ?? []).map((e) => [e.element.id, e.element.name])), [model]);
 
   useEffect(() => { if (jsonOpen && variants) { setJsonText(archToJson(variants)); setJsonError(null); } }, [jsonOpen, variants]);
+  // ダイアログの操作部は、モーダルの背景の隠し（aria-hidden）が済んでから出す（背景の「保存」などと同時に操作対象にならないように）。
+  // 隠しが効かない環境でも固定の待ちで止まらないよう、最大 1 秒で出す。
+  const [dlgReady, setDlgReady] = useState(false);
+  useEffect(() => {
+    if (!jsonOpen) { setDlgReady(false); return; }
+    let id = 0;
+    const t0 = performance.now();
+    const tick = () => {
+      const hidden = document.querySelector('[data-testid="workspace"]')?.closest('[aria-hidden="true"]') != null;
+      if (hidden || performance.now() - t0 > 1000) setDlgReady(true);
+      else id = requestAnimationFrame(tick);
+    };
+    id = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(id);
+  }, [jsonOpen]);
 
   if (state.status !== 'ready' || !model || !variants) return <LoadingView label="アーキテクチャ図を読み込み中" />;
   const { customer } = state.pack.data;
@@ -140,7 +155,16 @@ function ArchitectureScreen() {
       setJsonError(`パック全体の検証に通りません（適用しませんでした）:\n${problems.slice(0, 5).join('\n')}${problems.length > 5 ? `\nほか ${problems.length - 5} 件` : ''}`);
       return;
     }
-    usePackStore.getState().updateData((d) => ({ ...d, architecture: { ...d.architecture, asis: { elements: r.value.asis.elements as never, links: r.value.asis.links as never }, tobe: { elements: r.value.tobe.elements as never, links: r.value.tobe.links as never } } }));
+    const next = {
+      ...state.pack.data,
+      architecture: { ...state.pack.data.architecture, asis: { elements: r.value.asis.elements as never, links: r.value.asis.links as never }, tobe: { elements: r.value.tobe.elements as never, links: r.value.tobe.links as never } },
+    };
+    const c = useEditStore.getState().commit({
+      ok: true,
+      data: next,
+      changes: [{ op: 'update', entityLabel: 'アーキテクチャ図', fieldLabel: 'JSON（asis・tobe）', before: `AsIs ${variants.asis.elements.length} 要素・ToBe ${variants.tobe.elements.length} 要素`, after: `AsIs ${r.value.asis.elements.length} 要素・ToBe ${r.value.tobe.elements.length} 要素` }],
+    });
+    if (!c.ok) { setJsonError(c.message); return; }
     setJsonOpen(false);
   };
 
@@ -224,12 +248,12 @@ function ArchitectureScreen() {
             <DialogTitle>アーキテクチャの JSON 編集</DialogTitle>
             <DialogContent style={{ display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS }}>
               <Text size={200}>asis・tobe の elements（id・name・kind・layer など）と links（from・to・label）を編集できます。同じ ID を両方に置くと同じ要素の変更になります。</Text>
-              <Textarea className={s.json} resize="vertical" aria-label="アーキテクチャの JSON" value={jsonText} onChange={(_, d) => setJsonText(d.value)} rows={16} />
+              {dlgReady ? <Textarea className={s.json} resize="vertical" aria-label="アーキテクチャの JSON" value={jsonText} onChange={(_, d) => setJsonText(d.value)} rows={16} /> : null}
               {jsonError ? <Text role="alert" style={{ color: tokens.colorPaletteRedForeground1, whiteSpace: 'pre-wrap' }}>{jsonError}</Text> : null}
             </DialogContent>
             <DialogActions>
               <Button appearance="secondary" onClick={() => setJsonOpen(false)}>キャンセル</Button>
-              <Button appearance="primary" onClick={applyJson}>適用</Button>
+              {dlgReady ? <Button appearance="primary" onClick={applyJson}>適用</Button> : null}
             </DialogActions>
           </DialogBody>
         </DialogSurface>
