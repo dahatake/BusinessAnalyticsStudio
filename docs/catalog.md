@@ -66,12 +66,12 @@
 | FR-056 | エクスポートした Markdown からの復元 | 承認済み | 未実装 | 未実装 | なし |
 | FR-057 | 演出の設定の保存と復元 | 承認済み | 未実装 | 未実装 | なし |
 | FR-058 | Fluent 2 準拠のテーマ | 承認済み | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/screens/SettingsScreen.tsx | tests/unit/theme.test.ts | デザイン基盤, 画面の登録, 設定ストア |
-| FR-059 | ブランドランプの生成と適用 | 承認済み | 未実装 | 未実装 | なし |
-| FR-060 | コントラストの自動検証と補正 | 承認済み | 未実装 | 未実装 | なし |
-| FR-061 | ロゴの利用条件とプレースホルダー | 承認済み | 未実装 | 未実装 | なし |
-| FR-062 | フォントのフォールバックと等幅数字 | 承認済み | 未実装 | 未実装 | なし |
+| FR-059 | ブランドランプの生成と適用 | 承認済み | src/theme/brand.ts, src/theme/brandTheme.ts, src/theme/AppThemeProvider.tsx, src/theme/useBrand.ts | tests/unit/brand.test.ts, tests/system/e2e/brand-settings.spec.ts | デザイン基盤, ブランドテーマ |
+| FR-060 | コントラストの自動検証と補正 | 承認済み | src/theme/brand.ts, src/theme/brandTheme.ts, src/screens/SettingsScreen.tsx | tests/unit/brand.test.ts, tests/system/e2e/brand-settings.spec.ts | ブランドテーマ |
+| FR-061 | ロゴの利用条件とプレースホルダー | 承認済み | src/components/Brand.tsx, src/app/App.tsx, src/components/AppShell.tsx | tests/unit/brand.test.ts, tests/system/e2e/brand-settings.spec.ts | ブランド表示部品 |
+| FR-062 | フォントのフォールバックと等幅数字 | 承認済み | src/theme/brandTheme.ts, src/components/Brand.tsx | tests/unit/brand.test.ts, tests/system/e2e/brand-settings.spec.ts | ブランドテーマ, ブランド表示部品（KpiValue） |
 | FR-063 | ブランドトーンの演出への反映 | 承認済み | 未実装 | 未実装 | なし |
-| FR-064 | 設定パネルでのブランドの確認と上書き | 承認済み | 未実装 | 未実装 | なし |
+| FR-064 | 設定パネルでのブランドの確認と上書き | 承認済み | src/screens/SettingsScreen.tsx, src/store/settings.ts, src/theme/useBrand.ts, schema/brand-profile.json, src/schema/files.ts | tests/unit/brand.test.ts, tests/system/e2e/brand-settings.spec.ts | 設定ストア, ブランドテーマ |
 | FR-065 | 3D 描画とフォールバック | 承認済み | src/screens/View3DScreen.tsx, src/three/SceneCanvas.tsx, src/three/presets.ts, src/store/view3d.ts, src/screens/SettingsScreen.tsx | tests/system/e2e/views3d.spec.ts | デザイン基盤, 画面の登録, 3D 基盤 |
 | FR-066 | 必須の 3D シーン | 承認済み | src/screens/View3DScreen.tsx, src/three/SceneCanvas.tsx, src/three/presets.ts, src/store/view3d.ts, src/screens/SettingsScreen.tsx | tests/system/e2e/views3d.spec.ts | デザイン基盤, 画面の登録, 3D 基盤 |
 | FR-067 | シネマティック表現 | 承認済み | 未実装 | 未実装 | なし |
@@ -182,9 +182,11 @@
 
 | 部品名 | ファイル | 用途 | 使っている要求 ID |
 |---|---|---|---|
-| デザイン基盤 | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/components/AppShell.tsx, src/components/Panel.tsx, src/components/StateViews.tsx | Fluent UI v9 のトークン・4px グリッド・Light/Dark/ハイコントラスト、アプリの外枠、読み込み中/0 件/エラーの表示。以降の画面はこれを再利用する | FR-011, FR-058, FR-065, FR-066 |
+| ブランドテーマ | src/theme/brand.ts, src/theme/brandTheme.ts, src/theme/useBrand.ts | ブランドランプ（16 段階）の生成、コントラストの検証と補正（補正は記録）、Light/Dark のテーマへの適用、フォントの順、Primary 色の上書き | FR-059, FR-060, FR-062, FR-064 |
+| ブランド表示部品 | src/components/Brand.tsx | ロゴ（確認済みのみ）とプレースホルダー、「顧客名 × Microsoft」、等幅数字の KpiValue（KPI の数値はこれで表示する） | FR-061, FR-062 |
+| デザイン基盤 | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/components/AppShell.tsx, src/components/Panel.tsx, src/components/StateViews.tsx | Fluent UI v9 のトークン・4px グリッド・Light/Dark/ハイコントラスト、アプリの外枠、読み込み中/0 件/エラーの表示。以降の画面はこれを再利用する | FR-011, FR-058, FR-059, FR-065, FR-066 |
 | 画面の登録 | src/screens/registry.ts, src/screens/types.ts | 画面を足すときは registry に 1 行足す（nav-key / component-key） | FR-058, FR-065, FR-066 |
-| 設定ストア | src/store/settings.ts | Zustand と localStorage の利用者設定（現在はテーマ） | FR-058, FR-069 |
+| 設定ストア | src/store/settings.ts | Zustand と localStorage の利用者設定（テーマ、ブランドの Primary 色の上書き、3D 品質） | FR-058, FR-064, FR-069 |
 | AI 呼び出し口 | src/ai/client.ts, src/ai/useAi.ts, src/ai/AiStatus.tsx, src/ai/AiSettings.tsx, src/ai/ChatScreen.tsx | askAi（5 種類の LLM 処理の唯一の入口。既定はモック、実接続は確認後のみ localhost の中継へ）、常時表示の AI 状態、設定の実接続切替、チャットの土台（FR-017 が拡張） | FR-010, FR-011, FR-132, NFR-SEC-002 |
 | Copilot SDK 中継プロセス | scripts/relay/relay.ts, scripts/relay/copilot-adapter.ts, scripts/relay/start.ts | 127.0.0.1 だけで待ち受ける Node.js の中継。`npm run relay` | FR-010, FR-011, FR-132 |
 | 顧客パックのスキーマと検証 | src/schema/common.ts, src/schema/files.ts, src/schema/validate.ts, scripts/lib/pack-fs.ts | zod のスキーマ、ID の一意・参照・出典の検証。画面の部品を参照しない。schema の JSON は npm run gen:schema で生成 | FR-100, FR-102, FR-114, FR-115, FR-116, FR-118, FR-119, NFR-MAINT-001 |

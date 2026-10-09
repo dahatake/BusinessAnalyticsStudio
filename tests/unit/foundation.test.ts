@@ -23,7 +23,7 @@ describe('FR-100 顧客固有情報のコードからの分離', () => {
       const dataDir = path.join(REPO_ROOT, 'examples', kind, 'public');
       const customer = JSON.parse(fs.readFileSync(path.join(dataDir, 'data', 'customer.json'), 'utf8'));
       const brand = JSON.parse(fs.readFileSync(path.join(dataDir, 'brand', 'brand-profile.json'), 'utf8'));
-      needles.push(customer.name, customer.projectName, brand.name, brand.primaryColor);
+      needles.push(customer.name, customer.projectName, brand.name, brand.colors.primary);
     }
     expect(needles.length).toBeGreaterThanOrEqual(8);
     const targets = [

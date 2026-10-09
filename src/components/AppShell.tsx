@@ -21,6 +21,7 @@ const useStyles = makeStyles({
     backgroundColor: tokens.colorNeutralBackground3,
     borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
   },
+  brand: { marginLeft: 'auto' },
   nav: {
     display: 'flex',
     flexDirection: 'column',
@@ -52,14 +53,17 @@ export interface AppShellProps {
   /** ヘッダーの右側に常時出す要素（AI 接続状態など） */
   headerExtra?: ReactNode;
   children: ReactNode;
+  /** ヘッダーの右側に出すブランド表示（ロゴ・共創表現） */
+  brand?: ReactNode;
 }
 
-export function AppShell({ title, screens, activeKey, onSelect, headerExtra, children }: AppShellProps) {
+export function AppShell({ title, screens, activeKey, onSelect, headerExtra, children, brand }: AppShellProps) {
   const s = useStyles();
   return (
     <div className={s.root}>
       <header className={s.header}>
         <Text as="h1" size={500} weight="semibold" style={{ flexGrow: 1 }}>{title}</Text>
+        {brand ? <div>{brand}</div> : null}
         {headerExtra}
       </header>
       <nav className={s.nav} aria-label="画面">
