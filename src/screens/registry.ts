@@ -1,6 +1,6 @@
 import {
-  Chat24Regular, CommentMultiple24Regular, Cube24Regular, DataBarHorizontal24Regular, DataScatter24Regular, DocumentBulletList24Regular, Layer24Regular,
-  Organization24Regular, PhoneDesktop24Regular, Settings24Regular, Table24Regular, TaskListSquareLtr24Regular, TextBulletListTree24Regular,
+  Chat24Regular, CommentMultiple24Regular, Cube24Regular, DataBarHorizontal24Regular, DataScatter24Regular, DocumentBulletList24Regular, Layer24Regular, Map24Regular,
+  Organization24Regular, PhoneDesktop24Regular, Ruler24Regular, Settings24Regular, Table24Regular, TaskListSquareLtr24Regular, TextBulletListTree24Regular,
   TextNumberListLtr24Regular, Trophy24Regular, Whiteboard24Regular, Window24Regular,
 } from '@fluentui/react-icons';
 import type { ScreenDefinition } from './types';
@@ -12,6 +12,8 @@ import { MockAppScreen } from './MockAppScreen';
 import { TableScreen } from './TableScreen';
 import { GanttScreen } from './GanttScreen';
 import { View3DScreen } from './View3DScreen';
+import { Drawing2DScreen } from './Drawing2DScreen';
+import { MapScreen } from './MapScreen';
 import { PriorityScreen } from './PriorityScreen';
 import { RankingScreen } from './RankingScreen';
 import { MatrixScreen } from './MatrixScreen';
@@ -37,6 +39,8 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'table', label: '一覧表', icon: Table24Regular, component: TableScreen },
   { key: 'gantt', label: 'ガントチャート', icon: DataBarHorizontal24Regular, component: GanttScreen },
   { key: 'view3d', label: '3D ビュー', icon: Cube24Regular, component: View3DScreen },
+  { key: 'drawing2d', label: '2D 図面', icon: Ruler24Regular, component: Drawing2DScreen },
+  { key: 'map', label: '地図', icon: Map24Regular, component: MapScreen },
   { key: 'mock-app', label: 'ミニ・モックアプリ', icon: PhoneDesktop24Regular, component: MockAppScreen },
   { key: 'whiteboard', label: 'ホワイトボード', icon: Whiteboard24Regular, component: WhiteboardScreen },
   { key: 'themes', label: '議論テーマ', icon: CommentMultiple24Regular, component: ThemesScreen },

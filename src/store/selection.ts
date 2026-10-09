@@ -21,7 +21,7 @@ export interface UrlAdapter {
 }
 
 const browserAdapter: UrlAdapter = {
-  hash: () => (typeof window === 'undefined' ? '' : window.location.hash),
+  hash: () => (typeof window === 'undefined' ? '' : window.location?.hash ?? ''),
   push: (hash) => {
     if (typeof window === 'undefined') return;
     window.history.pushState(window.history.state, '', `${window.location.pathname}${window.location.search}${hash}`);

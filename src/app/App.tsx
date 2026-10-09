@@ -6,6 +6,7 @@ import { DiscussionFileActions } from '../discussion/FileActions';
 import { ExportButton, ExportHost } from '../export/ExportButton';
 import { AppShell } from '../components/AppShell';
 import { BrandLockup } from '../components/Brand';
+import { TimeAxis } from '../components/TimeAxis';
 import { AnimationStatus } from '../motion/AnimationController';
 import { runTransition } from '../motion/fluent';
 import type { Intensity } from '../motion/tone';
@@ -112,8 +113,8 @@ export function App() {
         title={`${name} ${projectName}`}
         screens={SCREENS}
         onSelect={onSelect}
-        headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><AnimationStatus /><AiStatus /></>}
-        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><ResetLayoutButton />        <PresentationButton /></>}
+        headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><TimeAxis /><AnimationStatus /><AiStatus /></>}
+        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><ResetLayoutButton /><PresentationButton /></>}
         dock={<Dock screens={SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
       >

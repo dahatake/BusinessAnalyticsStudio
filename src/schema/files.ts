@@ -41,12 +41,35 @@ export const CustomerSchema = z.looseObject({
   glossary: z.array(z.looseObject({ term: z.string().min(1), definition: z.string().min(1) })).optional(),
 });
 
+/** 拠点の位置（FR-021）。地図・地球儀に置く場所。緯度 -90〜90、経度 -180〜180（度） */
+export const LocationSchema = z.looseObject({
+  lat: z.number().min(-90).max(90),
+  lng: z.number().min(-180).max(180),
+});
+
 export const EntitiesSchema = z.looseObject({
   entities: z.array(entity({
     type: z.string().min(1),
     name: z.string().min(1),
+    /** 階層の親（FR-020・FR-023）。拠点の下のライン、設備の下の部品など。なければ最上位 */
+    parentId: IdSchema.nullable().optional(),
+    /** 位置（拠点）。なければ地図には出さず「位置情報なし」として数える（FR-113） */
+    location: LocationSchema.optional(),
     metrics: z.array(MetricSchema).optional(),
   })),
+  /** 物流・データの流れ（FR-021）。拠点から拠点への流れを、時間軸（0〜23 時）に応じた量の粒子で示す */
+  flows: z.array(entity({
+    from: IdSchema,
+    to: IdSchema,
+    label: z.string().min(1),
+    /** 流れの種類（粒子の色分け）。物流・データ・お金など */
+    kind: z.string().optional(),
+    /** 1 時間あたりの量の最大（単位は unit）。粒子の数と線の太さに反映する */
+    volume: z.number().nonnegative().optional(),
+    unit: z.string().optional(),
+    /** 流れが最も多い時刻（0〜23 時）。時刻ごとの量は、この時刻を頂点とする山形 */
+    peakHour: z.number().min(0).max(23).optional(),
+  })).optional(),
 });
 
 /** 課題の区分（FR-002）。社内向け／社外向けのどちらか（機密区分 classification とは別） */

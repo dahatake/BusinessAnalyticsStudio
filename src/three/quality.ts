@@ -14,13 +14,16 @@ export interface QualityProfile {
   particles: number;
   shadows: boolean;
   antialias: boolean;
+  /** シネマティック表現（FR-067）。品質 Low ではブルームと被写界深度を無効にする */
+  bloom: boolean;
+  dof: boolean;
 }
 
 export const QUALITY_PROFILES: Record<Quality, QualityProfile> = {
-  Low: { maxDpr: 0.75, particles: 300, shadows: false, antialias: false },
-  Medium: { maxDpr: 1, particles: 1200, shadows: false, antialias: true },
-  High: { maxDpr: 2, particles: 4000, shadows: true, antialias: true },
-  Ultra: { maxDpr: 3, particles: 9000, shadows: true, antialias: true },
+  Low: { maxDpr: 0.75, particles: 300, shadows: false, antialias: false, bloom: false, dof: false },
+  Medium: { maxDpr: 1, particles: 1200, shadows: false, antialias: true, bloom: true, dof: false },
+  High: { maxDpr: 2, particles: 4000, shadows: true, antialias: true, bloom: true, dof: true },
+  Ultra: { maxDpr: 3, particles: 9000, shadows: true, antialias: true, bloom: true, dof: true },
 };
 
 export function lowerQuality(q: Quality): Quality | null {
