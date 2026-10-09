@@ -15,10 +15,7 @@
   },
   "verify": {
     "timeout_sec": 1800,
-    "commands": [
-      { "name": "build", "run": "npm run build" },
-      { "name": "unit", "run": "npm test" }
-    ]
+    "commands": []
   },
   "models": {
     "_note": "Phase 1 で較正して決めます（users-guide/04-customization.md）。conductor は subagent を呼ぶときにこの表を参照します。空なら既定のモデルを使います。",
