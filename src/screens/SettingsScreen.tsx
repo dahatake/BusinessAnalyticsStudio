@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Field, Input, Radio, RadioGroup, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
+import { AiSettings } from '../ai/AiSettings';
 import { THEME_MODES, useSettings, type ThemeMode } from '../store/settings';
 import { usePackStore } from '../store/pack';
 import { isHexColor } from '../theme/brand';
@@ -27,6 +28,8 @@ const useStyles = makeStyles({
   step: { height: '32px' },
   editor: { display: 'flex', alignItems: 'flex-end', columnGap: tokens.spacingHorizontalM, flexWrap: 'wrap' },
   error: { color: tokens.colorPaletteRedForeground1 },
+  // Fluent の primary ボタンは強制カラーを無効にする。OS の色で描くため既定（auto）に戻す（FR-058 AC-071）
+  forcedAuto: { forcedColorAdjust: 'auto', '@media (forced-colors: active)': { forcedColorAdjust: 'auto' } },
 });
 
 type Conf = '高' | '中' | '低' | '推定';
@@ -113,7 +116,7 @@ export function SettingsScreen() {
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commit(); } else if (e.key === 'Escape') revert(); }}
               />
             </Field>
-            <Button appearance="primary" data-testid="primary-action" onClick={commit}>反映する</Button>
+            <Button appearance="primary" className={s.forcedAuto} data-testid="primary-action" onClick={commit}>反映する</Button>
             {override ? <Button onClick={() => { setOverride(null); setError(null); }}>パックの値{packPrimary ? `（${packPrimary}）` : ''}に戻す</Button> : null}
           </div>
           {error ? <div role="alert" className={s.error}>{error}</div> : null}
@@ -136,6 +139,7 @@ export function SettingsScreen() {
           </div>
         </section>
       ) : null}
+      <AiSettings />
     </Panel>
   );
 }
