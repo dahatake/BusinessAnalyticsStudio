@@ -3,8 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Badge, Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger,
-  Radio, RadioGroup, Text, Textarea, makeStyles, mergeClasses, tokens,
+  Text, Textarea, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
+import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { ArrowDownload24Regular, Code24Regular } from '@fluentui/react-icons';
 import {
   DIFF_LABEL, archToJson, archVariants, modelFor, parseArchitectureJson, sectionsOf, toMermaid, toSvg, validateArchitectureChange,

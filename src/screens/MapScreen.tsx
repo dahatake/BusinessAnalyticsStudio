@@ -3,13 +3,15 @@
 // 拠点のボタンは、3D の位置に重ねた DOM の要素（キーボード・スクリーンリーダーで操作できる）。選択はすべてのビューと共通（FR-024）。
 // 位置のない拠点は地図に出さず、「位置情報なし: N 件」と示して表で見られるようにする（FR-113）。
 import { useMemo, useRef, useState } from 'react';
-import { Field, Radio, RadioGroup, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { Field, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { FALLBACK_REASONS } from '../analysis/fallback';
 import { useHighlightClass } from '../components/highlight';
 import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
 import { UnrenderableNote } from '../components/UnrenderableNote';
-import { useMapData } from '../map/data';
+import { ViewAsTableButton, ViewTable } from '../components/ViewTable';
+import { siteTableRows, useMapData } from '../map/data';
 import { flowColor, flowRate } from '../map/flows';
 import type { MapMode } from '../map/geo';
 import { MapScene } from '../map/MapScene';
@@ -64,6 +66,7 @@ export function MapScreen() {
   const hour = useTimeline((t) => t.hour);
   const quality = useView3D((st) => st.quality);
   const [mode, setMode] = useState<MapMode>('globe');
+  const [asTable, setAsTable] = useState(false);
   const markerRefs = useRef(new Map<string, HTMLElement>());
   // ワークスペースのタブで隠れているときは、描画を止める（常時動く 3D を、見えていないのに回さない）
   const pane = usePane();
@@ -87,6 +90,7 @@ export function MapScreen() {
           </RadioGroup>
         </Field>
         <Text weight="semibold" data-testid="map-time" aria-live="polite">時刻: {formatHour(hour)}</Text>
+        <ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} />
         <UnrenderableNote
           source="map"
           reason={FALLBACK_REASONS.location}
@@ -96,6 +100,13 @@ export function MapScreen() {
 
       {!hasSites ? (
         <EmptyView message="位置を持つ拠点がありません。拠点（type が site）に location（lat・lng）を入れると、地図に表示されます。" />
+      ) : asTable ? (
+        <ViewTable
+          label="地図の拠点"
+          origin={ORIGIN}
+          columns={['名称', '種別', '緯度', '経度']}
+          rows={siteTableRows(data.sites)}
+        />
       ) : (
         <div className={s.stage}>
           <RenderCanvas cameraPosition={[0, 0, 3]} paused={!visible}>

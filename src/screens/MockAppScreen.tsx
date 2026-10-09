@@ -2,8 +2,9 @@
 // 画面間のボタンで遷移できる。モックは解決策の選択（共通の選択状態）と連動し、実際の製品ではないので「モック（イメージ）」と明示する。
 import { useMemo, useState } from 'react';
 import {
-  Badge, Button, Field, Input, Radio, RadioGroup, Select, Text, Textarea, makeStyles, tokens,
+  Badge, Button, Field, Input, Select, Text, Textarea, makeStyles, tokens,
 } from '@fluentui/react-components';
+import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { PhoneDesktop24Regular } from '@fluentui/react-icons';
 import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';

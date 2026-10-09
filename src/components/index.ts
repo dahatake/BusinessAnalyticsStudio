@@ -6,3 +6,5 @@ export * from './Brand';
 export * from './UnrenderableNote';
 export * from './highlight';
 export * from './TimeAxis';
+export * from './ChoiceRadio';
+export * from './ViewTable';

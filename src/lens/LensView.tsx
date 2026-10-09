@@ -1,6 +1,7 @@
 // ビジネス⇔IT のレンズ（FR-019）。切り替え（ビジネス／IT）または並置。同じ ID の項目は共通の選択状態で連動して強調される。
 import { useMemo } from 'react';
-import { Radio, RadioGroup, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { useHighlightClass } from '../components/highlight';
 import { GlossaryText } from '../glossary/GlossaryText';
 import { onEntityKey, useEntityBinding, useEntityGraph } from '../selection/hooks';
