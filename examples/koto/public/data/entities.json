@@ -1,10 +1,21 @@
 {
   "entities": [
     {
-      "id": "ent-koto-counter", "createdBy": "sample", "type": "site", "name": "駅前の窓口", "sourceIds": ["src-koto-001"],
+      "id": "ent-koto-counter", "createdBy": "sample", "type": "site", "name": "駅前の窓口", "location": { "lat": 35.6812, "lng": 139.7671 }, "sourceIds": ["src-koto-001"],
       "metrics": [
         { "label": "月間の電話での問い合わせ", "value": 820, "unit": "件", "sourceIds": ["src-koto-001"] }
       ]
-    }
+    },
+    { "id": "ent-koto-callcenter", "createdBy": "sample", "type": "site", "name": "コールセンター", "location": { "lat": 43.0621, "lng": 141.3544 }, "sourceIds": ["src-koto-001"] },
+    { "id": "ent-koto-hub", "createdBy": "sample", "type": "site", "name": "手配センター", "location": { "lat": 34.6937, "lng": 135.5023 }, "sourceIds": ["src-koto-001"] },
+    { "id": "ent-koto-airport", "createdBy": "sample", "type": "site", "name": "空港カウンター", "location": { "lat": 33.5902, "lng": 130.4017 }, "sourceIds": ["src-koto-002"] },
+    { "id": "ent-koto-hotel", "createdBy": "sample", "type": "site", "name": "提携ホテルの窓口", "location": { "lat": 26.2124, "lng": 127.6809 }, "sourceIds": ["src-koto-002"] }
+  ],
+  "flows": [
+    { "id": "flow-koto-001", "createdBy": "sample", "from": "ent-koto-counter", "to": "ent-koto-hub", "label": "窓口の予約データ", "kind": "data", "volume": 120, "unit": "件/時", "peakHour": 11, "sourceIds": ["src-koto-001"] },
+    { "id": "flow-koto-002", "createdBy": "sample", "from": "ent-koto-callcenter", "to": "ent-koto-hub", "label": "電話予約の連携", "kind": "data", "volume": 200, "unit": "件/時", "peakHour": 14, "sourceIds": ["src-koto-001"] },
+    { "id": "flow-koto-003", "createdBy": "sample", "from": "ent-koto-hub", "to": "ent-koto-hotel", "label": "宿泊の手配", "kind": "goods", "volume": 90, "unit": "件/時", "peakHour": 16, "sourceIds": ["src-koto-002"] },
+    { "id": "flow-koto-004", "createdBy": "sample", "from": "ent-koto-hub", "to": "ent-koto-airport", "label": "航空券の手配", "kind": "goods", "volume": 60, "unit": "件/時", "peakHour": 9, "sourceIds": ["src-koto-002"] },
+    { "id": "flow-koto-005", "createdBy": "sample", "from": "ent-koto-hotel", "to": "ent-koto-counter", "label": "確認書の返送", "kind": "data", "volume": 45, "unit": "件/時", "peakHour": 19, "sourceIds": ["src-koto-002"] }
   ]
 }

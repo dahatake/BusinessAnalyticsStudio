@@ -1,12 +1,15 @@
 // 3D ビュー（4 つの必須シーン）。FR-065 / FR-066 / FR-069
 import { useEffect, useState } from 'react';
 import { Button, Tab, TabList, Text, makeStyles, tokens } from '@fluentui/react-components';
+import { VideoClip20Regular, ZoomFit20Regular } from '@fluentui/react-icons';
 import { Panel } from '../components/Panel';
 import { AnnotationControls, AnnotationLayer } from '../ink/AnnotationLayer';
 import { usePane } from '../workspace/PaneContext';
 import { useIndustryPreset, useView3D } from '../store/view3d';
+import { cameraPathPoses, flyPath, goHome, useCameraRig } from '../three/cameraRig';
 import { SCENE_KEYS, SCENE_LABELS, type SceneKey } from '../three/presets';
 import { SceneCanvas } from '../three/SceneCanvas';
+import { useTwinLayout } from '../three/twin';
 
 const useStyles = makeStyles({
   tabs: { marginBottom: tokens.spacingVerticalM },
@@ -30,6 +33,8 @@ export function View3DScreen() {
   const preset = useIndustryPreset();
   const [toBe, setToBe] = useState(false);
   const [annotating, setAnnotating] = useState(false);
+  const layout = useTwinLayout();
+  const moving = useCameraRig((st) => st.moving);
 
   const pane = usePane();
   // ワークスペースのタブで隠れているときは、3D を表示していないものとして扱う（FPS の計測・自動の品質低下の対象にしない）
@@ -55,6 +60,14 @@ export function View3DScreen() {
       <div className={s.bar}>
         {scene === 'asis-tobe' && (
           <Button appearance="primary" onClick={() => setToBe((v) => !v)}>{toBe ? 'AsIs に戻す' : 'ToBe へ変形'}</Button>
+        )}
+        {scene === 'hero' && (
+          <>
+            <Button icon={<VideoClip20Regular aria-hidden />} disabled={moving} onClick={() => flyPath(cameraPathPoses(preset.cameraPath, layout), () => goHome(true))}>
+              カメラパスを再生
+            </Button>
+            <Button icon={<ZoomFit20Regular aria-hidden />} disabled={moving} onClick={() => goHome(true)}>全体を見渡す</Button>
+          </>
         )}
         {notice && <Text role="status" data-testid="quality-notice">{notice}</Text>}
       </div>

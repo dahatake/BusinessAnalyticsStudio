@@ -190,9 +190,9 @@ export function particlePosition(i: number, t: number, out: [number, number, num
   return out;
 }
 
-export function objectCount(scene: SceneKey, preset: IndustryPreset, particles: number): number {
+export function objectCount(scene: SceneKey, preset: IndustryPreset, particles: number, twinObjects = 0): number {
   switch (scene) {
-    case 'hero': return heroObjects(preset).length;
+    case 'hero': return heroObjects(preset).length + twinObjects;
     case 'kpi-tower': return kpiTowerObjects(preset).length;
     case 'dataflow': return SOURCE_NODES.length + 1 + particles;
     default: return MORPH_COUNT;

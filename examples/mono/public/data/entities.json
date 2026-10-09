@@ -1,11 +1,20 @@
 {
   "entities": [
     {
-      "id": "ent-mono-line-a", "createdBy": "sample", "type": "site", "name": "第 1 組立ライン", "sourceIds": ["src-mono-001"],
+      "id": "ent-mono-line-a", "createdBy": "sample", "type": "site", "name": "第 1 組立ライン", "parentId": "ent-mono-plant", "location": { "lat": 35.083, "lng": 137.156 }, "sourceIds": ["src-mono-001"],
       "metrics": [
         { "label": "月間の計画外停止", "value": 14, "unit": "回", "sourceIds": ["src-mono-001"] }
       ]
     },
+    { "id": "ent-mono-robot", "createdBy": "sample", "type": "part", "name": "組立ロボット", "parentId": "ent-mono-line-a", "sourceIds": ["src-mono-001"] },
+    { "id": "ent-mono-press", "createdBy": "sample", "type": "part", "name": "プレス機", "parentId": "ent-mono-line-a", "sourceIds": ["src-mono-001"] },
+    { "id": "ent-mono-motor", "createdBy": "sample", "type": "part", "name": "サーボモーター", "parentId": "ent-mono-robot", "relatedIds": ["ent-mono-leader"], "sourceIds": ["src-mono-001"] },
+    { "id": "ent-mono-gripper", "createdBy": "sample", "type": "part", "name": "グリッパー", "parentId": "ent-mono-robot", "sourceIds": ["src-mono-001"] },
+    { "id": "ent-mono-sensor", "createdBy": "sample", "type": "part", "name": "圧力センサー", "parentId": "ent-mono-press", "sourceIds": ["src-mono-001"] },
+    { "id": "ent-mono-die", "createdBy": "sample", "type": "part", "name": "金型", "parentId": "ent-mono-press", "sourceIds": ["src-mono-001"] },
+    { "id": "ent-mono-plant", "createdBy": "sample", "type": "site", "name": "ミズホ精機 本社工場", "location": { "lat": 35.1815, "lng": 136.9066 }, "sourceIds": ["src-mono-001"] },
+    { "id": "ent-mono-line-b", "createdBy": "sample", "type": "site", "name": "第 2 組立ライン", "parentId": "ent-mono-plant", "location": { "lat": 34.7108, "lng": 137.7261 }, "sourceIds": ["src-mono-001"] },
+    { "id": "ent-mono-conveyor", "createdBy": "sample", "type": "part", "name": "搬送コンベア", "parentId": "ent-mono-line-b", "sourceIds": ["src-mono-001"] },
     { "id": "ent-mono-leader", "createdBy": "sample", "type": "role", "name": "現場リーダー", "sourceIds": ["src-mono-002"] }
   ]
 }

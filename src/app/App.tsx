@@ -5,6 +5,7 @@ import { AiStatus } from '../ai/AiStatus';
 import { DiscussionFileActions } from '../discussion/FileActions';
 import { AppShell } from '../components/AppShell';
 import { BrandLockup } from '../components/Brand';
+import { TimeAxis } from '../components/TimeAxis';
 import { AnimationStatus } from '../motion/AnimationController';
 import { runTransition } from '../motion/fluent';
 import { useAnimation } from '../store/animation';
@@ -84,7 +85,7 @@ export function App() {
         title={`${name} ${projectName}`}
         screens={SCREENS}
         onSelect={selectComponent}
-        headerExtra={<><DiscussionFileActions /><AnimationStatus /><AiStatus /></>}
+        headerExtra={<><DiscussionFileActions /><TimeAxis /><AnimationStatus /><AiStatus /></>}
         actions={<><PersonaMenu /><ResetLayoutButton /><PresentationButton /></>}
         dock={<Dock screens={SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
