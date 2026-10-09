@@ -93,10 +93,10 @@
 | FR-083 | 演出強度の切替 | 承認済み | 未実装 | 未実装 | なし |
 | FR-084 | ショーコントロールバー | 承認済み | 未実装 | 未実装 | なし |
 | FR-085 | ショートカット一覧 | 承認済み | 未実装 | 未実装 | なし |
-| FR-086 | 無限キャンバスと複数ボード | 承認済み | 未実装 | 未実装 | なし |
-| FR-087 | ペン・タッチ・マウスの統一入力 | 承認済み | 未実装 | 未実装 | なし |
-| FR-088 | インクの道具 | 承認済み | 未実装 | 未実装 | なし |
-| FR-089 | フリーハンドの図形の整形 | 承認済み | 未実装 | 未実装 | なし |
+| FR-086 | 無限キャンバスと複数ボード | 承認済み | src/screens/whiteboard/WhiteboardScreen.tsx, src/ink/store.ts, src/ink/viewport.ts, src/ink/BoardSurface.tsx, src/ink/AnnotationLayer.tsx, src/screens/View3DScreen.tsx, src/screens/registry.ts | tests/unit/ink.test.ts (AC-104), tests/system/e2e/ink-board.spec.ts (E2E-082) | デザイン基盤, インク・ボード基盤, 画面の登録, テスト用フック |
+| FR-087 | ペン・タッチ・マウスの統一入力 | 承認済み | src/ink/input.ts, src/ink/outline.ts, src/ink/BoardSurface.tsx | tests/unit/ink.test.ts (AC-105。AC-106 は手動) | インク・ボード基盤 |
+| FR-088 | インクの道具 | 承認済み | src/ink/InkToolbar.tsx, src/ink/geometry.ts, src/ink/store.ts, src/ink/render.ts, src/ink/BoardSurface.tsx | tests/unit/ink.test.ts (AC-107), tests/system/e2e/ink-board.spec.ts (E2E-083) | デザイン基盤, インク・ボード基盤 |
+| FR-089 | フリーハンドの図形の整形 | 承認済み | src/ink/recognize.ts, src/ink/BoardSurface.tsx | tests/unit/ink.test.ts (AC-108) | インク・ボード基盤 |
 | FR-090 | 手書き文字の認識と反映 | 承認済み | 未実装 | 未実装 | なし |
 | FR-091 | フローティングツールバーとプレゼン中の注釈 | 承認済み | 未実装 | 未実装 | なし |
 | FR-092 | PDF 出力 | 承認済み | 未実装 | 未実装 | なし |
@@ -143,7 +143,7 @@
 | NFR-PERF-001 | 顧客パックの生成から起動までの時間 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-PERF-002 | 4K 表示での描画性能 | 承認済み | src/three/quality.ts, src/three/SceneCanvas.tsx, src/screens/SettingsScreen.tsx | docs/manual-tests.md | 3D 基盤 |
 | NFR-PERF-003 | 初回表示の時間 | 承認済み | 未実装 | 未実装 | なし |
-| NFR-PERF-004 | インクの描画遅延 | 承認済み | 未実装 | 未実装 | なし |
+| NFR-PERF-004 | インクの描画遅延 | 承認済み | src/ink/render.ts, src/ink/BoardSurface.tsx, src/ink/store.ts | tests/unit/ink.test.ts (AC-164 の前提の合成データ。AC-164 は手動。自動の計測は FR-095 の AC-117) | インク・ボード基盤 |
 | NFR-ENV-001 | 対応ブラウザーと端末 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-ENV-002 | 外部サーバーなし・オフラインでの動作 | 承認済み | src/data/loader.ts, src/ai/client.ts, vite.config.ts | tests/unit/template.test.ts (AC-167), tests/system/e2e/quality.spec.ts (AC-167) | 顧客パックの読み込み, AI 呼び出し口 |
 | NFR-L10N-001 | 日本語の UI | 承認済み | 未実装 | 未実装 | なし |
@@ -185,10 +185,11 @@
 |---|---|---|---|
 | ブランドテーマ | src/theme/brand.ts, src/theme/brandTheme.ts, src/theme/useBrand.ts | ブランドランプ（16 段階）の生成、コントラストの検証と補正（補正は記録）、Light/Dark のテーマへの適用、フォントの順、Primary 色の上書き | FR-059, FR-060, FR-062, FR-064 |
 | ブランド表示部品 | src/components/Brand.tsx | ロゴ（確認済みのみ）とプレースホルダー、「顧客名 × Microsoft」、等幅数字の KpiValue（KPI の数値はこれで表示する） | FR-061, FR-062 |
-| デザイン基盤 | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/components/AppShell.tsx, src/components/Panel.tsx, src/components/panelKeys.ts, src/components/StateViews.tsx | Fluent UI v9 のトークン・4px グリッド・Light/Dark/ハイコントラスト、アプリの外枠、読み込み中/0 件/エラーの表示。以降の画面はこれを再利用する | FR-001, FR-002, FR-007, FR-008, FR-011, FR-012, FR-013, FR-014, FR-048, FR-049, FR-050, FR-051, FR-058, FR-059, FR-065, FR-066, FR-109, FR-110 |
+| デザイン基盤 | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/components/AppShell.tsx, src/components/Panel.tsx, src/components/panelKeys.ts, src/components/StateViews.tsx | Fluent UI v9 のトークン・4px グリッド・Light/Dark/ハイコントラスト、アプリの外枠、読み込み中/0 件/エラーの表示。以降の画面はこれを再利用する | FR-001, FR-002, FR-007, FR-008, FR-011, FR-012, FR-013, FR-014, FR-048, FR-049, FR-050, FR-051, FR-058, FR-059, FR-065, FR-066, FR-086, FR-088, FR-109, FR-110 |
 | ワークスペース | src/workspace/layoutModel.ts, src/workspace/Workspace.tsx, src/workspace/PaneContext.tsx, src/workspace/Controls.tsx, src/store/layout.ts | レイアウトの木（分割とタブ）、ペルソナ別の保存、最大化/非表示/移動/タブ化、ドック、ペルソナ切替、既定に戻す。画面は Panel で包めば自動で対応する。registry に登録したキーが対象。画面はキーごとの描画先にポータルで描くので、移動・タブ切替でも状態が残る。既定が空なら登録済みの画面を並べる（暫定） | FR-012, FR-013, FR-014, FR-109, FR-110 |
-| テスト用フック | src/testing/hook.ts | `?e2e=1` のときだけ window.__edbTest に名前空間ごとのフックを足す（registerTestHook。キャンバスと 3D が共通で使う 1 つの入口） | FR-012 |
-| 画面の登録 | src/screens/registry.ts, src/screens/types.ts | 画面を足すときは registry に 1 行足す（nav-key / component-key） | FR-001, FR-007, FR-048, FR-058, FR-065, FR-066 |
+| テスト用フック | src/testing/hook.ts | `?e2e=1` のときだけ window.__edbTest に名前空間ごとのフックを足す（registerTestHook。キャンバスと 3D が共通で使う 1 つの入口） | FR-012, FR-086 |
+| インク・ボード基盤 | src/ink/model.ts, src/ink/store.ts, src/ink/viewport.ts, src/ink/render.ts, src/ink/geometry.ts, src/ink/input.ts, src/ink/outline.ts, src/ink/recognize.ts, src/ink/BoardSurface.tsx, src/ink/InkToolbar.tsx, src/ink/AnnotationLayer.tsx | 自前の Canvas 実装（外部ライブラリなし。Q-003 の推奨案 A）。ボード（議題ごと・背景・視点）、ストローク（筆圧）、図形・テキスト・付箋・画像の項目、元に戻す/やり直し、`BoardSurface`（描画面。overlay で他のビューの上の注釈）、`InkToolbar`、`useInk` ストア、`PointerRouter`（ペン=描画/指=パン/手のひら無視）、`recognizeShape`。テスト用フックの `board`・`ink.loadSynthetic`・`annotations` を登録する。保存（FR-095）・出力（FR-092/093）・手書き認識（FR-090）・付箋の整理（FR-099）は `useInk` の boards を読む／書く | FR-086, FR-087, FR-088, FR-089, NFR-PERF-004 |
+| 画面の登録 | src/screens/registry.ts, src/screens/types.ts | 画面を足すときは registry に 1 行足す（nav-key / component-key） | FR-001, FR-007, FR-048, FR-058, FR-065, FR-066, FR-086 |
 | 設定ストア | src/store/settings.ts | Zustand と localStorage の利用者設定（テーマ、ブランドの Primary 色の上書き、3D 品質） | FR-058, FR-064, FR-069 |
 | AI 呼び出し口 | src/ai/client.ts, src/ai/useAi.ts, src/ai/AiStatus.tsx, src/ai/AiSettings.tsx, src/ai/ChatScreen.tsx | askAi（5 種類の LLM 処理の唯一の入口。既定はモック、実接続は確認後のみ localhost の中継へ）、常時表示の AI 状態、設定の実接続切替、チャットの土台（FR-017 が拡張） | FR-010, FR-011, FR-050, FR-132, NFR-ENV-002, NFR-SEC-002 |
 | Copilot SDK 中継プロセス | scripts/relay/relay.ts, scripts/relay/copilot-adapter.ts, scripts/relay/start.ts | 127.0.0.1 だけで待ち受ける Node.js の中継。`npm run relay` | FR-010, FR-011, FR-132 |

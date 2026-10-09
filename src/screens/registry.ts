@@ -1,4 +1,4 @@
-import { Chat24Regular, CommentMultiple24Regular, Cube24Regular, DataBarHorizontal24Regular, Settings24Regular, TaskListSquareLtr24Regular, Window24Regular } from '@fluentui/react-icons';
+import { Chat24Regular, CommentMultiple24Regular, Cube24Regular, DataBarHorizontal24Regular, Settings24Regular, TaskListSquareLtr24Regular, Whiteboard24Regular, Window24Regular } from '@fluentui/react-icons';
 import type { ScreenDefinition } from './types';
 import { SettingsScreen } from './SettingsScreen';
 import { ThemesScreen } from './ThemesScreen';
@@ -6,6 +6,7 @@ import { CanvasScreen } from './canvas/CanvasScreen';
 import { IssueSolutionScreen } from './IssueSolutionScreen';
 import { GanttScreen } from './GanttScreen';
 import { View3DScreen } from './View3DScreen';
+import { WhiteboardScreen } from './whiteboard/WhiteboardScreen';
 import { ChatScreen } from '../ai/ChatScreen';
 
 /** 画面の一覧（ナビゲーションの並び順）。 */
@@ -14,6 +15,7 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'issue-solution', label: '課題-解決策分析', icon: TaskListSquareLtr24Regular, component: IssueSolutionScreen },
   { key: 'gantt', label: 'ガントチャート', icon: DataBarHorizontal24Regular, component: GanttScreen },
   { key: 'view3d', label: '3D ビュー', icon: Cube24Regular, component: View3DScreen },
+  { key: 'whiteboard', label: 'ホワイトボード', icon: Whiteboard24Regular, component: WhiteboardScreen },
   { key: 'themes', label: '議論テーマ', icon: CommentMultiple24Regular, component: ThemesScreen },
   { key: 'settings', label: '設定パネル', icon: Settings24Regular, component: SettingsScreen },
   { key: 'chat', label: 'チャット', icon: Chat24Regular, component: ChatScreen },
