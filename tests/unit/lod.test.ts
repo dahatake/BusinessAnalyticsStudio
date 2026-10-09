@@ -12,7 +12,7 @@ import { usePackStore } from '../../src/store/pack';
 import { CAMERA_FOV, framePose, homePose, setPose } from '../../src/three/cameraRig';
 import {
   FADE_SECONDS, HYSTERESIS_RATIO, defaultRatio, focusChain, homeDistance, hysteresisBand, initialLevel, minimapModel,
-  nextVisible, plateOpacity, resolveLevels, stepLevel, type LevelState,
+  nextVisible, plateOpacity, resolveLevels, stepLevel, minimapNeighbor, type LevelState,
 } from '../../src/three/lod';
 import { registerSceneCanvas, sceneObjects } from '../../src/three/twinProbe';
 import { viewportAspect } from '../../src/three/sceneViewport';
@@ -357,5 +357,25 @@ describe('FR-036 AC-043 表示中の階層だけを生成し、同じ形状を�
     expect(o.opacity).toBeLessThan(0.2);
     useAnimation.setState({ playing: false });
     expect(useLod.getState().levels[3]!.opacity).toBe(1);
+  });
+});
+
+// FR-033 AC-040（ミニマップのキーボード操作: 矢印で場所を選び、Enter で移動する）
+describe('FR-033 AC-040 ミニマップのキーボード操作（minimapNeighbor）', () => {
+  const layout = twinLayoutOf(loadPack('mono'));
+  it('左右は同じ階層の隣（水平の位置順）、上は親、下は表示中の子の先頭に動く', () => {
+    expect(minimapNeighbor(layout, 3, 'ent-mono-line-a', 'ArrowRight')).toBe('ent-mono-line-b');
+    expect(minimapNeighbor(layout, 3, 'ent-mono-line-b', 'ArrowLeft')).toBe('ent-mono-line-a');
+    expect(minimapNeighbor(layout, 3, 'ent-mono-robot', 'ArrowRight')).toBe('ent-mono-press');
+    expect(minimapNeighbor(layout, 3, 'ent-mono-robot', 'ArrowUp')).toBe('ent-mono-line-a');
+    expect(minimapNeighbor(layout, 3, 'ent-mono-line-a', 'ArrowDown')).toBe('ent-mono-robot');
+    expect(minimapNeighbor(layout, 3, 'ent-mono-robot', 'ArrowDown')).toBe('ent-mono-motor');
+  });
+  it('端・最上位・末端・表示中でない階層へは動かず、今の場所のまま', () => {
+    expect(minimapNeighbor(layout, 3, 'ent-mono-line-b', 'ArrowRight')).toBe('ent-mono-line-b');
+    expect(minimapNeighbor(layout, 3, 'ent-mono-plant', 'ArrowUp')).toBe('ent-mono-plant');
+    expect(minimapNeighbor(layout, 3, 'ent-mono-motor', 'ArrowDown')).toBe('ent-mono-motor');
+    expect(minimapNeighbor(layout, 2, 'ent-mono-robot', 'ArrowDown')).toBe('ent-mono-robot');
+    expect(minimapNeighbor(layout, 3, 'nothing', 'ArrowLeft')).toBe('nothing');
   });
 });

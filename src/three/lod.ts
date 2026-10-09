@@ -154,6 +154,26 @@ export function focusChain(layout: TwinLayout, target: Vec3, shownDepth: number)
   return chain;
 }
 
+/**
+ * ミニマップをキーボードで操作するときの、次の場所（FR-033）。左右: 同じ階層の隣（水平の位置順）、上: 親、下: 表示中の子の先頭。
+ * 動けない向きでは、今の場所のまま。表示中のレベルより深い項目には移らない。
+ */
+export function minimapNeighbor(layout: TwinLayout, shownDepth: number, fromId: string, key: 'ArrowLeft' | 'ArrowRight' | 'ArrowUp' | 'ArrowDown'): string {
+  const cur = layout.byId.get(fromId);
+  if (!cur) return fromId;
+  const byX = (a: TwinObject, b: TwinObject): number => a.position[0] - b.position[0] || a.position[2] - b.position[2];
+  if (key === 'ArrowUp') return cur.parentId && layout.byId.has(cur.parentId) ? cur.parentId : fromId;
+  if (key === 'ArrowDown') {
+    if (cur.depth + 1 > shownDepth) return fromId;
+    const first = cur.childIds.map((id) => layout.byId.get(id)!).filter(Boolean).sort(byX)[0];
+    return first ? first.entityId : fromId;
+  }
+  const same = layout.objects.filter((o) => o.depth === cur.depth).sort(byX);
+  const i = same.findIndex((o) => o.entityId === fromId);
+  const next = same[Math.min(same.length - 1, Math.max(0, i + (key === 'ArrowRight' ? 1 : -1)))];
+  return next ? next.entityId : fromId;
+}
+
 // ---- ミニマップ（FR-033） ----
 
 export interface MinimapRect { entityId: string; depth: number; x: number; y: number; w: number; h: number }

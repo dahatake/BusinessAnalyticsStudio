@@ -1,11 +1,11 @@
 // パンくずリストとミニマップ（FR-033）。3D ビューの上に置き、現在の階層を示し、クリックまたは Enter でその場所へフライスルーする。
 // 階層の判定はカメラの注視点と、表示中のレベル（src/store/lod.ts）から。キャンバスが非表示でも同じ値を読める。
-import { useMemo, type MouseEvent } from 'react';
+import { useMemo, useState, type KeyboardEvent, type MouseEvent } from 'react';
 import { makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { useLod } from '../store/lod';
 import { CAMERA_FOV, currentPose, flyTo, framePose, useCameraRig } from '../three/cameraRig';
 import type { TwinLayout, TwinObject } from '../three/entityLayout';
-import { focusChain, minimapModel } from '../three/lod';
+import { focusChain, minimapModel, minimapNeighbor } from '../three/lod';
 import { viewportAspect } from '../three/sceneViewport';
 import { useTwinLayout } from '../three/twin';
 
@@ -34,6 +34,7 @@ const useStyles = makeStyles({
     boxShadow: tokens.shadow8,
   },
   mapSvg: { display: 'block', cursor: 'pointer' },
+  srOnly: { position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' },
 });
 
 /** 項目の階層の視点へ移動する（フライスルー。アニメーション停止中は即座に切り替わる）。選択は変えない。 */
@@ -91,21 +92,51 @@ export function Minimap({ layout, chain }: { layout: TwinLayout; chain: readonly
     [layout, position, target, shown],
   );
   const current = new Set(chain.map((o) => o.entityId));
+  // キーボード操作: ミニマップにフォーカスして、矢印キーで場所を選び、Enter でその場所へ移動する。選択中の場所と表示範囲は、テキストでも読み上げる
+  const [cursor, setCursor] = useState<string | null>(null);
+  const tail = chain[chain.length - 1];
+  const cursorObj = cursor ? layout.byId.get(cursor) : undefined;
+  const status = cursorObj && cursorObj.depth <= shown
+    ? `ミニマップの選択: ${cursorObj.name}。Enter でその場所へ移動します。`
+    : `現在の表示範囲: ${chain.map((o) => o.name).join('、')}。`;
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
+    const from = cursorObj && cursorObj.depth <= shown ? cursorObj.entityId : tail?.entityId;
+    if (!from) return;
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      e.stopPropagation();
+      setCursor(minimapNeighbor(layout, shown, from, e.key));
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      const o = layout.byId.get(from);
+      if (!o) return;
+      e.preventDefault();
+      e.stopPropagation();
+      flyToEntity(o);
+    }
+  };
   const goTo = (px: number, py: number): void => {
     const [x, z] = model.toWorld(px, py);
     const hit = focusChain(layout, [x, 0, z], shown);
-    const tail = hit[hit.length - 1];
-    if (tail) flyToEntity(tail);
+    const last = hit[hit.length - 1];
+    if (last) flyToEntity(last);
   };
   return (
-    <div className={s.minimap} data-testid="minimap">
+    <div
+      className={s.minimap}
+      data-testid="minimap"
+      role="group"
+      tabIndex={0}
+      aria-label="ミニマップ。矢印キーで場所を選び、Enter でその場所へ移動します"
+      onKeyDown={onKeyDown}
+      onBlur={() => setCursor(null)}
+    >
+      <span className={s.srOnly} role="status" aria-live="polite" data-testid="minimap-status">{status}</span>
       <svg
         className={s.mapSvg}
         width={model.width}
         height={model.height}
         viewBox={`0 0 ${model.width} ${model.height}`}
-        role="group"
-        aria-label="ミニマップ（現在の表示範囲）"
+        aria-hidden="true"
         onClick={(e) => {
           const r = e.currentTarget.getBoundingClientRect();
           goTo(((e.clientX - r.left) / r.width) * model.width, ((e.clientY - r.top) / r.height) * model.height);
@@ -114,6 +145,7 @@ export function Minimap({ layout, chain }: { layout: TwinLayout; chain: readonly
         {model.rects.map((r) => {
           const o = layout.byId.get(r.entityId)!;
           const fill = specs[r.depth]?.meta?.color ?? (o.platform ? tokens.colorNeutralBackground5 : tokens.colorBrandBackground2);
+          const picked = cursor === r.entityId;
           return (
             <rect
               key={r.entityId}
@@ -122,7 +154,12 @@ export function Minimap({ layout, chain }: { layout: TwinLayout; chain: readonly
               y={r.y}
               width={Math.max(1.5, r.w)}
               height={Math.max(1.5, r.h)}
-              style={{ fill, fillOpacity: o.platform ? 0.35 : 0.9, stroke: current.has(r.entityId) ? tokens.colorBrandStroke1 : tokens.colorNeutralStroke2, strokeWidth: current.has(r.entityId) ? 2 : 1 }}
+              style={{
+                fill,
+                fillOpacity: o.platform ? 0.35 : 0.9,
+                stroke: picked ? tokens.colorStatusWarningBorder1 : current.has(r.entityId) ? tokens.colorBrandStroke1 : tokens.colorNeutralStroke2,
+                strokeWidth: picked ? 3 : current.has(r.entityId) ? 2 : 1,
+              }}
             >
               <title>{o.name}</title>
             </rect>
