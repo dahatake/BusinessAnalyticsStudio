@@ -10,6 +10,7 @@ import { runTransition } from '../motion/fluent';
 import { useAnimation } from '../store/animation';
 import { useEffectiveBrand } from '../theme/useBrand';
 import { ErrorView, LoadingView } from '../components/StateViews';
+import { PresentationBar, PresentationButton } from '../presentation/PresentationMode';
 import { SCREENS } from '../screens/registry';
 import { SelectionController } from '../selection/SelectionController';
 import { isComponentVisible, setAvailableComponents, useLayout } from '../store/layout';
@@ -84,7 +85,7 @@ export function App() {
         screens={SCREENS}
         onSelect={selectComponent}
         headerExtra={<><DiscussionFileActions /><AnimationStatus /><AiStatus /></>}
-        actions={<><PersonaMenu /><ResetLayoutButton /></>}
+        actions={<><PersonaMenu /><ResetLayoutButton /><PresentationButton /></>}
         dock={<Dock screens={SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
       >
@@ -118,6 +119,7 @@ export function App() {
             </MessageBar>
           </div>
         ) : null}
+        <PresentationBar />
         <Workspace screens={SCREENS} />
       </AppShell>
     </>

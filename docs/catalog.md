@@ -22,8 +22,8 @@
 | FR-012 | 議題間を移動できるキャンバス | 承認済み | src/screens/canvas/CanvasScreen.tsx, src/workspace/viewport.ts | tests/unit/workspace.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース, テスト用フック |
 | FR-013 | コンポーネントの最大化・通常表示・非表示 | 承認済み | src/components/Panel.tsx, src/components/panelKeys.ts, src/workspace/PaneContext.tsx, src/workspace/Workspace.tsx | tests/unit/workspace.test.ts, tests/unit/layoutStore.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
 | FR-014 | ドックからの再表示とペルソナ別レイアウトの保存 | 承認済み | src/store/layout.ts, src/workspace/Controls.tsx, src/workspace/layoutModel.ts | tests/unit/workspace.test.ts, tests/unit/layoutStore.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
-| FR-015 | ペルソナ別ビューの切替 | 承認済み | 未実装 | 未実装 | なし |
-| FR-016 | プレゼンテーションモード | 承認済み | 未実装 | 未実装 | なし |
+| FR-015 | ペルソナ別ビューの切替 | 承認済み | src/workspace/Controls.tsx, src/workspace/persona.ts, src/store/layout.ts | tests/unit/persona.test.ts, tests/system/e2e/layout.spec.ts (E2E-014) | デザイン基盤, ワークスペース, ペルソナ別の既定 |
+| FR-016 | プレゼンテーションモード | 承認済み | src/presentation/model.ts, src/presentation/PresentationMode.tsx, src/store/presentation.ts, src/screens/canvas/CanvasScreen.tsx, src/app/App.tsx | tests/unit/persona.test.ts, tests/system/e2e/presentation.spec.ts (E2E-015, E2E-016) | デザイン基盤, プレゼンテーションモード |
 | FR-017 | 検索と Copilot 風チャット | 承認済み | 未実装 | 未実装 | なし |
 | FR-018 | 中核オブジェクトの選定理由と変更 | 承認済み | 未実装 | 未実装 | なし |
 | FR-019 | ビジネス⇔IT のレンズ切替 | 承認済み | 未実装 | 未実装 | なし |
@@ -119,8 +119,8 @@
 | FR-109 | コンポーネントの移動・大きさの変更・タブ化 | 承認済み | src/workspace/Workspace.tsx, src/workspace/PaneContext.tsx, src/workspace/layoutModel.ts | tests/unit/workspace.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
 | FR-110 | 既定のレイアウトへの復元 | 承認済み | src/workspace/Controls.tsx, src/store/layout.ts | tests/unit/workspace.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
 | FR-111 | コマンドパレット | 承認済み | 未実装 | 未実装 | なし |
-| FR-112 | ペルソナ別の既定の情報表現と既定のレイアウト | 承認済み | 未実装 | 未実装 | なし |
-| FR-113 | 表現が成り立たないときの代替表示 | 承認済み | 未実装 | 未実装 | なし |
+| FR-112 | ペルソナ別の既定の情報表現と既定のレイアウト | 承認済み | src/workspace/persona.ts, src/workspace/layoutModel.ts, src/store/layout.ts | tests/unit/persona.test.ts, tests/system/e2e/layout.spec.ts (E2E-102, E2E-103) | ワークスペース, ペルソナ別の既定 |
+| FR-113 | 表現が成り立たないときの代替表示 | 承認済み | src/analysis/fallback.ts, src/store/fallback.ts, src/components/UnrenderableNote.tsx, src/screens/TableScreen.tsx | tests/unit/persona.test.ts, tests/system/e2e/views3d.spec.ts (E2E-104) | デザイン基盤, 代替表示 |
 | FR-114 | 一意の ID と ID による参照 | 承認済み | src/schema/validate.ts、src/schema/common.ts | tests/unit/pack.test.ts | 顧客パックのスキーマと検証 |
 | FR-115 | 数値・事実の出典 | 承認済み | src/schema/validate.ts, src/schema/files.ts | tests/unit/pack.test.ts (AC-141) | 顧客パックのスキーマと検証 |
 | FR-116 | 作成者の種別 | 承認済み | src/schema/common.ts, src/schema/edit.ts | tests/unit/pack.test.ts, tests/unit/partial.test.ts (AC-142) | 顧客パックのスキーマと検証 |
@@ -159,7 +159,7 @@
 | NFR-MAINT-001 | 型の厳格さと部品とスキーマの分離 | 承認済み | tsconfig.json, src/schema/index.ts | tests/unit/foundation.test.ts | 顧客パックのスキーマと検証 |
 | NFR-MAINT-002 | 雛形の回帰テスト | 承認済み | 未実装 | 未実装 | なし |
 | NFR-MAINT-003 | README | 承認済み | 未実装 | 未実装 | なし |
-| NFR-UX-001 | レイアウト・表現の切替で状態を失わない | 承認済み | 未実装 | 未実装 | なし |
+| NFR-UX-001 | レイアウト・表現の切替で状態を失わない | 承認済み | src/store/retained.ts, src/screens/canvas/CanvasScreen.tsx, src/workspace/Workspace.tsx | tests/unit/persona.test.ts, tests/system/e2e/layout.spec.ts (IT-013) | ワークスペース, 状態の保持 |
 | NFR-UX-002 | 狭い画面と高い拡大率での縮退 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-UX-003 | 時間のかかる処理の進行表示 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-UX-004 | エラーの原因と次の行動 | 承認済み | 未実装 | 未実装 | なし |
@@ -185,8 +185,8 @@
 |---|---|---|---|
 | ブランドテーマ | src/theme/brand.ts, src/theme/brandTheme.ts, src/theme/useBrand.ts | ブランドランプ（16 段階）の生成、コントラストの検証と補正（補正は記録）、Light/Dark のテーマへの適用、フォントの順、Primary 色の上書き | FR-059, FR-060, FR-062, FR-064 |
 | ブランド表示部品 | src/components/Brand.tsx | ロゴ（確認済みのみ）とプレースホルダー、「顧客名 × Microsoft」、等幅数字の KpiValue（KPI の数値はこれで表示する） | FR-061, FR-062 |
-| デザイン基盤 | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/components/AppShell.tsx, src/components/Panel.tsx, src/components/panelKeys.ts, src/components/StateViews.tsx | Fluent UI v9 のトークン・4px グリッド・Light/Dark/ハイコントラスト、アプリの外枠、読み込み中/0 件/エラーの表示。以降の画面はこれを再利用する | FR-001, FR-002, FR-007, FR-008, FR-011, FR-012, FR-013, FR-014, FR-048, FR-049, FR-050, FR-051, FR-058, FR-059, FR-065, FR-066, FR-070, FR-109, FR-110 |
-| ワークスペース | src/workspace/layoutModel.ts, src/workspace/Workspace.tsx, src/workspace/PaneContext.tsx, src/workspace/Controls.tsx, src/store/layout.ts | レイアウトの木（分割とタブ）、ペルソナ別の保存、最大化/非表示/移動/タブ化、ドック、ペルソナ切替、既定に戻す。画面は Panel で包めば自動で対応する。registry に登録したキーが対象。画面はキーごとの描画先にポータルで描くので、移動・タブ切替でも状態が残る。既定が空なら登録済みの画面を並べる（暫定） | FR-012, FR-013, FR-014, FR-109, FR-110 |
+| デザイン基盤 | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/components/AppShell.tsx, src/components/Panel.tsx, src/components/panelKeys.ts, src/components/StateViews.tsx | Fluent UI v9 のトークン・4px グリッド・Light/Dark/ハイコントラスト、アプリの外枠、読み込み中/0 件/エラーの表示。以降の画面はこれを再利用する | FR-001, FR-002, FR-007, FR-008, FR-011, FR-012, FR-013, FR-014, FR-015, FR-016, FR-048, FR-049, FR-050, FR-051, FR-058, FR-059, FR-065, FR-066, FR-070, FR-109, FR-110, FR-113 |
+| ワークスペース | src/workspace/layoutModel.ts, src/workspace/Workspace.tsx, src/workspace/PaneContext.tsx, src/workspace/Controls.tsx, src/store/layout.ts | レイアウトの木（分割とタブ）、ペルソナ別の保存、最大化/非表示/移動/タブ化、ドック、ペルソナ切替、既定に戻す。画面は Panel で包めば自動で対応する。registry に登録したキーが対象。画面はキーごとの描画先にポータルで描くので、移動・タブ切替でも状態が残る。既定が空なら登録済みの画面を並べる（暫定） | FR-012, FR-013, FR-014, FR-015, FR-109, FR-110, FR-112, NFR-UX-001 |
 | テスト用フック | src/testing/hook.ts | `?e2e=1` のときだけ window.__edbTest に名前空間ごとのフックを足す（registerTestHook。キャンバスと 3D が共通で使う 1 つの入口） | FR-012 |
 | 画面の登録 | src/screens/registry.ts, src/screens/types.ts | 画面を足すときは registry に 1 行足す（nav-key / component-key） | FR-001, FR-007, FR-048, FR-058, FR-065, FR-066 |
 | 設定ストア | src/store/settings.ts | Zustand と localStorage の利用者設定（テーマ、ブランドの Primary 色の上書き、ミュート、音量、演出強度。アニメ停止は src/store/animation.ts、3D 品質は src/store/view3d.ts が同じく保存） | FR-057, FR-058, FR-064, FR-069 |
@@ -209,3 +209,7 @@
 | 演出の動き | src/motion/tone.ts, src/motion/fluent.ts, src/motion/control.ts, src/motion/AnimationController.tsx, src/motion/useMotion.ts, src/motion/CountUp.tsx, src/motion/useDrawProgress.ts, src/motion/motion.css, src/store/animation.ts | ブランドトーン→演出の設定（演出強度の既定値・BGM の曲調・テンポ・テロップの文体）、Fluent 2 の時間とイージング、カウントアップ・チャート描画の進み、P キーでのグローバル停止（CSS・動画・3D）、動きを減らす設定での起動、アニメーション状態の表示（data-testid=animation-state）。動きの部品はこれを使い、停止中は最終値を即座に出す | FR-057, FR-063, FR-070, FR-071, FR-072 |
 | 業種プリセット | src/three/presets.ts, src/three/presetIcons.tsx | 5 業種（金融・製造・小売・物流・公共）の 3D シーン・カメラパス・アイコン・中核オブジェクトの表現。resolvePreset(customer.industryPreset) で選ぶ | FR-103 |
 | 雛形のバージョン | src/version.ts | TEMPLATE_VERSION（package.json の version）と、顧客パックの templateVersion との互換の判定（checkTemplateVersion） | FR-106 |
+| プレゼンテーションモード | src/presentation/model.ts, src/presentation/PresentationMode.tsx, src/store/presentation.ts | show.json の章・議題の順に巡るプレゼンテーション（開始/終了ボタン、進行バー `progress-bar`・`chapter`・`current-topic`、`←`/`→` で前/次。`↑`/`↓`・`Shift`+矢印・入力欄・メニューでは奪わない）。画面は `usePresentationStore` / `currentTopic` を読んで現在の議題に追従する（キャンバスが実装済み）。番組構成（FR-077）の次の予告カード・テロップ・ショーコントロールバーは、この進行バーとストアを拡張する | FR-016 |
+| 代替表示 | src/analysis/fallback.ts, src/store/fallback.ts, src/components/UnrenderableNote.tsx | 表現に必要な属性がない項目の扱い。`partitionRenderable` で分け、`<UnrenderableNote source reason items>` が「位置情報なし: N 件」を出す。選ぶと `useFallbackStore.request`（該当 ID）を立て、`table` コンポーネントがあれば再表示する（表は request を読んで該当項目を出す）。`table` 画面が未登録のときは一覧をその場に出す。地図・3D・ガントの画面が使う | FR-113 |
+| 状態の保持 | src/store/retained.ts | `useRetainedState(key, initial)`。入力中の内容・絞り込み・視点など、画面の作り直し（ペルソナの切替・非表示と再表示）をまたいで保ちたい一時的な状態を、`<画面のキー>.<名前>` で画面の外に持つ（保存はしない）。選択は共通選択状態ストア側 | NFR-UX-001 |
+| ペルソナ別の既定 | src/workspace/persona.ts | §7 の表（ペルソナ → 最大の領域の表現 `PERSONA_PRIMARY`）と、レイアウトから最大の領域を求める `largestComponent`。ペルソナの切替はレイアウトだけを変え、データの範囲を変えない | FR-015, FR-112 |
