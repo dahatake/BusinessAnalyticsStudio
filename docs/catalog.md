@@ -72,11 +72,11 @@
 | FR-062 | フォントのフォールバックと等幅数字 | 承認済み | 未実装 | 未実装 | なし |
 | FR-063 | ブランドトーンの演出への反映 | 承認済み | 未実装 | 未実装 | なし |
 | FR-064 | 設定パネルでのブランドの確認と上書き | 承認済み | 未実装 | 未実装 | なし |
-| FR-065 | 3D 描画とフォールバック | 承認済み | 未実装 | 未実装 | なし |
-| FR-066 | 必須の 3D シーン | 承認済み | 未実装 | 未実装 | なし |
+| FR-065 | 3D 描画とフォールバック | 承認済み | src/screens/View3DScreen.tsx, src/three/SceneCanvas.tsx, src/three/presets.ts, src/store/view3d.ts, src/screens/SettingsScreen.tsx | tests/system/e2e/views3d.spec.ts | デザイン基盤, 画面の登録, 3D 基盤 |
+| FR-066 | 必須の 3D シーン | 承認済み | src/screens/View3DScreen.tsx, src/three/SceneCanvas.tsx, src/three/presets.ts, src/store/view3d.ts, src/screens/SettingsScreen.tsx | tests/system/e2e/views3d.spec.ts | デザイン基盤, 画面の登録, 3D 基盤 |
 | FR-067 | シネマティック表現 | 承認済み | 未実装 | 未実装 | なし |
-| FR-068 | 3D アセットの権利 | 承認済み | 未実装 | 未実装 | なし |
-| FR-069 | 品質プリセットと自動の品質低下 | 承認済み | 未実装 | 未実装 | なし |
+| FR-068 | 3D アセットの権利 | 承認済み | CREDITS.md, src/three/presets.ts | tests/unit/assets-rights.test.ts | 3D 基盤 |
+| FR-069 | 品質プリセットと自動の品質低下 | 承認済み | src/three/quality.ts, src/store/view3d.ts, src/screens/SettingsScreen.tsx | tests/unit/quality.test.ts, tests/system/e2e/views3d.spec.ts | 3D 基盤, 設定ストア |
 | FR-070 | Fluent 2 のモーション | 承認済み | 未実装 | 未実装 | なし |
 | FR-071 | グローバルのアニメーション停止 | 承認済み | 未実装 | 未実装 | なし |
 | FR-072 | 動きを減らす設定での起動 | 承認済み | 未実装 | 未実装 | なし |
@@ -141,7 +141,7 @@
 | FR-131 | 雛形への改善要望の記録 | 承認済み | 未実装 | 未実装 | なし |
 | FR-132 | AI 実接続の明示的な有効化（Q-001 回答までの暫定） | 承認済み | 未実装 | 未実装 | なし |
 | NFR-PERF-001 | 顧客パックの生成から起動までの時間 | 承認済み | 未実装 | 未実装 | なし |
-| NFR-PERF-002 | 4K 表示での描画性能 | 承認済み | 未実装 | 未実装 | なし |
+| NFR-PERF-002 | 4K 表示での描画性能 | 承認済み | src/three/quality.ts, src/three/SceneCanvas.tsx, src/screens/SettingsScreen.tsx | docs/manual-tests.md（手動の AC-162） | 3D 基盤 |
 | NFR-PERF-003 | 初回表示の時間 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-PERF-004 | インクの描画遅延 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-ENV-001 | 対応ブラウザーと端末 | 承認済み | 未実装 | 未実装 | なし |
@@ -184,3 +184,4 @@
 | 設定ストア | src/store/settings.ts | Zustand と localStorage の利用者設定（現在はテーマ） | FR-058 |
 | 顧客パックのスキーマと検証 | src/schema/common.ts, src/schema/files.ts, src/schema/validate.ts, scripts/lib/pack-fs.ts | zod のスキーマ、ID の一意・参照・出典の検証。画面の部品を参照しない。schema の JSON は npm run gen:schema で生成 | FR-100, FR-114, FR-118, NFR-MAINT-001 |
 | 顧客パックの読み込み | src/data/loader.ts, src/store/pack.ts | 起動時に data・brand・runtime-config の JSON を読んで検証 | FR-100 |
+| 3D 基盤 | src/three/quality.ts, src/three/presets.ts, src/three/SceneCanvas.tsx, src/store/view3d.ts, src/store/animation.ts, src/testing/hook.ts | R3F + drei の描画（WebGPU 優先・WebGL2 フォールバック）、手続き生成の 4 シーン、品質プリセットと FPS 監視、テスト用フック登録（registerTestHook） | FR-065, FR-066, FR-068, FR-069, NFR-PERF-002 |
