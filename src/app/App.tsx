@@ -65,6 +65,12 @@ export function App() {
   const onSelect = useCallback((key: string) => selectComponent(key, motionRef.current), []);
 
   useEffect(() => { void load(); }, [load]);
+  // 顧客パックの読み込み中に Esc が押されたら、オープニングを飛ばす（読み込みが終わってから出るオープニングが、先の Esc を取りこぼさない）
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpened(true); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
   useEffect(() => installEditKeys(), []);
 
   const customer = state.status === 'ready' ? state.pack.data.customer : undefined;
