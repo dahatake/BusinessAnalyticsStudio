@@ -67,7 +67,7 @@ export function countFrame(): void {
   useView3D.setState((s) => ({ frame: s.frame + 1 }));
 }
 
-// ---- FPS の計測（アプリ全体で 1 つ。設定パネルでも読めるように常時動かす） ----
+// ---- FPS の計測（アプリ全体で 1 つ。値は 3D 表示中の最後の計測値を設定パネルでも読める） ----
 const monitor = new QualityMonitor();
 let meterStarted = false;
 
@@ -81,7 +81,9 @@ export function startFpsMeter(): void {
     const dt = now - last;
     if (dt >= 500) {
       const fps = (frames * 1000) / dt;
-      useView3D.setState({ fps: Math.round(fps * 10) / 10 });
+      // 3D を表示しているときだけ FPS を更新する。設定画面など 3D を開いていない間は
+      // 最後の計測値のまま変えず、表示が絶え間なく書き換わらないようにする（強制カラー等の比較でも安定）。
+      if (useView3D.getState().active) useView3D.setState({ fps: Math.round(fps * 10) / 10 });
       const s = useView3D.getState();
       if (s.active && useAnimation.getState().playing && document.visibilityState === 'visible') {
         const next = monitor.feed(fps, dt / 1000, s.quality);

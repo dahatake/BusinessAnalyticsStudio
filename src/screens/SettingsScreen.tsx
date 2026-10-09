@@ -40,7 +40,7 @@ export function SettingsScreen() {
         </Dropdown>
       </Field>
       <Text as="p" data-testid="quality-current">現在の品質: {quality}</Text>
-      <Text as="p" data-testid="fps">FPS: {fps.toFixed(1)} fps</Text>
+      <Text as="p" data-testid="fps">FPS: {fps.toFixed(1)} fps（3D 表示中の最後の計測値）</Text>
       <Text as="p" data-testid="renderer">描画方式: {renderer}</Text>
       {notice && <Text as="p" role="status">{notice}</Text>}
       <AiSettings />
