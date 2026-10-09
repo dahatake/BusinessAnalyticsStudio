@@ -1371,9 +1371,9 @@
       "command": "node tests/system/run.mjs AC-045",
       "canary": false,
       "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "last_commit": "e81ad94",
+      "last_run_at": "2026-10-09T20:41:04+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-035-202610092039.log",
       "history": [
         {
           "at": "2026-10-09T12:17:01+09:00",
@@ -1386,6 +1386,18 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: I15-edit(編集モード) I05-issues(issue-solution) I14-analysis(knowledge-graph) I07-selection(table)。I15-edit 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T20:39:29+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
+        },
+        {
+          "at": "2026-10-09T20:46:29+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: 他画面/導線(議論テーマにする,ナレッジグラフ,優先順位等)。後続統合後に再確認"
         }
       ]
     },
@@ -1501,9 +1513,9 @@
       "command": "node tests/system/run.mjs AC-050",
       "canary": false,
       "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "last_commit": "e81ad94",
+      "last_run_at": "2026-10-09T20:42:37+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-039-202610092041.log",
       "history": [
         {
           "at": "2026-10-09T12:17:09+09:00",
@@ -1516,6 +1528,18 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: I15-edit(編集モード) I14-analysis(architecture)。I15-edit 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T20:39:29+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
+        },
+        {
+          "at": "2026-10-09T20:46:30+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: 他画面/導線(議論テーマにする,ナレッジグラフ,優先順位等)。後続統合後に再確認"
         }
       ]
     },
@@ -1532,9 +1556,9 @@
       "command": "node tests/system/run.mjs AC-051",
       "canary": false,
       "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "last_commit": "e81ad94",
+      "last_run_at": "2026-10-09T20:42:50+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-040-202610092042.log",
       "history": [
         {
           "at": "2026-10-09T12:17:11+09:00",
@@ -1547,6 +1571,18 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: I15-edit(編集モード) I14-analysis(priority,summary)。I15-edit 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T20:39:30+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
+        },
+        {
+          "at": "2026-10-09T20:46:30+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: 他画面/導線(議論テーマにする,ナレッジグラフ,優先順位等)。後続統合後に再確認"
         }
       ]
     },
@@ -1594,9 +1630,9 @@
       "command": "node tests/system/run.mjs AC-053",
       "canary": false,
       "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "last_commit": "e81ad94",
+      "last_run_at": "2026-10-09T20:44:22+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-042-202610092042.log",
       "history": [
         {
           "at": "2026-10-09T12:17:15+09:00",
@@ -1609,6 +1645,18 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: I15-edit(編集モード) I14-analysis(discussion-tree)。I15-edit 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T20:39:30+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
+        },
+        {
+          "at": "2026-10-09T20:46:30+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: 他画面/導線(議論テーマにする,ナレッジグラフ,優先順位等)。後続統合後に再確認"
         }
       ]
     },
@@ -1624,10 +1672,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-054",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "e81ad94",
+      "last_run_at": "2026-10-09T20:44:26+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-043-202610092044.log",
       "history": [
         {
           "at": "2026-10-09T12:17:17+09:00",
@@ -1640,6 +1688,12 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: I05-issues(issue-solution) I15-edit(mock)。I15-edit 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T20:39:30+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
         }
       ]
     },
@@ -1655,10 +1709,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-055",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "e81ad94",
+      "last_run_at": "2026-10-09T20:44:31+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-044-202610092044.log",
       "history": [
         {
           "at": "2026-10-09T12:17:19+09:00",
@@ -1671,6 +1725,12 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: I15-edit(編集モード) I05-issues(詳細パネル) I07-selection(table)。I15-edit 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T20:39:31+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
         }
       ]
     },
@@ -1687,9 +1747,9 @@
       "command": "node tests/system/run.mjs AC-056",
       "canary": false,
       "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "last_commit": "e81ad94",
+      "last_run_at": "2026-10-09T20:46:04+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-045-202610092044.log",
       "history": [
         {
           "at": "2026-10-09T12:17:21+09:00",
@@ -1702,6 +1762,18 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: I15-edit(編集モード) I14-analysis(priority,summary) I07-selection(table)。I15-edit 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T20:39:31+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
+        },
+        {
+          "at": "2026-10-09T20:46:30+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: 他画面/導線(議論テーマにする,ナレッジグラフ,優先順位等)。後続統合後に再確認"
         }
       ]
     },
@@ -1717,10 +1789,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-057",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "e81ad94",
+      "last_run_at": "2026-10-09T20:46:07+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-046-202610092046.log",
       "history": [
         {
           "at": "2026-10-09T12:17:22+09:00",
@@ -1733,6 +1805,12 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: I15-edit(編集モード) I05-issues(詳細パネル) I07-selection(table)。I15-edit 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T20:39:31+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
         }
       ]
     },
@@ -1748,10 +1826,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-058",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "e81ad94",
+      "last_run_at": "2026-10-09T20:46:16+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-047-202610092046.log",
       "history": [
         {
           "at": "2026-10-09T12:17:24+09:00",
@@ -1764,6 +1842,12 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: I15-edit(編集モード) I07-selection(table)。I15-edit 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T20:39:31+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
         }
       ]
     },
@@ -1779,10 +1863,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-059",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "e81ad94",
+      "last_run_at": "2026-10-09T20:46:19+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-048-202610092046.log",
       "history": [
         {
           "at": "2026-10-09T12:17:26+09:00",
@@ -1795,6 +1879,12 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: I15-edit(編集モード) I05-issues(詳細パネル) I07-selection(table)。I15-edit 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T20:39:32+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
         }
       ]
     },
