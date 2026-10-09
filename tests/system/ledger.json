@@ -2334,9 +2334,9 @@
       "command": "node tests/system/run.mjs AC-087",
       "canary": false,
       "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "last_commit": "d26cc56",
+      "last_run_at": "2026-10-09T19:12:39+09:00",
+      "evidence": "work/runs/202610090557/logs/system-test/E2E-068-202610091911.log",
       "history": [
         {
           "at": "2026-10-09T12:17:55+09:00",
@@ -2349,6 +2349,18 @@
           "by": "conductor",
           "change": "blocked",
           "reason": "依存: I15-edit(編集モード) I07-selection(table) I19-motion()。I19-motion 統合後に not_run へ戻す"
+        },
+        {
+          "at": "2026-10-09T19:11:06+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "依存の画面が統合されたため再開"
+        },
+        {
+          "at": "2026-10-09T19:12:50+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "依存: 後続画面。統合後に再確認"
         }
       ]
     },
