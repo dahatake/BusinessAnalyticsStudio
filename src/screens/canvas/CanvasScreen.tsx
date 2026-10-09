@@ -8,6 +8,8 @@ import { CoreObjectPanel } from '../../coreobject/CoreObjectPanel';
 import { LensView } from '../../lens/LensView';
 import { useCoreObject } from '../../store/coreObject';
 import { usePackStore } from '../../store/pack';
+import { currentTopic, usePresentationStore } from '../../store/presentation';
+import { useRetainedState } from '../../store/retained';
 import { registerTestHook } from '../../testing/hook';
 import {
   CARD_H, CARD_W, GAP_X, GAP_Y, cardOrigin, centerOn, isCenteredOn, keyViewport, panBy, zoomAt, type Viewport,
@@ -84,10 +86,10 @@ export function CanvasScreen() {
   const coreY = -(CARD_H + GAP_Y);
   const { selected: core } = useCoreObject();
   const [showReason, setShowReason] = useState(false);
-  const [view, setViewState] = useState<Viewport>({ x: 40, y: 40 + CARD_H + GAP_Y, zoom: 1 });
-  const viewRef = useRef(view);
-  const setView = useCallback((v: Viewport) => { viewRef.current = v; setViewState(v); }, []);
-  const [selected, setSelected] = useState<string | null>(null);
+  // 視点と選択は、ペルソナの切替などで画面が作り直されても保つ（NFR-UX-001）
+  const [view, setViewState] = useRetainedState<Viewport>('canvas.view', { x: 40, y: 40 + CARD_H + GAP_Y, zoom: 1 });  const viewRef = useRef(view);
+  const setView = useCallback((v: Viewport) => { viewRef.current = v; setViewState(v); }, [setViewState]);
+  const [selected, setSelected] = useRetainedState<string | null>('canvas.selected', null);
   const [dragging, setDragging] = useState(false);
   const drag = useRef<{ x: number; y: number } | null>(null);
 
@@ -115,7 +117,11 @@ export function CanvasScreen() {
     setSelected(id);
     const { w, h } = size();
     setView(centerOn(viewRef.current, c.x + CARD_W / 2, c.y + CARD_H / 2, w, h));
-  }, [cards, setView]);
+  }, [cards, setView, setSelected]);
+
+  // プレゼンテーション中は、現在の議題の位置へ移動する（FR-016）
+  const presenting = usePresentationStore((st) => currentTopic(st)?.id ?? null);
+  useEffect(() => { if (presenting) goTo(presenting); }, [presenting, goTo]);
 
   useEffect(() => registerTestHook('canvas', {
     viewport: () => ({ ...viewRef.current }),

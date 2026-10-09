@@ -22,8 +22,8 @@
 | FR-012 | 議題間を移動できるキャンバス | 承認済み | src/screens/canvas/CanvasScreen.tsx, src/workspace/viewport.ts | tests/unit/workspace.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース, テスト用フック |
 | FR-013 | コンポーネントの最大化・通常表示・非表示 | 承認済み | src/components/Panel.tsx, src/components/panelKeys.ts, src/workspace/PaneContext.tsx, src/workspace/Workspace.tsx | tests/unit/workspace.test.ts, tests/unit/layoutStore.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
 | FR-014 | ドックからの再表示とペルソナ別レイアウトの保存 | 承認済み | src/store/layout.ts, src/workspace/Controls.tsx, src/workspace/layoutModel.ts | tests/unit/workspace.test.ts, tests/unit/layoutStore.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
-| FR-015 | ペルソナ別ビューの切替 | 承認済み | 未実装 | 未実装 | なし |
-| FR-016 | プレゼンテーションモード | 承認済み | 未実装 | 未実装 | なし |
+| FR-015 | ペルソナ別ビューの切替 | 承認済み | src/workspace/Controls.tsx, src/workspace/persona.ts, src/store/layout.ts | tests/unit/persona.test.ts, tests/system/e2e/layout.spec.ts (E2E-014) | デザイン基盤, ワークスペース, ペルソナ別の既定 |
+| FR-016 | プレゼンテーションモード | 承認済み | src/presentation/model.ts, src/presentation/PresentationMode.tsx, src/store/presentation.ts, src/screens/canvas/CanvasScreen.tsx, src/app/App.tsx | tests/unit/persona.test.ts, tests/system/e2e/presentation.spec.ts (E2E-015, E2E-016) | デザイン基盤, プレゼンテーションモード |
 | FR-017 | 検索と Copilot 風チャット | 承認済み | src/search/model.ts, src/search/GlobalSearch.tsx, src/ai/grounding.ts, src/ai/ChatScreen.tsx, src/app/App.tsx | tests/unit/search-chat.test.ts (AC-020, AC-021), tests/system/e2e/analysis.spec.ts (E2E-017, E2E-018) | グローバル検索, 選択状態とエンティティ関係グラフ, AI 呼び出し口, デザイン基盤 |
 | FR-018 | 中核オブジェクトの選定理由と変更 | 承認済み | src/coreobject/model.ts, src/coreobject/CoreObjectPanel.tsx, src/store/coreObject.ts, src/screens/canvas/CanvasScreen.tsx, src/schema/files.ts, schema/customer.json | tests/unit/core-lens.test.ts (AC-022), tests/system/e2e/analysis.spec.ts (E2E-019) | 中核オブジェクトと選定理由, 顧客パックのスキーマと検証, デザイン基盤 |
 | FR-019 | ビジネス⇔IT のレンズ切替 | 承認済み | src/lens/model.ts, src/lens/LensView.tsx, src/store/lens.ts, src/glossary/model.ts, src/glossary/GlossaryText.tsx, src/screens/canvas/CanvasScreen.tsx | tests/unit/core-lens.test.ts (AC-023), tests/system/e2e/analysis.spec.ts (E2E-020) | レンズと用語集, 選択状態とエンティティ関係グラフ, 顧客パックのスキーマと検証, デザイン基盤 |
@@ -36,7 +36,7 @@
 | FR-026 | 選択に応じた自動の絞り込み | 承認済み | src/screens/TableScreen.tsx, src/selection/model.ts (relatedSet, isVisibleInFilter), src/selection/hooks.ts (useSelectionFilter) | tests/unit/selection.test.ts (AC-031), tests/system/e2e/views.spec.ts (E2E-026) | 選択状態とエンティティ関係グラフ, 一覧表 |
 | FR-027 | ホバー・クリック・Esc の選択操作 | 承認済み | src/selection/keys.ts, src/selection/hooks.ts, src/store/selection.ts, src/screens/IssueSolutionScreen.tsx, src/screens/TableScreen.tsx | tests/unit/selection.test.ts (AC-032), tests/system/e2e/views.spec.ts (E2E-027) | 選択状態とエンティティ関係グラフ |
 | FR-028 | 選択状態の URL への反映と復元 | 承認済み | src/store/selection.ts (installUrlSync), src/selection/model.ts (parseSelectionHash, formatSelectionHash) | tests/unit/selection.test.ts (AC-033), tests/system/e2e/views.spec.ts (E2E-028) | 選択状態とエンティティ関係グラフ |
-| FR-029 | キーボード・スクリーンリーダーでの連動 | 承認済み | src/selection/Announcer.tsx, src/selection/announce.ts, src/commands/CommandPalette.tsx (ショートカット一覧), src/commands/registry.ts, src/commands/ui.ts, src/app/App.tsx | tests/unit/commands.test.ts (AC-034), tests/system/e2e/views.spec.ts (E2E-029) | 選択の通知（aria-live）, コマンドの登録簿, 選択状態とエンティティ関係グラフ |
+| FR-029 | キーボード・スクリーンリーダーでの連動 | 承認済み | src/selection/Announcer.tsx, src/selection/announce.ts, src/commands/CommandPalette.tsx (ショートカット一覧), src/commands/registry.ts, src/commands/ui.ts, src/app/App.tsx | tests/unit/commands.test.ts (AC-034), tests/system/e2e/views.spec.ts (E2E-029) | 選択の通知, コマンドの登録簿, 選択状態とエンティティ関係グラフ |
 | FR-030 | 階層と LOD のメタデータ | 承認済み | 未実装 | 未実装 | なし |
 | FR-031 | カメラ距離に応じた段階的な表示 | 承認済み | 未実装 | 未実装 | なし |
 | FR-032 | ヒステリシスによるちらつき防止 | 承認済み | 未実装 | 未実装 | なし |
@@ -64,22 +64,22 @@
 | FR-054 | 出力範囲・プレビュー・機密確認・形式の選択 | 承認済み | 未実装 | 未実装 | なし |
 | FR-055 | フォローアップ文書の同時生成 | 承認済み | 未実装 | 未実装 | なし |
 | FR-056 | エクスポートした Markdown からの復元 | 承認済み | src/discussion/memo.ts, src/discussion/restore.ts, src/discussion/FileActions.tsx | tests/unit/discussion.test.ts, tests/system/e2e/export.spec.ts (E2E-057) | 議論メモの書き出しと復元 |
-| FR-057 | 演出の設定の保存と復元 | 承認済み | 未実装 | 未実装 | なし |
+| FR-057 | 演出の設定の保存と復元 | 承認済み | src/store/settings.ts (muted, volume, intensity, themeMode), src/store/animation.ts (choice), src/store/view3d.ts (quality) | tests/unit/motion.test.ts (AC-070 6 項目の保存と復元), tests/system/e2e/brand-settings.spec.ts (E2E-058。コントロールバー（I22）の統合後に通る) | 設定ストア, 演出の動き |
 | FR-058 | Fluent 2 準拠のテーマ | 承認済み | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/screens/SettingsScreen.tsx | tests/unit/theme.test.ts | デザイン基盤, 画面の登録, 設定ストア |
 | FR-059 | ブランドランプの生成と適用 | 承認済み | src/theme/brand.ts, src/theme/brandTheme.ts, src/theme/AppThemeProvider.tsx, src/theme/useBrand.ts | tests/unit/brand.test.ts, tests/system/e2e/brand-settings.spec.ts | デザイン基盤, ブランドテーマ |
 | FR-060 | コントラストの自動検証と補正 | 承認済み | src/theme/brand.ts, src/theme/brandTheme.ts, src/screens/SettingsScreen.tsx | tests/unit/brand.test.ts, tests/system/e2e/brand-settings.spec.ts | ブランドテーマ |
 | FR-061 | ロゴの利用条件とプレースホルダー | 承認済み | src/components/Brand.tsx, src/app/App.tsx, src/components/AppShell.tsx | tests/unit/brand.test.ts, tests/system/e2e/brand-settings.spec.ts | ブランド表示部品 |
 | FR-062 | フォントのフォールバックと等幅数字 | 承認済み | src/theme/brandTheme.ts, src/components/Brand.tsx | tests/unit/brand.test.ts, tests/system/e2e/brand-settings.spec.ts | ブランドテーマ, ブランド表示部品（KpiValue） |
-| FR-063 | ブランドトーンの演出への反映 | 承認済み | 未実装 | 未実装 | なし |
+| FR-063 | ブランドトーンの演出への反映 | 承認済み | src/motion/tone.ts, src/motion/useMotion.ts | tests/unit/motion.test.ts (AC-078) | 演出の動き |
 | FR-064 | 設定パネルでのブランドの確認と上書き | 承認済み | src/screens/SettingsScreen.tsx, src/store/settings.ts, src/theme/useBrand.ts, schema/brand-profile.json, src/schema/files.ts | tests/unit/brand.test.ts, tests/system/e2e/brand-settings.spec.ts | 設定ストア, ブランドテーマ |
 | FR-065 | 3D 描画とフォールバック | 承認済み | src/screens/View3DScreen.tsx, src/three/SceneCanvas.tsx, src/three/presets.ts, src/store/view3d.ts, src/screens/SettingsScreen.tsx | tests/system/e2e/views3d.spec.ts | デザイン基盤, 画面の登録, 3D 基盤 |
 | FR-066 | 必須の 3D シーン | 承認済み | src/screens/View3DScreen.tsx, src/three/SceneCanvas.tsx, src/three/presets.ts, src/store/view3d.ts, src/screens/SettingsScreen.tsx | tests/system/e2e/views3d.spec.ts | デザイン基盤, 画面の登録, 3D 基盤 |
 | FR-067 | シネマティック表現 | 承認済み | 未実装 | 未実装 | なし |
 | FR-068 | 3D アセットの権利 | 承認済み | CREDITS.md, src/three/presets.ts | tests/unit/assets-rights.test.ts | 3D 基盤 |
 | FR-069 | 品質プリセットと自動の品質低下 | 承認済み | src/three/quality.ts, src/store/view3d.ts, src/screens/SettingsScreen.tsx | tests/unit/quality.test.ts, tests/system/e2e/views3d.spec.ts | 3D 基盤, 設定ストア |
-| FR-070 | Fluent 2 のモーション | 承認済み | 未実装 | 未実装 | なし |
-| FR-071 | グローバルのアニメーション停止 | 承認済み | 未実装 | 未実装 | なし |
-| FR-072 | 動きを減らす設定での起動 | 承認済み | 未実装 | 未実装 | なし |
+| FR-070 | Fluent 2 のモーション | 承認済み | src/motion/fluent.ts, src/motion/CountUp.tsx, src/motion/useDrawProgress.ts, src/motion/motion.css, src/app/App.tsx (画面遷移), src/app/Opening.tsx | tests/unit/motion.test.ts (AC-086 の動きの計算), docs/manual-tests.md (AC-086 の目視) | 演出の動き, デザイン基盤 |
+| FR-071 | グローバルのアニメーション停止 | 承認済み | src/motion/control.ts, src/motion/AnimationController.tsx, src/motion/motion.css, src/store/animation.ts, src/main.tsx | tests/unit/motion.test.ts (AC-087), tests/system/e2e/views3d.spec.ts (E2E-068。表・編集の画面の統合後に通る) | 演出の動き, 3D 基盤 |
+| FR-072 | 動きを減らす設定での起動 | 承認済み | src/store/animation.ts (prefersReducedMotion, resolvePlaying), src/app/Opening.tsx | tests/unit/motion.test.ts (AC-088), tests/system/e2e/presentation.spec.ts (E2E-069) | 演出の動き |
 | FR-073 | BGM と効果音 | 承認済み | 未実装 | 未実装 | なし |
 | FR-074 | ミュートと音量の操作 | 承認済み | 未実装 | 未実装 | なし |
 | FR-075 | ナレーション中のダッキング | 承認済み | 未実装 | 未実装 | なし |
@@ -93,10 +93,10 @@
 | FR-083 | 演出強度の切替 | 承認済み | 未実装 | 未実装 | なし |
 | FR-084 | ショーコントロールバー | 承認済み | 未実装 | 未実装 | なし |
 | FR-085 | ショートカット一覧 | 承認済み | 未実装 | 未実装 | なし |
-| FR-086 | 無限キャンバスと複数ボード | 承認済み | 未実装 | 未実装 | なし |
-| FR-087 | ペン・タッチ・マウスの統一入力 | 承認済み | 未実装 | 未実装 | なし |
-| FR-088 | インクの道具 | 承認済み | 未実装 | 未実装 | なし |
-| FR-089 | フリーハンドの図形の整形 | 承認済み | 未実装 | 未実装 | なし |
+| FR-086 | 無限キャンバスと複数ボード | 承認済み | src/screens/whiteboard/WhiteboardScreen.tsx, src/ink/store.ts, src/ink/viewport.ts, src/ink/BoardSurface.tsx, src/ink/AnnotationLayer.tsx, src/screens/View3DScreen.tsx, src/screens/registry.ts | tests/unit/ink.test.ts (AC-104), tests/system/e2e/ink-board.spec.ts (E2E-082) | デザイン基盤, インク・ボード基盤, 画面の登録, テスト用フック |
+| FR-087 | ペン・タッチ・マウスの統一入力 | 承認済み | src/ink/input.ts, src/ink/outline.ts, src/ink/BoardSurface.tsx | tests/unit/ink.test.ts (AC-105。AC-106 は手動) | インク・ボード基盤 |
+| FR-088 | インクの道具 | 承認済み | src/ink/InkToolbar.tsx, src/ink/geometry.ts, src/ink/store.ts, src/ink/render.ts, src/ink/BoardSurface.tsx | tests/unit/ink.test.ts (AC-107), tests/system/e2e/ink-board.spec.ts (E2E-083) | デザイン基盤, インク・ボード基盤 |
+| FR-089 | フリーハンドの図形の整形 | 承認済み | src/ink/recognize.ts, src/ink/BoardSurface.tsx | tests/unit/ink.test.ts (AC-108) | インク・ボード基盤 |
 | FR-090 | 手書き文字の認識と反映 | 承認済み | 未実装 | 未実装 | なし |
 | FR-091 | フローティングツールバーとプレゼン中の注釈 | 承認済み | 未実装 | 未実装 | なし |
 | FR-092 | PDF 出力 | 承認済み | 未実装 | 未実装 | なし |
@@ -119,8 +119,8 @@
 | FR-109 | コンポーネントの移動・大きさの変更・タブ化 | 承認済み | src/workspace/Workspace.tsx, src/workspace/PaneContext.tsx, src/workspace/layoutModel.ts | tests/unit/workspace.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
 | FR-110 | 既定のレイアウトへの復元 | 承認済み | src/workspace/Controls.tsx, src/store/layout.ts | tests/unit/workspace.test.ts, tests/system/e2e/layout.spec.ts | デザイン基盤, ワークスペース |
 | FR-111 | コマンドパレット | 承認済み | src/commands/registry.ts, src/commands/builtin.ts, src/commands/ui.ts, src/commands/CommandPalette.tsx, src/app/App.tsx | tests/unit/commands.test.ts (AC-136), tests/system/e2e/layout.spec.ts (E2E-101) | コマンドの登録簿, ワークスペース, デザイン基盤 |
-| FR-112 | ペルソナ別の既定の情報表現と既定のレイアウト | 承認済み | 未実装 | 未実装 | なし |
-| FR-113 | 表現が成り立たないときの代替表示 | 承認済み | 未実装 | 未実装 | なし |
+| FR-112 | ペルソナ別の既定の情報表現と既定のレイアウト | 承認済み | src/workspace/persona.ts, src/workspace/layoutModel.ts, src/store/layout.ts | tests/unit/persona.test.ts, tests/system/e2e/layout.spec.ts (E2E-102, E2E-103) | ワークスペース, ペルソナ別の既定 |
+| FR-113 | 表現が成り立たないときの代替表示 | 承認済み | src/analysis/fallback.ts, src/store/fallback.ts, src/components/UnrenderableNote.tsx, src/screens/TableScreen.tsx | tests/unit/persona.test.ts, tests/system/e2e/views3d.spec.ts (E2E-104) | デザイン基盤, 代替表示 |
 | FR-114 | 一意の ID と ID による参照 | 承認済み | src/schema/validate.ts、src/schema/common.ts | tests/unit/pack.test.ts | 顧客パックのスキーマと検証 |
 | FR-115 | 数値・事実の出典 | 承認済み | src/schema/validate.ts, src/schema/files.ts | tests/unit/pack.test.ts (AC-141) | 顧客パックのスキーマと検証 |
 | FR-116 | 作成者の種別 | 承認済み | src/schema/common.ts, src/schema/edit.ts | tests/unit/pack.test.ts, tests/unit/partial.test.ts (AC-142) | 顧客パックのスキーマと検証 |
@@ -143,7 +143,7 @@
 | NFR-PERF-001 | 顧客パックの生成から起動までの時間 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-PERF-002 | 4K 表示での描画性能 | 承認済み | src/three/quality.ts, src/three/SceneCanvas.tsx, src/screens/SettingsScreen.tsx | docs/manual-tests.md | 3D 基盤 |
 | NFR-PERF-003 | 初回表示の時間 | 承認済み | 未実装 | 未実装 | なし |
-| NFR-PERF-004 | インクの描画遅延 | 承認済み | 未実装 | 未実装 | なし |
+| NFR-PERF-004 | インクの描画遅延 | 承認済み | src/ink/render.ts, src/ink/BoardSurface.tsx, src/ink/store.ts | tests/unit/ink.test.ts (AC-164 の前提の合成データ。AC-164 は手動。自動の計測は FR-095 の AC-117) | インク・ボード基盤 |
 | NFR-ENV-001 | 対応ブラウザーと端末 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-ENV-002 | 外部サーバーなし・オフラインでの動作 | 承認済み | src/data/loader.ts, src/ai/client.ts, vite.config.ts | tests/unit/template.test.ts (AC-167), tests/system/e2e/quality.spec.ts (AC-167) | 顧客パックの読み込み, AI 呼び出し口 |
 | NFR-L10N-001 | 日本語の UI | 承認済み | 未実装 | 未実装 | なし |
@@ -159,7 +159,7 @@
 | NFR-MAINT-001 | 型の厳格さと部品とスキーマの分離 | 承認済み | tsconfig.json, src/schema/index.ts | tests/unit/foundation.test.ts | 顧客パックのスキーマと検証 |
 | NFR-MAINT-002 | 雛形の回帰テスト | 承認済み | 未実装 | 未実装 | なし |
 | NFR-MAINT-003 | README | 承認済み | 未実装 | 未実装 | なし |
-| NFR-UX-001 | レイアウト・表現の切替で状態を失わない | 承認済み | 未実装 | 未実装 | なし |
+| NFR-UX-001 | レイアウト・表現の切替で状態を失わない | 承認済み | src/store/retained.ts, src/screens/canvas/CanvasScreen.tsx, src/workspace/Workspace.tsx | tests/unit/persona.test.ts, tests/system/e2e/layout.spec.ts (IT-013) | ワークスペース, 状態の保持 |
 | NFR-UX-002 | 狭い画面と高い拡大率での縮退 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-UX-003 | 時間のかかる処理の進行表示 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-UX-004 | エラーの原因と次の行動 | 承認済み | 未実装 | 未実装 | なし |
@@ -185,12 +185,13 @@
 |---|---|---|---|
 | ブランドテーマ | src/theme/brand.ts, src/theme/brandTheme.ts, src/theme/useBrand.ts | ブランドランプ（16 段階）の生成、コントラストの検証と補正（補正は記録）、Light/Dark のテーマへの適用、フォントの順、Primary 色の上書き | FR-059, FR-060, FR-062, FR-064 |
 | ブランド表示部品 | src/components/Brand.tsx | ロゴ（確認済みのみ）とプレースホルダー、「顧客名 × Microsoft」、等幅数字の KpiValue（KPI の数値はこれで表示する） | FR-061, FR-062 |
-| デザイン基盤 | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/components/AppShell.tsx, src/components/Panel.tsx, src/components/panelKeys.ts, src/components/StateViews.tsx | Fluent UI v9 のトークン・4px グリッド・Light/Dark/ハイコントラスト、アプリの外枠、読み込み中/0 件/エラーの表示。以降の画面はこれを再利用する | FR-001, FR-002, FR-007, FR-008, FR-011, FR-012, FR-013, FR-014, FR-017, FR-018, FR-019, FR-048, FR-049, FR-050, FR-051, FR-058, FR-059, FR-065, FR-066, FR-109, FR-110, FR-111 |
-| ワークスペース | src/workspace/layoutModel.ts, src/workspace/Workspace.tsx, src/workspace/PaneContext.tsx, src/workspace/Controls.tsx, src/store/layout.ts | レイアウトの木（分割とタブ）、ペルソナ別の保存、最大化/非表示/移動/タブ化、ドック、ペルソナ切替、既定に戻す。画面は Panel で包めば自動で対応する。registry に登録したキーが対象。画面はキーごとの描画先にポータルで描くので、移動・タブ切替でも状態が残る。既定が空なら登録済みの画面を並べる（暫定） | FR-012, FR-013, FR-014, FR-109, FR-110, FR-111 |
-| テスト用フック | src/testing/hook.ts | `?e2e=1` のときだけ window.__edbTest に名前空間ごとのフックを足す（registerTestHook。キャンバスと 3D が共通で使う 1 つの入口） | FR-012 |
-| 画面の登録 | src/screens/registry.ts, src/screens/types.ts | 画面を足すときは registry に 1 行足す（nav-key / component-key） | FR-001, FR-007, FR-048, FR-058, FR-065, FR-066 |
-| 設定ストア | src/store/settings.ts | Zustand と localStorage の利用者設定（テーマ、ブランドの Primary 色の上書き、3D 品質） | FR-058, FR-064, FR-069 |
-| AI 呼び出し口 | src/ai/client.ts, src/ai/useAi.ts, src/ai/AiStatus.tsx, src/ai/AiSettings.tsx, src/ai/ChatScreen.tsx | askAi（5 種類の LLM 処理の唯一の入口。既定はモック、実接続は確認後のみ localhost の中継へ）、常時表示の AI 状態、設定の実接続切替、チャットの土台（FR-017 で根拠づけと出典カードを追加） | FR-010, FR-011, FR-017, FR-050, FR-132, NFR-ENV-002, NFR-SEC-002 |
+| デザイン基盤 | src/theme/tokens.ts, src/theme/resolve.ts, src/theme/AppThemeProvider.tsx, src/components/AppShell.tsx, src/components/Panel.tsx, src/components/panelKeys.ts, src/components/StateViews.tsx | Fluent UI v9 のトークン・4px グリッド・Light/Dark/ハイコントラスト、アプリの外枠、読み込み中/0 件/エラーの表示。以降の画面はこれを再利用する | FR-001, FR-002, FR-007, FR-008, FR-011, FR-012, FR-013, FR-014, FR-015, FR-016, FR-017, FR-018, FR-019, FR-048, FR-049, FR-050, FR-051, FR-058, FR-059, FR-065, FR-066, FR-086, FR-088, FR-070, FR-109, FR-110, FR-111, FR-113 |
+| ワークスペース | src/workspace/layoutModel.ts, src/workspace/Workspace.tsx, src/workspace/PaneContext.tsx, src/workspace/Controls.tsx, src/store/layout.ts | レイアウトの木（分割とタブ）、ペルソナ別の保存、最大化/非表示/移動/タブ化、ドック、ペルソナ切替、既定に戻す。画面は Panel で包めば自動で対応する。registry に登録したキーが対象。画面はキーごとの描画先にポータルで描くので、移動・タブ切替でも状態が残る。既定が空なら登録済みの画面を並べる（暫定） | FR-012, FR-013, FR-014, FR-015, FR-109, FR-110, FR-111, FR-112, NFR-UX-001 |
+| テスト用フック | src/testing/hook.ts | `?e2e=1` のときだけ window.__edbTest に名前空間ごとのフックを足す（registerTestHook。キャンバスと 3D が共通で使う 1 つの入口） | FR-012, FR-086 |
+| インク・ボード基盤 | src/ink/model.ts, src/ink/store.ts, src/ink/viewport.ts, src/ink/render.ts, src/ink/geometry.ts, src/ink/input.ts, src/ink/outline.ts, src/ink/recognize.ts, src/ink/BoardSurface.tsx, src/ink/InkToolbar.tsx, src/ink/AnnotationLayer.tsx | 自前の Canvas 実装（外部ライブラリなし。Q-003 の推奨案 A）。ボード（議題ごと・背景・視点）、ストローク（筆圧）、図形・テキスト・付箋・画像の項目、元に戻す/やり直し、`BoardSurface`（描画面。overlay で他のビューの上の注釈）、`InkToolbar`、`useInk` ストア、`PointerRouter`（ペン=描画/指=パン/手のひら無視）、`recognizeShape`。テスト用フックの `board`・`ink.loadSynthetic`・`annotations` を登録する。保存（FR-095）・出力（FR-092/093）・手書き認識（FR-090）・付箋の整理（FR-099）は `useInk` の boards を読む／書く | FR-086, FR-087, FR-088, FR-089, NFR-PERF-004 |
+| 画面の登録 | src/screens/registry.ts, src/screens/types.ts | 画面を足すときは registry に 1 行足す（nav-key / component-key） | FR-001, FR-007, FR-048, FR-058, FR-065, FR-066, FR-086 |
+| 設定ストア | src/store/settings.ts | Zustand と localStorage の利用者設定（テーマ、ブランドの Primary 色の上書き、ミュート、音量、演出強度。アニメ停止は src/store/animation.ts、3D 品質は src/store/view3d.ts が同じく保存） | FR-057, FR-058, FR-064, FR-069 |
+| AI 呼び出し口 | src/ai/client.ts, src/ai/useAi.ts, src/ai/AiStatus.tsx, src/ai/AiSettings.tsx, src/ai/ChatScreen.tsx | askAi（5 種類の LLM 処理の唯一の入口。既定はモック、実接続は確認後のみ localhost の中継へ）、常時表示の AI 状態、設定の実接続切替、チャットの土台（FR-017 が拡張） | FR-010, FR-011, FR-017, FR-050, FR-132, NFR-ENV-002, NFR-SEC-002 |
 | Copilot SDK 中継プロセス | scripts/relay/relay.ts, scripts/relay/copilot-adapter.ts, scripts/relay/start.ts | 127.0.0.1 だけで待ち受ける Node.js の中継。`npm run relay` | FR-010, FR-011, FR-132 |
 | 顧客パックのスキーマと検証 | src/schema/common.ts, src/schema/files.ts, src/schema/validate.ts, src/schema/anonymize.ts, scripts/lib/pack-fs.ts | zod のスキーマ、ID の一意・参照・出典の検証、internal の匿名化（anonymizeInternal、A-08）。画面の部品を参照しない。schema の JSON は npm run gen:schema で生成 | FR-002, FR-003, FR-005, FR-006, FR-007, FR-018, FR-019, FR-038, FR-100, FR-102, FR-114, FR-115, FR-116, FR-117, FR-118, FR-119, FR-125, NFR-MAINT-001 |
 | 生成パイプライン | scripts/pipeline/cli.ts, scripts/pipeline/pipeline.ts, scripts/pipeline/common.ts, scripts/pipeline/inputs.ts, scripts/pipeline/research.ts, scripts/pipeline/clone.ts, scripts/pipeline/generate.ts, scripts/pipeline/launch.ts, scripts/pipeline/timing.ts | `npm run pipeline -- <research\|build\|all>`（Skill 定義は .github 配下の envisioning-dashboard の SKILL.md）。工程①〜⑦の実行、入力変数、雛形の複製、顧客パックの生成、`logs/timing.json`。接続点: Researcher（調査）・PackGenerator（生成）・Launcher（起動）は差し替え可能（既定は外部に接続しないサンプル・モック） | FR-120, FR-124, FR-125, FR-130 |
@@ -205,9 +206,14 @@
 | 数値の出典表示 | src/components/NumericValue.tsx | 数値を包むと、ホバー／フォーカスで出典の種別（WorkIQ・Web・推定）・取得日・確度のツールチップを出す（data-testid="numeric-value"）。数値を表示する画面（優先順位分析・KPI など）はこれで包む | FR-009 |
 | サンプル表示 | src/components/Panel.tsx, src/data/sample.ts | パネルの見出しの横に「サンプル」を出す（顧客パックに createdBy が sample の項目があるとき）。Panel で包んだ画面は自動で対応する。Panel を使わない画面は hasSampleData で判定して同じ表示を出す | FR-008 |
 | ガント画面 | src/screens/GanttScreen.tsx, src/plan/model.ts | Feature ごとの工程のガントチャート（選択の強調、開始日・終了日・担当・作業内容の表示）。純粋なロジックは plan/model.ts。2D/2.5D 切替などの後続の要求はここを拡張する | FR-007 |
-| 3D 基盤 | src/three/quality.ts, src/three/presets.ts, src/three/SceneCanvas.tsx, src/store/view3d.ts, src/store/animation.ts, src/testing/hook.ts | R3F + drei の描画（WebGPU 優先・WebGL2 フォールバック）、手続き生成の 4 シーン、品質プリセットと FPS 監視、テスト用フック登録（registerTestHook） | FR-065, FR-066, FR-068, FR-069, FR-103, NFR-PERF-002 |
+| 3D 基盤 | src/three/quality.ts, src/three/presets.ts, src/three/SceneCanvas.tsx, src/store/view3d.ts, src/store/animation.ts, src/testing/hook.ts | R3F + drei の描画（WebGPU 優先・WebGL2 フォールバック）、手続き生成の 4 シーン、品質プリセットと FPS 監視、テスト用フック登録（registerTestHook） | FR-065, FR-066, FR-068, FR-069, FR-071, FR-103, NFR-PERF-002 |
+| 演出の動き | src/motion/tone.ts, src/motion/fluent.ts, src/motion/control.ts, src/motion/AnimationController.tsx, src/motion/useMotion.ts, src/motion/CountUp.tsx, src/motion/useDrawProgress.ts, src/motion/motion.css, src/store/animation.ts | ブランドトーン→演出の設定（演出強度の既定値・BGM の曲調・テンポ・テロップの文体）、Fluent 2 の時間とイージング、カウントアップ・チャート描画の進み、P キーでのグローバル停止（CSS・動画・3D）、動きを減らす設定での起動、アニメーション状態の表示（data-testid=animation-state）。動きの部品はこれを使い、停止中は最終値を即座に出す | FR-057, FR-063, FR-070, FR-071, FR-072 |
 | 業種プリセット | src/three/presets.ts, src/three/presetIcons.tsx | 5 業種（金融・製造・小売・物流・公共）の 3D シーン・カメラパス・アイコン・中核オブジェクトの表現。resolvePreset(customer.industryPreset) で選ぶ | FR-103 |
 | 雛形のバージョン | src/version.ts | TEMPLATE_VERSION（package.json の version）と、顧客パックの templateVersion との互換の判定（checkTemplateVersion） | FR-106 |
+| プレゼンテーションモード | src/presentation/model.ts, src/presentation/PresentationMode.tsx, src/store/presentation.ts | show.json の章・議題の順に巡るプレゼンテーション（開始/終了ボタン、進行バー `progress-bar`・`chapter`・`current-topic`、`←`/`→` で前/次。`↑`/`↓`・`Shift`+矢印・入力欄・メニューでは奪わない）。画面は `usePresentationStore` / `currentTopic` を読んで現在の議題に追従する（キャンバスが実装済み）。番組構成（FR-077）の次の予告カード・テロップ・ショーコントロールバーは、この進行バーとストアを拡張する | FR-016 |
+| 代替表示 | src/analysis/fallback.ts, src/store/fallback.ts, src/components/UnrenderableNote.tsx | 表現に必要な属性がない項目の扱い。`partitionRenderable` で分け、`<UnrenderableNote source reason items>` が「位置情報なし: N 件」を出す。選ぶと `useFallbackStore.request`（該当 ID）を立て、`table` コンポーネントがあれば再表示する（表は request を読んで該当項目を出す）。`table` 画面が未登録のときは一覧をその場に出す。地図・3D・ガントの画面が使う | FR-113 |
+| 状態の保持 | src/store/retained.ts | `useRetainedState(key, initial)`。入力中の内容・絞り込み・視点など、画面の作り直し（ペルソナの切替・非表示と再表示）をまたいで保ちたい一時的な状態を、`<画面のキー>.<名前>` で画面の外に持つ（保存はしない）。選択は共通選択状態ストア側 | NFR-UX-001 |
+| ペルソナ別の既定 | src/workspace/persona.ts | §7 の表（ペルソナ → 最大の領域の表現 `PERSONA_PRIMARY`）と、レイアウトから最大の領域を求める `largestComponent`。ペルソナの切替はレイアウトだけを変え、データの範囲を変えない | FR-015, FR-112 |
 | グローバル検索 | src/search/model.ts, src/search/GlobalSearch.tsx | ヘッダーの検索欄（searchbox「検索」）。グラフの課題・解決策・製品・エンティティを表示名の一部一致で探し、種別ごとのグループで表示（`search-results`、0 件は「該当なし」）。選ぶと共通の選択状態になる（origin `search`）。結果はレイアウト・ペルソナに依存しない | FR-017 |
 | 中核オブジェクトと選定理由 | src/coreobject/model.ts, src/coreobject/CoreObjectPanel.tsx, src/store/coreObject.ts | customer.json の coreObject（候補の name/label・scores、criteria、reason）を読む `readCoreObject`、利用者の選択を顧客名ごとに localStorage `edb.core-object` へ保存する `useCoreObject`。キャンバスの中心（`core-object`）と選定理由パネル（`component-core-object`）が使う | FR-018 |
 | レンズと用語集 | src/lens/model.ts, src/lens/LensView.tsx, src/store/lens.ts, src/glossary/model.ts, src/glossary/GlossaryText.tsx | ビジネス／IT／並置のレンズ（同じ ID の項目。localStorage `edb.lens`）。用語集（customer.json の glossary）の語に定義のツールチップを付ける `<GlossaryText>`（`data-glossary-term`、フォーカスでも表示）。専門用語を表示する画面はこれで包む | FR-019 |
