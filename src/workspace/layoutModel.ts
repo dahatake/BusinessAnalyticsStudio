@@ -221,8 +221,8 @@ export const DEFAULT_PERSONA: Persona = '経営層';
 /** ペルソナ別の既定のレイアウト（要求定義書 §7）。 */
 export function defaultLayout(persona: Persona): Layout {
   switch (persona) {
-    case '経営層': // 上段にサマリー、主領域に 2×2 マトリクス、横にランキング表
-      return split('col', [leaf('summary'), split('row', [leaf('matrix'), leaf('ranking')], [0.7, 0.3])], [0.25, 0.75]);
+    case '経営層': // 上段にサマリー、主領域に 2×2 マトリクス、横にランキング表。キャンバスは背景の全体図として小さく残す（§7 の表）
+      return split('col', [leaf('summary'), split('row', [leaf('matrix'), leaf('ranking'), leaf('canvas')], [0.45, 0.2, 0.35])], [0.25, 0.75]);
     case '事業部門': // 主領域に課題-解決策分析、横に議論ツリー、下にガント
       return split('col', [split('row', [leaf('issue-solution'), leaf('discussion-tree')], [0.65, 0.35]), leaf('gantt')], [0.7, 0.3]);
     case 'IT': // 主領域にアーキテクチャ図、横にナレッジグラフ、下に製品の一覧
