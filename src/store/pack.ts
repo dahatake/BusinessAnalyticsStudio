@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { loadPack, loadRuntimeConfig, PackLoadError, type LoadedPack, type RuntimeConfig } from '../data/loader';
-import { formatPackError } from '../schema';
+import { formatPackError, type PackData } from '../schema';
 
 export type PackState =
   | { status: 'loading' }
@@ -11,11 +11,18 @@ interface PackStore {
   state: PackState;
   runtime: RuntimeConfig;
   load: () => Promise<void>;
+  /** 読み込んだデータを書き換える（ナレッジグラフ・アーキテクチャ図の編集など）。新しいデータ・グラフになり、すべてのビューに反映される。 */
+  updateData: (fn: (data: PackData) => PackData) => void;
 }
 
-export const usePackStore = create<PackStore>((set) => ({
+export const usePackStore = create<PackStore>((set, get) => ({
   state: { status: 'loading' },
   runtime: {},
+  updateData: (fn) => {
+    const st = get().state;
+    if (st.status !== 'ready') return;
+    set({ state: { ...st, pack: { ...st.pack, data: fn(st.pack.data) } } });
+  },
   load: async () => {
     set({ state: { status: 'loading' } });
     const fetchFn = (url: string) => fetch(url, { cache: 'no-store' });

@@ -104,18 +104,28 @@ export function validatePack(files: PackFiles): PackValidation {
     parseWith(BrandProfileSchema, files.brandProfile, BRAND_PROFILE_PATH, errors);
   }
 
-  // ID の一意（パック全体）
-  const seen = new Map<string, { file: string; path: string }>();
+  // ID の一意（パック全体）。ただし architecture.json の asis と tobe は、同じ要素の「現状」と「将来」なので、同じ ID を両方に置ける（FR-040）。
+  // それぞれの中での重複は誤りとして扱う。
+  const variantOf = (file: string, path: string): 'asis' | 'tobe' | undefined => {
+    if (file !== dataFilePath('architecture')) return undefined;
+    return path.startsWith('asis.') ? 'asis' : path.startsWith('tobe.') ? 'tobe' : undefined;
+  };
+  const seen = new Map<string, { file: string; path: string; variants: Set<string> }>();
   for (const { file, value } of entries) {
     walk(value, [], undefined, (o, path) => {
       if (typeof o.id !== 'string') return;
       const prev = seen.get(o.id);
+      const variant = variantOf(file, path);
       if (prev) {
+        if (variant && prev.variants.size > 0 && !prev.variants.has(variant)) {
+          prev.variants.add(variant);
+          return;
+        }
         errors.push({
           code: 'duplicate-id', file, path, id: o.id,
           message: `ID が重複しています: ${o.id}（先に ${prev.file} の ${prev.path || '(root)'} で使われています）`,
         });
-      } else seen.set(o.id, { file, path });
+      } else seen.set(o.id, { file, path, variants: new Set(variant ? [variant] : []) });
     });
   }
 

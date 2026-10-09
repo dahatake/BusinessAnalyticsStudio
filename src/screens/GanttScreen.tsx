@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
+import { ExecutiveSummary } from '../components/ExecutiveSummary';
+import { RelatedMini } from '../components/RelatedMini';
 import { EmptyView, LoadingView } from '../components/StateViews';
 import { buildGantt, formatPeriod, type GanttTask } from '../plan/model';
 import { usePackStore } from '../store/pack';
@@ -115,6 +117,7 @@ function GanttScreen() {
       description="Feature ごとの工程（いつ・誰が・何を）を時間軸で確かめます。Feature を選ぶと、その工程を強調します。"
       maxWidth="1200px"
     >
+      <ExecutiveSummary scope="gantt" />
       {data.plan.tasks.length === 0 && data.plan.features.length === 0 ? (
         <EmptyView message="工程がありません。" />
       ) : (
@@ -205,6 +208,7 @@ function GanttScreen() {
           ) : null}
         </>
       )}
+      <RelatedMini origin="gantt" />
     </Panel>
   );
 }

@@ -1,0 +1,235 @@
+// アーキテクチャ図（2D/3D。FR-040）。ビジネスアーキテクチャ（Capability Map・バリューストリーム）と、アプリ/システムの層（2D のブロック図、3D のレイヤー積層図）。
+// AsIs/ToBe を切り替えると差分（追加・削除・変更）を色とラベルでハイライトする。図は Mermaid・SVG・PNG で出力でき、JSON で編集できる。
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Badge, Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger,
+  Radio, RadioGroup, Text, Textarea, makeStyles, mergeClasses, tokens,
+} from '@fluentui/react-components';
+import { ArrowDownload24Regular, Code24Regular } from '@fluentui/react-icons';
+import {
+  DIFF_LABEL, archToJson, archVariants, modelFor, parseArchitectureJson, sectionsOf, toMermaid, toSvg,
+  type ArchSection, type ArchView, type DiffElement, type DiffKind,
+} from '../analysis/architecture';
+import { downloadBlob, downloadText, exportFileName, svgToPng } from '../analysis/exportFile';
+import { ExecutiveSummary } from '../components/ExecutiveSummary';
+import { useHighlightClass } from '../components/highlight';
+import { Panel } from '../components/Panel';
+import { RelatedMini } from '../components/RelatedMini';
+import { EmptyView, LoadingView } from '../components/StateViews';
+import { onEntityKey, useEntityBinding, useSelection } from '../selection/hooks';
+import { useEditMode } from '../store/editMode';
+import { usePackStore } from '../store/pack';
+import { ArchitectureStack } from '../three/ArchitectureStack';
+
+const ORIGIN = 'architecture';
+
+const useStyles = makeStyles({
+  toolbar: { display: 'flex', flexWrap: 'wrap', alignItems: 'end', columnGap: tokens.spacingHorizontalXL, rowGap: tokens.spacingVerticalS },
+  section: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS },
+  grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(168px, 1fr))', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalM },
+  stream: { display: 'flex', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalS, rowGap: tokens.spacingVerticalS },
+  card: {
+    display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXXS,
+    padding: tokens.spacingHorizontalM, minHeight: '56px',
+    border: `${tokens.strokeWidthThick} solid ${tokens.colorNeutralStroke1}`,
+    borderRadius: tokens.borderRadiusMedium,
+    backgroundColor: tokens.colorNeutralBackground1,
+    cursor: 'pointer',
+    overflowWrap: 'anywhere',
+    ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`, outlineOffset: '2px' },
+  },
+  chevron: { clipPath: 'polygon(0 0, 88% 0, 100% 50%, 88% 100%, 0 100%, 12% 50%)', paddingInline: tokens.spacingHorizontalXXL, minWidth: '140px', alignItems: 'center', textAlign: 'center' },
+  added: { backgroundColor: tokens.colorPaletteGreenBackground1, borderTopColor: tokens.colorPaletteGreenBorder2, borderRightColor: tokens.colorPaletteGreenBorder2, borderBottomColor: tokens.colorPaletteGreenBorder2, borderLeftColor: tokens.colorPaletteGreenBorder2 },
+  removed: { backgroundColor: tokens.colorPaletteRedBackground1, borderTopColor: tokens.colorPaletteRedBorder2, borderRightColor: tokens.colorPaletteRedBorder2, borderBottomColor: tokens.colorPaletteRedBorder2, borderLeftColor: tokens.colorPaletteRedBorder2, borderTopStyle: 'dashed', borderRightStyle: 'dashed', borderBottomStyle: 'dashed', borderLeftStyle: 'dashed' },
+  changed: { backgroundColor: tokens.colorPaletteYellowBackground1, borderTopColor: tokens.colorPaletteYellowBorder2, borderRightColor: tokens.colorPaletteYellowBorder2, borderBottomColor: tokens.colorPaletteYellowBorder2, borderLeftColor: tokens.colorPaletteYellowBorder2 },
+  links: { margin: 0, paddingInlineStart: tokens.spacingHorizontalXL },
+  json: { fontFamily: tokens.fontFamilyMonospace, minHeight: '320px' },
+});
+
+
+function DiffBadge({ diff }: { diff: DiffKind }) {
+  if (diff === 'same') return null;
+  const color = diff === 'added' ? 'success' : diff === 'removed' ? 'danger' : 'warning';
+  const mark = diff === 'added' ? '＋' : diff === 'removed' ? '－' : '≠';
+  return <Badge appearance="filled" color={color} size="small">{mark} {DIFF_LABEL[diff]}</Badge>;
+}
+
+function ElementCard({ item, chevron }: { item: DiffElement; chevron?: boolean }) {
+  const s = useStyles();
+  const hl = useHighlightClass();
+  const bind = useEntityBinding(ORIGIN);
+  const props = bind(item.element.id);
+  return (
+    <div
+      {...props} role="button" tabIndex={0}
+      data-diff={item.diff === 'same' ? undefined : item.diff}
+      className={mergeClasses(s.card, chevron && s.chevron, item.diff === 'added' && s.added, item.diff === 'removed' && s.removed, item.diff === 'changed' && s.changed, hl(props['data-highlight']))}
+      onKeyDown={(e) => { onEntityKey(e, item.element.id, ORIGIN); }}
+    >
+      <Text weight="semibold">{item.element.name}</Text>
+      <DiffBadge diff={item.diff} />
+    </div>
+  );
+}
+
+function Diagram2D({ sections }: { sections: ArchSection[] }) {
+  const s = useStyles();
+  return (
+    <>
+      {sections.map((sec) => (
+        <section key={sec.title} className={s.section} aria-label={sec.title}>
+          <Text as="h3" size={400} weight="semibold">{sec.title}</Text>
+          <div className={sec.kind === 'stream' ? s.stream : s.grid}>
+            {sec.items.map((it) => <ElementCard key={it.element.id} item={it} chevron={sec.kind === 'stream'} />)}
+          </div>
+        </section>
+      ))}
+    </>
+  );
+}
+
+function ArchitectureScreen() {
+  const s = useStyles();
+  const { select } = useSelection();
+  const state = usePackStore((st) => st.state);
+  const editEnabled = useEditMode((st) => st.enabled);
+  const [view, setView] = useState<ArchView>('tobe');
+  const [dim, setDim] = useState<'2d' | '3d'>('2d');
+  const [scope, setScope] = useState<'all' | 'business' | 'app'>('all');
+  const [jsonOpen, setJsonOpen] = useState(false);
+  const [jsonText, setJsonText] = useState('');
+  const [jsonError, setJsonError] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+
+  const arch = state.status === 'ready' ? state.pack.data.architecture : undefined;
+  const variants = useMemo(() => (arch ? archVariants(arch) : undefined), [arch]);
+  const model = useMemo(() => (variants ? modelFor(view, variants) : undefined), [variants, view]);
+  const sections = useMemo(() => {
+    if (!model) return [];
+    const all = sectionsOf(model);
+    return scope === 'all' ? all : all.filter((x) => (scope === 'business') === (x.kind !== 'layer'));
+  }, [model, scope]);
+  const names = useMemo(() => new Map((model?.elements ?? []).map((e) => [e.element.id, e.element.name])), [model]);
+
+  useEffect(() => { if (jsonOpen && variants) { setJsonText(archToJson(variants)); setJsonError(null); } }, [jsonOpen, variants]);
+
+  if (state.status !== 'ready' || !model || !variants) return <LoadingView label="アーキテクチャ図を読み込み中" />;
+  const { customer } = state.pack.data;
+
+  const title = `${customer.name} ${customer.projectName} アーキテクチャ（${view === 'asis' ? 'AsIs' : 'ToBe'}）`;
+  const base = (ext: string) => exportFileName(customer.name, customer.projectName, `architecture-${view}`, ext);
+  const doExport = async (fmt: 'Mermaid' | 'SVG' | 'PNG') => {
+    setExportError(null);
+    try {
+      if (fmt === 'Mermaid') downloadText(base('mmd'), toMermaid(model, title), 'text/vnd.mermaid;charset=utf-8');
+      else {
+        const r = toSvg(model, title);
+        if (fmt === 'SVG') downloadText(base('svg'), r.svg, 'image/svg+xml;charset=utf-8');
+        else downloadBlob(base('png'), await svgToPng(r.svg, r.width, r.height));
+      }
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : String(e));
+    }
+  };
+  const applyJson = () => {
+    const r = parseArchitectureJson(jsonText);
+    if (!r.ok) { setJsonError(r.reason); return; }
+    usePackStore.getState().updateData((d) => ({ ...d, architecture: { ...d.architecture, asis: { elements: r.value.asis.elements as never, links: r.value.asis.links as never }, tobe: { elements: r.value.tobe.elements as never, links: r.value.tobe.links as never } } }));
+    setJsonOpen(false);
+  };
+
+  return (
+    <Panel
+      testId="component-architecture"
+      title="アーキテクチャ図"
+      description="ビジネスアーキテクチャ（Capability Map・バリューストリーム）と、アプリ/システムの層を見ます。AsIs と ToBe を切り替えると、差分を色とラベルで示します。"
+      maxWidth="1200px"
+    >
+      <ExecutiveSummary scope="architecture" />
+
+      <div className={s.toolbar} role="toolbar" aria-label="アーキテクチャ図の操作">
+        <Field label="版">
+          <RadioGroup layout="horizontal" value={view} onChange={(_, d) => setView(d.value as ArchView)}>
+            <Radio value="asis" label="AsIs" />
+            <Radio value="tobe" label="ToBe" />
+          </RadioGroup>
+        </Field>
+        <Field label="表示">
+          <RadioGroup layout="horizontal" value={dim} onChange={(_, d) => setDim(d.value as '2d' | '3d')}>
+            <Radio value="2d" label="2D" />
+            <Radio value="3d" label="3D" />
+          </RadioGroup>
+        </Field>
+        <Field label="範囲">
+          <RadioGroup layout="horizontal" value={scope} onChange={(_, d) => setScope(d.value as typeof scope)}>
+            <Radio value="all" label="すべて" />
+            <Radio value="business" label="ビジネス" />
+            <Radio value="app" label="アプリ/システム" />
+          </RadioGroup>
+        </Field>
+        <Menu>
+          <MenuTrigger disableButtonEnhancement>
+            <Button icon={<ArrowDownload24Regular aria-hidden />}>図を出力</Button>
+          </MenuTrigger>
+          <MenuPopover>
+            <MenuList>
+              <MenuItem onClick={() => void doExport('Mermaid')}>Mermaid</MenuItem>
+              <MenuItem onClick={() => void doExport('SVG')}>SVG</MenuItem>
+              <MenuItem onClick={() => void doExport('PNG')}>PNG</MenuItem>
+            </MenuList>
+          </MenuPopover>
+        </Menu>
+        <Button icon={<Code24Regular aria-hidden />} disabled={!editEnabled} onClick={() => setJsonOpen(true)}>JSON 編集</Button>
+        {!editEnabled ? <Text size={200}>編集モードを ON にすると、JSON で要素を編集できます。</Text> : null}
+      </div>
+      {exportError ? <Text role="alert" style={{ color: tokens.colorPaletteRedForeground1 }}>{exportError}</Text> : null}
+
+      <div role="group" aria-label="差分の凡例" style={{ display: 'flex', columnGap: tokens.spacingHorizontalM, flexWrap: 'wrap' }}>
+        <Text size={200}>{view === 'tobe' ? 'AsIs との差分:' : 'AsIs（現状）の図です。ToBe に切り替えると差分を示します。'}</Text>
+        {view === 'tobe' ? (['added', 'removed', 'changed'] as const).map((k) => <DiffBadge key={k} diff={k} />) : null}
+      </div>
+
+      {sections.length === 0 ? (
+        <EmptyView message="表示する要素がありません。" />
+      ) : dim === '2d' ? (
+        <Diagram2D sections={sections} />
+      ) : (
+        <ArchitectureStack sections={sections} model={model} onSelect={(id) => select(id, { origin: ORIGIN })} />
+      )}
+
+      <section aria-label="接続">
+        <Text as="h3" size={400} weight="semibold" block>接続</Text>
+        {model.links.length === 0 ? <Text size={200}>接続はありません。</Text> : (
+          <ul className={s.links}>
+            {model.links.map((l, i) => (
+              <li key={i}>
+                <Text size={200}>{names.get(l.from) ?? l.from} → {names.get(l.to) ?? l.to}{l.label ? `（${l.label}）` : ''}{l.diff !== 'same' ? `［${DIFF_LABEL[l.diff]}］` : ''}</Text>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <RelatedMini origin={ORIGIN} />
+
+      <Dialog open={jsonOpen} onOpenChange={(_, d) => { if (!d.open) setJsonOpen(false); }}>
+        <DialogSurface style={{ maxWidth: '720px' }}>
+          <DialogBody>
+            <DialogTitle>アーキテクチャの JSON 編集</DialogTitle>
+            <DialogContent style={{ display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS }}>
+              <Text size={200}>asis・tobe の elements（id・name・kind・layer など）と links（from・to・label）を編集できます。同じ ID を両方に置くと同じ要素の変更になります。</Text>
+              <Textarea className={s.json} resize="vertical" aria-label="アーキテクチャの JSON" value={jsonText} onChange={(_, d) => setJsonText(d.value)} rows={16} />
+              {jsonError ? <Text role="alert" style={{ color: tokens.colorPaletteRedForeground1 }}>{jsonError}</Text> : null}
+            </DialogContent>
+            <DialogActions>
+              <Button appearance="secondary" onClick={() => setJsonOpen(false)}>キャンセル</Button>
+              <Button appearance="primary" onClick={applyJson}>適用</Button>
+            </DialogActions>
+          </DialogBody>
+        </DialogSurface>
+      </Dialog>
+    </Panel>
+  );
+}
+
+export { ArchitectureScreen };

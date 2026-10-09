@@ -5,8 +5,13 @@ import {
   Badge, Button, Field, Radio, RadioGroup, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
   makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
-import { ChevronDown16Regular, ChevronRight16Regular, Lightbulb24Regular } from '@fluentui/react-icons';
+import { ChevronDown16Regular, ChevronRight16Regular, CommentMultiple24Regular, Lightbulb24Regular } from '@fluentui/react-icons';
 import { DetailPanel } from '../analysis/DetailPanel';
+import { ExecutiveSummary } from '../components/ExecutiveSummary';
+import { RelatedMini } from '../components/RelatedMini';
+import { packKeyOf } from '../discussion/model';
+import { useDiscussionStore } from '../store/discussion';
+import { useLayout } from '../store/layout';
 import { MatrixView, SankeyView, SourceLinks, type FlowSelection } from '../analysis/FlowViews';
 import {
   AUDIENCE_LABELS, buildFlow, buildMatrix, buildMeceGroups, buildTreeRows, filterIssues, filterSolutions, solutionIssueIds,
@@ -163,6 +168,7 @@ function IssueSolutionScreen() {
       description="課題をイシューツリー・MECE 表・サンキー図・マトリクスで整理し、原因・仮説・評価属性・解決策・効果・出典・Microsoft 製品を確かめます。"
       maxWidth="1200px"
     >
+      <ExecutiveSummary scope="issue-solution" />
       <div className={s.toolbar}>
         <Field label="表示の形">
           <RadioGroup layout="horizontal" value={mode} onChange={(_, d) => setMode(d.value as ViewMode)}>
@@ -182,6 +188,16 @@ function IssueSolutionScreen() {
         <Badge appearance="filled" color="brand" size="large" data-testid="count-badge" aria-label={`課題 ${visible.length} 件`}>
           {visible.length} 件
         </Badge>
+        <Button
+          icon={<CommentMultiple24Regular aria-hidden />}
+          disabled={!(selectedIssue ?? detailSelection?.issue)}
+          onClick={() => {
+            const issue = selectedIssue ?? detailSelection?.issue;
+            if (!issue) return;
+            useDiscussionStore.getState().createFromIssue(packKeyOf(data.customer.name, data.customer.projectName), { id: issue.id, title: issue.title });
+            useLayout.getState().showComponent('themes');
+          }}
+        >議論テーマにする</Button>
       </div>
 
       <div className={mergeClasses(s.layout, stacked && s.layoutStacked)}>
@@ -301,6 +317,7 @@ function IssueSolutionScreen() {
           onCloseSource={() => setSourceId(undefined)}
         />
       </div>
+      <RelatedMini origin={ORIGIN} />
     </Panel>
   );
 }
