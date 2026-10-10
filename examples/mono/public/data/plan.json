@@ -6,6 +6,7 @@
   "tasks": [
     { "id": "task-mono-001", "createdBy": "sample", "owner": "現場リーダー", "work": "現場の記録項目を洗い出して整理する", "title": "現場の記録項目の整理", "featureId": "feat-mono-001", "start": "2026-11-02", "end": "2026-11-13" },
     { "id": "task-mono-002", "createdBy": "sample", "owner": "IT 担当", "work": "タブレット用の入力アプリを試作して現場で試す", "title": "入力アプリの試作", "featureId": "feat-mono-001", "start": "2026-11-16", "end": "2026-12-11", "dependsOn": ["task-mono-001"] },
+    { "id": "task-mono-004", "createdBy": "sample", "owner": "現場リーダー", "work": "試作アプリを 1 ラインで試して使い勝手を確かめる", "title": "入力アプリの現場試用", "featureId": "feat-mono-001", "parentId": "task-mono-002", "start": "2026-12-01", "end": "2026-12-11" },
     { "id": "task-mono-003", "createdBy": "sample", "owner": "IT 担当", "work": "設備の稼働データを収集する仕組みをつくる", "title": "稼働データの収集", "featureId": "feat-mono-002", "start": "2026-11-16", "end": "2026-12-25" }
   ]
 }

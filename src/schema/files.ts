@@ -182,6 +182,8 @@ export const PlanSchema = z.looseObject({
   tasks: z.array(entity({
     title: z.string().min(1),
     featureId: IdSchema.optional(),
+    /** 上位の工程（FR-035）。ガントで、上位の工程を展開すると下位の工程が出る。なければ最上位 */
+    parentId: IdSchema.nullable().optional(),
     start: z.string().optional(),
     end: z.string().optional(),
     /** 担当（誰が）と作業内容（何を）（FR-007） */
