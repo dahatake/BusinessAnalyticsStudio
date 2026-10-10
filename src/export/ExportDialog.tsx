@@ -40,7 +40,7 @@ const SCOPES: ExportScope[] = ['all', 'screen', 'theme', 'decisions'];
 export interface ExportScreenRef { key: string; label: string }
 
 /** 書き出しの入力を、いまの状態から集める。 */
-function collectInput(): ExportInput | null {
+export function collectInput(): ExportInput | null {
   const st = usePackStore.getState().state;
   if (st.status !== 'ready') return null;
   const cu = st.pack.data.customer;
@@ -58,24 +58,19 @@ function collectInput(): ExportInput | null {
 }
 
 /**
- * Ctrl+S: ダイアログを開かずに、全量の Markdown（File System Access 非対応なら ZIP）をそのまま書き出す（FR-052）。
- * 機密区分 internal の項目があれば匿名化する（ダイアログの既定と同じ）。
+ * Ctrl+S: 画面を開かずに、全量の Markdown をその場でダウンロードとして保存する（FR-052 AC-064 の「いつでもエクスポート」）。
+ * 機密区分 internal の項目があるときは、安全側で匿名化する。出力範囲や匿名化を選びたいときは Ctrl+Shift+E の画面を使う。
  */
-export async function saveAllNow(): Promise<void> {
+export async function quickSaveAll(): Promise<void> {
   const input = collectInput();
   const setNotice = useExportUi.getState().setNotice;
   if (!input) return;
   try {
-    const fs = hasFileSystemAccess();
-    const asZip = !fs;
-    const r = buildExport(input, { scope: 'all', screenKey: '', themeId: '', anonymize: countInternal(input.data) > 0, format: asZip ? 'zip' : 'md', followUp: false });
-    const bytes = asZip ? createZip(r.files, input.now) : r.markdown;
-    const res = await deliver(asZip ? r.fileName.replace(/\.md$/, '.zip') : r.fileName, bytes, fs);
-    if (res.ok) {
-      setNotice({ kind: 'success', title: 'エクスポートしました', lines: [res.name, ...(res.method === 'download' ? ['ブラウザーのダウンロードとして保存しました。'] : [])] });
-    } else if (!res.cancelled) {
-      setNotice({ kind: 'error', title: 'エクスポートできませんでした', lines: [res.reason] });
-    }
+    const anonymize = countInternal(input.data) > 0;
+    const r = buildExport(input, { scope: 'all', screenKey: '', themeId: '', anonymize, format: 'md', followUp: false });
+    const res = await deliver(r.fileName, r.markdown, false);
+    if (res.ok) setNotice({ kind: 'success', title: 'エクスポートしました', lines: [res.name, 'ブラウザーのダウンロードとして保存しました。'] });
+    else if (!res.cancelled) setNotice({ kind: 'error', title: 'エクスポートできませんでした', lines: [res.reason] });
   } catch (e) {
     setNotice({ kind: 'error', title: 'エクスポートできませんでした', lines: [e instanceof Error ? e.message : String(e)] });
   }

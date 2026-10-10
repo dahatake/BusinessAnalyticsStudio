@@ -6,7 +6,9 @@ import {
   Badge, Button, Field, Input, MessageBar, MessageBarActions, MessageBarBody, MessageBarTitle, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
   makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
-import { FilterDismiss24Regular } from '@fluentui/react-icons';
+import { ChevronDown16Regular, ChevronRight16Regular, FilterDismiss24Regular } from '@fluentui/react-icons';
+import { flattenTree } from '../plan/hierarchy';
+import { usePackStore } from '../store/pack';
 import { SelectionDetail } from '../analysis/SelectionDetail';
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { useHighlightClass } from '../components/highlight';
@@ -41,7 +43,7 @@ const idOf = (n: GraphNode): string => n.id;
  * 名称のセル。編集モードが ON のとき、ダブルクリックまたは Enter でその場の編集になる（FR-044）。OFF のときは編集状態にならない（FR-047）。
  * role="gridcell" は、操作できるセルであることを伝える。
  */
-function NameCell({ node, className }: { node: GraphNode; className: string }) {
+function NameCell({ node, className, indent = 0 }: { node: GraphNode; className: string; indent?: number }) {
   const editMode = useEditStore((st) => st.editMode);
   const rename = useEditStore((st) => st.rename);
   const [editing, setEditing] = useState(false);
@@ -50,6 +52,7 @@ function NameCell({ node, className }: { node: GraphNode; className: string }) {
     <TableCell
       role="gridcell"
       className={className}
+      style={indent > 0 ? { paddingInlineStart: `calc(${tokens.spacingHorizontalXL} * ${indent})` } : undefined}
       tabIndex={0}
       onDoubleClick={() => { if (editMode) setEditing(true); }}
       onKeyDown={(e) => {
@@ -93,13 +96,29 @@ function TableScreen() {
     return nodes.filter((n) => ids.has(n.id));
   }, [fallback, nodes]);
   // 編集モードでは、選択で行を隠さない（編集した行・追加した行が見えなくならないように、関連しない行は減光で残す）
-  const base = fallbackNodes ?? (editMode ? nodes : filtered);
-  // 文字での絞り込み（NFR-UX-001: ペルソナの切替・表示の切替をまたいで保つ）。名称または ID に含まれる行だけを出す
+  // NFR-UX-001 AC-185: 文字での絞り込み。入力中の内容は画面の作り直しをまたいで保つ（useRetainedState）
   const [text, setText] = useRetainedState('table.filter', '');
-  const needle = text.trim().toLowerCase();
-  const visible = needle ? base.filter((n) => n.label.toLowerCase().includes(needle) || n.id.toLowerCase().includes(needle)) : base;
-  const count = needle ? visible.length : fallbackNodes ? fallbackNodes.length : filteredCount;
+  const q = text.trim().toLowerCase();
+  const base = fallbackNodes ?? (editMode ? nodes : filtered);
+  const visible = useMemo(
+    () => (q ? base.filter((n) => `${n.label} ${n.id} ${KIND_LABELS[n.kind]}`.toLowerCase().includes(q)) : base),
+    [base, q],
+  );
+  const count = q ? visible.length : fallbackNodes ? fallbackNodes.length : filteredCount;
   const selected = useMemo(() => new Set(selectedIds), [selectedIds]);
+  // FR-035: 親子（parentId）のある項目は、上位の行を展開すると下位の行が出て、折りたたむと隠れる（既定は展開）
+  const packState = usePackStore((st) => st.state);
+  const parentById = useMemo(() => {
+    const m = new Map<string, string>();
+    if (packState.status !== 'ready') return m;
+    const d = packState.pack.data;
+    const recs: ReadonlyArray<{ id: string; parentId?: string | null }> = [...d.entities.entities, ...d.issues.issues, ...(d.plan.tasks as Array<{ id: string; parentId?: string | null }>)];
+    for (const r of recs) if (r.parentId) m.set(r.id, r.parentId);
+    return m;
+  }, [packState]);
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
+  const toggle = (id: string): void => setCollapsed((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const rows = useMemo(() => flattenTree(visible, idOf, (n) => parentById.get(n.id), collapsed), [visible, parentById, collapsed]);
 
   if (!graph) return <LoadingView label="一覧を読み込み中" />;
 
@@ -132,6 +151,9 @@ function TableScreen() {
             <Radio value="hide" label="非表示" />
             <Radio value="dim" label="減光" />
           </RadioGroup>
+        </Field>
+        <Field label="絞り込み">
+          <Input value={text} onChange={(_, d) => setText(d.value)} placeholder="名称・ID・種別" />
         </Field>
         <Badge appearance="filled" color="brand" size="large" data-testid="count-badge" aria-label={`該当 ${count} 件`}>
           {count} 件
@@ -168,7 +190,7 @@ function TableScreen() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {visible.map((n) => {
+            {rows.map(({ item: n, depth, hasChildren, expanded }) => {
               const props = bind(n.id, { filterable: true });
               const state = selected.has(n.id) ? '選択中' : props['data-highlight']?.includes('related') ? '関連' : '';
               // 編集モードでは関連しない行を隠さないので、減光（dimmed）で示す
@@ -183,13 +205,21 @@ function TableScreen() {
                   onClick={editMode ? (e) => { select(n.id, { origin: ORIGIN, additive: e.ctrlKey || e.metaKey || e.shiftKey, history: 'none' }); } : props.onClick}
                   data-highlight={highlight}
                   aria-selected={selected.has(n.id)}
+                  aria-expanded={hasChildren ? expanded : undefined}
+                  aria-level={depth + 1}
                   tabIndex={0}
                   className={mergeClasses(s.row, hl(highlight))}
                   onKeyDown={(e) => { onEntityKey(e, n.id, ORIGIN); }}
                 >
-                  <TableCell className={s.cell}>{state ? <Badge appearance="outline" color={state === '選択中' ? 'brand' : 'informative'}>{state}</Badge> : null}</TableCell>
+                  <TableCell className={s.cell}>{hasChildren ? (
+                    <Button
+                      size="small" appearance="subtle" icon={expanded ? <ChevronDown16Regular aria-hidden /> : <ChevronRight16Regular aria-hidden />}
+                      aria-label={expanded ? `${n.label} を折りたたむ` : `${n.label} を展開`}
+                      onClick={(e) => { e.stopPropagation(); toggle(n.id); }}
+                    />
+                  ) : null}{state ? <Badge appearance="outline" color={state === '選択中' ? 'brand' : 'informative'}>{state}</Badge> : null}</TableCell>
                   <TableCell className={s.cell}>{KIND_LABELS[n.kind]}{n.type ? `（${n.type}）` : ''}</TableCell>
-                  <NameCell node={n} className={s.cell} />
+                  <NameCell node={n} className={s.cell} indent={depth} />
                   <TableCell className={mergeClasses(s.cell, s.idCell, s.hideNarrow)}>{n.id}</TableCell>
                 </TableRow>
               );

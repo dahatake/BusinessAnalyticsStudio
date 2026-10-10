@@ -1,41 +1,42 @@
-// ボードの Markdown 出力のダイアログ（FR-093）。出力する範囲（すべてのボード／このボードだけ）を選び、ZIP をダウンロードする。
+// インクの Markdown 出力のダイアログ（FR-093）。このボード／すべてのボードを選び、ボードごとの `.md` と `assets/` の画像を ZIP にして出力する。
 import { useState } from 'react';
 import { Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { useInk } from '../ink/store';
-import type { Board } from '../ink/model';
-import { boardsMarkdownZip } from './boardMarkdown';
 import { downloadBlob } from './deliver';
+import { inkMarkdownEntries, inkMarkdownZipName } from './inkMarkdown';
+import { createZip } from './zip';
 
 const useStyles = makeStyles({
   body: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM },
   forcedAuto: { forcedColorAdjust: 'auto', '@media (forced-colors: active)': { forcedColorAdjust: 'auto' } },
 });
 
+type Target = 'this' | 'all';
+
 export interface BoardMarkdownDialogProps {
-  /** 出力の対象にできるボード（画面に出ているもの） */
-  boards: readonly Board[];
-  activeBoardId: string;
+  boardId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onResult?: (message: string) => void;
 }
 
-export function BoardMarkdownDialog({ boards, activeBoardId, open, onOpenChange, onResult }: BoardMarkdownDialogProps) {
+export function BoardMarkdownDialog({ boardId, open, onOpenChange, onResult }: BoardMarkdownDialogProps) {
   const s = useStyles();
-  const [scope, setScope] = useState<'all' | 'one'>('all');
+  const boards = useInk((st) => st.boards);
+  const [target, setTarget] = useState<Target>('all');
   const [error, setError] = useState<string | null>(null);
 
+  const chosen = boards.filter((b) => b.kind === 'board' && (target === 'all' || b.id === boardId));
+
   const run = () => {
-    setError(null);
-    // 出力の直前の最新の中身を使う（ダイアログを開いている間の変更を含める）
-    const latest = useInk.getState().boards.filter((b) => boards.some((x) => x.id === b.id));
-    const targets = scope === 'all' ? latest : latest.filter((b) => b.id === activeBoardId);
-    if (targets.length === 0) { setError('出力するボードがありません。'); return; }
+    if (chosen.length === 0) { setError('出力するボードがありません。'); return; }
+    const now = new Date();
     try {
-      const bytes = boardsMarkdownZip(targets);
-      downloadBlob('boards-markdown.zip', new Blob([bytes.slice().buffer], { type: 'application/zip' }));
-      onResult?.(`boards-markdown.zip を出力しました（${targets.length} 枚）。`);
+      const name = inkMarkdownZipName(now);
+      downloadBlob(name, new Blob([createZip(inkMarkdownEntries(chosen, now), now).slice().buffer], { type: 'application/zip' }));
+      onResult?.(`${name} を出力しました（${chosen.length} 枚）。`);
+      setError(null);
       onOpenChange(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Markdown を出力できませんでした。');
@@ -49,16 +50,16 @@ export function BoardMarkdownDialog({ boards, activeBoardId, open, onOpenChange,
           <DialogTitle>Markdown 出力</DialogTitle>
           <DialogContent className={s.body}>
             <Field label="範囲">
-              <RadioGroup value={scope} onChange={(_, d) => setScope(d.value as 'all' | 'one')}>
-                <Radio value="all" label={`すべてのボード（${boards.length} 枚）`} />
-                <Radio value="one" label="このボードだけ" />
+              <RadioGroup layout="horizontal" value={target} onChange={(_, d) => setTarget(d.value as Target)}>
+                <Radio value="this" label="このボードだけ" />
+                <Radio value="all" label="すべてのボード" />
               </RadioGroup>
             </Field>
-            <Text size={200}>ボードごとの .md（front matter とチェックリスト付き）と、画像を置く assets/ を ZIP にまとめます。画像は相対リンクで参照します。</Text>
+            <Text size={200}>ボードごとに .md（front matter とチェックリスト）を作り、画像は assets/ に置いて相対リンクで参照する ZIP にします（{chosen.length} 枚）。</Text>
             {error && <Text role="alert" size={200}>{error}</Text>}
           </DialogContent>
           <DialogActions>
-            <Button className={s.forcedAuto} appearance="primary" onClick={run}>出力</Button>
+            <Button className={s.forcedAuto} appearance="primary" disabled={chosen.length === 0} onClick={run}>出力</Button>
             <Button onClick={() => onOpenChange(false)}>閉じる</Button>
           </DialogActions>
         </DialogBody>

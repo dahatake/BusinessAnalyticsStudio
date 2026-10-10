@@ -41,7 +41,12 @@ BGM と効果音は、外部から音源を取得せず、すべて Web Audio AP
 
 ### フォント
 
-フォントのファイルは同梱しません。画面は利用者の PC に入っている書体（Segoe UI Variable・Segoe UI・Noto Sans JP・Yu Gothic UI・Meiryo など）を名前で指定するだけで、配布も埋め込みもしません。
+画面は利用者の PC に入っている書体（Segoe UI Variable・Segoe UI・Noto Sans JP・Yu Gothic UI・Meiryo など）を名前で指定するだけで、画面用のフォントは配布も埋め込みもしません。
+PDF 出力（FR-092）だけは、日本語が文字化けしないように、次のフォントを同梱し、使った文字のグリフだけを PDF に埋め込みます（再配布・埋め込みが許される SIL OFL 1.1。著作権表示とライセンス全文は `public/fonts/OFL.txt`）。
+
+| アセット | 場所 | 権利の種別 | ライセンス |
+|---|---|---|---|
+| Sawarabi Gothic（さわらびゴシック。Copyright 2016 The Sawarabi Gothic Project Authors） | `public/fonts/SawarabiGothic-Regular.ttf` | 許諾済み | SIL OFL 1.1（OFL） |
 
 ### ライブラリ（実行時に同梱するもの）
 

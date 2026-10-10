@@ -1,7 +1,11 @@
 // エクスポートの常設ボタンと、ダイアログ・ショートカット・通知の置き場所（FR-052）。App の外枠に 1 つだけ置く。
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, MessageBar, MessageBarActions, MessageBarBody, MessageBarTitle, makeStyles, tokens } from '@fluentui/react-components';
-import { ArrowExport24Regular, Dismiss24Regular } from '@fluentui/react-icons';
+import { ArrowExport24Regular, Dismiss24Regular, DocumentPdf24Regular } from '@fluentui/react-icons';
+import { downloadBlob } from './deliver';
+import { collectInput } from './ExportDialog';
+import { loadJapaneseFont } from './pdf';
+import { buildSummaryPack } from './summaryPack';
 import { installDiscussionChangeLog } from './changelog';
 import { registerEditChangeLog, registerPackSnapshot } from './snapshot';
 import { useExportShortcuts } from './commands';
@@ -15,11 +19,30 @@ const useStyles = makeStyles({
   },
 });
 
-/** ヘッダーに常設するボタン。どの画面からでもエクスポートの画面を開く。 */
+/** ヘッダーに常設するボタン。どの画面からでもエクスポートの画面を開く。「Engagement サマリーパック」（FR-094）はワンクリックで PDF + Markdown の ZIP を作る。 */
 export function ExportButton() {
   const open = useExportUi((u) => u.openDialog);
+  const setNotice = useExportUi((u) => u.setNotice);
+  const [busy, setBusy] = useState(false);
+  const pack = async () => {
+    const input = collectInput();
+    if (!input) { setNotice({ kind: 'error', title: 'サマリーパックを作れません', lines: ['データの読み込みが終わってから、もう一度押してください。'] }); return; }
+    setBusy(true);
+    try {
+      const r = await buildSummaryPack(input, await loadJapaneseFont());
+      downloadBlob(r.fileName, new Blob([r.bytes.slice().buffer], { type: 'application/zip' }));
+      setNotice({ kind: 'success', title: 'Engagement サマリーパックを出力しました', lines: [r.fileName, 'PDF と Markdown を 1 つの ZIP にまとめました。'] });
+    } catch (e) {
+      setNotice({ kind: 'error', title: 'サマリーパックを作れませんでした', lines: [e instanceof Error ? e.message : String(e)] });
+    } finally {
+      setBusy(false);
+    }
+  };
   return (
-    <Button size="small" icon={<ArrowExport24Regular aria-hidden />} onClick={open}>エクスポート</Button>
+    <>
+      <Button size="small" icon={<ArrowExport24Regular aria-hidden />} onClick={open}>エクスポート</Button>
+      <Button size="small" icon={<DocumentPdf24Regular aria-hidden />} disabled={busy} onClick={() => { void pack(); }}>Engagement サマリーパック</Button>
+    </>
   );
 }
 

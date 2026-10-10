@@ -92,6 +92,17 @@
             "type": "string",
             "pattern": "^[a-z0-9][a-z0-9-]*$"
           },
+          "parentId": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^[a-z0-9][a-z0-9-]*$"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "start": {
             "type": "string"
           },
