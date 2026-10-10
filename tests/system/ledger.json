@@ -4289,9 +4289,9 @@
       "command": "node tests/system/run.mjs AC-169",
       "canary": false,
       "status": "fail",
-      "last_commit": "b321da0",
-      "last_run_at": "2026-10-10T14:31:42+09:00",
-      "evidence": "work/runs/202610100952/logs/system-test/IT-005-202610101431.log",
+      "last_commit": "8830f3d",
+      "last_run_at": "2026-10-10T14:32:30+09:00",
+      "evidence": "work/runs/202610100952/logs/system-test/IT-005-202610101432.log",
       "history": [
         {
           "at": "2026-10-09T12:18:44+09:00",
