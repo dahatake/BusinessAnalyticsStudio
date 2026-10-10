@@ -309,11 +309,11 @@ export function WhiteboardScreen() {
             {BACKGROUNDS.map((b) => <Option key={b.value} value={b.value}>{b.label}</Option>)}
           </Dropdown>
         </Field>
-        <Button icon={<ZoomFit20Regular aria-hidden />} onClick={() => active && fitBoard(active.id)}>全体表示</Button>
+        <Button icon={<ZoomFit20Regular aria-hidden />} aria-label="全体表示" title="全体表示" onClick={() => active && fitBoard(active.id)} />
         <Button icon={<ZoomOut20Regular aria-hidden />} aria-label="縮小" onClick={() => zoomBy(1 / 1.25)} />
         <Button icon={<ZoomIn20Regular aria-hidden />} aria-label="拡大" onClick={() => zoomBy(1.25)} />
-        <Button icon={<DocumentPdf20Regular aria-hidden />} disabled={!active} onClick={() => setPdfOpen(true)}>PDF 出力</Button>
-        <Button icon={<DocumentMarkdown20Regular aria-hidden />} disabled={!active} onClick={() => setMdOpen(true)}>Markdown 出力</Button>
+        <Button icon={<DocumentPdf20Regular aria-hidden />} disabled={!active} aria-label="PDF 出力" title="PDF 出力" onClick={() => setPdfOpen(true)} />
+        <Button icon={<DocumentMarkdown20Regular aria-hidden />} disabled={!active} aria-label="Markdown 出力" title="Markdown 出力" onClick={() => setMdOpen(true)} />
       </div>
       <TabList
         size="small"
