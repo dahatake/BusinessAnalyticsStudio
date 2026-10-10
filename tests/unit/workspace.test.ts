@@ -11,7 +11,7 @@ const biz = () => defaultLayout('事業部門');
 describe('FR-013 / FR-014 非表示と再表示', () => {
   // FR-013 AC-016
   it('FR-013 AC-016 非表示にするとそのコンポーネントが木から消え、残りが畳まれる', () => {
-    const l = hide(biz(), 'gantt');
+    const l = hide(hide(biz(), 'gantt'), 'table');
     expect(keysOf(l)).toEqual(['issue-solution', 'discussion-tree']);
     expect((l as SplitNode).dir).toBe('row');
   });
@@ -19,7 +19,7 @@ describe('FR-013 / FR-014 非表示と再表示', () => {
   // FR-014 AC-017
   it('FR-014 AC-017 非表示にしたものを再表示でき、すべて非表示でも再表示できる', () => {
     const l = show(hide(biz(), 'gantt'), 'gantt');
-    expect(keysOf(l).sort()).toEqual(['discussion-tree', 'gantt', 'issue-solution']);
+    expect(keysOf(l).sort()).    toEqual(['discussion-tree', 'gantt', 'issue-solution', 'table']);
     let all: Layout = biz();
     for (const k of keysOf(all)) all = hide(all, k);
     expect(all).toBeNull();
@@ -65,7 +65,7 @@ describe('FR-109 移動・方向・タブ・大きさ', () => {
 
   // FR-109 AC-134
   it('FR-109 AC-134 2 つをタブにまとめ、タブから出せる', () => {
-    const l = mergeIntoTabs(move(biz(), 'gantt', 'up'), 'discussion-tree', 'gantt');
+    const l = mergeIntoTabs(hide(move(biz(), 'gantt', 'up'), 'table'), 'discussion-tree', 'gantt');
     const first = (l as SplitNode).children[0]!;
     expect(first).toEqual({ kind: 'tabs', tabs: ['gantt', 'discussion-tree'], active: 'discussion-tree' });
     expect(keysOf(l).sort()).toEqual(['discussion-tree', 'gantt', 'issue-solution']);
