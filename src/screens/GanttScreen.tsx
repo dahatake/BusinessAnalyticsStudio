@@ -9,6 +9,7 @@ import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { flattenTree, type TreeRow } from '../plan/hierarchy';
 import { useEntityBinding, useSelection } from '../selection/hooks';
 import { Panel } from '../components/Panel';
+import { useHighlightClass } from '../components/highlight';
 import { ExecutiveSummary } from '../components/ExecutiveSummary';
 import { RelatedMini } from '../components/RelatedMini';
 import { EmptyView, LoadingView } from '../components/StateViews';
@@ -60,6 +61,17 @@ const useStyles = makeStyles({
     backgroundColor: tokens.colorNeutralBackground1,
   },
   chipSelected: { backgroundColor: tokens.colorBrandBackground2, border: `${tokens.strokeWidthThick} solid ${tokens.colorBrandStroke1}` },
+  siteList: { display: 'flex', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalS, rowGap: tokens.spacingVerticalS },
+  siteChip: {
+    cursor: 'pointer',
+    minHeight: '28px',
+    paddingInline: tokens.spacingHorizontalM,
+    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`,
+    borderRadius: tokens.borderRadiusMedium,
+    backgroundColor: tokens.colorNeutralBackground1,
+    color: tokens.colorNeutralForeground1,
+    ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`, outlineOffset: '1px' },
+  },
   canvas: { width: '100%', maxWidth: '960px', height: 'auto', border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium },
 });
 
@@ -79,30 +91,42 @@ function drawGantt25D(canvas: HTMLCanvasElement, rows: ReadonlyArray<{ g: GanttT
   const ctx = canvas.getContext('2d');
   if (!ctx) return;
   ctx.clearRect(0, 0, W, H);
-  ctx.fillStyle = '#f5f7fa';
+  // 色・フォントは、テーマの CSS 変数（tokens）を読む。テーマの切り替えに追従する
+  const cs = getComputedStyle(canvas);
+  const css = (token: string, fallback = 'CanvasText'): string => {
+    const m = /var\((--[^,)]+)/.exec(token);
+    return (m ? cs.getPropertyValue(m[1] ?? '').trim() : token.trim()) || fallback;
+  };
+  const cBg = css(tokens.colorNeutralBackground2);
+  const cGrid = css(tokens.colorNeutralStroke1);
+  const cText = css(tokens.colorNeutralForeground1);
+  const palette = {
+    selected: { front: css(tokens.colorBrandBackground), top: css(tokens.colorBrandBackgroundHover), side: css(tokens.colorBrandBackgroundPressed) },
+    related: { front: css(tokens.colorBrandBackground2Pressed), top: css(tokens.colorBrandBackground2), side: css(tokens.colorBrandStroke1) },
+    plain: { front: css(tokens.colorNeutralBackground5), top: css(tokens.colorNeutralBackground4), side: css(tokens.colorNeutralStroke1) },
+  };
+  ctx.fillStyle = cBg;
   ctx.fillRect(0, 0, W, H);
   const trackW = W - left - 40;
   const dx = 10;
   const dy = -8;
   // 床の格子（奥行きの目安）
-  ctx.strokeStyle = '#c8d0da';
+  ctx.strokeStyle = cGrid;
   ctx.lineWidth = 1;
   for (let i = 0; i <= 10; i++) {
     const x = left + (trackW * i) / 10;
     ctx.beginPath(); ctx.moveTo(x, 20); ctx.lineTo(x + dx * 2, 12); ctx.lineTo(x + dx * 2, H - 20); ctx.stroke();
   }
-  ctx.font = '12px sans-serif';
+  ctx.font = `${css(tokens.fontSizeBase200, '12px')} ${css(tokens.fontFamilyBase, 'sans-serif')}`;
   rows.forEach(({ g, depth, hl }, i) => {
     const y = 30 + i * rowH;
-    ctx.fillStyle = '#243447';
+    ctx.fillStyle = cText;
     ctx.textBaseline = 'middle';
     ctx.fillText(g.task.title.slice(0, 16), 10 + depth * 14, y + 8);
     if (g.startDay === undefined) return;
     const x = left + (g.leftPct / 100) * trackW;
     const w = Math.max(6, (g.widthPct / 100) * trackW);
-    const front = hl === 'selected' ? '#0f6cbd' : hl === 'related' ? '#479ef5' : '#8a9bb0';
-    const top = hl === 'selected' ? '#4f9bde' : hl === 'related' ? '#9cc9f7' : '#b9c5d3';
-    const side = hl === 'selected' ? '#0a4a82' : hl === 'related' ? '#2b72b8' : '#5d6e82';
+    const { front, top, side } = hl === 'selected' ? palette.selected : hl === 'related' ? palette.related : palette.plain;
     ctx.fillStyle = front; ctx.fillRect(x, y, w, 16);
     ctx.fillStyle = top; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + dx, y + dy); ctx.lineTo(x + w + dx, y + dy); ctx.lineTo(x + w, y); ctx.closePath(); ctx.fill();
     ctx.fillStyle = side; ctx.beginPath(); ctx.moveTo(x + w, y); ctx.lineTo(x + w + dx, y + dy); ctx.lineTo(x + w + dx, y + 16 + dy); ctx.lineTo(x + w, y + 16); ctx.closePath(); ctx.fill();
@@ -121,6 +145,7 @@ function GanttScreen() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const { graph, selectedIds, related, select, clear } = useSelection();
   const bind = useEntityBinding('gantt');
+  const hl = useHighlightClass();
 
   const features = data?.plan.features;
   const tasks = data?.plan.tasks;
@@ -154,6 +179,8 @@ function GanttScreen() {
   }, [view, groupRows, orphanRows, selectedIds, related, featureId, data]);
 
   if (!data) return <LoadingView label="工程を読み込み中" />;
+
+  const sites = data.entities.entities.filter((e) => e.type === 'site');
 
   const featureTitle = new Map(data.plan.features.map((f) => [f.id, f.title]));
   const issueTitle = new Map(data.issues.issues.map((i) => [i.id, i.title]));
@@ -336,6 +363,19 @@ function GanttScreen() {
           ) : null}
         </>
       )}
+      {sites.length > 0 ? (
+        <section className={s.section} data-testid="gantt-sites" aria-label="工程の実施拠点">
+          <Text as="h3" size={400} weight="semibold">実施拠点</Text>
+          <div className={s.siteList}>
+            {sites.map((site) => {
+              const p = bind(site.id);
+              return (
+                <button key={site.id} type="button" className={mergeClasses(s.siteChip, hl(p['data-highlight']))} {...p}>{site.name}</button>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
       <RelatedMini origin="gantt" />
     </Panel>
   );

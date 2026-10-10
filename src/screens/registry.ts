@@ -22,6 +22,7 @@ import { KnowledgeGraphScreen } from './KnowledgeGraphScreen';
 import { ArchitectureScreen } from './ArchitectureScreen';
 import { DiscussionTreeScreen } from './DiscussionTreeScreen';
 import { WhiteboardScreen } from './whiteboard/WhiteboardScreen';
+import { SourcesScreen } from './SourcesScreen';
 import { ChatScreen } from '../ai/ChatScreen';
 import '../analysis/commands';
 
@@ -41,6 +42,7 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'view3d', label: '3D ビュー', icon: Cube24Regular, component: View3DScreen },
   { key: 'drawing2d', label: '2D 図面', icon: Ruler24Regular, component: Drawing2DScreen },
   { key: 'map', label: '地図', icon: Map24Regular, component: MapScreen },
+  { key: 'sources', label: '出典', icon: DocumentBulletList24Regular, component: SourcesScreen },
   { key: 'mock-app', label: 'ミニ・モックアプリ', icon: PhoneDesktop24Regular, component: MockAppScreen },
   { key: 'whiteboard', label: 'ホワイトボード', icon: Whiteboard24Regular, component: WhiteboardScreen },
   { key: 'themes', label: '議論テーマ', icon: CommentMultiple24Regular, component: ThemesScreen },
