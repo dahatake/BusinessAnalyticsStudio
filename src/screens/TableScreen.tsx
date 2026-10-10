@@ -19,8 +19,8 @@ import { InlineInput } from '../edit/InlineInput';
 import { KIND_LABELS, type GraphNode } from '../selection/graph';
 import { onEntityKey, useEntityBinding, useSelection, useSelectionFilter } from '../selection/hooks';
 import { useEditStore } from '../store/edit';
-import { useFallbackStore } from '../store/fallback';
 import { useRetainedState } from '../store/retained';
+import { useFallbackStore } from '../store/fallback';
 
 const ORIGIN = 'table';
 
@@ -52,7 +52,7 @@ function NameCell({ node, className, indent = 0 }: { node: GraphNode; className:
     <TableCell
       role="gridcell"
       className={className}
-      style={indent > 0 ? { paddingInlineStart: `${indent * 20}px` } : undefined}
+      style={indent > 0 ? { paddingInlineStart: `calc(${tokens.spacingHorizontalXL} * ${indent})` } : undefined}
       tabIndex={0}
       onDoubleClick={() => { if (editMode) setEditing(true); }}
       onKeyDown={(e) => {
@@ -82,7 +82,7 @@ function NameCell({ node, className, indent = 0 }: { node: GraphNode; className:
 function TableScreen() {
   const s = useStyles();
   const hl = useHighlightClass();
-  const { graph, selectedIds, related, mode, unrelated, setMode, setUnrelated, clear } = useSelection();
+  const { graph, selectedIds, related, mode, unrelated, setMode, setUnrelated, clear, select } = useSelection();
   const bind = useEntityBinding(ORIGIN);
   const editMode = useEditStore((st) => st.editMode);
   // FR-113: 表現が成り立たない項目（位置情報なしなど）を「表で見る」要求があるときは、その項目だけを出す
@@ -158,6 +158,9 @@ function TableScreen() {
         <Badge appearance="filled" color="brand" size="large" data-testid="count-badge" aria-label={`該当 ${count} 件`}>
           {count} 件
         </Badge>
+        <Field label="文字で絞り込み">
+          <Input aria-label="絞り込み（名称・ID）" value={text} onChange={(_, d) => setText(d.value)} />
+        </Field>
         <Button icon={<FilterDismiss24Regular aria-hidden />} disabled={selectedIds.length === 0} onClick={() => clear({ origin: ORIGIN })}>
           フィルター解除
         </Button>
@@ -198,6 +201,8 @@ function TableScreen() {
                   key={n.id}
                   role="row"
                   {...props}
+                  // FR-045 AC-056: 編集モードでセルを編集するための選択は、URL（ブラウザー履歴）に積まない（編集中にページ遷移の扱いにしない）
+                  onClick={editMode ? (e) => { select(n.id, { origin: ORIGIN, additive: e.ctrlKey || e.metaKey || e.shiftKey, history: 'none' }); } : props.onClick}
                   data-highlight={highlight}
                   aria-selected={selected.has(n.id)}
                   aria-expanded={hasChildren ? expanded : undefined}
@@ -228,3 +233,4 @@ function TableScreen() {
 }
 
 export { TableScreen };
+
