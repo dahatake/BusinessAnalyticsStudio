@@ -179,6 +179,11 @@ function GanttScreen() {
         aria-expanded={hasChildren ? expanded : undefined}
         aria-level={depth + 1}
         onClick={(e) => { props.onClick?.(e); setFeatureId(g.task.featureId); }}
+        tabIndex={-1}
+        onFocus={() => setFocusId(g.task.id)}
+        onBlur={() => setFocusId(undefined)}
+        onMouseEnter={() => { props.onMouseEnter?.(); setHoverId(g.task.id); }}
+        onMouseLeave={() => { props.onMouseLeave?.(); setHoverId(undefined); }}
       >
         <div className={s.taskLabelCell} style={{ paddingInlineStart: `${depth * 20}px` }}>
           {hasChildren ? (
