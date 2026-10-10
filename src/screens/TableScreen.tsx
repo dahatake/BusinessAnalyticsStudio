@@ -3,7 +3,7 @@
 // 件数バッジ・AND/OR の切替・「非表示/減光」の選択・フィルター解除を備える。
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Badge, Button, Field, MessageBar, MessageBarActions, MessageBarBody, MessageBarTitle, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
+  Badge, Button, Field, Input, MessageBar, MessageBarActions, MessageBarBody, MessageBarTitle, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
   makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
 import { FilterDismiss24Regular } from '@fluentui/react-icons';
@@ -18,6 +18,7 @@ import { KIND_LABELS, type GraphNode } from '../selection/graph';
 import { onEntityKey, useEntityBinding, useSelection, useSelectionFilter } from '../selection/hooks';
 import { useEditStore } from '../store/edit';
 import { useFallbackStore } from '../store/fallback';
+import { useRetainedState } from '../store/retained';
 
 const ORIGIN = 'table';
 
@@ -92,8 +93,15 @@ function TableScreen() {
     return nodes.filter((n) => ids.has(n.id));
   }, [fallback, nodes]);
   // 編集モードでは、選択で行を隠さない（編集した行・追加した行が見えなくならないように、関連しない行は減光で残す）
-  const visible = fallbackNodes ?? (editMode ? nodes : filtered);
-  const count = fallbackNodes ? fallbackNodes.length : filteredCount;
+  // NFR-UX-001 AC-185: 文字での絞り込み。入力中の内容は画面の作り直しをまたいで保つ（useRetainedState）
+  const [text, setText] = useRetainedState('table.filter', '');
+  const q = text.trim().toLowerCase();
+  const base = fallbackNodes ?? (editMode ? nodes : filtered);
+  const visible = useMemo(
+    () => (q ? base.filter((n) => `${n.label} ${n.id} ${KIND_LABELS[n.kind]}`.toLowerCase().includes(q)) : base),
+    [base, q],
+  );
+  const count = q ? visible.length : fallbackNodes ? fallbackNodes.length : filteredCount;
   const selected = useMemo(() => new Set(selectedIds), [selectedIds]);
 
   if (!graph) return <LoadingView label="一覧を読み込み中" />;
@@ -127,6 +135,9 @@ function TableScreen() {
             <Radio value="hide" label="非表示" />
             <Radio value="dim" label="減光" />
           </RadioGroup>
+        </Field>
+        <Field label="絞り込み">
+          <Input value={text} onChange={(_, d) => setText(d.value)} placeholder="名称・ID・種別" />
         </Field>
         <Badge appearance="filled" color="brand" size="large" data-testid="count-badge" aria-label={`該当 ${count} 件`}>
           {count} 件

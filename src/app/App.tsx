@@ -20,7 +20,7 @@ import { SCREENS } from '../screens/registry';
 import { SelectionController } from '../selection/SelectionController';
 import { EditModeSwitch, HistoryButton, ResetSampleButton } from '../edit/EditControls';
 import { installEditKeys } from '../edit/useEditKeys';
-import { SelectionAnnouncer } from '../selection/Announcer';
+import { SelectionAnnouncer, SelectionIndicator } from '../selection/Announcer';
 import { EntityBoardActions } from '../whiteboard/entityActions';
 import { CommandController } from '../commands/CommandPalette';
 import { GlobalSearch } from '../search/GlobalSearch';
@@ -134,7 +134,7 @@ export function App() {
         title={`${name} ${projectName}`}
         screens={SCREENS}
         onSelect={onSelect}
-        headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><TimeAxis /><AnimationStatus /><IntensityIndicator /><AiStatus /></>}
+        headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><AiStatus /></>}
         actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /></>}
         dock={<Dock screens={SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
