@@ -19,6 +19,23 @@ const useStyles = makeStyles({
   },
 });
 
+// FR-015 AC-018: 選択中の対象を示す表示（ペルソナ切替などの画面の切替をまたいで保たれる）。ヘッダーに常に置く。
+export function SelectionIndicator() {
+  const { graph, selectedIds } = useSelection();
+  if (selectedIds.length === 0) return <span data-testid="selection-indicator" hidden />;
+  const names = selectedIds.map((id) => graph?.node(id)?.label ?? id);
+  const text = names.length > 1 ? `${names[0]} ほか ${names.length - 1} 件` : names[0];
+  return (
+    <span
+      data-testid="selection-indicator"
+      title={names.join('、')}
+      style={{ maxWidth: '16em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.85em' }}
+    >
+      選択中: {text}
+    </span>
+  );
+}
+
 export function SelectionAnnouncer() {
   const s = useStyles();
   const { graph, selectedIds, related } = useSelection();

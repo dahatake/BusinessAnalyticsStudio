@@ -1,7 +1,7 @@
 // 課題・解決策の詳細パネルと出典カード（FR-003 評価属性、FR-004 出典、FR-005 Microsoft 製品と適合理由）。
 // 編集モードが ON のときは、名前・評価属性の値をその場で編集でき、選んだ項目の追加・複製・削除ができる（FR-044・FR-046・FR-047）。
 import { useEffect, useState } from 'react';
-import { Badge, Button, Link, Text, makeStyles, tokens } from '@fluentui/react-components';
+import { Badge, Button, Field, Link, Text, Textarea, makeStyles, tokens } from '@fluentui/react-components';
 import { Edit16Regular } from '@fluentui/react-icons';
 import { InlineInput } from '../edit/InlineInput';
 import { EditToolbar } from '../edit/EditControls';
@@ -10,6 +10,7 @@ import { KIND_LABELS, type NodeKind } from '../selection/graph';
 import { useDetailHost } from '../store/detailHost';
 import { usePane } from '../workspace/PaneContext';
 import { useEditStore } from '../store/edit';
+import { useRetainedState } from '../store/retained';
 import {
   AUDIENCE_LABELS, causesOf, effectsOf, evaluationItems, genAiValueItems, productFits, safeHttpUrl, solutionsOfIssue,
   type Issue, type Product, type Solution, type Source,
@@ -107,6 +108,18 @@ export function DetailPanel({ hostPriority = 1, ...props }: DetailProps) {
   return visible && active ? <DetailBody {...props} /> : null;
 }
 
+/** 編集モードが ON のとき、未保存のメモ。入力中の内容は、画面の作り直し（ペルソナの切替など）をまたいで保つ（NFR-UX-001 AC-185）。保存はしない。 */
+function DraftNote() {
+  const editMode = useEditStore((st) => st.editMode);
+  const [text, setText] = useRetainedState('detail.draftNote', '');
+  if (!editMode) return null;
+  return (
+    <Field label="メモ（未保存）">
+      <Textarea resize="vertical" rows={2} value={text} onChange={(_, d) => setText(d.value)} />
+    </Field>
+  );
+}
+
 function DetailBody({ selection, solutions = [], products, sources, sourceId, onOpenSource, onCloseSource }: DetailProps) {
   const s = useStyles();
   const sourceById = new Map(sources.map((x) => [x.id, x]));
@@ -114,6 +127,7 @@ function DetailBody({ selection, solutions = [], products, sources, sourceId, on
   return (
     <aside className={s.root} data-testid="component-detail" aria-label="詳細">
       <EditToolbar />
+      <DraftNote />
       {!selection ? (
         <Text>項目を選ぶと、詳細を表示します。</Text>
       ) : selection.kind === 'issue' ? (
