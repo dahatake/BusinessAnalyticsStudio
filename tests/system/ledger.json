@@ -3493,10 +3493,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-115",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "470702d",
+      "last_run_at": "2026-10-10T11:25:54+09:00",
+      "evidence": "work/runs/202610100952/logs/system-test/E2E-088-202610101125.log",
       "history": [
         {
           "at": "2026-10-09T12:18:19+09:00",
