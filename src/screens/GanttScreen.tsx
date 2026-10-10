@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
+import { useHighlightClass } from '../components/highlight';
+import { useEntityBinding, useSelection } from '../selection/hooks';
 import { ExecutiveSummary } from '../components/ExecutiveSummary';
 import { RelatedMini } from '../components/RelatedMini';
 import { EmptyView, LoadingView } from '../components/StateViews';
@@ -44,6 +46,17 @@ const useStyles = makeStyles({
     border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     borderRadius: tokens.borderRadiusMedium,
   },
+  siteList: { display: 'flex', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalS, rowGap: tokens.spacingVerticalS },
+  siteChip: {
+    cursor: 'pointer',
+    minHeight: '28px',
+    paddingInline: tokens.spacingHorizontalM,
+    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`,
+    borderRadius: tokens.borderRadiusMedium,
+    backgroundColor: tokens.colorNeutralBackground1,
+    color: tokens.colorNeutralForeground1,
+    ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`, outlineOffset: '1px' },
+  },
   section: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS },
 });
 
@@ -69,7 +82,12 @@ function GanttScreen() {
     });
   }, [tasks, taskId, featureId]);
 
+  const bind = useEntityBinding('gantt');
+  const hl = useHighlightClass();
+  const { selectedIds, related } = useSelection();
+
   if (!data) return <LoadingView label="工程を読み込み中" />;
+  const sites = data.entities.entities.filter((e) => e.type === 'site');
 
   const featureTitle = new Map(data.plan.features.map((f) => [f.id, f.title]));
   const issueTitle = new Map(data.issues.issues.map((i) => [i.id, i.title]));
@@ -80,7 +98,8 @@ function GanttScreen() {
   const active = activeId ? byId.get(activeId)?.task : undefined;
 
   const highlight = (g: GanttTask): 'selected' | 'related' | undefined =>
-    g.task.id === taskId ? 'selected' : featureId !== undefined && g.task.featureId === featureId ? 'related' : undefined;
+    g.task.id === taskId || selectedIds.includes(g.task.id) ? 'selected'
+      : (featureId !== undefined && g.task.featureId === featureId) || related?.has(g.task.id) ? 'related' : undefined;
 
   const taskRow = (g: GanttTask) => {
     const h = highlight(g);
@@ -212,6 +231,19 @@ function GanttScreen() {
           ) : null}
         </>
       )}
+      {sites.length > 0 ? (
+        <section className={s.section} data-testid="gantt-sites" aria-label="工程の実施拠点">
+          <Text as="h3" size={400} weight="semibold">実施拠点</Text>
+          <div className={s.siteList}>
+            {sites.map((site) => {
+              const p = bind(site.id);
+              return (
+                <button key={site.id} type="button" className={mergeClasses(s.siteChip, hl(p['data-highlight']))} {...p}>{site.name}</button>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
       <RelatedMini origin="gantt" />
     </Panel>
   );

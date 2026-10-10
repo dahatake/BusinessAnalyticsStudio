@@ -3,7 +3,7 @@
 // 件数バッジ・AND/OR の切替・「非表示/減光」の選択・フィルター解除を備える。
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Badge, Button, Field, MessageBar, MessageBarActions, MessageBarBody, MessageBarTitle, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
+  Badge, Button, Field, Input, MessageBar, MessageBarActions, MessageBarBody, MessageBarTitle, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
   makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
 import { FilterDismiss24Regular } from '@fluentui/react-icons';
@@ -17,6 +17,7 @@ import { InlineInput } from '../edit/InlineInput';
 import { KIND_LABELS, type GraphNode } from '../selection/graph';
 import { onEntityKey, useEntityBinding, useSelection, useSelectionFilter } from '../selection/hooks';
 import { useEditStore } from '../store/edit';
+import { useRetainedState } from '../store/retained';
 import { useFallbackStore } from '../store/fallback';
 
 const ORIGIN = 'table';
@@ -78,7 +79,7 @@ function NameCell({ node, className }: { node: GraphNode; className: string }) {
 function TableScreen() {
   const s = useStyles();
   const hl = useHighlightClass();
-  const { graph, selectedIds, related, mode, unrelated, setMode, setUnrelated, clear } = useSelection();
+  const { graph, selectedIds, related, mode, unrelated, setMode, setUnrelated, clear, select } = useSelection();
   const bind = useEntityBinding(ORIGIN);
   const editMode = useEditStore((st) => st.editMode);
   // FR-113: 表現が成り立たない項目（位置情報なしなど）を「表で見る」要求があるときは、その項目だけを出す
@@ -92,8 +93,12 @@ function TableScreen() {
     return nodes.filter((n) => ids.has(n.id));
   }, [fallback, nodes]);
   // 編集モードでは、選択で行を隠さない（編集した行・追加した行が見えなくならないように、関連しない行は減光で残す）
-  const visible = fallbackNodes ?? (editMode ? nodes : filtered);
-  const count = fallbackNodes ? fallbackNodes.length : filteredCount;
+  const base = fallbackNodes ?? (editMode ? nodes : filtered);
+  // 文字での絞り込み（NFR-UX-001: ペルソナの切替・表示の切替をまたいで保つ）。名称または ID に含まれる行だけを出す
+  const [text, setText] = useRetainedState('table.filter', '');
+  const needle = text.trim().toLowerCase();
+  const visible = needle ? base.filter((n) => n.label.toLowerCase().includes(needle) || n.id.toLowerCase().includes(needle)) : base;
+  const count = needle ? visible.length : fallbackNodes ? fallbackNodes.length : filteredCount;
   const selected = useMemo(() => new Set(selectedIds), [selectedIds]);
 
   if (!graph) return <LoadingView label="一覧を読み込み中" />;
@@ -131,6 +136,9 @@ function TableScreen() {
         <Badge appearance="filled" color="brand" size="large" data-testid="count-badge" aria-label={`該当 ${count} 件`}>
           {count} 件
         </Badge>
+        <Field label="文字で絞り込み">
+          <Input aria-label="絞り込み（名称・ID）" value={text} onChange={(_, d) => setText(d.value)} />
+        </Field>
         <Button icon={<FilterDismiss24Regular aria-hidden />} disabled={selectedIds.length === 0} onClick={() => clear({ origin: ORIGIN })}>
           フィルター解除
         </Button>
@@ -171,6 +179,8 @@ function TableScreen() {
                   key={n.id}
                   role="row"
                   {...props}
+                  // FR-045 AC-056: 編集モードでセルを編集するための選択は、URL（ブラウザー履歴）に積まない（編集中にページ遷移の扱いにしない）
+                  onClick={editMode ? (e) => { select(n.id, { origin: ORIGIN, additive: e.ctrlKey || e.metaKey || e.shiftKey, history: 'none' }); } : props.onClick}
                   data-highlight={highlight}
                   aria-selected={selected.has(n.id)}
                   tabIndex={0}
@@ -193,3 +203,4 @@ function TableScreen() {
 }
 
 export { TableScreen };
+

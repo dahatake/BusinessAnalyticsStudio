@@ -4,6 +4,7 @@
 import { useEffect } from 'react';
 import { registerCommands, type Command } from '../commands/registry';
 import { openExportDialog } from './ui';
+import { saveAllNow } from './ExportDialog';
 
 export const EXPORT_COMMANDS: readonly Command[] = [
   {
@@ -18,7 +19,7 @@ export const EXPORT_COMMANDS: readonly Command[] = [
     label: '保存する（全量の Markdown をエクスポート）',
     keywords: ['保存', 'エクスポート', 'save', 'export'],
     shortcut: 'Ctrl+S',
-    run: openExportDialog,
+    run: () => { void saveAllNow(); },
   },
 ];
 
@@ -36,7 +37,7 @@ export function useExportShortcuts(): void {
     const onKey = (e: KeyboardEvent) => {
       if (e.isComposing || !isExportShortcut(e)) return;
       e.preventDefault();
-      if (!e.repeat) openExportDialog();
+      if (!e.repeat) { if (e.shiftKey) openExportDialog(); else void saveAllNow(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);

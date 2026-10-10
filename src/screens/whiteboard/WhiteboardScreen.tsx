@@ -9,13 +9,14 @@ import {
   MenuPopover, MenuTrigger, Option, SpinButton, Tab, TabList, Text, makeStyles, tokens,
 } from '@fluentui/react-components';
 import {
-  Add20Regular, AlignTop20Regular, DocumentPdf20Regular, Frame20Regular, Group20Regular, GroupDismiss20Regular, Link20Regular, Sparkle20Regular,
+  Add20Regular, AlignTop20Regular, DocumentPdf20Regular, DocumentText20Regular, Frame20Regular, Group20Regular, GroupDismiss20Regular, Link20Regular, Sparkle20Regular,
   TaskListSquareLtr20Regular, Timer20Regular, VoteRegular, ZoomFit20Regular, ZoomIn20Regular, ZoomOut20Regular,
 } from '@fluentui/react-icons';
 import { useAi } from '../../ai/useAi';
 import { Panel } from '../../components/Panel';
 import { usePackTarget } from '../../discussion/usePackTarget';
 import { BoardPdfDialog } from '../../export/BoardPdfDialog';
+import { BoardMarkdownDialog } from '../../export/BoardMarkdownDialog';
 import { usePane } from '../../workspace/PaneContext';
 import { BoardSurface } from '../../ink/BoardSurface';
 import { RECOGNIZED_LABEL, recognizeHandwriting } from '../../ink/handwriting';
@@ -42,6 +43,10 @@ const useStyles = makeStyles({
   recognized: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS, margin: 0, paddingLeft: tokens.spacingHorizontalXL },
   recognizedItem: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalS },
   status: { height: '1.4em', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' },
+  statusOverlay: {
+    position: 'absolute', top: tokens.spacingVerticalXS, left: tokens.spacingHorizontalS, right: tokens.spacingHorizontalS, zIndex: 1,
+    pointerEvents: 'none', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', color: tokens.colorNeutralForeground2,
+  },
   clock: { fontVariantNumeric: 'tabular-nums', fontSize: tokens.fontSizeHero700, fontWeight: tokens.fontWeightSemibold },
   timerBody: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM, alignItems: 'flex-start' },
 });
@@ -142,6 +147,7 @@ export function WhiteboardScreen() {
   const [busy, setBusy] = useState(false);
   const [timerOpen, setTimerOpen] = useState(false);
   const [pdfOpen, setPdfOpen] = useState(false);
+  const [mdOpen, setMdOpen] = useState(false);
   const [recBusy, setRecBusy] = useState(false);
   const recognized = useRecognized((st) => st.items);
   const timerEndsAt = useTimer((st) => st.endsAt);
@@ -295,6 +301,7 @@ export function WhiteboardScreen() {
         <Button className={s.forcedAuto} appearance="primary" icon={<Add20Regular aria-hidden />} onClick={() => addBoard(topicId)}>ボードを追加</Button>
         <Field label="背景" size="small">
           <Dropdown
+            style={{ minWidth: '112px', width: '112px' }}
             value={bg.label}
             selectedOptions={[bg.value]}
             onOptionSelect={(_, d) => { if (active && d.optionValue) setBackground(active.id, d.optionValue as Background); }}
@@ -306,6 +313,7 @@ export function WhiteboardScreen() {
         <Button icon={<ZoomOut20Regular aria-hidden />} aria-label="縮小" onClick={() => zoomBy(1 / 1.25)} />
         <Button icon={<ZoomIn20Regular aria-hidden />} aria-label="拡大" onClick={() => zoomBy(1.25)} />
         <Button icon={<DocumentPdf20Regular aria-hidden />} disabled={!active} onClick={() => setPdfOpen(true)}>PDF 出力</Button>
+        <Button icon={<DocumentText20Regular aria-hidden />} disabled={!active} onClick={() => setMdOpen(true)}>Markdown 出力</Button>
       </div>
       <TabList
         size="small"
@@ -341,12 +349,19 @@ export function WhiteboardScreen() {
           <TimerDialog open={timerOpen} onOpenChange={setTimerOpen} />
           {!timerOpen && timerShown ? <TimerReadout /> : null}
         </div>
-        <Text role="status" className={s.status} size={200}>
-          {status}{connectFrom ? ' 接続元を選びました。つなぐ相手の項目をクリックしてください（Esc で取り消し）。' : ''}
-          {voteMode ? ` 投票数: ${votes} 票` : ''}
-        </Text>
+        {!active ? (
+          <Text role="status" className={s.status} size={200}>
+            {status}{connectFrom ? ' 接続元を選びました。つなぐ相手の項目をクリックしてください（Esc で取り消し）。' : ''}
+            {voteMode ? ` 投票数: ${votes} 票` : ''}
+          </Text>
+        ) : null}
         {active && (
           <div className={s.stage}>
+            {/* 状態の表示は描画面の上端に重ねる（場所を取らず、描画面をできるだけ上に置く。ショーコントロールバーに隠れにくくする） */}
+            <Text role="status" className={s.statusOverlay} size={200}>
+              {status}{connectFrom ? ' 接続元を選びました。つなぐ相手の項目をクリックしてください（Esc で取り消し）。' : ''}
+              {voteMode ? ` 投票数: ${votes} 票` : ''}
+            </Text>
             <BoardSurface key={active.id} boardId={active.id} ariaLabel={`${active.name}の描画面`} minimap onEntityDrop={onEntityDrop} onItemActivate={onItemActivate}>
               <ItemOverlay boardId={active.id} />
             </BoardSurface>
@@ -371,6 +386,7 @@ export function WhiteboardScreen() {
           );
         })}
         {active && <BoardPdfDialog boardId={active.id} open={pdfOpen} onOpenChange={setPdfOpen} onResult={setStatus} />}
+        {active && <BoardMarkdownDialog boards={mine} activeBoardId={active.id} open={mdOpen} onOpenChange={setMdOpen} onResult={setStatus} />}
       </div>
     </Panel>
   );

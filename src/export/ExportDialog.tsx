@@ -57,6 +57,30 @@ function collectInput(): ExportInput | null {
   };
 }
 
+/**
+ * Ctrl+S: ダイアログを開かずに、全量の Markdown（File System Access 非対応なら ZIP）をそのまま書き出す（FR-052）。
+ * 機密区分 internal の項目があれば匿名化する（ダイアログの既定と同じ）。
+ */
+export async function saveAllNow(): Promise<void> {
+  const input = collectInput();
+  const setNotice = useExportUi.getState().setNotice;
+  if (!input) return;
+  try {
+    const fs = hasFileSystemAccess();
+    const asZip = !fs;
+    const r = buildExport(input, { scope: 'all', screenKey: '', themeId: '', anonymize: countInternal(input.data) > 0, format: asZip ? 'zip' : 'md', followUp: false });
+    const bytes = asZip ? createZip(r.files, input.now) : r.markdown;
+    const res = await deliver(asZip ? r.fileName.replace(/\.md$/, '.zip') : r.fileName, bytes, fs);
+    if (res.ok) {
+      setNotice({ kind: 'success', title: 'エクスポートしました', lines: [res.name, ...(res.method === 'download' ? ['ブラウザーのダウンロードとして保存しました。'] : [])] });
+    } else if (!res.cancelled) {
+      setNotice({ kind: 'error', title: 'エクスポートできませんでした', lines: [res.reason] });
+    }
+  } catch (e) {
+    setNotice({ kind: 'error', title: 'エクスポートできませんでした', lines: [e instanceof Error ? e.message : String(e)] });
+  }
+}
+
 export function ExportDialog({ screens }: { screens: readonly ExportScreenRef[] }) {
   const s = useStyles();
   const open = useExportUi((u) => u.open);

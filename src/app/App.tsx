@@ -21,6 +21,7 @@ import { SelectionController } from '../selection/SelectionController';
 import { EditModeSwitch, HistoryButton, ResetSampleButton } from '../edit/EditControls';
 import { installEditKeys } from '../edit/useEditKeys';
 import { SelectionAnnouncer } from '../selection/Announcer';
+import { SelectionIndicator } from '../selection/Indicator';
 import { EntityBoardActions } from '../whiteboard/entityActions';
 import { CommandController } from '../commands/CommandPalette';
 import { GlobalSearch } from '../search/GlobalSearch';
@@ -135,7 +136,7 @@ export function App() {
         screens={SCREENS}
         onSelect={onSelect}
         headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><TimeAxis /><AnimationStatus /><IntensityIndicator /><AiStatus /></>}
-        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /></>}
+        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><SelectionIndicator /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /></>}
         dock={<Dock screens={SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
       >
