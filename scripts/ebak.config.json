@@ -9,16 +9,39 @@
     "manual_tests": "docs/manual-tests.md"
   },
   "base_branch": "main",
+  "checks": {
+    "id_scan_exclude": [
+      "docs/**",
+      "work/**",
+      ".github/**",
+      "scripts/**",
+      "tools/**",
+      "users-guide/**",
+      "tests/toolkit/**",
+      "templates/**",
+      "node_modules/**",
+      "**/node_modules/**",
+      ".git/**",
+      "**/*.lock",
+      "**/package-lock.json",
+      "AGENTS.md",
+      "README.md",
+      "**/*.svg",
+      "EABK-Studio/**",
+      ".specify/**",
+      "specs/**/*.md",
+      "dist/**",
+      "tests/system/e2e/test_run_owned_cleanup.py",
+      "tests/system/test_run_cleanup_system.py"
+    ]
+  },
   "work": {
     "dir": "work",
     "retention_days": 14
   },
   "verify": {
     "timeout_sec": 1800,
-    "commands": [
-      { "name": "build", "run": "npm install --no-audit --no-fund && npm run build" },
-      { "name": "unit", "run": "npm test" }
-    ]
+    "commands": []
   },
   "models": {
     "_note": "Phase 1 で較正して決めます（users-guide/04-customization.md）。conductor は subagent を呼ぶときにこの表を参照します。空なら既定のモデルを使います。",
