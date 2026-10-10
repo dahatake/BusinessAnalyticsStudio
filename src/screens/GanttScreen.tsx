@@ -72,7 +72,6 @@ const useStyles = makeStyles({
     color: tokens.colorNeutralForeground1,
     ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`, outlineOffset: '1px' },
   },
-  section: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS },
   canvas: { width: '100%', maxWidth: '960px', height: 'auto', border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium },
 });
 
@@ -96,7 +95,7 @@ function drawGantt25D(canvas: HTMLCanvasElement, rows: ReadonlyArray<{ g: GanttT
   const cs = getComputedStyle(canvas);
   const css = (token: string, fallback = 'CanvasText'): string => {
     const m = /var\((--[^,)]+)/.exec(token);
-    return (m ? cs.getPropertyValue(m[1]).trim() : token.trim()) || fallback;
+    return (m ? cs.getPropertyValue(m[1] ?? '').trim() : token.trim()) || fallback;
   };
   const cBg = css(tokens.colorNeutralBackground2);
   const cGrid = css(tokens.colorNeutralStroke1);
