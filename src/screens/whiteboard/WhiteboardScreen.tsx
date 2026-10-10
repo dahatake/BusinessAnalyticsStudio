@@ -9,12 +9,13 @@ import {
   MenuPopover, MenuTrigger, Option, SpinButton, Tab, TabList, Text, makeStyles, tokens,
 } from '@fluentui/react-components';
 import {
-  Add20Regular, AlignTop20Regular, DocumentPdf20Regular, Frame20Regular, Group20Regular, GroupDismiss20Regular, Link20Regular, Sparkle20Regular,
+  Add20Regular, AlignTop20Regular, DocumentMarkdown20Regular, DocumentPdf20Regular, Frame20Regular, Group20Regular, GroupDismiss20Regular, Link20Regular, Sparkle20Regular,
   TaskListSquareLtr20Regular, Timer20Regular, VoteRegular, ZoomFit20Regular, ZoomIn20Regular, ZoomOut20Regular,
 } from '@fluentui/react-icons';
 import { useAi } from '../../ai/useAi';
 import { Panel } from '../../components/Panel';
 import { usePackTarget } from '../../discussion/usePackTarget';
+import { BoardMarkdownDialog } from '../../export/BoardMarkdownDialog';
 import { BoardPdfDialog } from '../../export/BoardPdfDialog';
 import { usePane } from '../../workspace/PaneContext';
 import { BoardSurface } from '../../ink/BoardSurface';
@@ -142,6 +143,7 @@ export function WhiteboardScreen() {
   const [busy, setBusy] = useState(false);
   const [timerOpen, setTimerOpen] = useState(false);
   const [pdfOpen, setPdfOpen] = useState(false);
+  const [mdOpen, setMdOpen] = useState(false);
   const [recBusy, setRecBusy] = useState(false);
   const recognized = useRecognized((st) => st.items);
   const timerEndsAt = useTimer((st) => st.endsAt);
@@ -306,6 +308,7 @@ export function WhiteboardScreen() {
         <Button icon={<ZoomOut20Regular aria-hidden />} aria-label="縮小" onClick={() => zoomBy(1 / 1.25)} />
         <Button icon={<ZoomIn20Regular aria-hidden />} aria-label="拡大" onClick={() => zoomBy(1.25)} />
         <Button icon={<DocumentPdf20Regular aria-hidden />} disabled={!active} onClick={() => setPdfOpen(true)}>PDF 出力</Button>
+        <Button icon={<DocumentMarkdown20Regular aria-hidden />} disabled={!active} onClick={() => setMdOpen(true)}>Markdown 出力</Button>
       </div>
       <TabList
         size="small"
@@ -371,6 +374,7 @@ export function WhiteboardScreen() {
           );
         })}
         {active && <BoardPdfDialog boardId={active.id} open={pdfOpen} onOpenChange={setPdfOpen} onResult={setStatus} />}
+        {active && <BoardMarkdownDialog boardId={active.id} open={mdOpen} onOpenChange={setMdOpen} onResult={setStatus} />}
       </div>
     </Panel>
   );
