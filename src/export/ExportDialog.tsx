@@ -57,6 +57,25 @@ export function collectInput(): ExportInput | null {
   };
 }
 
+/**
+ * Ctrl+S: 画面を開かずに、全量の Markdown をその場でダウンロードとして保存する（FR-052 AC-064 の「いつでもエクスポート」）。
+ * 機密区分 internal の項目があるときは、安全側で匿名化する。出力範囲や匿名化を選びたいときは Ctrl+Shift+E の画面を使う。
+ */
+export async function quickSaveAll(): Promise<void> {
+  const input = collectInput();
+  const setNotice = useExportUi.getState().setNotice;
+  if (!input) return;
+  try {
+    const anonymize = countInternal(input.data) > 0;
+    const r = buildExport(input, { scope: 'all', screenKey: '', themeId: '', anonymize, format: 'md', followUp: false });
+    const res = await deliver(r.fileName, r.markdown, false);
+    if (res.ok) setNotice({ kind: 'success', title: 'エクスポートしました', lines: [res.name, 'ブラウザーのダウンロードとして保存しました。'] });
+    else if (!res.cancelled) setNotice({ kind: 'error', title: 'エクスポートできませんでした', lines: [res.reason] });
+  } catch (e) {
+    setNotice({ kind: 'error', title: 'エクスポートできませんでした', lines: [e instanceof Error ? e.message : String(e)] });
+  }
+}
+
 export function ExportDialog({ screens }: { screens: readonly ExportScreenRef[] }) {
   const s = useStyles();
   const open = useExportUi((u) => u.open);
