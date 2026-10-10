@@ -40,7 +40,7 @@ const SCOPES: ExportScope[] = ['all', 'screen', 'theme', 'decisions'];
 export interface ExportScreenRef { key: string; label: string }
 
 /** 書き出しの入力を、いまの状態から集める。 */
-function collectInput(): ExportInput | null {
+export function collectInput(): ExportInput | null {
   const st = usePackStore.getState().state;
   if (st.status !== 'ready') return null;
   const cu = st.pack.data.customer;

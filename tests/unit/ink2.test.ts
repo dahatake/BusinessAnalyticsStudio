@@ -6,7 +6,7 @@ import { contentChanged, createInkPersister, mergeBoards, type InkIo, type Saved
 import { clearTemporaryStrokes, usePresentationInk } from '../../src/ink/presentationInk';
 import { useRecognized } from '../../src/ink/recognized';
 import { syntheticStrokes, useInk } from '../../src/ink/store';
-import { assemblePdf, countContents, fitImage, pageSize, pdfSource } from '../../src/export/pdf';
+import { countContents, pageSize, pdfSource } from '../../src/export/pdf';
 import { boardSvg } from '../../src/export/svg';
 import { usePresentationStore } from '../../src/store/presentation';
 
@@ -239,34 +239,6 @@ describe('FR-096 AC-118 エクスポートのプレビューと PDF', () => {
     expect(pageSize('A4', 'landscape').w).toBeCloseTo(841.89, 1);
     expect(pageSize('A4', 'landscape').h).toBeCloseTo(595.28, 1);
     expect(pageSize('A3', 'portrait').w).toBeCloseTo(841.89, 1);
-  });
-
-  // FR-096 AC-118
-  it('FR-096 AC-118 画像は余白つきで、用紙の中央に収まる', () => {
-    const page = pageSize('A4', 'landscape');
-    const r = fitImage(page, { width: 2000, height: 500 });
-    expect(r.w).toBeLessThanOrEqual(page.w);
-    expect(r.x).toBeGreaterThan(0);
-    expect(r.x + r.w / 2).toBeCloseTo(page.w / 2, 3);
-    expect(r.y + r.h / 2).toBeCloseTo(page.h / 2, 3);
-    expect(r.w / r.h).toBeCloseTo(4, 3);
-  });
-
-  // FR-096 AC-118
-  it('FR-096 AC-118 PDF は %PDF- で始まり、MediaBox・画像・xref の位置が正しい', () => {
-    const jpeg = new Uint8Array([0xff, 0xd8, 0xff, 0xd9]);
-    const bytes = assemblePdf(pageSize('A4', 'landscape'), { jpeg, width: 10, height: 5 });
-    const text = Buffer.from(bytes).toString('latin1');
-    expect(text.startsWith('%PDF-1.4')).toBe(true);
-    expect(text).toContain('/MediaBox [0 0 841.89 595.28]');
-    expect(text).toContain('/Filter /DCTDecode');
-    expect(text.trimEnd().endsWith('%%EOF')).toBe(true);
-    const startxref = Number(/startxref\n(\d+)/.exec(text)![1]);
-    expect(Buffer.from(bytes).subarray(startxref, startxref + 4).toString('latin1')).toBe('xref');
-    // 各オブジェクトの位置が xref の記載と一致する
-    const rows = [...text.slice(startxref).matchAll(/(\d{10}) 00000 n /g)].map((m) => Number(m[1]));
-    expect(rows).toHaveLength(5);
-    rows.forEach((off, i) => expect(Buffer.from(bytes).subarray(off, off + 8).toString('latin1')).toMatch(new RegExp(`^${i + 1} 0 obj`)));
   });
 
   // FR-096 AC-118

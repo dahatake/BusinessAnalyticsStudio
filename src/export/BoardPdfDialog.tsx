@@ -6,9 +6,10 @@ import {
 } from '@fluentui/react-components';
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { useInk, selectBoard } from '../ink/store';
+import { usePackStore } from '../store/pack';
 import { downloadBlob } from './deliver';
 import {
-  buildBoardPdf, countContents, pageSize, pdfSource, type Orientation, type PaperSize, type PdfRange,
+  buildBoardPdf, countContents, pageSize, pdfSections, pdfSource, type Orientation, type PaperSize, type PdfRange,
 } from './pdf';
 
 const useStyles = makeStyles({
@@ -43,14 +44,19 @@ export interface BoardPdfDialogProps {
 export function BoardPdfDialog({ boardId, open, onOpenChange, onResult }: BoardPdfDialogProps) {
   const s = useStyles();
   const board = useInk((st) => selectBoard(boardId)(st));
+  const boards = useInk((st) => st.boards);
+  const selection = useInk((st) => st.selection);
+  const pack = usePackStore((st) => st.state);
+  const selectedIds = useMemo(() => (selection && selection.boardId === boardId ? selection.ids : []), [selection, boardId]);
   const [range, setRange] = useState<PdfRange>('board');
   const [paper, setPaper] = useState<PaperSize>('A4');
   const [orientation, setOrientation] = useState<Orientation>('landscape');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const svg = useMemo(() => (open && board ? pdfSource(board, range) : null), [open, board, range]);
-  const counts = useMemo(() => (board ? countContents(board, range) : null), [board, range]);
+  const svg = useMemo(() => (open && board ? pdfSource(board, range, selectedIds) : null), [open, board, range, selectedIds]);
+  const counts = useMemo(() => (board ? countContents(board, range, selectedIds) : null), [board, range, selectedIds]);
+  const hasOutput = useMemo(() => pdfSections(boards, boardId, range, selectedIds).length > 0, [boards, boardId, range, selectedIds]);
   const page = pageSize(paper, orientation);
 
   const run = async () => {
@@ -58,9 +64,13 @@ export function BoardPdfDialog({ boardId, open, onOpenChange, onResult }: BoardP
     setBusy(true);
     setError(null);
     try {
-      const bytes = await buildBoardPdf(board, { paper, orientation, range });
+      const cu = pack.status === 'ready' ? pack.pack.data.customer : null;
+      const bytes = await buildBoardPdf(boards, boardId, {
+        paper, orientation, range, selectedIds,
+        ...(cu ? { subtitle: `${cu.name} ${cu.projectName}` } : {}),
+      });
       if (!bytes) { setError('出力する範囲に何もありません。範囲を変えるか、ボードに書き込んでください。'); return; }
-      const name = `${safeName(board.name)}.pdf`;
+      const name = `${safeName(range === 'all' ? 'ホワイトボード' : board.name)}.pdf`;
       downloadBlob(name, new Blob([bytes.slice().buffer], { type: 'application/pdf' }));
       onResult?.(`${name} を出力しました（${paper}・${orientation === 'landscape' ? '横' : '縦'}）。`);
       onOpenChange(false);
@@ -80,7 +90,9 @@ export function BoardPdfDialog({ boardId, open, onOpenChange, onResult }: BoardP
             <div className={s.options}>
               <Field label="範囲">
                 <RadioGroup layout="horizontal" value={range} onChange={(_, d) => setRange(d.value as PdfRange)}>
+                  <Radio value="all" label="全体" />
                   <Radio value="board" label="ボード" />
+                  <Radio value="selection" label="選択範囲" disabled={selectedIds.length === 0} />
                   <Radio value="view" label="表示中の範囲" />
                 </RadioGroup>
               </Field>
@@ -88,6 +100,7 @@ export function BoardPdfDialog({ boardId, open, onOpenChange, onResult }: BoardP
                 <RadioGroup layout="horizontal" value={paper} onChange={(_, d) => setPaper(d.value as PaperSize)}>
                   <Radio value="A4" label="A4" />
                   <Radio value="A3" label="A3" />
+                  <Radio value="16:9" label="16:9" />
                 </RadioGroup>
               </Field>
               <Field label="向き">
@@ -114,7 +127,7 @@ export function BoardPdfDialog({ boardId, open, onOpenChange, onResult }: BoardP
             {error && <Text role="alert" size={200}>{error}</Text>}
           </DialogContent>
           <DialogActions>
-            <Button className={s.forcedAuto} appearance="primary" disabled={busy || !svg} onClick={() => { void run(); }}>出力</Button>
+            <Button className={s.forcedAuto} appearance="primary" disabled={busy || !hasOutput} onClick={() => { void run(); }}>出力</Button>
             <Button onClick={() => onOpenChange(false)}>閉じる</Button>
           </DialogActions>
         </DialogBody>
