@@ -1,5 +1,5 @@
 {
-  "name": "enterprise-discussion-board",
+  "name": "business-analytics-studio",
   "private": true,
   "version": "0.1.0",
   "description": "ビジネス議論の分析ボード（顧客固有情報を持たない共通アプリ本体）",

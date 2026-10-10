@@ -10,7 +10,7 @@ npm run build
 npm run package
 ```
 
-`work/package/enterprise-discussion-board-<雛形のバージョン>.tgz` ができます。同梱するものは許可リスト（`scripts/lib/package.ts`）で決めます。`node_modules`・ビルド済みの `dist/`・`src/`・`schema/`・`examples/`・`package.json`・`package-lock.json`・`.env.example` など、実行と再ビルドに必要なものだけです。次のものは含めません。
+`work/package/business-analytics-studio-<雛形のバージョン>.tgz` ができます。同梱するものは許可リスト（`scripts/lib/package.ts`）で決めます。`node_modules`・ビルド済みの `dist/`・`src/`・`schema/`・`examples/`・`package.json`・`package-lock.json`・`.env.example` など、実行と再ビルドに必要なものだけです。次のものは含めません。
 
 - `.env`・`.env.*`（秘密値。`.env.example` だけは含みます）
 - 顧客パック（`public/data/`・`public/brand/`・`assets/brand/` と、ビルドが `dist/` に複製した `dist/data/`・`dist/brand/`・`dist/assets/brand/`）。お手本パックは `dist/example-pack/` と `examples/` にあります。

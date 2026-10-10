@@ -1,6 +1,6 @@
-﻿<#
+<#
 .SYNOPSIS
-  企業向け議論ボードのセットアップ（Windows / PowerShell）。何も入っていない PC で、お手本パックが起動するところまで進めます。(FR-107, FR-108)
+  Business Analytics Studio のセットアップ（Windows / PowerShell）。何も入っていない PC で、お手本パックが起動するところまで進めます。(FR-107, FR-108)
 .DESCRIPTION
   Node.js LTS・Git・GitHub Copilot CLI・依存パッケージ（Copilot SDK を含む）の有無を確認して不足分だけを導入し、
   アプリのビルド、.env の雛形の作成、中継プロセスの疎通と Copilot のサインインの確認、お手本パックでの起動確認（verify）まで行います。
