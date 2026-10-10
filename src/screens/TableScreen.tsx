@@ -158,9 +158,6 @@ function TableScreen() {
         <Badge appearance="filled" color="brand" size="large" data-testid="count-badge" aria-label={`該当 ${count} 件`}>
           {count} 件
         </Badge>
-        <Field label="文字で絞り込み">
-          <Input aria-label="絞り込み（名称・ID）" value={text} onChange={(_, d) => setText(d.value)} />
-        </Field>
         <Button icon={<FilterDismiss24Regular aria-hidden />} disabled={selectedIds.length === 0} onClick={() => clear({ origin: ORIGIN })}>
           フィルター解除
         </Button>
