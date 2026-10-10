@@ -212,7 +212,7 @@ function GanttScreen() {
         onMouseEnter={() => { props.onMouseEnter?.(); setHoverId(g.task.id); }}
         onMouseLeave={() => { props.onMouseLeave?.(); setHoverId(undefined); }}
       >
-        <div className={s.taskLabelCell} style={{ paddingInlineStart: `${depth * 20}px` }}>
+        <div role="gridcell" className={s.taskLabelCell} style={{ paddingInlineStart: `${depth * 20}px` }}>
           {hasChildren ? (
             <Button
               size="small" appearance="subtle" icon={expanded ? <ChevronDown16Regular aria-hidden /> : <ChevronRight16Regular aria-hidden />}
@@ -222,7 +222,7 @@ function GanttScreen() {
           ) : null}
           <Text size={300} className={s.taskLabel}>{g.task.title}</Text>
         </div>
-        <div className={s.track}>
+        <div role="gridcell" className={s.track}>
           {g.startDay === undefined ? (
             <Text size={200}>日付なし</Text>
           ) : (
@@ -275,9 +275,9 @@ function GanttScreen() {
             <canvas ref={canvasRef} className={s.canvas} role="img" aria-label="ガントチャート（2.5D）。工程を奥行きのある棒で表します。" />
           ) : null}
           <div className={s.scroll} role="region" aria-label="ガントチャートの時間軸" tabIndex={0}>
-            <div className={s.chart}>
-              <div className={s.row}>
-                <Text size={200} weight="semibold">Feature・工程</Text>
+            <div className={s.chart} role="treegrid" aria-label="ガントチャート（Feature・工程）">
+              <div className={s.row} role="row">
+                <div role="columnheader" style={{ display: 'contents' }}><Text size={200} weight="semibold">Feature・工程</Text></div>
                 <div className={s.months} aria-hidden>
                   {model.months.map((m) => <Text key={m.label} size={200} className={s.month} style={{ left: `${m.leftPct}%` }}>{m.label}</Text>)}
                 </div>
@@ -287,11 +287,13 @@ function GanttScreen() {
                 return (
                   <div key={g.feature.id}>
                     <div
+                      role="row"
                       className={mergeClasses(s.row, s.featureRow, on && s.featureSelected)}
                       data-entity-id={g.feature.id}
                       data-highlight={on ? 'selected' : undefined}
                       onClick={() => { setFeatureId(g.feature.id); if (selectedTaskId !== undefined) clear({ origin: 'gantt' }); }}
                     >
+                      <div role="gridcell" style={{ display: 'contents' }}>
                       <Button
                         appearance="transparent"
                         className={s.featureButton}
@@ -304,6 +306,7 @@ function GanttScreen() {
                       {(g.feature.issueIds ?? []).length > 0 ? (
                         <Text size={200}>課題: {(g.feature.issueIds ?? []).map((id) => issueTitle.get(id) ?? id).join('、')}</Text>
                       ) : null}
+                      </div>
                     </div>
                     {rows.map(taskRow)}
                   </div>
@@ -311,7 +314,7 @@ function GanttScreen() {
               })}
               {model.orphans.length > 0 ? (
                 <div>
-                  <div className={mergeClasses(s.row, s.featureRow)}><Text weight="semibold" className={s.taskLabel}>Feature に属さない工程</Text></div>
+                  <div role="row" className={mergeClasses(s.row, s.featureRow)}><div role="gridcell" style={{ display: 'contents' }}><Text weight="semibold" className={s.taskLabel}>Feature に属さない工程</Text></div></div>
                   {orphanRows.map(taskRow)}
                 </div>
               ) : null}
