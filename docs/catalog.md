@@ -176,6 +176,10 @@
 | NFR-A11Y-005 | 視覚表現の代替と状態の非色依存 | 承認済み | src/projects/AnalysisPanel.tsx | tests/unit/analysis-methods.test.ts (AC-200 の同一値。AC-216 はビュアー側のみ、AC-217 のステッパーは FR-136 の項目) | - |
 | NFR-SEC-004 | Project のアクセス範囲 | 承認済み | src/store/persist.ts | tests/unit/persist.test.ts (AC-218), tests/system/e2e/analysis-projects.spec.ts (E2E-211) | 企業・Project の端末内保存 |
 | FR-141 | 起動スクリプト（Windows・Mac・Linux） | 承認済み | start.cmd, start.ps1, start.sh, README.md | tests/system/launch/fr141-ac220.test.mjs, tests/system/launch/fr141-ac221.test.mjs, tests/system/launch/fr141-ac222.test.mjs | 起動スクリプト |
+| FR-142 | すべてのコンポーネントのドラッグでの移動 | 承認済み | 未実装 | 未実装 | - |
+| FR-143 | 操作中のコンポーネントを大きくする自動のサイズ調整 | 承認済み | 未実装 | 未実装 | - |
+| FR-144 | 起動後のデモ／実プロジェクトの選択 | 承認済み | 未実装 | 未実装 | - |
+| NFR-UX-007 | 画面とレイアウト操作への Fluent 2 の適用と最小の読みやすさ | 承認済み | 未実装 | 未実装 | - |
 
 ## API・イベント
 
