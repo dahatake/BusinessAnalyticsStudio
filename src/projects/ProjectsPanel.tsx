@@ -7,6 +7,7 @@ import {
 import { AnalysisPanel } from './AnalysisPanel';
 import { useProjects, type Company, type Project, type Result } from '../store/projects';
 import { useAnalyses } from '../store/analyses';
+import { useRestoreStatus } from '../store/persist';
 import { WorkTargetPicker } from './WorkTargetPicker';
 import { shouldShowStartupPicker, workTargetLabel, type TargetChoice } from './workTarget';
 
@@ -98,7 +99,12 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
   /** FR-144: デモを選んでいる間は、実際の企業・Project の一覧を出さない（デモと実際の内容を混ぜない。AC-231） */
   const [demoOnly, setDemoOnly] = useState(false);
   /** FR-144: 作業先の選択画面。実 Project が 2 件以上ある端末では起動時に開く（AC-229）。0 件は開かずデモで始める（AC-230） */
-  const [pickerOpen, setPickerOpen] = useState(() => shouldShowStartupPicker(useProjects.getState().projects));
+  const [pickerOpen, setPickerOpen] = useState(false);
+  // 保存内容の読込が終わってから 1 回だけ評価する（読込前の空の状態で判定して出し損ねない）
+  const restored = useRestoreStatus((r) => r.done);
+  useEffect(() => {
+    if (restored && shouldShowStartupPicker(useProjects.getState().projects)) setPickerOpen(true);
+  }, [restored]);
   const hasUnsaved = useAnalyses((a) => (st.openId ? Object.keys(a.drafts[st.openId] ?? {}).length > 0 : false));
   const apply = (target: string | null, demo: boolean, register: boolean) => {
     st.open(target);
