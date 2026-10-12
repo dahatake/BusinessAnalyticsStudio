@@ -69,9 +69,11 @@ export interface AppShellProps {
   children: ReactNode;
   /** ヘッダーの右側に出すブランド表示（ロゴ・共創表現） */
   brand?: ReactNode;
+  /** ヘッダーの下段に常時出す業務改善ステッパー（FR-136） */
+  stepper?: ReactNode;
 }
 
-export function AppShell({ title, screens, activeKey, onSelect, headerExtra, actions, dock, children, brand }: AppShellProps) {
+export function AppShell({ title, screens, activeKey, onSelect, headerExtra, actions, dock, children, brand, stepper }: AppShellProps) {
   const s = useStyles();
   // ナビゲーションは、Tab の停止位置を 1 つにする（roving tabindex）。矢印キーで項目を移り、Tab で、その項目のコンポーネントへ入る。
   // （WAI-ARIA のタブの作法。17 個の項目と非表示のドックを Tab で通り抜けなくても、選んだ画面へすぐ届く）
@@ -104,6 +106,7 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
           {headerExtra}
           {actions}
         </div>
+        {stepper}
       </header>
       <nav className={s.nav} aria-label="画面">
         {screens.map((sc) => {

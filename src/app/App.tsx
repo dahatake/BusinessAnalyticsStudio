@@ -17,6 +17,8 @@ import { useEffectiveBrand } from '../theme/useBrand';
 import { ErrorView, LoadingView } from '../components/StateViews';
 import { PresentationBar, PresentationButton } from '../presentation/PresentationMode';
 import { SCREENS } from '../screens/registry';
+import { Stepper } from '../stepper/Stepper';
+import { useStepper } from '../store/stepper';
 import { SelectionController } from '../selection/SelectionController';
 import { EditModeSwitch, HistoryButton, ResetSampleButton } from '../edit/EditControls';
 import { installEditKeys } from '../edit/useEditKeys';
@@ -40,6 +42,7 @@ import { ShowControlBar } from '../show/ShowControlBar';
 import { LaserPointer, PresenterView, ShowControlActions, ShowShortcuts } from '../show/ControlBarActions';
 import { ShortVideoButton, ShortVideoDialog } from '../show/ShortVideo';
 import { currentTopic } from '../store/presentation';
+import { ProjectsPanel } from '../projects/ProjectsPanel';
 
 setAvailableComponents(SCREENS.map((s) => s.key));
 
@@ -77,7 +80,10 @@ export function App() {
   const intensity = useIntensity();
   const motionRef = useRef({ presenting, intensity });
   motionRef.current = { presenting, intensity };
-  const onSelect = useCallback((key: string) => selectComponent(key, motionRef.current), []);
+  const onSelect = useCallback((key: string) => {
+    useStepper.getState().followScreen(key); // FR-136 AC-203: 画面に対応するステップを現在にする
+    selectComponent(key, motionRef.current);
+  }, []);
 
   useEffect(() => { void load(); }, [load]);
   // 顧客パックの読み込み中に Esc が押されたら、オープニングを飛ばす（読み込みが終わってから出るオープニングが、先の Esc を取りこぼさない）
@@ -134,6 +140,7 @@ export function App() {
         title={`${name} ${projectName}`}
         screens={SCREENS}
         onSelect={onSelect}
+        stepper={<Stepper onNavigate={onSelect} />}
         headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><AiStatus /></>}
         actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /></>}
         dock={<Dock screens={SCREENS} />}
@@ -170,6 +177,7 @@ export function App() {
           </div>
         ) : null}
         <PresentationBar />
+        <ProjectsPanel onNavigate={onSelect} />
         <ShowStage />
         <Workspace screens={SCREENS} />
       </AppShell>

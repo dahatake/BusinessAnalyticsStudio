@@ -41,7 +41,11 @@
   },
   "verify": {
     "timeout_sec": 1800,
-    "commands": []
+    "commands": [
+      { "name": "typecheck", "run": "npm run typecheck" },
+      { "name": "build", "run": "npm run build" },
+      { "name": "unit", "run": "npx vitest run tests/unit/projects.test.ts tests/unit/stepper.test.ts tests/unit/analysis-methods.test.ts" }
+    ]
   },
   "models": {
     "_note": "Phase 1 で較正して決めます（users-guide/04-customization.md）。conductor は subagent を呼ぶときにこの表を参照します。空なら既定のモデルを使います。",
