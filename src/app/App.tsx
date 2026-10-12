@@ -177,7 +177,7 @@ export function App() {
           </div>
         ) : null}
         <PresentationBar />
-        <ProjectsPanel />
+        <ProjectsPanel onNavigate={onSelect} />
         <ShowStage />
         <Workspace screens={SCREENS} />
       </AppShell>

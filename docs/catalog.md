@@ -164,16 +164,16 @@
 | NFR-UX-003 | 時間のかかる処理の進行表示 | 承認済み | src/store/tree.ts, src/screens/DiscussionTreeScreen.tsx, src/export/ExportDialog.tsx | tests/unit/ux.test.ts (AC-187), tests/system/e2e/editing.spec.ts (IT-015) | なし |
 | NFR-UX-004 | エラーの原因と次の行動 | 承認済み | src/export/deliver.ts, src/export/ExportDialog.tsx | tests/unit/ux.test.ts (AC-188), tests/system/e2e/export.spec.ts (IT-016) | なし |
 | NFR-UX-005 | OS と利用者の表示設定への追従 | 承認済み | src/theme/resolve.ts, src/workspace/Workspace.tsx, src/screens/KnowledgeGraphScreen.tsx | tests/unit/ux.test.ts (AC-189), tests/unit/theme.test.ts, tests/system/e2e/brand-settings.spec.ts (IT-017) | 縮退の判定 |
-| FR-133 | 分析手法の選択と開始 | 承認済み | 未実装 | 未実装 | - |
-| FR-134 | パラメーターの編集と結果の更新 | 承認済み | 未実装 | 未実装 | - |
-| FR-135 | ビュアーの切替と結果の確認 | 承認済み | 未実装 | 未実装 | - |
+| FR-133 | 分析手法の選択と開始 | 承認済み | src/methods/model.ts, src/store/analyses.ts, src/projects/AnalysisPanel.tsx, src/projects/ProjectsPanel.tsx, src/app/App.tsx | tests/unit/analysis-methods.test.ts (AC-195, AC-196), tests/system/e2e/analysis-projects.spec.ts (E2E-098) | - |
+| FR-134 | パラメーターの編集と結果の更新 | 承認済み | src/methods/model.ts, src/store/analyses.ts, src/projects/AnalysisPanel.tsx | tests/unit/analysis-methods.test.ts (AC-197, AC-198, AC-199), tests/system/e2e/analysis-projects.spec.ts (E2E-099) | - |
+| FR-135 | ビュアーの切替と結果の確認 | 承認済み | src/methods/model.ts, src/store/analyses.ts, src/projects/AnalysisPanel.tsx | tests/unit/analysis-methods.test.ts (AC-200, AC-201), tests/system/e2e/analysis-projects.spec.ts (E2E-100) | - |
 | FR-136 | 業務改善ステッパー | 承認済み | src/stepper/model.ts, src/stepper/Stepper.tsx, src/store/stepper.ts, src/components/AppShell.tsx (stepper スロット), src/app/App.tsx | tests/unit/stepper.test.ts (AC-202, AC-203, AC-204), tests/system/e2e/analysis-projects.spec.ts (E2E-101, E2E-102) | デザイン基盤, 画面の登録 |
 | FR-137 | 企業の登録と複数 Project の管理 | 承認済み | src/store/projects.ts, src/projects/ProjectsPanel.tsx, src/app/App.tsx | tests/unit/projects.test.ts (AC-205, AC-206, AC-208), tests/system/e2e/analysis-projects.spec.ts (E2E-103) | - |
 | FR-138 | Project の切替とデータの分離 | 承認待ち | 未実装 | 未実装 | - |
 | FR-139 | 企業・Project の識別子と正本 | 承認待ち | 未実装 | 未実装 | - |
 | FR-140 | 分析結果の AI 下書き | 承認待ち | 未実装 | 未実装 | - |
 | NFR-UX-006 | 分析画面のレイアウト変更 | 承認待ち | 未実装 | 未実装 | - |
-| NFR-A11Y-005 | 視覚表現の代替と状態の非色依存 | 承認済み | 未実装 | 未実装 | - |
+| NFR-A11Y-005 | 視覚表現の代替と状態の非色依存 | 承認済み | src/projects/AnalysisPanel.tsx | tests/unit/analysis-methods.test.ts (AC-200 の同一値。AC-216 はビュアー側のみ、AC-217 のステッパーは FR-136 の項目) | - |
 | NFR-SEC-004 | Project のアクセス範囲 | 承認待ち | 未実装 | 未実装 | - |
 
 ## API・イベント

@@ -3,6 +3,7 @@ import { useState } from 'react';
 import {
   Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Input, MessageBar, MessageBarBody, Text, makeStyles, tokens,
 } from '@fluentui/react-components';
+import { AnalysisPanel } from './AnalysisPanel';
 import { useProjects, type Company, type Project, type Result } from '../store/projects';
 
 const useStyles = makeStyles({
@@ -80,7 +81,7 @@ function CompanyRegion({ company, onModal }: { company: Company; onModal: (m: Mo
   );
 }
 
-export function ProjectsPanel() {
+export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string) => void } = {}) {
   const s = useStyles();
   const st = useProjects();
   const [modal, setModal] = useState<Modal | null>(null);
@@ -95,6 +96,7 @@ export function ProjectsPanel() {
         {current && currentCompany ? <Text data-testid="current-project">開いている Project: {currentCompany.name} / {current.name}</Text> : null}
       </div>
       {st.companies.map((c) => <CompanyRegion key={c.id} company={c} onModal={setModal} />)}
+      {current ? <AnalysisPanel projectId={current.id} onNavigate={onNavigate} /> : null}
       {modal?.kind === 'company' ? (
         <NameDialog title="企業を登録" label="企業名" submit="登録" onSubmit={st.addCompany} onClose={close} />
       ) : null}
