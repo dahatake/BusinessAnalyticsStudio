@@ -3,7 +3,7 @@
 顧客との議論を、課題・解決策・優先度・ナレッジグラフ・アーキテクチャ・議論ツリー・ガント・ホワイトボード・3D ビューなどで見せる、顧客固有の情報を持たない共通アプリ（雛形）です。
 顧客固有の値は、すべて「顧客パック」（`public/data/*.json` など）にあり、アプリ本体のコードには入っていません。顧客パックがないときは、架空企業の「お手本パック」で起動します。
 
-初めて使う方（事業部長・Product Manager・戦略コンサルタント）は、画面つきの [利用ガイド](docs/user-guide/README.md) から読んでください。
+初めて使う方（事業部長・Product Manager・戦略コンサルタント）は、画面つきの [利用ガイド](users-guide/app/README.md) から読んでください。
 
 要求の正本は `docs/requirements-definition.md`（と `docs/requirements/`）、実装の対応表は `docs/catalog.md` です。
 

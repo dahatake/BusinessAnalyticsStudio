@@ -361,7 +361,7 @@ ToBe に向けた課題を「議論テーマ」にして、選択肢・提言・
 | ブランドの差し替え | [README の 4 章](../../README.md#4-ブランド色ロゴフォントbgmの差し替え手順) |
 | 実際の AI の利用 | `npm run relay` を起動し、`copilot` で `/login` |
 | iPad での確認 | [README の 6 章](../../README.md#6-ipad-実機での確認手順) |
-| オフライン配布 | [distribution.md](../distribution.md) |
+| オフライン配布 | [distribution.md](../../docs/distribution.md) |
 
 ---
 
