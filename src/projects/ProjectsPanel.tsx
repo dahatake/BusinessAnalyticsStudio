@@ -50,7 +50,7 @@ type Modal = { kind: 'company' } | { kind: 'project'; company: Company } | { kin
 function CompanyRegion({ company, onModal, onOpen }: { company: Company; onModal: (m: Modal) => void; onOpen: (id: string) => void }) {
   const s = useStyles();
   const projects = useProjects((st) => st.projects).filter((p) => p.companyId === company.id);
-  const { openId, setArchived } = useProjects();
+  const { openId, setArchived, setAiAllowed } = useProjects();
   const active = projects.filter((p) => !p.archived);
   const archived = projects.filter((p) => p.archived);
   return (
@@ -58,11 +58,15 @@ function CompanyRegion({ company, onModal, onOpen }: { company: Company; onModal
       <div className={s.row}>
         <Text weight="semibold">{company.name}</Text>
         <Button size="small" onClick={() => onModal({ kind: 'project', company })}>Project を作成</Button>
+        <label>
+          <input type="checkbox" checked={company.aiAllowed === true} onChange={(e) => setAiAllowed(company.id, e.target.checked)} /> 外部 AI への送信を許可する
+        </label>
       </div>
       <ul className={s.list} aria-label="進行中の Project">
         {active.map((p) => (
           <li key={p.id} className={s.row} data-testid={`project-${p.id}`}>
-            <a href={`#${p.id}`} aria-current={openId === p.id ? 'page' : undefined} onClick={(e) => { e.preventDefault(); onOpen(p.id); }}>{p.name}</a>
+            {/* リンクは一覧（本文の先頭）にある。フォーカス・スクロールの要求で本文を送らない（scroll-margin で「先頭へ」の側に寄せ、位置が変わらないようにする） */}
+            <a href={`#${p.id}`} style={{ scrollMarginTop: '100vh', scrollMarginBottom: '100vh' }} aria-current={openId === p.id ? 'page' : undefined} onClick={(e) => { e.preventDefault(); onOpen(p.id); }}>{p.name}</a>
             <Button size="small" appearance="subtle" aria-label={`${p.name} の名称を変更`} onClick={() => onModal({ kind: 'rename', project: p })}>名称変更</Button>
             <Button size="small" appearance="subtle" aria-label={`${p.name} をアーカイブ`} onClick={() => setArchived(p.id, true)}>アーカイブ</Button>
           </li>
