@@ -43,7 +43,7 @@
     "timeout_sec": 1800,
     "commands": [
       { "name": "typecheck", "run": "npm run typecheck" },
-      { "name": "unit", "run": "npx vitest run tests/unit/projects.test.ts" }
+      { "name": "unit", "run": "npx vitest run tests/unit/projects.test.ts tests/unit/analysis-methods.test.ts" }
     ]
   },
   "models": {
