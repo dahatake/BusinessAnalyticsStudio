@@ -1763,9 +1763,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "8820553",
-      "last_run_at": "2026-10-13T05:00:13+09:00",
-      "evidence": "work/runs/202610130406/logs/system-test/E2E-162-202610130459.log",
+      "last_commit": "4cab19a",
+      "last_run_at": "2026-10-13T08:48:35+09:00",
+      "evidence": "work/runs/202610130529/logs/system-test/E2E-162-202610130848.log",
       "history": [
         {
           "at": "2026-10-12T14:07:28+09:00",
@@ -3611,10 +3611,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-229",
       "canary": false,
-      "status": "not_run",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "4cab19a",
+      "last_run_at": "2026-10-13T08:48:42+09:00",
+      "evidence": "work/runs/202610130529/logs/system-test/E2E-218-202610130848.log",
       "history": [
         {
           "at": "2026-10-13T05:45:13+09:00",
@@ -3636,10 +3636,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-230",
       "canary": false,
-      "status": "not_run",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "4cab19a",
+      "last_run_at": "2026-10-13T08:48:45+09:00",
+      "evidence": "work/runs/202610130529/logs/system-test/E2E-219-202610130848.log",
       "history": [
         {
           "at": "2026-10-13T05:45:16+09:00",
