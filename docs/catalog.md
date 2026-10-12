@@ -175,6 +175,7 @@
 | NFR-UX-006 | 分析画面のレイアウト変更 | 承認済み | src/store/analysisLayout.ts, src/projects/AnalysisPanel.tsx | tests/unit/ai-layout.test.ts (AC-214, AC-215), tests/system/e2e/analysis-projects.spec.ts (E2E-210) | 分析画面のレイアウト保存, コマンドの登録簿 |
 | NFR-A11Y-005 | 視覚表現の代替と状態の非色依存 | 承認済み | src/projects/AnalysisPanel.tsx | tests/unit/analysis-methods.test.ts (AC-200 の同一値。AC-216 はビュアー側のみ、AC-217 のステッパーは FR-136 の項目) | - |
 | NFR-SEC-004 | Project のアクセス範囲 | 承認済み | src/store/persist.ts | tests/unit/persist.test.ts (AC-218), tests/system/e2e/analysis-projects.spec.ts (E2E-211) | 企業・Project の端末内保存 |
+| FR-141 | 起動スクリプト（Windows・Mac・Linux） | 承認済み | 未実装 | 未実装 | - |
 
 ## API・イベント
 
