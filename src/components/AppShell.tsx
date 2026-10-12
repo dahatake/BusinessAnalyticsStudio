@@ -105,6 +105,8 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
           {brand ? <div>{brand}</div> : null}
           {headerExtra}
           {actions}
+          {/* 企業と Project の操作行（ProjectsPanel が portal で描く）。ワークスペースの縦の領域を削らないため、ヘッダーの空きに置く */}
+          <div id="projects-head-slot" style={{ display: 'contents' }} />
         </div>
         {stepper}
       </header>

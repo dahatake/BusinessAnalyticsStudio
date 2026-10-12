@@ -1,5 +1,6 @@
 // 企業の登録と Project の一覧・作成・名称変更・アーカイブ・切替（FR-137）。
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Input, MessageBar, MessageBarBody, Text, makeStyles, tokens,
 } from '@fluentui/react-components';
@@ -8,8 +9,8 @@ import { useProjects, type Company, type Project, type Result } from '../store/p
 import { useAnalyses } from '../store/analyses';
 
 const useStyles = makeStyles({
-  root: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS, padding: tokens.spacingHorizontalM, borderBottom: `1px solid ${tokens.colorNeutralStroke2}` },
-  head: { display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalM, flexWrap: 'wrap' },
+  root: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXXS, padding: `${tokens.spacingVerticalXXS} ${tokens.spacingHorizontalM}`, borderBottom: `1px solid ${tokens.colorNeutralStroke2}` },
+  head: { display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS, flexWrap: 'wrap', minHeight: '28px' },
   company: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXS, padding: tokens.spacingHorizontalS, border: `1px solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium },
   row: { display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS, flexWrap: 'wrap' },
   list: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXXS },
@@ -101,15 +102,22 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
   const close = () => setModal(null);
   const current = st.projects.find((p) => p.id === st.openId);
   const currentCompany = current ? st.companies.find((c) => c.id === current.companyId) : undefined;
+  const [slot, setSlot] = useState<HTMLElement | null>(null);
+  useEffect(() => { setSlot(document.getElementById('projects-head-slot')); }, []);
+  const head = (
+    <div className={s.head} data-testid="projects-head">
+      <Text weight="semibold">企業と Project</Text>
+      <Button size="small" onClick={() => setModal({ kind: 'company' })}>企業を登録</Button>
+      {current ? <Button size="small" onClick={() => requestOpen(null)}>Project 一覧へ</Button> : null}
+      {current && currentCompany ? <Text data-testid="current-project">開いている Project: {currentCompany.name} / {current.name}</Text> : null}
+    </div>
+  );
+  const hasBody = st.companies.length > 0 || !!current;
   return (
-    <div className={s.root} data-testid="projects-panel">
-      <div className={s.head}>
-        <Text weight="semibold">企業と Project</Text>
-        <Button size="small" onClick={() => setModal({ kind: 'company' })}>企業を登録</Button>
-        {current ? <Button size="small" onClick={() => requestOpen(null)}>Project 一覧へ</Button> : null}
-        {current && currentCompany ? <Text data-testid="current-project">開いている Project: {currentCompany.name} / {current.name}</Text> : null}
-      </div>
-      {st.companies.map((c) => <CompanyRegion key={c.id} company={c} onModal={setModal} onOpen={requestOpen} />)}
+    <>
+    {slot ? createPortal(head, slot) : null}
+    <div className={s.root} data-testid="projects-panel" style={hasBody ? undefined : { display: 'contents' }}>
+      {slot ? null : head}      {st.companies.map((c) => <CompanyRegion key={c.id} company={c} onModal={setModal} onOpen={requestOpen} />)}
       {current ? <AnalysisPanel projectId={current.id} onNavigate={onNavigate} /> : null}
       {pending ? (
         <Dialog open modalType="alert" onOpenChange={(_, d) => { if (!d.open) setPending(null); }}>
@@ -135,5 +143,6 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
         <NameDialog title="Project の名称を変更" label="Project 名" submit="変更" initial={modal.project.name} onSubmit={(n) => st.renameProject(modal.project.id, n)} onClose={close} />
       ) : null}
     </div>
+    </>
   );
 }
