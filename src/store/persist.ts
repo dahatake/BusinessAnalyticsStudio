@@ -1,5 +1,6 @@
 // 企業・Project・ステッパーの位置・分析の入力値を、この端末の localStorage だけに保存・復元する（FR-137 AC-207）。
 // サーバー・ほかの端末へは送らない（NFR-SEC-004 AC-218。利用者が書き出す操作は別）。共有・権限の仕組みはない（Q-009 A）。
+import { create } from 'zustand';
 import { useAnalyses, type Analysis } from './analyses';
 import { useProjects, type Company, type Project } from './projects';
 import { useStepper } from './stepper';
@@ -65,10 +66,14 @@ export function startPersistence(storage: Store): () => void {
   return () => offs.forEach((off) => off());
 }
 
+/** 保存内容の読込が終わったか（FR-144 AC-229: 起動時の作業先の選択は、読込の後に評価する）。復元できなかった場合も true になる */
+export const useRestoreStatus = create<{ done: boolean }>(() => ({ done: false }));
+
 /** アプリの起動時に 1 回: 復元してから保存を始める */
 export function initProjectPersistence(): void {
   try {
     restore(window.localStorage);
     startPersistence(window.localStorage);
   } catch { /* localStorage が使えない環境では保存しない */ }
+  useRestoreStatus.setState({ done: true });
 }
