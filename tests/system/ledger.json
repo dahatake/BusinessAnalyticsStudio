@@ -6,7 +6,128 @@
     "AC-200": "sha256:28826404c97119db",
     "AC-202": "sha256:c7c29afee95be7eb",
     "AC-203": "sha256:aa557249c3c7131a",
-    "AC-205": "sha256:0b5a113957b58da1"
+    "AC-205": "sha256:0b5a113957b58da1",
+    "AC-001": "sha256:4f4699cb18c0479b",
+    "AC-002": "sha256:aff9a1e246ed6ca9",
+    "AC-003": "sha256:02a135dd41e3e8d0",
+    "AC-004": "sha256:b1742351a81d3e45",
+    "AC-005": "sha256:341e39b7197e18da",
+    "AC-006": "sha256:c0d95a7877007a27",
+    "AC-007": "sha256:d23c577e792e8851",
+    "AC-008": "sha256:8282b7ebb15f910d",
+    "AC-009": "sha256:d621bf9f23168663",
+    "AC-013": "sha256:7103995e6b3d4cb7",
+    "AC-015": "sha256:da7d282cbcd52f31",
+    "AC-016": "sha256:1dfaeafc9f0e8d39",
+    "AC-017": "sha256:ffe4b87e559ed605",
+    "AC-018": "sha256:dfdbe8e929a60eb3",
+    "AC-019": "sha256:6784a504a48fe6e8",
+    "AC-192": "sha256:de8a0d1dc8ab70f9",
+    "AC-020": "sha256:c3b0e7ee9a642810",
+    "AC-021": "sha256:6fa41db02bd2717a",
+    "AC-022": "sha256:07d54283290fcea9",
+    "AC-023": "sha256:720504fc780a7f69",
+    "AC-024": "sha256:61a14d2dd58317c9",
+    "AC-025": "sha256:057ecc2f521306e4",
+    "AC-026": "sha256:fb78d2fa1aa08e48",
+    "AC-027": "sha256:0a9292f0f81ec117",
+    "AC-030": "sha256:9b188ee68b80f0a2",
+    "AC-031": "sha256:c7a70886ebc67910",
+    "AC-032": "sha256:abe28f93ca3a202c",
+    "AC-033": "sha256:6fdba92e0d59e4f0",
+    "AC-034": "sha256:909735bedf9f1307",
+    "AC-035": "sha256:be2b3d7cc35ce56c",
+    "AC-040": "sha256:c8bee36e4a5880ed",
+    "AC-041": "sha256:de70f03d55d7cf0a",
+    "AC-042": "sha256:75da96ec9eb9424f",
+    "AC-044": "sha256:0eeaa1d27da40e93",
+    "AC-045": "sha256:e4234ac62eb32bf8",
+    "AC-046": "sha256:7b24c6806676579e",
+    "AC-047": "sha256:763b2c3a636f9a9e",
+    "AC-049": "sha256:df55d6c6546ad46a",
+    "AC-050": "sha256:daca6cb75b5b8f4f",
+    "AC-051": "sha256:1d9d845644770de7",
+    "AC-052": "sha256:15fda5e384c736a5",
+    "AC-053": "sha256:7e267fcf72d0f74f",
+    "AC-054": "sha256:b1b23b80160e03c9",
+    "AC-055": "sha256:06b2fddb6a26dbda",
+    "AC-056": "sha256:8023c116d6f9992b",
+    "AC-057": "sha256:b8cb85942cb568e2",
+    "AC-058": "sha256:14b43fa47aca155a",
+    "AC-059": "sha256:c3283299a5bfefb9",
+    "AC-060": "sha256:fd2f46c1ab3b9e60",
+    "AC-061": "sha256:729e6d3efab459a6",
+    "AC-062": "sha256:28bff49e92e94ed6",
+    "AC-063": "sha256:b4ff089265d0295a",
+    "AC-064": "sha256:d4ccd69d0189dec0",
+    "AC-066": "sha256:2bc8729cfb351cb5",
+    "AC-067": "sha256:87938026e4fa3925",
+    "AC-068": "sha256:ef9013d283a0f3d8",
+    "AC-069": "sha256:96e7505280d9d736",
+    "AC-070": "sha256:3fccb12fc28173a0",
+    "AC-071": "sha256:733fe5701f3dc8ad",
+    "AC-073": "sha256:4fee486cd13bdd6f",
+    "AC-075": "sha256:792e9619d44a2675",
+    "AC-076": "sha256:ef41cc97633ef964",
+    "AC-077": "sha256:6c1486eced8803c9",
+    "AC-079": "sha256:55491c6d679558ad",
+    "AC-080": "sha256:7f9d63fb851bded8",
+    "AC-081": "sha256:0d3fd96a8418316d",
+    "AC-085": "sha256:f62e1ceb7e4ee593",
+    "AC-087": "sha256:23004fc9a7b816cd",
+    "AC-088": "sha256:c6358146976b4d9e",
+    "AC-091": "sha256:c5f14e2e98161df4",
+    "AC-193": "sha256:4810254bd9a33324",
+    "AC-093": "sha256:505c52848f57f1fc",
+    "AC-094": "sha256:1254ba11f4363dd1",
+    "AC-095": "sha256:09f2e7f58f8b1aa2",
+    "AC-096": "sha256:826937ff5d03199d",
+    "AC-097": "sha256:2b663b2a11a1f007",
+    "AC-099": "sha256:fb1f2390ffcc1504",
+    "AC-100": "sha256:90d4b183609394f5",
+    "AC-101": "sha256:c907f7f3095197db",
+    "AC-102": "sha256:aad77cdd9749fe0c",
+    "AC-103": "sha256:b6aebfdf395b20ad",
+    "AC-104": "sha256:7740d817414032a6",
+    "AC-107": "sha256:3b51bfe25df9be6a",
+    "AC-109": "sha256:f4e1f9f5f95e7eb8",
+    "AC-111": "sha256:141ff5e366dacee7",
+    "AC-112": "sha256:522859c6e553c7e5",
+    "AC-114": "sha256:8827ca413d45eeb0",
+    "AC-115": "sha256:8c37be0fa6f36cec",
+    "AC-116": "sha256:4ce2a02356f19b57",
+    "AC-117": "sha256:bb94569d941ce1db",
+    "AC-118": "sha256:431da68d5dd340ec",
+    "AC-119": "sha256:5f60b05a0d5aeb38",
+    "AC-120": "sha256:d2b0ba110f3b78cd",
+    "AC-121": "sha256:0fd0ba7fb957842a",
+    "AC-123": "sha256:e2b9afe5f28aadb7",
+    "AC-124": "sha256:4ec29b85c35e893c",
+    "AC-126": "sha256:45295e2fdc4dc107",
+    "AC-129": "sha256:03f883be9af3c5b2",
+    "AC-134": "sha256:9c796521614ae68e",
+    "AC-135": "sha256:75c8aa0798ab3878",
+    "AC-136": "sha256:c3c9a1ece4c28b1a",
+    "AC-137": "sha256:4945df6a296cfbe0",
+    "AC-138": "sha256:f33287feec695e8c",
+    "AC-139": "sha256:9f361baf40b01f8d",
+    "AC-163": "sha256:2bf612a5a99a5cd7",
+    "AC-165": "sha256:972a9d2203aa6e2a",
+    "AC-167": "sha256:a0579d8ded28b12b",
+    "AC-168": "sha256:97981e80f214d572",
+    "AC-169": "sha256:dd790c408f3b7413",
+    "AC-170": "sha256:4148ad966010dbb7",
+    "AC-172": "sha256:c4041eff2e77946f",
+    "AC-173": "sha256:476a86e820ab3e00",
+    "AC-174": "sha256:06881765522b7ab6",
+    "AC-176": "sha256:467a3386f5da0431",
+    "AC-178": "sha256:32d6763aff3d7dd9",
+    "AC-180": "sha256:affed7abeb0f0e6a",
+    "AC-185": "sha256:d18893906a5e5a75",
+    "AC-186": "sha256:c1e6cb474950c109",
+    "AC-187": "sha256:a962f1f245029c87",
+    "AC-188": "sha256:66a2b234889f892e",
+    "AC-189": "sha256:c37510aa9027e09a"
   },
   "cases": [
     {
@@ -156,6 +277,3031 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-104",
+      "requirement_ids": [
+        "FR-001"
+      ],
+      "ac_ids": [
+        "AC-001"
+      ],
+      "title": "AC-001 標準の検証条件で、課題-解決策分析ビューを開いたとき、お手本パックの全課題がイシューツリーの階層（上位課題→下位課題）と",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-001",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:05:45+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-105",
+      "requirement_ids": [
+        "FR-002"
+      ],
+      "ac_ids": [
+        "AC-002"
+      ],
+      "title": "AC-002 標準の検証条件で、課題の一覧を「社外向け」で絞り込むと、社外向けの課題だけが表示され、件数バッジがその件数と一致する。区",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-002",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:05:46+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-106",
+      "requirement_ids": [
+        "FR-003"
+      ],
+      "ac_ids": [
+        "AC-003"
+      ],
+      "title": "AC-003 標準の検証条件で、任意の課題の詳細パネルを開くと、優先順位・コスト・ROI・実現性・リスクの 5 項目が値と出典リンク付",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-003",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:05:47+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-107",
+      "requirement_ids": [
+        "FR-004"
+      ],
+      "ac_ids": [
+        "AC-004"
+      ],
+      "title": "AC-004 標準の検証条件で、解決策の出典カードを開くと、タイトル・URL・取得日・確度が表示され、URL は新しいタブで開くリンク",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-004",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:05:49+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-108",
+      "requirement_ids": [
+        "FR-005"
+      ],
+      "ac_ids": [
+        "AC-005"
+      ],
+      "title": "AC-005 標準の検証条件で、解決策を選ぶと、関連付けられた Microsoft 製品の名前と適合理由の文が表示される。製品が 0 ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-005",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:05:50+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-109",
+      "requirement_ids": [
+        "FR-006"
+      ],
+      "ac_ids": [
+        "AC-006"
+      ],
+      "title": "AC-006 標準の検証条件で、生成 AI を使う解決策の詳細に、4 種類の価値のうち顧客パックで指定したものがラベルと説明文で表示さ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-006",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:05:52+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-110",
+      "requirement_ids": [
+        "FR-007"
+      ],
+      "ac_ids": [
+        "AC-007"
+      ],
+      "title": "AC-007 標準の検証条件で、Feature を選ぶと、ガントチャートでその Feature の工程が強調され、各工程の開始日・終了",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-007",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:05:53+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-111",
+      "requirement_ids": [
+        "FR-008"
+      ],
+      "ac_ids": [
+        "AC-008"
+      ],
+      "title": "AC-008 標準の検証条件で、主要画面（要求定義書 §3.5 の一覧）のそれぞれに「サンプル」の表示があり、支援技術からも読み取れる",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-008",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:05:55+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-112",
+      "requirement_ids": [
+        "FR-009"
+      ],
+      "ac_ids": [
+        "AC-009"
+      ],
+      "title": "AC-009 標準の検証条件で、数値の項目にカーソルを合わせるかキーボードでフォーカスすると、出典の種別（WorkIQ・Web・推定）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-009",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:05:56+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-113",
+      "requirement_ids": [
+        "FR-011"
+      ],
+      "ac_ids": [
+        "AC-013"
+      ],
+      "title": "AC-013 標準の検証条件（Copilot 未接続）で、画面に「AI: モック」の状態表示が常に見え、チャットに質問するとモックの回",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-013",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:05:57+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-114",
+      "requirement_ids": [
+        "FR-012"
+      ],
+      "ac_ids": [
+        "AC-015"
+      ],
+      "title": "AC-015 標準の検証条件で、キャンバスをマウスのドラッグ、ホイール、キーボード（矢印キーと +/-）のそれぞれでパン/ズームでき、",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-015",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:05:59+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-115",
+      "requirement_ids": [
+        "FR-013"
+      ],
+      "ac_ids": [
+        "AC-016"
+      ],
+      "title": "AC-016 標準の検証条件で、コンポーネントにフォーカスして `Shift+F` を押すと最大化し、`Esc` で通常表示に戻り、`",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-016",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:01+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-116",
+      "requirement_ids": [
+        "FR-014"
+      ],
+      "ac_ids": [
+        "AC-017"
+      ],
+      "title": "AC-017 標準の検証条件で、コンポーネントを非表示にしてレイアウトを変えた後に再読込すると、同じペルソナでは変更後のレイアウトが復",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-017",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:02+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-117",
+      "requirement_ids": [
+        "FR-015"
+      ],
+      "ac_ids": [
+        "AC-018"
+      ],
+      "title": "AC-018 標準の検証条件で、ペルソナの切替メニュー（キーボードでも操作可）から 4 つのペルソナを順に選ぶと、それぞれ要求定義書 ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-018",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:04+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-118",
+      "requirement_ids": [
+        "FR-016"
+      ],
+      "ac_ids": [
+        "AC-019"
+      ],
+      "title": "AC-019 標準の検証条件で、プレゼンテーションモードを開始して `→` を押すたびに、show.json の順序どおりに次の議題へ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-019",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:05+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-119",
+      "requirement_ids": [
+        "FR-016"
+      ],
+      "ac_ids": [
+        "AC-192"
+      ],
+      "title": "AC-192 標準の検証条件で、プレゼンテーションモード中のキャンバスにフォーカスがあるとき、`←`/`→` は前/次の議題への移動に",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-192",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:07+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-120",
+      "requirement_ids": [
+        "FR-017"
+      ],
+      "ac_ids": [
+        "AC-020"
+      ],
+      "title": "AC-020 標準の検証条件で、検索欄に課題名の一部を入力すると、一致する課題・解決策・製品が種別ごとに表示され、選ぶとその対象が選択",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-020",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:09+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-121",
+      "requirement_ids": [
+        "FR-017"
+      ],
+      "ac_ids": [
+        "AC-021"
+      ],
+      "title": "AC-021 標準の検証条件で、チャットに質問すると、モックの回答に、顧客パックの出典から選んだ出典カードが 1 件以上と「AI 生成",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-021",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:11+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-122",
+      "requirement_ids": [
+        "FR-018"
+      ],
+      "ac_ids": [
+        "AC-022"
+      ],
+      "title": "AC-022 標準の検証条件で、中核オブジェクトの選定理由パネルに、customer.json の候補すべてと比較の観点、選定理由が表",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-022",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:13+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-123",
+      "requirement_ids": [
+        "FR-019"
+      ],
+      "ac_ids": [
+        "AC-023"
+      ],
+      "title": "AC-023 標準の検証条件で、レンズを「並置」にすると、ビジネス側の要素を選んだときに同じ ID の IT 側の要素も強調される。用",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-023",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:15+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-124",
+      "requirement_ids": [
+        "FR-020"
+      ],
+      "ac_ids": [
+        "AC-024"
+      ],
+      "title": "AC-024 種別がモノのお手本パックで起動すると、3D ビューに中核オブジェクトのモデルが描画され、2D 図面ビューに同じ部品の一覧",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-024",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:17+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-125",
+      "requirement_ids": [
+        "FR-021"
+      ],
+      "ac_ids": [
+        "AC-025"
+      ],
+      "title": "AC-025 種別がコトのお手本パックで起動すると、拠点が地球儀/マップ上の位置に表示され、時間軸のスライダー（キーボード操作可）を動",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-025",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:19+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-126",
+      "requirement_ids": [
+        "FR-022"
+      ],
+      "ac_ids": [
+        "AC-026"
+      ],
+      "title": "AC-026 標準の検証条件で、ガントチャートを 2D と 2.5D に切り替えても、表示される工程の件数・期間・選択中の工程が変わら",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-026",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:22+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-127",
+      "requirement_ids": [
+        "FR-023"
+      ],
+      "ac_ids": [
+        "AC-027"
+      ],
+      "title": "AC-027 標準の検証条件で、階層の末端の項目を選ぶと、カメラが連続的に移動してその項目を表示する（アニメーション停止中は移動後の視",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-027",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:24+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-128",
+      "requirement_ids": [
+        "FR-025"
+      ],
+      "ac_ids": [
+        "AC-030"
+      ],
+      "title": "AC-030 標準の検証条件で、3D ビューで拠点を選ぶと、地図・表・ガント・出典の各ビューで同じ ID の項目がハイライトされる。逆",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-030",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:26+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-129",
+      "requirement_ids": [
+        "FR-026"
+      ],
+      "ac_ids": [
+        "AC-031"
+      ],
+      "title": "AC-031 標準の検証条件で、2 つの項目を選び AND と OR を切り替えると、表の件数バッジが関連の積集合と和集合の件数に変わ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-031",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:28+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-130",
+      "requirement_ids": [
+        "FR-027"
+      ],
+      "ac_ids": [
+        "AC-032"
+      ],
+      "title": "AC-032 標準の検証条件で、項目にホバーすると他のビューで一時的なハイライトが表示され、ホバーを外すと消える。クリックで確定した選",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-032",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:30+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-131",
+      "requirement_ids": [
+        "FR-028"
+      ],
+      "ac_ids": [
+        "AC-033"
+      ],
+      "title": "AC-033 標準の検証条件で、項目 A、項目 B の順に選んでからブラウザーの「戻る」を押すと項目 A の選択に戻り、「進む」で項目",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-033",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:32+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-132",
+      "requirement_ids": [
+        "FR-029"
+      ],
+      "ac_ids": [
+        "AC-034"
+      ],
+      "title": "AC-034 標準の検証条件で、マウスを使わず Tab と Enter だけで表の項目を選ぶと、aria-live 領域に選択した項目",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-034",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:34+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-133",
+      "requirement_ids": [
+        "FR-029"
+      ],
+      "ac_ids": [
+        "AC-035"
+      ],
+      "title": "AC-035 標準の検証条件で、アニメーション停止中に項目を選ぶと、カメラとハイライトが遷移アニメーションなしで次の描画で切り替わる。",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-035",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:37+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-134",
+      "requirement_ids": [
+        "FR-033"
+      ],
+      "ac_ids": [
+        "AC-040"
+      ],
+      "title": "AC-040 標準の検証条件で、末端の項目まで移動するとパンくずリストに全階層の名前が並び、上位の階層名を選ぶ（クリックまたは Ent",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-040",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:39+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-135",
+      "requirement_ids": [
+        "FR-034"
+      ],
+      "ac_ids": [
+        "AC-041"
+      ],
+      "title": "AC-041 標準の検証条件で、`P` でアニメーションを止めてからズームすると、しきい値を越えた時点で下位の階層が表示され、パンくず",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-041",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:41+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-136",
+      "requirement_ids": [
+        "FR-035"
+      ],
+      "ac_ids": [
+        "AC-042"
+      ],
+      "title": "AC-042 標準の検証条件で、表の上位の行を展開すると下位の行が表示され、折りたたむと隠れる。ガントでも同様に上位の工程を展開すると",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-042",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:43+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-137",
+      "requirement_ids": [
+        "FR-037"
+      ],
+      "ac_ids": [
+        "AC-044"
+      ],
+      "title": "AC-044 標準の検証条件で、ノードを選んでホップ数を範囲内で変えると、そのホップ数以内のノードだけが表示される。種別フィルターで種",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-044",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:45+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-138",
+      "requirement_ids": [
+        "FR-037"
+      ],
+      "ac_ids": [
+        "AC-045"
+      ],
+      "title": "AC-045 標準の検証条件で、編集モードでノードとエッジを追加・削除すると、他のビュー（表・課題-解決策分析）にも反映される。各分析",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-045",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:48+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-139",
+      "requirement_ids": [
+        "FR-038"
+      ],
+      "ac_ids": [
+        "AC-046"
+      ],
+      "title": "AC-046 標準の検証条件で、課題-解決策分析ビューをイシューツリー・サンキー図・マトリクスに切り替えても、同じ課題を選択したまま、",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-046",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:49+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-140",
+      "requirement_ids": [
+        "FR-039"
+      ],
+      "ac_ids": [
+        "AC-047"
+      ],
+      "title": "AC-047 標準の検証条件で、重みのスライダー（キーボードでも数値入力でも操作可）を変えると、ランキング表の順位と 2×2 マトリク",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-047",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:52+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-141",
+      "requirement_ids": [
+        "FR-040"
+      ],
+      "ac_ids": [
+        "AC-049"
+      ],
+      "title": "AC-049 標準の検証条件で、AsIs から ToBe に切り替えると、追加・削除・変更された要素が種別ごとに区別して（色に加えてラ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-049",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:54+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-142",
+      "requirement_ids": [
+        "FR-040"
+      ],
+      "ac_ids": [
+        "AC-050"
+      ],
+      "title": "AC-050 標準の検証条件で、アーキテクチャ図を Mermaid・SVG・PNG で出力すると 3 つのファイルができ、Mermai",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-050",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:56+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-143",
+      "requirement_ids": [
+        "FR-041"
+      ],
+      "ac_ids": [
+        "AC-051"
+      ],
+      "title": "AC-051 標準の検証条件で、各コンポーネントの上部に結論・根拠の数値・推奨アクションの 3 要素を含むサマリーがあり、「AI 生成",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-051",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:57+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-144",
+      "requirement_ids": [
+        "FR-042"
+      ],
+      "ac_ids": [
+        "AC-052"
+      ],
+      "title": "AC-052 標準の検証条件で、議論テーマの記録から「ツリーを生成」を実行すると、モックの AI が論点・課題・解決策・決定事項・次の",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-052",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:06:59+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-145",
+      "requirement_ids": [
+        "FR-042"
+      ],
+      "ac_ids": [
+        "AC-053"
+      ],
+      "title": "AC-053 標準の検証条件で、ノードを手動で追加・移動・削除すると「人が編集」と表示が変わり、ノードを選ぶと他のビューの関連項目がハ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-053",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:01+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-146",
+      "requirement_ids": [
+        "FR-043"
+      ],
+      "ac_ids": [
+        "AC-054"
+      ],
+      "title": "AC-054 標準の検証条件で、解決策を選ぶと mocks.json のその解決策のモックが表示され、画面間のボタンで遷移でき、枠をス",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-054",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:03+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-147",
+      "requirement_ids": [
+        "FR-044"
+      ],
+      "ac_ids": [
+        "AC-055"
+      ],
+      "title": "AC-055 標準の検証条件で、編集モードを ON にして表のセルを書き換え、詳細パネルから項目を追加・複製・削除すると、それぞれの結",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-055",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:05+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-148",
+      "requirement_ids": [
+        "FR-045"
+      ],
+      "ac_ids": [
+        "AC-056"
+      ],
+      "title": "AC-056 標準の検証条件で、表で課題名を変更すると、ナレッジグラフ・課題-解決策分析・ガント・エグゼクティブサマリーの根拠表示の課",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-056",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:07+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-149",
+      "requirement_ids": [
+        "FR-046"
+      ],
+      "ac_ids": [
+        "AC-057"
+      ],
+      "title": "AC-057 標準の検証条件で、数値の欄に文字を入力すると保存されずに原因が表示される。編集を `Ctrl+Z` で戻し `Ctrl+",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-057",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:09+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-150",
+      "requirement_ids": [
+        "FR-046"
+      ],
+      "ac_ids": [
+        "AC-058"
+      ],
+      "title": "AC-058 標準の検証条件で、データを JSON と CSV でエクスポートし、編集後にインポートすると内容が置き換わる。不正な行を",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-058",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:10+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-151",
+      "requirement_ids": [
+        "FR-047"
+      ],
+      "ac_ids": [
+        "AC-059"
+      ],
+      "title": "AC-059 標準の検証条件で、編集モードが OFF のとき、セルのダブルクリックや Enter で編集状態にならず、追加・削除のボタ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-059",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:12+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-152",
+      "requirement_ids": [
+        "FR-048"
+      ],
+      "ac_ids": [
+        "AC-060"
+      ],
+      "title": "AC-060 標準の検証条件で、課題から議論テーマを作成し、名前を編集し、削除すると、テーマの一覧がそのとおりに変わる。削除は確認の後",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-060",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:14+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-153",
+      "requirement_ids": [
+        "FR-049"
+      ],
+      "ac_ids": [
+        "AC-061"
+      ],
+      "title": "AC-061 標準の検証条件で、テーマに 7 種類の項目をそれぞれ入力して再読込すると、すべての入力が残っている。次のアクションの期限",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-061",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:15+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-154",
+      "requirement_ids": [
+        "FR-050"
+      ],
+      "ac_ids": [
+        "AC-062"
+      ],
+      "title": "AC-062 標準の検証条件で、AI 提案のテーマを利用者が「決定」にすると、表示が「顧客決定」に変わり、AI の提案内容は別の欄に残",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-062",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:17+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-155",
+      "requirement_ids": [
+        "FR-051"
+      ],
+      "ac_ids": [
+        "AC-063"
+      ],
+      "title": "AC-063 標準の検証条件で、保存を実行すると既定のファイル名が当日の日付・顧客名・Project 名で組み立てられて提示される。保",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-063",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:18+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-156",
+      "requirement_ids": [
+        "FR-052"
+      ],
+      "ac_ids": [
+        "AC-064"
+      ],
+      "title": "AC-064 標準の検証条件で、`Ctrl+Shift+E` を押すとエクスポートの画面が開く。File System Access ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-064",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:20+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-157",
+      "requirement_ids": [
+        "FR-054"
+      ],
+      "ac_ids": [
+        "AC-066"
+      ],
+      "title": "AC-066 標準の検証条件で、範囲を「決定事項のみ」にするとプレビューに決定事項の節だけが表示される。`internal` の項目を",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-066",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:21+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-158",
+      "requirement_ids": [
+        "FR-054"
+      ],
+      "ac_ids": [
+        "AC-067"
+      ],
+      "title": "AC-067 標準の検証条件で、形式に `.zip` を選ぶと、`.md` と `assets/` の画像を含む ZIP ができ、`.",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-067",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:23+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-159",
+      "requirement_ids": [
+        "FR-055"
+      ],
+      "ac_ids": [
+        "AC-068"
+      ],
+      "title": "AC-068 標準の検証条件で、フォローアップ文書の生成を選んでエクスポートすると、3 種類の文書が出力に含まれ、未決事項が「確認依頼",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-068",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:24+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-160",
+      "requirement_ids": [
+        "FR-056"
+      ],
+      "ac_ids": [
+        "AC-069"
+      ],
+      "title": "AC-069 標準の検証条件で、データを編集して全量の Markdown をエクスポートし、アプリを初期状態に戻してからその Mark",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-069",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:25+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-161",
+      "requirement_ids": [
+        "FR-057"
+      ],
+      "ac_ids": [
+        "AC-070"
+      ],
+      "title": "AC-070 標準の検証条件で、ミュート解除・音量変更・アニメ停止・演出強度・3D 品質・ダークテーマを変えてから再読込すると、6 項",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-070",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:26+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-162",
+      "requirement_ids": [
+        "FR-058"
+      ],
+      "ac_ids": [
+        "AC-071"
+      ],
+      "title": "AC-071 標準の検証条件で、Light と Dark を切り替えると全画面の背景と文字の色が切り替わる。ブラウザーの強制カラー（ハ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-071",
+      "canary": true,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:28+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-163",
+      "requirement_ids": [
+        "FR-059"
+      ],
+      "ac_ids": [
+        "AC-073"
+      ],
+      "title": "AC-073 標準の検証条件で、お手本パックの Primary 色が主要なボタンとアクセントに反映されている（計算済みスタイルの色が、",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-073",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:29+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-164",
+      "requirement_ids": [
+        "FR-060"
+      ],
+      "ac_ids": [
+        "AC-075"
+      ],
+      "title": "AC-075 標準の検証条件で、主要画面の文字と背景の組み合わせを自動検査すると、AA のコントラスト違反が 0 件である。",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-075",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:31+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-165",
+      "requirement_ids": [
+        "FR-061"
+      ],
+      "ac_ids": [
+        "AC-076"
+      ],
+      "title": "AC-076 標準の検証条件で、ロゴの利用条件が「不明」の顧客パックでは「LOGO（要許諾確認）」が表示され、「確認済み」の顧客パック",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-076",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:32+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-166",
+      "requirement_ids": [
+        "FR-062"
+      ],
+      "ac_ids": [
+        "AC-077"
+      ],
+      "title": "AC-077 標準の検証条件で、本文の font-family がブランド書体・Segoe UI Variable・Noto Sans",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-077",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:34+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-167",
+      "requirement_ids": [
+        "FR-064"
+      ],
+      "ac_ids": [
+        "AC-079"
+      ],
+      "title": "AC-079 標準の検証条件で、設定パネルにブランドの色・ロゴ・フォント・トーンの値と出典・確認日・確度が表示され、確度が低い値に「推",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-079",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:36+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-168",
+      "requirement_ids": [
+        "FR-065"
+      ],
+      "ac_ids": [
+        "AC-080"
+      ],
+      "title": "AC-080 標準の検証条件で、WebGPU を無効にしたブラウザーで起動しても 3D シーンが描画され、設定パネルに描画方式が「We",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-080",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:37+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-169",
+      "requirement_ids": [
+        "FR-066"
+      ],
+      "ac_ids": [
+        "AC-081"
+      ],
+      "title": "AC-081 標準の検証条件で、4 つのシーンのそれぞれに切り替えると、そのシーンの 3D 要素が描画され、ページエラーが発生しない。",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-081",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:38+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-170",
+      "requirement_ids": [
+        "FR-069"
+      ],
+      "ac_ids": [
+        "AC-085"
+      ],
+      "title": "AC-085 標準の検証条件で、品質プリセットを 4 段階それぞれに切り替えられ、設定パネルに現在の品質と FPS が表示される。",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-085",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:40+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-171",
+      "requirement_ids": [
+        "FR-071"
+      ],
+      "ac_ids": [
+        "AC-087"
+      ],
+      "title": "AC-087 標準の検証条件で、`P` を押すと、CSS アニメーションの再生状態が停止になり、3D の描画が要求時だけになり（連続描",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-087",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:41+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-172",
+      "requirement_ids": [
+        "FR-072"
+      ],
+      "ac_ids": [
+        "AC-088"
+      ],
+      "title": "AC-088 prefers-reduced-motion を reduce にしたブラウザーで初めて起動すると、アニメーションの状態",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-088",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:42+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-173",
+      "requirement_ids": [
+        "FR-074"
+      ],
+      "ac_ids": [
+        "AC-091"
+      ],
+      "title": "AC-091 標準の検証条件で、初回起動時はミュートの表示になっている。`M` を押すとミュートが切り替わり、ボタンの表示とアクセシブ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-091",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:44+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-174",
+      "requirement_ids": [
+        "FR-074"
+      ],
+      "ac_ids": [
+        "AC-193"
+      ],
+      "title": "AC-193 標準の検証条件で、初回起動の後に `M` とミュートボタン以外の操作（クリック・キー入力）をしても、ミュートの表示のまま",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-193",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:45+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-175",
+      "requirement_ids": [
+        "FR-076"
+      ],
+      "ac_ids": [
+        "AC-093"
+      ],
+      "title": "AC-093 標準の検証条件で、オープニングにお手本パックの顧客名と Project 名を含むタイトルが表示され、全体の長さが {PA",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-093",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:47+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-176",
+      "requirement_ids": [
+        "FR-077"
+      ],
+      "ac_ids": [
+        "AC-094"
+      ],
+      "title": "AC-094 標準の検証条件で、進行バーに show.json のチャプターが順に並び、現在のチャプターが（色に加えて文字で）示され、",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-094",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:48+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-177",
+      "requirement_ids": [
+        "FR-078"
+      ],
+      "ac_ids": [
+        "AC-095"
+      ],
+      "title": "AC-095 標準の検証条件で、show.json のテロップが該当するチャプターで表示され、出典リンクを選ぶと出典の詳細が開く。",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-095",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:50+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-178",
+      "requirement_ids": [
+        "FR-079"
+      ],
+      "ac_ids": [
+        "AC-096"
+      ],
+      "title": "AC-096 標準の検証条件で、Before/After スライダーをキーボードとポインターで動かせ、TOP5 ランキングに上位 5 ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-096",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:52+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-179",
+      "requirement_ids": [
+        "FR-080"
+      ],
+      "ac_ids": [
+        "AC-097"
+      ],
+      "title": "AC-097 標準の検証条件で、ナビゲーターが show.json の台本を字幕で表示し、「AI 生成」のラベルが付く。音声合成が未設",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-097",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:53+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-180",
+      "requirement_ids": [
+        "FR-081"
+      ],
+      "ac_ids": [
+        "AC-099"
+      ],
+      "title": "AC-099 標準の検証条件で、ショート動画を書き出すと縦横比 9:16 の WebM ファイルがダウンロードされ、ファイルを再生する",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-099",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:55+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-181",
+      "requirement_ids": [
+        "FR-082"
+      ],
+      "ac_ids": [
+        "AC-100"
+      ],
+      "title": "AC-100 標準の検証条件で、クイズに全問回答すると成熟度の結果が表示され、リアクションボタンを押すと画面上に反応の表示が出て件数が",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-100",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:56+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-182",
+      "requirement_ids": [
+        "FR-083"
+      ],
+      "ac_ids": [
+        "AC-101"
+      ],
+      "title": "AC-101 標準の検証条件で、`E` を押すたびに演出強度が Executive→Showcase→Entertainment→Ex",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-101",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:07:58+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-183",
+      "requirement_ids": [
+        "FR-084"
+      ],
+      "ac_ids": [
+        "AC-102"
+      ],
+      "title": "AC-102 標準の検証条件で、コントロールバーに 9 種類の操作がすべてあり、操作がない状態が {PARAM-026} 続くと隠れ、",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-102",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:00+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-184",
+      "requirement_ids": [
+        "FR-085"
+      ],
+      "ac_ids": [
+        "AC-103"
+      ],
+      "title": "AC-103 標準の検証条件で、`?` を押すとショートカット一覧が開き、`M`・`P`・`F`・`←`・`→`・`E`・`Shift",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-103",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:02+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-185",
+      "requirement_ids": [
+        "FR-086"
+      ],
+      "ac_ids": [
+        "AC-104"
+      ],
+      "title": "AC-104 標準の検証条件で、議題に 2 枚目のボードを追加して背景を「方眼」にし、「全体表示」を押すと全ストロークが画面に収まる。",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-104",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:03+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-186",
+      "requirement_ids": [
+        "FR-088"
+      ],
+      "ac_ids": [
+        "AC-107"
+      ],
+      "title": "AC-107 標準の検証条件で、マウスで各道具を使って描き、投げ縄で選んだ要素を移動し、ストローク単位の消しゴムで 1 本を消し、`C",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-107",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:05+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-187",
+      "requirement_ids": [
+        "FR-090"
+      ],
+      "ac_ids": [
+        "AC-109"
+      ],
+      "title": "AC-109 標準の検証条件で、手書きの範囲を選んで「決定事項に反映」を実行すると、モックの認識結果が決定事項に追加され「AI 生成（",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-109",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:06+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-188",
+      "requirement_ids": [
+        "FR-091"
+      ],
+      "ac_ids": [
+        "AC-111"
+      ],
+      "title": "AC-111 標準の検証条件で、利き手を左にするとツールバーが画面の左側に移る。プレゼン中に「一時的な注釈」で書いた線は、チャプターを",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-111",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:08+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-189",
+      "requirement_ids": [
+        "FR-092"
+      ],
+      "ac_ids": [
+        "AC-112"
+      ],
+      "title": "AC-112 標準の検証条件で、ボードを A4 横で PDF に出力すると、PDF の 1 ページ目が表紙、2 ページ目が目次で、ペー",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-112",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:10+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-190",
+      "requirement_ids": [
+        "FR-093"
+      ],
+      "ac_ids": [
+        "AC-114"
+      ],
+      "title": "AC-114 標準の検証条件で、2 枚のボードを Markdown で出力すると、ZIP に 2 つの `.md` と `assets",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-114",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:12+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-191",
+      "requirement_ids": [
+        "FR-094"
+      ],
+      "ac_ids": [
+        "AC-115"
+      ],
+      "title": "AC-115 標準の検証条件で、「Engagement サマリーパック」を押すと、PDF と Markdown を含む 1 つの ZI",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-115",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:14+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-192",
+      "requirement_ids": [
+        "FR-095"
+      ],
+      "ac_ids": [
+        "AC-116"
+      ],
+      "title": "AC-116 標準の検証条件で、線を描いてから {PARAM-025} 待ってタブを強制的に閉じ、開き直すと、描いた線が残っている。",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-116",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:16+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-193",
+      "requirement_ids": [
+        "FR-095"
+      ],
+      "ac_ids": [
+        "AC-117"
+      ],
+      "title": "AC-117 標準の検証条件で、{PARAM-010} のストロークを読み込んだボードでパン/ズームしたとき、フレーム時間の中央値が ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-117",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:18+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-194",
+      "requirement_ids": [
+        "FR-096"
+      ],
+      "ac_ids": [
+        "AC-118"
+      ],
+      "title": "AC-118 標準の検証条件で、キーボードだけで付箋・テキスト・図形を追加し、PDF 出力のプレビューを開いて範囲を確かめ、出力まで行",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-118",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:20+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-195",
+      "requirement_ids": [
+        "FR-097"
+      ],
+      "ac_ids": [
+        "AC-119"
+      ],
+      "title": "AC-119 標準の検証条件で、付箋を 3 枚置き、2 枚をコネクターでつなぎ、フレームで囲み、グループにして整列すると、それぞれの結",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-119",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:23+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-196",
+      "requirement_ids": [
+        "FR-098"
+      ],
+      "ac_ids": [
+        "AC-120"
+      ],
+      "title": "AC-120 標準の検証条件で、課題をドラッグ&ドロップ、またはメニューの「ボードに配置」でホワイトボードに置き、カードで課題名を変え",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-120",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:25+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-197",
+      "requirement_ids": [
+        "FR-099"
+      ],
+      "ac_ids": [
+        "AC-121"
+      ],
+      "title": "AC-121 標準の検証条件で、付箋のクラスタリングを実行するとモックの AI が付箋をグループに分け「AI 生成」と表示される。ドッ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-121",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:27+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-198",
+      "requirement_ids": [
+        "FR-101"
+      ],
+      "ac_ids": [
+        "AC-123"
+      ],
+      "title": "AC-123 同じ `dist/` に 2 種類のお手本パックを順に差し替えて起動すると、再ビルドせずに、それぞれの顧客名がタイトルと",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-123",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:29+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-199",
+      "requirement_ids": [
+        "FR-102"
+      ],
+      "ac_ids": [
+        "AC-124"
+      ],
+      "title": "AC-124 1 件の課題だけが不正なお手本パックで起動すると、画面とコンソールにファイル名・項目の位置・エラーの内容が表示され、その",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-124",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:31+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-200",
+      "requirement_ids": [
+        "FR-104"
+      ],
+      "ac_ids": [
+        "AC-126"
+      ],
+      "title": "AC-126 `public/data/` が空の状態で起動すると、お手本パックの架空企業名がタイトルに表示され、「お手本パック」で起",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-126",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:33+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-201",
+      "requirement_ids": [
+        "FR-106"
+      ],
+      "ac_ids": [
+        "AC-129"
+      ],
+      "title": "AC-129 対応する雛形のバージョンが雛形のバージョンと互換でない顧客パックで起動すると、警告にバージョンの組み合わせが表示される。",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-129",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:35+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-202",
+      "requirement_ids": [
+        "FR-109"
+      ],
+      "ac_ids": [
+        "AC-134"
+      ],
+      "title": "AC-134 標準の検証条件で、コンポーネントを別の位置へ移動し、2 つをタブにまとめ、境界を動かして大きさを変えてから再読込すると、",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-134",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:38+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-203",
+      "requirement_ids": [
+        "FR-110"
+      ],
+      "ac_ids": [
+        "AC-135"
+      ],
+      "title": "AC-135 標準の検証条件で、レイアウトを変えた後に「既定のレイアウトに戻す」を実行すると、選択中のペルソナの既定のレイアウト（要求",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-135",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:40+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-204",
+      "requirement_ids": [
+        "FR-111"
+      ],
+      "ac_ids": [
+        "AC-136"
+      ],
+      "title": "AC-136 標準の検証条件で、`Ctrl+K` でコマンドパレットを開き（[ASSUMPTION] A-05）、「既定」と入力して「",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-136",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:42+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-205",
+      "requirement_ids": [
+        "FR-112"
+      ],
+      "ac_ids": [
+        "AC-137"
+      ],
+      "title": "AC-137 標準の検証条件で、保存済みのレイアウトがない状態で各ペルソナを選ぶと、§7 の表の既定の情報表現が最大の領域に表示される",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-137",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:44+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-206",
+      "requirement_ids": [
+        "FR-112"
+      ],
+      "ac_ids": [
+        "AC-138"
+      ],
+      "title": "AC-138 標準の検証条件で、どのペルソナを選んでも、検索で見つかる項目の件数が同じである（ペルソナの切替で、見られるデータの範囲が",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-138",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:46+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-207",
+      "requirement_ids": [
+        "FR-113"
+      ],
+      "ac_ids": [
+        "AC-139"
+      ],
+      "title": "AC-139 位置情報のない拠点を含むお手本パックで地図を開くと、地図に「位置情報なし: N 件」と表示され、それを選ぶと該当する拠点",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-139",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:48+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-014",
+      "requirement_ids": [
+        "NFR-PERF-003"
+      ],
+      "ac_ids": [
+        "AC-163"
+      ],
+      "title": "AC-163 標準の検証条件で、ページの読み込み開始からオープニングの最初の表示までの時間をブラウザーの性能計測で測ると、{PARAM",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-163",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:51+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-015",
+      "requirement_ids": [
+        "NFR-ENV-001"
+      ],
+      "ac_ids": [
+        "AC-165"
+      ],
+      "title": "AC-165 Chromium で、お手本パックの主要画面を巡るスモークテストがページエラー 0 件で合格する。",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-165",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:53+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-016",
+      "requirement_ids": [
+        "NFR-ENV-002"
+      ],
+      "ac_ids": [
+        "AC-167"
+      ],
+      "title": "AC-167 標準の検証条件で、localhost 以外へのすべての通信を遮断してお手本パックで起動し、主要画面・3D・音声の再生・エ",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-167",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:54+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-017",
+      "requirement_ids": [
+        "NFR-L10N-001"
+      ],
+      "ac_ids": [
+        "AC-168"
+      ],
+      "title": "AC-168 標準の検証条件で、文書の言語属性が `ja` であり、主要画面のボタン・メニュー・見出しの文言が日本語である（製品名・固",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-168",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:56+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-018",
+      "requirement_ids": [
+        "NFR-A11Y-001"
+      ],
+      "ac_ids": [
+        "AC-169"
+      ],
+      "title": "AC-169 標準の検証条件で、主要画面それぞれに自動のアクセシビリティ検査（WCAG 2.2 A/AA の規則）をかけると、違反が ",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-169",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:08:58+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-019",
+      "requirement_ids": [
+        "NFR-A11Y-001"
+      ],
+      "ac_ids": [
+        "AC-170"
+      ],
+      "title": "AC-170 標準の検証条件で、主要画面のすべての操作要素に Tab で到達でき、フォーカスの位置が見え、キーボードの罠がない。音声を",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-170",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:09:00+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-020",
+      "requirement_ids": [
+        "NFR-A11Y-002"
+      ],
+      "ac_ids": [
+        "AC-172"
+      ],
+      "title": "AC-172 標準の検証条件で、ミュートとアニメーション停止にしたまま、プレゼンテーションモードを最後まで進め、選択・編集・エクスポー",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-172",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:09:02+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-021",
+      "requirement_ids": [
+        "NFR-A11Y-003"
+      ],
+      "ac_ids": [
+        "AC-173"
+      ],
+      "title": "AC-173 標準の検証条件で、3D ビュー・地図・ナレッジグラフ・2×2 マトリクスのそれぞれで「表で見る」を選ぶと、表示中の項目と",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-173",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:09:04+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-022",
+      "requirement_ids": [
+        "NFR-A11Y-004"
+      ],
+      "ac_ids": [
+        "AC-174"
+      ],
+      "title": "AC-174 標準の検証条件で、ポインターのドラッグを使わずに、コンポーネントの移動と大きさの変更、課題カードのホワイトボードへの配置",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-174",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:09:06+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-023",
+      "requirement_ids": [
+        "NFR-SEC-002"
+      ],
+      "ac_ids": [
+        "AC-176"
+      ],
+      "title": "AC-176 中継プロセスを「接続済み」として振る舞う差し替え部品で起動し、チャットで質問すると、送信中の表示が出て、送信した内容を画",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-176",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:09:08+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-024",
+      "requirement_ids": [
+        "NFR-SEC-003"
+      ],
+      "ac_ids": [
+        "AC-178"
+      ],
+      "title": "AC-178 `internal` の項目を含むお手本パックでプレゼンテーションモードを開始すると、`internal` の項目の件数",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-178",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:09:09+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-025",
+      "requirement_ids": [
+        "NFR-LEGAL-002"
+      ],
+      "ac_ids": [
+        "AC-180"
+      ],
+      "title": "AC-180 標準の検証条件で、主要画面に「サンプル」、AI の回答・サマリー・ツリーに「AI 生成」、ミニ・モックアプリに「モック（",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-180",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:09:11+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-026",
+      "requirement_ids": [
+        "NFR-UX-001"
+      ],
+      "ac_ids": [
+        "AC-185"
+      ],
+      "title": "AC-185 標準の検証条件で、項目を選び、表を絞り込み、時間軸の時刻を指定し、詳細パネルに未保存の入力をした状態で、コンポーネントの",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-185",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:09:12+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-027",
+      "requirement_ids": [
+        "NFR-UX-002"
+      ],
+      "ac_ids": [
+        "AC-186"
+      ],
+      "title": "AC-186 標準の検証条件で、表示幅を {PARAM-029} にすると、コンポーネントがタブか縦積みになり、ページ全体に横スクロー",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-186",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:09:14+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-028",
+      "requirement_ids": [
+        "NFR-UX-003"
+      ],
+      "ac_ids": [
+        "AC-187"
+      ],
+      "title": "AC-187 標準の検証条件で、応答を遅らせたモックの AI でツリーを生成している間、進行中の表示があり（支援技術にも通知され）、キ",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-187",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:09:15+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-029",
+      "requirement_ids": [
+        "NFR-UX-004"
+      ],
+      "ac_ids": [
+        "AC-188"
+      ],
+      "title": "AC-188 標準の検証条件で、保存先への書き込みが失敗する状態でエクスポートすると、失敗の原因と「ZIP でダウンロード」などの次の",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-188",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:09:17+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-030",
+      "requirement_ids": [
+        "NFR-UX-005"
+      ],
+      "ac_ids": [
+        "AC-189"
+      ],
+      "title": "AC-189 prefers-color-scheme を dark にしたブラウザーで初めて起動するとダークテーマで表示される。ブラ",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-189",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T14:09:18+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
         }
       ]
     }
