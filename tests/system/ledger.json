@@ -131,7 +131,11 @@
     "AC-207": "sha256:0b69d19180e12356",
     "AC-209": "sha256:d9a66fdcd8b47302",
     "AC-214": "sha256:9df9834bddfc9b2a",
-    "AC-218": "sha256:32a7345c5759e758"
+    "AC-218": "sha256:32a7345c5759e758",
+    "AC-220": "sha256:183b5ad4eb50fcbe",
+    "AC-221": "sha256:164d4836ea954368",
+    "AC-222": "sha256:bf881f537411b020",
+    "AC-223": "sha256:33a4e1bba33a5f94"
   },
   "cases": [
     {
@@ -1753,9 +1757,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "70bef04",
-      "last_run_at": "2026-10-12T17:00:46+09:00",
-      "evidence": "work/runs/202610121516/logs/system-test/E2E-162-202610121700.log",
+      "last_commit": "8820553",
+      "last_run_at": "2026-10-13T05:00:13+09:00",
+      "evidence": "work/runs/202610130406/logs/system-test/E2E-162-202610130459.log",
       "history": [
         {
           "at": "2026-10-12T14:07:28+09:00",
@@ -3412,6 +3416,130 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-212",
+      "requirement_ids": [
+        "FR-141"
+      ],
+      "ac_ids": [
+        "AC-220"
+      ],
+      "title": "起動スクリプト: 導入・ビルド済みで install/build せず起動し 127.0.0.1 の URL でアプリが開く",
+      "layer": "e2e",
+      "command": "node --test tests/system/launch/fr141-ac220.test.mjs",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-13T04:13:08+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-13T04:13:39+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC は検証レベル=integration で System Test の対象外（CHK-10）。テストは tests/system/launch/ に作成済みで、implementer の結合テスト検証用に流用する。検証レベルを system にする変更は rd-author へ"
+        }
+      ]
+    },
+    {
+      "id": "E2E-213",
+      "requirement_ids": [
+        "FR-141"
+      ],
+      "ac_ids": [
+        "AC-221"
+      ],
+      "title": "起動スクリプト: 未導入で npm install、dist なしで build、失敗時は原因表示・非0・起動しない（異常系）",
+      "layer": "e2e",
+      "command": "node --test tests/system/launch/fr141-ac221.test.mjs",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-13T04:13:10+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-13T04:13:40+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC は検証レベル=integration で System Test の対象外（CHK-10）。テストは tests/system/launch/ に作成済みで、implementer の結合テスト検証用に流用する。検証レベルを system にする変更は rd-author へ"
+        }
+      ]
+    },
+    {
+      "id": "E2E-214",
+      "requirement_ids": [
+        "FR-141"
+      ],
+      "ac_ids": [
+        "AC-222"
+      ],
+      "title": "起動スクリプト: 127.0.0.1 のみ待受・LAN 不可・認証情報なし（静的検査）",
+      "layer": "e2e",
+      "command": "node --test tests/system/launch/fr141-ac222.test.mjs",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-13T04:13:11+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-13T04:13:40+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC は検証レベル=integration で System Test の対象外（CHK-10）。テストは tests/system/launch/ に作成済みで、implementer の結合テスト検証用に流用する。検証レベルを system にする変更は rd-author へ"
+        }
+      ]
+    },
+    {
+      "id": "E2E-215",
+      "requirement_ids": [
+        "FR-141"
+      ],
+      "ac_ids": [
+        "AC-223"
+      ],
+      "title": "起動スクリプト: クリーンな Windows/Mac/Linux 実機での起動（manual）",
+      "layer": "e2e",
+      "command": "node -e process.exit(1)",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-13T04:13:13+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-13T04:13:19+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-223 は検証レベル manual（3 OS のクリーン実機での確認で自動化できない）。手動確認の記録が必要"
         }
       ]
     }
