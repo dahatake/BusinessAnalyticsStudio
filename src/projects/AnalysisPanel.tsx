@@ -4,6 +4,8 @@
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 import { Button, Input, MessageBar, MessageBarBody, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { analysisResult, useAnalyses, type Analysis } from '../store/analyses';
+import { useStepper } from '../store/stepper';
+import { STEPS } from '../stepper/model';
 import { METHODS, VIEWERS, filterItems, getMethod, type ResultItem, type ViewerId } from '../methods/model';
 
 const useStyles = makeStyles({
@@ -205,13 +207,27 @@ export function AnalysisStart({ projectId, from = null }: { projectId: string; f
   );
 }
 
+/** ビジネスシナリオ（課題定義）・KPI 測定・ユースケース作成の作業（FR-133 AC-196）。この作業の途中で開始した分析は、元の作業へ戻れる。 */
+const WORK_STEP_KEYS = ['issue', 'kpi', 'usecase'];
+
 /** 開いている Project の分析（開始操作と、開始済みの分析） */
-export function AnalysisPanel({ projectId, onReturn }: { projectId: string; onReturn?: (from: string) => void }) {
+export function AnalysisPanel({ projectId, onNavigate }: { projectId: string; onNavigate?: (screenKey: string) => void }) {
   const s = useStyles();
   const a = useAnalyses((x) => x.byProject[projectId]);
+  const current = useStepper((x) => x.current);
+  const setCurrent = useStepper((x) => x.setCurrent);
+  const step = STEPS[current];
+  const from = step && WORK_STEP_KEYS.includes(step.key) ? step.label : null;
+  const onReturn = (label: string) => {
+    const i = STEPS.findIndex((x) => x.label === label);
+    const target = STEPS[i];
+    if (!target) return;
+    setCurrent(i);
+    onNavigate?.(target.screen);
+  };
   return (
     <div className={s.root} data-testid="analysis-panel">
-      <AnalysisStart projectId={projectId} />
+      <AnalysisStart projectId={projectId} from={from} />
       {a ? <AnalysisView key={`${projectId}:${a.methodId}`} projectId={projectId} a={a} onReturn={onReturn} /> : null}
     </div>
   );
