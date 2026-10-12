@@ -1,7 +1,10 @@
 // System Test: 分析手法・業務改善ステッパー・企業別 Project 管理
 // 期待値は要求定義書の受入基準（docs/requirements/analysis-projects.md）だけから決める。
-// 画面の探し方は tests/system/CONTRACT.md §8。AC-207 は BLOCKED（Q-009）のため対象外。
+// 画面の探し方は tests/system/CONTRACT.md §8。AC-207 は Q-009 A（端末内保存）で承認済み。
+import fs from 'node:fs';
+import path from 'node:path';
 import { test, expect } from '../support/fixtures';
+import { DIST_DIR } from '../support/server';
 import type { Page, Locator } from '@playwright/test';
 
 const STEPS = ['課題定義', '現状分析', 'KPI 測定', 'ユースケース作成', '施策計画']; // PARAM-030 = 5
@@ -215,5 +218,204 @@ test.describe('FR-137 企業の登録と複数 Project の管理', () => {
     await createProject(page, '合成株式会社B', '案件B1');
     await expect(page.getByRole('region', { name: '企業 合成株式会社A' }).getByRole('link', { name: '案件B1' })).toHaveCount(0);
     await expect(page.getByRole('region', { name: '企業 合成株式会社B' }).getByRole('link', { name: '案件A1' })).toHaveCount(0);
+  });
+});
+
+async function reopenProject(page: Page, company: string, project: string): Promise<void> {
+  if (!(await page.getByTestId('stepper').isVisible())) {
+    await page.getByRole('region', { name: `企業 ${company}` }).getByRole('link', { name: project }).click();
+  }
+  await expect(page.getByTestId('stepper')).toBeVisible();
+}
+
+async function backToList(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Project 一覧へ' }).click();
+}
+
+function listAllFiles(dir: string): string[] {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? listAllFiles(path.join(dir, e.name)) : [path.join(dir, e.name)]));
+}
+
+test.describe('FR-137 端末内保存と復元', () => {
+  // FR-137 AC-207
+  test('FR-137 AC-207 開き直しても企業・Project・ステッパーの位置・分析の入力値が復元される', async ({ page, start }) => {
+    await start();
+    await openNewProject(page, '復元株式会社', '復元案件');
+    await stepper(page).getByRole('button', { name: 'KPI 測定' }).click();
+    const analysis = await startAnalysis(page, 'SWOT 分析');
+    const input = analysis.getByTestId('analysis-params').getByRole('spinbutton').first();
+    await input.fill('7');
+    await input.blur();
+    await expect(analysis.getByTestId('analysis-result')).toContainText('7', { timeout: REFLECT_MS });
+    await page.reload();
+    await expect(page.getByRole('region', { name: '企業 復元株式会社' })).toBeVisible();
+    await reopenProject(page, '復元株式会社', '復元案件');
+    await expect(stepper(page).locator('[data-step-state="current"]')).toContainText('KPI 測定');
+    const restored = page.getByTestId('analysis');
+    await expect(restored).toContainText('SWOT 分析');
+    await expect(restored.getByTestId('analysis-params').getByRole('spinbutton').first()).toHaveValue('7');
+  });
+
+  // FR-137 AC-207（異常系: 保存はサーバーへ送られず、別の端末＝別の browser context には引き継がれない）
+  test('FR-137 AC-207 データはサーバーへ送られず、別の端末（別の文脈）では復元されない', async ({ page, start, browser }) => {
+    const sent: string[] = [];
+    page.on('request', (r) => {
+      if (r.method() !== 'GET' && r.method() !== 'HEAD') sent.push(`${r.method()} ${r.url()} ${r.postData() ?? ''}`);
+    });
+    const app = await start();
+    await registerCompany(page, '端末限定株式会社');
+    await createProject(page, '端末限定株式会社', '端末限定案件');
+    await page.reload();
+    await expect(page.getByRole('region', { name: '企業 端末限定株式会社' })).toBeVisible();
+    expect(sent.filter((s) => s.includes('端末限定') || s.includes(encodeURIComponent('端末限定'))), `送信された: ${sent.join(' | ')}`).toEqual([]);
+    const other = await browser.newContext();
+    const p2 = await other.newPage();
+    await p2.goto(app.url);
+    await expect(p2.getByRole('region', { name: '企業 端末限定株式会社' })).toHaveCount(0);
+    await other.close();
+  });
+});
+
+test.describe('FR-138 Project の切替', () => {
+  // FR-138 AC-209
+  test('FR-138 AC-209 Project を切り替えると各 Project の分析とステッパーの位置だけが表示される', async ({ page, start }) => {
+    await start();
+    await registerCompany(page, '切替株式会社');
+    await createProject(page, '切替株式会社', '案件A');
+    await createProject(page, '切替株式会社', '案件B');
+    const region = page.getByRole('region', { name: '企業 切替株式会社' });
+    await region.getByRole('link', { name: '案件A' }).click();
+    await stepper(page).getByRole('button', { name: '現状分析' }).click();
+    let analysis = await startAnalysis(page, 'SWOT 分析');
+    let input = analysis.getByTestId('analysis-params').getByRole('spinbutton').first();
+    await input.fill('3');
+    await input.blur();
+    await expect(analysis.getByTestId('analysis-result')).toContainText('3', { timeout: REFLECT_MS });
+    await backToList(page);
+    await region.getByRole('link', { name: '案件B' }).click();
+    await stepper(page).getByRole('button', { name: '施策計画' }).click();
+    analysis = await startAnalysis(page, '3C 分析');
+    input = analysis.getByTestId('analysis-params').getByRole('spinbutton').first();
+    await input.fill('8');
+    await input.blur();
+    await expect(analysis.getByTestId('analysis-result')).toContainText('8', { timeout: REFLECT_MS });
+    await backToList(page);
+    await region.getByRole('link', { name: '案件A' }).click();
+    await expect(stepper(page).locator('[data-step-state="current"]')).toContainText('現状分析');
+    await expect(page.getByTestId('analysis')).toContainText('SWOT 分析');
+    await expect(page.getByTestId('analysis')).not.toContainText('3C 分析');
+    await expect(page.getByTestId('analysis').getByTestId('analysis-params').getByRole('spinbutton').first()).toHaveValue('3');
+    await backToList(page);
+    await region.getByRole('link', { name: '案件B' }).click();
+    await expect(stepper(page).locator('[data-step-state="current"]')).toContainText('施策計画');
+    await expect(page.getByTestId('analysis')).toContainText('3C 分析');
+    await expect(page.getByTestId('analysis').getByTestId('analysis-params').getByRole('spinbutton').first()).toHaveValue('8');
+  });
+
+  // FR-138 AC-209（異常系: 分析のない新しい Project に他の Project の分析が現れない）
+  test('FR-138 AC-209 分析を作っていない Project に他の Project の分析は表示されない', async ({ page, start }) => {
+    await start();
+    await registerCompany(page, '切替株式会社');
+    await createProject(page, '切替株式会社', '案件A');
+    await createProject(page, '切替株式会社', '案件C');
+    const region = page.getByRole('region', { name: '企業 切替株式会社' });
+    await region.getByRole('link', { name: '案件A' }).click();
+    await startAnalysis(page, 'SWOT 分析');
+    await backToList(page);
+    await region.getByRole('link', { name: '案件C' }).click();
+    await expect(stepper(page).locator('[data-step-state="done"]')).toHaveCount(0);
+    await expect(page.getByTestId('analysis')).toHaveCount(0);
+  });
+});
+
+test.describe('NFR-UX-006 レイアウトの変更・復元', () => {
+  // NFR-UX-006 AC-214
+  test('NFR-UX-006 AC-214 レイアウトを変更しても入力・選択・絞り込みが保たれ、再表示で復元され、既定に戻せる', async ({ page, start }) => {
+    await start();
+    await openNewProject(page);
+    const analysis = await startAnalysis(page, 'SWOT 分析');
+    const panel = analysis.getByTestId('analysis-result');
+    await expect(panel).toBeVisible();
+    const filter = analysis.getByRole('searchbox', { name: '絞り込み' });
+    await filter.fill('a');
+    const item = analysis.getByTestId('result-item').first();
+    const itemId = await item.getAttribute('data-entity-id');
+    await item.click();
+    const initial = (await panel.boundingBox())!;
+    const handle = panel.getByTestId('panel-handle');
+    const hb = (await handle.boundingBox())!;
+    await page.mouse.move(hb.x + hb.width / 2, hb.y + hb.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(hb.x + hb.width / 2 - 250, hb.y + hb.height / 2 + 150, { steps: 10 });
+    await page.mouse.up();
+    const moved = (await panel.boundingBox())!;
+    expect(Math.abs(moved.x - initial.x) + Math.abs(moved.y - initial.y), 'レイアウトが変わっていない').toBeGreaterThan(20);
+    // 変更中に入力・選択・絞り込みが失われない
+    await expect(filter).toHaveValue('a');
+    await expect(analysis.locator(`[data-testid="result-item"][data-entity-id="${itemId}"]`).first()).toHaveAttribute('aria-selected', 'true');
+    // 再表示（開き直し）で復元される
+    await page.reload();
+    await reopenProject(page, '合成株式会社A', '業務改善 2026');
+    const restored = (await page.getByTestId('analysis').getByTestId('analysis-result').boundingBox())!;
+    expect(Math.abs(restored.x - moved.x)).toBeLessThan(5);
+    expect(Math.abs(restored.y - moved.y)).toBeLessThan(5);
+    // 既定に戻す
+    await page.getByRole('button', { name: 'レイアウトを既定に戻す' }).click();
+    const reset = (await page.getByTestId('analysis').getByTestId('analysis-result').boundingBox())!;
+    expect(Math.abs(reset.x - initial.x)).toBeLessThan(5);
+    expect(Math.abs(reset.y - initial.y)).toBeLessThan(5);
+  });
+
+  // NFR-UX-006 AC-214（異常系: 既定のまま「既定に戻す」を押しても何も壊れない／入力が消えない）
+  test('NFR-UX-006 AC-214 既定のレイアウトで既定に戻しても位置と絞り込みが変わらない', async ({ page, start }) => {
+    await start();
+    await openNewProject(page);
+    const analysis = await startAnalysis(page, 'SWOT 分析');
+    const panel = analysis.getByTestId('analysis-result');
+    const before = (await panel.boundingBox())!;
+    const filter = analysis.getByRole('searchbox', { name: '絞り込み' });
+    await filter.fill('zz');
+    await page.getByRole('button', { name: 'レイアウトを既定に戻す' }).click();
+    const after = (await panel.boundingBox())!;
+    expect(Math.abs(after.x - before.x) + Math.abs(after.y - before.y)).toBeLessThan(5);
+    await expect(filter).toHaveValue('zz');
+  });
+});
+
+test.describe('NFR-SEC-004 外部 AI への送信を許可しない既定の状態', () => {
+  const COMPANY = '機密合成社ZQ91';
+  const PROJECT = '機密案件ZQ91';
+
+  // NFR-SEC-004 AC-218
+  test('NFR-SEC-004 AC-218 既定の状態で保存・操作しても、通信に企業・Project の名称やデータが含まれない', async ({ page, start }) => {
+    const seen: string[] = [];
+    page.on('request', (r) => seen.push(`${r.method()} ${decodeURIComponent(r.url())} ${r.postData() ?? ''}`));
+    const app = await start();
+    await openNewProject(page, COMPANY, PROJECT);
+    const analysis = await startAnalysis(page, 'SWOT 分析');
+    const input = analysis.getByTestId('analysis-params').getByRole('spinbutton').first();
+    await input.fill('7');
+    await input.blur();
+    await expect(analysis.getByTestId('analysis-result')).toContainText('7', { timeout: REFLECT_MS });
+    await page.reload();
+    await expect(page.getByRole('region', { name: `企業 ${COMPANY}` })).toBeVisible();
+    const leaks = seen.filter((s) => s.includes('ZQ91') || s.includes(COMPANY) || s.includes(PROJECT));
+    expect(leaks, `名称が通信に含まれた: ${leaks.join(' | ')}`).toEqual([]);
+    // 中継プロセス（外部 AI への経路）へは何も送られない
+    expect(seen.filter((s) => s.includes(app.relayUrl)), '中継プロセスへ送信された').toEqual([]);
+  });
+
+  // NFR-SEC-004 AC-218（異常系: 配信物 dist/ に企業・Project の名称やデータが含まれない）
+  test('NFR-SEC-004 AC-218 利用者が書き出さない限り、配信物（dist/）に企業・Project の名称が含まれない', async ({ page, start }) => {
+    await start();
+    await openNewProject(page, COMPANY, PROJECT);
+    await startAnalysis(page, 'SWOT 分析');
+    await page.reload();
+    expect(fs.existsSync(DIST_DIR), 'dist/ がない（npm run build が必要）').toBe(true);
+    const hits = listAllFiles(DIST_DIR).filter((f) => {
+      const buf = fs.readFileSync(f);
+      return buf.includes('ZQ91') || buf.includes(encodeURIComponent(COMPANY));
+    });
+    expect(hits, `dist/ に含まれる: ${hits.join(', ')}`).toEqual([]);
   });
 });

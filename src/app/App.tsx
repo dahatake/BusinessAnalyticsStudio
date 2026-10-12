@@ -19,6 +19,7 @@ import { PresentationBar, PresentationButton } from '../presentation/Presentatio
 import { SCREENS } from '../screens/registry';
 import { Stepper } from '../stepper/Stepper';
 import { useStepper } from '../store/stepper';
+import { useProjects } from '../store/projects';
 import { SelectionController } from '../selection/SelectionController';
 import { EditModeSwitch, HistoryButton, ResetSampleButton } from '../edit/EditControls';
 import { installEditKeys } from '../edit/useEditKeys';
@@ -77,6 +78,7 @@ export function App() {
   const topic = usePresentationStore(currentTopic);
   const scene = !opened ? 'opening' : topic ? `chapter:${topic.chapterId}` : 'workspace';
   const presenting = usePresentationStore((s) => s.active);
+  const openProjectId = useProjects((s) => s.openId); // FR-138: ステッパーは Project を開いているときだけ出す
   const intensity = useIntensity();
   const motionRef = useRef({ presenting, intensity });
   motionRef.current = { presenting, intensity };
@@ -140,7 +142,7 @@ export function App() {
         title={`${name} ${projectName}`}
         screens={SCREENS}
         onSelect={onSelect}
-        stepper={<Stepper onNavigate={onSelect} />}
+        stepper={openProjectId ? <Stepper onNavigate={onSelect} /> : null}
         headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><AiStatus /></>}
         actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /></>}
         dock={<Dock screens={SCREENS} />}

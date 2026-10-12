@@ -127,7 +127,11 @@
     "AC-186": "sha256:c1e6cb474950c109",
     "AC-187": "sha256:a962f1f245029c87",
     "AC-188": "sha256:66a2b234889f892e",
-    "AC-189": "sha256:c37510aa9027e09a"
+    "AC-189": "sha256:c37510aa9027e09a",
+    "AC-207": "sha256:0b69d19180e12356",
+    "AC-209": "sha256:d9a66fdcd8b47302",
+    "AC-214": "sha256:9df9834bddfc9b2a",
+    "AC-218": "sha256:32a7345c5759e758"
   },
   "cases": [
     {
@@ -274,9 +278,9 @@
       "command": "node tests/system/run.mjs AC-205",
       "canary": false,
       "status": "pass",
-      "last_commit": "858c8b6",
-      "last_run_at": "2026-10-12T15:00:16+09:00",
-      "evidence": "work/runs/202610121323/logs/system-test/E2E-103-202610121500.log",
+      "last_commit": "70bef04",
+      "last_run_at": "2026-10-12T17:00:51+09:00",
+      "evidence": "work/runs/202610121516/logs/system-test/E2E-103-202610121700.log",
       "history": [
         {
           "at": "2026-10-12T13:42:34+09:00",
@@ -1749,9 +1753,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "9b92364",
-      "last_run_at": "2026-10-12T14:23:25+09:00",
-      "evidence": "work/runs/202610121323/logs/system-test/E2E-162-202610121423.log",
+      "last_commit": "70bef04",
+      "last_run_at": "2026-10-12T17:00:46+09:00",
+      "evidence": "work/runs/202610121516/logs/system-test/E2E-162-202610121700.log",
       "history": [
         {
           "at": "2026-10-12T14:07:28+09:00",
@@ -2348,10 +2352,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-107",
       "canary": false,
-      "status": "not_run",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "70bef04",
+      "last_run_at": "2026-10-12T17:00:56+09:00",
+      "evidence": "work/runs/202610121516/logs/system-test/E2E-186-202610121700.log",
       "history": [
         {
           "at": "2026-10-12T14:08:05+09:00",
@@ -3308,6 +3312,106 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "E2E-208",
+      "requirement_ids": [
+        "FR-137"
+      ],
+      "ac_ids": [
+        "AC-207"
+      ],
+      "title": "端末内保存と復元（正常・サーバー非送信・別端末に非引継ぎ）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-207",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "70bef04",
+      "last_run_at": "2026-10-12T17:01:01+09:00",
+      "evidence": "work/runs/202610121516/logs/system-test/E2E-208-202610121700.log",
+      "history": [
+        {
+          "at": "2026-10-12T15:28:48+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-209",
+      "requirement_ids": [
+        "FR-138"
+      ],
+      "ac_ids": [
+        "AC-209"
+      ],
+      "title": "Project 切替で各自の分析とステッパー位置のみ表示（正常・新規 Project）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-209",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "70bef04",
+      "last_run_at": "2026-10-12T17:01:06+09:00",
+      "evidence": "work/runs/202610121516/logs/system-test/E2E-209-202610121701.log",
+      "history": [
+        {
+          "at": "2026-10-12T15:28:51+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-210",
+      "requirement_ids": [
+        "NFR-UX-006"
+      ],
+      "ac_ids": [
+        "AC-214"
+      ],
+      "title": "レイアウト変更・復元・既定に戻す（正常・既定のまま）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-214",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "c82a007",
+      "last_run_at": "2026-10-12T16:29:02+09:00",
+      "evidence": "work/runs/202610121516/logs/system-test/E2E-210-202610121628.log",
+      "history": [
+        {
+          "at": "2026-10-12T15:28:53+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-211",
+      "requirement_ids": [
+        "NFR-SEC-004"
+      ],
+      "ac_ids": [
+        "AC-218"
+      ],
+      "title": "既定の送信不許可で通信・dist に名称を含まない（通信・配信物）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-218",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "c82a007",
+      "last_run_at": "2026-10-12T16:29:12+09:00",
+      "evidence": "work/runs/202610121516/logs/system-test/E2E-211-202610121629.log",
+      "history": [
+        {
+          "at": "2026-10-12T15:28:56+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
         }
       ]
     }

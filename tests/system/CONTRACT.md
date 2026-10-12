@@ -36,4 +36,9 @@
 ## 8. 分析手法・ステッパー・企業別 Project（FR-133〜137。analysis-projects.spec.ts が前提にする画面の探し方）
 - 企業: ボタン「企業を登録」→ dialog 内の textbox「企業名」＋ボタン「登録」。企業ごとに region「企業 <企業名>」。その中にボタン「Project を作成」（dialog: textbox「Project 名」＋ボタン「作成」）と、Project への link（名前は Project 名）。link で Project を開く。
 - ステッパー: `data-testid="stepper"`。各ステップは listitem（5 個。名前は課題定義・現状分析・KPI 測定・ユースケース作成・施策計画）で、`data-step-state="not-started|current|done"`。ステップは button（名前＝ステップ名）で、押すと対応する作業画面へ移動する。
+- 端末内保存・Project 切替・レイアウト（FR-137/138・NFR-UX-006・NFR-SEC-004。同じ spec の末尾）:
+  - 「アプリを閉じて開き直す」は同じブラウザー文脈での `page.reload()`（保存先は端末内。別の browser context＝別の端末には引き継がれない）。開き直し後は企業の region が見え、Project は link で開き直す（開いたままなら stepper が見える）。
+  - Project 画面からボタン「Project 一覧へ」で企業・Project の一覧に戻る。Project を切り替えて未保存の入力があるときの確認の案内は role=alertdialog か dialog（AC-210 は統合テストの範囲で、この spec では扱わない）。
+  - レイアウト: 分析画面のパネル `data-testid="analysis-result"` の見出し部 `data-testid="panel-handle"`（そのパネル内）をドラッグすると位置が変わる（`boundingBox` の変化で判定）。ボタン「レイアウトを既定に戻す」で既定の位置に戻る。
+  - NFR-SEC-004: 通信は `page.on('request')` で、配信物は `dist/` の全ファイルの文字列検索で調べる（企業・Project 名は一意な合成値）。
 - 分析: ボタン「分析を開始」→ listbox「分析手法」の option（5 手法の名称）。開始後は `data-testid="analysis"`。その中に `analysis-params`（入力欄。値は spinbutton。範囲外はエラーを role=alert で表示）、`analysis-result`（結果。採用した値のテキストを含む）、radiogroup「ビュアー」の radio（2 つ以上）、searchbox「絞り込み」、`result-item`（`data-entity-id`・`data-value`・`aria-selected`）。

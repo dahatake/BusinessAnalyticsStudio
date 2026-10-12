@@ -1,0 +1,74 @@
+// 企業・Project・ステッパーの位置・分析の入力値を、この端末の localStorage だけに保存・復元する（FR-137 AC-207）。
+// サーバー・ほかの端末へは送らない（NFR-SEC-004 AC-218。利用者が書き出す操作は別）。共有・権限の仕組みはない（Q-009 A）。
+import { useAnalyses, type Analysis } from './analyses';
+import { useProjects, type Company, type Project } from './projects';
+import { useStepper } from './stepper';
+
+export const STORAGE_KEY = 'eabk.projects.v1';
+
+interface Snapshot {
+  v: 1;
+  companies: Company[];
+  projects: Project[];
+  openId: string | null;
+  seq: number;
+  analyses: Record<string, Analysis>;
+  steps: Record<string, number>;
+}
+
+type Store = Pick<Storage, 'getItem' | 'setItem'>;
+
+export function snapshot(): Snapshot {
+  const p = useProjects.getState();
+  return {
+    v: 1,
+    companies: p.companies,
+    projects: p.projects,
+    openId: p.openId,
+    seq: p.seq,
+    analyses: useAnalyses.getState().byProject,
+    steps: useStepper.getState().byProject,
+  };
+}
+
+const isObj = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
+
+/** 保存した内容を各 store へ戻す。壊れている・なければ何もしない（空の状態で始まる）。 */
+export function restore(storage: Store): boolean {
+  let data: unknown;
+  try {
+    const raw = storage.getItem(STORAGE_KEY);
+    if (!raw) return false;
+    data = JSON.parse(raw);
+  } catch {
+    return false;
+  }
+  if (!isObj(data) || data.v !== 1 || !Array.isArray(data.companies) || !Array.isArray(data.projects)) return false;
+  const companies = (data.companies as Company[]).filter((c) => isObj(c) && typeof c.id === 'string' && typeof c.name === 'string');
+  const projects = (data.projects as Project[]).filter((p) => isObj(p) && typeof p.id === 'string' && typeof p.companyId === 'string' && typeof p.name === 'string');
+  const openId = typeof data.openId === 'string' && projects.some((p) => p.id === data.openId && !p.archived) ? data.openId : null;
+  const steps = isObj(data.steps) ? (data.steps as Record<string, number>) : {};
+  const analyses = isObj(data.analyses) ? (data.analyses as Record<string, Analysis>) : {};
+  useProjects.setState({ companies, projects, openId, seq: typeof data.seq === 'number' ? data.seq : companies.length + projects.length });
+  useAnalyses.setState({ byProject: analyses });
+  useStepper.setState({ byProject: steps });
+  useStepper.getState().switchTo(openId);
+  return true;
+}
+
+/** 変更のたびに保存する。保存できなくても（容量・無効化）操作は続ける。戻り値は購読の解除。 */
+export function startPersistence(storage: Store): () => void {
+  const save = () => {
+    try { storage.setItem(STORAGE_KEY, JSON.stringify(snapshot())); } catch { /* 保存できなくても使い続けられる */ }
+  };
+  const offs = [useProjects.subscribe(save), useAnalyses.subscribe(save), useStepper.subscribe(save)];
+  return () => offs.forEach((off) => off());
+}
+
+/** アプリの起動時に 1 回: 復元してから保存を始める */
+export function initProjectPersistence(): void {
+  try {
+    restore(window.localStorage);
+    startPersistence(window.localStorage);
+  } catch { /* localStorage が使えない環境では保存しない */ }
+}
