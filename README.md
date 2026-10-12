@@ -3,7 +3,17 @@
 顧客との議論を、課題・解決策・優先度・ナレッジグラフ・アーキテクチャ・議論ツリー・ガント・ホワイトボード・3D ビューなどで見せる、顧客固有の情報を持たない共通アプリ（雛形）です。
 顧客固有の値は、すべて「顧客パック」（`public/data/*.json` など）にあり、アプリ本体のコードには入っていません。顧客パックがないときは、架空企業の「お手本パック」で起動します。
 
-初めて使う方（事業部長・Product Manager・戦略コンサルタント）は、画面つきの [利用ガイド](users-guide/app/README.md) から読んでください。
+## ドキュメント
+
+全体の索引は [users-guide/README.md](users-guide/README.md) です。役割に合わせて読んでください。
+
+| 対象 | 文書 |
+|---|---|
+| このアプリを使う（事業部長・Product Manager・戦略コンサルタント）。**初めての方はここから** | [01. クイックスタート](users-guide/01-quick-start.md)（画面つき）／ [02. 顧客との議論の進め方](users-guide/02-meeting-playbook.md)／ [03. 用語集と情報の取り扱い](users-guide/03-glossary-and-data-handling.md) |
+| カスタマイズ・運用する Software Engineer | [1. アーキテクチャ](users-guide/engineering/01-architecture.md)／ [2. 顧客パック](users-guide/engineering/02-customer-pack.md)／ [3. ブランドとテーマ](users-guide/engineering/03-branding-and-theme.md)／ [4. 画面・機能の追加](users-guide/engineering/04-extending.md)／ [5. AI と中継プロセス](users-guide/engineering/05-ai-relay.md)／ [6. テストと検証](users-guide/engineering/06-testing.md)／ [7. ビルド・配布・運用](users-guide/engineering/07-build-and-distribution.md) |
+| 開発キット（conductor）で開発を進める | [1. 依頼の書き方](users-guide/build-kit/01-writing-requests.md)／ [2. 実行中と終了後](users-guide/build-kit/02-during-and-after-run.md)／ [3. 仕組み](users-guide/build-kit/03-how-it-works.md)／ [4. カスタマイズ](users-guide/build-kit/04-customization.md)／ [5. スクリプトリファレンス](users-guide/build-kit/05-scripts-reference.md)／ [6. 品質ゲート](users-guide/build-kit/06-quality-gates.md)／ [7. トラブルシューティング](users-guide/build-kit/07-troubleshooting.md)／ [8. ロードマップと KPI](users-guide/build-kit/08-roadmap.md) |
+| 管理データ（要求・カタログ・試験）の閲覧 | [EABK Studio の利用ガイド](EABK-Studio/users-guide/README.md) |
+| 配布・要求・手動テスト | [配布](docs/distribution.md)／ [要求定義書](docs/requirements-definition.md)／ [カタログ](docs/catalog.md)／ [手動テスト](docs/manual-tests.md)／ [System Test の契約](tests/system/CONTRACT.md)／ [CREDITS](CREDITS.md) |
 
 要求の正本は `docs/requirements-definition.md`（と `docs/requirements/`）、実装の対応表は `docs/catalog.md` です。
 

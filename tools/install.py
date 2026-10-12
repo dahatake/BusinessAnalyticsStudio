@@ -67,9 +67,9 @@ MANAGED = [
     "scripts/import-speckit.py",
     "scripts/hooks/gate.py",
     "tools/install.py",
-    "users-guide/02-during-and-after-run.md",
-    "users-guide/05-scripts-reference.md",
-    "users-guide/07-troubleshooting.md",
+    "users-guide/build-kit/02-during-and-after-run.md",
+    "users-guide/build-kit/05-scripts-reference.md",
+    "users-guide/build-kit/07-troubleshooting.md",
     "tests/toolkit/test_clean_work.py",
     "tests/toolkit/test_run_state.py",
     "tests/system/e2e/test_run_owned_cleanup.py",
@@ -124,7 +124,11 @@ MANAGED = [
     "EABK-Studio/tests/test_studio.py",
 ]
 # Files no longer shipped. Removed on update when unmodified.
-OBSOLETE: list[str] = []
+OBSOLETE: list[str] = [
+    "users-guide/02-during-and-after-run.md",
+    "users-guide/05-scripts-reference.md",
+    "users-guide/07-troubleshooting.md",
+]
 TEMPLATES = [
     "docs/requirements-definition.md",
     "docs/catalog.md",

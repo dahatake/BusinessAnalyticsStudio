@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""kpi.py - KPIs of a conductor run and of the whole run history (users-guide/08-roadmap.md §8.2).
+"""kpi.py - KPIs of a conductor run and of the whole run history (users-guide/build-kit/08-roadmap.md §8.2).
 
 Usage:
   python scripts/kpi.py run [--run current|<run-id>] [--format md|json|html] [--out FILE]
