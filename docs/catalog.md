@@ -178,7 +178,7 @@
 | FR-141 | 起動スクリプト（Windows・Mac・Linux） | 承認済み | start.cmd, start.ps1, start.sh, README.md | tests/system/launch/fr141-ac220.test.mjs, tests/system/launch/fr141-ac221.test.mjs, tests/system/launch/fr141-ac222.test.mjs | 起動スクリプト |
 | FR-142 | すべてのコンポーネントのドラッグでの移動 | 承認済み | 未実装 | 未実装 | - |
 | FR-143 | 操作中のコンポーネントを大きくする自動のサイズ調整 | 承認済み | 未実装 | 未実装 | - |
-| FR-144 | 起動後のデモ／実プロジェクトの選択 | 承認済み | 未実装 | 未実装 | - |
+| FR-144 | 起動後のデモ／実プロジェクトの選択 | 承認済み | src/projects/workTarget.ts, src/projects/WorkTargetPicker.tsx, src/projects/ProjectsPanel.tsx | tests/unit/work-target.test.ts (AC-229, AC-230, AC-231, AC-232), tests/system/e2e/workspace-layout.spec.ts (E2E-218, E2E-219) | - |
 | NFR-UX-007 | 画面とレイアウト操作への Fluent 2 の適用と最小の読みやすさ | 承認済み | 未実装 | 未実装 | - |
 
 ## API・イベント

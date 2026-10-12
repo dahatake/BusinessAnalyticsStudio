@@ -7,6 +7,8 @@ import {
 import { AnalysisPanel } from './AnalysisPanel';
 import { useProjects, type Company, type Project, type Result } from '../store/projects';
 import { useAnalyses } from '../store/analyses';
+import { WorkTargetPicker } from './WorkTargetPicker';
+import { shouldShowStartupPicker, workTargetLabel, type TargetChoice } from './workTarget';
 
 const useStyles = makeStyles({
   root: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXXS, padding: `${tokens.spacingVerticalXXS} ${tokens.spacingHorizontalM}`, borderBottom: `1px solid ${tokens.colorNeutralStroke2}` },
@@ -92,12 +94,27 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
   const st = useProjects();
   const [modal, setModal] = useState<Modal | null>(null);
   /** 未保存の入力があるときの切替の確認（FR-138 AC-210）。target は切替先（null は一覧へ） */
-  const [pending, setPending] = useState<{ target: string | null } | null>(null);
+  const [pending, setPending] = useState<{ target: string | null; demo: boolean; register: boolean } | null>(null);
+  /** FR-144: デモを選んでいる間は、実際の企業・Project の一覧を出さない（デモと実際の内容を混ぜない。AC-231） */
+  const [demoOnly, setDemoOnly] = useState(false);
+  /** FR-144: 作業先の選択画面。実 Project が 2 件以上ある端末では起動時に開く（AC-229）。0 件は開かずデモで始める（AC-230） */
+  const [pickerOpen, setPickerOpen] = useState(() => shouldShowStartupPicker(useProjects.getState().projects));
   const hasUnsaved = useAnalyses((a) => (st.openId ? Object.keys(a.drafts[st.openId] ?? {}).length > 0 : false));
-  const requestOpen = (target: string | null) => {
-    if (target === st.openId) return;
-    if (hasUnsaved) setPending({ target });
-    else st.open(target);
+  const apply = (target: string | null, demo: boolean, register: boolean) => {
+    st.open(target);
+    setDemoOnly(demo);
+    if (register) setModal({ kind: 'company' });
+  };
+  const requestOpen = (target: string | null, demo = false, register = false) => {
+    if (target === st.openId) { apply(target, demo, register); return; }
+    if (hasUnsaved) setPending({ target, demo, register });
+    else apply(target, demo, register);
+  };
+  const choose = (c: TargetChoice) => {
+    setPickerOpen(false);
+    if (c.kind === 'demo') requestOpen(null, true);
+    else if (c.kind === 'register') requestOpen(null, false, true);
+    else requestOpen(c.id);
   };
   const close = () => setModal(null);
   const current = st.projects.find((p) => p.id === st.openId);
@@ -106,18 +123,22 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
   useEffect(() => { setSlot(document.getElementById('projects-head-slot')); }, []);
   const head = (
     <div className={s.head} data-testid="projects-head">
-      <Text weight="semibold">企業と Project</Text>
+      <Text weight="semibold">作業先:</Text>
+      <Text weight="semibold" data-testid="work-target" aria-live="polite">{workTargetLabel(st.openId, st.projects, st.companies)}</Text>
+      <Button size="small" onClick={() => setPickerOpen(true)}>作業先</Button>
       <Button size="small" onClick={() => setModal({ kind: 'company' })}>企業を登録</Button>
       {current ? <Button size="small" onClick={() => requestOpen(null)}>Project 一覧へ</Button> : null}
       {current && currentCompany ? <Text data-testid="current-project">開いている Project: {currentCompany.name} / {current.name}</Text> : null}
     </div>
   );
-  const hasBody = st.companies.length > 0 || !!current;
+  const hasBody = (st.companies.length > 0 && !demoOnly) || !!current;
   return (
     <>
     {slot ? createPortal(head, slot) : null}
     <div className={s.root} data-testid="projects-panel" style={hasBody ? undefined : { display: 'contents' }}>
-      {slot ? null : head}      {st.companies.map((c) => <CompanyRegion key={c.id} company={c} onModal={setModal} onOpen={requestOpen} />)}
+      {slot ? null : head}
+      {demoOnly ? null : st.companies.map((c) => <CompanyRegion key={c.id} company={c} onModal={setModal} onOpen={(id) => requestOpen(id)} />)}
+      {pickerOpen ? <WorkTargetPicker projects={st.projects} companies={st.companies} onChoose={choose} onClose={() => setPickerOpen(false)} /> : null}
       {current ? <AnalysisPanel projectId={current.id} onNavigate={onNavigate} /> : null}
       {pending ? (
         <Dialog open modalType="alert" onOpenChange={(_, d) => { if (!d.open) setPending(null); }}>
@@ -127,7 +148,7 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
               <DialogContent>確定していない入力は、この Project に残したまま切り替えます。切り替えますか？</DialogContent>
               <DialogActions>
                 <Button appearance="secondary" onClick={() => setPending(null)}>キャンセル</Button>
-                <Button appearance="primary" onClick={() => { st.open(pending.target); setPending(null); }}>切り替える</Button>
+                <Button appearance="primary" onClick={() => { apply(pending.target, pending.demo, pending.register); setPending(null); }}>切り替える</Button>
               </DialogActions>
             </DialogBody>
           </DialogSurface>
