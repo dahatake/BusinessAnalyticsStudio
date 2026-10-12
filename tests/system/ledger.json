@@ -135,7 +135,13 @@
     "AC-220": "sha256:183b5ad4eb50fcbe",
     "AC-221": "sha256:164d4836ea954368",
     "AC-222": "sha256:bf881f537411b020",
-    "AC-223": "sha256:33a4e1bba33a5f94"
+    "AC-223": "sha256:33a4e1bba33a5f94",
+    "AC-224": "sha256:91b35108d50b863d",
+    "AC-226": "sha256:7484a781161f57f7",
+    "AC-229": "sha256:fe53273383b50e25",
+    "AC-230": "sha256:b37e3a1801bc0b66",
+    "AC-234": "sha256:630f15947acc625b",
+    "AC-235": "sha256:afc67c60e861de2c"
   },
   "cases": [
     {
@@ -3540,6 +3546,156 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC-223 は検証レベル manual（3 OS のクリーン実機での確認で自動化できない）。手動確認の記録が必要"
+        }
+      ]
+    },
+    {
+      "id": "E2E-216",
+      "requirement_ids": [
+        "FR-142"
+      ],
+      "ac_ids": [
+        "AC-224"
+      ],
+      "title": "コンポーネントのドラッグ移動（置き場所の表示・再読込後の保持・Esc 中止）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-224",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-13T05:45:05+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-217",
+      "requirement_ids": [
+        "FR-143"
+      ],
+      "ac_ids": [
+        "AC-226"
+      ],
+      "title": "操作中コンポーネントの 1.5 倍拡大・移動・自動調整オフ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-226",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-13T05:45:09+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-218",
+      "requirement_ids": [
+        "FR-144"
+      ],
+      "ac_ids": [
+        "AC-229"
+      ],
+      "title": "起動時の作業先選択（デモ／各 Project）と作業先の常時表示",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-229",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-13T05:45:13+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-219",
+      "requirement_ids": [
+        "FR-144"
+      ],
+      "ac_ids": [
+        "AC-230"
+      ],
+      "title": "Project 0 件でのデモ起動と作業先選択からの登録案内",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-230",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-13T05:45:16+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-220",
+      "requirement_ids": [
+        "NFR-UX-007"
+      ],
+      "ac_ids": [
+        "AC-234"
+      ],
+      "title": "Light/Dark/ハイコントラストの AA コントラスト・フォーカス・動きの軽減",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-234",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-13T05:45:21+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-221",
+      "requirement_ids": [
+        "NFR-UX-007"
+      ],
+      "ac_ids": [
+        "AC-235"
+      ],
+      "title": "縮小時も本文 12px 以上",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-235",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-13T05:45:25+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
         }
       ]
     }
