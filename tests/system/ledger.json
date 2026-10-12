@@ -141,7 +141,7 @@
       "title": "分析手法の一覧と分析の開始（正常・手法未選択）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-195",
-      "canary": true,
+      "canary": false,
       "status": "not_run",
       "last_commit": null,
       "last_run_at": null,
@@ -152,6 +152,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-12T14:23:21+09:00",
+          "by": "test-designer",
+          "change": "canary: True -> False",
+          "reason": "canary は実装済みの既存ケースにする（FR-133 は未実装）"
         }
       ]
     },
@@ -1742,10 +1748,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
-      "status": "not_run",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "9b92364",
+      "last_run_at": "2026-10-12T14:23:25+09:00",
+      "evidence": "work/runs/202610121323/logs/system-test/E2E-162-202610121423.log",
       "history": [
         {
           "at": "2026-10-12T14:07:28+09:00",
