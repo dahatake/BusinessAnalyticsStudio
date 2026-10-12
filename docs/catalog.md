@@ -175,7 +175,7 @@
 | NFR-UX-006 | 分析画面のレイアウト変更 | 承認済み | src/store/analysisLayout.ts, src/projects/AnalysisPanel.tsx | tests/unit/ai-layout.test.ts (AC-214, AC-215), tests/system/e2e/analysis-projects.spec.ts (E2E-210) | 分析画面のレイアウト保存, コマンドの登録簿 |
 | NFR-A11Y-005 | 視覚表現の代替と状態の非色依存 | 承認済み | src/projects/AnalysisPanel.tsx | tests/unit/analysis-methods.test.ts (AC-200 の同一値。AC-216 はビュアー側のみ、AC-217 のステッパーは FR-136 の項目) | - |
 | NFR-SEC-004 | Project のアクセス範囲 | 承認済み | src/store/persist.ts | tests/unit/persist.test.ts (AC-218), tests/system/e2e/analysis-projects.spec.ts (E2E-211) | 企業・Project の端末内保存 |
-| FR-141 | 起動スクリプト（Windows・Mac・Linux） | 承認済み | 未実装 | 未実装 | - |
+| FR-141 | 起動スクリプト（Windows・Mac・Linux） | 承認済み | start.cmd, start.ps1, start.sh, README.md | tests/system/launch/fr141-ac220.test.mjs, tests/system/launch/fr141-ac221.test.mjs, tests/system/launch/fr141-ac222.test.mjs | 起動スクリプト |
 
 ## API・イベント
 
@@ -259,6 +259,7 @@
 | 番組の操作の状態 | src/store/show.ts | プレゼンタービュー・レーザーポインター・リアクションの件数・ショート動画の画面の開閉（保存しない）。プレゼンタービュー `presenter-view` とレーザーポインター `laser-pointer` は src/show/ControlBarActions.tsx | FR-081, FR-082, FR-084 |
 | プレゼンテーションモード | src/presentation/model.ts, src/presentation/PresentationMode.tsx, src/store/presentation.ts | show.json の章・議題の順に巡るプレゼンテーション（開始/終了ボタン、進行バー `progress-bar`・`chapter`・`current-topic`、`←`/`→` で前/次。`↑`/`↓`・`Shift`+矢印・入力欄・メニューでは奪わない）。`internal` の項目を含むパックでは、開始の前に件数と確認の画面（`alertdialog`「機密情報の確認」）を出し、確認するまで開始しない（NFR-SEC-003）。画面は `usePresentationStore` / `currentTopic` を読んで現在の議題に追従する（キャンバスが実装済み）。番組構成（FR-077）の次の予告カード・テロップ・ショーコントロールバーは、この進行バーとストアを拡張する | FR-016, FR-077, NFR-SEC-003 |
 | セットアップスクリプト | scripts/setup.ps1, scripts/setup.sh, scripts/setup/helper.mjs | Windows（PowerShell）と macOS（シェル）の導入の自動化。段階ごとに「導入済み」を判定して不足分だけを導入し、冪等・管理者権限なし・実行前の一覧表示・`-DryRun`/`--dry-run`（表示だけ）・失敗時の原因と対処・`logs/setup.log`。判定の補助（依存・SDK・Chromium・dist の新しさ・中継の疎通・お手本パックの verify 用フォルダー）は helper.mjs に集約 | FR-107, FR-108 |
+| 起動スクリプト | start.cmd, start.ps1, start.sh | 導入済みの PC での起動。node_modules がなければ npm install、dist がなければ npm run build、そのあと npm start（127.0.0.1 のみ）。失敗時は原因を表示して 0 以外で止まる（導入の自動化は セットアップスクリプト） | FR-141 |
 | 代替表示 | src/analysis/fallback.ts, src/store/fallback.ts, src/components/UnrenderableNote.tsx | 表現に必要な属性がない項目の扱い。`partitionRenderable` で分け、`<UnrenderableNote source reason items>` が「位置情報なし: N 件」を出す。選ぶと `useFallbackStore.request`（該当 ID）を立て、`table` コンポーネントがあれば再表示する（表は request を読んで該当項目を出す）。`table` 画面が未登録のときは一覧をその場に出す。地図・3D・ガントの画面が使う | FR-021, FR-113 |
 | 状態の保持 | src/store/retained.ts | `useRetainedState(key, initial)`。入力中の内容・絞り込み・視点など、画面の作り直し（ペルソナの切替・非表示と再表示）をまたいで保ちたい一時的な状態を、`<画面のキー>.<名前>` で画面の外に持つ（保存はしない）。選択は共通選択状態ストア側 | NFR-UX-001 |
 | ペルソナ別の既定 | src/workspace/persona.ts | §7 の表（ペルソナ → 最大の領域の表現 `PERSONA_PRIMARY`）と、レイアウトから最大の領域を求める `largestComponent`。ペルソナの切替はレイアウトだけを変え、データの範囲を変えない | FR-015, FR-112 |
