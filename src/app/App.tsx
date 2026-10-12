@@ -42,6 +42,7 @@ import { ShowControlBar } from '../show/ShowControlBar';
 import { LaserPointer, PresenterView, ShowControlActions, ShowShortcuts } from '../show/ControlBarActions';
 import { ShortVideoButton, ShortVideoDialog } from '../show/ShortVideo';
 import { currentTopic } from '../store/presentation';
+import { ProjectsPanel } from '../projects/ProjectsPanel';
 
 setAvailableComponents(SCREENS.map((s) => s.key));
 
@@ -176,6 +177,7 @@ export function App() {
           </div>
         ) : null}
         <PresentationBar />
+        <ProjectsPanel />
         <ShowStage />
         <Workspace screens={SCREENS} />
       </AppShell>
