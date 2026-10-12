@@ -1,5 +1,163 @@
 {
   "version": 1,
-  "ac_digests": {},
-  "cases": []
+  "ac_digests": {
+    "AC-195": "sha256:09294c7e744f31dc",
+    "AC-197": "sha256:80784a06ad648e82",
+    "AC-200": "sha256:28826404c97119db",
+    "AC-202": "sha256:c7c29afee95be7eb",
+    "AC-203": "sha256:aa557249c3c7131a",
+    "AC-205": "sha256:0b5a113957b58da1"
+  },
+  "cases": [
+    {
+      "id": "E2E-098",
+      "requirement_ids": [
+        "FR-133"
+      ],
+      "ac_ids": [
+        "AC-195"
+      ],
+      "title": "分析手法の一覧と分析の開始（正常・手法未選択）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-195",
+      "canary": true,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T13:42:24+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-099",
+      "requirement_ids": [
+        "FR-134"
+      ],
+      "ac_ids": [
+        "AC-197"
+      ],
+      "title": "パラメーター変更の 2 秒以内の反映（正常・範囲外）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-197",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T13:42:26+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-100",
+      "requirement_ids": [
+        "FR-135"
+      ],
+      "ac_ids": [
+        "AC-200"
+      ],
+      "title": "ビュアー切替で選択・絞り込み・値が保たれる",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-200",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T13:42:28+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-101",
+      "requirement_ids": [
+        "FR-136"
+      ],
+      "ac_ids": [
+        "AC-202"
+      ],
+      "title": "ステッパー 5 ステップと状態の識別",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-202",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T13:42:30+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-102",
+      "requirement_ids": [
+        "FR-136"
+      ],
+      "ac_ids": [
+        "AC-203"
+      ],
+      "title": "画面移動後もステッパーが現在位置を示す",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-203",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T13:42:32+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-103",
+      "requirement_ids": [
+        "FR-137"
+      ],
+      "ac_ids": [
+        "AC-205"
+      ],
+      "title": "企業ごとの Project 一覧（複数・企業間の分離）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-205",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-12T13:42:34+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    }
+  ]
 }
