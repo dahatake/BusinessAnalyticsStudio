@@ -1,8 +1,13 @@
 // 分析手法の選択と開始・パラメーター編集・ビュアー切替（FR-133〜135、NFR-A11Y-005）。
 // 結果の項目は 3 つのビュアー（表・マトリクス・グラフ）で同じ値を表示し、選択と絞り込みを共有する。
 // 図・グラフ・マトリクスでも、同じ値を表で確認できる（AC-216）。状態は文字でも示す（色だけにしない）。
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
 import { Button, Input, MessageBar, MessageBarBody, Text, makeStyles, tokens } from '@fluentui/react-components';
+import { registerCommands } from '../commands/registry';
+import { useAi } from '../ai/useAi';
+import { useProjects } from '../store/projects';
+import { ANALYSIS_SCREEN, DEFAULT_LAYOUT, MOVE_STEP, useAnalysisLayout } from '../store/analysisLayout';
+import { requestDraft, type DraftOutcome } from './aiDraft';
 import { analysisResult, useAnalyses, type Analysis } from '../store/analyses';
 import { useStepper } from '../store/stepper';
 import { STEPS } from '../stepper/model';
@@ -19,6 +24,8 @@ const useStyles = makeStyles({
   matrix: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(14em, 1fr))', gap: tokens.spacingHorizontalS },
   cell: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXS },
   bar: { height: '0.75em', backgroundColor: tokens.colorBrandBackground, borderRadius: tokens.borderRadiusSmall },
+  panel: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXS, padding: tokens.spacingHorizontalS, border: `1px solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium, backgroundColor: tokens.colorNeutralBackground1, boxSizing: 'border-box' },
+  handle: { cursor: 'move', touchAction: 'none', userSelect: 'none', padding: tokens.spacingHorizontalXS, backgroundColor: tokens.colorNeutralBackground3, borderRadius: tokens.borderRadiusSmall },
   table: { borderCollapse: 'collapse', width: '100%' },
 });
 
@@ -116,6 +123,48 @@ function AnalysisView({ projectId, a, onReturn }: { projectId: string; a: Analys
     st.setDraft(projectId, `${factorId}:${field}`, r.ok ? null : raw);
     setError(r.ok ? null : r.reason);
   };
+  // NFR-UX-006: 結果パネルの位置・大きさ（端末内に保存）。ドラッグなしの手段はボタン・矢印キー・コマンドパレット（AC-215）
+  const layout = useAnalysisLayout();
+  const pl = layout.screens[ANALYSIS_SCREEN] ?? DEFAULT_LAYOUT;
+  useEffect(() => registerCommands(() => [
+    { id: 'analysis.layout.reset', label: '分析画面のレイアウトを既定に戻す', keywords: ['レイアウト', '分析'], run: () => useAnalysisLayout.getState().reset(ANALYSIS_SCREEN) },
+    { id: 'analysis.layout.left', label: '分析結果パネルを左へ移動', keywords: ['レイアウト', '分析'], run: () => useAnalysisLayout.getState().moveBy(ANALYSIS_SCREEN, -MOVE_STEP, 0) },
+    { id: 'analysis.layout.right', label: '分析結果パネルを右へ移動', keywords: ['レイアウト', '分析'], run: () => useAnalysisLayout.getState().moveBy(ANALYSIS_SCREEN, MOVE_STEP, 0) },
+    { id: 'analysis.layout.up', label: '分析結果パネルを上へ移動', keywords: ['レイアウト', '分析'], run: () => useAnalysisLayout.getState().moveBy(ANALYSIS_SCREEN, 0, -MOVE_STEP) },
+    { id: 'analysis.layout.down', label: '分析結果パネルを下へ移動', keywords: ['レイアウト', '分析'], run: () => useAnalysisLayout.getState().moveBy(ANALYSIS_SCREEN, 0, MOVE_STEP) },
+    { id: 'analysis.layout.wider', label: '分析結果パネルを広げる', keywords: ['レイアウト', '分析', '大きさ'], run: () => useAnalysisLayout.getState().resizeBy(ANALYSIS_SCREEN, MOVE_STEP) },
+    { id: 'analysis.layout.narrower', label: '分析結果パネルを狭める', keywords: ['レイアウト', '分析', '大きさ'], run: () => useAnalysisLayout.getState().resizeBy(ANALYSIS_SCREEN, -MOVE_STEP) },
+  ]), []);
+  const onHandleDown = (e: ReactPointerEvent<HTMLDivElement>) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    const sx = e.clientX, sy = e.clientY;
+    const base = useAnalysisLayout.getState().get(ANALYSIS_SCREEN);
+    const move = (ev: PointerEvent) => useAnalysisLayout.getState().set(ANALYSIS_SCREEN, { ...base, dx: base.dx + ev.clientX - sx, dy: base.dy + ev.clientY - sy });
+    const up = () => { window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up); };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+  };
+  const onHandleKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const L = useAnalysisLayout.getState();
+    const d: [number, number] | null = e.key === 'ArrowLeft' ? [-1, 0] : e.key === 'ArrowRight' ? [1, 0] : e.key === 'ArrowUp' ? [0, -1] : e.key === 'ArrowDown' ? [0, 1] : null;
+    if (e.key === 'Escape') { e.preventDefault(); L.reset(ANALYSIS_SCREEN); return; }
+    if (!d) return;
+    e.preventDefault();
+    if (e.shiftKey) L.resizeBy(ANALYSIS_SCREEN, d[0] * MOVE_STEP);
+    else L.moveBy(ANALYSIS_SCREEN, d[0] * MOVE_STEP, d[1] * MOVE_STEP);
+  };
+  // FR-140: 企業ごとの許可を尊重した AI 下書き
+  const project = useProjects((x) => x.projects.find((p) => p.id === projectId));
+  const company = useProjects((x) => x.companies.find((c) => c.id === project?.companyId));
+  const { ask } = useAi();
+  const [outcome, setOutcome] = useState<DraftOutcome | null>(null);
+  const [busy, setBusy] = useState(false);
+  const askDraft = async () => {
+    setBusy(true);
+    try { setOutcome(await requestDraft(company?.aiAllowed, a, (prompt) => ask('recommend', prompt))); } finally { setBusy(false); }
+  };
   return (
     <div data-testid="analysis" className={s.root} role="region" aria-label={`分析 ${m.name}`}>
       <div className={s.row}>
@@ -123,8 +172,31 @@ function AnalysisView({ projectId, a, onReturn }: { projectId: string; a: Analys
         <Text>状態: {a.status}</Text>
         {a.from && onReturn ? <Button size="small" onClick={() => onReturn(a.from!)}>元の作業に戻る（{a.from}）</Button> : null}
         <Button size="small" onClick={() => { st.resetParams(projectId); st.clearDrafts(projectId); setError(null); }}>既定値に戻す</Button>
+        {/* 結果の位置は本文のスクロールに従う。この操作のフォーカス・スクロール要求で本文を送らない（scroll-margin。位置が変わらないようにする） */}
+        <Button size="small" style={{ scrollMarginTop: '100vh', scrollMarginBottom: '100vh' }} onClick={() => layout.reset(ANALYSIS_SCREEN)}>レイアウトを既定に戻す</Button>
       </div>
       <Text>{m.summary}</Text>
+      <div className={s.row}>
+        <div role="radiogroup" aria-label="ビュアー" className={s.row}>
+          {VIEWERS.map((v) => (
+            <label key={v.id}>
+              <input type="radio" name={`viewer-${projectId}`} checked={a.viewer === v.id} onChange={() => st.setViewer(projectId, v.id as ViewerId)} /> {v.name}
+            </label>
+          ))}
+        </div>
+        <Input type="search" aria-label="絞り込み" role="searchbox" placeholder="項目・分類で絞り込み" value={a.filter} onChange={(_, d) => st.setFilter(projectId, d.value)} />
+      </div>
+      <div data-testid="analysis-result" role="region" aria-label="分析結果" className={s.panel}
+        style={{ transform: `translate(${pl.dx}px, ${pl.dy}px)`, width: pl.dw === 0 ? undefined : `calc(100% + ${pl.dw}px)` }}>
+        <div data-testid="panel-handle" className={s.handle} tabIndex={0} role="group"
+          aria-label="結果パネルの見出し（ドラッグ、または矢印キーで移動、Shift＋左右矢印で大きさ、Esc で既定に戻す）"
+          onPointerDown={onHandleDown} onKeyDown={onHandleKey}>
+          <Text weight="semibold">分析結果</Text>
+        </div>
+        <Text block>採用した手法: {m.name}／パラメーター: {result.items.map((i) => `${i.label} ${i.score}×${i.weight}`).join('、')}</Text>
+        <Text block>分類ごとの合計: {result.totals.map((t) => `${t.category} ${t.total}`).join('、')}</Text>
+        <Viewer a={a} items={visible} onSelect={(id) => st.select(projectId, id)} />
+      </div>
       <div data-testid="analysis-params" role="group" aria-label="パラメーター">
         <div className={s.params}>
           {m.factors.map((fc) => (
@@ -145,20 +217,27 @@ function AnalysisView({ projectId, a, onReturn }: { projectId: string; a: Analys
         </div>
         {error ? <MessageBar intent="error" role="alert"><MessageBarBody>{error}（結果は直前の有効な値のままです）</MessageBarBody></MessageBar> : null}
       </div>
-      <div className={s.row}>
-        <div role="radiogroup" aria-label="ビュアー" className={s.row}>
-          {VIEWERS.map((v) => (
-            <label key={v.id}>
-              <input type="radio" name={`viewer-${projectId}`} checked={a.viewer === v.id} onChange={() => st.setViewer(projectId, v.id as ViewerId)} /> {v.name}
-            </label>
-          ))}
-        </div>
-        <Input type="search" aria-label="絞り込み" role="searchbox" placeholder="項目・分類で絞り込み" value={a.filter} onChange={(_, d) => st.setFilter(projectId, d.value)} />
+      <div role="group" aria-label="結果パネルの移動と大きさ" className={s.row}>
+        <Button size="small" onClick={() => layout.moveBy(ANALYSIS_SCREEN, -MOVE_STEP, 0)}>結果を左へ移動</Button>
+        <Button size="small" onClick={() => layout.moveBy(ANALYSIS_SCREEN, MOVE_STEP, 0)}>結果を右へ移動</Button>
+        <Button size="small" onClick={() => layout.moveBy(ANALYSIS_SCREEN, 0, -MOVE_STEP)}>結果を上へ移動</Button>
+        <Button size="small" onClick={() => layout.moveBy(ANALYSIS_SCREEN, 0, MOVE_STEP)}>結果を下へ移動</Button>
+        <Button size="small" onClick={() => layout.resizeBy(ANALYSIS_SCREEN, MOVE_STEP)}>結果を広げる</Button>
+        <Button size="small" onClick={() => layout.resizeBy(ANALYSIS_SCREEN, -MOVE_STEP)}>結果を狭める</Button>
       </div>
-      <div data-testid="analysis-result" role="region" aria-label="分析結果">
-        <Text block>採用した手法: {m.name}／パラメーター: {result.items.map((i) => `${i.label} ${i.score}×${i.weight}`).join('、')}</Text>
-        <Text block>分類ごとの合計: {result.totals.map((t) => `${t.category} ${t.total}`).join('、')}</Text>
-        <Viewer a={a} items={visible} onSelect={(id) => st.select(projectId, id)} />
+      <div data-testid="ai-draft" role="group" aria-label="AI 下書き" className={s.row}>
+        <Button size="small" disabled={busy} onClick={() => void askDraft()}>AI 下書きを依頼</Button>
+        {outcome?.status === 'not-allowed' ? <MessageBar intent="warning" role="status"><MessageBarBody>{outcome.message}</MessageBarBody></MessageBar> : null}
+        {outcome?.status === 'error' ? <MessageBar intent="error" role="alert"><MessageBarBody>{outcome.message}</MessageBarBody></MessageBar> : null}
+        {outcome?.status === 'draft' ? (
+          <div role="group" aria-label="AI の下書き">
+            <Text block>{outcome.mock ? 'AI 生成（モック）' : 'AI 生成'}の下書き（採用するまで分析には反映されません）:</Text>
+            <Text block data-testid="ai-draft-text">{outcome.text}</Text>
+            <Button size="small" appearance="primary" onClick={() => { st.setAiNote(projectId, outcome.text); setOutcome(null); }}>採用</Button>
+            <Button size="small" onClick={() => setOutcome(null)}>却下</Button>
+          </div>
+        ) : null}
+        {a.aiNote ? <Text block data-testid="ai-note">採用した AI 下書き: {a.aiNote}</Text> : null}
       </div>
       {a.viewer !== 'table' ? (
         <details open>

@@ -13,6 +13,8 @@ export interface Analysis {
   status: AnalysisStatus;
   /** 分析を開始した作業（ビジネスシナリオ・KPI 測定・ユースケース作成）。元の作業へ戻る先。 */
   from: string | null;
+  /** 採用した AI 下書き（FR-140。利用者が採用するまで入らない） */
+  aiNote?: string;
 }
 
 export type EditResult = { ok: true } | { ok: false; reason: string };
@@ -31,6 +33,7 @@ interface AnalysesState {
   setViewer: (projectId: string, viewer: ViewerId) => void;
   select: (projectId: string, id: string | null) => void;
   setFilter: (projectId: string, filter: string) => void;
+  setAiNote: (projectId: string, note: string | undefined) => void;
   /** 結果を表示した分析を「結果確認済み」にする */
   confirm: (projectId: string) => void;
 }
@@ -76,6 +79,7 @@ export const useAnalyses = create<AnalysesState>((set, get) => ({
   setViewer: (projectId, viewer) => set((s) => patch(s, projectId, { viewer })),
   select: (projectId, id) => set((s) => patch(s, projectId, { selectedId: id })),
   setFilter: (projectId, filter) => set((s) => patch(s, projectId, { filter })),
+  setAiNote: (projectId, aiNote) => set((s) => patch(s, projectId, { aiNote })),
   confirm: (projectId) => set((s) => (s.byProject[projectId]?.status === '結果確認済み' ? s : patch(s, projectId, { status: '結果確認済み' }))),
 }));
 

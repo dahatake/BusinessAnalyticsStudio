@@ -6,7 +6,8 @@ import { useStepper } from './stepper';
 /** 企業ごとの Project 数の上限（PARAM-031）。アーカイブ済みも数える。 */
 export const MAX_PROJECTS_PER_COMPANY = 50;
 
-export interface Company { id: string; name: string }
+/** aiAllowed: 外部 AI への送信を許可した企業だけ true（既定は許可なし。FR-140 AC-219） */
+export interface Company { id: string; name: string; aiAllowed?: boolean }
 export interface Project { id: string; companyId: string; name: string; archived: boolean }
 
 export type Result = { ok: true; id: string } | { ok: false; reason: string };
@@ -22,6 +23,7 @@ interface ProjectsState {
   renameProject: (id: string, name: string) => Result;
   setArchived: (id: string, archived: boolean) => void;
   open: (id: string | null) => void;
+  setAiAllowed: (companyId: string, allowed: boolean) => void;
 }
 
 export const useProjects = create<ProjectsState>((set, get) => ({
@@ -70,6 +72,8 @@ export const useProjects = create<ProjectsState>((set, get) => ({
     }));
     if (closing) useStepper.getState().switchTo(null);
   },
+  setAiAllowed: (companyId, allowed) =>
+    set((s) => ({ companies: s.companies.map((c) => (c.id === companyId ? { ...c, aiAllowed: allowed } : c)) })),
   // FR-138 AC-209: 開く Project ごとにステッパーの位置を切り替える
   open: (id) => {
     set({ openId: id });
