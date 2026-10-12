@@ -98,24 +98,22 @@ function Viewer({ a, items, onSelect }: { a: Analysis; items: ResultItem[]; onSe
   );
 }
 
+const NO_DRAFTS: Record<string, string> = {};
+
 function AnalysisView({ projectId, a, onReturn }: { projectId: string; a: Analysis; onReturn?: (from: string) => void }) {
   const s = useStyles();
   const st = useAnalyses();
   const m = getMethod(a.methodId);
   const result = analysisResult(a);
   const visible = filterItems(result.items, a.filter);
-  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const drafts = useAnalyses((x) => x.drafts[projectId]) ?? NO_DRAFTS;
   const [error, setError] = useState<string | null>(null);
   // 結果を表示した分析は「結果確認済み」になる（AC-201）
   useEffect(() => { st.confirm(projectId); }, [a.params, a.methodId]); // eslint-disable-line react-hooks/exhaustive-deps
   const edit = (factorId: string, field: 'score' | 'weight', raw: string) => {
     const r = st.setParam(projectId, factorId, field, raw);
-    const key = `${factorId}:${field}`;
-    // 無効な入力だけ下書きとして残す（有効な値は保存済みの値を表示する）
-    setDrafts((d) => {
-      const { [key]: _drop, ...rest } = d;
-      return r.ok ? rest : { ...rest, [key]: raw };
-    });
+    // 無効な入力だけ下書きとして残す（有効な値は保存済みの値を表示する）。下書きは Project の切替でも失わない（FR-138 AC-210）
+    st.setDraft(projectId, `${factorId}:${field}`, r.ok ? null : raw);
     setError(r.ok ? null : r.reason);
   };
   return (
@@ -124,7 +122,7 @@ function AnalysisView({ projectId, a, onReturn }: { projectId: string; a: Analys
         <Text weight="semibold">{m.name}</Text>
         <Text>状態: {a.status}</Text>
         {a.from && onReturn ? <Button size="small" onClick={() => onReturn(a.from!)}>元の作業に戻る（{a.from}）</Button> : null}
-        <Button size="small" onClick={() => { st.resetParams(projectId); setDrafts({}); setError(null); }}>既定値に戻す</Button>
+        <Button size="small" onClick={() => { st.resetParams(projectId); st.clearDrafts(projectId); setError(null); }}>既定値に戻す</Button>
       </div>
       <Text>{m.summary}</Text>
       <div data-testid="analysis-params" role="group" aria-label="パラメーター">

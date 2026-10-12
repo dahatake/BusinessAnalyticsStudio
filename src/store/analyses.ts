@@ -1,4 +1,4 @@
-// Project ごとの分析（手法・パラメーター・ビュアー・選択・絞り込み・状態）の保持（FR-133〜135）。保存しない。
+// Project ごとの分析（手法・パラメーター・ビュアー・選択・絞り込み・状態）の保持（FR-133〜135）。保存は store/persist.ts（FR-137 AC-207）。
 import { create } from 'zustand';
 import { compute, defaultParams, getMethod, parseField, type AnalysisResult, type Field, type MethodId, type Params, type ViewerId } from '../methods/model';
 
@@ -19,6 +19,10 @@ export type EditResult = { ok: true } | { ok: false; reason: string };
 
 interface AnalysesState {
   byProject: Record<string, Analysis>;
+  /** 無効で確定できていない入力（未保存）。Project ごとに保持し、切替でも失わない（FR-138 AC-210） */
+  drafts: Record<string, Record<string, string>>;
+  setDraft: (projectId: string, key: string, raw: string | null) => void;
+  clearDrafts: (projectId: string) => void;
   start: (projectId: string, methodId: MethodId, from?: string | null) => void;
   close: (projectId: string) => void;
   /** 値・重みを変更する。範囲外・型違いは拒否し、ほかの値と結果は変えない。 */
@@ -38,6 +42,13 @@ const patch = (s: AnalysesState, id: string, p: Partial<Analysis>): Pick<Analyse
 
 export const useAnalyses = create<AnalysesState>((set, get) => ({
   byProject: {},
+  drafts: {},
+  setDraft: (projectId, key, raw) =>
+    set((s) => {
+      const { [key]: _drop, ...rest } = s.drafts[projectId] ?? {};
+      return { drafts: { ...s.drafts, [projectId]: raw === null ? rest : { ...rest, [key]: raw } } };
+    }),
+  clearDrafts: (projectId) => set((s) => ({ drafts: { ...s.drafts, [projectId]: {} } })),
   start: (projectId, methodId, from = null) =>
     set((s) => ({
       byProject: {
@@ -74,5 +85,5 @@ export function analysisResult(a: Analysis): AnalysisResult {
 
 /** テスト用: 状態を初期化する */
 export function resetAnalyses(): void {
-  useAnalyses.setState({ byProject: {} });
+  useAnalyses.setState({ byProject: {}, drafts: {} });
 }

@@ -7,11 +7,14 @@ import './motion/motion.css';
 import './theme/a11y.css';
 import { installTabsterDummyFix } from './theme/tabsterDummies';
 import { AppThemeProvider } from './theme/AppThemeProvider';
+import { initProjectPersistence } from './store/persist';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('#root がありません');
 const mount = createRoot(root);
 installTabsterDummyFix();
+// FR-137 AC-207: 企業・Project・ステッパー・分析を、この端末の localStorage から復元して保存を始める
+initProjectPersistence();
 
 // 保存したボード（FR-095・FR-097）を読み込んでから画面を出す。読めなくても、空のボードで始める。
 void restoreInk().finally(() => {

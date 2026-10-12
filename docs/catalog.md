@@ -168,13 +168,13 @@
 | FR-134 | パラメーターの編集と結果の更新 | 承認済み | src/methods/model.ts, src/store/analyses.ts, src/projects/AnalysisPanel.tsx | tests/unit/analysis-methods.test.ts (AC-197, AC-198, AC-199), tests/system/e2e/analysis-projects.spec.ts (E2E-099) | - |
 | FR-135 | ビュアーの切替と結果の確認 | 承認済み | src/methods/model.ts, src/store/analyses.ts, src/projects/AnalysisPanel.tsx | tests/unit/analysis-methods.test.ts (AC-200, AC-201), tests/system/e2e/analysis-projects.spec.ts (E2E-100) | - |
 | FR-136 | 業務改善ステッパー | 承認済み | src/stepper/model.ts, src/stepper/Stepper.tsx, src/store/stepper.ts, src/components/AppShell.tsx (stepper スロット), src/app/App.tsx | tests/unit/stepper.test.ts (AC-202, AC-203, AC-204), tests/system/e2e/analysis-projects.spec.ts (E2E-101, E2E-102) | デザイン基盤, 画面の登録 |
-| FR-137 | 企業の登録と複数 Project の管理 | 承認済み | src/store/projects.ts, src/projects/ProjectsPanel.tsx, src/app/App.tsx | tests/unit/projects.test.ts (AC-205, AC-206, AC-208), tests/system/e2e/analysis-projects.spec.ts (E2E-103) | - |
-| FR-138 | Project の切替とデータの分離 | 承認済み | 未実装 | 未実装 | - |
-| FR-139 | 企業・Project の識別子と正本 | 承認済み | 未実装 | 未実装 | - |
+| FR-137 | 企業の登録と複数 Project の管理 | 承認済み | src/store/projects.ts, src/store/persist.ts, src/main.tsx, src/projects/ProjectsPanel.tsx, src/app/App.tsx | tests/unit/projects.test.ts (AC-205, AC-206, AC-208), tests/unit/persist.test.ts (AC-207), tests/system/e2e/analysis-projects.spec.ts (E2E-103, E2E-208) | 企業・Project の端末内保存 |
+| FR-138 | Project の切替とデータの分離 | 承認済み | src/store/projects.ts, src/store/stepper.ts, src/store/analyses.ts, src/projects/ProjectsPanel.tsx, src/projects/AnalysisPanel.tsx, src/app/App.tsx | tests/unit/persist.test.ts (AC-209, AC-210), tests/system/e2e/analysis-projects.spec.ts (E2E-209) | 企業・Project の端末内保存 |
+| FR-139 | 企業・Project の識別子と正本 | 承認済み | src/store/projects.ts, src/store/persist.ts | tests/unit/persist.test.ts (AC-211) | 企業・Project の端末内保存 |
 | FR-140 | 分析結果の AI 下書き | 承認済み | 未実装 | 未実装 | - |
 | NFR-UX-006 | 分析画面のレイアウト変更 | 承認済み | 未実装 | 未実装 | - |
 | NFR-A11Y-005 | 視覚表現の代替と状態の非色依存 | 承認済み | src/projects/AnalysisPanel.tsx | tests/unit/analysis-methods.test.ts (AC-200 の同一値。AC-216 はビュアー側のみ、AC-217 のステッパーは FR-136 の項目) | - |
-| NFR-SEC-004 | Project のアクセス範囲 | 承認済み | 未実装 | 未実装 | - |
+| NFR-SEC-004 | Project のアクセス範囲 | 承認済み | src/store/persist.ts | tests/unit/persist.test.ts (AC-218), tests/system/e2e/analysis-projects.spec.ts (E2E-211) | 企業・Project の端末内保存 |
 
 ## API・イベント
 
@@ -188,6 +188,7 @@
 
 | テーブル名 | 定義ファイル | 正本のシステム | 関連する要求 ID |
 |---|---|---|---|
+| 企業・Project・ステッパーの位置・分析（localStorage `eabk.projects.v1`） | src/store/persist.ts, src/store/projects.ts, src/store/stepper.ts, src/store/analyses.ts | ブラウザー（この端末だけ。サーバー・ほかの端末へは送らない。識別子は自システムの採番 company-N / project-N） | FR-137, FR-138, FR-139, NFR-SEC-004 |
 | 議論テーマ（localStorage `edb.discussion`） | src/store/discussion.ts, src/discussion/model.ts | ブラウザー（保存・復元は議論メモの Markdown が正本の写し） | FR-048, FR-049, FR-050, FR-051, FR-056 |
 | ホワイトボードのボード（IndexedDB `edb-ink` の `state` / `boards`） | src/ink/persist.ts, src/ink/model.ts | ブラウザー（ボード・ストローク・項目の自動保存） | FR-095, FR-097 |
 | 手書きから反映した項目（localStorage `edb.recognized`） | src/ink/recognized.ts | ブラウザー（認識結果の決定事項・次のアクション。「AI 生成（認識結果）」ラベル付き。元の手書きは `edb-ink` のボードに残る） | FR-090 |
@@ -209,6 +210,7 @@
 | テスト用フック | src/testing/hook.ts | `?e2e=1` のときだけ window.__edbTest に名前空間ごとのフックを足す（registerTestHook。キャンバスと 3D が共通で使う 1 つの入口） | FR-012, FR-086, FR-097, FR-020, FR-021, FR-023 |
 | インク・ボード基盤 | src/ink/model.ts, src/ink/store.ts, src/ink/viewport.ts, src/ink/render.ts, src/ink/geometry.ts, src/ink/input.ts, src/ink/outline.ts, src/ink/recognize.ts, src/ink/BoardSurface.tsx, src/ink/InkToolbar.tsx, src/ink/AnnotationLayer.tsx | 自前の Canvas 実装（外部ライブラリなし。Q-003 の推奨案 A）。ボード（議題ごと・背景・視点）、ストローク（筆圧）、図形・テキスト・付箋・画像の項目、元に戻す/やり直し、`BoardSurface`（描画面。overlay で他のビューの上の注釈）、`InkToolbar`、`useInk` ストア、`PointerRouter`（ペン=描画/指=パン/手のひら無視）、`recognizeShape`。テスト用フックの `board`・`ink.loadSynthetic`・`annotations` を登録する。保存（FR-095）・出力（FR-092/093）・手書き認識（FR-090）は `useInk` の boards を読む／書く。付箋の整理（FR-097・FR-099）はホワイトボード部品が受け持つ（BoardItem に frame / connector / card と from・to・votes・sourceEntityId・label・author を追加。ToolId に connector。`BoardSurface` の `onEntityDrop`・`onItemActivate`・children、`InkToolbar` の `whiteboard`、`useInk` の `updateItems`・`voteMode`・`connectFrom`・`restoreBoards`）。テスト用フックの `board` は items に from・to・votes・sourceEntityId・label・author も返す | FR-086, FR-087, FR-088, FR-089, NFR-PERF-004, FR-097, FR-099, FR-090, FR-091, FR-095, FR-096, FR-092, FR-093, FR-094 |
 | ホワイトボード部品 | src/whiteboard/ops.ts, src/whiteboard/ItemOverlay.tsx, src/whiteboard/entityActions.tsx, src/whiteboard/cardEdit.ts, src/whiteboard/timer.ts, src/ink/persist.ts | ボードの項目（付箋・コネクター・フレーム・データのカード）の純粋な操作（`connect`・`frameSelection`・`groupSelection`・`alignItems`・`placeCard`・`voteItem`・クラスタリングの `clusterTexts`/`parseClusterJson`/`applyClusters`）、描画面の上に重ねる読み上げ・操作用の DOM の層 `ItemOverlay`（付箋・カードの文字と `data-wb-type`・`data-entity-id`・`vote-count`、カードの名前の編集）、データ項目（`data-entity-id`）のドラッグ&ドロップ・右クリック「ボードに配置」を文書全体で受ける `EntityBoardActions`（App.tsx に 1 つ）と `placeEntityOnBoard`、タイマーのストア `useTimer`（終了時刻から残りを計算）、ボードの IndexedDB への自動保存（PARAM-025 = 2 秒）と起動時の復旧 `restoreInk`/`startInkAutosave`（main.tsx が画面を出す前に読み込む。読み込みが終わるまで保存しない `createInkPersister`、視点だけの変化は保存しない `contentChanged`）。新しい項目の種類は `BoardItem.type` に足し、`render.ts` の drawItem と `geometry.ts` の itemHit にも足す。画面を開くときの幅は `layoutModel.SHOW_SHARE` | FR-097, FR-098, FR-099, FR-095 |
+| 企業・Project の端末内保存 | src/store/persist.ts | 企業・Project・ステッパーの位置（Project ごと）・分析を localStorage `eabk.projects.v1` に保存・復元する（`initProjectPersistence` を main.tsx が起動時に 1 回）。端末外への送信はしない | FR-137, FR-138, FR-139, NFR-SEC-004 |
 | 画面の登録 | src/screens/registry.ts, src/screens/types.ts | 画面を足すときは registry に 1 行足す（nav-key / component-key） | FR-001, FR-007, FR-048, FR-058, FR-065, FR-066, FR-086, FR-043, FR-037, FR-039, FR-040, FR-041, FR-042, FR-020, FR-021, FR-136 |
 | フローティングツールバー | src/ink/FloatingInkToolbar.tsx, src/ink/presentationInk.ts | 画面の端（利き手で左右）に浮かぶインクの道具 `FloatingInkToolbar`（描く間は薄くなり、30 秒使わなければ畳む）と、アプリに 1 つ置く `InkToolbarHost`（App.tsx。ホワイトボード表示中は選択中のボード、プレゼン中の注釈を書く間はプレゼンのボードを操作）。プレゼン中の注釈の扱い（書かない／一時的／保存）`usePresentationInk` と、チャプター移動・プレゼン終了で一時的な注釈を消す監視（`clearTemporaryStrokes`）。注釈を書く間はキャンバスを最大化する | FR-091 |
 | 手書き認識の接続点 | src/ink/handwriting.ts | `recognizeHandwriting`（選んだ手書きを認識）。接続先は `setHandwritingRecognizer` で差し替える口だけ用意し、既定はモック（Q-002 の推奨案 A。外部サービスには接続しない）。反映した項目のラベルは `RECOGNIZED_LABEL`（「AI 生成（認識結果）」） | FR-090 |

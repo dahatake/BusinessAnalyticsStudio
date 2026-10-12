@@ -5,6 +5,7 @@ import {
 } from '@fluentui/react-components';
 import { AnalysisPanel } from './AnalysisPanel';
 import { useProjects, type Company, type Project, type Result } from '../store/projects';
+import { useAnalyses } from '../store/analyses';
 
 const useStyles = makeStyles({
   root: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS, padding: tokens.spacingHorizontalM, borderBottom: `1px solid ${tokens.colorNeutralStroke2}` },
@@ -46,10 +47,10 @@ function NameDialog(props: { title: string; label: string; submit: string; initi
 
 type Modal = { kind: 'company' } | { kind: 'project'; company: Company } | { kind: 'rename'; project: Project };
 
-function CompanyRegion({ company, onModal }: { company: Company; onModal: (m: Modal) => void }) {
+function CompanyRegion({ company, onModal, onOpen }: { company: Company; onModal: (m: Modal) => void; onOpen: (id: string) => void }) {
   const s = useStyles();
   const projects = useProjects((st) => st.projects).filter((p) => p.companyId === company.id);
-  const { openId, open, setArchived } = useProjects();
+  const { openId, setArchived } = useProjects();
   const active = projects.filter((p) => !p.archived);
   const archived = projects.filter((p) => p.archived);
   return (
@@ -61,7 +62,7 @@ function CompanyRegion({ company, onModal }: { company: Company; onModal: (m: Mo
       <ul className={s.list} aria-label="進行中の Project">
         {active.map((p) => (
           <li key={p.id} className={s.row} data-testid={`project-${p.id}`}>
-            <a href={`#${p.id}`} aria-current={openId === p.id ? 'page' : undefined} onClick={(e) => { e.preventDefault(); open(p.id); }}>{p.name}</a>
+            <a href={`#${p.id}`} aria-current={openId === p.id ? 'page' : undefined} onClick={(e) => { e.preventDefault(); onOpen(p.id); }}>{p.name}</a>
             <Button size="small" appearance="subtle" aria-label={`${p.name} の名称を変更`} onClick={() => onModal({ kind: 'rename', project: p })}>名称変更</Button>
             <Button size="small" appearance="subtle" aria-label={`${p.name} をアーカイブ`} onClick={() => setArchived(p.id, true)}>アーカイブ</Button>
           </li>
@@ -85,6 +86,14 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
   const s = useStyles();
   const st = useProjects();
   const [modal, setModal] = useState<Modal | null>(null);
+  /** 未保存の入力があるときの切替の確認（FR-138 AC-210）。target は切替先（null は一覧へ） */
+  const [pending, setPending] = useState<{ target: string | null } | null>(null);
+  const hasUnsaved = useAnalyses((a) => (st.openId ? Object.keys(a.drafts[st.openId] ?? {}).length > 0 : false));
+  const requestOpen = (target: string | null) => {
+    if (target === st.openId) return;
+    if (hasUnsaved) setPending({ target });
+    else st.open(target);
+  };
   const close = () => setModal(null);
   const current = st.projects.find((p) => p.id === st.openId);
   const currentCompany = current ? st.companies.find((c) => c.id === current.companyId) : undefined;
@@ -93,10 +102,25 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
       <div className={s.head}>
         <Text weight="semibold">企業と Project</Text>
         <Button size="small" onClick={() => setModal({ kind: 'company' })}>企業を登録</Button>
+        {current ? <Button size="small" onClick={() => requestOpen(null)}>Project 一覧へ</Button> : null}
         {current && currentCompany ? <Text data-testid="current-project">開いている Project: {currentCompany.name} / {current.name}</Text> : null}
       </div>
-      {st.companies.map((c) => <CompanyRegion key={c.id} company={c} onModal={setModal} />)}
+      {st.companies.map((c) => <CompanyRegion key={c.id} company={c} onModal={setModal} onOpen={requestOpen} />)}
       {current ? <AnalysisPanel projectId={current.id} onNavigate={onNavigate} /> : null}
+      {pending ? (
+        <Dialog open modalType="alert" onOpenChange={(_, d) => { if (!d.open) setPending(null); }}>
+          <DialogSurface role="alertdialog" aria-label="未保存の入力があります">
+            <DialogBody>
+              <DialogTitle>未保存の入力があります</DialogTitle>
+              <DialogContent>確定していない入力は、この Project に残したまま切り替えます。切り替えますか？</DialogContent>
+              <DialogActions>
+                <Button appearance="secondary" onClick={() => setPending(null)}>キャンセル</Button>
+                <Button appearance="primary" onClick={() => { st.open(pending.target); setPending(null); }}>切り替える</Button>
+              </DialogActions>
+            </DialogBody>
+          </DialogSurface>
+        </Dialog>
+      ) : null}
       {modal?.kind === 'company' ? (
         <NameDialog title="企業を登録" label="企業名" submit="登録" onSubmit={st.addCompany} onClose={close} />
       ) : null}
