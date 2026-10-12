@@ -168,7 +168,7 @@
 | FR-134 | パラメーターの編集と結果の更新 | 承認済み | 未実装 | 未実装 | - |
 | FR-135 | ビュアーの切替と結果の確認 | 承認済み | 未実装 | 未実装 | - |
 | FR-136 | 業務改善ステッパー | 承認済み | 未実装 | 未実装 | - |
-| FR-137 | 企業の登録と複数 Project の管理 | 承認済み | 未実装 | 未実装 | - |
+| FR-137 | 企業の登録と複数 Project の管理 | 承認済み | src/store/projects.ts, src/projects/ProjectsPanel.tsx, src/app/App.tsx | tests/unit/projects.test.ts (AC-205, AC-206, AC-208), tests/system/e2e/analysis-projects.spec.ts (E2E-103) | - |
 | FR-138 | Project の切替とデータの分離 | 承認待ち | 未実装 | 未実装 | - |
 | FR-139 | 企業・Project の識別子と正本 | 承認待ち | 未実装 | 未実装 | - |
 | FR-140 | 分析結果の AI 下書き | 承認待ち | 未実装 | 未実装 | - |
