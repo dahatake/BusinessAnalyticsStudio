@@ -68,8 +68,10 @@ test.describe('FR-142 すべてのコンポーネントのドラッグでの移�
       const others = ks.filter((o) => o !== k);
       const target = await box(component(page, others[0]));
       // 移動先は、タブ化されない余白側（移動先の下端の余白）にする
-      const dx = target.x + target.width / 2 - (before.x + before.width / 2);
-      const dy = target.y + target.height + 6 - (before.y + before.height / 2);
+      // dx/dy は、掴む見出しの中心を基準にする（コンポーネント中心ではない）
+      const grab = await box(c.getByRole('heading').first());
+      const dx = target.x + target.width / 2 - (grab.x + grab.width / 2);
+      const dy = target.y + target.height + 6 - (grab.y + grab.height / 2);
       const shown = await dragByHeading(page, c, dx, dy);
       expect(shown, `${k}: ドロップ前に置ける場所が示されない`).toBe(true);
       const after = await box(component(page, k));
