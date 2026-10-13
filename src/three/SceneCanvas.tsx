@@ -4,6 +4,8 @@ import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from '
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
+import './scene.css';
+import { needsResize, registerSceneResizer } from './sceneViewport';
 import { useAnimation } from '../store/animation';
 import { countFrame, useIndustryPreset, useView3D } from '../store/view3d';
 import { goHome, setPose } from './cameraRig';
@@ -17,6 +19,81 @@ import { useTwinLayout } from './twin';
 import { CameraSync, EntityTwin } from './TwinScene';
 
 type Kind = 'trying-webgpu' | 'webgl2';
+const FIRST_FRAME_MAX_WAIT_MS = 8000;
+const RESIZE_SETTLE_MS = 150;
+
+/**
+ * 表示領域の大きさの通知。最初の 1 回はすぐ通し（描画面と中身をすぐ作る）、以降の変更は止まってから 1 回にまとめる。
+ * 描画面の中身（ピクセル）の大きさの変更は重く、変更のたびに行うと画面が止まるため（FR-146 AC-243）。
+ */
+class SettlingResizeObserver {
+  private readonly ro: ResizeObserver;
+  private first = true;
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  constructor(cb: ResizeObserverCallback) {
+    this.ro = new ResizeObserver((entries) => {
+      if (this.first) { this.first = false; cb(entries, this as unknown as ResizeObserver); return; }
+      if (this.timer) clearTimeout(this.timer);
+      this.timer = setTimeout(() => { this.timer = null; cb(entries, this as unknown as ResizeObserver); }, RESIZE_SETTLE_MS);
+    });
+  }
+  observe(target: Element, options?: ResizeObserverOptions): void { this.ro.observe(target, options); }
+  unobserve(target: Element): void { this.ro.unobserve(target); }
+  disconnect(): void { if (this.timer) clearTimeout(this.timer); this.ro.disconnect(); }
+}
+
+/**
+ * 最初の描画は、シェーダーのコンパイル（プログラムごとに同期で数百ミリ秒）で画面が 1 秒以上止まる。
+ * 描画を始める前に、材質ごとに 1 つずつコンパイルし、間で制御を返す。その間も描画面の大きさの追従・操作・測定を受け付けられる（FR-146 AC-243）。
+ * コンパイルが終わる（または上限に達する）まで、onDone は呼ばない。
+ */
+function FirstFrameGate({ onDone }: { onDone: () => void }) {
+  const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
+  const camera = useThree((s) => s.camera);
+  useEffect(() => {
+    let alive = true;
+    const finish = () => { if (alive) { alive = false; clearInterval(matrices); onDone(); } };
+    // 描き始める前でも、クリックの当たり判定（レイキャスト）が現在の配置で働くよう、行列だけは更新しておく
+    const matrices = setInterval(() => { scene.updateMatrixWorld(true); camera.updateMatrixWorld(true); }, 50);
+    const limit = setTimeout(finish, FIRST_FRAME_MAX_WAIT_MS);
+    const r = gl as unknown as { compile?: (o: THREE.Object3D, c: THREE.Camera, t: THREE.Object3D) => void; isWebGLRenderer?: boolean; getContext?: () => WebGL2RenderingContext; info?: { programs?: { program?: WebGLProgram }[] | null } };
+    const tick = () => new Promise<void>((res) => setTimeout(res, 0));
+    void (async () => {
+      await tick(); // 子の要素が組み上がるのを待つ
+      if (r.isWebGLRenderer && r.compile) {
+        const targets: THREE.Object3D[] = [];
+        const seen = new Set<string>();
+        scene.traverse((o) => {
+          const m = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
+          if (!m) return;
+          const key = (Array.isArray(m) ? m.map((x) => x.uuid).join() : m.uuid) + ((o as THREE.InstancedMesh).isInstancedMesh ? ':i' : '');
+          if (!seen.has(key)) { seen.add(key); targets.push(o); }
+        });
+        const ctx = r.getContext?.();
+        const linked = new Set<WebGLProgram>();
+        for (const o of targets) {
+          if (!alive) return;
+          try { r.compile(o, camera, scene); } catch { /* 描画のときに改めて扱われる */ }
+          // プログラムのリンクは、最初の描画で初めて待たされる。1 つずつここで待ち、間で制御を返す
+          for (const info of r.info?.programs ?? []) {
+            const pr = info.program;
+            if (!ctx || !pr || linked.has(pr)) continue;
+            linked.add(pr);
+            ctx.getProgramParameter(pr, ctx.LINK_STATUS);
+            await tick();
+            if (!alive) return;
+          }
+          await tick();
+        }
+      }
+      finish();
+    })();
+    return () => { alive = false; clearInterval(matrices); clearTimeout(limit); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gl, scene, camera]);
+  return null;
+}
 type WebGPUModule = { WebGPURenderer: new (p: Record<string, unknown>) => { init(): Promise<unknown> } & Record<string, unknown> };
 
 /** WebGPU が使えるかを確かめ、使えるなら three/webgpu を読み込む。使えなければ null。 */
@@ -185,6 +262,40 @@ function SceneContent({ scene, preset, quality, toBe }: { scene: SceneKey; prese
 }
 
 /**
+ * 描画面を表示領域の大きさに追従させる（FR-146 AC-243）。見た目の大きさ（CSS）は scene.css が即座に追従させ、
+ * ここでは中身（ピクセル）の大きさを、表示領域に合わせる。中身の大きさの変更は重いので、変更が続く間はまとめて、止まってから 1 回だけ行う。
+ * 座標を返す前（flushSceneSize）は、待たずにすぐ合わせる（クリックが外れない）。
+ */
+function SizeSync() {
+  const gl = useThree((s) => s.gl);
+  const get = useThree((s) => s.get);
+  const setSize = useThree((s) => s.setSize);
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => {
+    const area = gl.domElement.parentElement;
+    if (!area) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const apply = () => {
+      if (timer) { clearTimeout(timer); timer = null; }
+      const r = area.getBoundingClientRect();
+      if (needsResize(get().size, r)) setSize(r.width, r.height);
+      invalidate();
+    };
+    const schedule = () => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(apply, RESIZE_SETTLE_MS);
+    };
+    apply();
+    const unregister = registerSceneResizer(apply);
+    const ro = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(schedule);
+    ro?.observe(area);
+    window.addEventListener('resize', schedule);
+    return () => { if (timer) clearTimeout(timer); ro?.disconnect(); window.removeEventListener('resize', schedule); unregister(); };
+  }, [gl, get, setSize, invalidate]);
+  return null;
+}
+
+/**
  * 描画方式（WebGPU → WebGL2）の選択と Canvas。3D ビューと地図（src/map）が共有する。
  * children は Canvas の中身（シーン）。アニメーション停止中は、必要なときだけ描く（frameloop=demand。FR-071）。
  */
@@ -194,6 +305,11 @@ export function RenderCanvas({ children, cameraPosition, fov = 45, paused = fals
   const playing = useAnimation((s) => s.playing);
   const [kind, setKind] = useState<Kind | null>(null);
   const [ready, setReady] = useState(false);
+  // 最初の描画を少し遅らせる（FirstFrameGate。FR-146 AC-243）
+  const [settled, setSettled] = useState(false);
+  useEffect(() => {
+    if (!kind) setSettled(false);
+  }, [kind]);
   const gpuModule = useRef<WebGPUModule | null>(null);
   const rendererRef = useRef<{ init(): Promise<unknown> } | null>(null);
   const profile = QUALITY_PROFILES[quality];
@@ -234,13 +350,17 @@ export function RenderCanvas({ children, cameraPosition, fov = 45, paused = fals
   return (
     <Canvas
       key={kind}
+      className="r3f-fill"
+      resize={{ scroll: true, debounce: { scroll: 50, resize: 0 }, polyfill: SettlingResizeObserver as never }}
       gl={glFactory as never}
       shadows={profile.shadows}
       dpr={Math.min(typeof window === 'undefined' ? 1 : window.devicePixelRatio, profile.maxDpr)}
-      frameloop={ready && !paused ? (playing ? 'always' : 'demand') : 'never'}
+      frameloop={ready && settled && !paused ? (playing ? 'always' : 'demand') : 'never'}
       camera={{ position: cameraPosition, fov }}
       style={{ width: '100%', height: '100%', display: 'block' }}
     >
+      <SizeSync />
+      <FirstFrameGate onDone={() => setSettled(true)} />
       <Suspense fallback={null}>{children}</Suspense>
     </Canvas>
   );
