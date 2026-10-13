@@ -59,6 +59,8 @@ const useStyles = makeStyles({
 const KEY_STEP = 0.02;
 
 const DRAG_THRESHOLD_PX = 4;
+/** 分割線の上に放したときに、近くのコンポーネントへ寄せる距離（分割線の太さ 8px より少し大きく） */
+const SNAP_PX = 12;
 
 interface DragState {
   key: string;
@@ -301,7 +303,20 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
         }
       }
     }
-    return null;
+    // 境界（分割線）の上など、コンポーネントの外でも、すぐ近く（分割線の太さ程度）なら、いちばん近いコンポーネントに寄せる
+    let best: { key: string; rect: DOMRect; dist: number } | null = null;
+    for (const k of visible) {
+      const el = root.querySelector(`[data-testid="component-${k}"]`);
+      if (!el) continue;
+      const rect = el.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) continue;
+      const dist = Math.hypot(Math.max(rect.left - x, 0, x - rect.right), Math.max(rect.top - y, 0, y - rect.bottom));
+      if (!best || dist < best.dist) best = { key: k, rect, dist };
+    }
+    if (!best || best.dist > SNAP_PX || best.key === except) return null;
+    const cx = Math.min(Math.max(x, best.rect.left), best.rect.right);
+    const cy = Math.min(Math.max(y, best.rect.top), best.rect.bottom);
+    return { key: best.key, zone: zoneOf((cx - best.rect.left) / best.rect.width, (cy - best.rect.top) / best.rect.height), rect: best.rect };
   };
 
   /** 見出しのドラッグでコンポーネントを動かす。置ける場所を移動中に示し、Esc で中止する（FR-142 AC-224）。 */
