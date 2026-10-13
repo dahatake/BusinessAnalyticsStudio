@@ -20,6 +20,8 @@ export interface PaneInfo {
   toggleDirection: () => void;
   mergeInto: (target: string) => void;
   untab: () => void;
+  /** 見出しのポインター操作で移動を始める（FR-142）。キーボードの代わりはメニューと Alt+Shift+矢印キー（NFR-A11Y-004） */
+  startDrag: (e: { button: number; clientX: number; clientY: number; pointerId?: number }) => void;
 }
 
 export const PaneContext = createContext<PaneInfo | null>(null);

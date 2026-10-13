@@ -168,6 +168,65 @@ export function move(layout: Layout, key: string, dir: Move): Layout {
   });
 }
 
+export type DropZone = 'left' | 'right' | 'top' | 'bottom' | 'tabs';
+
+/** `a` と `b` を含む子が初めて分かれる分割の位置と、その手前の子の番号（境界を動かす対象）。 */
+export function splitBetween(layout: Layout, a: string, b: string): { path: Path; index: number } | null {
+  if (!layout) return null;
+  let node: LayoutNode = layout;
+  const path: Path = [];
+  for (;;) {
+    if (node.kind !== 'split') return null;
+    const ia = node.children.findIndex((c) => keysOf(c).includes(a));
+    const ib = node.children.findIndex((c) => keysOf(c).includes(b));
+    if (ia < 0 || ib < 0) return null;
+    if (ia === ib) { path.push(ia); node = node.children[ia]!; continue; }
+    return { path: [...path], index: Math.min(ia, ib) };
+  }
+}
+
+/**
+ * ドラッグでの移動（FR-142）。`key` を `target` の上下左右に置く。`tabs` なら `target` のタブにまとめる。
+ * どのコンポーネントも、どこへでも動かせる。移動できない組み合わせ（自分自身・存在しない）は、木を変えない。
+ */
+export function dropAt(layout: Layout, key: string, target: string, zone: DropZone): Layout {
+  if (!layout || key === target) return layout;
+  if (zone === 'tabs') return mergeIntoTabs(layout, key, target);
+  if (!isVisible(layout, key) || !isVisible(layout, target)) return layout;
+  const root = clone(layout);
+  const src = findTabs(root, key)!;
+  let rest: Layout;
+  if (src.node.tabs.length > 1) {
+    src.node.tabs = src.node.tabs.filter((k) => k !== key);
+    if (!src.node.tabs.includes(src.node.active)) src.node.active = src.node.tabs[0]!;
+    rest = root;
+  } else {
+    rest = removeNode(root, src.node);
+  }
+  if (!rest) return layout;
+  const dst = findTabs(rest, target);
+  if (!dst) return layout;
+  const dir: Dir = zone === 'left' || zone === 'right' ? 'row' : 'col';
+  const before = zone === 'left' || zone === 'top';
+  const moved = leaf(key);
+  if (dst.path.length > 0) {
+    const parent = getAt(rest, dst.path.slice(0, -1)) as SplitNode;
+    if (parent.dir === dir) {
+      // 同じ向きの分割には、並べて足す（入れ子を増やさない）
+      const i = dst.path[dst.path.length - 1]!;
+      const s = parent.sizes[i]!;
+      parent.children.splice(before ? i : i + 1, 0, moved);
+      parent.sizes.splice(i, 1, s / 2, s / 2);
+      parent.sizes = normalizeSizes(parent.sizes, parent.children.length);
+      return rest;
+    }
+    const pair = split(dir, before ? [moved, dst.node] : [dst.node, moved], [0.5, 0.5]);
+    parent.children[dst.path[dst.path.length - 1]!] = pair;
+    return rest;
+  }
+  return split(dir, before ? [moved, rest] : [rest, moved], before ? [0.4, 0.6] : [0.6, 0.4]);
+}
+
 /** 並べる方向（横/縦）を、そのコンポーネントを含む分割で入れ替える（FR-109）。 */
 export function toggleDirection(layout: Layout, key: string): Layout {
   return edit(layout, (root) => {
