@@ -186,7 +186,7 @@ describe('FR-143 AC-228 手動の大きさと既定へ戻す（ストア）', ()
     vi.stubGlobal('localStorage', storage);
     vi.stubGlobal('window', { localStorage: storage });
     const mod = await import('../../src/store/layout');
-    mod.setAvailableComponents(['issue-solution', 'discussion-tree', 'gantt', 'table']);
+    mod.setAvailableComponents(['issue-solution', 'discussion-tree', 'gantt', 'table', 'kpi-okr']);
     return { ...mod, storage };
   }
   beforeEach(() => { vi.unstubAllGlobals(); });
