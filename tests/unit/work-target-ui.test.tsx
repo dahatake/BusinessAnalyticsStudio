@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-// FR-144 の描画テスト（AC-229・AC-230・AC-231・AC-232・AC-236）。jsdom + testing-library。
+// FR-144 の描画テスト（AC-229・AC-231・AC-232・AC-237・AC-238・AC-241）。jsdom + testing-library。
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { FluentProvider, webLightTheme } from '@fluentui/react-components';
@@ -10,6 +10,7 @@ import type { TargetChoice } from '../../src/projects/workTarget';
 import { resetProjects, useProjects } from '../../src/store/projects';
 import { resetAnalyses, useAnalyses } from '../../src/store/analyses';
 import { useRestoreStatus } from '../../src/store/persist';
+import { useSettings } from '../../src/store/settings';
 
 const st = () => useProjects.getState();
 const wrap = (ui: ReactNode) => <FluentProvider theme={webLightTheme}>{ui}</FluentProvider>;
@@ -62,24 +63,46 @@ describe('FR-144 ProjectsPanel（描画）', () => {
     expect(await screen.findByRole('dialog', { name: '作業先の選択' })).toBeTruthy();
   });
 
-  // FR-144 AC-236
-  it('FR-144 AC-236 1 件なら選択画面を出さず、「作業先」ボタンから開ける', async () => {
+  // FR-144 AC-238
+  it('FR-144 AC-238 1 件でも読込完了後に選択画面を出し、前回の作業先が最初の候補。デモも選べる', async () => {
     const [p1] = seed(1);
     st().open(p1 ?? null);
     render(wrap(<ProjectsPanel />));
     act(() => useRestoreStatus.setState({ done: true }));
-    expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull();
+    const picker = await screen.findByRole('dialog', { name: '作業先の選択' });
+    const opts = within(picker).getAllByRole('option');
+    expect(opts[0]!.textContent).toContain('合成株式会社A / 業務改善 2026');
+    expect(opts.some((o) => /デモ/.test(o.textContent ?? ''))).toBe(true);
+    fireEvent.click(opts[0]!);
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull());
     expect(screen.getByTestId('work-target').textContent).toBe('合成株式会社A / 業務改善 2026');
-    fireEvent.click(screen.getByRole('button', { name: '作業先' }));
-    expect(await screen.findByRole('dialog', { name: '作業先の選択' })).toBeTruthy();
   });
 
-  // FR-144 AC-230
-  it('FR-144 AC-230 0 件なら選択画面を出さずデモで始まる', () => {
+  // FR-144 AC-237
+  it('FR-144 AC-237 0 件でも選択画面が出て、Esc では閉じられず、デモを選ぶと「デモ」になる', async () => {
     render(wrap(<ProjectsPanel />));
     act(() => useRestoreStatus.setState({ done: true }));
-    expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull();
+    const picker = await screen.findByRole('dialog', { name: '作業先の選択' });
+    fireEvent.keyDown(picker, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeTruthy();
+    fireEvent.click(within(picker).getByRole('option', { name: /デモ/ }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull());
     expect(screen.getByTestId('work-target').textContent).toBe('デモ');
+  });
+
+  // FR-144 AC-241
+  it('FR-144 AC-241 デモ非表示・0 件でも「実際の Project を登録」と設定への案内が出る', async () => {
+    useSettings.getState().setShowDemoInPicker(false);
+    try {
+      render(wrap(<ProjectsPanel />));
+      act(() => useRestoreStatus.setState({ done: true }));
+      const picker = await screen.findByRole('dialog', { name: '作業先の選択' });
+      expect(within(picker).queryByRole('option', { name: /デモ/ })).toBeNull();
+      expect(within(picker).getByRole('option', { name: '実際の Project を登録' })).toBeTruthy();
+      expect(within(picker).getByText(/設定の「選択画面にデモを表示」/)).toBeTruthy();
+    } finally {
+      useSettings.getState().setShowDemoInPicker(true);
+    }
   });
 
   // FR-144 AC-231

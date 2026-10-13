@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { resetProjects, useProjects } from '../../src/store/projects';
 import { useAnalyses, resetAnalyses } from '../../src/store/analyses';
 import {
-  activeProjects, parseChoice, shouldShowStartupPicker, targetOptions, workTargetLabel, STARTUP_PICKER_MIN_PROJECTS,
+  activeProjects, parseChoice, shouldShowStartupPicker, targetOptions, workTargetLabel,
 } from '../../src/projects/workTarget';
 
 const st = () => useProjects.getState();
@@ -19,9 +19,8 @@ function seed() {
 describe('FR-144 起動後のデモ／実プロジェクトの選択', () => {
   beforeEach(() => { resetProjects(); resetAnalyses(); });
 
-  // FR-144 AC-229
-  it('FR-144 AC-229 実 Project が 2 件以上のとき起動時に選択画面を出し、候補はデモと各 Project（企業名 / Project 名）', () => {
-    expect(STARTUP_PICKER_MIN_PROJECTS).toBe(2);
+  // FR-144 AC-229 AC-239
+  it('FR-144 AC-229 AC-239 実 Project が 2 件以上のとき起動時に選択画面を出し、候補はデモと各 Project（企業名 / Project 名）', () => {
     const { p1 } = seed();
     expect(shouldShowStartupPicker(st().projects)).toBe(true);
     const labels = targetOptions(st().projects, st().companies).map((o) => o.label);
@@ -33,22 +32,42 @@ describe('FR-144 起動後のデモ／実プロジェクトの選択', () => {
     expect(workTargetLabel(null, st().projects, st().companies)).toBe('デモ');
   });
 
-  // FR-144 AC-229（異常系: アーカイブ済みは候補に出ず、件数にも数えない）
-  it('FR-144 AC-229 異常系: アーカイブ済みの Project は候補に出ず、起動時の選択画面の条件にも数えない', () => {
+  // FR-144 AC-229（異常系: アーカイブ済みは候補に出ない）。AC-238: 件数によらず選択画面を出す
+  it('FR-144 AC-229 AC-238 異常系: アーカイブ済みの Project は候補に出ないが、選択画面は件数によらず出る', () => {
     const { p2 } = seed();
     st().setArchived(p2, true);
     expect(activeProjects(st().projects)).toHaveLength(1);
-    expect(shouldShowStartupPicker(st().projects)).toBe(false);
+    expect(shouldShowStartupPicker(st().projects)).toBe(true);
     expect(targetOptions(st().projects, st().companies).map((o) => o.label).join()).not.toContain('在庫最適化');
   });
 
-  // FR-144 AC-230
-  it('FR-144 AC-230 実 Project が 0 件なら選択画面を出さずデモで開き、候補はデモと「実際の Project を登録」だけ', () => {
-    expect(shouldShowStartupPicker(st().projects)).toBe(false);
+  // FR-144 AC-238: 1 件なら、その Project（前回の作業先があればそれ）が最初の候補。デモも選べる
+  it('FR-144 AC-238 実 Project が 1 件なら、その Project が最初の候補で、デモも選べる', () => {
+    const { p2 } = seed();
+    st().setArchived(p2, true);
+    const opts = targetOptions(st().projects, st().companies);
+    expect(opts.map((o) => o.kind)).toEqual(['project', 'demo', 'register']);
+    const { p1 } = { p1: st().projects[0]!.id };
+    st().setArchived(p2, false);
+    const withCurrent = targetOptions(st().projects, st().companies, { currentId: p2 });
+    expect(withCurrent[0]!.value).toBe(`project:${p2}`);
+    expect(p1).not.toBe(p2);
+  });
+
+  // FR-144 AC-237
+  it('FR-144 AC-237 実 Project が 0 件でも選択画面を出し、候補はデモと「実際の Project を登録」だけ', () => {
+    expect(shouldShowStartupPicker(st().projects)).toBe(true);
     expect(workTargetLabel(st().openId, st().projects, st().companies)).toBe('デモ');
     const opts = targetOptions(st().projects, st().companies);
     expect(opts.map((o) => o.kind)).toEqual(['demo', 'register']);
     expect(opts[1]!.label).toBe('実際の Project を登録');
+  });
+
+  // FR-144 AC-240 AC-241
+  it('FR-144 AC-240 AC-241 デモを非表示にすると候補にデモが出ず、0 件でも「実際の Project を登録」は残る', () => {
+    expect(targetOptions(st().projects, st().companies, { showDemo: false }).map((o) => o.kind)).toEqual(['register']);
+    seed();
+    expect(targetOptions(st().projects, st().companies, { showDemo: false }).some((o) => o.kind === 'demo')).toBe(false);
   });
 
   // FR-144 AC-231

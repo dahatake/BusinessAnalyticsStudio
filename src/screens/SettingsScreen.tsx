@@ -4,6 +4,7 @@ import { Badge, Button, Dropdown, Field, Input, Option, Switch, Text, makeStyles
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { Panel } from '../components/Panel';
 import { AiSettings } from '../ai/AiSettings';
+import { switchToDemo } from '../projects/workTargetUi';
 import { THEME_MODES, useSettings, type Handedness, type ThemeMode } from '../store/settings';
 import { INDUSTRY_PRESETS, useIndustryPreset, useView3D } from '../store/view3d';
 import { QUALITIES, type Quality } from '../three/quality';
@@ -69,6 +70,8 @@ export function SettingsScreen() {
   const setOverride = useSettings((st) => st.setBrandPrimaryOverride);
   const bgmEnabled = useSettings((st) => st.bgmEnabled);
   const setBgmEnabled = useSettings((st) => st.setBgmEnabled);
+  const showDemoInPicker = useSettings((st) => st.showDemoInPicker);
+  const setShowDemoInPicker = useSettings((st) => st.setShowDemoInPicker);
   const seEnabled = useSettings((st) => st.seEnabled);
   const setSeEnabled = useSettings((st) => st.setSeEnabled);
   const packState = usePackStore((st) => st.state);
@@ -117,6 +120,11 @@ export function SettingsScreen() {
           <Radio value="left" label="左利き" />
         </RadioGroup>
       </Field>
+      <div role="group" aria-labelledby="work-target-settings-title">
+        <Text id="work-target-settings-title" as="p" weight="semibold">作業先（FR-144）</Text>
+        <Switch label="選択画面にデモを表示" checked={showDemoInPicker} onChange={(_, d) => setShowDemoInPicker(d.checked)} />
+        <Button size="small" onClick={switchToDemo}>デモへ切り替える</Button>
+      </div>
       <div role="group" aria-labelledby="audio-settings-title">
         <Text id="audio-settings-title" as="p" weight="semibold">音声</Text>
         <Switch label="BGM" checked={bgmEnabled} onChange={(_, d) => setBgmEnabled(d.checked)} />
