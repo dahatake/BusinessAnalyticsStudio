@@ -26,7 +26,17 @@ async function nextFrames(page: Page, n = 2) {
   await page.evaluate((k) => new Promise<void>((r) => { let i = 0; const f = () => (++i >= k ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); }), n);
 }
 async function clickSceneObject(page: Page, entityId: string) {
-  const o = (await scene.objects(page)).find((x) => x.entityId === entityId && x.visible);
+  // カメラが動いている間は当たりがずれるので、座標が 2 フレーム連続で同じになるのを待ってからクリックする（最大 約 3 秒。収束しなければ直近の座標で押す）
+  const read = async () => (await scene.objects(page)).find((x) => x.entityId === entityId && x.visible);
+  let o = await read();
+  for (let i = 0; i < 60; i++) {
+    await nextFrames(page, 2);
+    const n = await read();
+    const same = !!o && !!n && Math.abs(o.x - n.x) < 0.5 && Math.abs(o.y - n.y) < 0.5;
+    o = n ?? o;
+    if (same) break;
+    await page.waitForTimeout(50);
+  }
   expect(o, `3D ビューに ${entityId} が表示されていない`).toBeTruthy();
   await page.mouse.click(o!.x, o!.y);
 }
