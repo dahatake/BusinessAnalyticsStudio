@@ -242,6 +242,42 @@ describe('NFR-UX-007 AC-233 トークンと 4px グリッド（静的検査）',
   });
 });
 
+describe('FR-143 AC-242 狭い画面では最小の幅を優先し、拡大率を 1 倍まで縮めてからタブにまとめる', () => {
+  const lf = (k: string) => ({ kind: 'tabs' as const, tabs: [k], active: k });
+  const widths = (l: Layout, w: number): number[] => {
+    const walk = (n: Exclude<Layout, null>, width: number): number[] => {
+      if (n.kind === 'tabs') return [width];
+      if (n.dir === 'col') return n.children.flatMap((c) => walk(c, width));
+      const u = width - 8 * (n.children.length - 1);
+      return n.children.flatMap((c, i) => walk(c, n.sizes[i]! * u));
+    };
+    return l ? walk(l, w) : [];
+  };
+  const input = (focus: string, width: number) => ({ enabled: true, focus, primary: null, manual: new Set<string>(), width });
+  // FR-143 AC-242
+  it('FR-143 AC-242 1.5 倍だと他が 240 未満になる幅では、拡大を 1.5 倍より小さく（1 倍以上で）縮め、どの幅も 240 以上', () => {
+    const row: Layout = { kind: 'split', dir: 'row', sizes: [0.25, 0.25, 0.25, 0.25], children: ['a', 'b', 'c', 'd'].map(lf) };
+    const w = 4 * 240 + 3 * 8 + 40; // 1 倍なら収まり、1.5 倍だと他が割る
+    const sized = applyAutoSize(row, input('a', w));
+    const ratio = share(sized, 'a') / 0.25;
+    expect(ratio).toBeGreaterThanOrEqual(1 - 1e-6);
+    expect(ratio).toBeLessThan(1.5 - 1e-6);
+    for (const x of widths(fitMinWidth(sized, w, ['a']), w)) expect(x).toBeGreaterThanOrEqual(MIN_COMPONENT_WIDTH - 0.5);
+    expect(leafShares(fitMinWidth(sized, w, ['a']))).toHaveLength(4);
+  });
+  // FR-143 AC-242
+  it('FR-143 AC-242 1 倍でも収まらないときは、拡大せず（1 倍）、収まらないものだけがタブにまとめられ到達できる', () => {
+    const row: Layout = { kind: 'split', dir: 'row', sizes: [0.25, 0.25, 0.25, 0.25], children: ['a', 'b', 'c', 'd'].map(lf) };
+    const w = 600;
+    const sized = applyAutoSize(row, input('a', w));
+    expect(share(sized, 'a')).toBeCloseTo(0.25, 6);
+    const fit = fitMinWidth(sized, w, ['a']);
+    expect([...keysOf(fit)].sort()).toEqual(['a', 'b', 'c', 'd']);
+    for (const x of widths(fit, w)) expect(x).toBeGreaterThanOrEqual(MIN_COMPONENT_WIDTH - 0.5);
+    expect(leafShares(fit).find((l) => l.node.tabs.includes('a'))!.node.tabs).toEqual(['a']);
+  });
+});
+
 describe('FR-143 AC-227 最小の幅の確保（収まるときはタブにまとめない）', () => {
   const lf = (k: string) => ({ kind: 'tabs' as const, tabs: [k], active: k });
   // FR-143 AC-227

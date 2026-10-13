@@ -58,7 +58,7 @@ function rebuild(node: LayoutNode, weight: Map<TabsNode, number>): LayoutNode {
  * - 手で大きさを変えたコンポーネントの面積は変えない（AC-228）。
  * 調整しない場合（無効・操作中なし・操作中が手動）は、同じ木を返す。
  */
-export function applyAutoSize(layout: Layout, input: AutoSizeInput): Layout {
+function sizeWith(layout: Layout, input: AutoSizeInput, scaleF: number): Layout {
   if (!layout || !input.enabled || !input.focus) return layout;
   const root = clone(layout);
   const leaves = leafShares(root);
@@ -72,7 +72,7 @@ export function applyAutoSize(layout: Layout, input: AutoSizeInput): Layout {
   const restSum = rest.reduce((a, l) => a + l.share, 0);
   if (budget <= 0 || restSum + (p?.share ?? 0) <= 1e-9) return layout;
 
-  let t = Math.min(FOCUS_SCALE * x.share, FOCUS_CAP * budget);
+  let t = Math.min(scaleF * x.share, FOCUS_CAP * budget);
   let scale = 1; // ほかのコンポーネントへの縮小率
   let pArea = p?.share ?? 0;
   for (let i = 0; i < 30; i++) {
@@ -114,6 +114,31 @@ export function applyAutoSize(layout: Layout, input: AutoSizeInput): Layout {
 }
 
 /** 横の分割の各列を、最小の幅以上にする（収まる場合だけ）。 */
+/** 葉ごとの幅（CSS px）。縦の分割は幅を分けない。 */
+function leafWidths(node: LayoutNode, width: number): number[] {
+  if (isTabs(node)) return [width];
+  if (node.dir === 'col') return node.children.flatMap((c) => leafWidths(c, width));
+  const usable = Math.max(0, width - SEPARATOR_PX * (node.children.length - 1));
+  return node.children.flatMap((c, i) => leafWidths(c, node.sizes[i]! * usable));
+}
+
+/**
+ * 自動のサイズ調整を適用する（FR-143 AC-226 AC-242）。
+ * 幅が分かるとき、PARAM-033 倍で最小の幅（PARAM-034）を割る列ができる狭い画面では、最小の幅の保持を優先し、
+ * 拡大率を PARAM-033 倍から 1 倍まで（1 倍を下限に）縮める。それでも収まらないものは fitMinWidth がタブにまとめる。
+ */
+export function applyAutoSize(layout: Layout, input: AutoSizeInput): Layout {
+  const w = input.width;
+  if (!w || w <= 0) return sizeWith(layout, input, FOCUS_SCALE);
+  const STEP = 0.05;
+  let last: Layout = layout;
+  for (let s = FOCUS_SCALE; s >= 1 - 1e-9; s -= STEP) {
+    last = sizeWith(layout, input, Math.max(1, s));
+    if (!last || leafWidths(last, w).every((x) => x >= MIN_COMPONENT_WIDTH - 0.5)) return last;
+  }
+  return last;
+}
+
 /** ノードが最小の幅を保つために必要な幅（横の分割は子の和＋境界、縦の分割は子の最大） */
 function needWidth(node: LayoutNode, min: number): number {
   if (isTabs(node)) return min;
