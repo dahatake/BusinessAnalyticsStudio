@@ -1,7 +1,7 @@
 // System Test: その場での編集・全ビューへの反映・入力検証・元に戻す・インポート/エクスポート・編集モード・議論テーマ・時間のかかる処理
 // 期待値は要求定義書の受入基準（app-core.md・quality.md）から決める。
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, entity, hook, setEditMode, tableRows, captureDownload } from '../support/fixtures';
+import { test, expect, openScreen, component, entity, hook, setEditMode, tableRows, captureDownload, reloadAndEnter } from '../support/fixtures';
 import { examplePack } from '../support/packs';
 
 const mono = examplePack('mono');
@@ -186,8 +186,7 @@ test.describe('FR-047 編集モード', () => {
     await expect(detail.getByRole('button', { name: '削除' })).toBeDisabled();
     // 既定は OFF（[ASSUMPTION] A-12）
     await page.evaluate(() => localStorage.clear());
-    await page.reload();
-    await page.keyboard.press('Escape');
+    await reloadAndEnter(page);
     await expect(page.getByRole('switch', { name: '編集モード' })).not.toBeChecked();
   });
 });
