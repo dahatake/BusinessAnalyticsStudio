@@ -2,7 +2,7 @@
 // すべて手続きで作り、外部のモデル・画像は取得しない（FR-068）。
 // ブルームと被写界深度は、品質プリセットで切り替える（Low は無効、Medium はブルームのみ、High 以上は両方）。
 // 後処理（EffectComposer）と環境マップ（PMREM）は WebGL レンダラーが対象。WebGPU のときはグリッドとホログラムだけになる（実際に描いているものは scene.info().effects で読める）。
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js';
@@ -15,10 +15,7 @@ import { useAnimation } from '../store/animation';
 import { useView3D } from '../store/view3d';
 import type { IndustryPreset, ObjectSpec } from './presets';
 import { QUALITY_PROFILES, type Quality } from './quality';
-import { useRenderStage } from './stage';
-
-/** 重い効果（環境マップ・後処理）を足すまでの待ち（表示が出そろってから）。 */
-const HEAVY_EFFECTS_DELAY_MS = 5000;
+import { useHeavyPhase, useRenderStage } from './stage';
 
 /** 後処理（ブルーム・被写界深度）。WebGL レンダラーのときだけ使う。描画を引き取る（優先度 1）ので、必要なときだけ配置する。 */
 function PostFx({ bloom, dof }: { bloom: boolean; dof: boolean }) {
@@ -106,12 +103,17 @@ function Hdri() {
   const scene = useThree((s) => s.scene);
   const invalidate = useThree((s) => s.invalidate);
   useEffect(() => {
-    const pmrem = new THREE.PMREMGenerator(gl);
-    const env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    scene.environment = env;
-    scene.environmentIntensity = 0.45;
-    invalidate();
-    return () => { scene.environment = null; env.dispose(); pmrem.dispose(); invalidate(); };
+    // 描画の合間に作る（直前の操作・追従の処理を待たせない）
+    let env: THREE.Texture | null = null;
+    let pmrem: THREE.PMREMGenerator | null = null;
+    const t = setTimeout(() => {
+      pmrem = new THREE.PMREMGenerator(gl);
+      env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      scene.environment = env;
+      scene.environmentIntensity = 0.45;
+      invalidate();
+    }, 0);
+    return () => { clearTimeout(t); if (env) { scene.environment = null; env.dispose(); } pmrem?.dispose(); invalidate(); };
   }, [gl, scene, invalidate]);
   return null;
 }
@@ -123,23 +125,21 @@ export function Cinematic({ preset, quality, gridSize }: { preset: IndustryPrese
   const profile = QUALITY_PROFILES[quality];
   const bloom = isWebGL && profile.bloom;
   const dof = isWebGL && profile.dof;
-  useEffect(() => {
-    setEffects({ bloom, dof, hdri: isWebGL, grid: true, hologram: true });
-    return () => setEffects({ bloom: false, dof: false, hdri: false, grid: false, hologram: false });
-  }, [setEffects, bloom, dof, isWebGL]);
   const stage = useRenderStage();
-  // 環境マップ・後処理のコンパイルは、1 秒ほど画面が止まる。開いた直後の操作（追従・クリック・測定）を妨げないよう、十分に後で行う（FR-147）
-  const [heavy, setHeavy] = useState(false);
+  // 環境マップ・後処理のコンパイルは、それぞれ 1 秒ほど画面が止まる。開いた直後の操作（追従・クリック・測定）を妨げないよう、
+  // 十分に後で、1 つずつ間を空けて足す（FR-147）。実際に付いたものだけを effects に出す
+  const phase = useHeavyPhase(stage);
+  const hdriOn = isWebGL && phase !== 'none';
+  const fxOn = phase === 'fx';
   useEffect(() => {
-    if (stage !== 'shown') return;
-    const t = setTimeout(() => setHeavy(true), HEAVY_EFFECTS_DELAY_MS);
-    return () => clearTimeout(t);
-  }, [stage]);
+    setEffects({ bloom: bloom && fxOn, dof: dof && fxOn, hdri: hdriOn, grid: stage !== 'first', hologram: true });
+    return () => setEffects({ bloom: false, dof: false, hdri: false, grid: false, hologram: false });
+  }, [setEffects, bloom, dof, hdriOn, fxOn, stage]);
   return (
     <>
       {stage !== 'first' && <group visible={stage === 'shown'}><HoloGrid size={gridSize} color={preset.accent} /></group>}
-      {isWebGL && heavy && <Hdri />}
-      {(bloom || dof) && heavy && <PostFx bloom={bloom} dof={dof} />}
+      {hdriOn && <Hdri />}
+      {(bloom || dof) && fxOn && <PostFx bloom={bloom} dof={dof} />}
     </>
   );
 }

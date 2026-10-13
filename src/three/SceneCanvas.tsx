@@ -17,7 +17,7 @@ import {
 import { QUALITY_PROFILES, type Quality } from './quality';
 import { useTwinLayout } from './twin';
 import { CameraSync, EntityTwin } from './TwinScene';
-import { LaterStage, StageContext, nextStage, type RenderStage } from './stage';
+import { LaterStage, StageContext, useStageProgress } from './stage';
 
 type Kind = 'trying-webgpu' | 'webgl2';
 const FIRST_FRAME_MAX_WAIT_MS = 8000;
@@ -78,25 +78,10 @@ function StageProvider({ enabled, settled, children }: { enabled: boolean; settl
   const scene = useThree((s) => s.scene);
   const camera = useThree((s) => s.camera);
   const invalidate = useThree((s) => s.invalidate);
-  const [stage, setStage] = useState<RenderStage>(enabled ? 'first' : 'shown');
-  useEffect(() => {
-    if (!enabled || !settled) return;
-    const t = setTimeout(() => setStage((s) => nextStage(s, 'settled')), REST_STAGE_DELAY_MS);
-    return () => clearTimeout(t);
-  }, [enabled, settled]);
-  useEffect(() => {
-    if (stage !== 'rest') return;
-    let alive = true;
-    void (async () => {
-      await new Promise<void>((res) => setTimeout(res, 0)); // 重い要素が組み上がるのを待つ
-      if (!alive) return;
-      await Promise.race([precompile(gl, scene, camera, () => alive), new Promise<void>((res) => setTimeout(res, FIRST_FRAME_MAX_WAIT_MS))]);
-      if (!alive) return;
-      setStage((s) => nextStage(s, 'compiled'));
-      invalidate();
-    })();
-    return () => { alive = false; };
-  }, [stage, gl, scene, camera, invalidate]);
+  const stage = useStageProgress(enabled, settled, REST_STAGE_DELAY_MS, async (alive) => {
+    await Promise.race([precompile(gl, scene, camera, alive), new Promise<void>((res) => setTimeout(res, FIRST_FRAME_MAX_WAIT_MS))]);
+  });
+  useEffect(() => { if (stage === 'shown') invalidate(); }, [stage, invalidate]);
   return <StageContext.Provider value={stage}>{children}</StageContext.Provider>;
 }
 
