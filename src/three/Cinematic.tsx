@@ -15,6 +15,7 @@ import { useAnimation } from '../store/animation';
 import { useView3D } from '../store/view3d';
 import type { IndustryPreset, ObjectSpec } from './presets';
 import { QUALITY_PROFILES, type Quality } from './quality';
+import { useHeavyPhase, useRenderStage } from './stage';
 
 /** 後処理（ブルーム・被写界深度）。WebGL レンダラーのときだけ使う。描画を引き取る（優先度 1）ので、必要なときだけ配置する。 */
 function PostFx({ bloom, dof }: { bloom: boolean; dof: boolean }) {
@@ -102,12 +103,17 @@ function Hdri() {
   const scene = useThree((s) => s.scene);
   const invalidate = useThree((s) => s.invalidate);
   useEffect(() => {
-    const pmrem = new THREE.PMREMGenerator(gl);
-    const env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    scene.environment = env;
-    scene.environmentIntensity = 0.45;
-    invalidate();
-    return () => { scene.environment = null; env.dispose(); pmrem.dispose(); invalidate(); };
+    // 描画の合間に作る（直前の操作・追従の処理を待たせない）
+    let env: THREE.Texture | null = null;
+    let pmrem: THREE.PMREMGenerator | null = null;
+    const t = setTimeout(() => {
+      pmrem = new THREE.PMREMGenerator(gl);
+      env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      scene.environment = env;
+      scene.environmentIntensity = 0.45;
+      invalidate();
+    }, 0);
+    return () => { clearTimeout(t); if (env) { scene.environment = null; env.dispose(); } pmrem?.dispose(); invalidate(); };
   }, [gl, scene, invalidate]);
   return null;
 }
@@ -119,15 +125,23 @@ export function Cinematic({ preset, quality, gridSize }: { preset: IndustryPrese
   const profile = QUALITY_PROFILES[quality];
   const bloom = isWebGL && profile.bloom;
   const dof = isWebGL && profile.dof;
+  const stage = useRenderStage();
+  // 環境マップ・後処理のコンパイルは、それぞれ 1 秒ほど画面が止まる。開いた直後の操作（追従・クリック・測定）を妨げないよう、
+  // 十分に後で、1 つずつ間を空けて足す（FR-147）。実際に付いたものだけを effects に出す
+  const phase = useHeavyPhase(stage);
+  const hdriOn = isWebGL && phase !== 'none';
+  const fxOn = phase === 'fx';
   useEffect(() => {
-    setEffects({ bloom, dof, hdri: isWebGL, grid: true, hologram: true });
+    setEffects({ bloom: bloom && fxOn, dof: dof && fxOn, hdri: hdriOn, grid: stage !== 'first', hologram: true });
     return () => setEffects({ bloom: false, dof: false, hdri: false, grid: false, hologram: false });
-  }, [setEffects, bloom, dof, isWebGL]);
+  }, [setEffects, bloom, dof, hdriOn, fxOn, stage]);
   return (
     <>
-      <HoloGrid size={gridSize} color={preset.accent} />
-      {isWebGL && <Hdri />}
-      {(bloom || dof) && <PostFx bloom={bloom} dof={dof} />}
+      {stage !== 'first' && <group visible={stage === 'shown'}><HoloGrid size={gridSize} color={preset.accent} /></group>}
+      {hdriOn && <Hdri />}
+      {(bloom || dof) && fxOn && <PostFx bloom={bloom} dof={dof} />}
     </>
   );
 }
+
+
