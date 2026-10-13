@@ -27,6 +27,8 @@ interface LayoutState {
   resizeByKeys: (a: string, b: string, delta: number) => void;
   /** 最大化中のコンポーネント（保存しない） */
   maximized: string | null;
+  /** 直近に「見せたい」と指示されたコンポーネント（ナビ・再表示・タブ選択。保存しない）。最小幅でタブにまとめた中でも前面にするために使う */
+  revealed: { key: string } | null;
   setPersona: (p: Persona) => void;
   hideComponent: (key: string) => void;
   showComponent: (key: string) => void;
@@ -61,6 +63,7 @@ export const useLayout = create<LayoutState>()(
         persona: DEFAULT_PERSONA,
         layouts: {},
         maximized: null,
+        revealed: null,
         autoSize: true,
         manual: {},
         setAutoSize: (autoSize) => set({ autoSize }),
@@ -75,7 +78,7 @@ export const useLayout = create<LayoutState>()(
         },
         setPersona: (persona) => set({ persona, maximized: null }),
         hideComponent: (key) => apply((l) => hide(l, key), get().maximized === key ? null : get().maximized),
-        showComponent: (key) => apply((l) => show(l, key)),
+        showComponent: (key) => { apply((l) => show(l, key)); set({ revealed: { key } }); },
         moveComponent: (key, dir) => apply((l) => move(l, key, dir)),
         toggleDirection: (key) => apply((l) => toggleDirection(l, key)),
         mergeTabs: (key, target) => apply((l) => mergeIntoTabs(l, key, target)),

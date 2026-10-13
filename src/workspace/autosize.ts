@@ -14,6 +14,8 @@ const PRIMARY_MARGIN = 1.1;
 const FOCUS_CAP = 0.8;
 /** ほかのコンポーネントが基準の面積に対して残す割合の下限 */
 const OTHERS_FLOOR = 0.2;
+/** 操作中のコンポーネントの列が、横の分割の幅に占める割合の上限（最小の幅の確保で縮んだ分を戻すとき） */
+const FOCUS_COLUMN_MAX = 0.5;
 
 export interface AutoSizeInput {
   enabled: boolean;
@@ -98,8 +100,12 @@ export function applyAutoSize(layout: Layout, input: AutoSizeInput): Layout {
   // 最小の幅（PARAM-034）を割る列は、操作中のコンポーネントの面積を保ったまま、縦の比率で補う
   if (input.width && input.width > 0) {
     for (let i = 0; i < 3; i++) {
-      out = floorWidths(out, input.width);
-      const now = leafShares(out).find((l) => l.node === x.node)?.share ?? t;
+      const before = leafShares(out).find((l) => l.node === x.node)?.share ?? t;
+      const floored = floorWidths(out, input.width, x.node);
+      const now = leafShares(floored).find((l) => l.node === x.node)?.share ?? t;
+      // 最小の幅を確保するために操作中のコンポーネントを小さくするくらいなら、押し出される列はタブにまとめる（fitMinWidth）。広げたものを縮めない
+      if (now < before - 0.005) break;
+      out = floored;
       const k = t / now;
       if (Math.abs(k - 1) < 0.01 || !scaleColumn(out, x.node, k)) break;
     }
@@ -108,25 +114,45 @@ export function applyAutoSize(layout: Layout, input: AutoSizeInput): Layout {
 }
 
 /** 横の分割の各列を、最小の幅以上にする（収まる場合だけ）。 */
-function floorWidths(node: LayoutNode, width: number, min = MIN_COMPONENT_WIDTH): LayoutNode {
+/** ノードが最小の幅を保つために必要な幅（横の分割は子の和＋境界、縦の分割は子の最大） */
+function needWidth(node: LayoutNode, min: number): number {
+  if (isTabs(node)) return min;
+  if (node.dir === 'col') return Math.max(...node.children.map((c) => needWidth(c, min)));
+  return node.children.reduce((a, c) => a + needWidth(c, min), 0) + SEPARATOR_PX * (node.children.length - 1);
+}
+
+function floorWidths(node: LayoutNode, width: number, protect: TabsNode | null = null, min = MIN_COMPONENT_WIDTH): LayoutNode {
   if (isTabs(node)) return node;
-  if (node.dir === 'col') return { ...node, children: node.children.map((c) => floorWidths(c, width, min)) };
+  if (node.dir === 'col') return { ...node, children: node.children.map((c) => floorWidths(c, width, protect, min)) };
   const n = node.children.length;
   const usable = Math.max(0, width - SEPARATOR_PX * (n - 1));
   let sizes = node.sizes.slice();
-  if (n * min <= usable) {
-    const pinned = new Set<number>();
-    for (let guard = 0; guard < n; guard++) {
-      const floor = min / usable;
-      const low = sizes.findIndex((s, i) => !pinned.has(i) && s < floor - 1e-9);
-      if (low < 0) break;
-      pinned.add(low);
-      const free = sizes.reduce((a, s, i) => (pinned.has(i) ? a : a + s), 0);
-      const room = 1 - pinned.size * floor;
-      sizes = sizes.map((s, i) => (pinned.has(i) ? floor : s * (room / free)));
+  const needs = node.children.map((c) => needWidth(c, min));
+  if (needs.reduce((a, v) => a + v, 0) <= usable) {
+    const floors = needs.map((v) => v / usable);
+    // 足りない分は、操作中のコンポーネントを含まない列の余りから先に取る。足りないときだけ、含む列からも取る
+    const guarded = node.children.map((c) => protect !== null && leafShares(c).some((l) => l.node === protect));
+    let deficit = 0;
+    sizes = sizes.map((s, i) => { if (s < floors[i]!) { deficit += floors[i]! - s; return floors[i]!; } return s; });
+    for (const pass of [false, true]) {
+      if (deficit <= 1e-9) break;
+      const donors = sizes.map((s, i) => (guarded[i] === pass && s > floors[i]! ? s - floors[i]! : 0));
+      const room = donors.reduce((a, d) => a + d, 0);
+      if (room <= 1e-9) continue;
+      const take = Math.min(deficit, room);
+      sizes = sizes.map((s, i) => s - take * (donors[i]! / room));
+      deficit -= take;
+    }
+    // 操作中のコンポーネントの列は、ほかの列が最小の幅を超えて持っている分を、半分まで引き取る（最小の幅の確保で縮められた分を戻す）
+    const gi = guarded.indexOf(true);
+    if (gi >= 0 && guarded.filter(Boolean).length === 1) {
+      const donors = sizes.map((s, i) => (i !== gi && s > floors[i]! ? s - floors[i]! : 0));
+      const room = donors.reduce((a, d) => a + d, 0);
+      const take = Math.min(room, Math.max(0, FOCUS_COLUMN_MAX - sizes[gi]!));
+      if (take > 1e-9) sizes = sizes.map((s, i) => (i === gi ? s + take : s - take * (donors[i]! / room)));
     }
   }
-  return { ...node, sizes, children: node.children.map((c, i) => floorWidths(c, sizes[i]! * usable, min)) };
+  return { ...node, sizes, children: node.children.map((c, i) => floorWidths(c, sizes[i]! * usable, protect, min)) };
 }
 
 /** `target` を含む縦の分割のうち、いちばん内側のものの比率を k 倍にする（残りは按分）。できたら true。 */
@@ -162,41 +188,47 @@ function scaleColumn(root: LayoutNode, target: TabsNode, k: number): boolean {
  */
 export function fitMinWidth(layout: Layout, width: number, prefer: readonly (string | null)[] = [], min = MIN_COMPONENT_WIDTH): Layout {
   if (!layout || !(width > 0)) return layout;
+  const keep = prefer.filter((k): k is string => k !== null);
   const flatten = (n: LayoutNode): TabsNode => {
     const keys = keysOf(n);
     const leaves = leafShares(n);
-    const active = prefer.find((k): k is string => k !== null && keys.includes(k)) ?? leaves[0]?.node.active ?? keys[0]!;
+    const active = keep.find((k) => keys.includes(k)) ?? leaves[0]?.node.active ?? keys[0]!;
     return { kind: 'tabs', tabs: keys, active };
   };
-  const walk = (n: LayoutNode, w: number): LayoutNode => {
+  /** 子が 1 つだけの分割は、その子に置き換える */
+  const collapse = (n: LayoutNode): LayoutNode => {
     if (isTabs(n)) return n;
-    let children = n.children.slice();
-    let sizes = n.sizes.slice();
-    if (n.dir === 'row') {
-      const widths = () => {
-        const usable = Math.max(0, w - SEPARATOR_PX * (children.length - 1));
-        return sizes.map((s) => s * usable);
-      };
-      while (children.length > 1) {
-        const ws = widths();
-        let i = 0;
-        for (let k = 1; k < ws.length; k++) if (ws[k]! < ws[i]!) i = k;
-        if (ws[i]! >= min - 0.5) break;
-        // いちばん狭いものを、隣（狭い方）にまとめる
-        const j = i === 0 ? 1 : i === ws.length - 1 ? i - 1 : (ws[i - 1]! <= ws[i + 1]! ? i - 1 : i + 1);
-        const [a, b] = i < j ? [i, j] : [j, i];
-        const merged = flatten({ kind: 'split', dir: 'row', sizes: [1, 1], children: [children[a]!, children[b]!] });
-        const size = sizes[a]! + sizes[b]!;
-        children = [...children.slice(0, a), merged, ...children.slice(b + 1)];
-        sizes = [...sizes.slice(0, a), size, ...sizes.slice(b + 1)];
-      }
-      if (children.length === 1) return walk(children[0]!, w);
-      const usable = Math.max(0, w - SEPARATOR_PX * (children.length - 1));
-      return { kind: 'split', dir: 'row', sizes: normalizeSizes(sizes, children.length), children: children.map((c, i) => walk(c, sizes[i]! * usable / (sizes.reduce((s, v) => s + v, 0) || 1))) };
-    }
-    return { kind: 'split', dir: 'col', sizes: n.sizes, children: n.children.map((c) => walk(c, w)) };
+    const children = n.children.map(collapse);
+    return children.length === 1 ? children[0]! : { ...n, children };
   };
-  return walk(layout, width);
+  // 全部が最小の幅で並ぶ間はタブにまとめない（まとめるのは収まらないときだけ。AC-227）。
+  // 収まらないときは、操作中・最後に選んだものを含まない、隣り合う葉の組のうち幅の合計が小さいものから 1 組ずつまとめ、収まるまで繰り返す。
+  let root = clone(layout) as LayoutNode;
+  for (let guard = 0; guard < 64 && needWidth(root, min) > width + 0.5; guard++) {
+    const cands: Array<{ parent: SplitNode; a: number; score: number; leafPair: boolean; prot: boolean }> = [];
+    const walk = (n: LayoutNode, w: number): void => {
+      if (isTabs(n)) return;
+      if (n.dir === 'col') { n.children.forEach((c) => walk(c, w)); return; }
+      const usable = Math.max(0, w - SEPARATOR_PX * (n.children.length - 1));
+      for (let a = 0; a + 1 < n.children.length; a++) {
+        const ca = n.children[a]!, cb = n.children[a + 1]!;
+        const ks = [...keysOf(ca), ...keysOf(cb)];
+        cands.push({ parent: n, a, score: (n.sizes[a]! + n.sizes[a + 1]!) * usable, leafPair: isTabs(ca) && isTabs(cb), prot: keep.some((k) => ks.includes(k)) });
+      }
+      n.children.forEach((c, i) => walk(c, n.sizes[i]! * usable));
+    };
+    walk(root, width);
+    if (cands.length === 0) break;
+    cands.sort((x, y) => Number(x.prot) - Number(y.prot) || Number(!x.leafPair) - Number(!y.leafPair) || x.score - y.score);
+    const { parent, a } = cands[0]!;
+    const merged = flatten({ kind: 'split', dir: 'row', sizes: [1, 1], children: [parent.children[a]!, parent.children[a + 1]!] });
+    const size = parent.sizes[a]! + parent.sizes[a + 1]!;
+    parent.children.splice(a, 2, merged);
+    parent.sizes.splice(a, 2, size);
+    parent.sizes = normalizeSizes(parent.sizes, parent.children.length);
+    root = collapse(root);
+  }
+  return floorWidths(root, width, null, min);
 }
 
 /** 分割の境界を動かしたときに「手で大きさを変えた」ことになるコンポーネント（境界の両側のすべて）。 */
