@@ -241,3 +241,24 @@ describe('NFR-UX-007 AC-233 トークンと 4px グリッド（静的検査）',
     }
   });
 });
+
+describe('FR-143 AC-227 最小の幅の確保（収まるときはタブにまとめない）', () => {
+  const lf = (k: string) => ({ kind: 'tabs' as const, tabs: [k], active: k });
+  // FR-143 AC-227
+  it('FR-143 AC-227 全部が最小の幅で並ぶなら、比率が偏っていてもタブにまとめず、すべて最小の幅以上にする', () => {
+    const row: Layout = { kind: 'split', dir: 'row', sizes: [0.6, 0.1, 0.1, 0.2], children: ['a', 'b', 'c', 'd'].map(lf) };
+    const fit = fitMinWidth(row, 1000);
+    expect(leafShares(fit)).toHaveLength(4);
+    for (const l of leafShares(fit)) expect(l.share * (1000 - 24)).toBeGreaterThanOrEqual(MIN_COMPONENT_WIDTH - 1);
+  });
+  // FR-143 AC-227
+  it('FR-143 AC-227 収まらないときは、操作中のものを含まない隣り合う葉から 1 組ずつまとめ、操作中のものは単独で残す', () => {
+    const inner: Layout = { kind: 'split', dir: 'row', sizes: [0.45, 0.2, 0.35], children: ['m', 'r', 'c'].map(lf) };
+    const row: Layout = { kind: 'split', dir: 'row', sizes: [0.5, 0.17, 0.17, 0.16], children: [inner, lf('t'), lf('d'), lf('i')] };
+    const fit = fitMinWidth(row, 1380, ['i']);
+    expect(keysOf(fit).sort()).toEqual(['c', 'd', 'i', 'm', 'r', 't']);
+    expect(leafShares(fit).find((l) => l.node.tabs.includes('d'))!.node.tabs).toEqual(['d']);
+    expect(leafShares(fit).find((l) => l.node.tabs.includes('i'))!.node.tabs).toEqual(['i']);
+    expect(leafShares(fit).length).toBe(5);
+  });
+});

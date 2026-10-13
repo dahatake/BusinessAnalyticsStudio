@@ -170,6 +170,9 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   /** 操作中（フォーカスのある）コンポーネント、最後に選んだタブ、ワークスペースの幅 */
   const [focusKey, setFocusKey] = useState<string | null>(null);
   const [picked, setPicked] = useState<string | null>(null);
+  // ナビなどで見せると指示されたコンポーネントは、最小幅でタブにまとめた中でも前面にする（非表示のタブにはフォーカスできないため）
+  const revealed = useLayout((st) => st.revealed);
+  useEffect(() => { if (revealed) setPicked(revealed.key); }, [revealed]);
   const [width, setWidth] = useState(0);
   const [drag, setDrag] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
@@ -364,6 +367,16 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   /** フォーカスが入ったコンポーネントを「操作中」にする（FR-143）。ドラッグ中は変えない。
    * マウスで押している間は大きさを変えない: 押した位置のボタンが動いて、クリックが成立しなくなるため。放したときに反映する。 */
   const pointerDown = useRef(false);
+  /** 直前にフォーカスのあった要素。自動のサイズ調整でコンポーネントの置き場所（DOM の親）が変わると、フォーカスが body に落ちるので戻す */
+  const lastFocused = useRef<HTMLElement | null>(null);
+  useLayoutEffect(() => {
+    const el = lastFocused.current;
+    if (!el || !el.isConnected) return;
+    const a = document.activeElement;
+    if (a && a !== document.body) return;
+    if (!rootRef.current?.contains(el) || el.getClientRects().length === 0) return;
+    el.focus({ preventScroll: true });
+  }, [layout]);
   const pendingFocus = useRef<string | null>(null);
   useEffect(() => {
     const down = () => { pointerDown.current = true; };
@@ -384,6 +397,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     };
   }, []);
   const onFocusCapture = (e: FocusEvent<HTMLDivElement>) => {
+    lastFocused.current = e.target as HTMLElement;
     if (dragRef.current) return;
     const visible = new Set(keysOf(base));
     for (let n: Element | null = e.target as Element; n && n !== e.currentTarget; n = n.parentElement) {
