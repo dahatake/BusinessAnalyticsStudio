@@ -78,7 +78,8 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
   const first = useRef(true);
   useEffect(() => {
     if (first.current) { first.current = false; return; }
-    // 最小化・復元でアイコンのボタンが入れ替わっても、フォーカスをコンポーネントに残す
+    // 最小化・復元でアイコンのボタンが入れ替わっても、フォーカスをコンポーネントに残す。見出しが隠れないよう、中のスクロールは先頭に戻す
+    if (ref.current) ref.current.scrollTop = 0;
     ref.current?.focus({ preventScroll: true });
   }, [minimized]);
   useEffect(() => {

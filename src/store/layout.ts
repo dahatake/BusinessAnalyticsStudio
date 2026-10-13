@@ -3,10 +3,11 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
-  DEFAULT_PERSONA, PERSONAS, activate, arrangeAll, defaultLayout, hide, isLayout, isVisible, mergeIntoTabs, move, prune, resize, show,
+  DEFAULT_PERSONA, PERSONAS, activate, keysOf, arrangeAll, defaultLayout, hide, isLayout, isVisible, mergeIntoTabs, move, prune, resize, show,
   splitFromTabs, splitBetween, toggleDirection, dropAt, getAt, type DropZone, type Layout, type Move, type Path, type Persona,
 } from '../workspace/layoutModel';
 import { resizedKeys } from '../workspace/autosize';
+import { snapLayout, type SnapKind, type SnapOpts } from '../workspace/snap';
 
 /** 画面の registry に登録されたコンポーネントのキー。App が起動時に設定する。 */
 let available: ReadonlySet<string> = new Set();
@@ -30,6 +31,8 @@ interface LayoutState {
   setMinimized: (key: string, on: boolean) => void;
   setNavMin: (on: boolean) => void;
   dropMove: (key: string, target: string, zone: DropZone) => void;
+  /** 画面端のスナップの候補どおりに配置する（FR-152）。配置した大きさは自動のサイズ調整で変えない */
+  snapTo: (key: string, kind: SnapKind, opts?: SnapOpts) => void;
   resizeByKeys: (a: string, b: string, delta: number) => void;
   /** 最大化中のコンポーネント（保存しない） */
   maximized: string | null;
@@ -85,6 +88,10 @@ export const useLayout = create<LayoutState>()(
         }),
         setNavMin: (navMin) => set({ navMin }),
         dropMove: (key, target, zone) => apply((l) => dropAt(l, key, target, zone)),
+        snapTo: (key, kind, opts) => {
+          set((st) => (kind === 'tabs' ? {} : { manual: { ...st.manual, [st.persona]: [...new Set([...(st.manual[st.persona] ?? []), ...keysOf(effectiveLayout(st))])] } }));
+          apply((l) => snapLayout(l, key, kind, opts));
+        },
         resizeByKeys: (a, b, delta) => {
           const l = effectiveLayout(get());
           const at = splitBetween(l, a, b);

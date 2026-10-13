@@ -7,6 +7,7 @@ import {
 } from '@fluentui/react-icons';
 import type { ReactElement } from 'react';
 import type { Move } from './layoutModel';
+import { SNAP_LABEL, type SnapKind } from './snap';
 
 const useActionStyles = makeStyles({
   actions: { display: 'flex', alignItems: 'center', columnGap: tokens.spacingHorizontalXXS, flexShrink: 0 },
@@ -31,6 +32,10 @@ export interface PaneInfo {
   hide: () => void;
   move: (dir: Move) => void;
   toggleDirection: () => void;
+  /** 画面端のスナップの候補から配置する（ドラッグなしの手段。FR-152 AC-266） */
+  snapTo: (kind: SnapKind) => void;
+  /** いま成り立つ候補（狭い画面では縦積み・タブ化だけ） */
+  snapKinds: readonly SnapKind[];
   mergeInto: (target: string) => void;
   untab: () => void;
   /** 見出しのポインター操作で移動を始める（FR-142）。キーボードの代わりはメニューと Alt+Shift+矢印キー（NFR-A11Y-004） */
@@ -60,6 +65,18 @@ export function ComponentMenu({ pane, title }: { pane: PaneInfo; title: string }
           <MenuItem onClick={() => pane.move('left')}>左へ移動</MenuItem>
           <MenuItem onClick={() => pane.move('right')}>右へ移動</MenuItem>
           <MenuItem onClick={pane.toggleDirection}>並べる方向を変える（横/縦）</MenuItem>
+          <Menu>
+            <MenuTrigger disableButtonEnhancement>
+              <MenuItem>画面に配置</MenuItem>
+            </MenuTrigger>
+            <MenuPopover>
+              <MenuList>
+                {pane.snapKinds.filter((k) => k !== 'tabs' || pane.peers.length > 0).map((k) => (
+                  <MenuItem key={k} onClick={() => pane.snapTo(k)}>{SNAP_LABEL[k]}</MenuItem>
+                ))}
+              </MenuList>
+            </MenuPopover>
+          </Menu>
           <MenuItem onClick={pane.toggleMaximize}>{pane.maximized ? '通常表示に戻す' : '最大化'}</MenuItem>
           {pane.peers.length > 0 ? (
             <Menu>
@@ -99,14 +116,17 @@ function IconButton({ label, icon, onClick, testId }: { label: string; icon: Rea
  */
 export function ComponentActions({ pane, title, active, narrow }: { pane: PaneInfo; title: string; active: boolean; narrow: boolean }) {
   const s = useActionStyles();
-  const showIcons = active && !narrow;
+  // アイコンは常に描き、フォーカスのないときは隠す（display: none）。隠している間は押せず、Tab でも止まらない。
+  // フォーカスが入ると現れ、操作できる（FR-150）。最小化中は復元のアイコンだけを、フォーカスに関わらず出す
+  const shown = (active && !narrow) || pane.minimized;
   return (
-    <div className={s.actions} data-testid="component-actions" data-minimized={pane.minimized ? 'true' : undefined}>
+    <>
+    <div className={s.actions} data-testid="component-actions" data-minimized={pane.minimized ? 'true' : undefined} style={shown ? undefined : { display: 'none' }}>
       {pane.minimized ? (
         // 最小化中は、フォーカスの有無に関わらず復元できる（見出しの操作で元の位置・大きさに戻る。FR-151）
         <IconButton label="元に戻す" icon={<ArrowMaximize20Regular aria-hidden />} onClick={pane.toggleMinimize} />
       ) : null}
-      {showIcons && !pane.minimized ? (
+      {!pane.minimized ? (
         <>
           <IconButton
             label={pane.maximized ? '通常表示' : '最大化'}
@@ -135,7 +155,8 @@ export function ComponentActions({ pane, title, active, narrow }: { pane: PaneIn
           <IconButton label="非表示" icon={<EyeOff20Regular aria-hidden />} onClick={pane.hide} />
         </>
       ) : null}
-      <ComponentMenu pane={pane} title={title} />
     </div>
+    <ComponentMenu pane={pane} title={title} />
+    </>
   );
 }

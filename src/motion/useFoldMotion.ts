@@ -37,3 +37,24 @@ export function useFoldClass(folded: boolean): string | undefined {
   const phase = useFoldMotion(folded);
   return phase ? mergeClasses(s.base, phase === 'fold' ? s.fold : s.unfold) : undefined;
 }
+const useSnapStyles = makeStyles({
+  // スナップの候補の出現と、配置後の見た目の移動・大きさの変化（NFR-UX-008。Normal 200ms・Decelerate）
+  appear: {
+    animationName: { from: { opacity: 0 }, to: { opacity: 1 } },
+    animationDuration: tokens.durationNormal,
+    animationTimingFunction: tokens.curveDecelerateMid,
+  },
+  follow: {
+    transitionProperty: 'left, top, width, height',
+    transitionDuration: tokens.durationNormal,
+    transitionTimingFunction: tokens.curveDecelerateMid,
+  },
+});
+
+/** スナップの候補（出現）と配置後の見た目（追従）の動き。動きを付けない設定のときは、どちらも undefined（所要時間 0）。 */
+export function useSnapMotion(): { appear: string | undefined; follow: string | undefined } {
+  const s = useSnapStyles();
+  const playing = useAnimation((st) => st.playing);
+  const on = motionAllowed(playing, prefersReducedMotion());
+  return { appear: on ? s.appear : undefined, follow: on ? s.follow : undefined };
+}
