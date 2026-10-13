@@ -151,7 +151,17 @@
     "AC-247": "sha256:c28ae190f4d2148c",
     "AC-248": "sha256:8b26ee69dd22cf3a",
     "AC-249": "sha256:6afbeb628863d6bb",
-    "AC-250": "sha256:48e7168573414b71"
+    "AC-250": "sha256:48e7168573414b71",
+    "AC-251": "sha256:4f5453185a5aa36f",
+    "AC-254": "sha256:8c4b41cce658f864",
+    "AC-257": "sha256:f2c1a59d0c97e880",
+    "AC-260": "sha256:4690110bce071259",
+    "AC-261": "sha256:fbf488f24c5dc299",
+    "AC-264": "sha256:d6d037d6fd1ad84b",
+    "AC-268": "sha256:2459e331ea5e80f0",
+    "AC-269": "sha256:accc64fc107d006f",
+    "AC-271": "sha256:9124f22914087fb0",
+    "AC-273": "sha256:2689b00e28c954be"
   },
   "cases": [
     {
@@ -3953,6 +3963,256 @@
       "history": [
         {
           "at": "2026-10-14T02:48:57+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-231",
+      "requirement_ids": [
+        "FR-148"
+      ],
+      "ac_ids": [
+        "AC-251"
+      ],
+      "title": "作業先メニューにデモと全 Project を一覧し移動できる（異常系: Esc で変わらない）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-251",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T05:25:35+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-232",
+      "requirement_ids": [
+        "FR-149"
+      ],
+      "ac_ids": [
+        "AC-254"
+      ],
+      "title": "users-guide の全ユーザー操作に画面上の操作部品がある（異常系: キーなしで再表示）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-254",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T05:25:38+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-233",
+      "requirement_ids": [
+        "FR-150"
+      ],
+      "ac_ids": [
+        "AC-257"
+      ],
+      "title": "フォーカス中のコンポーネントの操作アイコンの常時表示と移動（異常系: フォーカスのみで実行されない）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-257",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T05:25:41+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-234",
+      "requirement_ids": [
+        "FR-151"
+      ],
+      "ac_ids": [
+        "AC-260"
+      ],
+      "title": "コンポーネントの最小化と復元で状態が保たれる",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-260",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T05:25:44+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-235",
+      "requirement_ids": [
+        "FR-151"
+      ],
+      "ac_ids": [
+        "AC-261"
+      ],
+      "title": "左メニューのアイコンのみ表示（キーボード・異常系: 到達性）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-261",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T05:25:47+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-236",
+      "requirement_ids": [
+        "FR-152"
+      ],
+      "ac_ids": [
+        "AC-264"
+      ],
+      "title": "端へのドラッグでスナップ候補を表示し配置・保存（異常系: 遠いと出ない）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-264",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T05:25:50+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-237",
+      "requirement_ids": [
+        "NFR-UX-008"
+      ],
+      "ac_ids": [
+        "AC-268"
+      ],
+      "title": "最小化・復元のモーションが 200ms 以内で完了し最終状態が同じ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-268",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T05:25:53+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-238",
+      "requirement_ids": [
+        "NFR-UX-008"
+      ],
+      "ac_ids": [
+        "AC-269"
+      ],
+      "title": "動きの軽減・停止中は即座に切り替わり所要時間 0",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-269",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T05:25:57+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-239",
+      "requirement_ids": [
+        "FR-153"
+      ],
+      "ac_ids": [
+        "AC-271"
+      ],
+      "title": "KPI/OKR の定義と達成度・永続・Project 分離（異常系: 算出できない・検証エラー）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-271",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T05:26:00+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-240",
+      "requirement_ids": [
+        "FR-154"
+      ],
+      "ac_ids": [
+        "AC-273"
+      ],
+      "title": "既定のレイアウトに KPI/OKR を表示（全ペルソナ・異常系: 未設定の Project）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-273",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T05:26:04+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"

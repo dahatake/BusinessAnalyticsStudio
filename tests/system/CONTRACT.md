@@ -51,3 +51,11 @@
 - 最初のフレーム（FR-147 AC-246〜250）: 新しいフックは使わない。「最初のフレーム」は `scene.info().frame > 0` かつ `scene.objects()` に `visible` な拠点がある状態。開いた時刻は `openScreen(view3d)` の直前。
 - 3D の描画面（FR-146 AC-243・AC-244）: `data-testid="component-view3d"` の中の `canvas` と、その親要素（表示領域）の大きさを比べる。クリックは `scene.objects` の画面座標へ `page.mouse.click`。
 - 表示設定: Light/Dark は `emulateMedia({colorScheme})`、ハイコントラストは `forcedColors: 'active'`、動きの軽減は `reducedMotion: 'reduce'`。
+
+## 10. 作業先メニュー・操作アイコン・最小化・スナップ・KPI/OKR（FR-148〜154・NFR-UX-008。workspace-ops.spec.ts が前提にする画面の探し方）
+- 作業先メニュー（FR-148）: 最上段に常時 `data-testid="work-target-menu"`（button。表示は現在の作業先）。押すと menu「作業先」。項目は menuitemradio（「デモ」「<企業名> … <Project 名>」。現在の作業先は checked）。Esc で閉じる。
+- 操作アイコン（FR-150）: フォーカス中のコンポーネントの見出しに `data-testid="component-actions"`。その中の button（名前: 最大化・通常表示・最小化・元に戻す・タブにまとめる・非表示・その他の操作）。最小化中は `data-minimized="true"`。非表示の一覧は button「非表示のコンポーネント」→ menuitem。常時見える操作部品: ミュート・アニメーションの停止/再生・編集モード・レイアウトを既定に戻す（FR-149）。
+- 左メニューの最小化（FR-151）: button「メニューを最小化」／「メニューを元の幅に戻す」。最小化中も `nav-<key>` は名前つきで表示され、ホバーで tooltip に画面名。
+- スナップ（FR-152）: 端から 32 CSS px 以内で `data-testid="snap-candidates"`（候補は button「左半分」「右半分」「上半分」「下半分」「4 分割」「3 分割」「タブ化」）と `snap-preview`。候補の上で離すと配置。
+- KPI/OKR（FR-153・154）: component key `kpi-okr`。button「OKR を定義」→ dialog「OKR の定義」（textbox「Objective」、button「Key Result を追加」、`key-result` ごとに textbox「Key Result 名」「KPI 名」「単位」、spinbutton「基準値」「目標値」「現在値」、button「保存」、検証エラーは role=alert）。達成度は `data-testid="kpi-achievement"`（「25%」または「算出できない」）。未定義は「未設定」。
+- モーション（NFR-UX-008）: `document.getAnimations()` と計算済み transition/animation の所要時間で判定。停止は P と `animation-state`。
