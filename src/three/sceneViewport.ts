@@ -79,24 +79,24 @@ export function viewportAspect(): number {
 }
 
 /** 描画面の中身の大きさの変更をまとめる時間（ミリ秒） */
-export const RESIZE_SETTLE_MS = 150;
+export const RESIZE_SETTLE_MS = 50; // PARAM-037（1 秒）に、重い描画で塞がれても収まる短さ（60ms 以下）
 
 /**
- * 表示領域の大きさの通知。最初の 1 回はすぐ通し（描画面と中身をすぐ作る）、以降の変更は止まってから 1 回にまとめる。
- * 描画面の中身（ピクセル）の大きさの変更は重く、変更のたびに行うと画面が止まるため（FR-146 AC-243）。
+ * R3F 自身の大きさの測定への通知。最初の 1 回だけ通す（描画面と中身をすぐ作る）。
+ * 以降の大きさの追従は SizeSync が担う。R3F 側でも setSize すると、ソフトウェア GL では重い描画が二重になり、
+ * 画面が塞がって追従が遅れるため（FR-146 AC-243、PARAM-037）。
  */
 export class SettlingResizeObserver {
   private readonly ro: ResizeObserver;
   private first = true;
-  private timer: ReturnType<typeof setTimeout> | null = null;
   constructor(cb: ResizeObserverCallback) {
     this.ro = new ResizeObserver((entries) => {
-      if (this.first) { this.first = false; cb(entries, this as unknown as ResizeObserver); return; }
-      if (this.timer) clearTimeout(this.timer);
-      this.timer = setTimeout(() => { this.timer = null; cb(entries, this as unknown as ResizeObserver); }, RESIZE_SETTLE_MS);
+      if (!this.first) return;
+      this.first = false;
+      cb(entries, this as unknown as ResizeObserver);
     });
   }
   observe(target: Element, options?: ResizeObserverOptions): void { this.ro.observe(target, options); }
   unobserve(target: Element): void { this.ro.unobserve(target); }
-  disconnect(): void { if (this.timer) clearTimeout(this.timer); this.ro.disconnect(); }
+  disconnect(): void { this.ro.disconnect(); }
 }

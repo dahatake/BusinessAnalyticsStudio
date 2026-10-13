@@ -19,19 +19,19 @@ describe('FR-146 AC-243 SettlingResizeObserver', () => {
   });
   afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 
-  it('最初の通知はすぐ通し、続く通知は止まってから 1 回だけ通す', () => {
+  it('最初の通知だけ通し、続く通知は通さない（追従は SizeSync が行う）', () => {
     const cb = vi.fn();
     new SettlingResizeObserver(cb as never);
     fire([1]);
     expect(cb).toHaveBeenCalledTimes(1);
     fire([2]); fire([3]);
-    vi.advanceTimersByTime(RESIZE_SETTLE_MS - 1);
+    vi.advanceTimersByTime(RESIZE_SETTLE_MS * 4);
     expect(cb).toHaveBeenCalledTimes(1);
-    vi.advanceTimersByTime(1);
-    expect(cb).toHaveBeenCalledTimes(2);
-    expect(cb.mock.calls[1]?.[0]).toEqual([3]);
   });
-  it('解除すると、待っている通知は出ない', () => {
+  it('まとめる時間は 60ms 以下（PARAM-037 の 1 秒に確実に収める）', () => {
+    expect(RESIZE_SETTLE_MS).toBeLessThanOrEqual(60);
+  });
+  it('解除すると、元の監視も解除される', () => {
     const cb = vi.fn();
     const o = new SettlingResizeObserver(cb as never);
     fire([1]); fire([2]);

@@ -20,6 +20,7 @@ import { CameraSync, EntityTwin } from './TwinScene';
 
 type Kind = 'trying-webgpu' | 'webgl2';
 const FIRST_FRAME_MAX_WAIT_MS = 8000;
+const FIRST_FRAME_QUIET_MS = 1500;
 
 /**
  * 最初の描画は、シェーダーのコンパイル（プログラムごとに同期で数百ミリ秒）で画面が 1 秒以上止まる。
@@ -40,6 +41,9 @@ function FirstFrameGate({ onDone }: { onDone: () => void }) {
     const tick = () => new Promise<void>((res) => setTimeout(res, 0));
     void (async () => {
       await tick(); // 子の要素が組み上がるのを待つ
+      // 開いた直後の 1〜2 秒は、重い同期処理（コンパイル）を始めず、大きさの変更・操作・測定がすぐ返るようにする（PARAM-037）
+      await new Promise<void>((res) => setTimeout(res, FIRST_FRAME_QUIET_MS));
+      if (!alive) return;
       if (r.isWebGLRenderer && r.compile) {
         const targets: THREE.Object3D[] = [];
         const seen = new Set<string>();
@@ -260,7 +264,12 @@ function SizeSync() {
       if (needsResize(get().size, r)) setSize(r.width, r.height);
       invalidate();
     };
+    // 最初の通知（しばらく通知がなかった後）はすぐ適用し、続く通知は止まってから（短く）まとめる。rAF には依存しない
+    let last = 0;
     const schedule = () => {
+      const now = performance.now();
+      if (!timer && now - last > RESIZE_SETTLE_MS) { last = now; apply(); return; }
+      last = now;
       if (timer) clearTimeout(timer);
       timer = setTimeout(apply, RESIZE_SETTLE_MS);
     };
