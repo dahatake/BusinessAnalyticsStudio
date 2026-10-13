@@ -1,7 +1,7 @@
 // System Test: オープニング・プレゼンテーションモード・番組構成・演出・ショーコントロールバー
 // 期待値は要求定義書の受入基準（app-core.md・app-experience.md・quality.md）と、お手本パックの show.json から決める。
 import type { Page } from '@playwright/test';
-import { test, expect, openScreen, component, hook, captureDownload, saveEvidence, setEditMode } from '../support/fixtures';
+import { test, expect, openScreen, component, hook, captureDownload, saveEvidence, setEditMode, chooseWorkTarget } from '../support/fixtures';
 import { examplePack, packWithInternal, countInternal, PACK_FILES } from '../support/packs';
 
 const mono = examplePack('mono');
@@ -102,12 +102,14 @@ test.describe('FR-076 オープニング', () => {
     await expect(page.getByTestId('opening')).toBeVisible();
     await page.getByRole('button', { name: 'スキップ' }).click();
     await expect(page.getByTestId('opening')).toBeHidden({ timeout: 3_000 });
+    await chooseWorkTarget(page);
     await expect(page.getByTestId('workspace')).toBeVisible();
-    // 開き直して、今度は Esc で飛ばす
+    // 開き直して、今度は Esc で飛ばす（選択画面は再読込のたびに出る: FR-144 AC-239）
     await page.goto(app.url);
     await expect(page.getByTestId('opening')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.getByTestId('opening')).toBeHidden({ timeout: 3_000 });
+    await chooseWorkTarget(page);
   });
 });
 

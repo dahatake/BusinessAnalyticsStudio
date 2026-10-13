@@ -3,7 +3,7 @@
 import JSZip from 'jszip';
 import path from 'node:path';
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, entity, hook, captureDownload, setEditMode, measureFrameTimes, saveEvidence } from '../support/fixtures';
+import { test, expect, openScreen, component, entity, hook, captureDownload, setEditMode, measureFrameTimes, saveEvidence, gotoAndEnter } from '../support/fixtures';
 import { examplePack } from '../support/packs';
 
 const mono = examplePack('mono');
@@ -330,8 +330,7 @@ test.describe('FR-095 自動保存と大量ストローク', () => {
     await page.waitForTimeout(2_000 + 500);
     await page.close({ runBeforeUnload: false });
     const p2 = await context.newPage();
-    await p2.goto(app.url);
-    await p2.keyboard.press('Escape');
+    await gotoAndEnter(p2, app.url);
     await p2.getByTestId('nav-whiteboard').click();
     const all = await hook<BoardState>(p2, 't.board.state()');
     const strokes = all.boards.flatMap((b) => b.strokes.map((k) => k.id));
