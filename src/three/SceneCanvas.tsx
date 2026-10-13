@@ -17,7 +17,7 @@ import {
 import { QUALITY_PROFILES, type Quality } from './quality';
 import { useTwinLayout } from './twin';
 import { CameraSync, EntityTwin } from './TwinScene';
-import { LaterStage, StageContext, useStageProgress } from './stage';
+import { LaterStage, StageContext, useRenderStage, useStageProgress } from './stage';
 
 type Kind = 'trying-webgpu' | 'webgl2';
 const FIRST_FRAME_MAX_WAIT_MS = 8000;
@@ -123,6 +123,29 @@ async function detectWebGPU(): Promise<WebGPUModule | null> {
   } catch {
     return null;
   }
+}
+
+let webgpuProbe: Promise<WebGPUModule | null> | null = null;
+/** WebGPU の確認は 1 回だけ。アプリの起動後の空き時間に先に済ませ、3D ビューを開いたときに待たない（FR-147 AC-246）。 */
+function probeWebGPU(): Promise<WebGPUModule | null> {
+  return (webgpuProbe ??= detectWebGPU());
+}
+
+/**
+ * GPU プロセスと WebGL の最初のコンテキスト作成は重い（数十 ms〜）。アプリの起動後の空き時間に、使い捨てのコンテキストで先に温めておき、
+ * 3D ビューを開いたときの Canvas の生成を速くする（FR-147 AC-246）。
+ */
+function warmUpGraphics(): void {
+  try {
+    const c = document.createElement('canvas');
+    c.width = c.height = 1;
+    const gl = c.getContext('webgl2', { antialias: true, powerPreference: 'high-performance' });
+    gl?.getExtension('WEBGL_lose_context')?.loseContext();
+  } catch { /* 温めるだけ。失敗しても描画には影響しない */ }
+}
+
+if (typeof window !== 'undefined' && typeof document !== 'undefined') {
+  setTimeout(() => { warmUpGraphics(); void probeWebGPU(); }, 300);
 }
 
 function Geometry({ shape }: { shape: ObjectSpec['shape'] }) {
@@ -253,11 +276,14 @@ function SceneContent({ scene, preset, quality, toBe }: { scene: SceneKey; prese
   const groundSize = twin && layout ? Math.max(24, (Math.abs(backZ) + 8) * 2, (layout.radius + 10) * 2) : 24;
   const decor = scene === 'hero' ? heroObjects(preset) : [];
   const core = decor.find((o) => o.id === 'hero-core');
+  // 影は最初のフレームの後に付ける（最初のフレームの描画とシェーダーを軽くする。rest の間にコンパイルされる。FR-147 AC-246）
+  const stage = useRenderStage();
+  const shadowsOn = profile.shadows && stage !== 'first';
   return (
     <>
       <color attach="background" args={[preset.scene.background]} />
       <ambientLight intensity={0.6} />
-      <directionalLight position={[6, 10, 6]} intensity={1.6} castShadow={profile.shadows} shadow-mapSize={[1024, 1024]} />
+      <directionalLight position={[6, 10, 6]} intensity={1.6} castShadow={shadowsOn} shadow-mapSize={[1024, 1024]} />
       <Ground color={preset.scene.ground} size={groundSize} />
       {scene === 'hero' && (
         <LaterStage>
@@ -340,7 +366,7 @@ export function RenderCanvas({ children, cameraPosition, fov = 45, paused = fals
 
   useEffect(() => {
     let alive = true;
-    void detectWebGPU().then((m) => {
+    void probeWebGPU().then((m) => {
       if (!alive) return;
       gpuModule.current = m;
       if (m) setKind('trying-webgpu');
