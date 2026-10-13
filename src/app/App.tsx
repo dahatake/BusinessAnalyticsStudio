@@ -44,6 +44,7 @@ import { LaserPointer, PresenterView, ShowControlActions, ShowShortcuts } from '
 import { ShortVideoButton, ShortVideoDialog } from '../show/ShortVideo';
 import { currentTopic } from '../store/presentation';
 import { ProjectsPanel } from '../projects/ProjectsPanel';
+import { useWorkTargetUi } from '../projects/workTargetUi';
 
 setAvailableComponents(SCREENS.map((s) => s.key));
 
@@ -79,6 +80,7 @@ export function App() {
   const scene = !opened ? 'opening' : topic ? `chapter:${topic.chapterId}` : 'workspace';
   const presenting = usePresentationStore((s) => s.active);
   const openProjectId = useProjects((s) => s.openId); // FR-138: ステッパーは Project を開いているときだけ出す
+  const demoOnly = useWorkTargetUi((u) => u.demoOnly); // FR-144 AC-237: デモを選んだ後の表示
   const intensity = useIntensity();
   const motionRef = useRef({ presenting, intensity });
   motionRef.current = { presenting, intensity };
@@ -154,6 +156,16 @@ export function App() {
               <MessageBarBody>
                 <MessageBarTitle>お手本パックで起動しています。</MessageBarTitle>
                 架空企業のデモ用データです。顧客のデータは public/data/ と public/brand/ に置くと切り替わります。
+              </MessageBarBody>
+            </MessageBar>
+          </div>
+        ) : null}
+        {demoOnly && !state.pack.isExample ? (
+          <div data-testid="demo-target-notice">
+            <MessageBar intent="info" layout="multiline">
+              <MessageBarBody>
+                <MessageBarTitle>デモ（お手本パック）で作業しています。</MessageBarTitle>
+                実際の Project の内容は混ざりません。「作業先」から実際の Project に切り替えられます。
               </MessageBarBody>
             </MessageBar>
           </div>

@@ -1,5 +1,5 @@
 // 企業の登録と Project の一覧・作成・名称変更・アーカイブ・切替（FR-137）。
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Input, MessageBar, MessageBarBody, Text, makeStyles, tokens,
@@ -8,6 +8,8 @@ import { AnalysisPanel } from './AnalysisPanel';
 import { useProjects, type Company, type Project, type Result } from '../store/projects';
 import { useAnalyses } from '../store/analyses';
 import { useRestoreStatus } from '../store/persist';
+import { useSettings } from '../store/settings';
+import { useWorkTargetUi } from './workTargetUi';
 import { WorkTargetPicker } from './WorkTargetPicker';
 import { shouldShowStartupPicker, workTargetLabel, type TargetChoice } from './workTarget';
 
@@ -97,15 +99,20 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
   /** 未保存の入力があるときの切替の確認（FR-138 AC-210）。target は切替先（null は一覧へ） */
   const [pending, setPending] = useState<{ target: string | null; demo: boolean; register: boolean } | null>(null);
   /** FR-144: デモを選んでいる間は、実際の企業・Project の一覧を出さない（デモと実際の内容を混ぜない。AC-231） */
-  const [demoOnly, setDemoOnly] = useState(false);
-  /** FR-144: 作業先の選択画面。実 Project が 2 件以上ある端末では起動時に開く（AC-229）。0 件は開かずデモで始める（AC-230） */
+  const demoOnly = useWorkTargetUi((u) => u.demoOnly);
+  const setDemoOnly = useWorkTargetUi((u) => u.setDemoOnly);
+  const showDemo = useSettings((x) => x.showDemoInPicker);
+  /** FR-144: 作業先の選択画面。起動のたびに、件数によらず（0 件でも）開く（AC-237・AC-239）。起動時は何も選ばずには閉じられない */
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [startup, setStartup] = useState(false);
   // 保存内容の読込が終わってから 1 回だけ評価する（読込前の空の状態で判定して出し損ねない）
   const restored = useRestoreStatus((r) => r.done);
   useEffect(() => {
-    if (restored && shouldShowStartupPicker(useProjects.getState().projects)) setPickerOpen(true);
+    if (restored && shouldShowStartupPicker(useProjects.getState().projects)) { setStartup(true); setPickerOpen(true); }
   }, [restored]);
   const hasUnsaved = useAnalyses((a) => (st.openId ? Object.keys(a.drafts[st.openId] ?? {}).length > 0 : false));
+  const demoRequest = useWorkTargetUi((u) => u.demoRequest);
+  const handledDemoRequest = useRef(demoRequest);
   const apply = (target: string | null, demo: boolean, register: boolean) => {
     st.open(target);
     setDemoOnly(demo);
@@ -118,11 +125,18 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
   };
   const choose = (c: TargetChoice) => {
     setPickerOpen(false);
+    setStartup(false);
     if (c.kind === 'demo') requestOpen(null, true);
     else if (c.kind === 'register') requestOpen(null, false, true);
     else requestOpen(c.id);
   };
   const close = () => setModal(null);
+  // 設定の「デモへ切り替える」（AC-241）。未保存の入力があれば、他の切替と同じ確認を経由する（AC-231）
+  useEffect(() => {
+    if (demoRequest === handledDemoRequest.current) return;
+    handledDemoRequest.current = demoRequest;
+    requestOpen(null, true);
+  });
   const current = st.projects.find((p) => p.id === st.openId);
   const currentCompany = current ? st.companies.find((c) => c.id === current.companyId) : undefined;
   const [slot, setSlot] = useState<HTMLElement | null>(null);
@@ -132,7 +146,7 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
       <Text weight="semibold">作業先:</Text>
       <Text weight="semibold" data-testid="work-target" aria-live="polite">{workTargetLabel(st.openId, st.projects, st.companies)}</Text>
       <Button size="small" onClick={() => setPickerOpen(true)}>作業先</Button>
-      <Button size="small" onClick={() => setModal({ kind: 'company' })}>企業を登録</Button>
+      <Button size="small" onClick={() => { setDemoOnly(false); setModal({ kind: 'company' }); }}>企業を登録</Button>
       {current ? <Button size="small" onClick={() => requestOpen(null)}>Project 一覧へ</Button> : null}
       {current && currentCompany ? <Text data-testid="current-project">開いている Project: {currentCompany.name} / {current.name}</Text> : null}
     </div>
@@ -144,7 +158,7 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
     <div className={s.root} data-testid="projects-panel" style={hasBody ? undefined : { display: 'contents' }}>
       {slot ? null : head}
       {demoOnly ? null : st.companies.map((c) => <CompanyRegion key={c.id} company={c} onModal={setModal} onOpen={(id) => requestOpen(id)} />)}
-      {pickerOpen ? <WorkTargetPicker projects={st.projects} companies={st.companies} onChoose={choose} onClose={() => setPickerOpen(false)} /> : null}
+      {pickerOpen ? <WorkTargetPicker projects={st.projects} companies={st.companies} showDemo={showDemo} currentId={st.openId} dismissable={!startup} onChoose={choose} onClose={() => setPickerOpen(false)} /> : null}
       {current ? <AnalysisPanel projectId={current.id} onNavigate={onNavigate} /> : null}
       {pending ? (
         <Dialog open modalType="alert" onOpenChange={(_, d) => { if (!d.open) setPending(null); }}>
