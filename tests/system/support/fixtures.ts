@@ -131,6 +131,35 @@ export async function failingFsAccess(page: Page): Promise<void> {
   });
 }
 
+/**
+ * 起動時の作業先の選択画面（FR-144 AC-237・AC-239。起動のたびに必ず出る）が出ていれば、デモ（なければ最初の実 Project）を選んで閉じる。
+ * 作業先の選択そのものを確かめるテストは `skipOpening: false` で起動し、`pressOpeningEscape` だけ使う。
+ */
+export async function chooseWorkTarget(page: Page): Promise<void> {
+  const picker = page.getByRole('dialog', { name: '作業先の選択' });
+  try {
+    await picker.waitFor({ state: 'visible', timeout: 3_000 });
+  } catch {
+    return;
+  }
+  const demo = picker.getByRole('option', { name: /デモ/ });
+  if ((await demo.count()) > 0) await demo.first().click();
+  else await picker.getByRole('option', { name: /…|\// }).first().click();
+  await picker.waitFor({ state: 'hidden', timeout: 5_000 });
+}
+
+/** オープニングが出ていれば Esc で飛ばす（作業先の選択は選ばない）。 */
+export async function pressOpeningEscape(page: Page): Promise<void> {
+  const opening = page.getByTestId('opening');
+  try {
+    await opening.waitFor({ state: 'visible', timeout: 3_000 });
+    await page.keyboard.press('Escape');
+    await opening.waitFor({ state: 'hidden', timeout: 5_000 });
+  } catch {
+    /* オープニングがない場合はそのまま */
+  }
+}
+
 /** オープニングを `Esc` で飛ばし、本編が操作できる状態を待つ。 */
 export async function skipOpening(page: Page): Promise<void> {
   const opening = page.getByTestId('opening');
@@ -141,6 +170,7 @@ export async function skipOpening(page: Page): Promise<void> {
   } catch {
     /* オープニングがない（すでに本編）場合はそのまま */
   }
+  await chooseWorkTarget(page);
   await expect(page.getByTestId('workspace')).toBeVisible();
 }
 

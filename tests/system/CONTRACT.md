@@ -46,5 +46,7 @@
 ## 9. コンポーネントの移動・自動サイズ調整・作業先の選択・Fluent 2（FR-142〜144・NFR-UX-007。workspace-layout.spec.ts が前提にする画面の探し方）
 - 移動: コンポーネントの見出し（heading）をつかんでドラッグする。移動中は置ける場所を `data-testid="drop-indicator"` で示す。Esc で中止できる。
 - 自動サイズ調整: フォーカスしたコンポーネントの面積が基準の PARAM-033（1.5）倍になる。switch「サイズの自動調整」で切り替える。
-- 作業先: 常に表示する `data-testid="work-target"`（「デモ」または「企業名 / Project 名」）。ボタン「作業先」で dialog「作業先の選択」を開く。候補は option（「デモ」「<企業名> … <Project 名>」「実際の Project を登録」）。実 Project が 2 件以上ある端末では起動時に同じ dialog を出す。
+- 作業先: 常に表示する `data-testid="work-target"`（「デモ」または「企業名 / Project 名」）。ボタン「作業先」で dialog「作業先の選択」を開く。候補は option（「デモ」「<企業名> … <Project 名>」「実際の Project を登録」）。起動のたびに（実 Project が 0 件でも）同じ dialog を必ず出し、何も選ばずには閉じられない（FR-144 AC-237・AC-239）。support/fixtures.ts の `skipOpening` は、この dialog が出ていればデモ（なければ最初の Project）を選んで進む。選択画面そのものを確かめるテストは `skipOpening: false` で起動し `pressOpeningEscape`（オープニングだけ飛ばす）を使う。
+- デモの非表示（FR-144 AC-240・AC-241）: 設定画面（`nav-settings`）の switch「選択画面にデモを表示」（既定: オン）。オフにすると dialog「作業先の選択」にデモの option が出ない。端末内（localStorage 等）に保存され、再読込後も維持され、別の browser context には引き継がれない。
+- 3D の描画面（FR-146 AC-243・AC-244）: `data-testid="component-view3d"` の中の `canvas` と、その親要素（表示領域）の大きさを比べる。クリックは `scene.objects` の画面座標へ `page.mouse.click`。
 - 表示設定: Light/Dark は `emulateMedia({colorScheme})`、ハイコントラストは `forcedColors: 'active'`、動きの軽減は `reducedMotion: 'reduce'`。

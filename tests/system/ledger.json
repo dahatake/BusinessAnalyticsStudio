@@ -141,7 +141,12 @@
     "AC-229": "sha256:fe53273383b50e25",
     "AC-230": "sha256:b37e3a1801bc0b66",
     "AC-234": "sha256:630f15947acc625b",
-    "AC-235": "sha256:afc67c60e861de2c"
+    "AC-235": "sha256:afc67c60e861de2c",
+    "AC-239": "sha256:004b7129b8552595",
+    "AC-237": "sha256:62499861ef30e1d6",
+    "AC-240": "sha256:9a9a76c37b5a77fe",
+    "AC-243": "sha256:64b81e427cf413b1",
+    "AC-244": "sha256:0e34da53c823f470"
   },
   "cases": [
     {
@@ -2708,11 +2713,11 @@
       "ac_ids": [
         "AC-126"
       ],
-      "title": "AC-126 `public/data/` が空の状態で起動すると、お手本パックの架空企業名がタイトルに表示され、「お手本パック」で起",
+      "title": "AC-126 起動時の選択画面でデモを選んだ後、お手本パックの架空企業名がタイトルに表示され「お手本パック」で起動したことが示される（A-36）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-126",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "1391814",
       "last_run_at": "2026-10-13T15:41:36+09:00",
       "evidence": "work/runs/202610130529/logs/system-test/E2E-200-202610131541.log",
@@ -2722,6 +2727,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-10-13T18:12:20+09:00",
+          "by": "test-designer",
+          "change": "title: 'AC-126 `public/data/` が空の状態で起動すると、お手本パックの架空企業名がタイトルに表示され、「お手本パック」で起' -> 'AC-126 起動時の選択画面でデモを選んだ後、お手本パックの架空企業名がタイトルに表示され「お手本パック」で起動したことが示される（A-36）'",
+          "reason": "FR-144 A-36: AC-126 を『選択画面でデモを選んだ後の状態』と読む。skipOpening がデモを選ぶ"
         }
       ]
     },
@@ -3605,13 +3616,14 @@
         "FR-144"
       ],
       "ac_ids": [
-        "AC-229"
+        "AC-229",
+        "AC-239"
       ],
-      "title": "起動時の作業先選択（デモ／各 Project）と作業先の常時表示",
+      "title": "起動時の作業先選択（デモ／各 Project）・作業先の常時表示・再読込のたびに選択画面（AC-229・AC-239）",
       "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-229",
+      "command": "node tests/system/run.mjs AC-229 AC-239",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "2f593bd",
       "last_run_at": "2026-10-13T10:18:24+09:00",
       "evidence": "work/runs/202610130529/logs/system-test/E2E-218-202610131018.log",
@@ -3621,6 +3633,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-13T18:12:20+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/run.mjs AC-229' -> 'node tests/system/run.mjs AC-229 AC-239'; title: '起動時の作業先選択（デモ／各 Project）と作業先の常時表示' -> '起動時の作業先選択（デモ／各 Project）・作業先の常時表示・再読込のたびに選択画面（AC-229・AC-239）'; ac_ids: ['AC-229'] -> ['AC-229', 'AC-239']",
+          "reason": "Q-013 A: 起動のたびに選択画面（AC-239）を追加で確かめる"
         }
       ]
     },
@@ -3630,13 +3648,13 @@
         "FR-144"
       ],
       "ac_ids": [
-        "AC-230"
+        "AC-237"
       ],
-      "title": "Project 0 件でのデモ起動と作業先選択からの登録案内",
+      "title": "Project 0 件でも起動直後に選択画面（デモ・実際の Project を登録）。閉じられない。デモ選択後はお手本パック表示（AC-237）",
       "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-230",
+      "command": "node tests/system/run.mjs AC-237",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "2f593bd",
       "last_run_at": "2026-10-13T10:18:27+09:00",
       "evidence": "work/runs/202610130529/logs/system-test/E2E-219-202610131018.log",
@@ -3646,6 +3664,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-13T18:12:20+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/run.mjs AC-230' -> 'node tests/system/run.mjs AC-237'; title: 'Project 0 件でのデモ起動と作業先選択からの登録案内' -> 'Project 0 件でも起動直後に選択画面（デモ・実際の Project を登録）。閉じられない。デモ選択後はお手本パック表示（AC-237）'; ac_ids: ['AC-230'] -> ['AC-237']",
+          "reason": "AC-230 を AC-237 が置き換え（Q-013 A）。期待値を『選択画面を出さない』から『必ず出す』へ"
         }
       ]
     },
@@ -3696,6 +3720,112 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-222",
+      "requirement_ids": [
+        "FR-144"
+      ],
+      "ac_ids": [
+        "AC-240"
+      ],
+      "title": "デモの選択肢を表示しない設定の保存と再起動後の維持・別端末に引き継がれない（AC-240）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-240",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-13T18:12:23+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-223",
+      "requirement_ids": [
+        "FR-146"
+      ],
+      "ac_ids": [
+        "AC-243"
+      ],
+      "title": "3D ビューを開いた直後・大きさ変更直後に描画面が表示領域に追従（AC-243）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-243",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-13T18:12:26+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-224",
+      "requirement_ids": [
+        "FR-146"
+      ],
+      "ac_ids": [
+        "AC-244"
+      ],
+      "title": "3D ビューを開いた直後・大きさ変更直後のクリックで拠点が選ばれ各ビューでハイライト（AC-244）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-244",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-13T18:12:29+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-225",
+      "requirement_ids": [
+        "FR-144"
+      ],
+      "ac_ids": [
+        "AC-230"
+      ],
+      "title": "AC-230（旧: 0 件で選択画面を出さない）AC-237 に置き換え済み",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-237",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-13T18:12:32+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-13T18:12:41+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-230 の『選択画面を出さない』は AC-237（Q-013 A）に置き換えられた旧 AC。rd-author が AC-230 を廃止にするまで被覆のためだけに残す"
         }
       ]
     }
