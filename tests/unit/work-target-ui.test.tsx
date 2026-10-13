@@ -11,6 +11,7 @@ import { resetProjects, useProjects } from '../../src/store/projects';
 import { resetAnalyses, useAnalyses } from '../../src/store/analyses';
 import { useRestoreStatus } from '../../src/store/persist';
 import { useSettings } from '../../src/store/settings';
+import { WorkTargetSettings } from '../../src/projects/WorkTargetSettings';
 
 const st = () => useProjects.getState();
 const wrap = (ui: ReactNode) => <FluentProvider theme={webLightTheme}>{ui}</FluentProvider>;
@@ -88,6 +89,62 @@ describe('FR-144 ProjectsPanel（描画）', () => {
     fireEvent.click(within(picker).getByRole('option', { name: /デモ/ }));
     await waitFor(() => expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull());
     expect(screen.getByTestId('work-target').textContent).toBe('デモ');
+  });
+
+  // FR-144 AC-241 AC-231: 設定の「デモへ切り替える」は、未保存の入力があれば確認を経由する
+  it('FR-144 AC-241 AC-231 設定のボタンでデモへ切り替えられ、未保存の入力があれば確認を経由する', async () => {
+    const [p1] = seed(2);
+    st().open(p1 ?? null);
+    useAnalyses.getState().setDraft(p1 ?? '', 'param', '9');
+    useSettings.getState().setShowDemoInPicker(false);
+    try {
+      render(wrap(<><ProjectsPanel /><WorkTargetSettings /></>));
+      act(() => useRestoreStatus.setState({ done: true }));
+      const picker = await screen.findByRole('dialog', { name: '作業先の選択' });
+      expect(within(picker).queryByRole('option', { name: /デモ/ })).toBeNull();
+      fireEvent.click(within(picker).getByRole('option', { name: /業務改善 2026/ }));
+      await waitFor(() => expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull());
+      fireEvent.click(screen.getByRole('button', { name: 'デモへ切り替える' }));
+      const confirm = await screen.findByRole('alertdialog', { name: '未保存の入力があります' });
+      expect(st().openId).toBe(p1); // 確認の前は切り替わらない
+      fireEvent.click(within(confirm).getByRole('button', { name: 'キャンセル' }));
+      await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+      expect(st().openId).toBe(p1);
+      fireEvent.click(screen.getByRole('button', { name: 'デモへ切り替える' }));
+      fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: '切り替える' }));
+      await waitFor(() => expect(st().openId).toBeNull());
+      expect(screen.getByTestId('work-target').textContent).toBe('デモ');
+      expect(useAnalyses.getState().drafts[p1 ?? '']?.param).toBe('9');
+    } finally {
+      useSettings.getState().setShowDemoInPicker(true);
+    }
+  });
+
+  // FR-144 AC-241: 未保存がなければ確認なしで切り替わる
+  it('FR-144 AC-241 未保存の入力がなければ、設定のボタンで確認なしにデモへ切り替わる', async () => {
+    const [p1] = seed(1);
+    st().open(p1 ?? null);
+    render(wrap(<><ProjectsPanel /><WorkTargetSettings /></>));
+    fireEvent.click(screen.getByRole('button', { name: 'デモへ切り替える' }));
+    await waitFor(() => expect(st().openId).toBeNull());
+    expect(screen.queryByRole('alertdialog')).toBeNull();
+  });
+
+  // FR-144 AC-240: switch は edb.settings に保存され、再読込（再起動）後も維持される
+  it('FR-144 AC-240 switch「選択画面にデモを表示」は既定オンで、オフにすると edb.settings に保存され再読込後も維持される', async () => {
+    expect(useSettings.getState().showDemoInPicker).toBe(true);
+    render(wrap(<WorkTargetSettings />));
+    const sw = screen.getByRole('switch', { name: '選択画面にデモを表示' }) as HTMLInputElement;
+    expect(sw.checked).toBe(true);
+    try {
+      fireEvent.click(sw);
+      await waitFor(() => expect(useSettings.getState().showDemoInPicker).toBe(false));
+      expect(JSON.parse(localStorage.getItem('edb.settings') ?? '{}').state.showDemoInPicker).toBe(false);
+      await useSettings.persist.rehydrate(); // 再起動で保存内容から復元
+      expect(useSettings.getState().showDemoInPicker).toBe(false);
+    } finally {
+      useSettings.getState().setShowDemoInPicker(true);
+    }
   });
 
   // FR-144 AC-241

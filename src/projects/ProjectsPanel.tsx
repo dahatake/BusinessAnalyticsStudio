@@ -1,5 +1,5 @@
 // 企業の登録と Project の一覧・作成・名称変更・アーカイブ・切替（FR-137）。
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Input, MessageBar, MessageBarBody, Text, makeStyles, tokens,
@@ -111,6 +111,8 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
     if (restored && shouldShowStartupPicker(useProjects.getState().projects)) { setStartup(true); setPickerOpen(true); }
   }, [restored]);
   const hasUnsaved = useAnalyses((a) => (st.openId ? Object.keys(a.drafts[st.openId] ?? {}).length > 0 : false));
+  const demoRequest = useWorkTargetUi((u) => u.demoRequest);
+  const handledDemoRequest = useRef(demoRequest);
   const apply = (target: string | null, demo: boolean, register: boolean) => {
     st.open(target);
     setDemoOnly(demo);
@@ -129,6 +131,12 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
     else requestOpen(c.id);
   };
   const close = () => setModal(null);
+  // 設定の「デモへ切り替える」（AC-241）。未保存の入力があれば、他の切替と同じ確認を経由する（AC-231）
+  useEffect(() => {
+    if (demoRequest === handledDemoRequest.current) return;
+    handledDemoRequest.current = demoRequest;
+    requestOpen(null, true);
+  });
   const current = st.projects.find((p) => p.id === st.openId);
   const currentCompany = current ? st.companies.find((c) => c.id === current.companyId) : undefined;
   const [slot, setSlot] = useState<HTMLElement | null>(null);
