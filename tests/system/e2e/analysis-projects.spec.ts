@@ -410,7 +410,8 @@ test.describe('NFR-SEC-004 外部 AI への送信を許可しない既定の状�
     await start();
     await openNewProject(page, COMPANY, PROJECT);
     await startAnalysis(page, 'SWOT 分析');
-    await reloadAndEnter(page, COMPANY);(DIST_DIR), 'dist/ がない（npm run build が必要）').toBe(true);
+    await reloadAndEnter(page, COMPANY);
+    expect(fs.existsSync(DIST_DIR), 'dist/ がない（npm run build が必要）').toBe(true);
     const hits = listAllFiles(DIST_DIR).filter((f) => {
       const buf = fs.readFileSync(f);
       return buf.includes('ZQ91') || buf.includes(encodeURIComponent(COMPANY));
