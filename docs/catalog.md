@@ -180,6 +180,7 @@
 | FR-143 | 操作中のコンポーネントを大きくする自動のサイズ調整 | 承認済み | src/workspace/autosize.ts (applyAutoSize と fitMinWidth。PARAM-033 PARAM-034), src/workspace/Workspace.tsx, src/workspace/Controls.tsx (AutoSizeSwitch), src/store/layout.ts (autoSize・manual・resizeByKeys・resetLayout) | tests/unit/layout-fluent.test.ts (AC-226, AC-227, AC-228), tests/system/e2e/workspace-layout.spec.ts (E2E-217) | デザイン基盤, ワークスペース |
 | FR-144 | 起動後のデモ／実プロジェクトの選択 | 承認済み | src/projects/workTarget.ts, src/projects/WorkTargetPicker.tsx, src/projects/ProjectsPanel.tsx | tests/unit/work-target.test.ts (AC-229, AC-230, AC-231, AC-232, AC-236), tests/unit/work-target-ui.test.tsx (AC-229, AC-230, AC-231, AC-232, AC-236), tests/system/e2e/workspace-layout.spec.ts (E2E-218, E2E-219) | 企業・Project の端末内保存 |
 | NFR-UX-007 | 画面とレイアウト操作への Fluent 2 の適用と最小の読みやすさ | 承認済み | src/workspace/Workspace.tsx (ドロップ先の表示: トークン), src/theme/a11y.css (使えないボタンの AA), src/components/Panel.tsx, src/screens/DiscussionTreeScreen.tsx (最小の文字 12px), src/screens/ArchitectureScreen.tsx, src/screens/RankingScreen.tsx, src/screens/whiteboard/WhiteboardScreen.tsx, src/screens/KnowledgeGraphScreen.tsx, src/screens/IssueSolutionScreen.tsx (詳細の最小の幅) | tests/unit/layout-fluent.test.ts (AC-233), tests/system/e2e/workspace-layout.spec.ts (E2E-220, E2E-221) | デザイン基盤, ワークスペース |
+| FR-146 | 3D ビューを開いた直後の大きさの追従とクリックの当たり | 承認済み | 未実装 | 未実装 | - |
 
 ## API・イベント
 
