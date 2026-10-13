@@ -17,14 +17,92 @@ import {
 import { QUALITY_PROFILES, type Quality } from './quality';
 import { useTwinLayout } from './twin';
 import { CameraSync, EntityTwin } from './TwinScene';
+import { LaterStage, StageContext, nextStage, type RenderStage } from './stage';
 
 type Kind = 'trying-webgpu' | 'webgl2';
 const FIRST_FRAME_MAX_WAIT_MS = 8000;
-const FIRST_FRAME_QUIET_MS = 1500;
+/** 最初のフレームを出してから、重い要素を組み上げ始めるまでの待ち（最初のフレームが描かれて、操作を受け付けられるように） */
+const REST_STAGE_DELAY_MS = 150;
+
+type CompileTarget = {
+  compile?: (o: THREE.Object3D, c: THREE.Camera, t?: THREE.Object3D) => void;
+  compileAsync?: (o: THREE.Object3D, c: THREE.Camera, t?: THREE.Object3D) => Promise<unknown>;
+  isWebGLRenderer?: boolean;
+  extensions?: { has?: (n: string) => boolean };
+  getContext?: () => WebGL2RenderingContext;
+  info?: { programs?: { program?: WebGLProgram }[] | null };
+};
 
 /**
- * 最初の描画は、シェーダーのコンパイル（プログラムごとに同期で数百ミリ秒）で画面が 1 秒以上止まる。
- * 描画を始める前に、材質ごとに 1 つずつコンパイルし、間で制御を返す。その間も描画面の大きさの追従・操作・測定を受け付けられる（FR-146 AC-243）。
+ * 今あるシーンのシェーダーを、描画の前にコンパイルしておく（FR-147）。
+ * 並列コンパイル（KHR_parallel_shader_compile）が使えれば compileAsync で別スレッドに任せ、メインスレッドを塞がない。
+ * 使えなければ、材質ごとに 1 つずつコンパイルし、間で制御を返す（FR-146 AC-243 の追従・操作・測定が止まらないように）。
+ */
+async function precompile(gl: unknown, scene: THREE.Scene, camera: THREE.Camera, alive: () => boolean): Promise<void> {
+  const r = gl as CompileTarget;
+  if (!r.isWebGLRenderer || !r.compile) return;
+  const tick = () => new Promise<void>((res) => setTimeout(res, 0));
+  const ctx = r.getContext?.();
+  if (r.compileAsync && ctx?.getExtension('KHR_parallel_shader_compile')) {
+    try { await r.compileAsync(scene, camera); } catch { /* 描画のときに改めて扱われる */ }
+    return;
+  }
+  const targets: THREE.Object3D[] = [];
+  const seen = new Set<string>();
+  scene.traverse((o) => {
+    const m = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
+    if (!m) return;
+    const key = (Array.isArray(m) ? m.map((x) => x.uuid).join() : m.uuid) + ((o as THREE.InstancedMesh).isInstancedMesh ? ':i' : '');
+    if (!seen.has(key)) { seen.add(key); targets.push(o); }
+  });
+  const linked = new Set<WebGLProgram>();
+  for (const o of targets) {
+    if (!alive()) return;
+    try { r.compile(o, camera, scene); } catch { /* 描画のときに改めて扱われる */ }
+    // プログラムのリンクは、最初の描画で初めて待たされる。1 つずつここで待ち、間で制御を返す
+    for (const info of r.info?.programs ?? []) {
+      const pr = info.program;
+      if (!ctx || !pr || linked.has(pr)) continue;
+      linked.add(pr);
+      ctx.getProgramParameter(pr, ctx.LINK_STATUS);
+      await tick();
+      if (!alive()) return;
+    }
+    await tick();
+  }
+}
+
+/** 描画の段階を進める（最初のフレーム → 重い要素を非表示で組み上げてコンパイル → 表示）。enabled が false なら常にすべて表示。 */
+function StageProvider({ enabled, settled, children }: { enabled: boolean; settled: boolean; children: ReactNode }) {
+  const gl = useThree((s) => s.gl);
+  const scene = useThree((s) => s.scene);
+  const camera = useThree((s) => s.camera);
+  const invalidate = useThree((s) => s.invalidate);
+  const [stage, setStage] = useState<RenderStage>(enabled ? 'first' : 'shown');
+  useEffect(() => {
+    if (!enabled || !settled) return;
+    const t = setTimeout(() => setStage((s) => nextStage(s, 'settled')), REST_STAGE_DELAY_MS);
+    return () => clearTimeout(t);
+  }, [enabled, settled]);
+  useEffect(() => {
+    if (stage !== 'rest') return;
+    let alive = true;
+    void (async () => {
+      await new Promise<void>((res) => setTimeout(res, 0)); // 重い要素が組み上がるのを待つ
+      if (!alive) return;
+      await Promise.race([precompile(gl, scene, camera, () => alive), new Promise<void>((res) => setTimeout(res, FIRST_FRAME_MAX_WAIT_MS))]);
+      if (!alive) return;
+      setStage((s) => nextStage(s, 'compiled'));
+      invalidate();
+    })();
+    return () => { alive = false; };
+  }, [stage, gl, scene, camera, invalidate]);
+  return <StageContext.Provider value={stage}>{children}</StageContext.Provider>;
+}
+
+/**
+ * 最初のフレームの前に、軽いシーン（拠点・床・ライト）のシェーダーをコンパイルしておく。待ち時間は入れない（FR-147）。
+ * その間も描画面の大きさの追従・操作・測定を受け付けられる（FR-146 AC-243）。
  * コンパイルが終わる（または上限に達する）まで、onDone は呼ばない。
  */
 function FirstFrameGate({ onDone }: { onDone: () => void }) {
@@ -37,39 +115,10 @@ function FirstFrameGate({ onDone }: { onDone: () => void }) {
     // 描き始める前でも、クリックの当たり判定（レイキャスト）が現在の配置で働くよう、行列だけは更新しておく
     const matrices = setInterval(() => { scene.updateMatrixWorld(true); camera.updateMatrixWorld(true); }, 50);
     const limit = setTimeout(finish, FIRST_FRAME_MAX_WAIT_MS);
-    const r = gl as unknown as { compile?: (o: THREE.Object3D, c: THREE.Camera, t: THREE.Object3D) => void; isWebGLRenderer?: boolean; getContext?: () => WebGL2RenderingContext; info?: { programs?: { program?: WebGLProgram }[] | null } };
-    const tick = () => new Promise<void>((res) => setTimeout(res, 0));
     void (async () => {
-      await tick(); // 子の要素が組み上がるのを待つ
-      // 開いた直後の 1〜2 秒は、重い同期処理（コンパイル）を始めず、大きさの変更・操作・測定がすぐ返るようにする（PARAM-037）
-      await new Promise<void>((res) => setTimeout(res, FIRST_FRAME_QUIET_MS));
+      await new Promise<void>((res) => setTimeout(res, 0)); // 子の要素が組み上がるのを待つ
       if (!alive) return;
-      if (r.isWebGLRenderer && r.compile) {
-        const targets: THREE.Object3D[] = [];
-        const seen = new Set<string>();
-        scene.traverse((o) => {
-          const m = (o as THREE.Mesh).material as THREE.Material | THREE.Material[] | undefined;
-          if (!m) return;
-          const key = (Array.isArray(m) ? m.map((x) => x.uuid).join() : m.uuid) + ((o as THREE.InstancedMesh).isInstancedMesh ? ':i' : '');
-          if (!seen.has(key)) { seen.add(key); targets.push(o); }
-        });
-        const ctx = r.getContext?.();
-        const linked = new Set<WebGLProgram>();
-        for (const o of targets) {
-          if (!alive) return;
-          try { r.compile(o, camera, scene); } catch { /* 描画のときに改めて扱われる */ }
-          // プログラムのリンクは、最初の描画で初めて待たされる。1 つずつここで待ち、間で制御を返す
-          for (const info of r.info?.programs ?? []) {
-            const pr = info.program;
-            if (!ctx || !pr || linked.has(pr)) continue;
-            linked.add(pr);
-            ctx.getProgramParameter(pr, ctx.LINK_STATUS);
-            await tick();
-            if (!alive) return;
-          }
-          await tick();
-        }
-      }
+      await precompile(gl, scene, camera, () => alive);
       finish();
     })();
     return () => { alive = false; clearInterval(matrices); clearTimeout(limit); };
@@ -226,10 +275,12 @@ function SceneContent({ scene, preset, quality, toBe }: { scene: SceneKey; prese
       <directionalLight position={[6, 10, 6]} intensity={1.6} castShadow={profile.shadows} shadow-mapSize={[1024, 1024]} />
       <Ground color={preset.scene.ground} size={groundSize} />
       {scene === 'hero' && (
-        <group position={[0, 0, backZ]}>
-          <Objects specs={decor.filter((o) => o.id !== 'hero-core')} />
-          {core && <Hologram spec={core} accent={preset.accent} />}
-        </group>
+        <LaterStage>
+          <group position={[0, 0, backZ]}>
+            <Objects specs={decor.filter((o) => o.id !== 'hero-core')} />
+            {core && <Hologram spec={core} accent={preset.accent} />}
+          </group>
+        </LaterStage>
       )}
       {twin && layout && <EntityTwin layout={layout} preset={preset} />}
       {scene === 'kpi-tower' && <Objects specs={kpiTowerObjects(preset)} />}
@@ -348,8 +399,10 @@ export function RenderCanvas({ children, cameraPosition, fov = 45, paused = fals
       style={{ width: '100%', height: '100%', display: 'block' }}
     >
       <SizeSync />
-      {deferFirstFrame && <FirstFrameGate onDone={() => setSettled(true)} />}
-      <Suspense fallback={null}>{children}</Suspense>
+      <StageProvider enabled={deferFirstFrame} settled={settled}>
+        {deferFirstFrame && <FirstFrameGate onDone={() => setSettled(true)} />}
+        <Suspense fallback={null}>{children}</Suspense>
+      </StageProvider>
     </Canvas>
   );
 }
@@ -364,3 +417,5 @@ export function SceneCanvas({ toBe }: { toBe: boolean }) {
     </RenderCanvas>
   );
 }
+
+
