@@ -1,11 +1,12 @@
 // 画面のパネルの共通の外枠（見出し・説明）。画面はこれで包み、見た目の体系をそろえる。
 // ワークスペースの中では、フォーカス・最大化（Shift+F／ダブルクリック）・非表示（H）・メニューを受け持つ（FR-013/FR-109）。
 // 顧客パックにサンプルの項目があるときは、見出しの横に「サンプル」を明記する（FR-008）。
-import type { KeyboardEvent, MouseEvent, PointerEvent, ReactNode } from 'react';
+import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
 import { Badge, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { hasSampleData } from '../data/sample';
 import { usePackStore } from '../store/pack';
-import { ComponentMenu, usePane } from '../workspace/PaneContext';
+import { useFoldClass } from '../motion/useFoldMotion';
+import { ComponentActions, usePane } from '../workspace/PaneContext';
 import type { Move } from '../workspace/layoutModel';
 import { isEditableTarget, panelKeyAction, runPanelKeyAction, titleDoubleClick, type KeyLike } from './panelKeys';
 
@@ -31,6 +32,13 @@ const useStyles = makeStyles({
     ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`, outlineOffset: '-2px' },
   },
   maximized: { position: 'absolute', inset: 0, zIndex: 10, height: 'auto' },
+  // 最小化: 見出しだけを残す。中身は mount したまま隠し、入力中の内容・絞り込みを保つ（FR-151 AC-260）
+  minimized: {
+    overflow: 'hidden',
+    paddingBlock: tokens.spacingVerticalS,
+    rowGap: 0,
+    '& > *:not(:first-child)': { display: 'none' },
+  },
   head: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS },
   headRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', columnGap: tokens.spacingHorizontalS },
   titleRow: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalM, flexGrow: 1, minWidth: 0 },
@@ -60,6 +68,28 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
   const pane = usePane();
   const state = usePackStore((st) => st.state);
   const sample = state.status === 'ready' && hasSampleData(state.pack.data);
+  const ref = useRef<HTMLElement>(null);
+  // フォーカス中のコンポーネントだけ、見出しに操作アイコンを出す（FR-150）
+  const [focused, setFocused] = useState(false);
+  const [narrow, setNarrow] = useState(false);
+  const minimized = pane?.minimized === true;
+  // 最小化・復元の動き（NFR-UX-008。レイアウトは即座に切り替え、見た目だけを 200ms で整える）
+  const foldMotion = useFoldClass(minimized);
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) { first.current = false; return; }
+    // 最小化・復元でアイコンのボタンが入れ替わっても、フォーカスをコンポーネントに残す
+    ref.current?.focus({ preventScroll: true });
+  }, [minimized]);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const ro = new ResizeObserver(() => setNarrow(el.getBoundingClientRect().width < 360));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const onFocus = () => setFocused(true);
+  const onBlur = (e: FocusEvent<HTMLElement>) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false); };
 
   const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {
     const action = panelKeyAction(toKeyLike(e), pane);
@@ -75,12 +105,16 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
   return (
     <section
       data-testid={testId}
-      className={mergeClasses(s.root, pane ? s.pane : undefined, pane?.maximized ? s.maximized : undefined)}
+      ref={ref}
+      onFocus={onFocus}
+      onBlur={onBlur}
+      className={mergeClasses(s.root, pane ? s.pane : undefined, pane?.maximized ? s.maximized : undefined, minimized ? s.minimized : undefined, foldMotion)}
       style={maxWidth && !pane ? { maxWidth } : undefined}
       aria-label={title}
       tabIndex={pane ? 0 : undefined}
       onKeyDown={onKeyDown}
       data-display={pane ? (pane.maximized ? 'maximized' : 'normal') : undefined}
+      data-minimized={minimized ? 'true' : undefined}
     >
       <div className={s.head}>
         <div className={s.headRow}>
@@ -104,9 +138,9 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
               </span>
             ) : null}
           </div>
-          {pane ? <ComponentMenu pane={pane} title={title} /> : null}
+          {pane ? <ComponentActions pane={pane} title={title} active={focused || minimized} narrow={narrow} /> : null}
         </div>
-        {description ? <Text size={300}>{description}</Text> : null}
+        {description && !minimized ? <Text size={300}>{description}</Text> : null}
       </div>
       {children}
     </section>

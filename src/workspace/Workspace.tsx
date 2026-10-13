@@ -38,6 +38,8 @@ const useStyles = makeStyles({
   row: { flexDirection: 'row' },
   col: { flexDirection: 'column' },
   cell: { display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0 },
+  // 最小化したコンポーネントのセル: 見出しだけの高さ（4px グリッド）。空いた領域はほかのセルが使う（FR-151）
+  cellMin: { overflow: 'hidden' },
   sep: {
     flex: '0 0 auto',
     backgroundColor: tokens.colorNeutralStroke2,
@@ -57,6 +59,10 @@ const useStyles = makeStyles({
 });
 
 const KEY_STEP = 0.02;
+
+/** 最小化したコンポーネントの見出しだけの高さと、横に並べたときの幅（4px グリッド。FR-151） */
+export const MINIMIZED_HEIGHT = 48;
+export const MINIMIZED_WIDTH = 240;
 
 const DRAG_THRESHOLD_PX = 4;
 /** 分割線の上に放したときに、近くのコンポーネントへ寄せる距離（分割線の太さ 8px より少し大きく） */
@@ -165,6 +171,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   const autoSize = useLayout((st) => st.autoSize);
   const manualKeys = useLayout((st) => st.manual[st.persona]);
   const maximized = useLayout((st) => st.maximized);
+  const minimizedKeys = useLayout((st) => st.minimized[st.persona]);
+  const minSet = useMemo(() => new Set(minimizedKeys ?? []), [minimizedKeys]);
   const actions = useLayout.getState;
   const byKey = useCallback((k: string) => screens.find((sc) => sc.key === k), [screens]);
   /** 操作中（フォーカスのある）コンポーネント、最後に選んだタブ、ワークスペースの幅 */
@@ -198,6 +206,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     return {
       key,
       maximized: isMax,
+      minimized: minSet.has(key),
+      toggleMinimize: () => a.setMinimized(key, !minSet.has(key)),
       visible: group.length === 1 || active === key,
       inTabs: group.length > 1,
       peers: keysOf(layout).filter((k) => !group.includes(k)).map((k) => ({ key: k, label: byKey(k)?.label ?? k })),
@@ -266,11 +276,22 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     return renderSplit(node, path);
   };
 
-  const renderSplit = (node: SplitNode, path: Path): JSX.Element => (
+  const renderSplit = (node: SplitNode, path: Path): JSX.Element => {
+    const isFolded = (child: LayoutNode): boolean => keysOf(child).every((k) => minSet.has(k)) && maximized === null;
+    // 畳んだセルがあるとき、残りのセルの伸びる割合の合計を 1 にそろえる（合計が 1 未満だと、空いた領域を使い切らない）
+    const open = node.children.reduce((sum, c, i) => (isFolded(c) ? sum : sum + (node.sizes[i] ?? 0)), 0);
+    const anyFolded = node.children.some(isFolded);
+    return (
     <div className={mergeClasses(s.split, node.dir === 'row' ? s.row : s.col)} key={path.join('.')}>
       {node.children.flatMap((child, i) => {
+        const folded = isFolded(child);
+        const cellStyle: CSSProperties = folded
+          ? (node.dir === 'row'
+            ? { flex: `0 0 ${MINIMIZED_WIDTH}px`, alignSelf: 'flex-start', height: MINIMIZED_HEIGHT }
+            : { flex: `0 0 ${MINIMIZED_HEIGHT}px` })
+          : { flex: `${anyFolded && open > 0 ? (node.sizes[i] ?? 0) / open : node.sizes[i]} 1 0` };
         const cell = (
-          <div key={`c${i}`} className={s.cell} style={{ flex: `${node.sizes[i]} 1 0` }}>
+          <div key={`c${i}`} className={mergeClasses(s.cell, folded ? s.cellMin : undefined)} style={cellStyle} data-folded={folded ? 'true' : undefined}>
             {render(child, [...path, i])}
           </div>
         );
@@ -279,12 +300,13 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
           : [cell];
       })}
     </div>
-  );
+    );
+  };
 
   const renderStack = (root: LayoutNode): JSX.Element => (
     <div className={s.stack}>
       {stackedLeaves(root).map((leafNode, i) => (
-        <div key={`k${leafNode.tabs.join('+')}`} className={s.stackCell} data-stacked={i}>
+        <div key={`k${leafNode.tabs.join('+')}`} className={s.stackCell} data-stacked={i} style={leafNode.tabs.every((k) => minSet.has(k)) && maximized === null ? { height: MINIMIZED_HEIGHT } : undefined}>
           {render(leafNode, [i])}
         </div>
       ))}

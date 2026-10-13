@@ -23,6 +23,12 @@ interface LayoutState {
   /** 利用者が手で大きさを変えたコンポーネント（ペルソナ別）。自動の調整で変えない */
   manual: Partial<Record<Persona, string[]>>;
   setAutoSize: (on: boolean) => void;
+  /** 最小化したコンポーネント（ペルソナ別。見出しだけ残して畳む。保存する。FR-151） */
+  minimized: Partial<Record<Persona, string[]>>;
+  /** 左のメニューをアイコンだけにしているか（保存する。FR-151） */
+  navMin: boolean;
+  setMinimized: (key: string, on: boolean) => void;
+  setNavMin: (on: boolean) => void;
   dropMove: (key: string, target: string, zone: DropZone) => void;
   resizeByKeys: (a: string, b: string, delta: number) => void;
   /** 最大化中のコンポーネント（保存しない） */
@@ -70,6 +76,14 @@ export const useLayout = create<LayoutState>()(
         autoSize: true,
         manual: {},
         setAutoSize: (autoSize) => set({ autoSize }),
+        minimized: {},
+        navMin: false,
+        setMinimized: (key, on) => set((st) => {
+          const cur = (st.minimized[st.persona] ?? []).filter((k) => k !== key);
+          // 最小化は最大化と両立しない（最小化すると最大化を解く）
+          return { minimized: { ...st.minimized, [st.persona]: on ? [...cur, key] : cur }, ...(on && st.maximized === key ? { maximized: null } : {}) };
+        }),
+        setNavMin: (navMin) => set({ navMin }),
         dropMove: (key, target, zone) => apply((l) => dropAt(l, key, target, zone)),
         resizeByKeys: (a, b, delta) => {
           const l = effectiveLayout(get());
@@ -93,22 +107,33 @@ export const useLayout = create<LayoutState>()(
           apply((x) => resize(x, path, index, delta));
         },
         activateTab: (key) => apply((l) => activate(l, key)),
-        setMaximized: (maximized) => set({ maximized }),
+        setMaximized: (maximized) => set((st) => ({
+          maximized,
+          // 操作の対象にすると最小化は解ける（FR-151）
+          ...(maximized ? { minimized: { ...st.minimized, [st.persona]: (st.minimized[st.persona] ?? []).filter((k) => k !== maximized) } } : {}),
+        })),
         resetLayout: () => set((s) => {
           const layouts = { ...s.layouts };
           delete layouts[s.persona];
           const manual = { ...s.manual };
           delete manual[s.persona];
-          return { layouts, manual, maximized: null, resetCount: s.resetCount + 1 };
+          const minimized = { ...s.minimized };
+          delete minimized[s.persona];
+          return { layouts, manual, minimized, navMin: false, maximized: null, resetCount: s.resetCount + 1 };
         }),
       };
     },
     {
       name: 'edb.layout',
       version: 1,
-      partialize: (s) => ({ persona: s.persona, layouts: s.layouts, autoSize: s.autoSize, manual: s.manual }),
+      partialize: (s) => ({ persona: s.persona, layouts: s.layouts, autoSize: s.autoSize, manual: s.manual, minimized: s.minimized, navMin: s.navMin }),
       merge: (persisted, current) => {
-        const p = (persisted ?? {}) as Partial<Pick<LayoutState, 'persona' | 'layouts' | 'autoSize' | 'manual'>>;
+        const p = (persisted ?? {}) as Partial<Pick<LayoutState, 'persona' | 'layouts' | 'autoSize' | 'manual' | 'minimized' | 'navMin'>>;
+        const minimized: Partial<Record<Persona, string[]>> = {};
+        for (const name of PERSONAS) {
+          const v = (p.minimized as Record<string, unknown> | undefined)?.[name];
+          if (Array.isArray(v) && v.every((k) => typeof k === 'string')) minimized[name] = v as string[];
+        }
         const persona = PERSONAS.includes(p.persona as Persona) ? (p.persona as Persona) : current.persona;
         const layouts: Partial<Record<Persona, Layout>> = {};
         for (const name of PERSONAS) {
@@ -120,7 +145,7 @@ export const useLayout = create<LayoutState>()(
           const v = (p.manual as Record<string, unknown> | undefined)?.[name];
           if (Array.isArray(v) && v.every((k) => typeof k === 'string')) manual[name] = v as string[];
         }
-        return { ...current, persona, layouts, manual, autoSize: typeof p.autoSize === 'boolean' ? p.autoSize : true };
+        return { ...current, persona, layouts, manual, minimized, navMin: p.navMin === true, autoSize: typeof p.autoSize === 'boolean' ? p.autoSize : true };
       },
     },
   ),
