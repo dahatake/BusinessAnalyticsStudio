@@ -34,7 +34,7 @@ const useStyles = makeStyles({
   toolbar: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalXL, rowGap: tokens.spacingVerticalS },
   layout: {
     display: 'grid',
-    gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 2fr)',
+    gridTemplateColumns: 'minmax(0, 3fr) minmax(240px, 2fr)', // 詳細は最小の幅（PARAM-034）を下回らない（NFR-UX-007 AC-235）
     columnGap: tokens.spacingHorizontalL,
     alignItems: 'start',
     '@media (max-width: 720px)': { gridTemplateColumns: 'minmax(0, 1fr)', rowGap: tokens.spacingVerticalL },

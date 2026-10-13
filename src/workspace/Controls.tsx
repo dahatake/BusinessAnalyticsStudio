@@ -1,6 +1,6 @@
 // ワークスペースの操作: ペルソナの切替、既定のレイアウトに戻す、ドック（FR-014/FR-110）。
 import { useMemo } from 'react';
-import { Button, Menu, MenuItemRadio, MenuList, MenuPopover, MenuTrigger, Text, makeStyles, tokens } from '@fluentui/react-components';
+import { Button, Menu, MenuItemRadio, MenuList, MenuPopover, MenuTrigger, Switch, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { ArrowReset20Regular, Person20Regular } from '@fluentui/react-icons';
 import type { ScreenDefinition } from '../screens/types';
 import { effectiveLayout, useLayout } from '../store/layout';
@@ -44,6 +44,13 @@ export function ResetLayoutButton() {
   return (
     <Button icon={<ArrowReset20Regular aria-hidden />} onClick={reset}>既定のレイアウトに戻す</Button>
   );
+}
+
+/** 操作中のコンポーネントを大きくする自動のサイズ調整の切替（FR-143 AC-228）。いつでも切り替えられる。 */
+export function AutoSizeSwitch() {
+  const on = useLayout((s) => s.autoSize);
+  const set = useLayout((s) => s.setAutoSize);
+  return <Switch checked={on} onChange={(_, d) => set(d.checked)} label="サイズの自動調整" />;
 }
 
 /** 非表示のコンポーネントを再表示するドック。 */
