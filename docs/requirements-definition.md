@@ -474,7 +474,7 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 | FR-141 | 起動スクリプト（Windows・Mac・Linux） | 承認済み | SHOULD | AC-220〜AC-223 | [app-experience.md](requirements/app-experience.md) |
 | FR-142 | すべてのコンポーネントのドラッグでの移動 | 承認済み | SHOULD | AC-224〜AC-225 | [app-experience.md](requirements/app-experience.md) |
 | FR-143 | 操作中のコンポーネントを大きくする自動のサイズ調整 | 承認済み | SHOULD | AC-226〜AC-228、AC-242 | [app-experience.md](requirements/app-experience.md) |
-| FR-144 | 起動後のデモ／実プロジェクトの選択 | 承認済み | MUST | AC-229〜AC-232、AC-236〜AC-241 | [app-experience.md](requirements/app-experience.md) |
+| FR-144 | 起動後のデモ／実プロジェクトの選択 | 承認済み | MUST | AC-229〜AC-232、AC-237〜AC-241（AC-230・AC-236 は廃止・置換） | [app-experience.md](requirements/app-experience.md) |
 | FR-146 | 3D ビューを開いた直後の大きさの追従とクリックの当たり | 承認済み | MUST | AC-243〜AC-244 | [app-core.md](requirements/app-core.md) |
 | NFR-UX-007 | 画面とレイアウト操作への Fluent 2 の適用と最小の読みやすさ | 承認済み | MUST | AC-233〜AC-235 | [app-experience.md](requirements/app-experience.md) |
 | NFR-A11Y-005 | 視覚表現の代替と状態の非色依存 | 承認済み | MUST | AC-216〜AC-217 | [analysis-projects.md](requirements/analysis-projects.md) |
@@ -711,7 +711,7 @@ TBD: なし。競合: なし（ドラフト内の `Esc` の重なりは A-04、�
 
 [ASSUMPTION] A-37: FR-146（E2E-128 の修正）。E2E-128（FR-025・AC-030。3D ビューのクロスハイライト）は基点 b16e88b から fail していた（3D canvas が 300x150 のままで scene.objects の座標が古くクリックが外れる。AUD-38 と同一）。2026-10-13 に利用者の依頼で FR-146・AC-243・AC-244 を追加した（AC-030 と E2E-128 は変更しない）。許容差 {PARAM-036}＝1 CSS px、追従の上限時間 {PARAM-037}＝1 秒は仮の値。解消条件: 実装の修正で E2E-128 と AC-243・AC-244 のケース（台帳への追加は test-designer）が pass すること。影響: FR-025 の AC-030 は修正まで未確認。覆す条件: PARAM の変更。
 
-競合（2026-10-13、Q-013 の回答）: AC-230（0 件で選択画面を出さない）・AC-236（1 件で選択画面を出さない）は FR-144 の新しい本文と両立しない。AC-237・AC-238 が置き換える。旧 AC は台帳（E2E-218・E2E-219、tests/unit/work-target*）の手順（test-designer と ledger.py）で廃止または更新するまで、実行すると fail する見込み。AC-126（空の状態の起動でお手本パックのタイトルを表示）も、起動直後に選択画面が出るため、デモを選ぶ操作を含む形に台帳のケース（E2E-097）を更新する必要がある。
+競合（2026-10-13、Q-013 の回答）: AC-230（0 件で選択画面を出さない）・AC-236（1 件で選択画面を出さない）は FR-144 の新しい本文と両立しない。AC-237・AC-238 が置き換える。AC-230・AC-236 は 2026-10-13 に廃止（置換）し本文から外した（ID は再利用しない）。台帳の E2E-225（AC-230 の被覆用・blocked）は、test-designer が ledger.py で整える。AC-126（空の状態の起動でお手本パックのタイトルを表示）も、起動直後に選択画面が出るため、デモを選ぶ操作を含む形に台帳のケース（E2E-097）を更新する必要がある。
 
 競合（2026-10-13・run 202610130529。いずれも承認済みの文面は変えていない）: ①FR-144 と FR-104・AC-126（起動時に選択画面を出すか。実 Project が 0 件のときだけ AC-126 と両立する読みを A-36 で採り、毎回出す場合は AC-126 の見直しが要る。Q-013）。②FR-144 の「実際のプロジェクト」と生成パイプラインの顧客パック（顧客名・Project 名の入力変数、FR-130）の関係（条件不明による矛盾の疑い。Q-012）。③FR-143 と AC-137（各ペルソナの既定の情報表現が最大の領域）・AC-135（既定への復元）: 操作中のコンポーネントが既定の情報表現以外のとき、最大の領域が移りうる。AC-137 は保存済みのレイアウトも操作もない初期状態の判定とし、FR-143 の初期状態は既定の情報表現のコンポーネントを操作中の扱いにする（A-35。AC-228 で復元を確かめる）。④FR-142 の「自由に」と FR-109（移動・方向・タブ化）: FR-109 は重ならない配置（分割・タブ）を前提とする。重なる浮動配置は要求にせず、必要なら別の質問票にする（提案・仮説に記録）。
 
