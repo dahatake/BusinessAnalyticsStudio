@@ -27,6 +27,20 @@ async function keys(page: Page): Promise<string[]> {
   return out;
 }
 
+/** 祖先に component-*（component-menu を除く）がある要素を除いた、直下のコンポーネントだけ。 */
+async function topKeys(page: Page): Promise<string[]> {
+  return page.getByTestId('workspace').evaluate((ws) => {
+    const sel = '[data-testid^="component-"]:not([data-testid="component-menu"])';
+    const out: string[] = [];
+    ws.querySelectorAll(sel).forEach((el) => {
+      const parent = el.parentElement?.closest(sel);
+      const r = (el as HTMLElement).getBoundingClientRect();
+      if (!parent && r.width > 0 && r.height > 0) out.push((el.getAttribute('data-testid') ?? '').replace('component-', ''));
+    });
+    return out;
+  });
+}
+
 /** 見出しをつかんで (dx, dy) だけ動かす。途中で drop-indicator が見えることを返す。 */
 async function dragByHeading(page: Page, c: Locator, dx: number, dy: number): Promise<boolean> {
   const h = await box(c.getByRole('heading').first());
@@ -46,15 +60,16 @@ test.describe('FR-142 すべてのコンポーネントのドラッグでの移�
   test('FR-142 AC-224 表示中のすべてのコンポーネントをドラッグで動かせ、ドロップ前に置き場所が示され、再読込後も同じ配置', async ({ page, start }) => {
     const app = await start();
     await selectPersona(page, '事業部門');
-    const ks = await keys(page);
+    const ks = await topKeys(page);
     expect(ks.length, 'コンポーネントが 2 つ以上必要').toBeGreaterThanOrEqual(2);
     for (const k of ks) {
       const c = component(page, k);
       const before = await box(c);
       const others = ks.filter((o) => o !== k);
       const target = await box(component(page, others[0]));
+      // 移動先は、タブ化されない余白側（移動先の下端の余白）にする
       const dx = target.x + target.width / 2 - (before.x + before.width / 2);
-      const dy = target.y + target.height - (before.y + before.height / 2) - 4;
+      const dy = target.y + target.height + 6 - (before.y + before.height / 2);
       const shown = await dragByHeading(page, c, dx, dy);
       expect(shown, `${k}: ドロップ前に置ける場所が示されない`).toBe(true);
       const after = await box(component(page, k));
@@ -96,7 +111,7 @@ test.describe('FR-143 操作中のコンポーネントを大きくする自動�
   test('FR-143 AC-226 操作したコンポーネントの面積が基準の 1.5 倍になり、別のコンポーネントを操作すると大きいものが移る', async ({ page, start }) => {
     await start();
     await selectPersona(page, '事業部門');
-    const ks = await keys(page);
+    const ks = await topKeys(page);
     expect(ks.length, '4 つ以上のコンポーネントが必要').toBeGreaterThanOrEqual(4);
     const base: Record<string, number> = {};
     for (const k of ks) base[k] = area(await box(component(page, k)));
@@ -113,7 +128,7 @@ test.describe('FR-143 操作中のコンポーネントを大きくする自動�
     await start();
     await selectPersona(page, '経営層');
     await expect(component(page, 'matrix')).toBeVisible();
-    const ks = (await keys(page)).filter((k) => k !== 'matrix');
+    const ks = (await topKeys(page)).filter((k) => k !== 'matrix');
     expect(ks.length).toBeGreaterThanOrEqual(3);
     await component(page, ks[0]).focus();
     const primary = area(await box(component(page, 'matrix')));
