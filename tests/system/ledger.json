@@ -146,7 +146,12 @@
     "AC-237": "sha256:c0fc3beeaf6dc45b",
     "AC-240": "sha256:9a9a76c37b5a77fe",
     "AC-243": "sha256:64b81e427cf413b1",
-    "AC-244": "sha256:0e34da53c823f470"
+    "AC-244": "sha256:0e34da53c823f470",
+    "AC-246": "sha256:497078984e521d8c",
+    "AC-247": "sha256:c28ae190f4d2148c",
+    "AC-248": "sha256:8b26ee69dd22cf3a",
+    "AC-249": "sha256:6afbeb628863d6bb",
+    "AC-250": "sha256:48e7168573414b71"
   },
   "cases": [
     {
@@ -3826,6 +3831,131 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC-230 の『選択画面を出さない』は AC-237（Q-013 A）に置き換えられた旧 AC。rd-author が AC-230 を廃止にするまで被覆のためだけに残す"
+        }
+      ]
+    },
+    {
+      "id": "E2E-226",
+      "requirement_ids": [
+        "FR-147"
+      ],
+      "ac_ids": [
+        "AC-246"
+      ],
+      "title": "3D ビューを開いてから最初のフレームが 1 秒以内（再読み込み・コトの異常系を含む）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-246",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T02:48:49+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-227",
+      "requirement_ids": [
+        "FR-147"
+      ],
+      "ac_ids": [
+        "AC-247"
+      ],
+      "title": "開いた直後（最初のフレームの前後）のリサイズに追従（連続リサイズの異常系を含む）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-247",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T02:48:51+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-228",
+      "requirement_ids": [
+        "FR-147"
+      ],
+      "ac_ids": [
+        "AC-248"
+      ],
+      "title": "最初のフレーム時点で拠点クリックが当たり各ビューでハイライト（リサイズ後の異常系を含む）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-248",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T02:48:53+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-229",
+      "requirement_ids": [
+        "FR-147"
+      ],
+      "ac_ids": [
+        "AC-249"
+      ],
+      "title": "4 シーンの描画（AC-081）と P による停止・再開（AC-087）が対応後も満たされる",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-081 AC-087",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T02:48:56+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-230",
+      "requirement_ids": [
+        "FR-147"
+      ],
+      "ac_ids": [
+        "AC-250"
+      ],
+      "title": "CPU 負荷条件で AC-243 の判定を 10 回連続 pass",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-250",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T02:48:57+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
         }
       ]
     }
