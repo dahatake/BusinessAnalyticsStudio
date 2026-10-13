@@ -70,6 +70,8 @@ describe('FR-014 AC-017 / FR-110 AC-135 レイアウトのストア', () => {
     const st = useLayout.getState();
     expect(st.persona).toBe('事業部門');
     expect(st.maximized).toBeNull();
+    // FR-110 AC-135 / FR-143: 戻した回数を進め、Workspace が操作中の扱いを解けるようにする
+    expect(st.resetCount).toBe(1);
     expect(st.layouts['事業部門']).toBeUndefined();
     expect(effectiveLayout(st)).toEqual(defaultLayout('事業部門'));
     expect(st.layouts['IT']).toBeTruthy(); // 他のペルソナの保存は残る

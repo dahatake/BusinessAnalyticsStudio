@@ -29,6 +29,8 @@ interface LayoutState {
   maximized: string | null;
   /** 直近に「見せたい」と指示されたコンポーネント（ナビ・再表示・タブ選択。保存しない）。最小幅でタブにまとめた中でも前面にするために使う */
   revealed: { key: string } | null;
+  /** 「既定のレイアウトに戻す」を行った回数（保存しない）。戻した直後は操作中の扱いを解き、次の操作まで既定の寸法にする（FR-110 AC-135、FR-143） */
+  resetCount: number;
   setPersona: (p: Persona) => void;
   hideComponent: (key: string) => void;
   showComponent: (key: string) => void;
@@ -64,6 +66,7 @@ export const useLayout = create<LayoutState>()(
         layouts: {},
         maximized: null,
         revealed: null,
+        resetCount: 0,
         autoSize: true,
         manual: {},
         setAutoSize: (autoSize) => set({ autoSize }),
@@ -96,7 +99,7 @@ export const useLayout = create<LayoutState>()(
           delete layouts[s.persona];
           const manual = { ...s.manual };
           delete manual[s.persona];
-          return { layouts, manual, maximized: null };
+          return { layouts, manual, maximized: null, resetCount: s.resetCount + 1 };
         }),
       };
     },

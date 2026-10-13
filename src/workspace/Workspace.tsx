@@ -173,6 +173,9 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   // ナビなどで見せると指示されたコンポーネントは、最小幅でタブにまとめた中でも前面にする（非表示のタブにはフォーカスできないため）
   const revealed = useLayout((st) => st.revealed);
   useEffect(() => { if (revealed) setPicked(revealed.key); }, [revealed]);
+  // 既定のレイアウトに戻した直後は、操作中の扱いを解く（次にコンポーネントを操作するまで既定の寸法。FR-110 AC-135 / FR-143）
+  const resetCount = useLayout((st) => st.resetCount);
+  useEffect(() => { if (resetCount > 0) { setFocusKey(null); setPicked(null); } }, [resetCount]);
   const [width, setWidth] = useState(0);
   const [drag, setDrag] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
