@@ -287,7 +287,7 @@ function DiscussionTreeScreen() {
                     </span>
                     <Badge appearance="outline" style={{ borderColor: KIND_TOKEN[n.kind] }}>{KIND_MARK[n.kind]} {n.kind}</Badge>
                     <Text weight={n.parentId === null ? 'semibold' : 'regular'} className={s.title}>{n.title}</Text>
-                    <Badge appearance={n.origin === 'human' ? 'filled' : 'tint'} color={n.origin === 'human' ? 'brand' : 'informative'} size="small">
+                    <Badge appearance={n.origin === 'human' ? 'filled' : 'tint'} color={n.origin === 'human' ? 'brand' : 'informative'} size="medium">
                       {n.origin === 'ai' ? 'AI 生成' : n.origin === 'human' ? '人が編集' : 'パックの議題'}
                     </Badge>
                     {n.rationale ? <RationaleLink r={n.rationale} /> : null}

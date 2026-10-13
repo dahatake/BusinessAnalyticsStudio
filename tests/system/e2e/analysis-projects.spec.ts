@@ -3,7 +3,7 @@
 // 画面の探し方は tests/system/CONTRACT.md §8。AC-207 は Q-009 A（端末内保存）で承認済み。
 import fs from 'node:fs';
 import path from 'node:path';
-import { test, expect } from '../support/fixtures';
+import { test, expect, reloadAndEnter, gotoAndEnter } from '../support/fixtures';
 import { DIST_DIR } from '../support/server';
 import type { Page, Locator } from '@playwright/test';
 
@@ -247,7 +247,7 @@ test.describe('FR-137 端末内保存と復元', () => {
     await input.fill('7');
     await input.blur();
     await expect(analysis.getByTestId('analysis-result')).toContainText('7', { timeout: REFLECT_MS });
-    await page.reload();
+    await reloadAndEnter(page, '復元株式会社');
     await expect(page.getByRole('region', { name: '企業 復元株式会社' })).toBeVisible();
     await reopenProject(page, '復元株式会社', '復元案件');
     await expect(stepper(page).locator('[data-step-state="current"]')).toContainText('KPI 測定');
@@ -265,12 +265,12 @@ test.describe('FR-137 端末内保存と復元', () => {
     const app = await start();
     await registerCompany(page, '端末限定株式会社');
     await createProject(page, '端末限定株式会社', '端末限定案件');
-    await page.reload();
+    await reloadAndEnter(page, '端末限定株式会社');
     await expect(page.getByRole('region', { name: '企業 端末限定株式会社' })).toBeVisible();
     expect(sent.filter((s) => s.includes('端末限定') || s.includes(encodeURIComponent('端末限定'))), `送信された: ${sent.join(' | ')}`).toEqual([]);
     const other = await browser.newContext();
     const p2 = await other.newPage();
-    await p2.goto(app.url);
+    await gotoAndEnter(p2, app.url);
     await expect(p2.getByRole('region', { name: '企業 端末限定株式会社' })).toHaveCount(0);
     await other.close();
   });
@@ -354,7 +354,7 @@ test.describe('NFR-UX-006 レイアウトの変更・復元', () => {
     await expect(filter).toHaveValue('a');
     await expect(analysis.locator(`[data-testid="result-item"][data-entity-id="${itemId}"]`).first()).toHaveAttribute('aria-selected', 'true');
     // 再表示（開き直し）で復元される
-    await page.reload();
+    await reloadAndEnter(page, '合成株式会社A');
     await reopenProject(page, '合成株式会社A', '業務改善 2026');
     const restored = (await page.getByTestId('analysis').getByTestId('analysis-result').boundingBox())!;
     expect(Math.abs(restored.x - moved.x)).toBeLessThan(5);
@@ -397,7 +397,7 @@ test.describe('NFR-SEC-004 外部 AI への送信を許可しない既定の状�
     await input.fill('7');
     await input.blur();
     await expect(analysis.getByTestId('analysis-result')).toContainText('7', { timeout: REFLECT_MS });
-    await page.reload();
+    await reloadAndEnter(page, COMPANY);
     await expect(page.getByRole('region', { name: `企業 ${COMPANY}` })).toBeVisible();
     const leaks = seen.filter((s) => s.includes('ZQ91') || s.includes(COMPANY) || s.includes(PROJECT));
     expect(leaks, `名称が通信に含まれた: ${leaks.join(' | ')}`).toEqual([]);
@@ -410,7 +410,7 @@ test.describe('NFR-SEC-004 外部 AI への送信を許可しない既定の状�
     await start();
     await openNewProject(page, COMPANY, PROJECT);
     await startAnalysis(page, 'SWOT 分析');
-    await page.reload();
+    await reloadAndEnter(page, COMPANY);
     expect(fs.existsSync(DIST_DIR), 'dist/ がない（npm run build が必要）').toBe(true);
     const hits = listAllFiles(DIST_DIR).filter((f) => {
       const buf = fs.readFileSync(f);

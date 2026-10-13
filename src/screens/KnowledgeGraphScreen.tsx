@@ -35,7 +35,7 @@ const useStyles = makeStyles({
   svg: { width: '100%', height: 'auto', maxHeight: '70vh', minHeight: '320px', flexShrink: 0, display: 'block', backgroundColor: tokens.colorNeutralBackground2, borderRadius: tokens.borderRadiusMedium },
   node: { cursor: 'pointer', outline: 'none', ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}` } },
   nodeLabel: {
-    width: '92px', height: '34px', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center', fontSize: tokens.fontSizeBase100,
+    width: '92px', height: '34px', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center', fontSize: tokens.fontSizeBase200,
     lineHeight: tokens.lineHeightBase100, color: tokens.colorNeutralForeground1, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
     overflowWrap: 'anywhere', pointerEvents: 'none',
   },

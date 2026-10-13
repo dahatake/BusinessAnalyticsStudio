@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準と、お手本パック（モノ／コト）の内容から決める。
 // 3D・地図の内部の状態は、CONTRACT.md §6 のテスト用フック（window.__edbTest）で読む。
 import type { Page } from '@playwright/test';
-import { test, expect, openScreen, component, entity, hook, scene, expectCanvasDrawn, captureDownload, setEditMode } from '../support/fixtures';
+import { test, expect, openScreen, component, entity, hook, scene, expectCanvasDrawn, waitFirstFrame, captureDownload, setEditMode } from '../support/fixtures';
 import { examplePack, makeVariant } from '../support/packs';
 
 const mono = examplePack('mono');
@@ -26,7 +26,17 @@ async function nextFrames(page: Page, n = 2) {
   await page.evaluate((k) => new Promise<void>((r) => { let i = 0; const f = () => (++i >= k ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); }), n);
 }
 async function clickSceneObject(page: Page, entityId: string) {
-  const o = (await scene.objects(page)).find((x) => x.entityId === entityId && x.visible);
+  // カメラが動いている間は当たりがずれるので、座標が 2 フレーム連続で同じになるのを待ってからクリックする（最大 約 3 秒。収束しなければ直近の座標で押す）
+  const read = async () => (await scene.objects(page)).find((x) => x.entityId === entityId && x.visible);
+  let o = await read();
+  for (let i = 0; i < 60; i++) {
+    await nextFrames(page, 2);
+    const n = await read();
+    const same = !!o && !!n && Math.abs(o.x - n.x) < 0.5 && Math.abs(o.y - n.y) < 0.5;
+    o = n ?? o;
+    if (same) break;
+    await page.waitForTimeout(50);
+  }
   expect(o, `3D ビューに ${entityId} が表示されていない`).toBeTruthy();
   await page.mouse.click(o!.x, o!.y);
 }
@@ -168,6 +178,63 @@ test.describe('FR-025 クロスハイライト', () => {
     expect(o.x).toBeLessThan(b.x + b.width);
     expect(o.y).toBeGreaterThan(b.y);
     expect(o.y).toBeLessThan(b.y + b.height);
+  });
+});
+
+test.describe('FR-146 3D ビューを開いた直後の大きさの追従とクリックの当たり', () => {
+  const TOL = 1; // PARAM-036（CSS px）
+  const WITHIN_MS = 1000; // PARAM-037（1 秒）
+
+  async function sizes(page: Page) {
+    return page.locator('[data-testid="component-view3d"] canvas').first().evaluate((cv) => {
+      const c = cv.getBoundingClientRect();
+      const p = (cv.parentElement as HTMLElement).getBoundingClientRect();
+      return { cw: c.width, ch: c.height, pw: p.width, ph: p.height };
+    });
+  }
+  function matches(s: { cw: number; ch: number; pw: number; ph: number }): boolean {
+    return Math.abs(s.cw - s.pw) <= TOL && Math.abs(s.ch - s.ph) <= TOL && !(Math.round(s.cw) === 300 && Math.round(s.ch) === 150 && (s.pw > 301 || s.ph > 151));
+  }
+
+  // FR-146 AC-243
+  test('FR-146 AC-243 3D ビューを開いた直後に、描画面の大きさが表示領域と 1 CSS px 以内で一致する（300×150 のままではない）', async ({ page, start }) => {
+    await start();
+    await openScreen(page, 'view3d');
+    await expect.poll(async () => matches(await sizes(page)), { timeout: WITHIN_MS, message: '描画面が表示領域の大きさに追従しない' }).toBe(true);
+  });
+
+  // FR-146 AC-243（異常系: 画面の大きさを変えた直後も追従する。小さくしても大きくしても）
+  test('FR-146 AC-243 異常系: ウィンドウの大きさを小さく・大きく変えた直後にも、描画面が表示領域に追従する', async ({ page, start }) => {
+    await start();
+    await openScreen(page, 'view3d');
+    for (const vp of [{ width: 900, height: 600 }, { width: 1400, height: 900 }]) {
+      await page.setViewportSize(vp);
+      await expect.poll(async () => matches(await sizes(page)), { timeout: WITHIN_MS, message: `${vp.width}x${vp.height} で追従しない` }).toBe(true);
+    }
+  });
+
+  // FR-146 AC-244
+  test('FR-146 AC-244 3D ビューを開いた直後に拠点をクリックすると選ばれ、地図・表・ガント・出典で同じ ID がハイライトされる', async ({ page, start }) => {
+    await start();
+    const site = mono.entities().find((e) => e.type === 'site');
+    expect(site, 'お手本パックに拠点がない').toBeTruthy();
+    await openScreen(page, 'view3d');
+    await clickSceneObject(page, site.id);
+    for (const key of ['map', 'table', 'gantt', 'sources']) {
+      const c = await openScreen(page, key);
+      await expect(entity(c, site.id).first(), `${key} でハイライトされない`).toHaveAttribute('data-highlight', /selected|related/);
+    }
+  });
+
+  // FR-146 AC-244（異常系: 大きさを変えた直後のクリックでも、現在の描画面の位置で当たる）
+  test('FR-146 AC-244 異常系: ウィンドウの大きさを変えた直後でも、拠点のクリックがその拠点を選ぶ', async ({ page, start }) => {
+    await start();
+    const site = mono.entities().find((e) => e.type === 'site');
+    await openScreen(page, 'view3d');
+    await page.setViewportSize({ width: 1000, height: 650 });
+    await clickSceneObject(page, site.id);
+    const t = await openScreen(page, 'table');
+    await expect(entity(t, site.id).first()).toHaveAttribute('data-highlight', /selected|related/);
   });
 });
 
@@ -346,7 +413,7 @@ test.describe('FR-071 グローバルのアニメーション停止', () => {
     await start();
     await openScreen(page, 'view3d');
     await toggleAnimation(page, '再生中');
-    const f0 = (await scene.info(page)).frame;
+    const f0 = await waitFirstFrame(page);
     await page.waitForTimeout(500);
     expect((await scene.info(page)).frame, '再生中に 3D が連続描画されていない').toBeGreaterThan(f0);
     await page.keyboard.press('p');

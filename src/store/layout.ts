@@ -4,8 +4,9 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import {
   DEFAULT_PERSONA, PERSONAS, activate, arrangeAll, defaultLayout, hide, isLayout, isVisible, mergeIntoTabs, move, prune, resize, show,
-  splitFromTabs, toggleDirection, type Layout, type Move, type Path, type Persona,
+  splitFromTabs, splitBetween, toggleDirection, dropAt, getAt, type DropZone, type Layout, type Move, type Path, type Persona,
 } from '../workspace/layoutModel';
+import { resizedKeys } from '../workspace/autosize';
 
 /** 画面の registry に登録されたコンポーネントのキー。App が起動時に設定する。 */
 let available: ReadonlySet<string> = new Set();
@@ -17,8 +18,19 @@ interface LayoutState {
   persona: Persona;
   /** 利用者が変えたレイアウト。ないペルソナは既定のレイアウト */
   layouts: Partial<Record<Persona, Layout>>;
+  /** 操作中のコンポーネントを大きくする自動のサイズ調整（FR-143）。保存する */
+  autoSize: boolean;
+  /** 利用者が手で大きさを変えたコンポーネント（ペルソナ別）。自動の調整で変えない */
+  manual: Partial<Record<Persona, string[]>>;
+  setAutoSize: (on: boolean) => void;
+  dropMove: (key: string, target: string, zone: DropZone) => void;
+  resizeByKeys: (a: string, b: string, delta: number) => void;
   /** 最大化中のコンポーネント（保存しない） */
   maximized: string | null;
+  /** 直近に「見せたい」と指示されたコンポーネント（ナビ・再表示・タブ選択。保存しない）。最小幅でタブにまとめた中でも前面にするために使う */
+  revealed: { key: string } | null;
+  /** 「既定のレイアウトに戻す」を行った回数（保存しない）。戻した直後は操作中の扱いを解き、次の操作まで既定の寸法にする（FR-110 AC-135、FR-143） */
+  resetCount: number;
   setPersona: (p: Persona) => void;
   hideComponent: (key: string) => void;
   showComponent: (key: string) => void;
@@ -53,36 +65,62 @@ export const useLayout = create<LayoutState>()(
         persona: DEFAULT_PERSONA,
         layouts: {},
         maximized: null,
+        revealed: null,
+        resetCount: 0,
+        autoSize: true,
+        manual: {},
+        setAutoSize: (autoSize) => set({ autoSize }),
+        dropMove: (key, target, zone) => apply((l) => dropAt(l, key, target, zone)),
+        resizeByKeys: (a, b, delta) => {
+          const l = effectiveLayout(get());
+          const at = splitBetween(l, a, b);
+          if (!at || !l) return;
+          const keys = resizedKeys(getAt(l, at.path), at.index);
+          set((st) => ({ manual: { ...st.manual, [st.persona]: [...new Set([...(st.manual[st.persona] ?? []), ...keys])] } }));
+          apply((x) => resize(x, at.path, at.index, delta));
+        },
         setPersona: (persona) => set({ persona, maximized: null }),
         hideComponent: (key) => apply((l) => hide(l, key), get().maximized === key ? null : get().maximized),
-        showComponent: (key) => apply((l) => show(l, key)),
+        showComponent: (key) => { apply((l) => show(l, key)); set({ revealed: { key } }); },
         moveComponent: (key, dir) => apply((l) => move(l, key, dir)),
         toggleDirection: (key) => apply((l) => toggleDirection(l, key)),
         mergeTabs: (key, target) => apply((l) => mergeIntoTabs(l, key, target)),
         untab: (key) => apply((l) => splitFromTabs(l, key)),
-        resizeAt: (path, index, delta) => apply((l) => resize(l, path, index, delta)),
+        resizeAt: (path, index, delta) => {
+          const l = effectiveLayout(get());
+          const keys = l ? resizedKeys(getAt(l, path), index) : [];
+          set((st) => ({ manual: { ...st.manual, [st.persona]: [...new Set([...(st.manual[st.persona] ?? []), ...keys])] } }));
+          apply((x) => resize(x, path, index, delta));
+        },
         activateTab: (key) => apply((l) => activate(l, key)),
         setMaximized: (maximized) => set({ maximized }),
         resetLayout: () => set((s) => {
           const layouts = { ...s.layouts };
           delete layouts[s.persona];
-          return { layouts, maximized: null };
+          const manual = { ...s.manual };
+          delete manual[s.persona];
+          return { layouts, manual, maximized: null, resetCount: s.resetCount + 1 };
         }),
       };
     },
     {
       name: 'edb.layout',
       version: 1,
-      partialize: (s) => ({ persona: s.persona, layouts: s.layouts }),
+      partialize: (s) => ({ persona: s.persona, layouts: s.layouts, autoSize: s.autoSize, manual: s.manual }),
       merge: (persisted, current) => {
-        const p = (persisted ?? {}) as Partial<Pick<LayoutState, 'persona' | 'layouts'>>;
+        const p = (persisted ?? {}) as Partial<Pick<LayoutState, 'persona' | 'layouts' | 'autoSize' | 'manual'>>;
         const persona = PERSONAS.includes(p.persona as Persona) ? (p.persona as Persona) : current.persona;
         const layouts: Partial<Record<Persona, Layout>> = {};
         for (const name of PERSONAS) {
           const v = (p.layouts as Record<string, unknown> | undefined)?.[name];
           if (v !== undefined && isLayout(v)) layouts[name] = v;
         }
-        return { ...current, persona, layouts };
+        const manual: Partial<Record<Persona, string[]>> = {};
+        for (const name of PERSONAS) {
+          const v = (p.manual as Record<string, unknown> | undefined)?.[name];
+          if (Array.isArray(v) && v.every((k) => typeof k === 'string')) manual[name] = v as string[];
+        }
+        return { ...current, persona, layouts, manual, autoSize: typeof p.autoSize === 'boolean' ? p.autoSize : true };
       },
     },
   ),

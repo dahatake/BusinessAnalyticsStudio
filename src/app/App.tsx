@@ -30,7 +30,7 @@ import { GlobalSearch } from '../search/GlobalSearch';
 import { isComponentVisible, setAvailableComponents, useLayout } from '../store/layout';
 import { usePackStore } from '../store/pack';
 import { checkTemplateVersion, versionWarning } from '../version';
-import { Dock, PersonaMenu, ResetLayoutButton } from '../workspace/Controls';
+import { AutoSizeSwitch, Dock, PersonaMenu, ResetLayoutButton } from '../workspace/Controls';
 import { Workspace } from '../workspace/Workspace';
 import { IntensityIndicator } from '../show/IntensityIndicator';
 import { ShowStage } from '../show/ShowStage';
@@ -144,7 +144,7 @@ export function App() {
         onSelect={onSelect}
         stepper={openProjectId ? <Stepper onNavigate={onSelect} /> : null}
         headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><AiStatus /></>}
-        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /></>}
+        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><AutoSizeSwitch /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /></>}
         dock={<Dock screens={SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
       >

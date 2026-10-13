@@ -3,7 +3,7 @@
 import JSZip from 'jszip';
 import path from 'node:path';
 import type { Page } from '@playwright/test';
-import { test, expect, openScreen, entity, captureDownload, setEditMode, failingFsAccess, component } from '../support/fixtures';
+import { test, expect, openScreen, entity, captureDownload, setEditMode, failingFsAccess, component, gotoAndEnter } from '../support/fixtures';
 import { examplePack, packWithInternal, SYNTHETIC_INTERNAL_TOKEN, ANONYMIZED_LABEL } from '../support/packs';
 
 const mono = examplePack('mono');
@@ -63,8 +63,7 @@ test.describe('FR-051 議論データの保存と復元', () => {
     // 空の状態のアプリ（別のブラウザーのプロファイル）で読み込む
     const ctx = await browser.newContext({ locale: 'ja-JP', timezoneId: 'Asia/Tokyo' });
     const p2 = await ctx.newPage();
-    await p2.goto(app.url);
-    await p2.keyboard.press('Escape');
+    await gotoAndEnter(p2, app.url);
     await p2.getByTestId('workspace').waitFor();
     const [chooser] = await Promise.all([p2.waitForEvent('filechooser'), p2.getByRole('button', { name: /開く|読み込む/ }).first().click()]);
     await chooser.setFiles({ name: file.name, mimeType: 'text/markdown', buffer: file.data });

@@ -397,7 +397,7 @@ test.describe('FR-102 顧客パックの検証', () => {
 });
 
 test.describe('FR-104 お手本パックでの起動', () => {
-  // FR-104 AC-126
+  // FR-104 AC-126（FR-144 A-36: 起動時の選択画面でデモを選んだ後の状態。skipOpening がデモを選ぶ）
   test('FR-104 AC-126 public/data が空なら、お手本パックの架空企業名がタイトルに出て「お手本パック」で起動したことが示される', async ({ page, start }) => {
     await start({ pack: null });
     await expect(page).toHaveTitle(new RegExp(mono.customerName));
