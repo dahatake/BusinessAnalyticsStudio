@@ -13,6 +13,7 @@ import { SceneCanvas } from '../three/SceneCanvas';
 import { Breadcrumb, Minimap, useLodNavigation } from '../three/LodNavigator';
 import { useTwinLayout, twinTableRows } from '../three/twin';
 import { sceneObjects } from '../three/twinProbe';
+import { registerSceneArea } from '../three/sceneViewport';
 
 const useStyles = makeStyles({
   tabs: { marginBottom: tokens.spacingVerticalM },
@@ -81,7 +82,7 @@ export function View3DScreen() {
       ) : (
         <>
           {scene === 'hero' && lod.layout && lod.layout.objects.length > 0 && <Breadcrumb chain={lod.chain} />}
-          <div className={s.stage}>
+          <div className={s.stage} ref={registerSceneArea}>
             <SceneCanvas toBe={toBe} />
             {scene === 'hero' && lod.layout && lod.layout.objects.length > 0 && <Minimap layout={lod.layout} chain={lod.chain} />}
             <AnnotationLayer viewKey="view3d" label="3D ビュー" active={annotating} />

@@ -6,9 +6,9 @@ import { getEntityGraph } from '../selection/hooks';
 import { relatedSet } from '../selection/model';
 import { useSelectionStore } from '../store/selection';
 import { syncLod, useLod } from '../store/lod';
-import { CAMERA_FOV, useCameraRig } from './cameraRig';
+import { CAMERA_FOV, rehomeIfPristine, useCameraRig } from './cameraRig';
 import { pickPoints, type TwinLayout } from './entityLayout';
-import { viewportRect, type ViewportRect } from './sceneViewport';
+import { ensureCanvasInView, flushSceneSize, viewportAspect, viewportRect, type ViewportRect } from './sceneViewport';
 import { getTwinLayout } from './twin';
 import { twinGeometry, twinScale } from './twinGeometry';
 
@@ -65,6 +65,10 @@ const dir = new THREE.Vector3();
 export function sceneObjects(): SceneObjectInfo[] {
   const layout = getTwinLayout();
   if (!layout) return [];
+  // 座標を返す前に、描画面の大きさ・見える位置・ホームを今の表示領域に合わせる（開いた直後・大きさを変えた直後でも、クリックが外れない。FR-146）
+  flushSceneSize();
+  ensureCanvasInView();
+  rehomeIfPristine(viewportAspect());
   syncLod();
   const key = useLod.getState().key;
   const { meshes } = ensureProbe(layout, key);

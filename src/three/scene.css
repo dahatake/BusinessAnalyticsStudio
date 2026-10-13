@@ -1,0 +1,7 @@
+/* 3D の描画面（canvas）は、作られた瞬間から表示領域いっぱいにする（FR-146 AC-243）。
+   描画の初期化で画面が止まっている間も、既定の 300×150 のまま残らない。ピクセルの大きさは SizeSync が追って合わせる。 */
+.r3f-fill canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
