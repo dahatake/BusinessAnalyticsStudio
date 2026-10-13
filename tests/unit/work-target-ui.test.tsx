@@ -111,7 +111,7 @@ describe('FR-144 ProjectsPanel（描画）', () => {
       await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
       expect(st().openId).toBe(p1);
       fireEvent.click(screen.getByRole('button', { name: 'デモへ切り替える' }));
-      fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: '切り替える' }));
+      await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: '切り替える' })));
       await waitFor(() => expect(st().openId).toBeNull());
       expect(screen.getByTestId('work-target').textContent).toBe('デモ');
       expect(useAnalyses.getState().drafts[p1 ?? '']?.param).toBe('9');
@@ -183,7 +183,7 @@ describe('FR-144 ProjectsPanel（描画）', () => {
     // もう一度デモへ → 「切り替える」で切替。入力は Project に残り、企業一覧は出ない
     fireEvent.click(screen.getByRole('button', { name: '作業先' }));
     fireEvent.click(within(await screen.findByRole('dialog', { name: '作業先の選択' })).getByRole('option', { name: /デモ/ }));
-    fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: '切り替える' }));
+    await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: '切り替える' })));
     await waitFor(() => expect(st().openId).toBeNull());
     expect(screen.getByTestId('work-target').textContent).toBe('デモ');
     expect(screen.queryByText(/業務改善 2026/)).toBeNull(); // 企業一覧・Project は出ない（作業先の表示は「デモ」）

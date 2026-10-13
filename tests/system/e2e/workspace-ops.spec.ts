@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準（docs/requirements/app-experience.md の FR-148〜154・NFR-UX-008）だけから決める。
 // 画面の探し方は tests/system/CONTRACT.md §10。PARAM-040=24 CSS px、PARAM-041=200 ms、PARAM-042=32 CSS px。
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, selectPersona, setEditMode } from '../support/fixtures';
+import { test, expect, openScreen, component, selectPersona, setEditMode, reloadAndEnter } from '../support/fixtures';
 
 const HIT = 24; // PARAM-040
 const MOTION_MS = 200; // PARAM-041
@@ -59,7 +59,7 @@ test.describe('FR-148 最上段の作業先メニュー', () => {
   test('FR-148 AC-251 企業 2 社（各 2 Project）で、作業先メニューにデモと 4 Project が企業名・Project 名で並び、選ぶと移動して表示が変わる', async ({ page, start }) => {
     await start();
     await seedProjects(page, '合成株式会社A', ['業務改善 2026', '在庫最適化']);
-    await page.getByRole('button', { name: 'Project 一覧へ' }).click().catch(() => undefined);
+    await page.getByRole('button', { name: 'Project 一覧へ' }).click({ timeout: 500 }).catch(() => undefined);
     await seedProjects(page, '合成株式会社B', ['需要予測', '品質改善']);
     const menu = page.getByTestId('work-target-menu');
     await menu.click();
@@ -168,7 +168,7 @@ test.describe('FR-150 操作アイコンの常時表示', () => {
     await selectPersona(page, '事業部門');
     const [k] = await topKeys(page);
     const c = component(page, k);
-    await page.getByRole('switch', { name: 'サイズの自動調整' }).uncheck().catch(() => undefined);
+    await page.getByRole('switch', { name: 'サイズの自動調整' }).uncheck({ timeout: 500 }).catch(() => undefined);
     const before = await box(c);
     await c.focus();
     await page.waitForTimeout(400);
@@ -370,7 +370,7 @@ test.describe('FR-153 KPI と OKR の定義', () => {
     // (50-0)/(200-0)=25%、(20-10)/(30-10)=50%
     await expect(c.getByTestId('kpi-achievement').nth(0)).toContainText('25%');
     await expect(c.getByTestId('kpi-achievement').nth(1)).toContainText('50%');
-    await app.reload();
+    await reloadAndEnter(page, '合成株式会社A');
     await page.getByRole('link', { name: '業務改善 2026' }).click();
     await expect(component(page, 'kpi-okr').getByTestId('kpi-achievement').nth(0)).toContainText('25%');
     await page.getByRole('button', { name: 'Project 一覧へ' }).click();

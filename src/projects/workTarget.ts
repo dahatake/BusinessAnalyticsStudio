@@ -49,6 +49,16 @@ export function targetOptions(
   ];
 }
 
+export interface MenuCompanyGroup { company: Company; projects: Project[] }
+
+/** 最上段の作業先メニュー（FR-148）の項目: デモと、登録済みのすべての企業（Project をまとめる。0 件の企業も出す）。選択画面と違い、デモは常に出す */
+export function menuGroups(projects: readonly Project[], companies: readonly Company[]): MenuCompanyGroup[] {
+  const active = activeProjects(projects);
+  return companies.map((company) => ({ company, projects: active.filter((p) => p.companyId === company.id) }));
+}
+
+export const MENU_DEMO_LABEL = 'デモ（架空企業のお手本パック）';
+
 export type TargetChoice = { kind: 'demo' } | { kind: 'register' } | { kind: 'project'; id: string };
 
 export function parseChoice(value: string): TargetChoice | null {

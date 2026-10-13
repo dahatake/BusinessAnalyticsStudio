@@ -11,6 +11,7 @@ import { useRestoreStatus } from '../store/persist';
 import { useSettings } from '../store/settings';
 import { useWorkTargetUi } from './workTargetUi';
 import { WorkTargetPicker } from './WorkTargetPicker';
+import { WorkTargetMenu } from './WorkTargetMenu';
 import { shouldShowStartupPicker, workTargetLabel, type TargetChoice } from './workTarget';
 
 const useStyles = makeStyles({
@@ -143,6 +144,7 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
   useEffect(() => { setSlot(document.getElementById('projects-head-slot')); }, []);
   const head = (
     <div className={s.head} data-testid="projects-head">
+      <WorkTargetMenu projects={st.projects} companies={st.companies} openId={st.openId} demoOnly={demoOnly} onChoose={choose} onCreateProject={(company) => setModal({ kind: 'project', company })} />
       <Text weight="semibold">作業先:</Text>
       <Text weight="semibold" data-testid="work-target" aria-live="polite">{workTargetLabel(st.openId, st.projects, st.companies)}</Text>
       {demoOnly ? <Text data-testid="demo-target-notice">お手本パックのデモで作業しています（実際の Project の内容は混ざりません）</Text> : null}
