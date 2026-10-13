@@ -77,3 +77,26 @@ export function viewportAspect(): number {
   const r = viewportRect();
   return r.width / r.height;
 }
+
+/** 描画面の中身の大きさの変更をまとめる時間（ミリ秒） */
+export const RESIZE_SETTLE_MS = 150;
+
+/**
+ * 表示領域の大きさの通知。最初の 1 回はすぐ通し（描画面と中身をすぐ作る）、以降の変更は止まってから 1 回にまとめる。
+ * 描画面の中身（ピクセル）の大きさの変更は重く、変更のたびに行うと画面が止まるため（FR-146 AC-243）。
+ */
+export class SettlingResizeObserver {
+  private readonly ro: ResizeObserver;
+  private first = true;
+  private timer: ReturnType<typeof setTimeout> | null = null;
+  constructor(cb: ResizeObserverCallback) {
+    this.ro = new ResizeObserver((entries) => {
+      if (this.first) { this.first = false; cb(entries, this as unknown as ResizeObserver); return; }
+      if (this.timer) clearTimeout(this.timer);
+      this.timer = setTimeout(() => { this.timer = null; cb(entries, this as unknown as ResizeObserver); }, RESIZE_SETTLE_MS);
+    });
+  }
+  observe(target: Element, options?: ResizeObserverOptions): void { this.ro.observe(target, options); }
+  unobserve(target: Element): void { this.ro.unobserve(target); }
+  disconnect(): void { if (this.timer) clearTimeout(this.timer); this.ro.disconnect(); }
+}

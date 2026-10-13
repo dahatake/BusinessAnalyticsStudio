@@ -1,7 +1,46 @@
 // FR-146 AC-243 3D の描画面を表示領域の大きさへ追従させる判定（needsResize）の単体テスト。
 // 画面での確認（開いた直後・大きさの変更直後の一致、クリックの当たり）は System Test（E2E-128・223・224）が行う。
-import { describe, expect, it } from 'vitest';
-import { ensureCanvasInView, needsResize, registerSceneCanvas } from '../../src/three/sceneViewport';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { RESIZE_SETTLE_MS, SettlingResizeObserver, ensureCanvasInView, needsResize, registerSceneCanvas } from '../../src/three/sceneViewport';
+
+// FR-146 AC-243 表示領域の大きさの通知は、最初の 1 回はすぐ、以降は止まってから 1 回にまとめる（150ms）
+describe('FR-146 AC-243 SettlingResizeObserver', () => {
+  let fire: (entries: unknown[]) => void = () => {};
+  let disconnected = 0;
+  beforeEach(() => {
+    vi.useFakeTimers();
+    disconnected = 0;
+    vi.stubGlobal('ResizeObserver', class {
+      constructor(cb: (e: unknown[]) => void) { fire = cb; }
+      observe() {}
+      unobserve() {}
+      disconnect() { disconnected += 1; }
+    });
+  });
+  afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
+
+  it('最初の通知はすぐ通し、続く通知は止まってから 1 回だけ通す', () => {
+    const cb = vi.fn();
+    new SettlingResizeObserver(cb as never);
+    fire([1]);
+    expect(cb).toHaveBeenCalledTimes(1);
+    fire([2]); fire([3]);
+    vi.advanceTimersByTime(RESIZE_SETTLE_MS - 1);
+    expect(cb).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(1);
+    expect(cb).toHaveBeenCalledTimes(2);
+    expect(cb.mock.calls[1]?.[0]).toEqual([3]);
+  });
+  it('解除すると、待っている通知は出ない', () => {
+    const cb = vi.fn();
+    const o = new SettlingResizeObserver(cb as never);
+    fire([1]); fire([2]);
+    o.disconnect();
+    vi.advanceTimersByTime(RESIZE_SETTLE_MS * 2);
+    expect(cb).toHaveBeenCalledTimes(1);
+    expect(disconnected).toBe(1);
+  });
+});
 
 // FR-146 AC-244 ウィンドウの大きさを変えた直後に、キャンバスが画面の外にあるときは見える位置までスクロールする
 describe('FR-146 AC-244 ensureCanvasInView', () => {

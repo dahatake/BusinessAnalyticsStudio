@@ -5,7 +5,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
 import './scene.css';
-import { needsResize, registerSceneResizer } from './sceneViewport';
+import { RESIZE_SETTLE_MS, SettlingResizeObserver, needsResize, registerSceneResizer } from './sceneViewport';
 import { useAnimation } from '../store/animation';
 import { countFrame, useIndustryPreset, useView3D } from '../store/view3d';
 import { goHome, setPose } from './cameraRig';
@@ -20,27 +20,6 @@ import { CameraSync, EntityTwin } from './TwinScene';
 
 type Kind = 'trying-webgpu' | 'webgl2';
 const FIRST_FRAME_MAX_WAIT_MS = 8000;
-const RESIZE_SETTLE_MS = 150;
-
-/**
- * 表示領域の大きさの通知。最初の 1 回はすぐ通し（描画面と中身をすぐ作る）、以降の変更は止まってから 1 回にまとめる。
- * 描画面の中身（ピクセル）の大きさの変更は重く、変更のたびに行うと画面が止まるため（FR-146 AC-243）。
- */
-class SettlingResizeObserver {
-  private readonly ro: ResizeObserver;
-  private first = true;
-  private timer: ReturnType<typeof setTimeout> | null = null;
-  constructor(cb: ResizeObserverCallback) {
-    this.ro = new ResizeObserver((entries) => {
-      if (this.first) { this.first = false; cb(entries, this as unknown as ResizeObserver); return; }
-      if (this.timer) clearTimeout(this.timer);
-      this.timer = setTimeout(() => { this.timer = null; cb(entries, this as unknown as ResizeObserver); }, RESIZE_SETTLE_MS);
-    });
-  }
-  observe(target: Element, options?: ResizeObserverOptions): void { this.ro.observe(target, options); }
-  unobserve(target: Element): void { this.ro.unobserve(target); }
-  disconnect(): void { if (this.timer) clearTimeout(this.timer); this.ro.disconnect(); }
-}
 
 /**
  * 最初の描画は、シェーダーのコンパイル（プログラムごとに同期で数百ミリ秒）で画面が 1 秒以上止まる。
@@ -299,13 +278,13 @@ function SizeSync() {
  * 描画方式（WebGPU → WebGL2）の選択と Canvas。3D ビューと地図（src/map）が共有する。
  * children は Canvas の中身（シーン）。アニメーション停止中は、必要なときだけ描く（frameloop=demand。FR-071）。
  */
-export function RenderCanvas({ children, cameraPosition, fov = 45, paused = false }: { children: ReactNode; cameraPosition: [number, number, number]; fov?: number; paused?: boolean }) {
+export function RenderCanvas({ children, cameraPosition, fov = 45, paused = false, deferFirstFrame = false }: { children: ReactNode; cameraPosition: [number, number, number]; fov?: number; paused?: boolean; deferFirstFrame?: boolean }) {
   const quality = useView3D((s) => s.quality);
   const setRenderer = useView3D((s) => s.setRenderer);
   const playing = useAnimation((s) => s.playing);
   const [kind, setKind] = useState<Kind | null>(null);
   const [ready, setReady] = useState(false);
-  // 最初の描画を少し遅らせる（FirstFrameGate。FR-146 AC-243）
+  // 最初の描画を少し遅らせる（3D ビューだけ。地図は遅らせない。FirstFrameGate。FR-146 AC-243）
   const [settled, setSettled] = useState(false);
   useEffect(() => {
     if (!kind) setSettled(false);
@@ -355,12 +334,12 @@ export function RenderCanvas({ children, cameraPosition, fov = 45, paused = fals
       gl={glFactory as never}
       shadows={profile.shadows}
       dpr={Math.min(typeof window === 'undefined' ? 1 : window.devicePixelRatio, profile.maxDpr)}
-      frameloop={ready && settled && !paused ? (playing ? 'always' : 'demand') : 'never'}
+      frameloop={ready && (settled || !deferFirstFrame) && !paused ? (playing ? 'always' : 'demand') : 'never'}
       camera={{ position: cameraPosition, fov }}
       style={{ width: '100%', height: '100%', display: 'block' }}
     >
       <SizeSync />
-      <FirstFrameGate onDone={() => setSettled(true)} />
+      {deferFirstFrame && <FirstFrameGate onDone={() => setSettled(true)} />}
       <Suspense fallback={null}>{children}</Suspense>
     </Canvas>
   );
@@ -371,7 +350,7 @@ export function SceneCanvas({ toBe }: { toBe: boolean }) {
   const quality = useView3D((s) => s.quality);
   const preset = useIndustryPreset();
   return (
-    <RenderCanvas cameraPosition={preset.cameraPath[0]?.position ?? [7, 6, 9]}>
+    <RenderCanvas cameraPosition={preset.cameraPath[0]?.position ?? [7, 6, 9]} deferFirstFrame>
       <SceneContent scene={scene} preset={preset} quality={quality} toBe={toBe} />
     </RenderCanvas>
   );
