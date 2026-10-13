@@ -27,6 +27,8 @@ const useStyles = makeStyles({
     borderRadius: tokens.borderRadiusMedium,
     backgroundColor: tokens.colorNeutralBackground2,
   },
+  // 無効のボタンは Fluent が forced-color-adjust: none を付ける。強制カラー（ハイコントラスト）では OS の色で描かせる（FR-058 AC-071）
+  define: { forcedColorAdjust: 'auto', ':disabled': { forcedColorAdjust: 'auto' }, ':disabled:hover': { forcedColorAdjust: 'auto' }, ':disabled:hover:active': { forcedColorAdjust: 'auto' } },
   value: { fontVariantNumeric: 'tabular-nums' },
   state: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalXS, fontVariantNumeric: 'tabular-nums' },
   form: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM },
@@ -123,7 +125,7 @@ function KpiOkrScreen() {
   return (
     <Panel testId="component-kpi-okr" title="KPI/OKR" description="議論の目的と成果を、Objective・Key Result・KPI の数値で共有します。">
       <div className={s.actions}>
-        <Button appearance="primary" disabled={!editMode} onClick={() => useOkrDialog.getState().show(toDraft(okr?.objectives[0]))}>OKR を定義</Button>
+        <Button appearance="primary" className={s.define} disabled={!editMode} onClick={() => useOkrDialog.getState().show(toDraft(okr?.objectives[0]))}>OKR を定義</Button>
         {!editMode ? <Text size={200}>定義と現在値の更新は、編集モードを ON にして行います。</Text> : null}
         <Text size={200} data-testid="okr-updated">最終更新日時: {okr ? formatUpdated(okr.updatedAt) : '未更新'}</Text>
       </div>
