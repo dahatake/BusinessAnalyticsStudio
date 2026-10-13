@@ -260,9 +260,19 @@ export const scene = {
 
 /** canvas 要素に何かが描かれている（単色でない）ことを、スクリーンショットの画素のばらつきで確かめる。 */
 export async function expectCanvasDrawn(loc: Locator): Promise<void> {
-  const png = await loc.screenshot();
+  // 開いた直後の約 1.5 秒は描画を始めない設計（FR-146）。最初の描画を最大 10 秒まで待つ。
   // PNG の生データの多様性で簡易に判定（単色の PNG は圧縮後が非常に小さい）
-  expect(png.byteLength, 'canvas が単色（何も描画されていない）').toBeGreaterThan(3_000);
+  await expect
+    .poll(async () => (await loc.screenshot()).byteLength, { timeout: 10_000, message: 'canvas が単色（何も描画されていない）' })
+    .toBeGreaterThan(3_000);
+}
+
+/** 3D の最初の描画（frame > 0）を最大 10 秒まで待つ。開いてすぐ描画を測るケースで使う。 */
+export async function waitFirstFrame(page: Page): Promise<number> {
+  await expect
+    .poll(async () => (await scene.info(page)).frame, { timeout: 10_000, message: '3D の最初の描画が始まらない' })
+    .toBeGreaterThan(0);
+  return (await scene.info(page)).frame;
 }
 
 /** ダウンロードを待って中身を返す。 */
