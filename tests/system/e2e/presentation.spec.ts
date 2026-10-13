@@ -100,9 +100,10 @@ test.describe('FR-076 オープニング', () => {
   test('FR-076 AC-093 スキップのボタンと Esc で本編に移る', async ({ page, start }) => {
     const app = await start({ skipOpening: false });
     await expect(page.getByTestId('opening')).toBeVisible();
+    // 起動直後はオープニングの上に作業先の選択画面が重なる（FR-144 AC-237）ので、先に作業先を選ぶ
+    await chooseWorkTarget(page);
     await page.getByRole('button', { name: 'スキップ' }).click();
     await expect(page.getByTestId('opening')).toBeHidden({ timeout: 3_000 });
-    await chooseWorkTarget(page);
     await expect(page.getByTestId('workspace')).toBeVisible();
     // 開き直して、今度は Esc で飛ばす（選択画面は再読込のたびに出る: FR-144 AC-239）
     await page.goto(app.url);
