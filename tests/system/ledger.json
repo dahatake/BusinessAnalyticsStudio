@@ -4845,7 +4845,7 @@
       ],
       "title": "データビュアー: 拡大で鳥観図→エンティティ→列、最大で列名が読め、縮小で鳥観図",
       "layer": "e2e",
-      "command": "npx playwright test -c tests/system/playwright.config.ts tests/system/e2e/data-viewer.spec.ts -g 'AC-334 拡大すると'",
+      "command": "node tests/system/run.mjs AC-334",
       "canary": false,
       "status": "not_run",
       "last_commit": null,
@@ -4857,6 +4857,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-15T01:47:52+09:00",
+          "by": "test-designer",
+          "change": "command: \"npx playwright test -c tests/system/playwright.config.ts tests/system/e2e/data-viewer.spec.ts -g 'AC-334 拡大すると'\" -> 'node tests/system/run.mjs AC-334'",
+          "reason": "playwright を二重読み込みで落ちる直接呼び出しから run.mjs 経由に修正(E2E-266 と同じ)"
         }
       ]
     },
@@ -4870,7 +4876,7 @@
       ],
       "title": "データビュアー: 2D/3D 切替で選択保持・どちらでも列まで拡大",
       "layer": "e2e",
-      "command": "npx playwright test -c tests/system/playwright.config.ts tests/system/e2e/data-viewer.spec.ts -g '2D と 3D を切り替えても'",
+      "command": "node tests/system/run.mjs AC-334",
       "canary": false,
       "status": "not_run",
       "last_commit": null,
@@ -4882,6 +4888,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-15T01:47:53+09:00",
+          "by": "test-designer",
+          "change": "command: \"npx playwright test -c tests/system/playwright.config.ts tests/system/e2e/data-viewer.spec.ts -g '2D と 3D を切り替えても'\" -> 'node tests/system/run.mjs AC-334'",
+          "reason": "playwright を二重読み込みで落ちる直接呼び出しから run.mjs 経由に修正(E2E-266 と同じ)"
         }
       ]
     },
@@ -4895,7 +4907,7 @@
       ],
       "title": "データビュアー（異常系）: 上限超の拡大でも列のまま壊れず縮小で戻る",
       "layer": "e2e",
-      "command": "npx playwright test -c tests/system/playwright.config.ts tests/system/e2e/data-viewer.spec.ts -g '最大に拡大した後に'",
+      "command": "node tests/system/run.mjs AC-334",
       "canary": false,
       "status": "not_run",
       "last_commit": null,
@@ -4907,6 +4919,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-15T01:47:53+09:00",
+          "by": "test-designer",
+          "change": "command: \"npx playwright test -c tests/system/playwright.config.ts tests/system/e2e/data-viewer.spec.ts -g '最大に拡大した後に'\" -> 'node tests/system/run.mjs AC-334'",
+          "reason": "playwright を二重読み込みで落ちる直接呼び出しから run.mjs 経由に修正(E2E-266 と同じ)"
         }
       ]
     },
