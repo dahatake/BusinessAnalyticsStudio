@@ -44,7 +44,7 @@
     "commands": [
       { "name": "typecheck", "run": "npm run typecheck" },
       { "name": "build", "run": "npm run build" },
-      { "name": "unit", "run": "npx vitest run tests/unit/projects.test.ts tests/unit/stepper.test.ts tests/unit/analysis-methods.test.ts tests/unit/persist.test.ts tests/unit/ai-layout.test.ts tests/unit/work-target.test.ts tests/unit/work-target-ui.test.tsx tests/unit/layout-fluent.test.ts tests/unit/layoutStore.test.ts tests/unit/workspace.test.ts tests/unit/minimize.test.ts tests/unit/snap.test.ts tests/unit/usecase.test.tsx tests/unit/data-catalog.test.tsx tests/unit/data-catalog-reconcile.test.tsx tests/unit/data-viewer.test.ts tests/unit/data-viewer.test.tsx" }
+      { "name": "unit", "run": "npx vitest run tests/unit/projects.test.ts tests/unit/stepper.test.ts tests/unit/analysis-methods.test.ts tests/unit/persist.test.ts tests/unit/ai-layout.test.ts tests/unit/work-target.test.ts tests/unit/work-target-ui.test.tsx tests/unit/layout-fluent.test.ts tests/unit/layoutStore.test.ts tests/unit/workspace.test.ts tests/unit/minimize.test.ts tests/unit/snap.test.ts tests/unit/usecase.test.tsx tests/unit/data-catalog.test.tsx tests/unit/data-catalog-reconcile.test.tsx tests/unit/data-viewer.test.ts tests/unit/data-viewer.test.tsx tests/unit/storyboard.test.tsx" }
     ]
   },
   "models": {

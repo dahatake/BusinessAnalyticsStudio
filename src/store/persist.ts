@@ -98,7 +98,7 @@ export function restore(storage: Store): boolean {
     const { source: _drop, ...rest } = u;
     return rest;
   });
-  useUseCases.setState({ byProject: Object.fromEntries(Object.entries(ucs).filter(([, v]) => isObj(v) && Array.isArray(v.items)).map(([k, v]) => [k, { items: cleanItems(v.items), animations: isObj(v.animations) ? v.animations : {}, seq: typeof v.seq === 'number' ? v.seq : v.items.length }])) });
+  useUseCases.setState({ byProject: Object.fromEntries(Object.entries(ucs).filter(([, v]) => isObj(v) && Array.isArray(v.items)).map(([k, v]) => [k, { items: cleanItems(v.items), animations: isObj(v.animations) ? v.animations : {}, storyboards: isObj(v.storyboards) ? v.storyboards : {}, seq: typeof v.seq === 'number' ? v.seq : v.items.length }])) });
   const dl = isObj(data.dataLinks) ? data.dataLinks : {};
   useDataCatalog.setState({
     linksByProject: Object.fromEntries(Object.entries(dl).filter(([, v]) => Array.isArray(v)).map(([k, v]) => [

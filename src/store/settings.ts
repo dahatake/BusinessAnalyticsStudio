@@ -31,6 +31,9 @@ interface SettingsState {
   /** 利き手。フローティングツールバーを画面のどちら側に置くか（FR-091）。既定は右利き */
   handedness: Handedness;
   setHandedness: (h: Handedness) => void;
+  /** 字幕の読み上げを有効にするか（既定は無効。FR-167。音が鳴るのは、ミュートでないときだけ） */
+  speechEnabled: boolean;
+  setSpeechEnabled: (enabled: boolean) => void;
   /** 作業先の選択画面にデモを出すか（既定オン。FR-144 AC-240・AC-241。端末内に保存） */
   showDemoInPicker: boolean;
   setShowDemoInPicker: (show: boolean) => void;
@@ -61,6 +64,8 @@ export const useSettings = create<SettingsState>()(
       setIntensity: (intensity) => set({ intensity }),
       handedness: 'right',
       setHandedness: (handedness) => set({ handedness: handedness === 'left' ? 'left' : 'right' }),
+      speechEnabled: false,
+      setSpeechEnabled: (speechEnabled) => set({ speechEnabled }),
       showDemoInPicker: true,
       setShowDemoInPicker: (showDemoInPicker) => set({ showDemoInPicker }),
     }),
