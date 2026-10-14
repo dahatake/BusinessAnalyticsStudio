@@ -2,8 +2,8 @@
   "issues": [
     {
       "id": "issue-koto-001", "createdBy": "sample", "parentId": null, "title": "変更の問い合わせが電話に集中する", "hypothesis": "オンラインで変更できない", "origin": "interview", "classification": "shareable", "sourceIds": ["src-koto-002"],
-      "audience": "external", "personas": ["事業部門", "現場"],
-      "causes": [{ "id": "cause-koto-001", "title": "予約の変更がオンラインの画面にない" }],
+      "audience": "external", "personas": ["経営層", "事業部門", "IT", "現場"],
+      "causes": [{ "id": "cause-koto-001", "title": "予約の変更がオンラインの画面にない" }, { "id": "cause-koto-002", "title": "部門ごとに別の表計算ファイルで問い合わせを記録している" }, { "id": "cause-koto-003", "title": "よくある質問と回答が共有されていない" }],
       "evaluation": {
         "priority": { "value": 1, "unit": "位", "sourceIds": ["src-koto-002"] },
         "cost": { "value": 400, "unit": "万円", "sourceIds": ["src-koto-001"] },
@@ -20,6 +20,20 @@
       "effects": [{ "id": "effect-koto-001", "title": "電話での変更の問い合わせが減る" }],
       "productIds": ["prod-koto-001"], "sourceIds": ["src-koto-002"],
       "productFits": [{ "productId": "prod-koto-001", "reason": "予約の確認と変更をオンラインで完結できるため" }]
+    },
+    {
+      "id": "sol-koto-002", "createdBy": "sample", "issueId": "issue-koto-001", "issueIds": ["issue-koto-001"], "title": "問い合わせの記録を 1 か所に集めて分析する",
+      "genAiValues": ["fusion"],
+      "effects": [{ "id": "effect-koto-002", "title": "顧客の声の傾向を経営が毎月確認できる" }],
+      "productIds": ["prod-koto-002"], "sourceIds": ["src-koto-001"],
+      "productFits": [{ "productId": "prod-koto-002", "reason": "部門ごとの記録を 1 つの形式に集めて傾向を示せるため" }]
+    },
+    {
+      "id": "sol-koto-003", "createdBy": "sample", "issueId": "issue-koto-001", "issueIds": ["issue-koto-001"], "title": "よくある質問への回答案を窓口に提示する",
+      "genAiValues": ["chatRag"],
+      "effects": [{ "id": "effect-koto-003", "title": "経験の浅い担当でも根拠のある回答ができる" }],
+      "productIds": ["prod-koto-003"], "sourceIds": ["src-koto-002"],
+      "productFits": [{ "productId": "prod-koto-003", "reason": "過去の問い合わせの記録から回答案を探して示せるため" }]
     }
   ]
 }

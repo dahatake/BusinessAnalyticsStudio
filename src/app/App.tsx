@@ -16,10 +16,10 @@ import { prefersReducedMotion, useAnimation } from '../store/animation';
 import { useEffectiveBrand } from '../theme/useBrand';
 import { ErrorView, LoadingView } from '../components/StateViews';
 import { PresentationBar, PresentationButton } from '../presentation/PresentationMode';
+import { StoryHost } from '../story/StoryHost';
 import { SCREENS } from '../screens/registry';
 import { Stepper } from '../stepper/Stepper';
 import { useStepper } from '../store/stepper';
-import { useProjects } from '../store/projects';
 import { SelectionController } from '../selection/SelectionController';
 import { EditModeSwitch, HistoryButton, ResetSampleButton } from '../edit/EditControls';
 import { installEditKeys } from '../edit/useEditKeys';
@@ -78,7 +78,6 @@ export function App() {
   const topic = usePresentationStore(currentTopic);
   const scene = !opened ? 'opening' : topic ? `chapter:${topic.chapterId}` : 'workspace';
   const presenting = usePresentationStore((s) => s.active);
-  const openProjectId = useProjects((s) => s.openId); // FR-138: ステッパーは Project を開いているときだけ出す
   const intensity = useIntensity();
   const motionRef = useRef({ presenting, intensity });
   motionRef.current = { presenting, intensity };
@@ -142,7 +141,7 @@ export function App() {
         title={`${name} ${projectName}`}
         screens={SCREENS}
         onSelect={onSelect}
-        stepper={openProjectId ? <Stepper onNavigate={onSelect} /> : null}
+        stepper={<Stepper onNavigate={onSelect} />}
         headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><AiStatus /></>}
         actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><AutoSizeSwitch /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /></>}
         dock={<Dock screens={SCREENS} />}
@@ -179,6 +178,7 @@ export function App() {
           </div>
         ) : null}
         <PresentationBar />
+        <StoryHost />
         <ProjectsPanel onNavigate={onSelect} />
         <ShowStage />
         <Workspace screens={SCREENS} />

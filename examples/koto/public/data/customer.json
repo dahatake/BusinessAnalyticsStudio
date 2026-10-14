@@ -28,10 +28,62 @@
           {
             "objective": "問い合わせから手配までの待ち時間を短くし、顧客体験を高める（合成データ）",
             "keyResults": [
-              { "name": "問い合わせへの初回回答を早める", "kpi": { "name": "初回回答までの時間", "unit": "時間", "baseline": 24, "current": 16, "target": 4, "due": "2027-03-31" } },
-              { "name": "手配のやり直しを減らす", "kpi": { "name": "手配のやり直し率", "unit": "%", "baseline": 12, "current": 6, "target": 3, "due": "2027-03-31" } }
+              { "id": "kr-koto-001", "name": "問い合わせへの初回回答を早める", "solutionIds": ["sol-koto-001", "sol-koto-003"], "kpi": { "name": "初回回答までの時間", "unit": "時間", "baseline": 24, "current": 16, "target": 4, "due": "2027-03-31" } },
+              { "id": "kr-koto-002", "name": "手配のやり直しを減らす", "solutionIds": ["sol-koto-001"], "kpi": { "name": "手配のやり直し率", "unit": "%", "baseline": 12, "current": 6, "target": 3, "due": "2027-03-31" } },
+              { "id": "kr-koto-003", "name": "顧客の声を毎月経営が確認する", "solutionIds": ["sol-koto-002"], "kpi": { "name": "顧客の声の月次確認の実施率", "unit": "%", "baseline": 0, "current": 25, "target": 100, "due": "2027-03-31" } }
             ]
           }
         ]
-      }
+      },
+      "fictionalNote": "このデモのユースケース・企業名・数値はすべて架空（合成データ）です。実在の企業・個人・Project とは関係ありません。",
+      "useCases": [
+        {
+          "id": "uc-koto-001", "name": "経営会議で顧客の声の傾向を確認する", "persona": "経営層", "solutionId": "sol-koto-002",
+          "summary": "部門をまたいだ問い合わせの傾向を毎月確認し、改善の優先順位を決める。",
+          "steps": [{ "title": "月次の傾向を見る", "description": "問い合わせの種類ごとの件数の推移を確認する" }, { "title": "改善の優先順位を決める", "description": "件数と影響の大きい順に取り組みを決める" }],
+          "effect": "顧客の不満の兆しを早く見つけ、手を打てる。", "kpiNames": ["顧客の声の月次確認の実施率"]
+        },
+        {
+          "id": "uc-koto-002", "name": "オンラインの変更受付の効果を投資対効果で確認する", "persona": "経営層", "solutionId": "sol-koto-001",
+          "summary": "電話の変更が減った分のコスト削減と、初回回答の短縮を確認する。",
+          "steps": [{ "title": "電話の件数を見る", "description": "変更の問い合わせの電話の件数を確認する" }, { "title": "ROI を確認する", "description": "導入コストと削減効果を比べる" }],
+          "effect": "追加の投資を判断する根拠がそろう。", "kpiNames": ["初回回答までの時間", "手配のやり直し率"]
+        },
+        {
+          "id": "uc-koto-003", "name": "変更の問い合わせを電話からオンラインへ誘導する", "persona": "事業部門", "solutionId": "sol-koto-001",
+          "summary": "予約の確認メールにオンラインの変更窓口の案内を載せ、電話の集中を和らげる。",
+          "steps": [{ "title": "案内の文面を決める", "description": "変更の方法とできる範囲を書く" }, { "title": "確認メールに載せる", "description": "予約の確認メールに案内を足す" }, { "title": "件数の変化を見る", "description": "電話とオンラインの件数を比べる" }],
+          "effect": "電話の変更の問い合わせが減り、窓口が相談に時間を使える。", "kpiNames": ["初回回答までの時間"]
+        },
+        {
+          "id": "uc-koto-004", "name": "部門ごとの問い合わせの記録を 1 つの形式にそろえる", "persona": "事業部門", "solutionId": "sol-koto-002",
+          "summary": "部門ごとに別の形式の記録を、共通の項目へ移し替えるルールを決める。",
+          "steps": [{ "title": "項目を洗い出す", "description": "各部門の記録の項目を一覧にする" }, { "title": "共通の項目を決める", "description": "部門間で合意した項目にそろえる" }],
+          "effect": "部門をまたいだ集計ができるようになる。", "kpiNames": ["顧客の声の月次確認の実施率"]
+        },
+        {
+          "id": "uc-koto-005", "name": "予約システムとオンライン変更の画面をつなぐ", "persona": "IT", "solutionId": "sol-koto-001",
+          "summary": "既存の予約システムの予約の確認・変更を、オンラインの画面から呼び出せるようにする。",
+          "steps": [{ "title": "連携の方式を確認する", "description": "既存の予約システムが提供する連携の方式を確認する" }, { "title": "変更の画面をつなぐ", "description": "確認と変更の操作を連携する" }, { "title": "失敗時の扱いを決める", "description": "変更に失敗したときの案内と再実行を決める" }],
+          "effect": "既存の環境を変えずに、オンラインの変更を始められる。", "kpiNames": ["手配のやり直し率"]
+        },
+        {
+          "id": "uc-koto-006", "name": "部門ごとの記録を集める取り込みの仕組みをつくる", "persona": "IT", "solutionId": "sol-koto-002",
+          "summary": "部門ごとの表計算ファイルを、定期的に 1 か所へ取り込む。",
+          "steps": [{ "title": "取り込み先を決める", "description": "集める場所とアクセスできる人を決める" }, { "title": "定期的に取り込む", "description": "取り込みの頻度と失敗時の再実行を決める" }],
+          "effect": "手作業の集計が不要になる。", "kpiNames": ["顧客の声の月次確認の実施率"]
+        },
+        {
+          "id": "uc-koto-007", "name": "繁忙期の問い合わせに回答案を見ながら答える", "persona": "現場", "solutionId": "sol-koto-003",
+          "summary": "問い合わせの内容を入力すると、過去の記録から回答案が示される。",
+          "steps": [{ "title": "内容を入力する", "description": "お客様の質問を入力する" }, { "title": "回答案を確認する", "description": "根拠つきの回答案を読み、必要なら直す" }, { "title": "回答する", "description": "お客様へ回答する" }],
+          "effect": "経験の浅い担当でも、初回の回答が早くなる。", "kpiNames": ["初回回答までの時間"]
+        },
+        {
+          "id": "uc-koto-008", "name": "窓口でお客様の予約をその場で変更する", "persona": "現場", "solutionId": "sol-koto-001",
+          "summary": "窓口でもオンラインと同じ変更の画面を使い、お客様の変更をその場で完了する。",
+          "steps": [{ "title": "予約を呼び出す", "description": "予約番号から予約を表示する" }, { "title": "変更を反映する", "description": "日程や人数を変更する" }],
+          "effect": "手配のやり直しが減る。", "kpiNames": ["手配のやり直し率"]
+        }
+      ]
 }

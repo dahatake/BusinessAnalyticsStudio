@@ -29,10 +29,69 @@
       {
         "objective": "計画外停止を減らし、現場データで生産を安定させる（合成データ）",
         "keyResults": [
-          { "name": "計画外停止の時間を減らす", "kpi": { "name": "計画外停止時間", "unit": "時間/月", "baseline": 40, "current": 30, "target": 20, "due": "2027-03-31" } },
-          { "name": "予兆検知で防げた停止を増やす", "kpi": { "name": "予兆検知の的中率", "unit": "%", "baseline": 0, "current": 0, "target": 70, "due": "2027-03-31" } }
+          { "id": "kr-mono-001", "name": "計画外停止の時間を減らす", "solutionIds": ["sol-mono-001"], "kpi": { "name": "計画外停止時間", "unit": "時間/月", "baseline": 40, "current": 30, "target": 20, "due": "2027-03-31" } },
+          { "id": "kr-mono-002", "name": "予兆検知で防げた停止を増やす", "solutionIds": ["sol-mono-001"], "kpi": { "name": "予兆検知の的中率", "unit": "%", "baseline": 0, "current": 0, "target": 70, "due": "2027-03-31" } },
+          { "id": "kr-mono-003", "name": "停止原因の集計を早める", "solutionIds": ["sol-mono-002"], "kpi": { "name": "停止原因の集計に要する時間", "unit": "日", "baseline": 3, "current": 2, "target": 0.5, "due": "2027-03-31" } }
+        ]
+      },
+      {
+        "objective": "判断・検査・在庫の情報を早く共有し、現場と事業部門の待ち時間を減らす（合成データ）",
+        "keyResults": [
+          { "id": "kr-mono-004", "name": "熟練者の判断基準を共有する", "solutionIds": ["sol-mono-003"], "kpi": { "name": "判断基準の文書化率", "unit": "%", "baseline": 0, "current": 20, "target": 80, "due": "2027-03-31" } },
+          { "id": "kr-mono-005", "name": "検査結果の共有を早める", "solutionIds": ["sol-mono-004"], "kpi": { "name": "検査結果の共有に要する時間", "unit": "時間", "baseline": 24, "current": 20, "target": 2, "due": "2027-03-31" } }
         ]
       }
     ]
-  }
+  },
+  "fictionalNote": "このデモのユースケース・企業名・数値はすべて架空（合成データ）です。実在の企業・個人・Project とは関係ありません。",
+  "useCases": [
+    {
+      "id": "uc-mono-001", "name": "経営会議で計画外停止の予兆と投資対効果を確認する", "persona": "経営層", "solutionId": "sol-mono-001",
+      "summary": "予兆検知の結果と ROI を 1 画面で見て、投資の可否を判断する。",
+      "steps": [{ "title": "停止の傾向を見る", "description": "月ごとの計画外停止時間の推移を確認する" }, { "title": "予兆の的中率を見る", "description": "予兆検知で防げた停止の割合を確認する" }, { "title": "投資を判断する", "description": "ROI とコストを比べて拡大の可否を決める" }],
+      "effect": "投資判断までの会議の回数が減り、計画外停止の削減に早く着手できる。", "kpiNames": ["計画外停止時間", "予兆検知の的中率"]
+    },
+    {
+      "id": "uc-mono-002", "name": "熟練者の判断基準を全拠点の方針にそろえる", "persona": "経営層", "solutionId": "sol-mono-003",
+      "summary": "属人化している判断を共有し、拠点間の品質のばらつきを抑える方針を決める。",
+      "steps": [{ "title": "文書化の進み具合を見る", "description": "判断基準の文書化率を拠点ごとに確認する" }, { "title": "方針を決める", "description": "共有する判断基準の範囲と期限を決める" }],
+      "effect": "熟練者の退職があっても判断の質を保てる。", "kpiNames": ["判断基準の文書化率"]
+    },
+    {
+      "id": "uc-mono-003", "name": "計画外停止の予兆に応じて保全計画を組み直す", "persona": "事業部門", "solutionId": "sol-mono-001",
+      "summary": "予兆が出た設備の保全を、生産計画に影響の少ない時間へ前倒しする。",
+      "steps": [{ "title": "予兆を受け取る", "description": "予兆が出た設備と時期を確認する" }, { "title": "生産計画を確認する", "description": "停止できる時間帯を探す" }, { "title": "保全を前倒しする", "description": "保全の作業を計画に組み込む" }],
+      "effect": "計画外停止が計画停止に置き換わり、納期遅れが減る。", "kpiNames": ["計画外停止時間", "予兆検知の的中率"]
+    },
+    {
+      "id": "uc-mono-004", "name": "検査結果をその日のうちに生産計画へ反映する", "persona": "事業部門", "solutionId": "sol-mono-004",
+      "summary": "検査結果が即時に共有され、不良の傾向に応じて当日の生産計画を調整する。",
+      "steps": [{ "title": "検査結果を受け取る", "description": "検査機器の出力が自動で届く" }, { "title": "不良の傾向を見る", "description": "品目・ラインごとの傾向を確認する" }, { "title": "計画を調整する", "description": "当日の生産の順序を見直す" }],
+      "effect": "不良品の流出と手戻りが減る。", "kpiNames": ["検査結果の共有に要する時間"]
+    },
+    {
+      "id": "uc-mono-005", "name": "稼働データの収集と予兆検知の仕組みを既存システムにつなぐ", "persona": "IT", "solutionId": "sol-mono-001",
+      "summary": "既存の稼働データをゲートウェイ経由で集め、予兆検知サービスへ連携する。",
+      "steps": [{ "title": "データの出所を確認する", "description": "既存の設備から取得できる項目を洗い出す" }, { "title": "ゲートウェイを設置する", "description": "設備と外部サービスをつなぐ" }, { "title": "予兆検知に連携する", "description": "送信するデータと頻度を設定する" }],
+      "effect": "既存環境を大きく変えずに、予兆検知を始められる。", "kpiNames": ["予兆検知の的中率"]
+    },
+    {
+      "id": "uc-mono-006", "name": "停止原因の入力データを集計の仕組みへ自動で渡す", "persona": "IT", "solutionId": "sol-mono-002",
+      "summary": "タブレットの入力を、既存の集計の仕組みへ日次で渡す。",
+      "steps": [{ "title": "連携の方式を決める", "description": "既存の集計の仕組みが受け取れる形式を確認する" }, { "title": "自動で渡す", "description": "渡す時刻と失敗時の再実行を決める" }],
+      "effect": "手作業の転記が不要になり、集計が即日で終わる。", "kpiNames": ["停止原因の集計に要する時間"]
+    },
+    {
+      "id": "uc-mono-007", "name": "停止の直後にタブレットで原因を入力する", "persona": "現場", "solutionId": "sol-mono-002",
+      "summary": "設備が止まったらその場でタブレットに停止原因を選んで入力する。",
+      "steps": [{ "title": "停止を確認する", "description": "止まった設備を選ぶ" }, { "title": "原因を選ぶ", "description": "一覧から原因を選び、必要なら一言を足す" }, { "title": "送信する", "description": "入力が即時に集計へ反映される" }],
+      "effect": "終業後の入力が不要になり、集計が即日で終わる。", "kpiNames": ["停止原因の集計に要する時間"]
+    },
+    {
+      "id": "uc-mono-008", "name": "熟練者の判断を作業中に確認する", "persona": "現場", "solutionId": "sol-mono-003",
+      "summary": "判断に迷ったとき、作業の手元で熟練者の判断基準を調べる。",
+      "steps": [{ "title": "状況を入力する", "description": "迷っている状況を言葉で入力する" }, { "title": "基準を確認する", "description": "該当する判断基準と根拠を読む" }],
+      "effect": "新任者でも判断に迷う時間が減る。", "kpiNames": ["判断基準の文書化率"]
+    }
+  ]
 }

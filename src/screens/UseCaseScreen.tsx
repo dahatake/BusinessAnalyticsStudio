@@ -16,6 +16,7 @@ import {
   type Animation, type AnimationState, type UseCase, type UseCaseDraft, type UseCaseSource,
 } from '../usecase/model';
 import { deriveCandidates, type Candidate } from '../usecase/derive';
+import { demoUseCases } from '../usecase/demo';
 import { usePackStore } from '../store/pack';
 
 const useStyles = makeStyles({
@@ -209,6 +210,9 @@ function UseCaseScreen() {
   // 導出のやり直し: 押すたびに候補だけを作り直す（登録済みは変えない。AC-291）。候補は保存しない
   const [deriveRun, setDeriveRun] = useState(0);
   const data = packState.status === 'ready' ? packState.pack.data : undefined;
+  // デモ（Project を開いていないとき）だけ、顧客パックのお手本のユースケースを読み込み専用で示す（FR-180）。実際の Project には出さない
+  const demoItems = useMemo(() => (projectId ? [] : demoUseCases(data?.customer, data?.issues.solutions)), [projectId, data]);
+  const demoNote = projectId ? undefined : data?.customer.fictionalNote;
   const derivation = useMemo(
     () => deriveCandidates(data?.issues.issues, data?.issues.solutions, data?.products.products, set.items.map((u) => u.source)),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -227,7 +231,25 @@ function UseCaseScreen() {
     <Panel testId="component-usecase" title="ユースケース" description="Project のユースケースを登録し、ユースケースごとにプレゼン用のアニメーションを作ります。">
       <div data-testid="usecase-editor" className={s.form}>
         {!projectId ? (
-          <EmptyView message="Project を開くと、ユースケースを登録できます。" />
+          <>
+            <EmptyView message="Project を開くと、ユースケースを登録できます。以下はデモ（架空のお手本）のユースケースです。" />
+            {demoNote ? <Text size={200} data-testid="demo-fictional-note">{demoNote}</Text> : null}
+            <ul className={s.list} data-testid="usecase-list" aria-label="ユースケース一覧（デモ・架空）">
+              {demoItems.map((uc) => (
+                <li key={uc.id} className={s.item} data-persona={uc.persona} data-usecase-id={uc.id}>
+                  <div className={s.row}>
+                    <Text weight="semibold" data-testid="usecase-name">{uc.name}</Text>
+                    <Badge appearance="outline" color="informative">{`対象: ${uc.persona}`}</Badge>
+                  </div>
+                  <Text size={200} data-testid="usecase-summary">{uc.summary}</Text>
+                  <Text size={200} data-testid="usecase-steps">{uc.steps.map((st, i) => `${i + 1}. ${st.title}${st.description ? `: ${st.description}` : ''}`).join(' → ')}</Text>
+                  <Text size={200} data-testid="usecase-effect">{uc.effect}</Text>
+                  <Text size={200} data-testid="usecase-solution">{uc.solutionTitle ?? uc.solutionId}</Text>
+                  <Text size={200} data-testid="usecase-kpi">{uc.kpiNames.join('、')}</Text>
+                </li>
+              ))}
+            </ul>
+          </>
         ) : (
           <>
             <div className={s.row}>
@@ -285,9 +307,9 @@ function UseCaseScreen() {
                 const anim = set.animations[uc.id];
                 const st = animationState(uc, anim);
                 return (
-                  <li key={uc.id} className={s.item}>
+                  <li key={uc.id} className={s.item} data-persona={uc.persona}>
                     <div className={s.row}>
-                      <Text weight="semibold">{uc.name}</Text>
+                      <Text weight="semibold" data-testid="usecase-name">{uc.name}</Text>
                       <Badge appearance="outline" color={st === 'stale' ? 'warning' : st === 'latest' ? 'success' : 'subtle'}>{`アニメーション: ${STATE_LABEL[st]}`}</Badge>
                     </div>
                     <Text size={200}>{`手順 ${uc.steps.length} 件${uc.persona ? ` ／ 対象: ${uc.persona}` : ''}`}</Text>
