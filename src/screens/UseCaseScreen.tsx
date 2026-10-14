@@ -8,6 +8,7 @@ import { Add24Regular } from '@fluentui/react-icons';
 import { create } from 'zustand';
 import { Panel } from '../components/Panel';
 import { EmptyView } from '../components/StateViews';
+import { useAnimation } from '../store/animation';
 import { useProjects } from '../store/projects';
 import { useUseCases, useUseCaseSet } from '../store/usecases';
 import {
@@ -35,6 +36,9 @@ const useStyles = makeStyles({
     backgroundColor: tokens.colorNeutralBackground1,
   },
   scene: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS, minHeight: '96px', whiteSpace: 'pre-wrap' },
+  sr: { position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' },
+  outline: { margin: 0, paddingLeft: tokens.spacingHorizontalXL, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS },
+  outlineBody: { margin: 0, whiteSpace: 'pre-wrap' },
   forced: { forcedColorAdjust: 'auto', ':disabled': { forcedColorAdjust: 'auto' }, ':disabled:hover': { forcedColorAdjust: 'auto' }, ':disabled:hover:active': { forcedColorAdjust: 'auto' } },
 });
 
@@ -44,8 +48,17 @@ const STATE_LABEL: Record<AnimationState, string> = { none: '未作成', latest:
 interface DialogState { editId: string | null; draft: UseCaseDraft; errors: string[] }
 const useUseCaseDialog = create<{ dlg: DialogState | null; set: (d: DialogState | null) => void }>((set) => ({ dlg: null, set: (dlg) => set({ dlg }) }));
 
-/** 再生中のユースケース（保存しない） */
-const usePlaying = create<{ id: string | null; set: (id: string | null) => void }>((set) => ({ id: null, set: (id) => set({ id }) }));
+/** 再生中のユースケースと再生位置・状態（保存しない）。レイアウト操作でコンポーネントが作り直されても位置と一時停止が残るよう、外に持つ（NFR-UX-010 AC-288）。 */
+type PlayState = 'playing' | 'paused' | 'ended';
+interface PlayingStore { id: string | null; index: number; state: PlayState; set: (id: string | null) => void; setIndex: (i: number) => void; setState: (s: PlayState) => void }
+const usePlaying = create<PlayingStore>((set) => ({
+  id: null, index: 0, state: 'playing',
+  set: (id) => set({ id, index: 0, state: 'playing' }),
+  setIndex: (index) => set({ index }),
+  setState: (state) => set({ state }),
+}));
+/** 再生の状態を初期に戻す（テスト用・Project を閉じるとき用） */
+export function resetPlayback() { usePlaying.getState().set(null); useUseCaseDialog.getState().set(null); }
 
 function UseCaseDialog({ projectId }: { projectId: string }) {
   const s = useStyles();
@@ -104,25 +117,29 @@ function UseCaseDialog({ projectId }: { projectId: string }) {
   );
 }
 
-/** アニメーションの再生（導入→手順→効果）。1 シーン SCENE_SECONDS 秒で自動に進む。 */
+/** アニメーションの再生（導入→手順→効果）。1 シーン SCENE_SECONDS 秒で自動に進む。
+ *  FR-157: アニメーションの状態（P・動きを減らす設定）が停止中のときは、動きなし・自動進行なしで、全シーンを文字で示す。音声は扱わない（ミュートが既定）。 */
 function AnimationPlayer({ uc, anim, onClose }: { uc: UseCase; anim: Animation; onClose: () => void }) {
   const s = useStyles();
-  const [index, setIndex] = useState(0);
-  const [state, setState] = useState<'playing' | 'paused' | 'ended'>('playing');
+  const index = usePlaying((x) => x.index);
+  const state = usePlaying((x) => x.state);
+  const setIndex = usePlaying((x) => x.setIndex);
+  const setState = usePlaying((x) => x.setState);
+  const motionRunning = useAnimation((x) => x.playing);
   const total = anim.scenes.length;
   const stale = animationState(uc, anim) === 'stale';
 
   useEffect(() => {
-    if (state !== 'playing') return undefined;
+    if (state !== 'playing' || !motionRunning) return undefined;
     const t = window.setTimeout(() => {
       if (index < total - 1) setIndex(index + 1);
       else setState('ended');
     }, SCENE_SECONDS * 1000);
     return () => window.clearTimeout(t);
-  }, [state, index, total]);
+  }, [state, motionRunning, index, total, setIndex, setState]);
 
-  const next = () => setIndex((i) => Math.min(total - 1, i + 1));
-  const prev = () => setIndex((i) => Math.max(0, i - 1));
+  const next = () => setIndex(Math.min(total - 1, index + 1));
+  const prev = () => setIndex(Math.max(0, index - 1));
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const el = e.target as HTMLElement | null;
@@ -133,20 +150,25 @@ function AnimationPlayer({ uc, anim, onClose }: { uc: UseCase; anim: Animation; 
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  });
 
-  const scene = anim.scenes[index]!;
+  const scene = anim.scenes[Math.min(index, total - 1)]!;
+  const stateText = state === 'playing' ? (motionRunning ? '再生中' : '再生中（動きは停止中）') : state === 'paused' ? '一時停止中' : '終了';
   return (
-    <section className={s.player} data-testid="animation-player" aria-label={`アニメーション: ${uc.name}`} data-animation-state={state} data-motion="running">
+    <section className={s.player} data-testid="animation-player" aria-label={`アニメーション: ${uc.name}`} data-animation-state={state} data-motion={motionRunning ? 'running' : 'stopped'}>
       {stale ? (
         <div role="status"><MessageBar intent="warning"><MessageBarBody>このアニメーションは古い内容です。ユースケースを編集した後に再作成していません。「アニメーションを作成」で最新にできます。</MessageBarBody></MessageBar></div>
       ) : null}
-      <Text data-testid="animation-position" aria-live="polite">{`${index + 1} / ${total}`}</Text>
+      <div className={s.row}>
+        <Text data-testid="animation-position" aria-live="polite">{`${index + 1} / ${total}`}</Text>
+        <Text size={200} data-testid="animation-state-text">{`状態: ${stateText}`}</Text>
+      </div>
       <div className={s.scene} data-testid="animation-scene" data-scene-kind={scene.kind}>
         <Text as="h3" size={600} weight="semibold">{scene.title}</Text>
         {scene.body ? <Text>{scene.body}</Text> : null}
       </div>
-      <div className={s.row}>
+      <div className={s.sr} aria-live="polite" aria-atomic="true" data-testid="animation-announce">{`シーン ${index + 1} / ${total}: ${scene.title}`}</div>
+      <div className={s.row} role="group" aria-label="再生の操作">
         {state === 'playing'
           ? <Button className={s.forced} onClick={() => setState('paused')}>一時停止</Button>
           : <Button className={s.forced} appearance="primary" onClick={() => { if (state === 'ended') setIndex(0); setState('playing'); }}>再生</Button>}
@@ -154,10 +176,20 @@ function AnimationPlayer({ uc, anim, onClose }: { uc: UseCase; anim: Animation; 
         <Button className={s.forced} onClick={next} disabled={index >= total - 1}>次へ</Button>
         <Button className={s.forced} onClick={onClose}>終了</Button>
       </div>
+      <section aria-label="手順の一覧" data-testid="animation-outline">
+        <Text weight="semibold">手順の一覧</Text>
+        <ol className={s.outline}>
+          {anim.scenes.map((sc, i) => (
+            <li key={i} aria-current={i === index ? 'step' : undefined}>
+              <Text weight={i === index ? 'semibold' : 'regular'}>{`${i === index ? '【現在】' : ''}${sc.title}`}</Text>
+              {sc.body ? <Text as="p" size={200} className={s.outlineBody}>{sc.body}</Text> : null}
+            </li>
+          ))}
+        </ol>
+      </section>
     </section>
   );
 }
-
 function UseCaseScreen() {
   const s = useStyles();
   const projectId = useProjects((x) => x.openId);
