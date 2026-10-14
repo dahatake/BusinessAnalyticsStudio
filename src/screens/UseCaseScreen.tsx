@@ -285,7 +285,7 @@ function UseCaseScreen() {
                 const anim = set.animations[uc.id];
                 const st = animationState(uc, anim);
                 return (
-                  <li key={uc.id} className={s.item}>
+                  <li key={uc.id} className={s.item} data-usecase-name={uc.name}>
                     <div className={s.row}>
                       <Text weight="semibold">{uc.name}</Text>
                       <Badge appearance="outline" color={st === 'stale' ? 'warning' : st === 'latest' ? 'success' : 'subtle'}>{`アニメーション: ${STATE_LABEL[st]}`}</Badge>

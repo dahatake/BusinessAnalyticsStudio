@@ -1,5 +1,5 @@
 import {
-  Chat24Regular, CommentMultiple24Regular, Cube24Regular, DataBarHorizontal24Regular, DataScatter24Regular, DocumentBulletList24Regular, Layer24Regular, Map24Regular,
+  Chat24Regular, CommentMultiple24Regular, Cube24Regular, Database24Regular, DataBarHorizontal24Regular, DataScatter24Regular, DocumentBulletList24Regular, Layer24Regular, Map24Regular,
   Organization24Regular, PhoneDesktop24Regular, Ruler24Regular, Settings24Regular, Table24Regular, TaskListSquareLtr24Regular, TextBulletListTree24Regular,
   Target24Regular, TextNumberListLtr24Regular, Lightbulb24Regular, Trophy24Regular, Whiteboard24Regular, Window24Regular,
 } from '@fluentui/react-icons';
@@ -24,6 +24,7 @@ import { DiscussionTreeScreen } from './DiscussionTreeScreen';
 import { WhiteboardScreen } from './whiteboard/WhiteboardScreen';
 import { KpiOkrScreen } from './KpiOkrScreen';
 import { UseCaseScreen } from './UseCaseScreen';
+import { DataCatalogScreen } from './DataCatalogScreen';
 import { SourcesScreen } from './SourcesScreen';
 import { ChatScreen } from '../ai/ChatScreen';
 import '../analysis/commands';
@@ -48,6 +49,7 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'sources', label: '出典', icon: DocumentBulletList24Regular, component: SourcesScreen },
   { key: 'mock-app', label: 'ミニ・モックアプリ', icon: PhoneDesktop24Regular, component: MockAppScreen },
   { key: 'usecase', label: 'ユースケース', icon: Lightbulb24Regular, component: UseCaseScreen },
+  { key: 'data-catalog', label: 'データカタログ', icon: Database24Regular, component: DataCatalogScreen },
   { key: 'whiteboard', label: 'ホワイトボード', icon: Whiteboard24Regular, component: WhiteboardScreen },
   { key: 'themes', label: '議論テーマ', icon: CommentMultiple24Regular, component: ThemesScreen },
   { key: 'settings', label: '設定パネル', icon: Settings24Regular, component: SettingsScreen },

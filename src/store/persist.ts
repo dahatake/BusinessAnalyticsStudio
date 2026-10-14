@@ -6,6 +6,8 @@ import { useOkr, type OkrSet } from './okr';
 import { useProjects, type Company, type Project } from './projects';
 import { useStepper } from './stepper';
 import { useUseCases, type UseCaseSet } from './usecases';
+import { useDataCatalog } from './datacatalog';
+import type { ExplicitLink } from '../datacatalog/model';
 
 export const STORAGE_KEY = 'eabk.projects.v1';
 
@@ -21,6 +23,8 @@ interface Snapshot {
   okr?: Record<string, OkrSet>;
   /** Project ごとのユースケースとアニメーション（FR-158・FR-155）。古い保存内容にはない */
   usecases?: Record<string, UseCaseSet>;
+  /** Project ごとのデータカタログの明示の紐づけ（FR-160）。古い保存内容にはない */
+  dataLinks?: Record<string, ExplicitLink[]>;
 }
 
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
@@ -37,6 +41,7 @@ export function snapshot(): Snapshot {
     steps: useStepper.getState().byProject,
     okr: useOkr.getState().byTarget,
     usecases: useUseCases.getState().byProject,
+    dataLinks: useDataCatalog.getState().linksByProject,
   };
 }
 
@@ -73,6 +78,13 @@ export function restore(storage: Store): boolean {
     return rest;
   });
   useUseCases.setState({ byProject: Object.fromEntries(Object.entries(ucs).filter(([, v]) => isObj(v) && Array.isArray(v.items)).map(([k, v]) => [k, { items: cleanItems(v.items), animations: isObj(v.animations) ? v.animations : {}, seq: typeof v.seq === 'number' ? v.seq : v.items.length }])) });
+  const dl = isObj(data.dataLinks) ? data.dataLinks : {};
+  useDataCatalog.setState({
+    linksByProject: Object.fromEntries(Object.entries(dl).filter(([, v]) => Array.isArray(v)).map(([k, v]) => [
+      k, (v as unknown[]).filter((l): l is ExplicitLink => isObj(l) && typeof l.entityKey === 'string' && typeof l.useCaseId === 'string'),
+    ])),
+    selectedKey: null,
+  });
   useStepper.getState().switchTo(openId);
   return true;
 }
@@ -82,7 +94,7 @@ export function startPersistence(storage: Store): () => void {
   const save = () => {
     try { storage.setItem(STORAGE_KEY, JSON.stringify(snapshot())); } catch { /* 保存できなくても使い続けられる */ }
   };
-  const offs = [useProjects.subscribe(save), useAnalyses.subscribe(save), useStepper.subscribe(save), useOkr.subscribe(save), useUseCases.subscribe(save)];
+  const offs = [useProjects.subscribe(save), useAnalyses.subscribe(save), useStepper.subscribe(save), useOkr.subscribe(save), useUseCases.subscribe(save), useDataCatalog.subscribe(save)];
   return () => offs.forEach((off) => off());
 }
 

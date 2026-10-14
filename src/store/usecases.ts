@@ -1,6 +1,7 @@
 // Project ごとのユースケースとアニメーション（FR-158・FR-155）。ほかの Project に混ざらない（FR-138）。
 // 保存は store/persist.ts（端末内 localStorage のみ。FR-137・NFR-SEC-004）。
 import { create } from 'zustand';
+import { useDataCatalog } from './datacatalog';
 import {
   createAnimation, toDraft, validateDraft,
   type Animation, type UseCase, type UseCaseDraft, type UseCaseSource,
@@ -36,12 +37,16 @@ export const useUseCases = create<UseCaseState>((set, get) => ({
     set((s) => ({ byProject: { ...s.byProject, [projectId]: { ...cur, seq: cur.seq + 1, items: [...cur.items, { ...v.value, id: newId, ...(source ? { source } : {}) }] } } }));
     return { ok: true, id: newId };
   },
-  remove: (projectId, id) => set((s) => {
-    const cur = s.byProject[projectId];
-    if (!cur) return s;
-    const { [id]: _gone, ...animations } = cur.animations;
-    return { byProject: { ...s.byProject, [projectId]: { ...cur, items: cur.items.filter((u) => u.id !== id), animations } } };
-  }),
+  remove: (projectId, id) => {
+    set((s) => {
+      const cur = s.byProject[projectId];
+      if (!cur) return s;
+      const { [id]: _gone, ...animations } = cur.animations;
+      return { byProject: { ...s.byProject, [projectId]: { ...cur, items: cur.items.filter((u) => u.id !== id), animations } } };
+    });
+    // FR-160 AC-313: そのユースケースへのデータカタログの明示の紐づけも連動して削除する
+    useDataCatalog.getState().removeByUseCase(projectId, id);
+  },
   createAnimation: (projectId, id) => {
     const cur = get().byProject[projectId] ?? EMPTY;
     const uc = cur.items.find((u) => u.id === id);
