@@ -5,6 +5,7 @@ import { RadioGroup, Radio } from '../components/ChoiceRadio';
 import { useAnimation } from '../store/animation';
 import { useStoryStyle } from '../store/storyboardStyle';
 import { useStoryboardUi } from '../store/storyboardUi';
+import { useCaptionSpeech } from '../speech/useCaptionSpeech';
 import {
   STYLES, is3dStyle, isStyle, moveScene, sceneMs, telopParts, telopPlain, validateScenes, TELOP_MAX,
   type StoryScene, type StoryStyle,
@@ -95,6 +96,7 @@ export function StoryboardPlayer({ name, scenes, onClose }: { name: string; scen
   });
 
   const scene = scenes[Math.min(index, total - 1)]!;
+  const speech = useCaptionSpeech(scene.caption);
   const shapes = Math.min(8, index + 1);
   return (
     <Portal>
@@ -115,6 +117,8 @@ export function StoryboardPlayer({ name, scenes, onClose }: { name: string; scen
       </div>
       {fallback ? <p className="sbp-notice" role="status" data-testid="storyboard-fullscreen-fallback">この環境では全画面にできないため、画面全体を覆う表示で再生しています。</p> : null}
       {flat ? <p className="sbp-notice" role="status" data-testid="storyboard-style-notice">3D を描けない環境（WebGL が使えない）のため、2D のアニメの表現で再生しています。</p> : null}
+      {speech.sending ? <p className="sbp-notice" role="status" data-testid="speech-sending-notice">字幕の文言を音声合成の接続先（{speech.host}）へ送って読み上げています。</p> : null}
+      {speech.error ? <p className="sbp-notice" role="status" data-testid="speech-error">{speech.error}</p> : null}
       <div className="sbp-stage">
         <h2 className="sbp-heading" key={`h${index}`}>{scene.heading}</h2>
         <div className="sbp-world" aria-hidden="true">

@@ -7,6 +7,8 @@ import {
 export interface RuntimeConfig {
   relayUrl?: string;
   aiMock?: { delayMs?: number };
+  /** 字幕の読み上げの接続先とキー（FR-167。キーの入力・保存は FR-168 で別に扱う） */
+  speech?: { endpoint?: string; key?: string };
 }
 
 export type FetchLike = (url: string) => Promise<{ ok: boolean; status: number; json(): Promise<unknown> }>;
