@@ -5,8 +5,9 @@ import { Button, Tab, TabList, Text, makeStyles, mergeClasses, tokens } from '@f
 import { useSnapMotion } from '../motion/useFoldMotion';
 import { SNAP_LABEL, defaultSnapKind, nearestCorner, snapKindsFor, snapRect, type Edge, type SnapKind, type SnapOpts } from './snap';
 import type { ScreenDefinition } from '../screens/types';
-import { effectiveLayout, useLayout } from '../store/layout';
-import { keysOf, type DropZone, type LayoutNode, type Path, type SplitNode } from './layoutModel';
+import { effectiveLayout, useLayout, clampFloat, type FloatRect } from '../store/layout';
+import { EXPAND_RATIO, useSettings, type ExpandPosition } from '../store/settings';
+import { keysOf, prune, type DropZone, type LayoutNode, type Path, type SplitNode } from './layoutModel';
 import { applyAutoSize, fitMinWidth } from './autosize';
 import { PERSONA_PRIMARY } from './persona';
 import { PaneContext, type PaneInfo } from './PaneContext';
@@ -47,6 +48,14 @@ const useStyles = makeStyles({
     border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`,
   },
   root: { position: 'relative', display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0, minWidth: 0 },
+  // 分割の木を入れる箱。拡大表示中は、余白で残りの領域に収める（FR-174）
+  treeBox: { display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0, minWidth: 0, boxSizing: 'border-box' },
+  // 自由配置・拡大表示のコンポーネントの置き場（作業領域に対する絶対配置。重なりを許す。FR-173）
+  floatBox: { position: 'absolute', display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, boxSizing: 'border-box', boxShadow: tokens.shadow16, borderRadius: tokens.borderRadiusMedium, overflow: 'hidden' },
+  freePreview: {
+    position: 'fixed', zIndex: 1000, pointerEvents: 'none', boxSizing: 'border-box',
+    backgroundColor: tokens.colorBrandBackground2, border: `${tokens.strokeWidthThick} dashed ${tokens.colorBrandStroke1}`, borderRadius: tokens.borderRadiusMedium,
+  },
   split: { display: 'flex', flex: '1 1 0', minWidth: 0, minHeight: 0 },
   row: { flexDirection: 'row' },
   col: { flexDirection: 'column' },
@@ -78,6 +87,8 @@ export const MINIMIZED_HEIGHT = 48;
 export const MINIMIZED_WIDTH = 240;
 
 const DRAG_THRESHOLD_PX = 4;
+/** マウスで押したコンポーネントを「操作中」にするまでの待ち（ダブルクリックの間隔より長く） */
+const POINTER_FOCUS_DELAY_MS = 500;
 /** 分割線の上に放したときに、近くのコンポーネントへ寄せる距離（分割線の太さ 8px より少し大きく） */
 const SNAP_PX = 12;
 
@@ -96,6 +107,30 @@ interface DragState {
   key: string;
   target: { key: string; zone: DropZone; rect: DOMRect } | null;
   snap?: SnapState | null;
+  /** 分割に入れず、置いた位置にそのまま置く（自由配置。FR-173）ときの、置く場所（画面上の座標） */
+  free?: { left: number; top: number; width: number; height: number } | null;
+}
+
+/** 拡大表示の位置と大きさ（作業領域に対する割合。FR-174・FR-175） */
+export function expandRect(pos: ExpandPosition): FloatRect {
+  const r = EXPAND_RATIO;
+  switch (pos) {
+    case 'left': return { x: 0, y: 0, w: r, h: 1 };
+    case 'right': return { x: 1 - r, y: 0, w: r, h: 1 };
+    case 'bottom': return { x: 0, y: 1 - r, w: 1, h: r };
+    default: return { x: 0, y: 0, w: 1, h: r };
+  }
+}
+
+/** 拡大表示の分だけ、残りのコンポーネントを置く領域を狭める余白（px） */
+function expandInset(pos: ExpandPosition, w: number, h: number): CSSProperties {
+  const r = EXPAND_RATIO;
+  switch (pos) {
+    case 'left': return { paddingLeft: w * r };
+    case 'right': return { paddingRight: w * r };
+    case 'bottom': return { paddingBottom: h * r };
+    default: return { paddingTop: h * r };
+  }
 }
 
 /** 端からこの距離以内でスナップの候補を出す（PARAM-042） */
@@ -198,6 +233,10 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   const persona = useLayout((st) => st.persona);
   const stored = useLayout((st) => st.layouts);
   const base = useMemo(() => effectiveLayout({ persona, layouts: stored }), [persona, stored]);
+  const floatMap = useLayout((st) => st.floats[st.persona]);
+  const zOrder = useLayout((st) => st.zOrder);
+  const expandedKey = useLayout((st) => st.expanded);
+  const expandPos = useSettings((st) => st.expandPosition);
   const autoSize = useLayout((st) => st.autoSize);
   const manualKeys = useLayout((st) => st.manual[st.persona]);
   const maximized = useLayout((st) => st.maximized);
@@ -216,27 +255,54 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   const resetCount = useLayout((st) => st.resetCount);
   useEffect(() => { if (resetCount > 0) { setFocusKey(null); setPicked(null); } }, [resetCount]);
   const [width, setWidth] = useState(0);
+  const [height, setHeight] = useState(0);
   const [drag, setDrag] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
   dragRef.current = drag;
   // 幅が狭い（または拡大率が高い）ときは、分割を縦に積む。レイアウトの木は変えず、描き方だけを替える。
   const rootRef = useRef<HTMLDivElement>(null);
   const [compact, setCompact] = useState(false);
-  // 自動のサイズ調整と最小の幅を、描くときだけ適用する。保存するレイアウト（base）は変えない（FR-143、AC-227）。
+  // 木の外に出して描くコンポーネント: 拡大表示中はそれ 1 つだけ（ほかは残りの領域に収める）、それ以外は自由配置したもの（FR-173・FR-174）。
+  // 狭い画面（縦積み）では自由配置を使わない。
+  const baseKeys = useMemo(() => new Set(keysOf(base)), [base]);
+  const expandedOut = expandedKey !== null && baseKeys.has(expandedKey) ? expandedKey : null;
+  const floatKeys = useMemo(
+    () => (compact || expandedOut ? [] : Object.keys(floatMap ?? {}).filter((k) => baseKeys.has(k) && !!byKey(k)?.component)),
+    [compact, expandedOut, floatMap, baseKeys, byKey],
+  );
+  const outKeys = useMemo(() => (expandedOut ? [expandedOut] : floatKeys), [expandedOut, floatKeys]);
+  const treeBase = useMemo(() => (outKeys.length === 0 ? base : prune(base, new Set([...baseKeys].filter((k) => !outKeys.includes(k))))), [base, baseKeys, outKeys]);
+  const inset = expandedOut ? expandInset(expandPos, width, height) : undefined;
+  // 拡大表示中は「操作中」の更新を止める（復帰したとき、拡大前と同じ大きさに戻すため。FR-174）
+  const expandedRef = useRef<string | null>(null);
+  expandedRef.current = expandedOut;
+  const treeWidth = expandedOut ? (expandPos === 'left' || expandPos === 'right' ? width * (1 - EXPAND_RATIO) : width) : width;
+  // 自動のサイズ調整と最小の幅を、描くときだけ適用する。保存するレイアウト（base）は変えない（FR-143、AC-227）。拡大表示中は自動の調整を止める（A-41）。
   const layout = useMemo(() => {
-    if (compact) return base;
-    const sized = applyAutoSize(base, {
-      enabled: autoSize, focus: focusKey, primary: PERSONA_PRIMARY[persona], manual: new Set(manualKeys ?? []), width,
+    if (compact) return treeBase;
+    const sized = applyAutoSize(treeBase, {
+      enabled: autoSize && !expandedOut, focus: focusKey, primary: PERSONA_PRIMARY[persona], manual: new Set(manualKeys ?? []), width: treeWidth,
     });
-    return fitMinWidth(sized, width, [picked, focusKey]);
-  }, [base, compact, autoSize, focusKey, persona, manualKeys, width, picked]);
+    return fitMinWidth(sized, treeWidth, [picked, focusKey]);
+  }, [treeBase, compact, autoSize, expandedOut, focusKey, persona, manualKeys, treeWidth, picked]);
 
   const pane = (key: string, group: string[], active: string): PaneInfo => {
     const a = actions();
     const isMax = maximized === key;
+    const isFloat = floatKeys.includes(key);
+    const zRank = zOrder.indexOf(key);
     return {
       key,
       maximized: isMax,
+      expanded: expandedOut === key,
+      toggleExpand: () => actions().toggleExpanded(key),
+      floating: isFloat,
+      toggleFloat: () => {
+        if (isFloat || (floatMap && key in floatMap)) { actions().unfloat(key); return; }
+        const r = rectOfKey(key);
+        if (r) actions().setFloat(key, r);
+      },
+      z: zRank >= 0 ? 2 + zRank : undefined,
       minimized: minSet.has(key),
       toggleMinimize: () => a.setMinimized(key, !minSet.has(key)),
       visible: group.length === 1 || active === key,
@@ -245,7 +311,13 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       toggleMaximize: () => actions().setMaximized(actions().maximized === key ? null : key),
       restore: () => actions().setMaximized(null),
       hide: () => a.hideComponent(key),
-      move: (d) => a.moveComponent(key, d),
+      move: (d) => {
+        // 自由配置のコンポーネントは、同じ向きに作業領域の 5% ずつ動かす（ドラッグなしの手段。FR-173 AC-349）
+        const cur = isFloat ? floatMap?.[key] : undefined;
+        if (!cur) { a.moveComponent(key, d); return; }
+        const step = 0.05;
+        a.setFloat(key, { ...cur, x: cur.x + (d === 'right' ? step : d === 'left' ? -step : 0), y: cur.y + (d === 'down' ? step : d === 'up' ? -step : 0) });
+      },
       toggleDirection: () => a.toggleDirection(key),
       snapTo: (kind) => a.snapTo(key, kind, { tabTarget: keysOf(layout).find((k) => !group.includes(k)) }),
       snapKinds: snapKindsFor(compact),
@@ -255,11 +327,22 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     };
   };
 
+  /** 画面上のコンポーネントの、作業領域に対する位置と大きさ（0〜1）。見つからなければ null */
+  const rectOfKey = (key: string): FloatRect | null => {
+    const root = rootRef.current;
+    const el = root?.querySelector(`[data-testid="component-${key}"]`);
+    if (!root || !el) return null;
+    const a = root.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    if (a.width <= 0 || a.height <= 0 || r.width <= 0 || r.height <= 0) return null;
+    return clampFloat({ x: (r.left - a.left) / a.width, y: (r.top - a.top) / a.height, w: r.width / a.width, h: r.height / a.height });
+  };
+
   const hosts = useRef(new Map<string, HTMLElement>());
   useLayoutEffect(() => {
     const el = rootRef.current;
     if (!el) return;
-    const measure = () => { const w = el.getBoundingClientRect().width; setWidth(w); setCompact(isCompactWidth(w)); };
+    const measure = () => { const r = el.getBoundingClientRect(); setWidth(r.width); setHeight(r.height); setCompact(isCompactWidth(r.width)); };
     measure();
     if (typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(measure);
@@ -283,6 +366,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     else n.children.forEach(collect);
   };
   if (layout) collect(layout);
+  outKeys.forEach((k) => groups.set(k, { tabs: [k], active: k }));
 
   const renderLeaf = (key: string, hidden = false) => {
     if (!byKey(key)?.component) return null;
@@ -420,6 +504,22 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     const sx = e.clientX;
     const sy = e.clientY;
     let active = false;
+    // つかんだ位置（コンポーネントの左上からの差）と大きさ。置いた位置の計算に使う（FR-173）
+    const grabRect = rootRef.current?.querySelector(`[data-testid="component-${key}"]`)?.getBoundingClientRect() ?? null;
+    const offX = grabRect ? sx - grabRect.left : 0;
+    const offY = grabRect ? sy - grabRect.top : 0;
+    useLayout.getState().raise(key);
+    /** ポインターの位置から、自由配置の置き場所（画面上の座標。作業領域の中に収める）を決める */
+    const freeAt = (px: number, py: number): DragState['free'] => {
+      const area = rootRef.current?.getBoundingClientRect();
+      if (compact || !area || !grabRect || area.width <= 0 || area.height <= 0) return null;
+      const width = Math.min(grabRect.width, area.width);
+      const height = Math.min(grabRect.height, area.height);
+      const left = Math.min(Math.max(px - offX, area.left), area.right - width);
+      const top = Math.min(Math.max(py - offY, area.top), area.bottom - height);
+      return { left, top, width, height };
+    };
+    let lastFree: DragState['free'] = null;
     const stop = () => {
       window.removeEventListener('pointermove', onMove, true);
       window.removeEventListener('pointerup', onUp, true);
@@ -435,14 +535,21 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       }
       const hit = hitTest(ev.clientX, ev.clientY, key);
       const snap = snapAt(ev.clientX, ev.clientY, key, hit?.key ?? null);
-      setDrag({ key, target: hit && !snap ? { key: hit.key, zone: hit.zone, rect: hit.rect } : null, snap });
+      // 分割へ入れる置き場所（上下左右の辺）でも、端のスナップでもなければ、置いた位置にそのまま置く（自由配置。重なってもよい。FR-173）
+      const docking = !!snap || (hit !== null && (hit.zone !== 'tabs' || compact));
+      lastFree = docking ? null : freeAt(ev.clientX, ev.clientY);
+      setDrag({ key, target: hit && !snap && docking ? { key: hit.key, zone: hit.zone, rect: hit.rect } : null, snap, free: lastFree });
     };
     const onUp = () => {
       const d = dragRef.current;
       stop();
       setDrag(null);
+      const area = rootRef.current?.getBoundingClientRect();
       if (active && d?.snap) useLayout.getState().snapTo(key, d.snap.kind, d.snap.opts);
       else if (active && d?.target) useLayout.getState().dropMove(key, d.target.key, d.target.zone);
+      else if (active && lastFree && area && grabRect) {
+        useLayout.getState().setFloat(key, { x: (lastFree.left - area.left) / area.width, y: (lastFree.top - area.top) / area.height, w: lastFree.width / area.width, h: lastFree.height / area.height });
+      }
     };
     const onCancel = () => { stop(); setDrag(null); };
     const onKey = (ev: globalThis.KeyboardEvent) => {
@@ -463,13 +570,16 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   const pointerDown = useRef(false);
   /** 直前にフォーカスのあった要素。自動のサイズ調整でコンポーネントの置き場所（DOM の親）が変わると、フォーカスが body に落ちるので戻す */
   const lastFocused = useRef<HTMLElement | null>(null);
+  const refocusing = useRef(false);
   useLayoutEffect(() => {
     const el = lastFocused.current;
     if (!el || !el.isConnected) return;
     const a = document.activeElement;
     if (a && a !== document.body) return;
     if (!rootRef.current?.contains(el) || el.getClientRects().length === 0) return;
+    refocusing.current = true;
     el.focus({ preventScroll: true });
+    refocusing.current = false;
   }, [layout]);
   const pendingFocus = useRef<string | null>(null);
   useEffect(() => {
@@ -479,7 +589,9 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       const k = pendingFocus.current;
       pendingFocus.current = null;
       // click は pointerup の直後に届くので、その後で反映する
-      if (k) setTimeout(() => setFocusKey(k), 0);
+      // ダブルクリック（ヘッダーの拡大表示・復帰など）の途中で、1 回目のクリックのあとにレイアウトが動いて 2 回目が外れたり、
+      // 拡大・復帰の前後で大きさが変わったりしないよう、マウスで操作した場合は、ダブルクリックの間隔が過ぎてから反映する（FR-174）。
+      if (k) setTimeout(() => { if (!expandedRef.current) setFocusKey(k); }, POINTER_FOCUS_DELAY_MS);
     };
     window.addEventListener('pointerdown', down, true);
     window.addEventListener('pointerup', up, true);
@@ -492,7 +604,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   }, []);
   const onFocusCapture = (e: FocusEvent<HTMLDivElement>) => {
     lastFocused.current = e.target as HTMLElement;
-    if (dragRef.current) return;
+    if (dragRef.current || expandedRef.current || refocusing.current) return;
     const visible = new Set(keysOf(base));
     for (let n: Element | null = e.target as Element; n && n !== e.currentTarget; n = n.parentElement) {
       const id = n.getAttribute('data-testid') ?? '';
@@ -505,8 +617,22 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     }
   };
 
+  /** 操作した（押した）コンポーネントを手前に出す（FR-173。重なったときは直近に操作したものが手前） */
+  const onPointerDownRaise = (e: PointerEvent<HTMLDivElement>) => {
+    for (let n: Element | null = e.target as Element; n && n !== e.currentTarget; n = n.parentElement) {
+      const id = n.getAttribute('data-testid') ?? '';
+      if (id.startsWith('component-') && id !== 'component-menu' && id !== 'component-actions') { actions().raise(id.slice('component-'.length)); return; }
+    }
+  };
+
   return (
-    <div ref={rootRef} onFocusCapture={onFocusCapture} className={mergeClasses(s.root, compact ? s.rootCompact : undefined)} data-layout={compact ? 'stacked' : 'split'}>
+    <div
+      ref={rootRef}
+      onFocusCapture={onFocusCapture}
+      onPointerDownCapture={onPointerDownRaise}
+      className={mergeClasses(s.root, compact ? s.rootCompact : undefined)}
+      data-layout={compact ? 'stacked' : 'split'}
+    >
       {drag?.target ? (
         <div
           data-testid="drop-indicator"
@@ -549,9 +675,29 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
           </>
         );
       })() : null}
-      {layout ? (compact ? renderStack(layout) : render(layout, [])) : (
-        <Text className={s.empty} size={400}>表示中のコンポーネントがありません。左のドックから再表示してください。</Text>
-      )}
+      {drag?.free ? (
+        <div data-testid="free-indicator" aria-hidden className={s.freePreview} style={{ left: drag.free.left, top: drag.free.top, width: drag.free.width, height: drag.free.height }} />
+      ) : null}
+      <div className={s.treeBox} style={inset}>
+        {layout ? (compact ? renderStack(layout) : render(layout, [])) : (
+          <Text className={s.empty} size={400}>{outKeys.length > 0 ? '' : '表示中のコンポーネントがありません。左のドックから再表示してください。'}</Text>
+        )}
+      </div>
+      {outKeys.map((k) => {
+        const r = expandedOut === k ? expandRect(expandPos) : floatMap?.[k];
+        if (!r || !byKey(k)?.component) return null;
+        const rank = zOrder.indexOf(k);
+        return (
+          <div
+            key={`float-${k}`}
+            className={s.floatBox}
+            data-float={k}
+            style={{ left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.w * 100}%`, height: `${r.h * 100}%`, zIndex: expandedOut === k ? 500 : 2 + Math.max(rank, 0) }}
+          >
+            <Slot host={hostOf(k)} />
+          </div>
+        );
+      })}
       {[...groups.entries()].map(([key, g]) => {
         const Screen = byKey(key)?.component;
         if (!Screen) return null;

@@ -5,7 +5,7 @@ import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { Panel } from '../components/Panel';
 import { AiSettings } from '../ai/AiSettings';
 import { WorkTargetSettings } from '../projects/WorkTargetSettings';
-import { THEME_MODES, useSettings, type Handedness, type ThemeMode } from '../store/settings';
+import { DEFAULT_EXPAND_POSITION, EXPAND_LABEL, EXPAND_POSITIONS, THEME_MODES, useSettings, type ExpandPosition, type Handedness, type ThemeMode } from '../store/settings';
 import { INDUSTRY_PRESETS, useIndustryPreset, useView3D } from '../store/view3d';
 import { QUALITIES, type Quality } from '../three/quality';
 import { PresetIcon } from '../three/presetIcons';
@@ -66,6 +66,8 @@ export function SettingsScreen() {
   const setMode = useSettings((st) => st.setThemeMode);
   const handedness = useSettings((st) => st.handedness);
   const setHandedness = useSettings((st) => st.setHandedness);
+  const expandPosition = useSettings((st) => st.expandPosition);
+  const setExpandPosition = useSettings((st) => st.setExpandPosition);
   const override = useSettings((st) => st.brandPrimaryOverride);
   const setOverride = useSettings((st) => st.setBrandPrimaryOverride);
   const bgmEnabled = useSettings((st) => st.bgmEnabled);
@@ -117,6 +119,12 @@ export function SettingsScreen() {
           <Radio value="right" label="右利き" />
           <Radio value="left" label="左利き" />
         </RadioGroup>
+      </Field>
+      <Field label="拡大表示の位置" hint="コンポーネントの見出しをダブルクリック（またはメニュー・Shift+E）したときに、作業領域の 75% を使って表示する位置です。">
+        <RadioGroup layout="horizontal" value={expandPosition} onChange={(_, d) => setExpandPosition(d.value as ExpandPosition)}>
+          {EXPAND_POSITIONS.map((p) => <Radio key={p} value={p} label={EXPAND_LABEL[p]} />)}
+        </RadioGroup>
+        <Button size="small" appearance="subtle" disabled={expandPosition === DEFAULT_EXPAND_POSITION} onClick={() => setExpandPosition(DEFAULT_EXPAND_POSITION)}>拡大表示の位置を既定（上）に戻す</Button>
       </Field>
       <WorkTargetSettings />
       <div role="group" aria-labelledby="audio-settings-title">
