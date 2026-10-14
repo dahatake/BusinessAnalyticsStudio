@@ -32,6 +32,8 @@ export interface StartOptions {
   /** 既定は「未接続」（使われていないポート） */
   relayUrl?: string;
   aiMockDelayMs?: number;
+  /** 音声合成のモック接続（runtime-config.json の speech。CONTRACT.md §13） */
+  speech?: { endpoint: string; key: string };
   /** オープニングを飛ばして本編から始める（既定 true） */
   skipOpening?: boolean;
   /** File System Access API を無効にする（既定 true: ダウンロードで受け取る） */
@@ -78,7 +80,7 @@ export const test = base.extend<Fixtures>({
       const relayUrl = opts.relayUrl ?? `http://127.0.0.1:${await unusedPort()}`;
       const server = opts.server ?? (await startStaticServer({
         pack: { root: pack ? pack.root : null },
-        runtimeConfig: { relayUrl, aiMock: { delayMs: opts.aiMockDelayMs ?? 0 } },
+        runtimeConfig: { relayUrl, aiMock: { delayMs: opts.aiMockDelayMs ?? 0 }, ...(opts.speech ? { speech: opts.speech } : {}) },
       }));
       if (!opts.server) servers.push(server);
       if (opts.disableFileSystemAccess !== false) await disableFsAccess(page);

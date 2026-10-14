@@ -72,3 +72,10 @@
 - 対応表（FR-160）: `entity-usecase-matrix`。セルは `data-kind="derived|explicit|none"`・`data-entity-name`・`data-usecase-name`。derived は文字「導出」、explicit は「明示」。none のセルに button「紐づけを追加」（名前は部分一致）、explicit のセルに button「削除」。derived には削除の操作がない。ユースケースが 0 件のとき `matrix-empty-reason` に理由（「ユースケース」を含む）。
 - 取り込みと突合（FR-161）: file input（label「企業データカタログのファイル」）。突合は `reconcile-table` の `tr[data-entity-name][data-category="一致|差異|BASのみ|カタログのみ"]`（区分は行内にも文字で表示）。拒否は role=alert に原因（JSON・形式・読み込めない等）。
 - ToDo 追加（FR-162）: button「未掲載を ToDo に追加」。結果と件数は `todo-add-result`（追加件数の数字。追加できないときは理由）。フック `t.plan.tasks()` は Project の plan の tasks を `{ id, title, description }[]` で返す。
+
+## 13. ストーリーボード・スタイル・音声読み上げ（FR-163〜167。storyboard.spec.ts が前提にする画面の探し方）
+- 作成（FR-163）: ユースケース一覧の各 item にボタン「ストーリーボードを作成」「ストーリーボードを編集」「ストーリーボードを再生」（未作成のあいだ再生は無効）。手順 0 件の作成は role=alert（文言に「手順を 1 つ以上追加する」）で拒否。編集は `data-testid="storyboard-scenes"` の listitem（シーン n）に textbox「シーン n の見出し」「シーン n の字幕」「シーン n の強調テロップ」とボタン「保存」。対象ペルソナが scenes 内に文字で出る。Esc で閉じる。
+- 再生（FR-164）: `data-testid="storyboard-player"`。`data-storyboard-state="playing|paused|ended"`、`data-motion="running|stopped"`、`storyboard-position`（「n / 全体」）。ボタン「再生」「一時停止」。キー: `P`・`←`/`→`・`Esc`。再生開始で `document.fullscreenElement` が設定される。全画面にできないときは `storyboard-fullscreen-fallback`（旨の表示）で画面全体を覆う。再生開始から ended まで実時間 25〜35 秒（手順 3 件・6 件とも）。
+- 字幕・テロップ（FR-165）: 現在のシーンの `storyboard-caption`（字幕。不透明な背景色を自身に持つ）・`storyboard-telop`（強調テロップ。最初のシーン冒頭。20 文字以内）・その中の強調語 `storyboard-emphasis`。
+- スタイル（FR-166）: ユースケース作成画面の radiogroup「スタイル」に radio 5 つ（3D・アニメ・Geometric 3D・Isometric 3D・Whimsical 3D。既定 Isometric 3D）。再生中の `storyboard-style-name` に現在名。WebGL なしでは `storyboard-style-notice`（「2D」を含む理由）。保存先は端末内。
+- 音声（FR-167）: `runtime-config.json` の `speech: { endpoint, key }`（モック。テストは endpoint を `page.route` で受ける。実際の Azure は呼ばない）。設定画面（`nav-settings`）に region「音声設定」: `speech-status`（「設定済み」/「未設定」）、switch「字幕の読み上げ」、未設定で有効にすると role=alert。再生中: 送信中は `speech-sending-notice`、失敗・未設定・タイムアウト・オフラインは `speech-error`（原因と直し方）で、再生は字幕だけで最後まで進む。ミュート（button「ミュート」, aria-pressed。既定 true）のままでは要求を送らない。送信本文に字幕の文言を含む。
