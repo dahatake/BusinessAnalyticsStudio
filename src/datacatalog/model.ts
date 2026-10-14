@@ -16,6 +16,8 @@ export interface DataEntity {
   /** 表示名（全角・半角などを正規化し、前後の空白を除いたもの） */
   name: string;
   description: string;
+  /** 顧客パックのエンティティの ID（同じ鍵の最初のもの。企業データカタログの basId との突合に使う。FR-161） */
+  id?: string;
   origins: Origin[];
 }
 export interface EntityDerivation { entities: DataEntity[]; emptyReason?: string }
@@ -49,7 +51,7 @@ export function deriveEntities(entities: readonly PackEntity[], records: readonl
       const key = normalizeKey(e.name);
       let cur = out.get(key);
       if (!cur) {
-        cur = { key, name: displayName(e.name), description: '', origins: [] };
+        cur = { key, name: displayName(e.name), description: '', id: e.id, origins: [] };
         out.set(key, cur);
       }
       if (!cur.description && e.description?.trim()) cur.description = e.description.trim();

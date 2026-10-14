@@ -15,6 +15,8 @@ import { RelatedMini } from '../components/RelatedMini';
 import { EmptyView, LoadingView } from '../components/StateViews';
 import { buildGantt, formatPeriod, type GanttTask } from '../plan/model';
 import { usePackStore } from '../store/pack';
+import { useProjectTasks } from '../store/datacatalog';
+import { useProjects } from '../store/projects';
 import { registerTestHook } from '../testing/hook';
 
 const useStyles = makeStyles({
@@ -148,7 +150,10 @@ function GanttScreen() {
   const hl = useHighlightClass();
 
   const features = data?.plan.features;
-  const tasks = data?.plan.tasks;
+  // plan の tasks は、顧客パックの tasks に Project 内の追加分（FR-162）を合わせたもの。schema/plan.json は変えない
+  const packTasks = data?.plan.tasks;
+  const extraTasks = useProjectTasks(useProjects((x) => x.openId));
+  const tasks = useMemo((): typeof packTasks => (packTasks ? [...packTasks, ...extraTasks.map((t) => ({ id: t.id, createdBy: 'human' as const, title: t.title, work: t.description }) as NonNullable<typeof packTasks>[number])] : undefined), [packTasks, extraTasks]);
   const model = useMemo(() => buildGantt(features ?? [], tasks ?? []), [features, tasks]);
   const taskIdSet = useMemo(() => new Set((tasks ?? []).map((t) => t.id)), [tasks]);
   const selectedTaskId = selectedIds.find((id) => taskIdSet.has(id));
