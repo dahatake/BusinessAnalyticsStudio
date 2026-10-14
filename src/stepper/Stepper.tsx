@@ -43,7 +43,7 @@ export function Stepper({ onNavigate }: StepperProps) {
                 icon={state === 'done' ? <Checkmark16Regular aria-hidden /> : undefined}
                 aria-current={state === 'current' ? 'step' : undefined}
                 title={STEP_STATE_LABEL[state]}
-                onClick={() => { setCurrent(i); onNavigate(step.screen); }}
+                onClick={() => { setCurrent(i); onNavigate(step.screen); step.also?.forEach(onNavigate); }}
               >
                 {step.label}
               </Button>
