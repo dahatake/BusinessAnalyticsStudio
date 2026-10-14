@@ -617,11 +617,11 @@
       "ac_ids": [
         "AC-016"
       ],
-      "title": "AC-016 標準の検証条件で、コンポーネントにフォーカスして `Shift+F` を押すと最大化し、`Esc` で通常表示に戻り、`",
+      "title": "AC-016 Shift+F で最大化、Esc で通常、H で非表示、見出しのダブルクリックは最大化でなく拡大（FR-174）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-016",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "b052565",
       "last_run_at": "2026-10-14T15:01:22+09:00",
       "evidence": "work/runs/202610141416/logs/system-test/E2E-115-202610141440.log",
@@ -631,6 +631,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-10-15T06:15:55+09:00",
+          "by": "test-designer",
+          "change": "title: 'AC-016 標準の検証条件で、コンポーネントにフォーカスして `Shift+F` を押すと最大化し、`Esc` で通常表示に戻り、`' -> 'AC-016 Shift+F で最大化、Esc で通常、H で非表示、見出しのダブルクリックは最大化でなく拡大（FR-174）'",
+          "reason": "AC-016 改訂（Q-023 2026-10-15）: ダブルクリックは data-expanded、最大化は Shift+F で検証"
         }
       ]
     },
