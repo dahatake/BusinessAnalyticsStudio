@@ -27,6 +27,7 @@ const useStyles = makeStyles({
     backgroundColor: tokens.colorNeutralBackground3,
     borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
   },
+  topRow: { flexBasis: '100%', display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalS, minWidth: 0 },
   actions: { marginLeft: 'auto', display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalS },
   nav: {
     display: 'flex',
@@ -133,13 +134,13 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
   return (
     <div ref={rootRef} className={mergeClasses(s.root, navMin ? s.rootMin : undefined)} data-nav-min={navMin ? 'true' : undefined}>
       <header className={s.header}>
+        {/* FR-176: 作業先・企業・Project の段（ProjectsPanel が portal で描く）。画面の最上段に置き、Tab 順でも最初に届く */}
+        <div id="projects-head-slot" className={s.topRow} data-testid="top-row" />
         <Text as="h1" size={500} weight="semibold">{title}</Text>
         <div className={s.actions}>
           {brand ? <div>{brand}</div> : null}
           {headerExtra}
           {actions}
-          {/* 企業と Project の操作行（ProjectsPanel が portal で描く）。ワークスペースの縦の領域を削らないため、ヘッダーの空きに置く */}
-          <div id="projects-head-slot" style={{ display: 'contents' }} />
         </div>
         {stepper}
       </header>
