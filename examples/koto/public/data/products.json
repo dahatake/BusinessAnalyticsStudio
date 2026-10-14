@@ -1,5 +1,7 @@
 {
   "products": [
-    { "id": "prod-koto-001", "createdBy": "sample", "name": "サンプル予約管理サービス", "vendor": "架空のベンダー C", "summary": "予約の確認と変更をオンラインで行う（合成データ）", "sourceIds": ["src-koto-002"] }
+    { "id": "prod-koto-001", "createdBy": "sample", "name": "サンプル予約管理サービス", "vendor": "架空のベンダー C", "summary": "予約の確認と変更をオンラインで行う（合成データ）", "sourceIds": ["src-koto-002"] },
+    { "id": "prod-koto-002", "createdBy": "sample", "name": "サンプル顧客の声分析サービス", "vendor": "架空のベンダー D", "summary": "部門ごとの問い合わせの記録を集めて傾向を示す（合成データ）", "sourceIds": ["src-koto-001"] },
+    { "id": "prod-koto-003", "createdBy": "sample", "name": "サンプル回答支援サービス", "vendor": "架空のベンダー E", "summary": "過去の記録から窓口の回答案を示す（合成データ）", "sourceIds": ["src-koto-002"] }
   ]
 }

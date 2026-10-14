@@ -145,9 +145,20 @@
                 "items": {
                   "type": "object",
                   "properties": {
+                    "id": {
+                      "type": "string",
+                      "pattern": "^[a-z0-9][a-z0-9-]*$"
+                    },
                     "name": {
                       "type": "string",
                       "minLength": 1
+                    },
+                    "solutionIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "pattern": "^[a-z0-9][a-z0-9-]*$"
+                      }
                     },
                     "kpi": {
                       "type": "object",
@@ -203,6 +214,86 @@
         "objectives"
       ],
       "additionalProperties": {}
+    },
+    "useCases": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1
+          },
+          "persona": {
+            "type": "string",
+            "enum": [
+              "経営層",
+              "事業部門",
+              "IT",
+              "現場"
+            ]
+          },
+          "steps": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "title": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "description": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "title"
+              ],
+              "additionalProperties": {}
+            }
+          },
+          "effect": {
+            "type": "string",
+            "minLength": 1
+          },
+          "solutionId": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "kpiNames": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "summary",
+          "persona",
+          "steps",
+          "effect",
+          "solutionId",
+          "kpiNames"
+        ],
+        "additionalProperties": {}
+      }
+    },
+    "fictionalNote": {
+      "type": "string",
+      "minLength": 1
     }
   },
   "required": [

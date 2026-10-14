@@ -72,6 +72,19 @@
       "effects": [{ "id": "effect-mono-003", "title": "停止原因の集計が即日で終わる" }],
       "productIds": ["prod-mono-002"], "sourceIds": ["src-mono-002"],
       "productFits": [{ "productId": "prod-mono-002", "reason": "現場のタブレットで記録を入力でき、紙の集計を不要にできるため" }]
+    },
+    {
+      "id": "sol-mono-003", "createdBy": "sample", "issueId": "issue-mono-003", "issueIds": ["issue-mono-003"], "title": "熟練者の判断基準をナレッジとして共有する",
+      "genAiValues": ["chatRag"],
+      "effects": [{ "id": "effect-mono-004", "title": "判断の根拠を誰でも確かめられる" }],
+      "productIds": ["prod-mono-003"], "sourceIds": ["src-mono-002"],
+      "productFits": [{ "productId": "prod-mono-003", "reason": "熟練者の判断基準を蓄積し、質問に答える形で引き出せるため" }]
+    },
+    {
+      "id": "sol-mono-004", "createdBy": "sample", "issueId": "issue-mono-004", "issueIds": ["issue-mono-004"], "title": "検査結果を即時に共有する",
+      "effects": [{ "id": "effect-mono-005", "title": "検査結果が共有されるまでの時間が短くなる" }],
+      "productIds": ["prod-mono-004"], "sourceIds": ["src-mono-002"],
+      "productFits": [{ "productId": "prod-mono-004", "reason": "検査機器の出力を取り込み、関係者へ即時に配信できるため" }]
     }
   ]
 }

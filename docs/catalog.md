@@ -202,8 +202,8 @@
 | FR-176 | 作業先・企業・Project のメニューを画面の最上位に置く | 承認済み | 未実装 | 未実装 | - |
 | FR-177 | プレゼンテーション: ペルソナ別の分析結果のストーリー | 承認済み | 未実装 | 未実装 | - |
 | FR-178 | プレゼンテーション: フルスクリーンのドラマチックな演出と操作 | 承認済み | 未実装 | 未実装 | - |
-| FR-179 | プレゼンテーション: ストーリーの材料と、不足するデータの扱い | 承認済み | 未実装 | 未実装 | - |
-| FR-180 | デモの作業先のユースケースなど不足するデータの補完 | 承認済み | 未実装 | 未実装 | - |
+| FR-179 | プレゼンテーション: ストーリーの材料と、不足するデータの扱い | 承認済み | src/usecase/demo.ts (kpisForSolution, useCasesForSolution = 材料の読み出し。ストーリーの描画は presentation-story), src/schema/files.ts (okr.keyResults[].solutionIds) | tests/unit/demo-data.test.tsx (AC-362 の材料) | デモのユースケースと解決策の結び付き, KPI・OKR |
+| FR-180 | デモの作業先のユースケースなど不足するデータの補完 | 承認済み | src/usecase/demo.ts (demoUseCases, countByPersona, personasBelowMinimum), src/schema/files.ts (useCases, fictionalNote, USECASE_PERSONAS), src/screens/UseCaseScreen.tsx (デモの読み込み専用の一覧), examples/mono/public/data/customer.json, examples/koto/public/data/customer.json (useCases・okr), examples/mono/public/data/issues.json, examples/koto/public/data/issues.json (解決策の追加), examples/mono/public/data/products.json, examples/koto/public/data/products.json, schema/customer.json | tests/unit/demo-data.test.tsx (AC-364, AC-365, AC-366), tests/system/e2e/story.spec.ts (E2E-275) | デモのユースケースと解決策の結び付き, KPI・OKR |
 | NFR-A11Y-008 | ストーリーの代替の手段と動きの配慮 | 承認済み | 未実装 | 未実装 | - |
 ## API・イベント
 
@@ -218,7 +218,8 @@
 | テーブル名 | 定義ファイル | 正本のシステム | 関連する要求 ID |
 |---|---|---|---|
 | 企業・Project・ステッパーの位置・分析（localStorage `eabk.projects.v1`） | src/store/persist.ts, src/store/projects.ts, src/store/stepper.ts, src/store/analyses.ts, src/store/usecases.ts | ブラウザー（この端末だけ。サーバー・ほかの端末へは送らない。識別子は自システムの採番 company-N / project-N）。作業先ごとの KPI・OKR（okr）も同じキーに保存。Project ごとのユースケースとアニメーション（usecases）も同じキーに保存 | FR-137, FR-138, FR-139, NFR-SEC-004, FR-153, FR-158, FR-155 |
-| お手本の KPI・OKR（customer.json の okr） | src/schema/files.ts, schema/customer.json, examples/mono/public/data/customer.json, examples/koto/public/data/customer.json | 顧客パック（デモのお手本。読み込み専用で、定義すると端末内の保存が優先される） | FR-153, FR-154 |
+| お手本の KPI・OKR（customer.json の okr） | src/schema/files.ts, schema/customer.json, examples/mono/public/data/customer.json, examples/koto/public/data/customer.json | 顧客パック（デモのお手本。読み込み専用で、定義すると端末内の保存が優先される）。Key Result は解決策への参照（solutionIds）を持てる | FR-153, FR-154, FR-179, FR-180 |
+
 | 分析画面のレイアウト（localStorage `eabk.analysis-layout.v1`。画面キーごとの位置・幅の差分） | src/store/analysisLayout.ts | ブラウザー（この端末だけ。送信しない） | NFR-UX-006 |
 | 議論テーマ（localStorage `edb.discussion`） | src/store/discussion.ts, src/discussion/model.ts | ブラウザー（保存・復元は議論メモの Markdown が正本の写し） | FR-048, FR-049, FR-050, FR-051, FR-056 |
 | ホワイトボードのボード（IndexedDB `edb-ink` の `state` / `boards`） | src/ink/persist.ts, src/ink/model.ts | ブラウザー（ボード・ストローク・項目の自動保存） | FR-095, FR-097 |
@@ -291,7 +292,7 @@
 | 起動スクリプト | start.cmd, start.ps1, start.sh | 導入済みの PC での起動。node_modules がなければ npm install、dist がなければ npm run build、そのあと npm start（127.0.0.1 のみ）。失敗時は原因を表示して 0 以外で止まる（導入の自動化は セットアップスクリプト） | FR-141 |
 | 代替表示 | src/analysis/fallback.ts, src/store/fallback.ts, src/components/UnrenderableNote.tsx | 表現に必要な属性がない項目の扱い。`partitionRenderable` で分け、`<UnrenderableNote source reason items>` が「位置情報なし: N 件」を出す。選ぶと `useFallbackStore.request`（該当 ID）を立て、`table` コンポーネントがあれば再表示する（表は request を読んで該当項目を出す）。`table` 画面が未登録のときは一覧をその場に出す。地図・3D・ガントの画面が使う | FR-021, FR-113 |
 | 状態の保持 | src/store/retained.ts | `useRetainedState(key, initial)`。入力中の内容・絞り込み・視点など、画面の作り直し（ペルソナの切替・非表示と再表示）をまたいで保ちたい一時的な状態を、`<画面のキー>.<名前>` で画面の外に持つ（保存はしない）。選択は共通選択状態ストア側 | NFR-UX-001 |
-| KPI・OKR | src/okr/model.ts, src/store/okr.ts | Objective・Key Result・KPI の型、達成度（（現在値−基準値）÷（目標値−基準値）。同じなら「算出できない」）、入力の検証、変更履歴の差分、作業先（Project・デモ）ごとの保存 | FR-153, FR-154 |
+| KPI・OKR | src/okr/model.ts, src/store/okr.ts | Objective・Key Result・KPI の型、達成度（（現在値−基準値）÷（目標値−基準値）。同じなら「算出できない」）、入力の検証、変更履歴の差分、作業先（Project・デモ）ごとの保存 | FR-153, FR-154, FR-179, FR-180 |
 | ペルソナ別の既定 | src/workspace/persona.ts | §7 の表（ペルソナ → 最大の領域の表現 `PERSONA_PRIMARY`）と、レイアウトから最大の領域を求める `largestComponent`。ペルソナの切替はレイアウトだけを変え、データの範囲を変えない | FR-015, FR-112 |
 | グローバル検索 | src/search/model.ts, src/search/GlobalSearch.tsx | ヘッダーの検索欄（searchbox「検索」）。グラフの課題・解決策・製品・エンティティを表示名の一部一致で探し、種別ごとのグループで表示（`search-results`、0 件は「該当なし」）。選ぶと共通の選択状態になる（origin `search`）。結果はレイアウト・ペルソナに依存しない | FR-017 |
 | 中核オブジェクトと選定理由 | src/coreobject/model.ts, src/coreobject/CoreObjectPanel.tsx, src/store/coreObject.ts | customer.json の coreObject（候補の name/label・scores、criteria、reason）を読む `readCoreObject`、利用者の選択を顧客名ごとに localStorage `edb.core-object` へ保存する `useCoreObject`。キャンバスの中心（`core-object`）と選定理由パネル（`component-core-object`）が使う | FR-018 |
@@ -300,3 +301,4 @@
 | 選択の通知 | src/selection/Announcer.tsx, src/selection/announce.ts | 選択の変化を「<項目名> を選択しました。関連する項目 N 件」で通知する視覚的に隠した aria-live 領域（アプリで 1 つ）。画面は選択を共通ストアに書けば自動で通知される | FR-015, FR-029 |
 | 最小化・復元の動き | src/motion/useFoldMotion.ts, src/motion/motion.css | 最小化・復元（コンポーネント・左メニュー）の動き。レイアウトは即座に最終の状態にし、見た目だけを Fluent 2 の Normal 200ms で整える。停止中・prefers-reduced-motion では動きを付けない。スナップの候補の出現・配置後の見た目の追従（useSnapMotion）も同じ | FR-151, NFR-UX-008, FR-152 |
 | ユースケース・アニメーション | src/usecase/model.ts, src/usecase/derive.ts, src/store/usecases.ts, src/screens/UseCaseScreen.tsx | ユースケース（名称・概要・対象ペルソナ・順序つきの手順・期待する効果・導出元の参照。手順は PARAM-046 = 20 件まで）の検証と、課題・解決策からの候補の導出（A-40 ⑤。保存せず、登録済みの導出元は除く）、プレゼン用シーンの生成（導入 + 手順 + 効果）、作成状態（未作成/最新/古い）、再生（PARAM-047 = 1 シーン 5 秒）。端末内だけで AI に接続しない。Project ごとに保存。再生画面（位置・状態は外に保持、手順の一覧・通知、P・動きを減らす設定に追従） | FR-155, FR-156, FR-157, NFR-A11Y-006, NFR-UX-010, FR-158 |
+| デモのユースケースと解決策の結び付き | src/usecase/demo.ts, src/schema/files.ts, examples/mono/public/data/customer.json, examples/koto/public/data/customer.json | デモ（お手本パック）のユースケース（ペルソナごとに PARAM-060 = 2 件以上）を顧客パックから読み込み専用で取り出し、解決策に結び付く KPI・OKR・ユースケースを引く。値は架空で、実際の Project の保存には書かない。パックにない値は補わない | FR-179, FR-180 |

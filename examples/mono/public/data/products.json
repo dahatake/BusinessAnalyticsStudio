@@ -1,6 +1,8 @@
 {
   "products": [
     { "id": "prod-mono-001", "createdBy": "sample", "name": "サンプル予兆検知サービス", "vendor": "架空のベンダー A", "summary": "稼働データから異常の予兆を検知する（合成データ）", "sourceIds": ["src-mono-003"] },
-    { "id": "prod-mono-002", "createdBy": "sample", "name": "サンプル現場入力アプリ", "vendor": "架空のベンダー B", "summary": "タブレットで現場の記録を入力する（合成データ）", "sourceIds": ["src-mono-003"] }
-  ]
+    { "id": "prod-mono-002", "createdBy": "sample", "name": "サンプル現場入力アプリ", "vendor": "架空のベンダー B", "summary": "タブレットで現場の記録を入力する（合成データ）",     "sourceIds": ["src-mono-003"] },
+        { "id": "prod-mono-003", "createdBy": "sample", "name": "サンプルナレッジ共有サービス", "vendor": "架空のベンダー D", "summary": "熟練者の判断基準を蓄積して共有する（合成データ）", "sourceIds": ["src-mono-003"] },
+        { "id": "prod-mono-004", "createdBy": "sample", "name": "サンプル検査結果配信サービス", "vendor": "架空のベンダー E", "summary": "検査機器の出力を関係者へ即時に配信する（合成データ）",         "sourceIds": ["src-mono-003"] }
+      ]
 }

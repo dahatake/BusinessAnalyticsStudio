@@ -5,6 +5,9 @@ import {
   ClassificationSchema, ConfidenceSchema, CreatedBySchema, IdSchema, entityShape,
 } from './common';
 
+/** ユースケースの対象ペルソナ（FR-180）。ワークスペースのペルソナ（経営層・事業部門・IT・現場）と同じ。スキーマは画面の部品を参照しないので、ここに持つ */
+export const USECASE_PERSONAS = ['経営層', '事業部門', 'IT', '現場'] as const;
+
 const entity = <T extends z.ZodRawShape>(shape: T) => z.looseObject({ ...entityShape, ...shape });
 
 /** 数値・事実を表す項目。`sourceIds` が必須（FR-115） */
@@ -46,7 +49,11 @@ export const CustomerSchema = z.looseObject({
     objectives: z.array(z.looseObject({
       objective: z.string().min(1),
       keyResults: z.array(z.looseObject({
+        /** パック内で一意の ID（任意）。解決策への参照（solutionIds）が壊れたとき、この Key Result だけを無効にできるようにする（FR-102） */
+        id: IdSchema.optional(),
         name: z.string().min(1),
+        /** この Key Result に効く解決策（FR-179・FR-180。ストーリーの③で、解決策に結び付く KPI/OKR を示す） */
+        solutionIds: z.array(IdSchema).optional(),
         kpi: z.looseObject({
           name: z.string().min(1),
           unit: z.string().min(1),
@@ -59,6 +66,22 @@ export const CustomerSchema = z.looseObject({
       })),
     })),
   }).optional(),
+  /**
+   * お手本（デモ）のユースケース（FR-180）。ペルソナごとに PARAM-060 件以上。解決策（solutionId）と、影響する KPI の名前（okr の kpi.name）に結び付く。
+   * デモの作業先にだけ現れる読み込み専用の値で、実際の Project には混ざらない（FR-138）。
+   */
+  useCases: z.array(z.looseObject({
+    id: IdSchema,
+    name: z.string().min(1),
+    summary: z.string().min(1),
+    persona: z.enum(USECASE_PERSONAS),
+    steps: z.array(z.looseObject({ title: z.string().min(1), description: z.string().optional() })).min(1),
+    effect: z.string().min(1),
+    solutionId: IdSchema,
+    kpiNames: z.array(z.string().min(1)).min(1),
+  })).optional(),
+  /** 架空のデータであることの注記（NFR-LEGAL-002）。画面に示す */
+  fictionalNote: z.string().min(1).optional(),
 });
 
 /** 拠点の位置（FR-021）。地図・地球儀に置く場所。緯度 -90〜90、経度 -180〜180（度） */
