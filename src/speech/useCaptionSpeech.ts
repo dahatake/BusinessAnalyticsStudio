@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { usePackStore } from '../store/pack';
 import { useSettings } from '../store/settings';
+import { useSpeechRelay, requestSpeechViaRelay } from './relayKey';
 import { explainFailure, isSpeechConfigured, requestSpeech, speechHost, type SpeechConfig } from './speech';
 
 export interface CaptionSpeech {
@@ -33,7 +34,12 @@ export function useCaptionSpeech(caption: string, cfgOverride?: SpeechConfig): C
   const muted = useSettings((s) => s.muted);
   const volume = useSettings((s) => s.volume);
   const active = enabled && !muted;
-  const configured = isSpeechConfigured(cfg);
+  const relayUrl = usePackStore((s) => s.runtime.relayUrl);
+  const relayView = useSpeechRelay((s) => s.view);
+  const refreshRelay = useSpeechRelay((s) => s.refresh);
+  useEffect(() => { void refreshRelay(relayUrl); }, [relayUrl, refreshRelay]);
+  const viaRelay = !!relayUrl && !!relayView?.configured;
+  const configured = viaRelay || isSpeechConfigured(cfg);
   const [error, setError] = useState<string | null>(null);
   const failed = useRef(false);
 
@@ -41,14 +47,15 @@ export function useCaptionSpeech(caption: string, cfgOverride?: SpeechConfig): C
   useEffect(() => {
     failed.current = false;
     setError(null);
-  }, [active, configured]);
+  }, [active, configured, viaRelay]);
 
   useEffect(() => {
     if (!active) return undefined;
     if (!configured) { setError(explainFailure('unconfigured')); return undefined; }
     if (failed.current) return undefined;
     const ctl = new AbortController();
-    void requestSpeech(cfg, caption, { signal: ctl.signal }).then((r) => {
+    const req = viaRelay ? requestSpeechViaRelay(relayUrl as string, caption, { signal: ctl.signal }) : requestSpeech(cfg, caption, { signal: ctl.signal });
+    void req.then((r) => {
       if (ctl.signal.aborted) return;
       if (r.ok) playBlob(r.audio, volume);
       else { failed.current = true; setError(r.message); }
@@ -57,5 +64,5 @@ export function useCaptionSpeech(caption: string, cfgOverride?: SpeechConfig): C
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [caption, active, configured]);
 
-  return { sending: active && configured && error === null, host: speechHost(cfg), error: active ? error : null };
+  return { sending: active && configured && error === null, host: (viaRelay ? relayView?.host ?? '' : speechHost(cfg)), error: active ? error : null };
 }
