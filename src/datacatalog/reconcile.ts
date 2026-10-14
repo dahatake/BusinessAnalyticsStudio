@@ -1,7 +1,7 @@
 // 企業データカタログの取り込み（FR-161）と突合、未掲載エンティティの ToDo 化（FR-162）の純関数。
 // すべて端末内で完結し、ネットワークには接続しない（NFR-SEC-004）。URL は出典として文字列で持つだけで、アクセスしない。
 import { parseCsv } from '../edit/model';
-import { displayName, normalizeKey, type DataEntity } from './model';
+import { displayName, normalizeKey, toColumns, type DataColumn, type DataEntity } from './model';
 
 /** PARAM-050: 取り込めるファイルの大きさの上限（5 MB） */
 export const MAX_CATALOG_BYTES = 5 * 1024 * 1024;
@@ -9,20 +9,25 @@ export const MAX_CATALOG_BYTES = 5 * 1024 * 1024;
 export const MAX_CATALOG_ITEMS = 5000;
 
 /** 企業データカタログの項目。名称は必須。basId は BAS のデータエンティティの ID を示す任意の欄 */
-export interface CatalogItem { name: string; description: string; id?: string; basId?: string }
+export interface CatalogItem { name: string; description: string; id?: string; basId?: string; /** 列（FR-172）。なければ列なし */ columns?: DataColumn[]; /** ドメイン名（FR-172） */ domain?: string }
 
 export type ParseResult = { ok: true; items: CatalogItem[] } | { ok: false; errors: string[] };
 
 const str = (v: unknown): string => (typeof v === 'string' ? v : typeof v === 'number' ? String(v) : '');
 const opt = (v: unknown): string | undefined => { const s = str(v).trim(); return s ? s : undefined; };
 
-function fromRecord(r: Record<string, unknown>): CatalogItem | undefined {
+type ItemResult = { item: CatalogItem } | { error: string } | undefined;
+function fromRecord(r: Record<string, unknown>): ItemResult {
   const pick = (...keys: string[]): unknown => { for (const k of keys) if (r[k] !== undefined) return r[k]; return undefined; };
   const name = displayName(str(pick('name', '名称')));
   if (!name) return undefined;
   const id = opt(pick('id', 'ID'));
   const basId = opt(pick('basId', 'basid', 'BASID'));
-  return { name, description: str(pick('description', '説明')).trim(), ...(id ? { id } : {}), ...(basId ? { basId } : {}) };
+  const domainRaw = opt(pick('domain', 'ドメイン'));
+  const domain = domainRaw ? displayName(domainRaw) : undefined;
+  const cols = toColumns(pick('columns', '列'));
+  if (!cols.ok) return { error: cols.error };
+  return { item: { name, description: str(pick('description', '説明')).trim(), ...(id ? { id } : {}), ...(basId ? { basId } : {}), ...(cols.columns.length ? { columns: cols.columns } : {}), ...(domain ? { domain } : {}) } };
 }
 
 function finish(items: CatalogItem[]): ParseResult {
@@ -45,9 +50,10 @@ function parseJson(text: string): ParseResult {
   const items: CatalogItem[] = [];
   for (let i = 0; i < arr.length; i++) {
     const r = arr[i];
-    const item = typeof r === 'object' && r !== null && !Array.isArray(r) ? fromRecord(r as Record<string, unknown>) : undefined;
-    if (!item) return { ok: false, errors: [`${i + 1} 件目に名称（name）がありません。すべての項目に名称を入れてください。`] };
-    items.push(item);
+    const res = typeof r === 'object' && r !== null && !Array.isArray(r) ? fromRecord(r as Record<string, unknown>) : undefined;
+    if (!res) return { ok: false, errors: [`${i + 1} 件目に名称（name）がありません。すべての項目に名称を入れてください。`] };
+    if ('error' in res) return { ok: false, errors: [`${i + 1} 件目: ${res.error}`] };
+    items.push(res.item);
   }
   return finish(items);
 }
@@ -61,6 +67,7 @@ function parseCsvCatalog(text: string): ParseResult {
   const iName = col('名称', 'name');
   if (iName < 0) return { ok: false, errors: ['CSV の見出しに「名称」（または name）の列がありません。先頭行に名称の列を追加してください。'] };
   const iDesc = col('説明', 'description'); const iId = col('id'); const iBas = col('basid');
+  const iCols = col('columns', '列'); const iDom = col('domain', 'ドメイン');
   if (records.length - 1 > MAX_CATALOG_ITEMS) return finish(new Array<CatalogItem>(records.length - 1).fill({ name: '', description: '' }));
   const items: CatalogItem[] = [];
   for (const rec of records.slice(1)) {
@@ -68,7 +75,12 @@ function parseCsvCatalog(text: string): ParseResult {
     const name = displayName(cell(iName));
     if (!name) return { ok: false, errors: [`CSV の ${rec.line} 行目に名称がありません。すべての行に名称を入れてください。`] };
     const id = cell(iId).trim(); const basId = cell(iBas).trim();
-    items.push({ name, description: cell(iDesc).trim(), ...(id ? { id } : {}), ...(basId ? { basId } : {}) });
+    const domain = displayName(cell(iDom));
+    // CSV の列の欄は「列名:型」を ; で区切る（型は省略可。例: 受注ID:文字列;金額:数値）
+    const colText = cell(iCols).trim();
+    const cols = toColumns(colText ? colText.split(';').map((seg) => { const k = seg.indexOf(':'); return k < 0 ? { name: seg } : { name: seg.slice(0, k), type: seg.slice(k + 1) }; }) : undefined);
+    if (!cols.ok) return { ok: false, errors: [`CSV の ${rec.line} 行目: ${cols.error}`] };
+    items.push({ name, description: cell(iDesc).trim(), ...(id ? { id } : {}), ...(basId ? { basId } : {}), ...(cols.columns.length ? { columns: cols.columns } : {}), ...(domain ? { domain } : {}) });
   }
   return finish(items);
 }
