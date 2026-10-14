@@ -184,9 +184,9 @@ export const useLayout = create<LayoutState>()(
     {
       name: 'edb.layout',
       version: 1,
-      partialize: (s) => ({ persona: s.persona, floats: s.floats, layouts: s.layouts, autoSize: s.autoSize, manual: s.manual, minimized: s.minimized, navMin: s.navMin }),
+      partialize: (s) => ({ persona: s.persona, floats: s.floats, zOrder: s.zOrder, layouts: s.layouts, autoSize: s.autoSize, manual: s.manual, minimized: s.minimized, navMin: s.navMin }),
       merge: (persisted, current) => {
-        const p = (persisted ?? {}) as Partial<Pick<LayoutState, 'persona' | 'floats' | 'layouts' | 'autoSize' | 'manual' | 'minimized' | 'navMin'>>;
+        const p = (persisted ?? {}) as Partial<Pick<LayoutState, 'persona' | 'floats' | 'zOrder' | 'layouts' | 'autoSize' | 'manual' | 'minimized' | 'navMin'>>;
         const minimized: Partial<Record<Persona, string[]>> = {};
         for (const name of PERSONAS) {
           const v = (p.minimized as Record<string, unknown> | undefined)?.[name];
@@ -212,7 +212,8 @@ export const useLayout = create<LayoutState>()(
             floats[name] = m;
           }
         }
-        return { ...current, floats, persona, layouts, manual, minimized, navMin: p.navMin === true, autoSize: typeof p.autoSize === 'boolean' ? p.autoSize : true };
+        const zOrder = Array.isArray(p.zOrder) && p.zOrder.every((k) => typeof k === 'string') ? p.zOrder : [];
+        return { ...current, floats, zOrder, persona, layouts, manual, minimized, navMin: p.navMin === true, autoSize: typeof p.autoSize === 'boolean' ? p.autoSize : true };
       },
     },
   ),

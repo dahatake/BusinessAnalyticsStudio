@@ -262,11 +262,14 @@ describe('FR-173 FR-174 FR-175 自由配置・拡大表示・拡大位置の設�
 
   // FR-173 AC-348
   it('FR-173 AC-348 直近に操作したものが手前になる（zOrder の末尾）', async () => {
-    const { useLayout } = await freshStore(ALL);
+    const { useLayout, storage } = await freshStore(ALL);
     useLayout.getState().setFloat('summary', { x: 0, y: 0, w: 0.3, h: 0.3 });
     useLayout.getState().raise('matrix');
     useLayout.getState().raise('summary');
     expect(useLayout.getState().zOrder).toEqual(['matrix', 'summary']);
+    // 再読込後も手前の順が維持される（保存する）
+    const again = await freshStore(ALL, JSON.parse(JSON.stringify({ state: JSON.parse(storage.getItem('edb.layout')!).state, version: 1 })));
+    expect(again.useLayout.getState().zOrder).toEqual(['matrix', 'summary']);
   });
 
   // FR-173 AC-349
