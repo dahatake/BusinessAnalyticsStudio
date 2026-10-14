@@ -3,7 +3,36 @@
 import type { UseCase } from '../usecase/model';
 
 /** 顧客パックのエンティティ（entities.json の entities） */
-export interface PackEntity { id: string; name: string; description?: string; type?: string }
+export interface PackEntity { id: string; name: string; description?: string; type?: string; /** 任意の属性欄（FR-172。文字列、または { name, type? } の配列） */ attributes?: unknown }
+/** データエンティティの列（属性。FR-172） */
+export interface DataColumn { name: string; type?: string }
+/** 列がないときの表示（FR-169 の列の詳細度。FR-172） */
+export const NO_COLUMNS_LABEL = '列の情報なし';
+
+/** 値を列の配列にする。列名が空・配列でないものは理由を返す（取り込みの検査用）。undefined・null は列なし */
+export function toColumns(v: unknown): { ok: true; columns: DataColumn[] } | { ok: false; error: string } {
+  if (v === undefined || v === null) return { ok: true, columns: [] };
+  if (!Array.isArray(v)) return { ok: false, error: 'columns は配列で指定してください。' };
+  const columns: DataColumn[] = [];
+  for (let i = 0; i < v.length; i++) {
+    const c = v[i];
+    const rawName = typeof c === 'string' ? c : typeof c === 'object' && c !== null && !Array.isArray(c) ? (c as { name?: unknown }).name : undefined;
+    const name = typeof rawName === 'string' ? displayName(rawName) : '';
+    if (!name) return { ok: false, error: `columns の ${i + 1} 番目に列名（name）がありません。すべての列に列名を入れてください。` };
+    const rawType = typeof c === 'object' && c !== null ? (c as { type?: unknown }).type : undefined;
+    const type = typeof rawType === 'string' ? rawType.trim() : '';
+    columns.push({ name, ...(type ? { type } : {}) });
+  }
+  return { ok: true, columns };
+}
+
+/** エンティティの列: 取り込んだ列があればそれ、なければ導出した列。どちらもなければ空（列なし） */
+export function entityColumns(entity: { columns?: readonly DataColumn[] }, imported?: { columns?: readonly DataColumn[] }): DataColumn[] {
+  if (imported?.columns && imported.columns.length > 0) return [...imported.columns];
+  return [...(entity.columns ?? [])];
+}
+/** 列の総数（FR-171 の簡略表示の判定に使う） */
+export function totalColumns(lists: readonly (readonly DataColumn[])[]): number { return lists.reduce((n, l) => n + l.length, 0); }
 export type OriginKind = 'issue' | 'solution' | 'flow';
 export const ORIGIN_LABELS: Record<OriginKind, string> = { issue: '課題', solution: '解決策', flow: 'フロー' };
 /** 課題・解決策・フローの 1 件と、それが参照するエンティティの ID */
@@ -18,6 +47,8 @@ export interface DataEntity {
   description: string;
   /** 顧客パックのエンティティの ID（同じ鍵の最初のもの。企業データカタログの basId との突合に使う。FR-161） */
   id?: string;
+  /** 顧客パックの属性欄から導出した列（保存しない。FR-172）。なければ列なし */
+  columns?: DataColumn[];
   origins: Origin[];
 }
 export interface EntityDerivation { entities: DataEntity[]; emptyReason?: string }
@@ -55,6 +86,10 @@ export function deriveEntities(entities: readonly PackEntity[], records: readonl
         out.set(key, cur);
       }
       if (!cur.description && e.description?.trim()) cur.description = e.description.trim();
+      if (!cur.columns) {
+        const cols = toColumns(e.attributes);
+        if (cols.ok && cols.columns.length > 0) cur.columns = cols.columns; // 不正な属性欄は列なしとして扱い、壊さない
+      }
       if (!cur.origins.some((o) => o.kind === r.kind && o.id === r.id)) cur.origins.push({ kind: r.kind, id: r.id, title: r.title });
     }
   }

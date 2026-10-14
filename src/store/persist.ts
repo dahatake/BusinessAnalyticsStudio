@@ -8,7 +8,8 @@ import { useStepper } from './stepper';
 import { useUseCases, type UseCaseSet } from './usecases';
 import { useDataCatalog } from './datacatalog';
 import type { ExplicitLink } from '../datacatalog/model';
-import type { ProjectTask } from '../datacatalog/reconcile';
+import type { ProjectTask, CatalogItem } from '../datacatalog/reconcile';
+import { toColumns } from '../datacatalog/model';
 import type { ImportedCatalog } from './datacatalog';
 
 export const STORAGE_KEY = 'eabk.projects.v1';
@@ -55,6 +56,18 @@ export function snapshot(): Snapshot {
 
 const isObj = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
 
+/** 保存した企業データカタログの列・ドメイン（FR-172）を読む。古い保存内容（欄なし）はそのまま、形が正しくない欄は捨てて項目は読む */
+function cleanCatalog(c: ImportedCatalog): ImportedCatalog {
+  return {
+    ...c,
+    items: c.items.map((it) => {
+      const { columns, domain, ...rest } = it as CatalogItem;
+      const cols = toColumns(columns);
+      return { ...rest, ...(cols.ok && cols.columns.length ? { columns: cols.columns } : {}), ...(typeof domain === 'string' && domain ? { domain } : {}) };
+    }),
+  };
+}
+
 /** 保存した内容を各 store へ戻す。壊れている・なければ何もしない（空の状態で始まる）。 */
 export function restore(storage: Store): boolean {
   let data: unknown;
@@ -91,7 +104,7 @@ export function restore(storage: Store): boolean {
     linksByProject: Object.fromEntries(Object.entries(dl).filter(([, v]) => Array.isArray(v)).map(([k, v]) => [
       k, (v as unknown[]).filter((l): l is ExplicitLink => isObj(l) && typeof l.entityKey === 'string' && typeof l.useCaseId === 'string'),
     ])),
-    catalogByProject: Object.fromEntries(Object.entries(isObj(data.dataCatalogs) ? data.dataCatalogs : {}).filter(([, v]) => isObj(v) && Array.isArray(v.items) && typeof v.sourceUrl === 'string').map(([k, v]) => [k, v as unknown as ImportedCatalog])),
+    catalogByProject: Object.fromEntries(Object.entries(isObj(data.dataCatalogs) ? data.dataCatalogs : {}).filter(([, v]) => isObj(v) && Array.isArray(v.items) && typeof v.sourceUrl === 'string').map(([k, v]) => [k, cleanCatalog(v as unknown as ImportedCatalog)])),
     tasksByProject: Object.fromEntries(Object.entries(isObj(data.dataTasks) ? data.dataTasks : {}).filter(([, v]) => Array.isArray(v)).map(([k, v]) => [
       k, (v as unknown[]).filter((x): x is ProjectTask => isObj(x) && typeof x.id === 'string' && typeof x.title === 'string' && typeof x.description === 'string'),
     ])),
