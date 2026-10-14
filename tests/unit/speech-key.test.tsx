@@ -160,3 +160,47 @@ describe('FR-168 AC-331 キーボード操作とアクセシブルな名前', ()
     await waitFor(() => expect(screen.getByTestId('speech-key-result').textContent).toContain('削除しました'));
   });
 });
+
+// NFR-SEC-005 AC-329: マスター鍵は OS の鍵保護でラップされ、平文で speech.enc と同じ場所に置かれない。権限の絞り込みを呼ぶ。
+describe('NFR-SEC-005 AC-329 マスター鍵のラップと権限', () => {
+  const mkProtector = () => {
+    const raw: Buffer[] = [];
+    return {
+      raw,
+      p: {
+        name: 'mock',
+        wrap: (k: Buffer) => { raw.push(k); return 'WRAPPED:' + Buffer.from(k).reverse().toString('hex'); },
+        unwrap: (w: string) => Buffer.from(w.slice('WRAPPED:'.length), 'hex').reverse(),
+      },
+    };
+  };
+  it('鍵ファイルにはラップ済みの値だけが入り、平文の鍵（base64/hex）は dir のどこにも無い。再オープンで復号できる', () => {
+    const { p, raw } = mkProtector();
+    const restrict = vi.fn();
+    const v = openSpeechVault(dir, { protector: p, restrict, warn: () => {} });
+    v.save({ endpoint: ENDPOINT, key: KEY });
+    const mk = raw[0] as Buffer;
+    const all = fs.readdirSync(dir).map((f) => fs.readFileSync(path.join(dir, f), 'utf8')).join('\n');
+    expect(all).not.toContain(mk.toString('base64'));
+    expect(all).not.toContain(mk.toString('hex'));
+    expect(all).not.toContain(KEY);
+    expect(JSON.parse(fs.readFileSync(path.join(dir, 'master.key'), 'utf8'))).toMatchObject({ method: 'mock' });
+    expect(openSpeechVault(dir, { protector: p, restrict, warn: () => {} }).secret()).toEqual({ endpoint: ENDPOINT, key: KEY });
+  });
+  it('フォルダー・鍵ファイル・暗号文に権限の絞り込みを呼び、失敗しても保存は成功して警告する', () => {
+    const { p } = mkProtector();
+    const calls: string[] = [];
+    const warn = vi.fn();
+    const v = openSpeechVault(dir, { protector: p, restrict: (t) => { calls.push(path.basename(t)); throw new Error('icacls failed'); }, warn });
+    expect(() => v.save({ endpoint: ENDPOINT, key: KEY })).not.toThrow();
+    expect(calls).toEqual([path.basename(dir), 'master.key', 'speech.enc']);
+    expect(warn).toHaveBeenCalled();
+    expect(v.secret()?.key).toBe(KEY);
+  });
+  it('OS の鍵保護がない（weak）ときは起動時に警告する', () => {
+    const warn = vi.fn();
+    openSpeechVault(dir, { protector: { name: 'file', weak: true, wrap: (k) => k.toString('base64'), unwrap: (w) => Buffer.from(w, 'base64') }, restrict: () => {}, warn });
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('残りリスク'));
+  });
+});
+
