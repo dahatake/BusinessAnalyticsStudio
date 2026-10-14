@@ -7,7 +7,7 @@ import { useStoryStyle } from '../store/storyboardStyle';
 import { useStoryboardUi } from '../store/storyboardUi';
 import { useCaptionSpeech } from '../speech/useCaptionSpeech';
 import {
-  STYLES, is3dStyle, isStyle, moveScene, sceneMs, telopParts, telopPlain, validateScenes, TELOP_MAX,
+  DEFAULT_STORY_INTENSITY, STYLES, is3dStyle, isStyle, moveScene, sceneMs, telopParts, telopPlain, validateScenes, TELOP_MAX,
   type StoryScene, type StoryStyle,
 } from './storyboard';
 import './storyboard.css';
@@ -113,6 +113,7 @@ export function StoryboardPlayer({ name, scenes, onClose }: { name: string; scen
       <div className="sbp-bar">
         <b data-testid="storyboard-position" aria-live="polite">{`${index + 1} / ${total}`}</b>
         <span>スタイル: <b data-testid="storyboard-style-name">{style}</b></span>
+        <span>演出強度: <b data-testid="storyboard-intensity">{DEFAULT_STORY_INTENSITY}</b></span>
         <span>{state === 'playing' ? (motionRunning ? '再生中' : '再生中（動きは停止中）') : state === 'paused' ? '一時停止中' : '終了'}</span>
       </div>
       {fallback ? <p className="sbp-notice" role="status" data-testid="storyboard-fullscreen-fallback">この環境では全画面にできないため、画面全体を覆う表示で再生しています。</p> : null}

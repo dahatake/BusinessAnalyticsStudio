@@ -12,7 +12,7 @@ import { useStoryStyle } from '../../src/store/storyboardStyle';
 import { useStoryboardUi } from '../../src/store/storyboardUi';
 import { restore, startPersistence } from '../../src/store/persist';
 import {
-  DEFAULT_STYLE, STYLES, TARGET_MS, TELOP_MAX, buildStoryScenes, createStoryboard, sceneMs, storyboardState, telopParts, telopPlain, validateScenes,
+  DEFAULT_STORY_INTENSITY, DEFAULT_STYLE, STYLES, TARGET_MS, TELOP_MAX, buildStoryScenes, createStoryboard, sceneMs, storyboardState, telopParts, telopPlain, validateScenes,
   type StoryScene,
 } from '../../src/usecase/storyboard';
 import type { UseCaseDraft } from '../../src/usecase/model';
@@ -110,6 +110,24 @@ describe('FR-164 AC-318 再生の長さ', () => {
       act(() => { vi.advanceTimersByTime(sceneMs(scenes.length) + 1); });
     }
     expect(p.getAttribute('data-storyboard-state')).toBe('ended');
+  });
+});
+
+describe('FR-164 AC-320 再生の既定の演出強度', () => {
+  it('AC-320 既定は Entertainment と文字で出し、閉じて再生し直しても同じ。Executive にはならない', () => {
+    expect(DEFAULT_STORY_INTENSITY).toBe('Entertainment');
+    const r = wrap(<StoryboardPlayer name="n" scenes={buildStoryScenes(uc(3))} onClose={() => undefined} />);
+    expect(screen.getByTestId('storyboard-intensity').textContent).toContain('Entertainment');
+    expect(screen.getByTestId('storyboard-intensity').textContent).not.toContain('Executive');
+    r.unmount();
+    wrap(<StoryboardPlayer name="n" scenes={buildStoryScenes(uc(3))} onClose={() => undefined} />);
+    expect(screen.getByTestId('storyboard-intensity').textContent).toContain('Entertainment');
+  });
+  it('AC-320（G-002）シーンは Entertainment でも対象ペルソナ・手順・期待する効果を省かない', () => {
+    const text = buildStoryScenes(uc(2)).map((s) => `${s.heading}${s.caption}${s.telop}`).join('');
+    expect(text).toContain('現場担当者');
+    expect(text).toContain('A手順1');
+    expect(text).toContain('半分になる');
   });
 });
 

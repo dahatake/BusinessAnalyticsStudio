@@ -17,6 +17,9 @@ export const STYLES = ['3D', 'アニメ', 'Geometric 3D', 'Isometric 3D', 'Whims
 export type StoryStyle = (typeof STYLES)[number];
 /** 既定のスタイル（FR-166） */
 export const DEFAULT_STYLE: StoryStyle = 'Isometric 3D';
+
+/** 再生の演出強度の既定（FR-164 AC-320）。企業向けの Executive ではなく、明るく楽しい Entertainment で始める（FR-016 の既存の見せ方は別の入口） */
+export const DEFAULT_STORY_INTENSITY = 'Entertainment' as const;
 export const isStyle = (x: unknown): x is StoryStyle => typeof x === 'string' && (STYLES as readonly string[]).includes(x);
 /** 3D を描くスタイル（WebGL が使えないときは 2D の表現に切り替える） */
 export const is3dStyle = (s: StoryStyle): boolean => s !== 'アニメ';

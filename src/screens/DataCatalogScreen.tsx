@@ -6,11 +6,13 @@ import { Button, Input, MessageBar, MessageBarBody, Text, makeStyles, mergeClass
 import { Panel } from '../components/Panel';
 import { EmptyView } from '../components/StateViews';
 import {
-  KIND_LABELS, ORIGIN_LABELS, buildMatrix, deriveEntities, deriveLinks, relatedUseCases, toRecords, type PackEntity,
+  KIND_LABELS, ORIGIN_LABELS, buildMatrix, deriveEntities, deriveLinks, normalizeKey, relatedUseCases, toRecords, type PackEntity,
 } from '../datacatalog/model';
 import {
   CATEGORIES, NO_BAS_ONLY_REASON, NO_CATALOG_REASON, buildTodos, countByCategory, reconcile,
 } from '../datacatalog/reconcile';
+import { DataViewer } from '../components/DataViewer';
+import { toViewerEntities } from '../datacatalog/viewer';
 import { usePackStore } from '../store/pack';
 import { useDataCatalog, useExplicitLinks, useImportedCatalog } from '../store/datacatalog';
 import { useProjects } from '../store/projects';
@@ -79,6 +81,13 @@ function DataCatalogScreen() {
   const selected = entities.find((e) => e.key === selectedKey);
 
   const rows = useMemo(() => (imported && imported.items.length > 0 ? reconcile(entities, imported.items) : []), [entities, imported]);
+  const viewerEntities = useMemo(
+    () => toViewerEntities(
+      entities, imported?.items ?? [], (e) => relatedUseCases(e, useCases, model.derived, links).map((r) => ({ name: r.name, kind: r.kind })), normalizeKey,
+      (e) => rows.find((r) => r.entity?.key === e.key)?.category ?? '',
+    ),
+    [entities, imported, useCases, model.derived, links, rows],
+  );
   const counts = countByCategory(rows);
   const hasCatalog = !!imported && imported.fileName !== '';
   // 追加できない理由は、操作の前から表示する（FR-162 AC-308）
@@ -152,6 +161,11 @@ function DataCatalogScreen() {
                 );
               })}
             </ul>
+          </section>
+
+          <section className={s.section} aria-label="データビュアー">
+            <Text as="h3" weight="semibold">データビュアー</Text>
+            <DataViewer entities={viewerEntities} selectedKey={selectedKey} onSelect={select} />
           </section>
 
           <section className={s.section} aria-label="データエンティティの詳細" data-testid="entity-detail">
