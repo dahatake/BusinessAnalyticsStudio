@@ -19,10 +19,13 @@ interface DataViewerState {
   home: () => void;
   setFilter: (q: string) => void;
   setCluster: (c: string | null) => void;
+  /** 注目しているユースケース（FR-170） */
+  useCase: string | null;
+  setUseCase: (u: string | null) => void;
   reset: () => void;
 }
 
-const INITIAL = { mode: '2d' as ViewMode, zoom: ZOOM_HOME, level: levelOfZoom(ZOOM_HOME), filter: '', cluster: null as string | null };
+const INITIAL = { mode: '2d' as ViewMode, zoom: ZOOM_HOME, level: levelOfZoom(ZOOM_HOME), filter: '', cluster: null as string | null, useCase: null as string | null };
 
 export const useDataViewer = create<DataViewerState>((set) => ({
   ...INITIAL,
@@ -33,5 +36,6 @@ export const useDataViewer = create<DataViewerState>((set) => ({
   home: () => set({ zoom: ZOOM_HOME, level: levelOfZoom(ZOOM_HOME) }),
   setFilter: (filter) => set({ filter }),
   setCluster: (cluster) => set({ cluster }),
+  setUseCase: (useCase) => set({ useCase }),
   reset: () => set({ ...INITIAL }),
 }));

@@ -9,6 +9,10 @@ import {
   type ViewerEntity,
 } from '../datacatalog/viewer';
 import { useDataViewer } from '../store/dataViewer';
+import {
+  RELATION_KIND_LABELS, RELATION_KINDS, decideViewMode, describeRelation, highlightOf, lineStyleOf, relatedOf, relationAnnouncement, simplifySelection,
+  type RelationKind, type ViewerRelation,
+} from '../datacatalog/relations';
 
 const DataViewer3D = lazy(() => import('../three/DataViewer3D').then((m) => ({ default: m.DataViewer3D })));
 
@@ -44,14 +48,22 @@ export function detect3D(): boolean {
 export interface DataViewerProps {
   entities: readonly ViewerEntity[];
   selectedKey: string | null;
-  onSelect: (key: string) => void;
+  /** key=null は選択の解除 */
+  onSelect: (key: string | null) => void;
+  /** 関連（FR-170。deriveViewerRelations の結果）。なければ関連の表示なし */
+  relations?: readonly ViewerRelation[];
+  /** テスト用: 簡略表示の上限（PARAM-055・056）を差し替える */
+  limits?: { entities: number; columns: number };
   /** テスト用: 3D の可否を差し替える */
   available3D?: boolean;
 }
 
-export function DataViewer({ entities, selectedKey, onSelect, available3D }: DataViewerProps) {
+const NO_RELATIONS: readonly ViewerRelation[] = [];
+
+export function DataViewer({ entities, selectedKey, onSelect, relations = NO_RELATIONS, limits, available3D }: DataViewerProps) {
   const s = useStyles();
-  const { mode, zoom, level, filter, cluster } = useDataViewer();
+  const { mode, zoom, level, filter, cluster, useCase } = useDataViewer();
+  const setUseCase = useDataViewer((x) => x.setUseCase);
   const setMode = useDataViewer((x) => x.setMode);
   const zoomBy = useDataViewer((x) => x.zoomBy);
   const step = useDataViewer((x) => x.step);
@@ -68,16 +80,34 @@ export function DataViewer({ entities, selectedKey, onSelect, available3D }: Dat
   const layout = useMemo(() => layoutViewer(clusters), [clusters]);
   const selected = entities.find((e) => e.key === selectedKey);
 
-  // 変化の通知（aria-live）。選択と詳細度が変わったときに、文字で知らせる
+  // FR-170: 関連の強調と減光。エンティティの選択が優先で、なければ注目しているユースケース
+  const rel = useMemo(() => relatedOf(relations, selected ? { entityKey: selected.key } : { useCase }), [relations, selected, useCase]);
+  const hl = (key: string) => highlightOf(rel, key, selectedKey);
+  const useCases = useMemo(() => [...new Set(relations.map((r) => r.useCase).filter((x): x is string => !!x))].sort(), [relations]);
+
+  // FR-171: 上限を超えたら簡略表示（鳥観図と、選択中のエンティティとその近傍だけの詳細）。理由と集約した件数を出す
+  const totalColumns = useMemo(() => entities.reduce((n, e) => n + e.columns.length, 0), [entities]);
+  const viewMode = useMemo(() => decideViewMode(entities.length, totalColumns, limits?.entities, limits?.columns), [entities.length, totalColumns, limits]);
+  const simple = useMemo(
+    () => (viewMode.simplified ? simplifySelection(entities, shown, selectedKey, rel?.entityKeys ?? new Set<string>(), filter.trim() !== '') : null),
+    [viewMode.simplified, entities, shown, selectedKey, rel, filter],
+  );
+  const detailKeys = simple?.detailKeys ?? null;
+  const inDetail = (k: string) => !detailKeys || detailKeys.has(k);
+
+  // 変化の通知（aria-live）。選択・解除と詳細度が変わったときに、文字で知らせる
   const lastLevel = useRef(level);
   const lastSel = useRef(selected?.name);
   useEffect(() => {
     const msgs: string[] = [];
     if (lastLevel.current !== level) msgs.push(`詳細度が ${DETAIL_LABELS[level]} になりました。`);
-    if (lastSel.current !== selected?.name && selected) msgs.push(`${selected.name} を選択しました。列 ${selected.columns.length} 件。`);
+    if (lastSel.current !== selected?.name) {
+      if (selected) msgs.push(`${selected.name} を選択しました。列 ${selected.columns.length} 件。関連する対象 ${Math.max(0, (rel?.entityKeys.size ?? 1) - 1)} 件。`);
+      else msgs.push(relationAnnouncement(null, 0));
+    }
     lastLevel.current = level; lastSel.current = selected?.name;
     if (msgs.length) setLive(msgs.join(' '));
-  }, [level, selected]);
+  }, [level, selected, rel]);
 
   // ホイール・ピンチ（ドラッグでの移動にはボタン・キーという別の手段がある。2.5.7）
   useEffect(() => {
@@ -129,11 +159,13 @@ export function DataViewer({ entities, selectedKey, onSelect, available3D }: Dat
   const gridStyle = { gridTemplateColumns: `repeat(auto-fill, minmax(${minW}px, 1fr))` };
   const entityCard = (e: ViewerEntity) => {
     const on = e.key === selectedKey;
+    const h = hl(e.key);
     return (
       <div
-        key={e.key} role="option" aria-selected={on} tabIndex={0} data-viewer-entity={e.name} className={mergeClasses(s.card, on && s.on)} onClick={() => onSelect(e.key)}
+        key={e.key} role="option" aria-selected={on} tabIndex={0} data-viewer-entity={e.name} data-highlight={h} className={mergeClasses(s.card, on && s.on)}
+        style={h === 'dimmed' ? { opacity: 0.4 } : h === 'related' ? { borderStyle: 'dashed', borderWidth: 2 } : undefined} onClick={() => { setUseCase(null); onSelect(e.key); }}
       >
-        <Text weight="semibold">{e.name}{on ? '（選択中）' : ''}</Text>
+        <Text weight="semibold">{e.name}{on ? '（選択中）' : h === 'related' ? '（関連）' : ''}</Text>
         <Text size={200}>{e.description}</Text>
         {level === 'column' ? (
           e.columns.length === 0
@@ -165,13 +197,58 @@ export function DataViewer({ entities, selectedKey, onSelect, available3D }: Dat
       </div>
       {!can3D ? <Text role="status" data-testid="viewer-no3d-reason" size={200}>{NO_3D_REASON}</Text> : null}
       <div className={s.hidden} role="status" aria-live="polite" data-testid="viewer-live">{live}</div>
+      {viewMode.simplified ? (
+        <Text role="status" data-testid="viewer-simplified" size={200}>
+          簡略表示です。理由: {viewMode.reason}。鳥観図と、選択中のエンティティとその近傍だけを詳細で表示し、ほか {simple?.aggregated ?? 0} 件を集約しています。検索で絞り込んで選ぶと詳細で表示します。表（一覧）には全件があります。
+        </Text>
+      ) : null}
+      {relations.length > 0 || selected ? (
+        <section aria-label="関連" data-testid="viewer-relations" className={s.group}>
+          <Text weight="semibold" size={200}>関連（種類は線の種類と文字で区別します）</Text>
+          <ul className={s.cols} aria-label="関連の凡例">
+            {RELATION_KINDS.map((k: RelationKind) => {
+              const sample = lineStyleOf({ kind: k, state: k === 'usecase' ? '導出' : k === 'reconcile' ? '一致' : '' });
+              return (
+                <li key={k} data-relation-legend={k}>
+                  <svg width="48" height="8" aria-hidden="true" focusable="false"><line x1="0" y1="4" x2="48" y2="4" stroke="currentColor" strokeWidth={sample.width} strokeDasharray={sample.dash || undefined} /></svg>{' '}
+                  {RELATION_KIND_LABELS[k]}（{sample.label}）
+                </li>
+              );
+            })}
+          </ul>
+          {useCases.length > 0 ? (
+            <div className={s.bar} role="group" aria-label="ユースケースで関連を見る">
+              {useCases.map((u) => (
+                <Button key={u} size="small" appearance={!selected && useCase === u ? 'primary' : 'secondary'} aria-pressed={!selected && useCase === u} data-viewer-usecase={u} onClick={() => { onSelect(null); setUseCase(useCase === u && !selected ? null : u); }}>{u}</Button>
+              ))}
+            </div>
+          ) : null}
+          {selected || useCase ? <Button size="small" data-testid="viewer-clear" onClick={() => { setUseCase(null); onSelect(null); }}>選択を解除</Button> : null}
+          {rel ? (
+            rel.relations.length === 0
+              ? <Text size={200} data-testid="viewer-relations-empty">関連はありません。</Text>
+              : <ul className={s.cols} data-testid="viewer-relation-list" aria-label="選択に関連する線">
+                {rel.relations.map((r) => {
+                  const st = lineStyleOf(r);
+                  return (
+                    <li key={r.id} data-relation-kind={r.kind} data-relation-state={r.state || undefined}>
+                      <svg width="48" height="8" aria-hidden="true" focusable="false"><line x1="0" y1="4" x2="48" y2="4" stroke="currentColor" strokeWidth={st.width} strokeDasharray={st.dash || undefined} /></svg>{' '}
+                      {describeRelation(r)}
+                    </li>
+                  );
+                })}
+              </ul>
+          ) : null}
+        </section>
+      ) : null}
 
       {shown.length === 0 ? (
         <Text role="status">{entities.length === 0 ? '表示するデータエンティティがありません。' : '絞り込みに合うデータエンティティがありません。'}</Text>
       ) : effectiveMode === '3d' ? (
         <Suspense fallback={<Text role="status">3D を読み込んでいます。</Text>}>
           <DataViewer3D
-            clusters={clusters} layout={layout} level={level} zoom={zoom} selectedKey={selectedKey} activeCluster={cluster} onSelect={onSelect} onCluster={setCluster}
+            clusters={clusters} layout={layout} level={level} zoom={zoom} selectedKey={selectedKey} activeCluster={cluster} onSelect={(k) => { setUseCase(null); onSelect(k); }} onCluster={setCluster}
+            relations={relations} related={rel} detailKeys={detailKeys}
           />
         </Suspense>
       ) : (
@@ -192,7 +269,10 @@ export function DataViewer({ entities, selectedKey, onSelect, available3D }: Dat
             clusters.map((c) => (
               <div key={c.name} className={s.group} role="group" aria-label={`塊: ${c.name}`} data-viewer-cluster-group={c.name}>
                 <Text weight="semibold" size={200}>{c.name}</Text>
-                <div className={s.grid} style={gridStyle}>{c.entities.map(entityCard)}</div>
+                <div className={s.grid} style={gridStyle}>{c.entities.filter((e) => inDetail(e.key)).map(entityCard)}</div>
+                {detailKeys && c.entities.some((e) => !inDetail(e.key)) ? (
+                  <Text size={200} data-viewer-aggregated>ほか {c.entities.filter((e) => !inDetail(e.key)).length} 件を集約しています（検索すると選べます）</Text>
+                ) : null}
               </div>
             ))
           )}
