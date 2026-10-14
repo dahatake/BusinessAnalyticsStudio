@@ -64,7 +64,15 @@ export function restore(storage: Store): boolean {
   const okr = isObj(data.okr) ? (data.okr as Record<string, OkrSet>) : {};
   useOkr.setState({ byTarget: Object.fromEntries(Object.entries(okr).filter(([, v]) => isObj(v) && Array.isArray(v.objectives))) });
   const ucs = isObj(data.usecases) ? (data.usecases as Record<string, UseCaseSet>) : {};
-  useUseCases.setState({ byProject: Object.fromEntries(Object.entries(ucs).filter(([, v]) => isObj(v) && Array.isArray(v.items)).map(([k, v]) => [k, { items: v.items, animations: isObj(v.animations) ? v.animations : {}, seq: typeof v.seq === 'number' ? v.seq : v.items.length }])) });
+  // 導出元の参照（source。FR-158 AC-290）は古い保存内容にはない。形が正しくないものは捨てて、ユースケース自体は読む
+  const cleanItems = (items: UseCaseSet['items']) => items.map((u) => {
+    const src = (u as { source?: unknown }).source;
+    const ok = isObj(src) && typeof src.solutionId === 'string' && typeof src.issueId === 'string';
+    if (ok) return u;
+    const { source: _drop, ...rest } = u;
+    return rest;
+  });
+  useUseCases.setState({ byProject: Object.fromEntries(Object.entries(ucs).filter(([, v]) => isObj(v) && Array.isArray(v.items)).map(([k, v]) => [k, { items: cleanItems(v.items), animations: isObj(v.animations) ? v.animations : {}, seq: typeof v.seq === 'number' ? v.seq : v.items.length }])) });
   useStepper.getState().switchTo(openId);
   return true;
 }

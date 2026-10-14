@@ -7,7 +7,9 @@ export const SCENE_SECONDS = 5;
 
 export interface UseCaseStep { title: string; description: string }
 export interface UseCaseDraft { name: string; summary: string; persona: string; steps: UseCaseStep[]; effect: string }
-export interface UseCase extends UseCaseDraft { id: string }
+/** 導出元の参照（解決策 ID と課題 ID。FR-158 AC-290）。利用者が自分で登録したものにはない */
+export interface UseCaseSource { solutionId: string; issueId: string }
+export interface UseCase extends UseCaseDraft { id: string; source?: UseCaseSource }
 
 export type SceneKind = 'intro' | 'step' | 'effect';
 export interface Scene { kind: SceneKind; title: string; body: string }
