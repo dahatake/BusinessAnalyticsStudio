@@ -18,7 +18,7 @@
     "AC-009": "sha256:d621bf9f23168663",
     "AC-013": "sha256:7103995e6b3d4cb7",
     "AC-015": "sha256:da7d282cbcd52f31",
-    "AC-016": "sha256:1dfaeafc9f0e8d39",
+    "AC-016": "sha256:7ab7683c7036e96e",
     "AC-017": "sha256:ffe4b87e559ed605",
     "AC-018": "sha256:dfdbe8e929a60eb3",
     "AC-019": "sha256:6784a504a48fe6e8",
@@ -167,7 +167,15 @@
     "AC-281": "sha256:84a6398c4ae9cfc6",
     "AC-282": "sha256:fd4b2277251bd889",
     "AC-285": "sha256:e8089e626bc854fd",
-    "AC-289": "sha256:9f181836c85bd4d0"
+    "AC-289": "sha256:9f181836c85bd4d0",
+    "AC-348": "sha256:f65dd5116df1e6f6",
+    "AC-350": "sha256:371e1ada1ddd799e",
+    "AC-352": "sha256:97c669125802611b",
+    "AC-354": "sha256:8e591d37213c2612",
+    "AC-356": "sha256:40cc7b9b7f9fad18",
+    "AC-357": "sha256:3d028f014b2ac4c2",
+    "AC-359": "sha256:dae70daa572193fc",
+    "AC-364": "sha256:60fb013bf6b901aa"
   },
   "cases": [
     {
@@ -4369,6 +4377,206 @@
       "history": [
         {
           "at": "2026-10-14T14:23:34+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-268",
+      "requirement_ids": [
+        "FR-173"
+      ],
+      "ac_ids": [
+        "AC-348"
+      ],
+      "title": "コンポーネントのヘッダードラッグでの自由移動・重なり・手前表示・再読込後の維持（異常系: キャンバス外・本文ドラッグ）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-348",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T05:31:37+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-269",
+      "requirement_ids": [
+        "FR-174"
+      ],
+      "ac_ids": [
+        "AC-350"
+      ],
+      "title": "ヘッダーのダブルクリックで上 75% に拡大し再度で復帰（異常系: 本文では拡大しない）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-350",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T05:31:40+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-270",
+      "requirement_ids": [
+        "FR-175"
+      ],
+      "ac_ids": [
+        "AC-352"
+      ],
+      "title": "拡大位置を左に設定するとダブルクリックで左 75% に拡大（異常系: 既定は上）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-352",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T05:31:42+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-271",
+      "requirement_ids": [
+        "FR-176"
+      ],
+      "ac_ids": [
+        "AC-354"
+      ],
+      "title": "作業先・企業を登録が最上段（複数幅・画面切替の異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-354",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T05:31:45+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-272",
+      "requirement_ids": [
+        "FR-177"
+      ],
+      "ac_ids": [
+        "AC-356"
+      ],
+      "title": "ストーリー: 経営層で①〜④が順に現れる（異常系: 選ばず閉じる）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-356",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T05:31:48+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-273",
+      "requirement_ids": [
+        "FR-177"
+      ],
+      "ac_ids": [
+        "AC-357"
+      ],
+      "title": "ストーリー: 4 ペルソナで①〜④と理由の指標がペルソナごとに異なる（異常系: 現場）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-357",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T05:31:51+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-274",
+      "requirement_ids": [
+        "FR-178"
+      ],
+      "ac_ids": [
+        "AC-359"
+      ],
+      "title": "ストーリー: 2 秒以内にフルスクリーンで 1 メッセージ（異常系: フルスクリーン不可）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-359",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T05:31:54+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-275",
+      "requirement_ids": [
+        "FR-180"
+      ],
+      "ac_ids": [
+        "AC-364"
+      ],
+      "title": "デモ（モノ・コト）のユースケースがペルソナごとに 2 件以上でストーリーにデータなし 0 件（異常系: 実 Project に現れない）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-364",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T05:31:57+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"

@@ -65,3 +65,11 @@
 - 導出の候補（FR-158 AC-289）: 同じ `usecase-editor` 内の `data-testid="usecase-candidates"`（登録済みの `usecase-list` とは別の要素）。候補は listitem で、各 item に表示「導出（未登録）」と、ラベルつきの名称・概要・対象ペルソナ・手順・期待する効果の値。候補は登録するまで保存されず、`usecase-list` の listitem にも数えない。導出元がないときは `usecase-candidates` 内に理由の文言（「導出の元がない」）を出し、listitem は 0 件。登録操作は候補 item 内のボタン「登録」（編集してから登録する場合は「編集して登録」）。登録すると候補は `usecase-candidates` から外れ、`usecase-list` に入る。
 - 再生画面（FR-155〜157）: `data-testid="animation-player"`（ワークスペースのコンポーネント）。`data-animation-state="playing|paused|ended"`、`data-motion="running|stopped"`（P・動きを減らす設定で stopped）。`animation-position`（「n / 全体」）、現在のシーン `animation-scene`（見出しは heading）。ボタン「再生」「一時停止」「次へ」「前へ」「終了」。キー: `P`（動きの停止/再開）・`←`/`→`（前後）・`Esc`（終了）。動きを減らす設定のときは全シーンの見出し・説明が player 内に文字として表示される。
 - 音声: `t.audio.isAudible()`（既存フック）。
+
+## 12. 自由配置・拡大表示・ストーリー（FR-173〜180。workspace-free-layout.spec.ts・story.spec.ts が前提にする画面の探し方）
+- 自由配置・拡大（FR-173〜175）: 移動は見出し（heading）のドラッグ。置いた位置は再読込後も維持され、`workspace` の外へ出ない。重なったときは直近に操作したものが手前（`document.elementFromPoint` で判定）。ダブルクリックで拡大中のコンポーネントは `data-expanded="true"`（最大化は `data-maximized="true"` で別。拡大では付かない）。拡大の寸法は `workspace` の境界に対する割合（PARAM-058=75%）。
+- 設定（FR-175）: 設定画面（`nav-settings`）の radiogroup「拡大表示の位置」に radio「上」「左」「右」「下」（既定: 上）。
+- 作業先メニュー（FR-176）: `work-target-menu` とボタン「企業を登録」が最上段（ほかの `nav-*`・ペルソナ・編集モード・`stepper` より上端が上か同じ）。
+- ストーリー（FR-177〜179）: ボタン「プレゼンテーションを開始」→ dialog「ペルソナの選択」（button 経営層・事業部門・IT・現場。Esc で閉じるとストーリーは始まらない）→ `data-testid="story"`。現在のシーン `story-scene`（見出し heading は 1 つ。`data-story-part`=1〜4（①解決策②理由③KPI/OKR④ユースケース）、①は `data-solution-id`、不足データのシーンは `data-no-data="true"` で本文に「データなし」・理由・補う入口）。`story-position`（「n / 全体」）。`→`/`←`/`Esc` で操作。
+- ユースケース一覧（FR-180）: ステッパーの「ユースケース作成」→ `usecase-list` の listitem に `data-persona`（経営層・事業部門・IT・現場）、子に `usecase-name`・`usecase-summary`・`usecase-steps`・`usecase-effect`・`usecase-solution`・`usecase-kpi`。
+- 優先順位（FR-177 の期待値の元）: `priority` 画面内の `data-entity-id`（`sol-` で始まる解決策 ID）の出現順。
