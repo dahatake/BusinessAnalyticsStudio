@@ -3,9 +3,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { FluentProvider, webLightTheme } from '@fluentui/react-components';
-import { UseCaseScreen } from '../../src/screens/UseCaseScreen';
+import { UseCaseScreen, resetPlayback } from '../../src/screens/UseCaseScreen';
 import { resetProjects, useProjects } from '../../src/store/projects';
 import { useUseCases } from '../../src/store/usecases';
+import { useAnimation } from '../../src/store/animation';
 import { restore, startPersistence, STORAGE_KEY } from '../../src/store/persist';
 import { STEPS } from '../../src/stepper/model';
 import {
@@ -200,5 +201,99 @@ describe('FR-158 FR-155 画面（結合）', () => {
     // 編集すると「古い」と再生画面に表示される
     act(() => { useUseCases.getState().save(pid, { ...uc(3), name: 'A案', steps: steps(2) }, a.id); });
     expect(within(screen.getByTestId('animation-player')).getByRole('status').textContent).toContain('古い');
+  });
+});
+
+
+describe('FR-156 FR-157 NFR-A11Y-006 NFR-UX-010 再生画面（結合）', () => {
+  const ui = () => render(<FluentProvider theme={webLightTheme}><UseCaseScreen /></FluentProvider>);
+  const setup = () => {
+    const c = useProjects.getState().addCompany('X社'); if (!c.ok) throw new Error();
+    const pr = useProjects.getState().addProject(c.id, 'P1'); if (!pr.ok) throw new Error();
+    useProjects.getState().open(pr.id);
+    const a = useUseCases.getState().save(pr.id, { ...uc(3), name: 'A案' }); if (!a.ok) throw new Error();
+    useUseCases.getState().createAnimation(pr.id, a.id);
+    const r = ui();
+    // 前のテストのダイアログが残した aria-hidden（Fluent の後始末が非同期）を外す\n    document.querySelectorAll('body > [aria-hidden]').forEach((e) => e.removeAttribute('aria-hidden'));
+    fireEvent.click(screen.getByRole('button', { name: 'アニメーションを再生' }));
+    return { r, p: screen.getByTestId('animation-player') };
+  };
+  beforeEach(() => { resetPlayback(); useAnimation.getState().setPlaying(true); vi.useFakeTimers(); });
+  afterEach(() => { vi.useRealTimers(); });
+
+  it('FR-156 AC-279 5 秒ごとに自動で進み、最後の後は終了。一時停止で止まる', () => {
+    const { p } = setup();
+    expect(within(p).getByTestId('animation-position').textContent).toBe('1 / 5');
+    act(() => { vi.advanceTimersByTime(5000); });
+    expect(within(p).getByTestId('animation-position').textContent).toBe('2 / 5');
+    fireEvent.click(within(p).getByRole('button', { name: '一時停止' }));
+    act(() => { vi.advanceTimersByTime(20000); });
+    expect(within(p).getByTestId('animation-position').textContent).toBe('2 / 5');
+    fireEvent.click(within(p).getByRole('button', { name: '再生' }));
+    for (let i = 0; i < 4; i++) act(() => { vi.advanceTimersByTime(5000); });
+    expect(p.getAttribute('data-animation-state')).toBe('ended');
+  });
+
+  it('FR-156 AC-280 キーボードだけで前後に移動でき、Esc で終了して一覧に戻る', () => {
+    const { p } = setup();
+    fireEvent.keyDown(window, { key: 'ArrowRight' });
+    expect(within(p).getByTestId('animation-position').textContent).toBe('2 / 5');
+    fireEvent.keyDown(window, { key: 'ArrowLeft' });
+    expect(within(p).getByTestId('animation-position').textContent).toBe('1 / 5');
+    fireEvent.keyDown(window, { key: 'Escape' });
+    expect(screen.queryByTestId('animation-player')).toBeNull();
+    expect(screen.getByTestId('usecase-list')).toBeTruthy();
+  });
+
+  it('FR-157 AC-281 動きが停止中は data-motion=stopped で自動進行せず、操作では進め、再開で自動進行する', () => {
+    const { p } = setup();
+    act(() => { useAnimation.getState().setPlaying(false); });
+    expect(p.getAttribute('data-motion')).toBe('stopped');
+    act(() => { vi.advanceTimersByTime(20000); });
+    expect(within(p).getByTestId('animation-position').textContent).toBe('1 / 5');
+    fireEvent.click(within(p).getByRole('button', { name: '次へ' }));
+    expect(within(p).getByTestId('animation-position').textContent).toBe('2 / 5');
+    act(() => { useAnimation.getState().setPlaying(true); });
+    expect(p.getAttribute('data-motion')).toBe('running');
+    act(() => { vi.advanceTimersByTime(5000); });
+    expect(within(p).getByTestId('animation-position').textContent).toBe('3 / 5');
+  });
+
+  it('FR-157 AC-282 動きを減らす設定（停止中）でも全シーンの見出しと説明が文字で読める', () => {
+    const { p } = setup();
+    act(() => { useAnimation.getState().setPlaying(false); });
+    for (const x of ['A手順1', 'A説明1', 'A手順3', 'A説明3', '半分になる', 'A案']) expect(p.textContent).toContain(x);
+  });
+
+  it('NFR-A11Y-006 AC-283 シーン切替が通知され、操作部品は名前を持つ', () => {
+    const { p } = setup();
+    fireEvent.click(within(p).getByRole('button', { name: '一時停止' }));
+    fireEvent.click(within(p).getByRole('button', { name: '次へ' }));
+    expect(within(p).getByTestId('animation-announce').textContent).toContain('2 / 5');
+    expect(within(p).getByTestId('animation-announce').textContent).toContain('A手順1');
+    expect(within(p).getByTestId('animation-announce').getAttribute('aria-live')).toBe('polite');
+    for (const b of within(p).getAllByRole('button')) expect((b.textContent ?? '').trim().length).toBeGreaterThan(0);
+    expect(within(p).getAllByRole('heading')[0]!.textContent).toContain('A手順1');
+  });
+
+  it('NFR-A11Y-006 AC-284 手順の一覧に全シーンが番号つきで載り、現在位置と状態が文字でも示される', () => {
+    const { p } = setup();
+    const items = within(within(p).getByTestId('animation-outline')).getAllByRole('listitem');
+    expect(items).toHaveLength(5);
+    expect(items[0]!.textContent).toContain('A案');
+    expect(items[2]!.textContent).toContain('A説明2');
+    expect(items[0]!.getAttribute('aria-current')).toBe('step');
+    expect(within(p).getByTestId('animation-state-text').textContent).toContain('再生中');
+  });
+
+  it('NFR-UX-010 AC-288 コンポーネントが作り直されても再生位置と一時停止の状態が保たれる', () => {
+    const { r, p } = setup();
+    fireEvent.click(within(p).getByRole('button', { name: '一時停止' }));
+    fireEvent.click(within(p).getByRole('button', { name: '次へ' }));
+    r.unmount();
+    ui();
+    const q = screen.getByTestId('animation-player');
+    expect(within(q).getByTestId('animation-position').textContent).toBe('2 / 5');
+    expect(q.getAttribute('data-animation-state')).toBe('paused');
   });
 });
