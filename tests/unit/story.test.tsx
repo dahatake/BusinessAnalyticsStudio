@@ -17,7 +17,7 @@ import { usePackStore } from '../../src/store/pack';
 import { usePresentationStore } from '../../src/store/presentation';
 import { useStoryStore } from '../../src/store/story';
 import { useAnimation } from '../../src/store/animation';
-import { resetProjects } from '../../src/store/projects';
+import { resetProjects, useProjects } from '../../src/store/projects';
 import { useUseCases } from '../../src/store/usecases';
 
 const KINDS = ['mono', 'koto'] as const;
@@ -208,6 +208,57 @@ describe('FR-178 ストーリーの画面（結合）', () => {
     key('Escape');
     expect(screen.queryByTestId('story-scene')).toBeNull();
     expect(usePresentationStore.getState().active).toBe(false);
+  });
+
+  // FR-178 AC-359
+  it('FR-178 AC-359 開始の操作で requestFullscreen が呼ばれ、PARAM-061（2 秒）以内に最初のシーンが出る。見出しは 1 つで、冒頭に数字がある', () => {
+    usePresentationStore.getState().start([{ id: 't1', title: '議題', chapterId: 'c', chapterTitle: '章', chapterIndex: 0 }]);
+    render(<FluentProvider theme={webLightTheme}><StoryHost /></FluentProvider>);
+    act(() => useStoryStore.getState().openPicker());
+    const t0 = performance.now();
+    fireEvent.click(screen.getByRole('button', { name: '経営層' }));
+    const scene = screen.getByTestId('story-scene');
+    expect(performance.now() - t0).toBeLessThan(2000);
+    expect(Element.prototype.requestFullscreen).toHaveBeenCalledTimes(1);
+    expect(document.fullscreenElement).not.toBeNull();
+    expect(scene.querySelectorAll('h2').length).toBe(1);
+    expect(scene.textContent).toMatch(/\d/);
+  });
+
+  // FR-180 AC-365 / FR-177 AC-358
+  it('FR-180 AC-365 実際の Project を開いているとき、ストーリーにデモのパックの値（解決策・ROI・KPI/OKR・注記）は出ず、「データなし」になる', () => {
+    useProjects.setState({ openId: 'real-project-1' });
+    open();
+    const texts: string[] = [];
+    for (let i = 0; i < 10; i++) { texts.push(screen.getByTestId('story-scene').textContent ?? ''); key('ArrowRight'); }
+    const all = texts.join('\n');
+    expect(all).toContain('データなし');
+    for (const s of pack.issues.solutions) expect(all).not.toContain(s.title);
+    for (const i of pack.issues.issues) expect(all).not.toContain(i.title);
+    for (const u of demoUseCases(pack.customer, pack.issues.solutions)) expect(all).not.toContain(u.name);
+    expect(all).not.toMatch(/ROI：|180 %|120 %/);
+    expect(screen.queryByTestId('demo-fictional-note')).toBeNull();
+  });
+
+  // FR-180 AC-365（デモでは架空の注記が出る）
+  it('FR-180 AC-365 デモのときは架空であることの注記（fictionalNote）を表示する', () => {
+    open();
+    expect(screen.getByTestId('demo-fictional-note').textContent).toBe(pack.customer.fictionalNote);
+  });
+
+  // FR-179 AC-362
+  it('FR-179 AC-362 ストーリーを開いて最後まで進めても、通信（fetch・sendBeacon・XHR）は発生しない', () => {
+    const fetchSpy = vi.fn();
+    const beacon = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+    (navigator as unknown as { sendBeacon: unknown }).sendBeacon = beacon;
+    const xhr = vi.spyOn(XMLHttpRequest.prototype, 'open');
+    open();
+    for (let i = 0; i < 20; i++) key('ArrowRight');
+    expect(fetchSpy).not.toHaveBeenCalled();
+    expect(beacon).not.toHaveBeenCalled();
+    expect(xhr).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 
   // FR-178 AC-359（異常系: フルスクリーンが拒否されても止まらない）

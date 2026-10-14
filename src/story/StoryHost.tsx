@@ -76,15 +76,26 @@ function useStoryUseCases(): StoryUseCase[] {
 function useStoryScenes(persona: StoryPersona): StoryScene[] {
   const packState = usePackStore((x) => x.state);
   const weights = usePriorityStore((x) => x.weights);
+  const projectId = useProjects((x) => x.openId);
   const useCases = useStoryUseCases();
   return useMemo(() => {
+    // 実際の Project を開いているときは、デモのお手本パック（解決策・優先順位・ROI・KPI/OKR）の値を使わない（FR-138・FR-180）。
+    // Project 自身のデータがない要素は「データなし」のシーンになる
+    if (projectId) return buildStory({ persona, issues: [], solutions: [], products: [], customer: undefined, useCases, weights });
     if (packState.status !== 'ready') return [];
     const d = packState.pack.data;
     return buildStory({
       persona, issues: d.issues.issues, solutions: d.issues.solutions, products: d.products.products,
       customer: d.customer as never, useCases, weights,
     });
-  }, [packState, persona, weights, useCases]);
+  }, [packState, persona, weights, useCases, projectId]);
+}
+
+/** デモの作業先のときだけ、架空であることの注記（UseCaseScreen と同じ fictionalNote） */
+function useDemoNote(): string | undefined {
+  const projectId = useProjects((x) => x.openId);
+  const packState = usePackStore((x) => x.state);
+  return projectId || packState.status !== 'ready' ? undefined : packState.pack.data.customer.fictionalNote;
 }
 
 function endStory(): void {
@@ -149,6 +160,7 @@ function SceneView({ scene, motion }: { scene: StoryScene; motion: boolean }) {
 function StoryPlayer({ persona }: { persona: StoryPersona }) {
   const s = useStyles();
   const scenes = useStoryScenes(persona);
+  const demoNote = useDemoNote();
   const index = useStoryStore((x) => x.index);
   const setIndex = useStoryStore((x) => x.setIndex);
   const motion = useAnimation((x) => x.playing);
@@ -205,6 +217,7 @@ function StoryPlayer({ persona }: { persona: StoryPersona }) {
     <FluentProvider theme={webDarkTheme} className={s.forced} style={{ background: 'transparent' }}>
       <div ref={rootRef} className={s.root} tabIndex={-1} role="dialog" aria-modal="true" aria-label={`${persona}向けのストーリー`} data-testid="story" data-persona={persona}>
         {scene ? <SceneView key={scene.id} scene={scene} motion={motion} /> : <section className={s.stage} data-testid="story-scene" data-no-data="true"><h2 className={s.heading}>データなし</h2></section>}
+        {demoNote ? <Text size={200} className={s.hint} align="center" data-testid="demo-fictional-note">{demoNote}</Text> : null}
         <ol className={s.progress} aria-hidden="true">
           {scenes.map((sc, i) => <li key={sc.id} className={mergeClasses(s.seg, i <= cur && s.segDone)} />)}
         </ol>
