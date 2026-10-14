@@ -82,7 +82,6 @@ function DataCatalogScreen() {
   const counts = countByCategory(rows);
   const hasCatalog = !!imported && imported.fileName !== '';
   // 追加できない理由は、操作の前から表示する（FR-162 AC-308）
-  const unavailableReason = !hasCatalog ? NO_CATALOG_REASON : counts['BASのみ'] === 0 ? NO_BAS_ONLY_REASON : '';
   const todoPrecondition = !hasCatalog ? NO_CATALOG_REASON : counts['BASのみ'] === 0 ? NO_BAS_ONLY_REASON : '';
 
   // 取り込みはブラウザーの中だけで読む（File.text）。ネットワークには送らない（NFR-SEC-004）。拒否したときは既存の内容を変えない
