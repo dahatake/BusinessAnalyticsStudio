@@ -8,6 +8,8 @@ import { useStepper } from './stepper';
 import { useUseCases, type UseCaseSet } from './usecases';
 import { useDataCatalog } from './datacatalog';
 import type { ExplicitLink } from '../datacatalog/model';
+import type { ProjectTask } from '../datacatalog/reconcile';
+import type { ImportedCatalog } from './datacatalog';
 
 export const STORAGE_KEY = 'eabk.projects.v1';
 
@@ -25,6 +27,10 @@ interface Snapshot {
   usecases?: Record<string, UseCaseSet>;
   /** Project ごとのデータカタログの明示の紐づけ（FR-160）。古い保存内容にはない */
   dataLinks?: Record<string, ExplicitLink[]>;
+  /** Project ごとの取り込んだ企業データカタログと出典の URL（FR-161）。古い保存内容にはない */
+  dataCatalogs?: Record<string, ImportedCatalog>;
+  /** Project ごとの plan の tasks への追加分（FR-162）。古い保存内容にはない */
+  dataTasks?: Record<string, ProjectTask[]>;
 }
 
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
@@ -42,6 +48,8 @@ export function snapshot(): Snapshot {
     okr: useOkr.getState().byTarget,
     usecases: useUseCases.getState().byProject,
     dataLinks: useDataCatalog.getState().linksByProject,
+    dataCatalogs: useDataCatalog.getState().catalogByProject,
+    dataTasks: useDataCatalog.getState().tasksByProject,
   };
 }
 
@@ -82,6 +90,10 @@ export function restore(storage: Store): boolean {
   useDataCatalog.setState({
     linksByProject: Object.fromEntries(Object.entries(dl).filter(([, v]) => Array.isArray(v)).map(([k, v]) => [
       k, (v as unknown[]).filter((l): l is ExplicitLink => isObj(l) && typeof l.entityKey === 'string' && typeof l.useCaseId === 'string'),
+    ])),
+    catalogByProject: Object.fromEntries(Object.entries(isObj(data.dataCatalogs) ? data.dataCatalogs : {}).filter(([, v]) => isObj(v) && Array.isArray(v.items) && typeof v.sourceUrl === 'string').map(([k, v]) => [k, v as unknown as ImportedCatalog])),
+    tasksByProject: Object.fromEntries(Object.entries(isObj(data.dataTasks) ? data.dataTasks : {}).filter(([, v]) => Array.isArray(v)).map(([k, v]) => [
+      k, (v as unknown[]).filter((x): x is ProjectTask => isObj(x) && typeof x.id === 'string' && typeof x.title === 'string' && typeof x.description === 'string'),
     ])),
     selectedKey: null,
   });
