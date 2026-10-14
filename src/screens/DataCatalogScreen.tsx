@@ -13,8 +13,10 @@ import {
 } from '../datacatalog/reconcile';
 import { DataViewer } from '../components/DataViewer';
 import { toViewerEntities } from '../datacatalog/viewer';
+import { deriveViewerRelations } from '../datacatalog/relations';
 import { usePackStore } from '../store/pack';
 import { useDataCatalog, useExplicitLinks, useImportedCatalog } from '../store/datacatalog';
+import { useSelectionStore } from '../store/selection';
 import { useProjects } from '../store/projects';
 import { useUseCaseSet } from '../store/usecases';
 
@@ -77,6 +79,19 @@ function DataCatalogScreen() {
   }, [data, useCases]);
 
   const entities = model.derivation.entities;
+  // FR-170: 共通の選択状態（FR-024）との連動。データカタログの選択（鍵）と、全ビュー共通の選択（顧客パックのエンティティ ID）を相互に反映する
+  const globalIds = useSelectionStore((x) => x.selectedIds);
+  const globalKey = useMemo(() => {
+    const last = globalIds[globalIds.length - 1];
+    return last ? entities.find((e) => e.id === last)?.key ?? null : null;
+  }, [globalIds, entities]);
+  useEffect(() => { if (globalKey && globalKey !== useDataCatalog.getState().selectedKey) useDataCatalog.getState().select(globalKey); }, [globalKey]);
+  const selectShared = (key: string | null): void => {
+    select(key);
+    const id = key ? entities.find((e) => e.key === key)?.id : undefined;
+    if (id) useSelectionStore.getState().select(id, { origin: 'データカタログ' });
+    else if (!key) useSelectionStore.getState().clear({ origin: 'データカタログ' });
+  };
   const matrix = useMemo(() => buildMatrix(entities, useCases, model.derived, links), [entities, useCases, model.derived, links]);
   const selected = entities.find((e) => e.key === selectedKey);
 
@@ -89,6 +104,15 @@ function DataCatalogScreen() {
     [entities, imported, useCases, model.derived, links, rows],
   );
   const counts = countByCategory(rows);
+  // FR-170: ①エンティティ間の関係は顧客パックのフロー（from・to）。端点（顧客パックのエンティティ ID）を鍵に直す
+  const viewerRelations = useMemo(() => {
+    const idToKey = new Map(((data?.entities.entities ?? []) as unknown as PackEntity[]).map((e) => [e.id, normalizeKey(e.name)]));
+    const entityLinks = (data?.entities.flows ?? []).flatMap((f) => {
+      const a = idToKey.get(f.from); const b = idToKey.get(f.to);
+      return a && b ? [{ from: a, to: b, label: f.label }] : [];
+    });
+    return deriveViewerRelations({ entities: viewerEntities, entityLinks, catalogItems: imported?.items ?? [], normalize: normalizeKey });
+  }, [data, viewerEntities, imported]);
   const hasCatalog = !!imported && imported.fileName !== '';
   // 追加できない理由は、操作の前から表示する（FR-162 AC-308）
   const todoPrecondition = !hasCatalog ? NO_CATALOG_REASON : counts['BASのみ'] === 0 ? NO_BAS_ONLY_REASON : '';
@@ -152,8 +176,8 @@ function DataCatalogScreen() {
                     data-entity-description={e.description}
                     tabIndex={0}
                     aria-current={on ? 'true' : undefined}
-                    onClick={() => select(e.key)}
-                    onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); select(e.key); } }}
+                    onClick={() => selectShared(e.key)}
+                    onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); selectShared(e.key); } }}
                   >
                     <Text weight="semibold">{e.name}{on ? '（選択中）' : ''}</Text>
                     <Text size={200}>{e.description}</Text>
@@ -165,7 +189,7 @@ function DataCatalogScreen() {
 
           <section className={s.section} aria-label="データビュアー">
             <Text as="h3" weight="semibold">データビュアー</Text>
-            <DataViewer entities={viewerEntities} selectedKey={selectedKey} onSelect={select} />
+            <DataViewer entities={viewerEntities} selectedKey={selectedKey} onSelect={selectShared} relations={viewerRelations} />
           </section>
 
           <section className={s.section} aria-label="データエンティティの詳細" data-testid="entity-detail">

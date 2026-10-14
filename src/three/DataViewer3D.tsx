@@ -3,9 +3,10 @@
 // 2D と同じ属性（data-viewer-entity・data-viewer-column・aria-selected）と操作（クリック・Enter）を持つ。
 import { useEffect, useMemo } from 'react';
 import { useThree } from '@react-three/fiber';
-import { Html } from '@react-three/drei';
+import { Html, Line } from '@react-three/drei';
 import { DiagramCanvas } from './DiagramCanvas';
 import { DETAIL_LABELS, fitDistance, type DetailLevel, type ViewerCluster, type ViewerLayout } from '../datacatalog/viewer';
+import { highlightOf, lineStyleOf, type relatedOf, type ViewerRelation } from '../datacatalog/relations';
 import { NO_COLUMNS_LABEL } from '../datacatalog/model';
 
 const card = {
@@ -37,15 +38,37 @@ export interface DataViewer3DProps {
   activeCluster: string | null;
   onSelect: (key: string) => void;
   onCluster: (name: string) => void;
+  /** FR-170: 関連（①の線を描く）と、選択に関連する対象（強調・減光） */
+  relations?: readonly ViewerRelation[];
+  related?: ReturnType<typeof relatedOf>;
+  /** FR-171: 簡略表示のとき、詳細（ラベル）を出す対象。null は全件 */
+  detailKeys?: ReadonlySet<string> | null;
 }
 
-export function DataViewer3D({ clusters, layout, level, zoom, selectedKey, activeCluster, onSelect, onCluster }: DataViewer3DProps) {
+export function DataViewer3D({ clusters, layout, level, zoom, selectedKey, activeCluster, onSelect, onCluster, relations = [], related = null, detailKeys = null }: DataViewer3DProps) {
   const pos = useMemo(() => new Map(layout.entities.map((p) => [p.key, p])), [layout]);
   const sel = selectedKey ? pos.get(selectedKey) : undefined;
   const focus: [number, number, number] = sel ? [sel.x, 0, sel.z] : [0, 0, 0];
+  // ①の線（エンティティ間）。簡略表示では選択に関わるものだけ描く。線の種類は線種（実線）とラベルで示す（色だけに頼らない）
+  const lines = useMemo(() => relations.filter((r) => r.kind === 'entity' && (!detailKeys || (related?.relations.includes(r) ?? false))), [relations, detailKeys, related]);
   return (
     <DiagramCanvas label={`データビュアー（3D）。詳細度は ${DETAIL_LABELS[level]}。ホイール・ピンチ・ボタン・キーで拡大縮小できます`} cameraPosition={[6, 12, 10]}>
       <CameraDriver zoom={zoom} focus={focus} extent={layout.extent} />
+      {lines.map((r) => {
+        const a = pos.get(r.entityKeys[0]!); const b = pos.get(r.entityKeys[1]!);
+        if (!a || !b) return null;
+        const hot = !related || related.relations.includes(r);
+        return (
+          <group key={r.id} data-relation-line={r.id}>
+            <Line points={[[a.x, 0.3, a.z], [b.x, 0.3, b.z]]} color={hot ? '#0f6cbd' : '#8a8a8a'} lineWidth={hot ? 3 : 1} transparent opacity={hot ? 1 : 0.3} />
+            {hot && level !== 'bird' ? (
+              <Html center position={[(a.x + b.x) / 2, 0.5, (a.z + b.z) / 2]} zIndexRange={[4, 0]}>
+                <div style={{ background: '#fff', color: '#111', border: '1px solid #5b6b7b', borderRadius: 4, padding: '0 4px', fontSize: 11 }} data-relation-label={r.label}>{lineStyleOf(r).label}: {r.label}</div>
+              </Html>
+            ) : null}
+          </group>
+        );
+      })}
       {layout.clusters.map((c) => (
         <group key={`c:${c.name}`} position={[c.x, 0, c.z]}>
           <mesh position={[0, -0.12, 0]}>
@@ -68,19 +91,22 @@ export function DataViewer3D({ clusters, layout, level, zoom, selectedKey, activ
         const p = pos.get(e.key);
         if (!p) return null;
         const on = e.key === selectedKey;
+        const h = highlightOf(related, e.key, selectedKey);
+        const dim = h === 'dimmed';
+        const showLabel = level !== 'bird' && (!detailKeys || detailKeys.has(e.key));
         return (
           <group key={e.key} position={[p.x, 0, p.z]}>
             <mesh position={[0, 0.25, 0]} scale={on ? 1.25 : 1} onClick={(ev) => { ev.stopPropagation(); onSelect(e.key); }}>
               <boxGeometry args={[0.9, 0.5, 0.9]} />
-              <meshStandardMaterial color={on ? '#0f6cbd' : '#5b8bb5'} emissive={on ? '#0f6cbd' : '#000000'} emissiveIntensity={on ? 0.5 : 0} />
+              <meshStandardMaterial color={on || h === 'related' ? '#0f6cbd' : '#5b8bb5'} emissive={on ? '#0f6cbd' : '#000000'} emissiveIntensity={on ? 0.5 : 0} transparent={dim} opacity={dim ? 0.3 : 1} />
             </mesh>
-            {level !== 'bird' ? (
+            {showLabel ? (
               <Html center position={[0, 0.9, 0]} zIndexRange={[5, 0]}>
                 <div
-                  role="option" aria-selected={on} tabIndex={-1} data-viewer-entity={e.name} style={on ? cardOn : card}
+                  role="option" aria-selected={on} tabIndex={-1} data-viewer-entity={e.name} data-highlight={h} style={{ ...(on ? cardOn : card), ...(dim ? { opacity: 0.4 } : {}), ...(h === 'related' ? { borderStyle: 'dashed' } : {}) }}
                   onClick={() => onSelect(e.key)}
                 >
-                  <strong>{on ? `${e.name}（選択中）` : e.name}</strong>
+                  <strong>{on ? `${e.name}（選択中）` : h === 'related' ? `${e.name}（関連）` : e.name}</strong>
                   <div style={{ fontSize: 11 }}>{e.description}</div>
                   {level === 'column' ? (
                     e.columns.length === 0
