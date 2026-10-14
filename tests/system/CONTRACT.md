@@ -65,3 +65,10 @@
 - 導出の候補（FR-158 AC-289）: 同じ `usecase-editor` 内の `data-testid="usecase-candidates"`（登録済みの `usecase-list` とは別の要素）。候補は listitem で、各 item に表示「導出（未登録）」と、ラベルつきの名称・概要・対象ペルソナ・手順・期待する効果の値。候補は登録するまで保存されず、`usecase-list` の listitem にも数えない。導出元がないときは `usecase-candidates` 内に理由の文言（「導出の元がない」）を出し、listitem は 0 件。登録操作は候補 item 内のボタン「登録」（編集してから登録する場合は「編集して登録」）。登録すると候補は `usecase-candidates` から外れ、`usecase-list` に入る。
 - 再生画面（FR-155〜157）: `data-testid="animation-player"`（ワークスペースのコンポーネント）。`data-animation-state="playing|paused|ended"`、`data-motion="running|stopped"`（P・動きを減らす設定で stopped）。`animation-position`（「n / 全体」）、現在のシーン `animation-scene`（見出しは heading）。ボタン「再生」「一時停止」「次へ」「前へ」「終了」。キー: `P`（動きの停止/再開）・`←`/`→`（前後）・`Esc`（終了）。動きを減らす設定のときは全シーンの見出し・説明が player 内に文字として表示される。
 - 音声: `t.audio.isAudible()`（既存フック）。
+
+## 12. データカタログ（FR-159〜162・NFR-UX-011。data-catalog.spec.ts が前提にする画面の探し方）
+- 画面: component key `data-catalog`（`nav-data-catalog`、`component-data-catalog`）。ユースケース一覧 `usecase-list` の各 listitem に `data-usecase-name`。
+- 一覧・詳細（FR-159）: `entity-list` の listitem（`data-entity-name`・`data-entity-description`。表示と同じ値）。行を選ぶと `entity-detail` にラベル「名称」「説明」「導出元」「関連するユースケース」と値。0 件のときは `entity-list-empty-reason` に理由（「導出の元がない」または「顧客パックがない」）。
+- 対応表（FR-160）: `entity-usecase-matrix`。セルは `data-kind="derived|explicit|none"`・`data-entity-name`・`data-usecase-name`。derived は文字「導出」、explicit は「明示」。none のセルに button「紐づけを追加」（名前は部分一致）、explicit のセルに button「削除」。derived には削除の操作がない。ユースケースが 0 件のとき `matrix-empty-reason` に理由（「ユースケース」を含む）。
+- 取り込みと突合（FR-161）: file input（label「企業データカタログのファイル」）。突合は `reconcile-table` の `tr[data-entity-name][data-category="一致|差異|BASのみ|カタログのみ"]`（区分は行内にも文字で表示）。拒否は role=alert に原因（JSON・形式・読み込めない等）。
+- ToDo 追加（FR-162）: button「未掲載を ToDo に追加」。結果と件数は `todo-add-result`（追加件数の数字。追加できないときは理由）。フック `t.plan.tasks()` は Project の plan の tasks を `{ id, title, description }[]` で返す。

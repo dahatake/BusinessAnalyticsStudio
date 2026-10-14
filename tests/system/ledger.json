@@ -167,7 +167,11 @@
     "AC-281": "sha256:84a6398c4ae9cfc6",
     "AC-282": "sha256:fd4b2277251bd889",
     "AC-285": "sha256:e8089e626bc854fd",
-    "AC-289": "sha256:9f181836c85bd4d0"
+    "AC-289": "sha256:9f181836c85bd4d0",
+    "AC-294": "sha256:38023a682076f924",
+    "AC-297": "sha256:20045253f4fc78d5",
+    "AC-300": "sha256:f143b83de2fa5e5a",
+    "AC-305": "sha256:c7a63ddfc4f68753"
   },
   "cases": [
     {
@@ -4369,6 +4373,106 @@
       "history": [
         {
           "at": "2026-10-14T14:23:34+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-247",
+      "requirement_ids": [
+        "FR-159"
+      ],
+      "ac_ids": [
+        "AC-294"
+      ],
+      "title": "データカタログの一覧・詳細・開き直しで同じ導出（異常系: 導出元なしは 0 件と理由）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-294",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T20:55:25+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-248",
+      "requirement_ids": [
+        "FR-160"
+      ],
+      "ac_ids": [
+        "AC-297"
+      ],
+      "title": "対応表の「導出」「明示」の文字表示（異常系: ユースケース 0 件の理由）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-297",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T20:55:27+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-249",
+      "requirement_ids": [
+        "FR-161"
+      ],
+      "ac_ids": [
+        "AC-300"
+      ],
+      "title": "企業データカタログ JSON の取り込みと 4 区分の突合（異常系: 壊れた JSON は拒否・結果不変）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-300",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T20:55:29+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-250",
+      "requirement_ids": [
+        "FR-162"
+      ],
+      "ac_ids": [
+        "AC-305"
+      ],
+      "title": "未掲載エンティティの ToDo 一括追加（異常系: 未取り込み・重複追加）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-305",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T20:55:31+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
