@@ -28,6 +28,15 @@ export interface PaneInfo {
   /** タブにまとめられる相手（表示中の別のコンポーネント） */
   peers: ReadonlyArray<{ key: string; label: string }>;
   toggleMaximize: () => void;
+  /** ヘッダーのダブルクリックなどで拡大表示しているか（FR-174。最大化とは別） */
+  expanded: boolean;
+  toggleExpand: () => void;
+  /** 自由に動かせる配置（浮動）にしているか（FR-173） */
+  floating: boolean;
+  /** 浮動にする／分割の配置へ戻す（ドラッグなしの手段。FR-173 AC-349） */
+  toggleFloat: () => void;
+  /** 手前に出す順の重なり（z-index）。操作したことのあるコンポーネントだけ持つ（FR-173） */
+  z?: number;
   restore: () => void;
   hide: () => void;
   move: (dir: Move) => void;
@@ -78,6 +87,8 @@ export function ComponentMenu({ pane, title }: { pane: PaneInfo; title: string }
             </MenuPopover>
           </Menu>
           <MenuItem onClick={pane.toggleMaximize}>{pane.maximized ? '通常表示に戻す' : '最大化'}</MenuItem>
+          <MenuItem onClick={pane.toggleExpand}>{pane.expanded ? '拡大表示を戻す' : '拡大表示（75%）'}</MenuItem>
+          <MenuItem onClick={pane.toggleFloat}>{pane.floating ? '分割の配置に戻す' : '自由に動かせる配置にする'}</MenuItem>
           {pane.peers.length > 0 ? (
             <Menu>
               <MenuTrigger disableButtonEnhancement>

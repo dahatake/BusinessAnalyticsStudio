@@ -34,7 +34,19 @@ interface SettingsState {
   /** 作業先の選択画面にデモを出すか（既定オン。FR-144 AC-240・AC-241。端末内に保存） */
   showDemoInPicker: boolean;
   setShowDemoInPicker: (show: boolean) => void;
+  /** ヘッダーのダブルクリックでの拡大表示の位置（既定は上。PARAM-059。端末内に保存。FR-175） */
+  expandPosition: ExpandPosition;
+  setExpandPosition: (p: ExpandPosition) => void;
 }
+
+/** 拡大表示の位置（FR-175） */
+export type ExpandPosition = 'top' | 'left' | 'right' | 'bottom';
+export const EXPAND_POSITIONS: readonly ExpandPosition[] = ['top', 'left', 'right', 'bottom'];
+/** 既定の拡大表示の位置（PARAM-059） */
+export const DEFAULT_EXPAND_POSITION: ExpandPosition = 'top';
+export const EXPAND_LABEL: Record<ExpandPosition, string> = { top: '上', left: '左', right: '右', bottom: '下' };
+/** 拡大表示がキャンバスに占める割合（PARAM-058 = 75%） */
+export const EXPAND_RATIO = 0.75;
 
 export type Handedness = 'right' | 'left';
 export const HANDEDNESS: readonly Handedness[] = ['right', 'left'];
@@ -63,6 +75,8 @@ export const useSettings = create<SettingsState>()(
       setHandedness: (handedness) => set({ handedness: handedness === 'left' ? 'left' : 'right' }),
       showDemoInPicker: true,
       setShowDemoInPicker: (showDemoInPicker) => set({ showDemoInPicker }),
+      expandPosition: DEFAULT_EXPAND_POSITION,
+      setExpandPosition: (p) => set({ expandPosition: EXPAND_POSITIONS.includes(p) ? p : DEFAULT_EXPAND_POSITION }),
     }),
     { name: 'edb.settings', version: 1 },
   ),

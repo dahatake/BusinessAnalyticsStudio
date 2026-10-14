@@ -110,11 +110,13 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
       onFocus={onFocus}
       onBlur={onBlur}
       className={mergeClasses(s.root, pane ? s.pane : undefined, pane?.maximized ? s.maximized : undefined, minimized ? s.minimized : undefined, foldMotion)}
-      style={maxWidth && !pane ? { maxWidth } : undefined}
+      style={maxWidth && !pane ? { maxWidth } : pane?.z !== undefined && !pane.maximized ? { position: 'relative', zIndex: pane.z } : undefined}
       aria-label={title}
       tabIndex={pane ? 0 : undefined}
       onKeyDown={onKeyDown}
       data-display={pane ? (pane.maximized ? 'maximized' : 'normal') : undefined}
+      data-maximized={pane?.maximized ? 'true' : undefined}
+      data-expanded={pane?.expanded ? 'true' : undefined}
       data-minimized={minimized ? 'true' : undefined}
     >
       <div className={s.head}>
@@ -125,10 +127,10 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
               size={600}
               weight="semibold"
               block
-              className={pane && !pane.maximized ? s.grab : undefined}
+              className={pane && !pane.maximized && !pane.expanded ? s.grab : undefined}
               onDoubleClick={titleDoubleClick(pane)}
-              onMouseDown={pane && !pane.maximized ? (e: MouseEvent<HTMLElement>) => { if (e.button === 0 && e.detail < 2) e.preventDefault(); } : undefined}
-              onPointerDown={pane && !pane.maximized ? (e: PointerEvent<HTMLElement>) => { if (e.button === 0) { e.preventDefault(); pane.startDrag(e); } } : undefined}
+              onMouseDown={pane && !pane.maximized && !pane.expanded ? (e: MouseEvent<HTMLElement>) => { if (e.button === 0 && e.detail < 2) e.preventDefault(); } : undefined}
+              onPointerDown={pane && !pane.maximized && !pane.expanded ? (e: PointerEvent<HTMLElement>) => { if (e.button === 0) { e.preventDefault(); pane.startDrag(e); } } : undefined}
             >
               {title}
             </Text>

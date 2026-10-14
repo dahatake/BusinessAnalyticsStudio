@@ -178,7 +178,7 @@ const key = (k: string, extra: Partial<KeyLike> = {}): KeyLike => ({
 });
 
 describe('FR-013 AC-016 パネルのキー操作', () => {
-  const pane = (maximized = false) => ({ maximized, toggleMaximize: vi.fn(), restore: vi.fn(), hide: vi.fn() });
+  const pane = (maximized = false) => ({ maximized, toggleMaximize: vi.fn(), toggleExpand: vi.fn(), restore: vi.fn(), hide: vi.fn() });
 
   // FR-013 AC-016
   it('FR-013 AC-016 Shift+F で最大化/通常を切り替える', () => {
@@ -227,10 +227,92 @@ describe('FR-013 AC-016 パネルのキー操作', () => {
     expect(titleDoubleClick(null)).toBeUndefined();
   });
 
-  // FR-013 AC-016
-  it('FR-013 AC-016 見出しのダブルクリックは最大化/通常の切替になる', () => {
+  // FR-013 AC-016 / FR-174 AC-350: 見出しのダブルクリックは最大化ではなく、拡大表示/復帰の切替になる
+  it('FR-013 AC-016 FR-174 AC-350 見出しのダブルクリックは拡大表示/復帰の切替で、最大化にはならない', () => {
     const p = pane();
     titleDoubleClick(p)!();
-    expect(p.toggleMaximize).toHaveBeenCalledTimes(1);
+    expect(p.toggleExpand).toHaveBeenCalledTimes(1);
+    expect(p.toggleMaximize).not.toHaveBeenCalled();
+  });
+
+  // FR-174 AC-351: ダブルクリックを使わないキーボードの手段
+  it('FR-174 AC-351 Shift+E で拡大表示/復帰を切り替える。入力欄では何もしない', () => {
+    const p = pane();
+    const a = panelKeyAction(key('E', { shiftKey: true }), p);
+    expect(a).toBe('toggle-expand');
+    expect(runPanelKeyAction(a, p)).toBe(true);
+    expect(p.toggleExpand).toHaveBeenCalledTimes(1);
+    expect(panelKeyAction(key('E', { shiftKey: true, editable: true }), p)).toBeNull();
+    expect(panelKeyAction(key('e'), p)).toBeNull();
+  });
+});
+
+describe('FR-173 FR-174 FR-175 自由配置・拡大表示・拡大位置の設定のストア', () => {
+  // FR-173 AC-348
+  it('FR-173 AC-348 浮かせた位置は作業領域の中に収まり、保存され、再読込で復元される', async () => {
+    const a = await freshStore(ALL);
+    a.useLayout.getState().setFloat('summary', { x: 0.9, y: -0.2, w: 0.5, h: 0.4 });
+    const f = a.useLayout.getState().floats[a.useLayout.getState().persona]!.summary!;
+    expect(f.x).toBeCloseTo(0.5);
+    expect(f.y).toBe(0);
+    const saved = a.storage.getItem('edb.layout');
+    const b = await freshStore(ALL, saved!);
+    expect(b.useLayout.getState().floats[b.useLayout.getState().persona]!.summary).toEqual(f);
+  });
+
+  // FR-173 AC-348
+  it('FR-173 AC-348 直近に操作したものが手前になる（zOrder の末尾）', async () => {
+    const { useLayout, storage } = await freshStore(ALL);
+    useLayout.getState().setFloat('summary', { x: 0, y: 0, w: 0.3, h: 0.3 });
+    useLayout.getState().raise('matrix');
+    useLayout.getState().raise('summary');
+    expect(useLayout.getState().zOrder).toEqual(['matrix', 'summary']);
+    // 再読込後も手前の順が維持される（保存する）
+    const again = await freshStore(ALL, JSON.parse(JSON.stringify({ state: JSON.parse(storage.getItem('edb.layout')!).state, version: 1 })));
+    expect(again.useLayout.getState().zOrder).toEqual(['matrix', 'summary']);
+  });
+
+  // FR-173 AC-349
+  it('FR-173 AC-349 既定のレイアウトに戻すと、浮かせた位置も戻る。分割の配置への移動でも浮動は外れる', async () => {
+    const { useLayout } = await freshStore(ALL);
+    const s = () => useLayout.getState();
+    s().setFloat('summary', { x: 0.1, y: 0.1, w: 0.3, h: 0.3 });
+    s().resetLayout();
+    expect(s().floats[s().persona]).toBeUndefined();
+    s().setFloat('summary', { x: 0.1, y: 0.1, w: 0.3, h: 0.3 });
+    s().dropMove('summary', 'matrix', 'left');
+    expect(s().floats[s().persona]!.summary).toBeUndefined();
+  });
+
+  // FR-174 AC-351
+  it('FR-174 AC-351 拡大表示は保存されず、最大化とは両立しない', async () => {
+    const a = await freshStore(ALL);
+    const s = () => a.useLayout.getState();
+    s().toggleExpanded('summary');
+    expect(s().expanded).toBe('summary');
+    s().setMaximized('matrix');
+    expect(s().expanded).toBeNull();
+    s().toggleExpanded('summary');
+    expect(s().maximized).toBeNull();
+    s().toggleExpanded('summary');
+    expect(s().expanded).toBeNull();
+    s().toggleExpanded('summary');
+    const b = await freshStore(ALL, a.storage.getItem('edb.layout')!);
+    expect(b.useLayout.getState().expanded).toBeNull();
+  });
+
+  // FR-175 AC-353
+  it('FR-175 AC-353 拡大表示の位置は既定が上で、選んだ位置は保存され、既定に戻せる。不正な値は上になる', async () => {
+    vi.resetModules();
+    const storage = new MemoryStorage();
+    vi.stubGlobal('localStorage', storage);
+    vi.stubGlobal('window', { localStorage: storage });
+    const m = await import('../../src/store/settings');
+    expect(m.useSettings.getState().expandPosition).toBe('top');
+    m.useSettings.getState().setExpandPosition('left');
+    expect(JSON.parse(storage.getItem('edb.settings')!).state.expandPosition).toBe('left');
+    m.useSettings.getState().setExpandPosition('bogus' as never);
+    expect(m.useSettings.getState().expandPosition).toBe(m.DEFAULT_EXPAND_POSITION);
+    expect(m.EXPAND_RATIO).toBe(0.75);
   });
 });

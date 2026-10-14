@@ -15,8 +15,35 @@ export function setAvailableComponents(keys: readonly string[]): void {
   available = new Set(keys);
 }
 
+/** 自由配置（浮動）したコンポーネントの位置と大きさ。作業領域に対する割合（0〜1）。FR-173 */
+export interface FloatRect { x: number; y: number; w: number; h: number }
+export type FloatMap = Record<string, FloatRect>;
+const MIN_FLOAT = 0.1;
+/** 作業領域の外へ出ないように収める */
+export function clampFloat(r: FloatRect): FloatRect {
+  const w = Math.min(1, Math.max(MIN_FLOAT, Number.isFinite(r.w) ? r.w : 0.5));
+  const h = Math.min(1, Math.max(MIN_FLOAT, Number.isFinite(r.h) ? r.h : 0.5));
+  const x = Math.min(1 - w, Math.max(0, Number.isFinite(r.x) ? r.x : 0));
+  const y = Math.min(1 - h, Math.max(0, Number.isFinite(r.y) ? r.y : 0));
+  return { x, y, w, h };
+}
+const isFloatRect = (v: unknown): v is FloatRect => !!v && typeof v === 'object' && ['x', 'y', 'w', 'h'].every((k) => typeof (v as Record<string, unknown>)[k] === 'number');
+
 interface LayoutState {
   persona: Persona;
+  /** 自由配置したコンポーネント（ペルソナ別。保存する。FR-173） */
+  floats: Partial<Record<Persona, FloatMap>>;
+  /** 手前に出す順（後ろほど手前。保存しない。FR-173） */
+  zOrder: string[];
+  setFloat: (key: string, r: FloatRect) => void;
+  /** 浮かせたコンポーネントを分割の配置へ戻す */
+  unfloat: (key: string) => void;
+  /** 直近に操作したものを手前に出す */
+  raise: (key: string) => void;
+  /** ヘッダーのダブルクリックで拡大表示しているコンポーネント（保存しない。FR-174） */
+  expanded: string | null;
+  setExpanded: (key: string | null) => void;
+  toggleExpanded: (key: string) => void;
   /** 利用者が変えたレイアウト。ないペルソナは既定のレイアウト */
   layouts: Partial<Record<Persona, Layout>>;
   /** 操作中のコンポーネントを大きくする自動のサイズ調整（FR-143）。保存する */
@@ -70,8 +97,28 @@ export const useLayout = create<LayoutState>()(
           layouts: { ...s.layouts, [s.persona]: fn(effectiveLayout(s)) },
           ...(maximized !== undefined ? { maximized } : {}),
         }));
+      const dropFloat = (key: string) => set((s) => {
+        const cur = s.floats[s.persona];
+        if (!cur || !(key in cur)) return {};
+        const { [key]: _drop, ...rest } = cur;
+        return { floats: { ...s.floats, [s.persona]: rest } };
+      });
       return {
         persona: DEFAULT_PERSONA,
+        floats: {},
+        zOrder: [],
+        expanded: null,
+        setFloat: (key, r) => set((s) => ({
+          floats: { ...s.floats, [s.persona]: { ...(s.floats[s.persona] ?? {}), [key]: clampFloat(r) } },
+          zOrder: [...s.zOrder.filter((k) => k !== key), key],
+        })),
+        unfloat: (key) => dropFloat(key),
+        raise: (key) => set((s) => (s.zOrder[s.zOrder.length - 1] === key ? {} : { zOrder: [...s.zOrder.filter((k) => k !== key), key] })),
+        setExpanded: (key) => set((s) => ({
+          expanded: key,
+          ...(key ? { maximized: null, minimized: { ...s.minimized, [s.persona]: (s.minimized[s.persona] ?? []).filter((k) => k !== key) } } : {}),
+        })),
+        toggleExpanded: (key) => get().setExpanded(get().expanded === key ? null : key),
         layouts: {},
         maximized: null,
         revealed: null,
@@ -87,9 +134,10 @@ export const useLayout = create<LayoutState>()(
           return { minimized: { ...st.minimized, [st.persona]: on ? [...cur, key] : cur }, ...(on && st.maximized === key ? { maximized: null } : {}) };
         }),
         setNavMin: (navMin) => set({ navMin }),
-        dropMove: (key, target, zone) => apply((l) => dropAt(l, key, target, zone)),
+        dropMove: (key, target, zone) => { dropFloat(key); apply((l) => dropAt(l, key, target, zone)); },
         snapTo: (key, kind, opts) => {
           set((st) => (kind === 'tabs' ? {} : { manual: { ...st.manual, [st.persona]: [...new Set([...(st.manual[st.persona] ?? []), ...keysOf(effectiveLayout(st))])] } }));
+          dropFloat(key);
           apply((l) => snapLayout(l, key, kind, opts));
         },
         resizeByKeys: (a, b, delta) => {
@@ -100,13 +148,13 @@ export const useLayout = create<LayoutState>()(
           set((st) => ({ manual: { ...st.manual, [st.persona]: [...new Set([...(st.manual[st.persona] ?? []), ...keys])] } }));
           apply((x) => resize(x, at.path, at.index, delta));
         },
-        setPersona: (persona) => set({ persona, maximized: null }),
-        hideComponent: (key) => apply((l) => hide(l, key), get().maximized === key ? null : get().maximized),
+        setPersona: (persona) => set({ persona, maximized: null, expanded: null }),
+        hideComponent: (key) => { dropFloat(key); if (get().expanded === key) set({ expanded: null }); apply((l) => hide(l, key), get().maximized === key ? null : get().maximized); },
         showComponent: (key) => { apply((l) => show(l, key)); set({ revealed: { key } }); },
         moveComponent: (key, dir) => apply((l) => move(l, key, dir)),
         toggleDirection: (key) => apply((l) => toggleDirection(l, key)),
-        mergeTabs: (key, target) => apply((l) => mergeIntoTabs(l, key, target)),
-        untab: (key) => apply((l) => splitFromTabs(l, key)),
+        mergeTabs: (key, target) => { dropFloat(key); apply((l) => mergeIntoTabs(l, key, target)); },
+        untab: (key) => { dropFloat(key); apply((l) => splitFromTabs(l, key)); },
         resizeAt: (path, index, delta) => {
           const l = effectiveLayout(get());
           const keys = l ? resizedKeys(getAt(l, path), index) : [];
@@ -116,6 +164,7 @@ export const useLayout = create<LayoutState>()(
         activateTab: (key) => apply((l) => activate(l, key)),
         setMaximized: (maximized) => set((st) => ({
           maximized,
+          ...(maximized ? { expanded: null } : {}),
           // 操作の対象にすると最小化は解ける（FR-151）
           ...(maximized ? { minimized: { ...st.minimized, [st.persona]: (st.minimized[st.persona] ?? []).filter((k) => k !== maximized) } } : {}),
         })),
@@ -126,16 +175,18 @@ export const useLayout = create<LayoutState>()(
           delete manual[s.persona];
           const minimized = { ...s.minimized };
           delete minimized[s.persona];
-          return { layouts, manual, minimized, navMin: false, maximized: null, resetCount: s.resetCount + 1 };
+          const floats = { ...s.floats };
+          delete floats[s.persona];
+          return { layouts, manual, minimized, floats, navMin: false, maximized: null, expanded: null, resetCount: s.resetCount + 1 };
         }),
       };
     },
     {
       name: 'edb.layout',
       version: 1,
-      partialize: (s) => ({ persona: s.persona, layouts: s.layouts, autoSize: s.autoSize, manual: s.manual, minimized: s.minimized, navMin: s.navMin }),
+      partialize: (s) => ({ persona: s.persona, floats: s.floats, zOrder: s.zOrder, layouts: s.layouts, autoSize: s.autoSize, manual: s.manual, minimized: s.minimized, navMin: s.navMin }),
       merge: (persisted, current) => {
-        const p = (persisted ?? {}) as Partial<Pick<LayoutState, 'persona' | 'layouts' | 'autoSize' | 'manual' | 'minimized' | 'navMin'>>;
+        const p = (persisted ?? {}) as Partial<Pick<LayoutState, 'persona' | 'floats' | 'zOrder' | 'layouts' | 'autoSize' | 'manual' | 'minimized' | 'navMin'>>;
         const minimized: Partial<Record<Persona, string[]>> = {};
         for (const name of PERSONAS) {
           const v = (p.minimized as Record<string, unknown> | undefined)?.[name];
@@ -152,7 +203,17 @@ export const useLayout = create<LayoutState>()(
           const v = (p.manual as Record<string, unknown> | undefined)?.[name];
           if (Array.isArray(v) && v.every((k) => typeof k === 'string')) manual[name] = v as string[];
         }
-        return { ...current, persona, layouts, manual, minimized, navMin: p.navMin === true, autoSize: typeof p.autoSize === 'boolean' ? p.autoSize : true };
+        const floats: Partial<Record<Persona, FloatMap>> = {};
+        for (const name of PERSONAS) {
+          const v = (p.floats as Record<string, unknown> | undefined)?.[name];
+          if (v && typeof v === 'object') {
+            const m: FloatMap = {};
+            for (const [k, r] of Object.entries(v as Record<string, unknown>)) if (isFloatRect(r)) m[k] = clampFloat(r);
+            floats[name] = m;
+          }
+        }
+        const zOrder = Array.isArray(p.zOrder) && p.zOrder.every((k) => typeof k === 'string') ? p.zOrder : [];
+        return { ...current, floats, zOrder, persona, layouts, manual, minimized, navMin: p.navMin === true, autoSize: typeof p.autoSize === 'boolean' ? p.autoSize : true };
       },
     },
   ),
