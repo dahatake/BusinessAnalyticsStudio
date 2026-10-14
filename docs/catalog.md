@@ -196,6 +196,15 @@
 | NFR-A11Y-006 | アニメーションの代替と非色依存 | 承認済み | src/screens/UseCaseScreen.tsx (手順の一覧・通知・状態の文字表示) | tests/unit/usecase.test.tsx (AC-283, AC-284) | ユースケース・アニメーション, ワークスペース, デザイン基盤 |
 | FR-158 | ユースケースの導出・登録と編集 | 承認済み | src/usecase/model.ts (MAX_STEPS, addStep, validateDraft, UseCaseSource), src/usecase/derive.ts (deriveCandidates), src/store/usecases.ts, src/screens/UseCaseScreen.tsx (導出の候補・登録・編集ダイアログ), src/screens/registry.ts (usecase), src/stepper/model.ts (also), src/stepper/Stepper.tsx, src/store/persist.ts (導出元の参照の復元) | tests/unit/usecase.test.tsx (AC-285, AC-286, AC-287), tests/unit/usecase-derive.test.tsx (AC-287, AC-289〜AC-293), tests/system/e2e/usecase-animation.spec.ts (E2E-245, E2E-246) | ユースケース・アニメーション, 画面の登録, 企業・Project の端末内保存, ワークスペース, デザイン基盤 |
 | NFR-UX-010 | アニメーションの再生画面のレイアウト操作 | 承認済み | src/screens/UseCaseScreen.tsx (再生位置・状態を外に保持) | tests/unit/usecase.test.tsx (AC-288) | ユースケース・アニメーション, ワークスペース, デザイン基盤 |
+| FR-173 | コンポーネントのキャンバス内での自由な移動 | 承認済み | 未実装 | 未実装 | - |
+| FR-174 | ヘッダーのダブルクリックでの拡大表示と復帰 | 承認済み | 未実装 | 未実装 | - |
+| FR-175 | 拡大表示の位置の設定 | 承認済み | 未実装 | 未実装 | - |
+| FR-176 | 作業先・企業・Project のメニューを画面の最上位に置く | 承認済み | 未実装 | 未実装 | - |
+| FR-177 | プレゼンテーション: ペルソナ別の分析結果のストーリー | 承認済み | 未実装 | 未実装 | - |
+| FR-178 | プレゼンテーション: フルスクリーンのドラマチックな演出と操作 | 承認済み | 未実装 | 未実装 | - |
+| FR-179 | プレゼンテーション: ストーリーの材料と、不足するデータの扱い | 承認済み | 未実装 | 未実装 | - |
+| FR-180 | デモの作業先のユースケースなど不足するデータの補完 | 承認済み | 未実装 | 未実装 | - |
+| NFR-A11Y-008 | ストーリーの代替の手段と動きの配慮 | 承認済み | 未実装 | 未実装 | - |
 ## API・イベント
 
 | 名前 | 定義ファイル | 関連する要求 ID |
