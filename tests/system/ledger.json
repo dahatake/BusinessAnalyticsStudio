@@ -166,7 +166,8 @@
     "AC-279": "sha256:63d314fa620fd21c",
     "AC-281": "sha256:84a6398c4ae9cfc6",
     "AC-282": "sha256:fd4b2277251bd889",
-    "AC-285": "sha256:74f885b5122e3187"
+    "AC-285": "sha256:e8089e626bc854fd",
+    "AC-289": "sha256:9f181836c85bd4d0"
   },
   "cases": [
     {
@@ -3862,9 +3863,9 @@
       "command": "node tests/system/run.mjs AC-246",
       "canary": false,
       "status": "fail",
-      "last_commit": "da9e824",
-      "last_run_at": "2026-10-14T13:04:32+09:00",
-      "evidence": "work/runs/202610141134/logs/system-test/E2E-226-202610141304.log",
+      "last_commit": "9d2ffb4",
+      "last_run_at": "2026-10-14T13:05:43+09:00",
+      "evidence": "work/runs/adhoc-202610141305/logs/system-test/E2E-226-202610141305.log",
       "history": [
         {
           "at": "2026-10-14T02:48:49+09:00",
@@ -4343,6 +4344,31 @@
       "history": [
         {
           "at": "2026-10-14T11:45:39+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-246",
+      "requirement_ids": [
+        "FR-158"
+      ],
+      "ac_ids": [
+        "AC-289"
+      ],
+      "title": "導出の候補が「導出（未登録）」つきで出て、開き直しても登録済みに現れない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-289",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T14:23:34+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"

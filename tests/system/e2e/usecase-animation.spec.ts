@@ -153,9 +153,36 @@ test.describe('FR-158 ユースケースの登録と編集', () => {
     await page.keyboard.press('Escape');
     await expect(page.getByTestId('usecase-list').getByRole('listitem')).toHaveCount(0);
   });
+
+  // FR-158 AC-289（導出の候補: 「導出（未登録）」表示つきで一覧に出る。開き直しても未登録のまま。異常系: 登録済みの一覧には現れない）
+  test('FR-158 AC-289 お手本パックでは導出の候補が「導出（未登録）」つきで出て、開き直しても登録済みの一覧に現れない', async ({ page, start }) => {
+    await start(); // 標準の検証条件（お手本パック mono）
+    await openNewProject(page);
+    let editor = await openUseCaseStep(page);
+    const candidates = () => page.getByTestId('usecase-candidates').getByRole('listitem');
+    await expect(candidates().first()).toBeVisible();
+    const n = await candidates().count();
+    expect(n).toBeGreaterThan(0);
+    for (let i = 0; i < n; i++) {
+      const c = candidates().nth(i);
+      await expect(c).toContainText('導出（未登録）');
+      for (const label of ['名称', '概要', '対象ペルソナ', '手順', '期待する効果']) await expect(c).toContainText(label);
+      // 各項目に実際の値が入っている（ラベルだけではない）
+      expect(((await c.textContent()) ?? '').replace(/\s+/g, '').length).toBeGreaterThan(30);
+    }
+    // 登録していないので、登録済みの一覧には現れない
+    await expect(page.getByTestId('usecase-list').getByRole('listitem')).toHaveCount(0);
+    // 開き直しても保存されておらず、再び導出で表示される
+    await reloadAndEnter(page, '合成株式会社U');
+    await openProject(page, '合成株式会社U', 'UC案件1');
+    editor = await openUseCaseStep(page);
+    await expect(candidates()).toHaveCount(n);
+    await expect(candidates().first()).toContainText('導出（未登録）');
+    await expect(editor.getByTestId('usecase-list').getByRole('listitem')).toHaveCount(0);
+  });
 });
 
-test.describe('FR-155 ユースケースごとのアニメーションの作成', () => {
+test.describe('FR-155  ユースケースごとのアニメーションの作成', () => {
   // FR-155 AC-275
   test('FR-155 AC-275 A を選んで作成すると、導入 1・A の手順 3（順序どおり）・効果 1 のシーンで、B の内容は含まれない', async ({ page, start }) => {
     await start();

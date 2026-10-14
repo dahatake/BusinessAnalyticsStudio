@@ -62,5 +62,6 @@
 
 ## 11. ユースケース登録・プレゼン用アニメーション（FR-155〜158・NFR-UX-010。usecase-animation.spec.ts が前提にする画面の探し方）
 - 登録（FR-158）: ステッパーのボタン「ユースケース作成」→ `data-testid="usecase-editor"`。ボタン「ユースケースを追加」→ dialog「ユースケース」（textbox「名称」「概要」「対象ペルソナ」「期待する効果」、ボタン「手順を追加」、手順ごとに textbox「手順 n の見出し」「手順 n の説明」、ボタン「保存」、検証エラーは dialog 内の role=alert。Esc で閉じる）。一覧は `data-testid="usecase-list"` の listitem で、各 item にボタン「編集」「削除」「アニメーションを作成」「アニメーションを再生」（未作成のあいだ「再生」は無効）。削除に確認があれば alertdialog か dialog 内のボタン（名前に「削除」）。
+- 導出の候補（FR-158 AC-289）: 同じ `usecase-editor` 内の `data-testid="usecase-candidates"`（登録済みの `usecase-list` とは別の要素）。候補は listitem で、各 item に表示「導出（未登録）」と、ラベルつきの名称・概要・対象ペルソナ・手順・期待する効果の値。候補は登録するまで保存されず、`usecase-list` の listitem にも数えない。導出元がないときは `usecase-candidates` 内に理由の文言（「導出の元がない」）を出し、listitem は 0 件。登録操作は候補 item 内のボタン「登録」（編集してから登録する場合は「編集して登録」）。登録すると候補は `usecase-candidates` から外れ、`usecase-list` に入る。
 - 再生画面（FR-155〜157）: `data-testid="animation-player"`（ワークスペースのコンポーネント）。`data-animation-state="playing|paused|ended"`、`data-motion="running|stopped"`（P・動きを減らす設定で stopped）。`animation-position`（「n / 全体」）、現在のシーン `animation-scene`（見出しは heading）。ボタン「再生」「一時停止」「次へ」「前へ」「終了」。キー: `P`（動きの停止/再開）・`←`/`→`（前後）・`Esc`（終了）。動きを減らす設定のときは全シーンの見出し・説明が player 内に文字として表示される。
 - 音声: `t.audio.isAudible()`（既存フック）。
