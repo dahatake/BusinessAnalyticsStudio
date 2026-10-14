@@ -23,6 +23,7 @@ export function MuteButton() {
       size="small"
       appearance="subtle"
       aria-pressed={muted}
+      aria-label={muted ? 'ミュートを解除する（現在: ミュート中）' : 'ミュートにする（現在: ミュート解除中）'}
       title="ミュートの切替（M キー）"
       icon={muted ? <SpeakerMute20Regular aria-hidden /> : <Speaker220Regular aria-hidden />}
       onClick={() => setMuted(!muted)}
