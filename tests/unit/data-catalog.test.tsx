@@ -143,6 +143,12 @@ describe('画面（結合）', () => {
     expect(within(screen.getByTestId('entity-list')).queryAllByRole('listitem')).toHaveLength(0);
     expect(screen.getByTestId('entity-list-empty-reason').textContent).toContain('顧客パックがない');
     cleanup();
+    // お手本パックへの代替（顧客パックがないとき）も、顧客パックがない扱い
+    usePackStore.setState({ state: { status: 'ready', pack: { data: packData(), isExample: true } as never, warnings: [] } });
+    view();
+    expect(within(screen.getByTestId('entity-list')).queryAllByRole('listitem')).toHaveLength(0);
+    expect(screen.getByTestId('entity-list-empty-reason').textContent).toContain('顧客パックがない');
+    cleanup();
     setPack({ issues: { issues: [{ id: 'I1', title: 't', audience: 'internal' }], solutions: [] }, entities: { entities: [] }, products: { products: [] } });
     view();
     expect(screen.getByTestId('entity-list-empty-reason').textContent).toContain('導出の元がない');

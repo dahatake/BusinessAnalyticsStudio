@@ -46,7 +46,8 @@ function DataCatalogScreen() {
   const remove = useDataCatalog((x) => x.remove);
   const [errors, setErrors] = useState<string[]>([]);
 
-  const data = packState.status === 'ready' ? packState.pack.data : undefined;
+  // 顧客パックがない = 読み込めていない、またはお手本パックへの代替（isExample。FR-104）。お手本の代替は Project の顧客パックではない
+  const data = packState.status === 'ready' && !packState.pack.isExample ? packState.pack.data : undefined;
   const model = useMemo(() => {
     const packEntities = ((data?.entities.entities ?? []) as unknown as (PackEntity & Record<string, unknown>)[]).map((e) => ({
       id: e.id, name: e.name, type: typeof e.type === 'string' ? e.type : undefined,
