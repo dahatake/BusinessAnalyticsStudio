@@ -196,6 +196,11 @@
 | NFR-A11Y-006 | アニメーションの代替と非色依存 | 承認済み | src/screens/UseCaseScreen.tsx (手順の一覧・通知・状態の文字表示) | tests/unit/usecase.test.tsx (AC-283, AC-284) | ユースケース・アニメーション, ワークスペース, デザイン基盤 |
 | FR-158 | ユースケースの導出・登録と編集 | 承認済み | src/usecase/model.ts (MAX_STEPS, addStep, validateDraft, UseCaseSource), src/usecase/derive.ts (deriveCandidates), src/store/usecases.ts, src/screens/UseCaseScreen.tsx (導出の候補・登録・編集ダイアログ), src/screens/registry.ts (usecase), src/stepper/model.ts (also), src/stepper/Stepper.tsx, src/store/persist.ts (導出元の参照の復元) | tests/unit/usecase.test.tsx (AC-285, AC-286, AC-287), tests/unit/usecase-derive.test.tsx (AC-287, AC-289〜AC-293), tests/system/e2e/usecase-animation.spec.ts (E2E-245, E2E-246) | ユースケース・アニメーション, 画面の登録, 企業・Project の端末内保存, ワークスペース, デザイン基盤 |
 | NFR-UX-010 | アニメーションの再生画面のレイアウト操作 | 承認済み | src/screens/UseCaseScreen.tsx (再生位置・状態を外に保持) | tests/unit/usecase.test.tsx (AC-288) | ユースケース・アニメーション, ワークスペース, デザイン基盤 |
+| FR-159 | データカタログの画面（エンティティの一覧と詳細） | 承認済み | 未実装 | 未実装 | - |
+| FR-160 | エンティティ×ユースケースの対応表と明示の紐づけ | 承認済み | 未実装 | 未実装 | - |
+| FR-161 | 企業データカタログの取り込みと突合 | 承認済み | 未実装 | 未実装 | - |
+| FR-162 | カタログ未掲載のエンティティの ToDo への一括追加 | 承認済み | 未実装 | 未実装 | - |
+| NFR-UX-011 | データカタログ画面のレイアウト操作とペルソナ別の表現 | 承認済み | 未実装 | 未実装 | - |
 ## API・イベント
 
 | 名前 | 定義ファイル | 関連する要求 ID |
