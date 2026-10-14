@@ -59,3 +59,8 @@
 - スナップ（FR-152）: 端から 32 CSS px 以内で `data-testid="snap-candidates"`（候補は button「左半分」「右半分」「上半分」「下半分」「4 分割」「3 分割」「タブ化」）と `snap-preview`。候補の上で離すと配置。
 - KPI/OKR（FR-153・154）: component key `kpi-okr`。button「OKR を定義」→ dialog「OKR の定義」（textbox「Objective」、button「Key Result を追加」、`key-result` ごとに textbox「Key Result 名」「KPI 名」「単位」、spinbutton「基準値」「目標値」「現在値」、button「保存」、検証エラーは role=alert）。達成度は `data-testid="kpi-achievement"`（「25%」または「算出できない」）。未定義は「未設定」。
 - モーション（NFR-UX-008）: `document.getAnimations()` と計算済み transition/animation の所要時間で判定。停止は P と `animation-state`。
+
+## 11. ユースケース登録・プレゼン用アニメーション（FR-155〜158・NFR-UX-010。usecase-animation.spec.ts が前提にする画面の探し方）
+- 登録（FR-158）: ステッパーのボタン「ユースケース作成」→ `data-testid="usecase-editor"`。ボタン「ユースケースを追加」→ dialog「ユースケース」（textbox「名称」「概要」「対象ペルソナ」「期待する効果」、ボタン「手順を追加」、手順ごとに textbox「手順 n の見出し」「手順 n の説明」、ボタン「保存」、検証エラーは dialog 内の role=alert。Esc で閉じる）。一覧は `data-testid="usecase-list"` の listitem で、各 item にボタン「編集」「削除」「アニメーションを作成」「アニメーションを再生」（未作成のあいだ「再生」は無効）。削除に確認があれば alertdialog か dialog 内のボタン（名前に「削除」）。
+- 再生画面（FR-155〜157）: `data-testid="animation-player"`（ワークスペースのコンポーネント）。`data-animation-state="playing|paused|ended"`、`data-motion="running|stopped"`（P・動きを減らす設定で stopped）。`animation-position`（「n / 全体」）、現在のシーン `animation-scene`（見出しは heading）。ボタン「再生」「一時停止」「次へ」「前へ」「終了」。キー: `P`（動きの停止/再開）・`←`/`→`（前後）・`Esc`（終了）。動きを減らす設定のときは全シーンの見出し・説明が player 内に文字として表示される。
+- 音声: `t.audio.isAudible()`（既存フック）。

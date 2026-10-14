@@ -161,7 +161,12 @@
     "AC-268": "sha256:2459e331ea5e80f0",
     "AC-269": "sha256:accc64fc107d006f",
     "AC-271": "sha256:9124f22914087fb0",
-    "AC-273": "sha256:2689b00e28c954be"
+    "AC-273": "sha256:2689b00e28c954be",
+    "AC-275": "sha256:ca3fb7b1656048bf",
+    "AC-279": "sha256:63d314fa620fd21c",
+    "AC-281": "sha256:84a6398c4ae9cfc6",
+    "AC-282": "sha256:fd4b2277251bd889",
+    "AC-285": "sha256:74f885b5122e3187"
   },
   "cases": [
     {
@@ -4213,6 +4218,131 @@
       "history": [
         {
           "at": "2026-10-14T05:26:04+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-241",
+      "requirement_ids": [
+        "FR-155"
+      ],
+      "ac_ids": [
+        "AC-275"
+      ],
+      "title": "ユースケース A のアニメーション作成（導入・手順・効果。B は混ざらない。効果なしは効果シーンなし）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-275",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T11:45:29+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-242",
+      "requirement_ids": [
+        "FR-156"
+      ],
+      "ac_ids": [
+        "AC-279"
+      ],
+      "title": "アニメーションの再生・一時停止・次へ前へ・終了状態",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-279",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T11:45:32+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-243",
+      "requirement_ids": [
+        "FR-157"
+      ],
+      "ac_ids": [
+        "AC-281"
+      ],
+      "title": "P キーでの動きと自動進行の停止・再開",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-281",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T11:45:34+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-244",
+      "requirement_ids": [
+        "FR-157"
+      ],
+      "ac_ids": [
+        "AC-282"
+      ],
+      "title": "prefers-reduced-motion での静的表示・無自動進行・無音",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-282",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T11:45:36+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-245",
+      "requirement_ids": [
+        "FR-158"
+      ],
+      "ac_ids": [
+        "AC-285"
+      ],
+      "title": "ユースケースの登録・編集・削除・復元・Project 分離（名称空の拒否を含む）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-285",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-14T11:45:39+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
