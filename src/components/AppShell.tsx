@@ -1,6 +1,6 @@
 // アプリの外枠: ヘッダー（顧客名・操作）、ナビゲーション、ドック、ワークスペース。
 // 広い画面では左にナビゲーション、狭い画面では上に横並びに組み替える（横スクロールを強いない）。
-import { useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Button, Text, Tooltip, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { PanelLeftContract20Regular, PanelLeftExpand20Regular } from '@fluentui/react-icons';
 import { useLayout } from '../store/layout';
@@ -84,6 +84,22 @@ export interface AppShellProps {
 export function AppShell({ title, screens, activeKey, onSelect, headerExtra, actions, dock, children, brand, stepper }: AppShellProps) {
   const s = useStyles();
   const navMin = useLayout((st) => st.navMin);
+  const rootRef = useRef<HTMLDivElement>(null);
+  // モーダルのダイアログが開いている間は、背景（アプリ本体）を操作・支援技術の対象から外す（WAI-ARIA のモーダルの作法）。
+  // 背景の「KPI/OKR」などのボタンが、ダイアログのボタン（OK など）と取り違えられない
+  useEffect(() => {
+    const sync = (): void => {
+      const open = document.querySelector('[role="dialog"][aria-modal="true"], [role="alertdialog"][aria-modal="true"], dialog[open]') !== null;
+      const root = rootRef.current;
+      if (!root) return;
+      root.toggleAttribute('inert', open);
+      if (open) root.setAttribute('aria-hidden', 'true'); else root.removeAttribute('aria-hidden');
+    };
+    sync();
+    const mo = new MutationObserver(sync);
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => { mo.disconnect(); rootRef.current?.removeAttribute('inert'); rootRef.current?.removeAttribute('aria-hidden'); };
+  }, []);
   const setNavMin = useLayout((st) => st.setNavMin);
   // 最小化・復元の動き（NFR-UX-008。レイアウトは即座に切り替え、見た目だけを 200ms で整える）
   const navMotion = useFoldClass(navMin);
@@ -115,7 +131,7 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
     }
   };
   return (
-    <div className={mergeClasses(s.root, navMin ? s.rootMin : undefined)} data-nav-min={navMin ? 'true' : undefined}>
+    <div ref={rootRef} className={mergeClasses(s.root, navMin ? s.rootMin : undefined)} data-nav-min={navMin ? 'true' : undefined}>
       <header className={s.header}>
         <Text as="h1" size={500} weight="semibold">{title}</Text>
         <div className={s.actions}>
