@@ -175,6 +175,12 @@
 | NFR-UX-006 | 分析画面のレイアウト変更 | 承認済み | src/store/analysisLayout.ts, src/projects/AnalysisPanel.tsx | tests/unit/ai-layout.test.ts (AC-214, AC-215), tests/system/e2e/analysis-projects.spec.ts (E2E-210) | 分析画面のレイアウト保存, コマンドの登録簿 |
 | NFR-A11Y-005 | 視覚表現の代替と状態の非色依存 | 承認済み | src/projects/AnalysisPanel.tsx | tests/unit/analysis-methods.test.ts (AC-200 の同一値。AC-216 はビュアー側のみ、AC-217 のステッパーは FR-136 の項目) | - |
 | NFR-SEC-004 | Project のアクセス範囲 | 承認済み | src/store/persist.ts | tests/unit/persist.test.ts (AC-218), tests/system/e2e/analysis-projects.spec.ts (E2E-211) | 企業・Project の端末内保存 |
+| FR-163 | ストーリーボードの作成（ユーザーストーリー中心） | 承認済み | 未実装 | 未実装 | なし |
+| FR-164 | 全画面・約 30 秒・アニメーション中心の再生 | 承認済み | 未実装 | 未実装 | なし |
+| FR-165 | バズを狙う字幕とテロップ | 承認済み | 未実装 | 未実装 | なし |
+| FR-166 | スタイルの選択 | 承認済み | 未実装 | 未実装 | なし |
+| FR-167 | 設定画面と字幕の読み上げ | 承認済み | 未実装 | 未実装 | なし |
+| NFR-SEC-005 | API キーなど秘密情報の安全な保管 | 承認待ち | 未実装 | 未実装 | なし |
 | FR-141 | 起動スクリプト（Windows・Mac・Linux） | 承認済み | start.cmd, start.ps1, start.sh, README.md | tests/system/launch/fr141-ac220.test.mjs, tests/system/launch/fr141-ac221.test.mjs, tests/system/launch/fr141-ac222.test.mjs | 起動スクリプト |
 | FR-142 | すべてのコンポーネントのドラッグでの移動 | 承認済み | src/workspace/Workspace.tsx (startDrag・hitTest・zoneOf・ドロップ先の表示), src/workspace/layoutModel.ts (dropAt・splitBetween), src/components/Panel.tsx (見出しのつかみ・Alt+Shift+矢印キー), src/workspace/PaneContext.tsx (startDrag), src/store/layout.ts (dropMove) | tests/unit/layout-fluent.test.ts (AC-224, AC-225), tests/system/e2e/workspace-layout.spec.ts (E2E-216) | デザイン基盤, ワークスペース |
 | FR-143 | 操作中のコンポーネントを大きくする自動のサイズ調整 | 承認済み | src/workspace/autosize.ts (applyAutoSize と fitMinWidth。PARAM-033 PARAM-034), src/workspace/Workspace.tsx, src/workspace/Controls.tsx (AutoSizeSwitch), src/store/layout.ts (autoSize・manual・resizeByKeys・resetLayout) | tests/unit/layout-fluent.test.ts (AC-226, AC-227, AC-228), tests/system/e2e/workspace-layout.spec.ts (E2E-217) | デザイン基盤, ワークスペース |
