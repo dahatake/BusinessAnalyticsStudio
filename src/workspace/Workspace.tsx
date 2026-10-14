@@ -1,7 +1,9 @@
 // ワークスペース: レイアウトの木（分割とタブ）を描く。境界はドラッグでもキーボードでも動かせる（FR-109、NFR-A11Y-004）。
 import { createPortal } from 'react-dom';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type PointerEvent } from 'react';
-import { Tab, TabList, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { Button, Tab, TabList, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { useSnapMotion } from '../motion/useFoldMotion';
+import { SNAP_LABEL, defaultSnapKind, nearestCorner, snapKindsFor, snapRect, type Edge, type SnapKind, type SnapOpts } from './snap';
 import type { ScreenDefinition } from '../screens/types';
 import { effectiveLayout, useLayout } from '../store/layout';
 import { keysOf, type DropZone, type LayoutNode, type Path, type SplitNode } from './layoutModel';
@@ -24,6 +26,17 @@ const useStyles = makeStyles({
     border: `${tokens.strokeWidthThick} dashed ${tokens.colorBrandStroke1}`,
     borderRadius: tokens.borderRadiusMedium,
   },
+  // 画面端のスナップの候補（FR-152）。端のすぐ内側に出し、配置後の見た目は snap-preview で示す
+  snapPanel: {
+    position: 'fixed', zIndex: 1001, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS,
+    padding: tokens.spacingHorizontalS, borderRadius: tokens.borderRadiusLarge, boxShadow: tokens.shadow16,
+    backgroundColor: tokens.colorNeutralBackground1, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`,
+  },
+  snapButton: { justifyContent: 'flex-start', minWidth: '96px', minHeight: '32px' },
+  snapPreview: {
+    position: 'fixed', zIndex: 1000, pointerEvents: 'none', boxSizing: 'border-box',
+    backgroundColor: tokens.colorBrandBackground2, border: `${tokens.strokeWidthThick} solid ${tokens.colorBrandStroke1}`, borderRadius: tokens.borderRadiusMedium,
+  },
   dropLabel: {
     margin: tokens.spacingVerticalS,
     paddingBlock: tokens.spacingVerticalXXS,
@@ -38,6 +51,8 @@ const useStyles = makeStyles({
   row: { flexDirection: 'row' },
   col: { flexDirection: 'column' },
   cell: { display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0 },
+  // 最小化したコンポーネントのセル: 見出しだけの高さ（4px グリッド）。空いた領域はほかのセルが使う（FR-151）
+  cellMin: { overflow: 'hidden' },
   sep: {
     flex: '0 0 auto',
     backgroundColor: tokens.colorNeutralStroke2,
@@ -58,14 +73,35 @@ const useStyles = makeStyles({
 
 const KEY_STEP = 0.02;
 
+/** 最小化したコンポーネントの見出しだけの高さと、横に並べたときの幅（4px グリッド。FR-151） */
+export const MINIMIZED_HEIGHT = 48;
+export const MINIMIZED_WIDTH = 240;
+
 const DRAG_THRESHOLD_PX = 4;
 /** 分割線の上に放したときに、近くのコンポーネントへ寄せる距離（分割線の太さ 8px より少し大きく） */
 const SNAP_PX = 12;
 
+/** 画面端に近づけたときの、スナップの候補の状態（FR-152） */
+interface SnapState {
+  edges: Edge[];
+  /** 選んでいる（または既定の）候補 */
+  kind: SnapKind;
+  opts: SnapOpts;
+  /** ポインターの位置（候補の出す位置） */
+  px: number;
+  py: number;
+}
+
 interface DragState {
   key: string;
   target: { key: string; zone: DropZone; rect: DOMRect } | null;
+  snap?: SnapState | null;
 }
+
+/** 端からこの距離以内でスナップの候補を出す（PARAM-042） */
+const SNAP_EDGE_PX = 32;
+/** 候補の表示の周りで、候補を出し続ける余白 */
+const SNAP_KEEP_PX = 24;
 
 /** 置き場所の説明（ドロップ先の表示と、読み上げに使う） */
 const ZONE_LABEL: Record<DropZone, string> = { left: '左', right: '右', top: '上', bottom: '下', tabs: 'タブへ移動します' };
@@ -165,6 +201,9 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   const autoSize = useLayout((st) => st.autoSize);
   const manualKeys = useLayout((st) => st.manual[st.persona]);
   const maximized = useLayout((st) => st.maximized);
+  const snapMotion = useSnapMotion();
+  const minimizedKeys = useLayout((st) => st.minimized[st.persona]);
+  const minSet = useMemo(() => new Set(minimizedKeys ?? []), [minimizedKeys]);
   const actions = useLayout.getState;
   const byKey = useCallback((k: string) => screens.find((sc) => sc.key === k), [screens]);
   /** 操作中（フォーカスのある）コンポーネント、最後に選んだタブ、ワークスペースの幅 */
@@ -198,6 +237,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     return {
       key,
       maximized: isMax,
+      minimized: minSet.has(key),
+      toggleMinimize: () => a.setMinimized(key, !minSet.has(key)),
       visible: group.length === 1 || active === key,
       inTabs: group.length > 1,
       peers: keysOf(layout).filter((k) => !group.includes(k)).map((k) => ({ key: k, label: byKey(k)?.label ?? k })),
@@ -206,6 +247,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       hide: () => a.hideComponent(key),
       move: (d) => a.moveComponent(key, d),
       toggleDirection: () => a.toggleDirection(key),
+      snapTo: (kind) => a.snapTo(key, kind, { tabTarget: keysOf(layout).find((k) => !group.includes(k)) }),
+      snapKinds: snapKindsFor(compact),
       mergeInto: (t) => a.mergeTabs(key, t),
       untab: () => a.untab(key),
       startDrag: (e) => startDrag(key, e),
@@ -266,11 +309,22 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     return renderSplit(node, path);
   };
 
-  const renderSplit = (node: SplitNode, path: Path): JSX.Element => (
+  const renderSplit = (node: SplitNode, path: Path): JSX.Element => {
+    const isFolded = (child: LayoutNode): boolean => keysOf(child).every((k) => minSet.has(k)) && maximized === null;
+    // 畳んだセルがあるとき、残りのセルの伸びる割合の合計を 1 にそろえる（合計が 1 未満だと、空いた領域を使い切らない）
+    const open = node.children.reduce((sum, c, i) => (isFolded(c) ? sum : sum + (node.sizes[i] ?? 0)), 0);
+    const anyFolded = node.children.some(isFolded);
+    return (
     <div className={mergeClasses(s.split, node.dir === 'row' ? s.row : s.col)} key={path.join('.')}>
       {node.children.flatMap((child, i) => {
+        const folded = isFolded(child);
+        const cellStyle: CSSProperties = folded
+          ? (node.dir === 'row'
+            ? { flex: `0 0 ${MINIMIZED_WIDTH}px`, alignSelf: 'flex-start', height: MINIMIZED_HEIGHT }
+            : { flex: `0 0 ${MINIMIZED_HEIGHT}px` })
+          : { flex: `${anyFolded && open > 0 ? (node.sizes[i] ?? 0) / open : node.sizes[i]} 1 0` };
         const cell = (
-          <div key={`c${i}`} className={s.cell} style={{ flex: `${node.sizes[i]} 1 0` }}>
+          <div key={`c${i}`} className={mergeClasses(s.cell, folded ? s.cellMin : undefined)} style={cellStyle} data-folded={folded ? 'true' : undefined}>
             {render(child, [...path, i])}
           </div>
         );
@@ -279,12 +333,13 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
           : [cell];
       })}
     </div>
-  );
+    );
+  };
 
   const renderStack = (root: LayoutNode): JSX.Element => (
     <div className={s.stack}>
       {stackedLeaves(root).map((leafNode, i) => (
-        <div key={`k${leafNode.tabs.join('+')}`} className={s.stackCell} data-stacked={i}>
+        <div key={`k${leafNode.tabs.join('+')}`} className={s.stackCell} data-stacked={i} style={leafNode.tabs.every((k) => minSet.has(k)) && maximized === null ? { height: MINIMIZED_HEIGHT } : undefined}>
           {render(leafNode, [i])}
         </div>
       ))}
@@ -325,6 +380,40 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     return { key: best.key, zone: zoneOf((cx - best.rect.left) / best.rect.width, (cy - best.rect.top) / best.rect.height), rect: best.rect };
   };
 
+  /** 作業領域の端（PARAM-042 以内）に近づけたときのスナップの候補。候補の上にいる間は、その候補を選ぶ（FR-152） */
+  const snapAt = (x: number, y: number, key: string, hitKey: string | null): SnapState | null => {
+    const root = rootRef.current;
+    if (!root) return null;
+    const area = root.getBoundingClientRect();
+    if (area.width <= 0 || area.height <= 0) return null;
+    const prev = dragRef.current?.snap ?? null;
+    const edges: Edge[] = [];
+    if (x >= area.left && x <= area.right && y >= area.top && y <= area.bottom) {
+      if (x - area.left <= SNAP_EDGE_PX) edges.push('left');
+      else if (area.right - x <= SNAP_EDGE_PX) edges.push('right');
+      if (y - area.top <= SNAP_EDGE_PX) edges.push('top');
+      else if (area.bottom - y <= SNAP_EDGE_PX) edges.push('bottom');
+    }
+    const panel = document.querySelector('[data-testid="snap-candidates"]')?.getBoundingClientRect();
+    const inPanel = !!panel && x >= panel.left - SNAP_KEEP_PX && x <= panel.right + SNAP_KEEP_PX && y >= panel.top - SNAP_KEEP_PX && y <= panel.bottom + SNAP_KEEP_PX;
+    if (edges.length === 0 && !(prev && inPanel)) return null;
+    const useEdges = edges.length > 0 ? edges : prev!.edges;
+    const kinds = snapKindsFor(compact);
+    const over = document.elementsFromPoint(x, y).find((el) => el.hasAttribute('data-snap-kind'))?.getAttribute('data-snap-kind') as SnapKind | null | undefined;
+    const kind = over && kinds.includes(over) ? over : edges.length > 0 ? defaultSnapKind(useEdges, compact) : prev!.kind;
+    const horizontal = useEdges.find((e) => e === 'left' || e === 'right');
+    const vertical = useEdges.find((e) => e === 'top' || e === 'bottom');
+    const opts: SnapOpts = {
+      edge: horizontal ?? vertical,
+      corner: edges.length > 0
+        ? (horizontal && vertical ? (`${vertical === 'top' ? 't' : 'b'}${horizontal === 'left' ? 'l' : 'r'}` as SnapOpts['corner']) : nearestCorner((x - area.left) / area.width, (y - area.top) / area.height))
+        : prev!.opts.corner,
+      tabTarget: (edges.length > 0 ? hitKey : null) ?? prev?.opts.tabTarget ?? keysOf(layout).find((k) => k !== key),
+    };
+    if (opts.tabTarget === key) opts.tabTarget = keysOf(layout).find((k) => k !== key);
+    return { edges: useEdges, kind, opts, px: edges.length > 0 ? x : prev!.px, py: edges.length > 0 ? y : prev!.py };
+  };
+
   /** 見出しのドラッグでコンポーネントを動かす。置ける場所を移動中に示し、Esc で中止する（FR-142 AC-224）。 */
   const startDrag = (key: string, e: { button: number; clientX: number; clientY: number }) => {
     if (e.button !== 0) return;
@@ -345,13 +434,15 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
         document.body.style.userSelect = 'none';
       }
       const hit = hitTest(ev.clientX, ev.clientY, key);
-      setDrag({ key, target: hit ? { key: hit.key, zone: hit.zone, rect: hit.rect } : null });
+      const snap = snapAt(ev.clientX, ev.clientY, key, hit?.key ?? null);
+      setDrag({ key, target: hit && !snap ? { key: hit.key, zone: hit.zone, rect: hit.rect } : null, snap });
     };
     const onUp = () => {
       const d = dragRef.current;
       stop();
       setDrag(null);
-      if (active && d?.target) useLayout.getState().dropMove(key, d.target.key, d.target.zone);
+      if (active && d?.snap) useLayout.getState().snapTo(key, d.snap.kind, d.snap.opts);
+      else if (active && d?.target) useLayout.getState().dropMove(key, d.target.key, d.target.zone);
     };
     const onCancel = () => { stop(); setDrag(null); };
     const onKey = (ev: globalThis.KeyboardEvent) => {
@@ -428,6 +519,36 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
           </Text>
         </div>
       ) : null}
+      {drag?.snap ? (() => {
+        const sn = drag.snap;
+        const area = rootRef.current?.getBoundingClientRect();
+        if (!area) return null;
+        const tabEl = sn.opts.tabTarget ? rootRef.current?.querySelector(`[data-testid="component-${sn.opts.tabTarget}"]`) : null;
+        const pr = snapRect(area, sn.kind, sn.opts, tabEl?.getBoundingClientRect() ?? null);
+        const h = sn.edges.find((e) => e === 'left' || e === 'right');
+        const panelPos: CSSProperties = h
+          ? { top: Math.min(Math.max(sn.py, area.top + 120), area.bottom - 120), transform: 'translateY(-50%)', ...(h === 'left' ? { left: area.left + 40 } : { right: window.innerWidth - area.right + 40 }) }
+          : { left: Math.min(Math.max(sn.px, area.left + 80), area.right - 80), transform: 'translateX(-50%)', ...(sn.edges[0] === 'top' ? { top: area.top + 40 } : { bottom: window.innerHeight - area.bottom + 40 }) };
+        return (
+          <>
+            <div data-testid="snap-preview" aria-hidden className={mergeClasses(s.snapPreview, snapMotion.follow)} style={{ left: pr.left, top: pr.top, width: pr.width, height: pr.height }} />
+            <div data-testid="snap-candidates" role="group" aria-label="配置の候補" className={mergeClasses(s.snapPanel, snapMotion.appear)} style={panelPos}>
+              {snapKindsFor(compact).map((k) => (
+                <Button
+                  key={k}
+                  data-snap-kind={k}
+                  className={s.snapButton}
+                  size="small"
+                  appearance={k === sn.kind ? 'primary' : 'secondary'}
+                  aria-pressed={k === sn.kind}
+                >
+                  {SNAP_LABEL[k]}
+                </Button>
+              ))}
+            </div>
+          </>
+        );
+      })() : null}
       {layout ? (compact ? renderStack(layout) : render(layout, [])) : (
         <Text className={s.empty} size={400}>表示中のコンポーネントがありません。左のドックから再表示してください。</Text>
       )}

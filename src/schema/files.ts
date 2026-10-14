@@ -39,6 +39,26 @@ export const CustomerSchema = z.looseObject({
   }),
   /** 用語集（FR-019）。専門用語とその定義 */
   glossary: z.array(z.looseObject({ term: z.string().min(1), definition: z.string().min(1) })).optional(),
+  /** お手本の KPI と OKR（FR-153・FR-154）。デモを開いたときの「KPI/OKR」コンポーネントに出る。Objective ごとに Key Result と、それを測る KPI を持つ */
+  okr: z.looseObject({
+    /** 最終更新日時（ISO 8601） */
+    updatedAt: z.string().min(1).optional(),
+    objectives: z.array(z.looseObject({
+      objective: z.string().min(1),
+      keyResults: z.array(z.looseObject({
+        name: z.string().min(1),
+        kpi: z.looseObject({
+          name: z.string().min(1),
+          unit: z.string().min(1),
+          baseline: z.number(),
+          current: z.number(),
+          target: z.number(),
+          /** 期限（任意。YYYY-MM-DD） */
+          due: z.string().optional(),
+        }),
+      })),
+    })),
+  }).optional(),
 });
 
 /** 拠点の位置（FR-021）。地図・地球儀に置く場所。緯度 -90〜90、経度 -180〜180（度） */

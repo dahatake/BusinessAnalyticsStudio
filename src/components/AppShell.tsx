@@ -1,7 +1,10 @@
 // アプリの外枠: ヘッダー（顧客名・操作）、ナビゲーション、ドック、ワークスペース。
 // 広い画面では左にナビゲーション、狭い画面では上に横並びに組み替える（横スクロールを強いない）。
-import { useState, type KeyboardEvent, type ReactNode } from 'react';
-import { Button, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { Button, Text, Tooltip, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { PanelLeftContract20Regular, PanelLeftExpand20Regular } from '@fluentui/react-icons';
+import { useLayout } from '../store/layout';
+import { useFoldClass } from '../motion/useFoldMotion';
 import type { ScreenDefinition } from '../screens/types';
 import { rovingTarget } from './roving';
 
@@ -41,7 +44,12 @@ const useStyles = makeStyles({
       borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     },
   },
+  rootMin: { gridTemplateColumns: '56px 1fr', '@media (max-width: 720px)': { gridTemplateColumns: '1fr' } },
+  navMin: { overflowX: 'hidden', alignItems: 'center', paddingInline: tokens.spacingHorizontalS },
   navButton: { justifyContent: 'flex-start', minHeight: '32px' },
+  // アイコンだけの列（FR-151）。当たり判定は 24 CSS px 以上
+  navButtonMin: { justifyContent: 'center', minWidth: '32px', paddingInline: 0 },
+  navToggle: { alignSelf: 'flex-start' },
   main: {
     position: 'relative',
     display: 'flex',
@@ -75,6 +83,31 @@ export interface AppShellProps {
 
 export function AppShell({ title, screens, activeKey, onSelect, headerExtra, actions, dock, children, brand, stepper }: AppShellProps) {
   const s = useStyles();
+  const navMin = useLayout((st) => st.navMin);
+  const rootRef = useRef<HTMLDivElement>(null);
+  // モーダルのダイアログが開いている間は、背景（アプリ本体）を操作・支援技術の対象から外す（WAI-ARIA のモーダルの作法）。
+  // 背景の「KPI/OKR」などのボタンが、ダイアログのボタン（OK など）と取り違えられない
+  useEffect(() => {
+    const sync = (): void => {
+      const open = document.querySelector('[role="dialog"][aria-modal="true"], [role="alertdialog"][aria-modal="true"], dialog[open]') !== null;
+      const root = rootRef.current;
+      if (!root) return;
+      root.toggleAttribute('inert', open);
+      if (open) root.setAttribute('aria-hidden', 'true'); else root.removeAttribute('aria-hidden');
+    };
+    sync();
+    const mo = new MutationObserver(sync);
+    mo.observe(document.body, { childList: true, subtree: true });
+    return () => { mo.disconnect(); rootRef.current?.removeAttribute('inert'); rootRef.current?.removeAttribute('aria-hidden'); };
+  }, []);
+  const setNavMin = useLayout((st) => st.setNavMin);
+  // 最小化・復元の動き（NFR-UX-008。レイアウトは即座に切り替え、見た目だけを 200ms で整える）
+  const navMotion = useFoldClass(navMin);
+  // 押した直後は、切替ボタンの名前の表示を閉じる（切り替えた先の画面名の表示と重ならないように）。ボタンから離れるまで出さない
+  const [toggleTip, setToggleTip] = useState(false);
+  const [toggleHold, setToggleHold] = useState(false);
+  // 最小化中に画面名を出しているアイコン（ホバー・フォーカス）
+  const [tipKey, setTipKey] = useState<string | null>(null);
   // ナビゲーションは、Tab の停止位置を 1 つにする（roving tabindex）。矢印キーで項目を移り、Tab で、その項目のコンポーネントへ入る。
   // （WAI-ARIA のタブの作法。17 個の項目と非表示のドックを Tab で通り抜けなくても、選んだ画面へすぐ届く）
   const [roving, setRoving] = useState<string | undefined>(activeKey);
@@ -98,7 +131,7 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
     }
   };
   return (
-    <div className={s.root}>
+    <div ref={rootRef} className={mergeClasses(s.root, navMin ? s.rootMin : undefined)} data-nav-min={navMin ? 'true' : undefined}>
       <header className={s.header}>
         <Text as="h1" size={500} weight="semibold">{title}</Text>
         <div className={s.actions}>
@@ -110,15 +143,30 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
         </div>
         {stepper}
       </header>
-      <nav className={s.nav} aria-label="画面">
+      <nav className={mergeClasses(s.nav, navMin ? s.navMin : undefined, navMotion)} aria-label="画面">
+        <Tooltip content={navMin ? 'メニューを元の幅に戻す' : 'メニューを最小化'} relationship="label" withArrow visible={toggleTip && !toggleHold} onVisibleChange={(_, d) => setToggleTip(d.visible)}>
+          <Button
+            data-testid="nav-toggle"
+            className={s.navToggle}
+            appearance="subtle"
+            icon={navMin ? <PanelLeftExpand20Regular aria-hidden /> : <PanelLeftContract20Regular aria-hidden />}
+            aria-expanded={!navMin}
+            onClick={() => { setToggleHold(true); setNavMin(!navMin); }}
+            onBlur={() => setToggleHold(false)}
+            onMouseLeave={() => setToggleHold(false)}
+          >
+            {navMin ? null : 'メニューを最小化'}
+          </Button>
+        </Tooltip>
         {screens.map((sc) => {
           const Icon = sc.icon;
           const active = sc.key === activeKey;
-          return (
+          const button = (
             <Button
               key={sc.key}
               data-testid={`nav-${sc.key}`}
-              className={mergeClasses(s.navButton)}
+              className={mergeClasses(s.navButton, navMin ? s.navButtonMin : undefined)}
+              aria-label={navMin ? sc.label : undefined}
               appearance={active ? 'secondary' : 'subtle'}
               icon={<Icon aria-hidden />}
               aria-current={active ? 'page' : undefined}
@@ -127,8 +175,14 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
               onKeyDown={(e) => onNavKey(e, sc.key)}
               onClick={() => onSelect(sc.key)}
             >
-              {sc.label}
+              {navMin ? null : sc.label}
             </Button>
+          );
+          // 最小化中は、ホバー・フォーカスで画面名を出す（支援技術には aria-label で伝わる）
+          return (
+            <Tooltip key={sc.key} content={sc.label} relationship="description" withArrow visible={navMin && tipKey === sc.key} onVisibleChange={(_, d) => setTipKey((cur) => (d.visible ? sc.key : cur === sc.key ? null : cur))}>
+              {button}
+            </Tooltip>
           );
         })}
         {dock}

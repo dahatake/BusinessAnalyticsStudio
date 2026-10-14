@@ -182,3 +182,13 @@ export const useEditStore = create<EditState>((set, get) => {
 export function resetEditForTest(): void {
   useEditStore.setState({ editMode: false, past: [], future: [], log: [], seq: 0 });
 }
+
+/** 顧客パック以外（KPI・OKR など、Project ごとの定義）の変更を、変更履歴に記録する（FR-046・FR-153 AC-272）。編集の確定と同じ形で残し、購読者にも知らせる */
+export function recordHistory(changes: readonly DataChange[], actor: Actor = 'human'): HistoryEntry[] {
+  const at = new Date().toISOString();
+  let seq = useEditStore.getState().seq;
+  const entries = changes.map((c) => ({ ...c, seq: ++seq, at, actor }));
+  useEditStore.setState((s) => ({ log: [...s.log, ...entries], seq }));
+  for (const l of listeners) l(entries);
+  return entries;
+}

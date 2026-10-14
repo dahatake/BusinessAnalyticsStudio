@@ -292,13 +292,13 @@ export const DEFAULT_PERSONA: Persona = '経営層';
 export function defaultLayout(persona: Persona): Layout {
   switch (persona) {
     case '経営層': // 上段にサマリー、主領域に 2×2 マトリクス、横にランキング表。キャンバスは背景の全体図として小さく残す（§7 の表）
-      return split('col', [leaf('summary'), split('row', [leaf('matrix'), leaf('ranking'), leaf('canvas')], [0.45, 0.2, 0.35])], [0.25, 0.75]);
+      return split('col', [split('row', [leaf('summary'), leaf('kpi-okr')], [0.6, 0.4]), split('row', [leaf('matrix'), leaf('ranking'), leaf('canvas')], [0.45, 0.2, 0.35])], [0.25, 0.75]);
     case '事業部門': // 主領域に課題-解決策分析、横に議論ツリー、下にガントと一覧表（FR-110 AC-135: リセット後も絞り込みの入力欄が残る）
-      return split('col', [split('row', [leaf('issue-solution'), leaf('discussion-tree')], [0.65, 0.35]), split('row', [leaf('gantt'), leaf('table')], [0.55, 0.45])], [0.7, 0.3]);
+      return split('col', [split('row', [leaf('issue-solution'), leaf('discussion-tree')], [0.65, 0.35]), split('row', [leaf('gantt'), leaf('table'), leaf('kpi-okr')], [0.4, 0.3, 0.3])], [0.7, 0.3]);
     case 'IT': // 主領域にアーキテクチャ図、横にナレッジグラフ、下に製品の一覧
-      return split('col', [split('row', [leaf('architecture'), leaf('knowledge-graph')], [0.65, 0.35]), leaf('products')], [0.7, 0.3]);
+      return split('col', [split('row', [leaf('architecture'), leaf('knowledge-graph')], [0.65, 0.35]), split('row', [leaf('products'), leaf('kpi-okr')], [0.55, 0.45])], [0.7, 0.3]);
     case '現場': // 主領域に 3D/地図、横にミニ・モックアプリ、下にガント
-      return split('col', [split('row', [leaf('view3d'), leaf('mock-app')], [0.65, 0.35]), leaf('gantt')], [0.7, 0.3]);
+      return split('col', [split('row', [leaf('view3d'), leaf('mock-app')], [0.65, 0.35]), split('row', [leaf('gantt'), leaf('kpi-okr')], [0.55, 0.45])], [0.7, 0.3]);
   }
 }
 

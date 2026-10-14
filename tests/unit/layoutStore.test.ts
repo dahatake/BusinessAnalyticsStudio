@@ -14,7 +14,7 @@ class MemoryStorage {
   clear() { this.m.clear(); }
 }
 
-const ALL = ['canvas', 'summary', 'matrix', 'ranking', 'issue-solution', 'discussion-tree', 'gantt', 'architecture', 'knowledge-graph', 'products', 'view3d', 'mock-app', 'table'];
+const ALL = ['canvas', 'summary', 'matrix', 'ranking', 'issue-solution', 'discussion-tree', 'gantt', 'architecture', 'knowledge-graph', 'products', 'view3d', 'mock-app', 'table', 'kpi-okr'];
 
 /** 新しいストアを、保存値（あれば）を読んだ状態で作る。 */
 async function freshStore(available: readonly string[], saved?: unknown) {
@@ -39,7 +39,7 @@ describe('FR-014 AC-017 / FR-110 AC-135 レイアウトのストア', () => {
     const st = useLayout.getState();
     expect(st.persona).toBe('IT');
     expect(st.maximized).toBeNull();
-    expect(keysOf(effectiveLayout(st)).sort()).toEqual(['architecture', 'knowledge-graph', 'products']);
+    expect(keysOf(effectiveLayout(st)).sort()).toEqual(['architecture', 'knowledge-graph', 'kpi-okr', 'products']);
   });
 
   // FR-014 AC-017
@@ -153,8 +153,8 @@ describe('FR-012 FR-014 AC-017 既定が空になるときの退避（暫定）'
   // FR-012 FR-112 経営層の既定にはキャンバスが背景の全体図として残る（§7 の表）
   it('FR-112 §7 経営層の既定のレイアウトにはキャンバスが含まれ、2×2 マトリクスが最大の領域になる', () => {
     const l = defaultLayout('経営層');
-    expect(keysOf(l)).toEqual(['summary', 'matrix', 'ranking', 'canvas']);
-    const row = (l as { children: Array<{ sizes: number[] }> }).children[1]!;
+    expect(keysOf(l)).toEqual(['summary', 'kpi-okr', 'matrix', 'ranking', 'canvas']);
+    const row = (l as { children: Array<{ sizes: number[] }> }).children[1]!; // 下段（上段はサマリーと KPI/OKR）
     expect(row.sizes[0]).toBeGreaterThan(Math.max(...row.sizes.slice(1)));
   });
 
