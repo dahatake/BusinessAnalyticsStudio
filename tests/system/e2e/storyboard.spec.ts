@@ -164,7 +164,7 @@ test.describe('FR-163 ストーリーボードの作成', () => {
     await expect(p.getByTestId('storyboard-caption')).toContainText('編集後の字幕 ABC');
     await page.keyboard.press('Escape');
     // 元のユースケースは変わらない
-    await item(page, UC_A.name).getByRole('button', { name: '編集' }).click();
+    await item(page, UC_A.name).getByRole('button', { name: '編集', exact: true }).click();
     const dlg = page.getByRole('dialog', { name: 'ユースケース' });
     await expect(dlg.getByRole('textbox', { name: '手順 1 の説明' })).toHaveValue(UC_A.steps[0].desc);
     await expect(dlg).not.toContainText('編集後の字幕 ABC');
@@ -331,7 +331,7 @@ test.describe('FR-166 スタイルの選択', () => {
     await setup(page, [UC_A]);
     await page.getByRole('radiogroup', { name: 'スタイル' }).getByRole('radio', { name: 'アニメ', exact: true }).check();
     await page.reload();
-    await reloadAndEnter(page);
+    await reloadAndEnter(page, '合成株式会社S');
     void app;
     await page.getByRole('region', { name: '企業 合成株式会社S' }).getByRole('link', { name: 'SB案件1' }).click();
     await goBackToUseCases(page);

@@ -79,3 +79,8 @@
 - 字幕・テロップ（FR-165）: 現在のシーンの `storyboard-caption`（字幕。不透明な背景色を自身に持つ）・`storyboard-telop`（強調テロップ。最初のシーン冒頭。20 文字以内）・その中の強調語 `storyboard-emphasis`。
 - スタイル（FR-166）: ユースケース作成画面の radiogroup「スタイル」に radio 5 つ（3D・アニメ・Geometric 3D・Isometric 3D・Whimsical 3D。既定 Isometric 3D）。再生中の `storyboard-style-name` に現在名。WebGL なしでは `storyboard-style-notice`（「2D」を含む理由）。保存先は端末内。
 - 音声（FR-167）: `runtime-config.json` の `speech: { endpoint, key }`（モック。テストは endpoint を `page.route` で受ける。実際の Azure は呼ばない）。設定画面（`nav-settings`）に region「音声設定」: `speech-status`（「設定済み」/「未設定」）、switch「字幕の読み上げ」、未設定で有効にすると role=alert。再生中: 送信中は `speech-sending-notice`、失敗・未設定・タイムアウト・オフラインは `speech-error`（原因と直し方）で、再生は字幕だけで最後まで進む。ミュート（button「ミュート」, aria-pressed。既定 true）のままでは要求を送らない。送信本文に字幕の文言を含む。
+
+## 14. データビュアー（FR-169。data-viewer.spec.ts が前提にする画面の探し方）
+- データカタログ画面（`openScreen(page,'data-catalog')`）の `data-testid="data-viewer"`。`data-view-mode="2d|3d"`、`data-detail-level="bird|entity|column"`（表示している詳細度。文字でも表示）。radiogroup「表示モード」の radio「2D」「3D」。ボタン「拡大」「縮小」「全体表示に戻す」。
+- 列の詳細度では、各エンティティ要素 `[data-viewer-entity="<名称>"]` の中に `[data-viewer-column]`（列名の文字）が出る。選択中は `aria-selected="true"`。
+- 列を含む企業データカタログは、`entities[].columns: [{name,type}]` の JSON（FR-172）で取り込む（file input は §12 と同じ）。

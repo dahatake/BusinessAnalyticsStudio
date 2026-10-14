@@ -183,7 +183,8 @@
     "AC-324": "sha256:257ae6d8c27a141e",
     "AC-325": "sha256:305dd0155574a0b8",
     "AC-326": "sha256:a45d0f069650b597",
-    "AC-328": "sha256:1c35a83a5b71e702"
+    "AC-328": "sha256:1c35a83a5b71e702",
+    "AC-334": "sha256:28e9f4a26b6d23b5"
   },
   "cases": [
     {
@@ -4830,6 +4831,81 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "検証レベルが integration（System Test の対象外）。結合テストは implementer の範囲。spec は storyboard.spec.ts に参考として残す"
+        }
+      ]
+    },
+    {
+      "id": "E2E-263",
+      "requirement_ids": [
+        "FR-169"
+      ],
+      "ac_ids": [
+        "AC-334"
+      ],
+      "title": "データビュアー: 拡大で鳥観図→エンティティ→列、最大で列名が読め、縮小で鳥観図",
+      "layer": "e2e",
+      "command": "npx playwright test -c tests/system/playwright.config.ts tests/system/e2e/data-viewer.spec.ts -g 'AC-334 拡大すると'",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T00:40:02+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-264",
+      "requirement_ids": [
+        "FR-169"
+      ],
+      "ac_ids": [
+        "AC-334"
+      ],
+      "title": "データビュアー: 2D/3D 切替で選択保持・どちらでも列まで拡大",
+      "layer": "e2e",
+      "command": "npx playwright test -c tests/system/playwright.config.ts tests/system/e2e/data-viewer.spec.ts -g '2D と 3D を切り替えても'",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T00:40:04+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-265",
+      "requirement_ids": [
+        "FR-169"
+      ],
+      "ac_ids": [
+        "AC-334"
+      ],
+      "title": "データビュアー（異常系）: 上限超の拡大でも列のまま壊れず縮小で戻る",
+      "layer": "e2e",
+      "command": "npx playwright test -c tests/system/playwright.config.ts tests/system/e2e/data-viewer.spec.ts -g '最大に拡大した後に'",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T00:40:07+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
         }
       ]
     }
