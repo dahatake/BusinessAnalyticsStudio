@@ -5,6 +5,7 @@ import { useAnalyses, type Analysis } from './analyses';
 import { useOkr, type OkrSet } from './okr';
 import { useProjects, type Company, type Project } from './projects';
 import { useStepper } from './stepper';
+import { useUseCases, type UseCaseSet } from './usecases';
 
 export const STORAGE_KEY = 'eabk.projects.v1';
 
@@ -18,6 +19,8 @@ interface Snapshot {
   steps: Record<string, number>;
   /** 作業先ごとの KPI と OKR（FR-153）。古い保存内容にはない */
   okr?: Record<string, OkrSet>;
+  /** Project ごとのユースケースとアニメーション（FR-158・FR-155）。古い保存内容にはない */
+  usecases?: Record<string, UseCaseSet>;
 }
 
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
@@ -33,6 +36,7 @@ export function snapshot(): Snapshot {
     analyses: useAnalyses.getState().byProject,
     steps: useStepper.getState().byProject,
     okr: useOkr.getState().byTarget,
+    usecases: useUseCases.getState().byProject,
   };
 }
 
@@ -59,6 +63,8 @@ export function restore(storage: Store): boolean {
   useStepper.setState({ byProject: steps });
   const okr = isObj(data.okr) ? (data.okr as Record<string, OkrSet>) : {};
   useOkr.setState({ byTarget: Object.fromEntries(Object.entries(okr).filter(([, v]) => isObj(v) && Array.isArray(v.objectives))) });
+  const ucs = isObj(data.usecases) ? (data.usecases as Record<string, UseCaseSet>) : {};
+  useUseCases.setState({ byProject: Object.fromEntries(Object.entries(ucs).filter(([, v]) => isObj(v) && Array.isArray(v.items)).map(([k, v]) => [k, { items: v.items, animations: isObj(v.animations) ? v.animations : {}, seq: typeof v.seq === 'number' ? v.seq : v.items.length }])) });
   useStepper.getState().switchTo(openId);
   return true;
 }
@@ -68,7 +74,7 @@ export function startPersistence(storage: Store): () => void {
   const save = () => {
     try { storage.setItem(STORAGE_KEY, JSON.stringify(snapshot())); } catch { /* 保存できなくても使い続けられる */ }
   };
-  const offs = [useProjects.subscribe(save), useAnalyses.subscribe(save), useStepper.subscribe(save), useOkr.subscribe(save)];
+  const offs = [useProjects.subscribe(save), useAnalyses.subscribe(save), useStepper.subscribe(save), useOkr.subscribe(save), useUseCases.subscribe(save)];
   return () => offs.forEach((off) => off());
 }
 
