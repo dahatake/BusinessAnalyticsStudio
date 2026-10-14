@@ -67,7 +67,7 @@ function RankingScreen() {
                       return (
                         <TableCell key={c.key} className={s.num} title={v.decided !== undefined ? `AI 提案 ${v.ai} / 顧客決定 ${v.decided}` : 'AI 提案'}>
                           <NumericValue sourceIds={v.sourceIds}>{v.value}</NumericValue>
-                          {v.origin === 'customer' ? <Badge size="small" appearance="outline" color="brand" style={{ marginInlineStart: tokens.spacingHorizontalXS }}>顧客決定</Badge> : null}
+                          {v.origin === 'customer' ? <Badge size="medium" appearance="outline" color="brand" style={{ marginInlineStart: tokens.spacingHorizontalXS }}>顧客決定</Badge> : null}
                         </TableCell>
                       );
                     })}

@@ -5,6 +5,7 @@ const listeners = new Set();
 
 const D = {
   ja: {
+    'nav.implstatus': '実装状態', 'impl2.sub': '承認済みの要求が、未着手・実装登録済み・試験 pass 済みのどこにあるかを表します。実装の登録と試験の合否は別に判定します。', 'impl2.legend': '状態の凡例', 'impl2.all': '全体', 'impl2.goal': '目的別', 'impl2.priority': '優先度別', 'impl2.kanban': 'かんばん', 'impl2.table': '一覧表', 'impl2.cases': '試験ケースの内訳', 'impl2.stalled': '停止中', 'impl2.excluded': '対象外（承認待ち・保留・却下・廃止）の要求数',
     'nav.dashboard': 'ダッシュボード', 'nav.map2d': '2D マップ', 'nav.map3d': '3D マップ', 'nav.diagrams': '図式', 'nav.placement': '配置', 'nav.source': 'ソース対応', 'nav.tables': '表',
     'search.ph': 'ID・題名・ファイル・用語を検索…', 'repo.change': '対象リポジトリを切り替える', 'repo.prompt': 'EABK を使っているリポジトリのフォルダーのパスを入力してください',         'repo.nodata': 'data layer がそのフォルダーには見つかりません（docs/requirements-definition.md など）。', 'repo.bad': 'not found: フォルダーが見つかりません。',
     'update.avail': 'データが更新されました。再読み込みします…', 'loading': 'データ層を読み込み中…', 'none': '（なし）',
@@ -25,6 +26,10 @@ const D = {
     'dgm.states.note': '要求定義書の「状態」の表から作る、エンティティごとの状態遷移図です(二重枠は終端)。',
     'dgm.entities.note': '要求の「対象エンティティ」の同時出現から作るデータの関連図です。線の太さは共有する要求の数、紫の丸は状態数です。',
     'dgm.components.note': 'カタログのファイルパスから作るコンポーネント図です。線は同じ要求を共有していること(共同実装)を示します。',
+    'dgm.layers': '実装配置図', 'dgm.layers.note': '要求がどの層(画面・API・データ)のどの実装資産に置かれているかを、管理データのファイルパス・API・テーブル・エンティティから分類した図です。線は層をまたいで共有する要求の数、クリックまたは Enter で関連を強調、Esc で解除します。',
+    'lay.screen': '画面', 'lay.api': 'API', 'lay.data': 'データ', 'lay.other': 'その他', 'lay.test': 'テスト', 'lay.has': '● あり', 'lay.none': '○ なし', 'lay.unimpl': '○ 未実装',
+    'lay.legend': '凡例: ● あり = その層に実装資産がある / ○ なし = その層に実装資産がない。線の太さ = 共有する要求の数', 'lay.table': '要求ごとの実装有無', 'lay.req': '要求', 'lay.title': '題名', 'lay.more': '件を省略', 'lay.shared': '件の要求を共有', 'lay.toER': 'ER 図で開く', 'lay.empty': '実装資産が管理データにありません',
+    'er.title': 'Entity 向け ER 図', 'er.entities': 'エンティティ', 'er.tables': '関連テーブル', 'er.noent': '対象エンティティがありません', 'er.evidence': '根拠', 'er.norel': '関係情報なし', 'er.norelwarn': '関係情報が不足（{id} から推測しません）', 'er.notable': '関連テーブルなし',
     'ctx.system': '(対象システム)', 'goals.none': '(目的なし)', 'states.none': '要求定義書に「状態」の表がありません。', 'states.states': '状態', 'states.trans': '遷移', 'states.reqs': '関係する要求:',
     'ent.threshold': '線を出す最小の共有要求数', 'ent.links': '本', 'comp.shared': '件の要求を共有', 'comp.note': '箱:コンポーネント(ファイルの配置先)。内側:モジュールとファイル数。下の小さな枠:そこに置かれた共通部品・API・テーブル。',
     'tbl.sub': 'データ層の全レコードです。行を選ぶと図面で強調され、検索や図の選択はここでも強調されます。', 'tbl.filter': 'この表を絞り込む…', 'tbl.only': '選択に関連する行だけ', 'tbl.all': 'すべて',
@@ -39,6 +44,7 @@ const D = {
     'd.text': '要求本文', 'd.acs': '受入基準', 'd.info': '情報', 'd.impl': '実装ファイル', 'd.tests': 'テスト', 'd.refs': '本文で参照している要求', 'd.src': '定義の位置', 'd.raw': '要求定義書の原文を表示', 'd.open': 'VS Code で開く', 'd.copy': 'IDをコピー', 'd.copied': 'コピーしました',
   },
   en: {
+    'nav.implstatus': 'Impl. status', 'impl2.sub': 'Where each approved requirement stands: not started, implementation registered, or test passed. Registration and test results are judged separately.', 'impl2.legend': 'State legend', 'impl2.all': 'Overall', 'impl2.goal': 'By goal', 'impl2.priority': 'By priority', 'impl2.kanban': 'Kanban', 'impl2.table': 'Table', 'impl2.cases': 'Test case breakdown', 'impl2.stalled': 'Stalled', 'impl2.excluded': 'Excluded (pending, on hold, rejected, retired) requirements',
     'nav.dashboard': 'Dashboard', 'nav.map2d': '2D Map', 'nav.map3d': '3D Map', 'nav.diagrams': 'Diagrams', 'nav.placement': 'Placement', 'nav.source': 'Source Map', 'nav.tables': 'Tables',
     'search.ph': 'Search IDs, titles, files, terms…', 'repo.change': 'Switch the target repository', 'repo.prompt': 'Enter the folder path of a repository that uses EABK', 'repo.nodata': 'No EABK data layer (docs/requirements-definition.md etc.) was found in that folder.', 'repo.bad': 'Folder not found.',
     'update.avail': 'Data changed. Reloading…', 'loading': 'Loading the data layer…', 'none': '(none)',
@@ -59,6 +65,10 @@ const D = {
     'dgm.states.note': 'State-transition diagrams per entity, from the "states" table of the requirements document (double frame = terminal).',
     'dgm.entities.note': 'Data relations from the co-occurrence of "target entities" in requirements. Line width = shared requirements; purple badge = number of states.',
     'dgm.components.note': 'A component diagram built from the file paths in the catalog. Lines mean two components share requirements (co-implementation).',
+    'dgm.layers': 'Placement diagram', 'dgm.layers.note': 'Shows which layer (screen, API, data) and which implementation asset hold each requirement, classified from file paths, APIs, tables and entities in the managed data. Line width = requirements shared across layers. Click or press Enter to highlight relations; Esc clears.',
+    'lay.screen': 'Screen', 'lay.api': 'API', 'lay.data': 'Data', 'lay.other': 'Other', 'lay.test': 'Test', 'lay.has': '● yes', 'lay.none': '○ none', 'lay.unimpl': '○ not implemented',
+    'lay.legend': 'Legend: ● yes = the layer has an implementation asset / ○ none = no asset in the layer. Line width = shared requirements', 'lay.table': 'Implementation per requirement', 'lay.req': 'Requirement', 'lay.title': 'Title', 'lay.more': 'more omitted', 'lay.shared': 'shared requirements', 'lay.toER': 'Open in ER diagram', 'lay.empty': 'No implementation assets in the managed data',
+    'er.title': 'Entity-relationship (ER) diagram', 'er.entities': 'Entities', 'er.tables': 'Related tables', 'er.noent': 'No target entities', 'er.evidence': 'Evidence', 'er.norel': 'No relation info', 'er.norelwarn': 'Relation info missing (not inferred from {id})', 'er.notable': 'No related tables',
     'ctx.system': '(system under description)', 'goals.none': '(no goal)', 'states.none': 'The requirements document has no "states" table.', 'states.states': 'states', 'states.trans': 'transitions', 'states.reqs': 'Related requirements:',
     'ent.threshold': 'Minimum shared requirements per link', 'ent.links': 'links', 'comp.shared': 'shared requirements', 'comp.note': 'Box: component (where files live). Inside: modules with file counts. Small frames: common parts / APIs / tables placed there.',
     'tbl.sub': 'Every record of the data layer. Selecting a row highlights it on the maps; search and diagram selections highlight here too.', 'tbl.filter': 'Filter this table…', 'tbl.only': 'Only rows related to the selection', 'tbl.all': 'all',

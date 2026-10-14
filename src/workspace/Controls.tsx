@@ -1,7 +1,7 @@
 // ワークスペースの操作: ペルソナの切替、既定のレイアウトに戻す、ドック（FR-014/FR-110）。
 import { useMemo } from 'react';
-import { Button, Menu, MenuItemRadio, MenuList, MenuPopover, MenuTrigger, Text, makeStyles, tokens } from '@fluentui/react-components';
-import { ArrowReset20Regular, Person20Regular } from '@fluentui/react-icons';
+import { Button, Menu, MenuItem, MenuItemRadio, MenuList, MenuPopover, MenuTrigger, Switch, Text, makeStyles, tokens } from '@fluentui/react-components';
+import { ArrowReset20Regular, EyeOff20Regular, Person20Regular } from '@fluentui/react-icons';
 import type { ScreenDefinition } from '../screens/types';
 import { effectiveLayout, useLayout } from '../store/layout';
 import { PERSONAS, keysOf, type Persona } from './layoutModel';
@@ -46,6 +46,13 @@ export function ResetLayoutButton() {
   );
 }
 
+/** 操作中のコンポーネントを大きくする自動のサイズ調整の切替（FR-143 AC-228）。いつでも切り替えられる。 */
+export function AutoSizeSwitch() {
+  const on = useLayout((s) => s.autoSize);
+  const set = useLayout((s) => s.setAutoSize);
+  return <Switch checked={on} onChange={(_, d) => set(d.checked)} label="サイズの自動調整" />;
+}
+
 /** 非表示のコンポーネントを再表示するドック。 */
 export function Dock({ screens }: { screens: readonly ScreenDefinition[] }) {
   const s = useStyles();
@@ -58,7 +65,19 @@ export function Dock({ screens }: { screens: readonly ScreenDefinition[] }) {
   }, [screens, persona, stored]);
   return (
     <div className={s.dock} data-testid="dock" role="group" aria-label="ドック（非表示のコンポーネント）">
-      <Text size={200} weight="semibold">非表示のコンポーネント</Text>
+      <Menu positioning={{ position: 'after', align: 'start', autoSize: 'height', overflowBoundary: undefined, fallbackPositions: ['after-top', 'below-start'] }}>
+        <MenuTrigger disableButtonEnhancement>
+          <Button className={s.dockButton} appearance="subtle" icon={<EyeOff20Regular aria-hidden />} aria-label={`非表示のコンポーネント（${hidden.length} 件）`}>
+            非表示のコンポーネント
+          </Button>
+        </MenuTrigger>
+        <MenuPopover>
+          <MenuList>
+            {hidden.length === 0 ? <MenuItem disabled>なし</MenuItem> : null}
+            {hidden.map((sc) => <MenuItem key={sc.key} onClick={() => show(sc.key)}>{sc.label}を再表示</MenuItem>)}
+          </MenuList>
+        </MenuPopover>
+      </Menu>
       {hidden.length === 0 ? <Text size={200}>なし</Text> : null}
       {hidden.map((sc) => {
         const Icon = sc.icon;

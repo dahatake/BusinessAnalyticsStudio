@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準と、お手本パック（モノ／コト）の内容から決める。
 // 3D・地図の内部の状態は、CONTRACT.md §6 のテスト用フック（window.__edbTest）で読む。
 import type { Page } from '@playwright/test';
-import { test, expect, openScreen, component, entity, hook, scene, expectCanvasDrawn, captureDownload, setEditMode } from '../support/fixtures';
+import { test, expect, openScreen, component, entity, hook, scene, expectCanvasDrawn, waitFirstFrame, captureDownload, setEditMode } from '../support/fixtures';
 import { examplePack, makeVariant } from '../support/packs';
 
 const mono = examplePack('mono');
@@ -26,7 +26,17 @@ async function nextFrames(page: Page, n = 2) {
   await page.evaluate((k) => new Promise<void>((r) => { let i = 0; const f = () => (++i >= k ? r() : requestAnimationFrame(f)); requestAnimationFrame(f); }), n);
 }
 async function clickSceneObject(page: Page, entityId: string) {
-  const o = (await scene.objects(page)).find((x) => x.entityId === entityId && x.visible);
+  // カメラが動いている間は当たりがずれるので、座標が 2 フレーム連続で同じになるのを待ってからクリックする（最大 約 3 秒。収束しなければ直近の座標で押す）
+  const read = async () => (await scene.objects(page)).find((x) => x.entityId === entityId && x.visible);
+  let o = await read();
+  for (let i = 0; i < 60; i++) {
+    await nextFrames(page, 2);
+    const n = await read();
+    const same = !!o && !!n && Math.abs(o.x - n.x) < 0.5 && Math.abs(o.y - n.y) < 0.5;
+    o = n ?? o;
+    if (same) break;
+    await page.waitForTimeout(50);
+  }
   expect(o, `3D ビューに ${entityId} が表示されていない`).toBeTruthy();
   await page.mouse.click(o!.x, o!.y);
 }
@@ -168,6 +178,63 @@ test.describe('FR-025 クロスハイライト', () => {
     expect(o.x).toBeLessThan(b.x + b.width);
     expect(o.y).toBeGreaterThan(b.y);
     expect(o.y).toBeLessThan(b.y + b.height);
+  });
+});
+
+test.describe('FR-146 3D ビューを開いた直後の大きさの追従とクリックの当たり', () => {
+  const TOL = 1; // PARAM-036（CSS px）
+  const WITHIN_MS = 1000; // PARAM-037（1 秒）
+
+  async function sizes(page: Page) {
+    return page.locator('[data-testid="component-view3d"] canvas').first().evaluate((cv) => {
+      const c = cv.getBoundingClientRect();
+      const p = (cv.parentElement as HTMLElement).getBoundingClientRect();
+      return { cw: c.width, ch: c.height, pw: p.width, ph: p.height };
+    });
+  }
+  function matches(s: { cw: number; ch: number; pw: number; ph: number }): boolean {
+    return Math.abs(s.cw - s.pw) <= TOL && Math.abs(s.ch - s.ph) <= TOL && !(Math.round(s.cw) === 300 && Math.round(s.ch) === 150 && (s.pw > 301 || s.ph > 151));
+  }
+
+  // FR-146 AC-243
+  test('FR-146 AC-243 3D ビューを開いた直後に、描画面の大きさが表示領域と 1 CSS px 以内で一致する（300×150 のままではない）', async ({ page, start }) => {
+    await start();
+    await openScreen(page, 'view3d');
+    await expect.poll(async () => matches(await sizes(page)), { timeout: WITHIN_MS, message: '描画面が表示領域の大きさに追従しない' }).toBe(true);
+  });
+
+  // FR-146 AC-243（異常系: 画面の大きさを変えた直後も追従する。小さくしても大きくしても）
+  test('FR-146 AC-243 異常系: ウィンドウの大きさを小さく・大きく変えた直後にも、描画面が表示領域に追従する', async ({ page, start }) => {
+    await start();
+    await openScreen(page, 'view3d');
+    for (const vp of [{ width: 900, height: 600 }, { width: 1400, height: 900 }]) {
+      await page.setViewportSize(vp);
+      await expect.poll(async () => matches(await sizes(page)), { timeout: WITHIN_MS, message: `${vp.width}x${vp.height} で追従しない` }).toBe(true);
+    }
+  });
+
+  // FR-146 AC-244
+  test('FR-146 AC-244 3D ビューを開いた直後に拠点をクリックすると選ばれ、地図・表・ガント・出典で同じ ID がハイライトされる', async ({ page, start }) => {
+    await start();
+    const site = mono.entities().find((e) => e.type === 'site');
+    expect(site, 'お手本パックに拠点がない').toBeTruthy();
+    await openScreen(page, 'view3d');
+    await clickSceneObject(page, site.id);
+    for (const key of ['map', 'table', 'gantt', 'sources']) {
+      const c = await openScreen(page, key);
+      await expect(entity(c, site.id).first(), `${key} でハイライトされない`).toHaveAttribute('data-highlight', /selected|related/);
+    }
+  });
+
+  // FR-146 AC-244（異常系: 大きさを変えた直後のクリックでも、現在の描画面の位置で当たる）
+  test('FR-146 AC-244 異常系: ウィンドウの大きさを変えた直後でも、拠点のクリックがその拠点を選ぶ', async ({ page, start }) => {
+    await start();
+    const site = mono.entities().find((e) => e.type === 'site');
+    await openScreen(page, 'view3d');
+    await page.setViewportSize({ width: 1000, height: 650 });
+    await clickSceneObject(page, site.id);
+    const t = await openScreen(page, 'table');
+    await expect(entity(t, site.id).first()).toHaveAttribute('data-highlight', /selected|related/);
   });
 });
 
@@ -346,7 +413,7 @@ test.describe('FR-071 グローバルのアニメーション停止', () => {
     await start();
     await openScreen(page, 'view3d');
     await toggleAnimation(page, '再生中');
-    const f0 = (await scene.info(page)).frame;
+    const f0 = await waitFirstFrame(page);
     await page.waitForTimeout(500);
     expect((await scene.info(page)).frame, '再生中に 3D が連続描画されていない').toBeGreaterThan(f0);
     await page.keyboard.press('p');
@@ -412,3 +479,131 @@ test.describe('FR-113 表現が成り立たないときの代替表示', () => {
 });
 
 void koto;
+
+test.describe('FR-147 3D ビューの最初のフレームの速さと描画中の応答', () => {
+  const TOL = 1; // PARAM-036（CSS px）
+  const WITHIN_MS = 1000; // PARAM-037（1 秒）
+  const FIRST_FRAME_MS = 1000; // PARAM-038（1 秒）
+  const REPEAT = 10; // PARAM-039（回）
+
+  async function sizes(page: Page) {
+    return page.locator('[data-testid="component-view3d"] canvas').first().evaluate((cv) => {
+      const c = cv.getBoundingClientRect();
+      const p = (cv.parentElement as HTMLElement).getBoundingClientRect();
+      return { cw: c.width, ch: c.height, pw: p.width, ph: p.height };
+    });
+  }
+  function matches(s: { cw: number; ch: number; pw: number; ph: number }): boolean {
+    return Math.abs(s.cw - s.pw) <= TOL && Math.abs(s.ch - s.ph) <= TOL && !(Math.round(s.cw) === 300 && Math.round(s.ch) === 150 && (s.pw > 301 || s.ph > 151));
+  }
+  /** 3D ビューを開いてから、拠点が 1 つ以上描かれた最初のフレーム（frame > 0 かつ visible な拠点あり）までの ms。 */
+  async function openToFirstFrameMs(page: Page, siteId: string): Promise<number> {
+    const t0 = Date.now();
+    await openScreen(page, 'view3d');
+    await expect
+      .poll(async () => {
+        try {
+          const f = (await scene.info(page)).frame;
+          return f > 0 && (await scene.objects(page)).some((o) => o.entityId === siteId && o.visible);
+        } catch { return false; }
+      }, { timeout: 15_000, intervals: [20], message: '最初のフレーム（拠点が描かれ選べる状態）が出ない' })
+      .toBe(true);
+    return Date.now() - t0;
+  }
+
+  // FR-147 AC-246
+  test('FR-147 AC-246 3D ビューを開いてから、拠点が描かれクリックで選べる最初のフレームが 1 秒以内に出る', async ({ page, start }) => {
+    await start();
+    const site = mono.entities().find((e) => e.type === 'site');
+    expect(site, 'お手本パックに拠点がない').toBeTruthy();
+    const ms = await openToFirstFrameMs(page, site.id);
+    expect(ms, `最初のフレームまで ${ms}ms（上限 ${FIRST_FRAME_MS}ms）`).toBeLessThanOrEqual(FIRST_FRAME_MS);
+  });
+
+  // FR-147 AC-246（異常系: 別のパック（コト）・再読み込み後でも 1 秒以内。初回だけ速いのを許さない）
+  test('FR-147 AC-246 異常系: 再読み込みして開き直しても、コトのパックでも、最初のフレームが 1 秒以内に出る', async ({ page, start }) => {
+    const app = await start({ pack: 'koto' });
+    const site = koto.entities().find((e) => e.type === 'site') ?? leafEntities(koto)[0];
+    const first = await openToFirstFrameMs(page, site.id);
+    expect(first, `1 回目 ${first}ms`).toBeLessThanOrEqual(FIRST_FRAME_MS);
+    await app.reload();
+    const second = await openToFirstFrameMs(page, site.id);
+    expect(second, `再読み込み後 ${second}ms`).toBeLessThanOrEqual(FIRST_FRAME_MS);
+  });
+
+  // FR-147 AC-247
+  test('FR-147 AC-247 3D ビューを開いた直後（最初のフレームの前後）に大きさを変えても、描画面が表示領域に 1 秒以内・1 CSS px 以内で追従する', async ({ page, start }) => {
+    await start();
+    await openScreen(page, 'view3d');
+    await page.setViewportSize({ width: 1000, height: 650 }); // 最初のフレームを待たずに変える
+    await expect.poll(async () => matches(await sizes(page)), { timeout: WITHIN_MS, message: '最初のフレーム前のリサイズに追従しない' }).toBe(true);
+    await waitFirstFrame(page);
+    await page.setViewportSize({ width: 1300, height: 800 }); // 最初のフレーム直後
+    await expect.poll(async () => matches(await sizes(page)), { timeout: WITHIN_MS, message: '最初のフレーム直後のリサイズに追従しない' }).toBe(true);
+  });
+
+  // FR-147 AC-247（異常系: 小さくする方向、連続して変える）
+  test('FR-147 AC-247 異常系: 開いた直後に小さく・大きくと続けて変えても、最後の大きさに追従する', async ({ page, start }) => {
+    await start();
+    await openScreen(page, 'view3d');
+    for (const vp of [{ width: 800, height: 500 }, { width: 1200, height: 760 }, { width: 900, height: 600 }]) await page.setViewportSize(vp);
+    await expect.poll(async () => matches(await sizes(page)), { timeout: WITHIN_MS, message: '連続リサイズの最後に追従しない' }).toBe(true);
+    await waitFirstFrame(page);
+    expect(matches(await sizes(page))).toBe(true);
+  });
+
+  // FR-147 AC-248
+  test('FR-147 AC-248 最初のフレームが出た時点で拠点をクリックすると選ばれ、地図・表・ガント・出典で同じ ID がハイライトされる', async ({ page, start }) => {
+    await start();
+    const site = mono.entities().find((e) => e.type === 'site');
+    await openScreen(page, 'view3d');
+    await waitFirstFrame(page);
+    await clickSceneObject(page, site.id);
+    expect((await scene.objects(page)).find((o) => o.entityId === site.id)?.highlighted, '3D 側で拠点が選ばれていない').toBe(true);
+    for (const key of ['map', 'table', 'gantt', 'sources']) {
+      const c = await openScreen(page, key);
+      await expect(entity(c, site.id).first(), `${key} でハイライトされない`).toHaveAttribute('data-highlight', /selected|related/);
+    }
+  });
+
+  // FR-147 AC-248（異常系: 最初のフレーム直後にリサイズしてからのクリックでも当たる）
+  test('FR-147 AC-248 異常系: 最初のフレーム直後にリサイズしてクリックしても、その拠点が選ばれる', async ({ page, start }) => {
+    await start();
+    const site = mono.entities().find((e) => e.type === 'site');
+    await openScreen(page, 'view3d');
+    await waitFirstFrame(page);
+    await page.setViewportSize({ width: 1100, height: 700 });
+    await clickSceneObject(page, site.id);
+    const t = await openScreen(page, 'table');
+    await expect(entity(t, site.id).first()).toHaveAttribute('data-highlight', /selected|related/);
+  });
+
+  // FR-147 AC-249 は、既存ケース（FR-066 AC-081・FR-071 AC-087）を同じ判定で再実行するケースで確かめる（台帳）。
+
+  // FR-147 AC-250（負荷条件。別ページで CPU を使い、AC-243 の判定を REPEAT 回連続で行う）
+  test('FR-147 AC-250 CPU 負荷をかけた条件で、AC-243 の判定（開いた直後・大きさ変更直後の追従）を 10 回連続で満たす', async ({ page, start, context }) => {
+    test.setTimeout(240_000);
+    const app = await start();
+    const load = await context.newPage();
+    await load.goto('about:blank');
+    await load.evaluate(() => {
+      const src = 'const e=Date.now()+600000;while(Date.now()<e){Math.sqrt(Math.random())}';
+      for (let i = 0; i < 4; i++) new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+    });
+    try {
+      await page.bringToFront();
+      for (let i = 1; i <= REPEAT; i++) {
+        if (i > 1) await app.reload();
+        await page.setViewportSize({ width: 1280, height: 800 });
+        await openScreen(page, 'view3d');
+        await expect.poll(async () => matches(await sizes(page)), { timeout: WITHIN_MS, message: `${i} 回目: 開いた直後に追従しない` }).toBe(true);
+        for (const vp of [{ width: 900, height: 600 }, { width: 1400, height: 900 }]) {
+          await page.setViewportSize(vp);
+          await expect.poll(async () => matches(await sizes(page)), { timeout: WITHIN_MS, message: `${i} 回目: ${vp.width}x${vp.height} で追従しない` }).toBe(true);
+        }
+      }
+    } finally {
+      await load.close();
+    }
+  });
+});

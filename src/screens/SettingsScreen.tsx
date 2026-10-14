@@ -4,6 +4,7 @@ import { Badge, Button, Dropdown, Field, Input, Option, Switch, Text, makeStyles
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { Panel } from '../components/Panel';
 import { AiSettings } from '../ai/AiSettings';
+import { WorkTargetSettings } from '../projects/WorkTargetSettings';
 import { THEME_MODES, useSettings, type Handedness, type ThemeMode } from '../store/settings';
 import { INDUSTRY_PRESETS, useIndustryPreset, useView3D } from '../store/view3d';
 import { QUALITIES, type Quality } from '../three/quality';
@@ -117,6 +118,7 @@ export function SettingsScreen() {
           <Radio value="left" label="左利き" />
         </RadioGroup>
       </Field>
+      <WorkTargetSettings />
       <div role="group" aria-labelledby="audio-settings-title">
         <Text id="audio-settings-title" as="p" weight="semibold">音声</Text>
         <Switch label="BGM" checked={bgmEnabled} onChange={(_, d) => setBgmEnabled(d.checked)} />

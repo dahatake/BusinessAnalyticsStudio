@@ -26,3 +26,20 @@ html[data-animation='paused'] *::after {
 ::view-transition-new(*) {
   pointer-events: none;
 }
+
+/* OS の「視差効果を減らす」（prefers-reduced-motion: reduce）: コンポーネントの移動・最小化・スナップ・左メニューの最小化は、動きを付けず最終の状態へ即座に切り替える（NFR-UX-008 AC-269）。
+   アプリのアニメーションの再生・停止の選択（FR-071・FR-072）とは別に、CSS だけで即座に効く。 */
+@media (prefers-reduced-motion: reduce) {
+  [data-layout],
+  [data-layout] *,
+  [data-nav-min],
+  [data-nav-min] *,
+  nav[aria-label='画面'] *,
+  [data-testid^='snap-'],
+  [data-testid='drop-indicator'] {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+  }
+}

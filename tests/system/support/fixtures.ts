@@ -131,8 +131,38 @@ export async function failingFsAccess(page: Page): Promise<void> {
   });
 }
 
+/**
+ * 起動時の作業先の選択画面（FR-144 AC-237・AC-239。起動のたびに必ず出る）が出ていれば、デモ（なければ最初の実 Project）を選んで閉じる。
+ * 作業先の選択そのものを確かめるテストは `skipOpening: false` で起動し、`pressOpeningEscape` だけ使う。
+ */
+export async function chooseWorkTarget(page: Page, target?: RegExp | string): Promise<void> {
+  const picker = page.getByRole('dialog', { name: '作業先の選択' });
+  try {
+    await picker.waitFor({ state: 'visible', timeout: 3_000 });
+  } catch {
+    return;
+  }
+  const demo = picker.getByRole('option', { name: /デモ/ });
+  if (target) await picker.getByRole('option', { name: target }).first().click();
+  else if ((await demo.count()) > 0) await demo.first().click();
+  else await picker.getByRole('option', { name: /…|\// }).first().click();
+  await picker.waitFor({ state: 'hidden', timeout: 5_000 });
+}
+
+/** オープニングが出ていれば Esc で飛ばす（作業先の選択は選ばない）。 */
+export async function pressOpeningEscape(page: Page): Promise<void> {
+  const opening = page.getByTestId('opening');
+  try {
+    await opening.waitFor({ state: 'visible', timeout: 3_000 });
+    await page.keyboard.press('Escape');
+    await opening.waitFor({ state: 'hidden', timeout: 5_000 });
+  } catch {
+    /* オープニングがない場合はそのまま */
+  }
+}
+
 /** オープニングを `Esc` で飛ばし、本編が操作できる状態を待つ。 */
-export async function skipOpening(page: Page): Promise<void> {
+export async function skipOpening(page: Page, target?: RegExp | string): Promise<void> {
   const opening = page.getByTestId('opening');
   try {
     await opening.waitFor({ state: 'visible', timeout: 5_000 });
@@ -141,7 +171,20 @@ export async function skipOpening(page: Page): Promise<void> {
   } catch {
     /* オープニングがない（すでに本編）場合はそのまま */
   }
+  await chooseWorkTarget(page, target);
   await expect(page.getByTestId('workspace')).toBeVisible();
+}
+
+/** 再読込（FR-144 AC-239: 毎回選択画面が出る）して、オープニングと作業先の選択を進める。 */
+export async function reloadAndEnter(page: Page, target?: RegExp | string): Promise<void> {
+  await page.reload();
+  await skipOpening(page, target);
+}
+
+/** 新しいページ（別の context など）で URL を開き、オープニングと作業先の選択を進める。 */
+export async function gotoAndEnter(page: Page, url: string, target?: RegExp | string): Promise<void> {
+  await page.goto(url);
+  await skipOpening(page, target);
 }
 
 /** 画面の切替（ナビゲーション）。CONTRACT.md §4 の `nav-<key>` */
@@ -217,9 +260,19 @@ export const scene = {
 
 /** canvas 要素に何かが描かれている（単色でない）ことを、スクリーンショットの画素のばらつきで確かめる。 */
 export async function expectCanvasDrawn(loc: Locator): Promise<void> {
-  const png = await loc.screenshot();
+  // 開いた直後の約 1.5 秒は描画を始めない設計（FR-146）。最初の描画を最大 10 秒まで待つ。
   // PNG の生データの多様性で簡易に判定（単色の PNG は圧縮後が非常に小さい）
-  expect(png.byteLength, 'canvas が単色（何も描画されていない）').toBeGreaterThan(3_000);
+  await expect
+    .poll(async () => (await loc.screenshot()).byteLength, { timeout: 10_000, message: 'canvas が単色（何も描画されていない）' })
+    .toBeGreaterThan(3_000);
+}
+
+/** 3D の最初の描画（frame > 0）を最大 10 秒まで待つ。開いてすぐ描画を測るケースで使う。 */
+export async function waitFirstFrame(page: Page): Promise<number> {
+  await expect
+    .poll(async () => (await scene.info(page)).frame, { timeout: 10_000, message: '3D の最初の描画が始まらない' })
+    .toBeGreaterThan(0);
+  return (await scene.info(page)).frame;
 }
 
 /** ダウンロードを待って中身を返す。 */

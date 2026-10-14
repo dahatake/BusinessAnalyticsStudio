@@ -1,3 +1,5 @@
 # Enterprise App Build Kit: append-only records
 docs/id-registry.md merge=union
 docs/run-history.md merge=union
+*.sh text eol=lf
+*.cmd text eol=crlf

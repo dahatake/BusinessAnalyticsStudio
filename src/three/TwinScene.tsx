@@ -165,6 +165,25 @@ export function CameraSync() {
     return () => registerSceneCanvas(null);
   }, [gl]);
 
+  // 最初の描画の前でも、ホームを描画面の縦横比に置き直し、カメラをストアの視点に置く
+  // （クリックの当たり判定が、見えている位置と合う。大きさを変えた直後も同じ。FR-146 AC-244）
+  useEffect(() => {
+    const place = (): void => {
+      rehomeIfPristine(viewportAspect());
+      const r = useCameraRig.getState();
+      camera.position.set(...r.position);
+      camera.lookAt(...r.target);
+      camera.updateMatrixWorld(true);
+    };
+    place();
+    const unsub = useCameraRig.subscribe(place);
+    const area = gl.domElement.parentElement;
+    const ro = typeof ResizeObserver === 'undefined' || !area ? null : new ResizeObserver(place);
+    if (area) ro?.observe(area);
+    window.addEventListener('resize', place);
+    return () => { unsub(); ro?.disconnect(); window.removeEventListener('resize', place); };
+  }, [camera, gl]);
+
   // ストアが変わったら描画を要求する（アニメーション停止中は、変わったときだけ描く）
   useEffect(() => useCameraRig.subscribe(() => invalidate()), [invalidate]);
 

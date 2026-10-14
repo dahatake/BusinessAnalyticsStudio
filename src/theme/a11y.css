@@ -27,3 +27,13 @@ input.fui-Combobox__input:focus-visible {
   outline: 2px solid var(--colorStrokeFocus2, currentColor);
   outline-offset: -2px;
 }
+
+/* ワークスペースの中の使えないボタン: 文字は AA のコントラスト（4.5:1）で読める。使えないことは、点線の枠・カーソル・無効の属性で示し、色だけに頼らない（NFR-UX-007 AC-234）。
+   色は Fluent 2 のトークン（テーマの CSS 変数）から取り、Light/Dark/ハイコントラストに従う。 */
+[data-layout] button:disabled,
+[data-layout] button[aria-disabled='true'] {
+  color: var(--colorNeutralForeground2);
+  background-color: var(--colorNeutralBackground1);
+  border-style: dashed;
+  cursor: not-allowed;
+}

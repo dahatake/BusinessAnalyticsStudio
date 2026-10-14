@@ -377,7 +377,7 @@ export function WhiteboardScreen() {
                 {list.map((i) => (
                   <li key={i.id} className={s.recognizedItem}>
                     <Text>{i.text}</Text>
-                    <Badge appearance="tint" color="informative" size="small">{i.label}</Badge>
+                    <Badge appearance="tint" color="informative" size="medium">{i.label}</Badge>
                     <Button size="small" appearance="subtle" onClick={() => useRecognized.getState().remove(i.id)}>一覧から外す</Button>
                   </li>
                 ))}

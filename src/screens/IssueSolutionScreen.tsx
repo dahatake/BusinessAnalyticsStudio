@@ -34,7 +34,7 @@ const useStyles = makeStyles({
   toolbar: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalXL, rowGap: tokens.spacingVerticalS },
   layout: {
     display: 'grid',
-    gridTemplateColumns: 'minmax(0, 3fr) minmax(0, 2fr)',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', // 幅が足りないときは詳細を下に回す（最小の幅 240 の中でも一覧を読めるようにする。NFR-UX-007 AC-235）
     columnGap: tokens.spacingHorizontalL,
     alignItems: 'start',
     '@media (max-width: 720px)': { gridTemplateColumns: 'minmax(0, 1fr)', rowGap: tokens.spacingVerticalL },

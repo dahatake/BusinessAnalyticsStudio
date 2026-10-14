@@ -52,7 +52,7 @@ function DiffBadge({ diff }: { diff: DiffKind }) {
   if (diff === 'same') return null;
   const color = diff === 'added' ? 'success' : diff === 'removed' ? 'danger' : 'warning';
   const mark = diff === 'added' ? '＋' : diff === 'removed' ? '－' : '≠';
-  return <Badge appearance="filled" color={color} size="small">{mark} {DIFF_LABEL[diff]}</Badge>;
+  return <Badge appearance="filled" color={color} size="medium">{mark} {DIFF_LABEL[diff]}</Badge>;
 }
 
 function ElementCard({ item, chevron }: { item: DiffElement; chevron?: boolean }) {
