@@ -53,7 +53,9 @@ async function importCatalogWithColumns(page: Page): Promise<{ entity: string; c
 async function zoomTo(viewer: Locator, level: 'bird' | 'entity' | 'column'): Promise<void> {
   for (let i = 0; i < 40; i++) {
     if ((await viewer.getAttribute('data-detail-level')) === level) return;
-    await viewer.getByRole('button', { name: level === 'bird' ? '縮小' : '拡大' }).click();
+    const btn = viewer.getByRole('button', { name: level === 'bird' ? '縮小' : '拡大' });
+    if (!(await btn.isEnabled())) return; // 上限・下限では無効。待ち続けず、後続の expect で検証する
+    await btn.click({ timeout: 5_000 });
   }
 }
 
