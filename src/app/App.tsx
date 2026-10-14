@@ -16,6 +16,7 @@ import { prefersReducedMotion, useAnimation } from '../store/animation';
 import { useEffectiveBrand } from '../theme/useBrand';
 import { ErrorView, LoadingView } from '../components/StateViews';
 import { PresentationBar, PresentationButton } from '../presentation/PresentationMode';
+import { StoryHost } from '../story/StoryHost';
 import { SCREENS } from '../screens/registry';
 import { Stepper } from '../stepper/Stepper';
 import { useStepper } from '../store/stepper';
@@ -177,6 +178,7 @@ export function App() {
           </div>
         ) : null}
         <PresentationBar />
+        <StoryHost />
         <ProjectsPanel onNavigate={onSelect} />
         <ShowStage />
         <Workspace screens={SCREENS} />

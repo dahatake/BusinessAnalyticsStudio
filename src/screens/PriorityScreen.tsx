@@ -15,6 +15,8 @@ import { RelatedMini } from '../components/RelatedMini';
 import { LoadingView } from '../components/StateViews';
 import { usePriorityStore } from '../store/priority';
 import { topFive } from '../show/model';
+import { usePackStore } from '../store/pack';
+import { rankSolutions } from '../story/model';
 
 const useStyles = makeStyles({
   kpis: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalM },
@@ -86,6 +88,12 @@ function PriorityScreen() {
   const { ready, issues, weights, rows } = usePriority();
   const sens = useMemo(() => sensitivity(issues, weights), [issues, weights]);
   const reset = usePriorityStore((st) => st.reset);
+  const packState = usePackStore((st) => st.state);
+  // 解決策の優先順位（効く課題の順位の高い順。ストーリー FR-177 の「優先度の高い解決策」と同じ並び）
+  const rankedSolutions = useMemo(
+    () => (packState.status === 'ready' ? rankSolutions(issues, packState.pack.data.issues.solutions, weights, Number.MAX_SAFE_INTEGER) : []),
+    [packState, issues, weights],
+  );
 
   if (!ready) return <LoadingView label="優先順位を読み込み中" />;
 
@@ -134,6 +142,18 @@ function PriorityScreen() {
               <span className={s.top5Rank}>{r.rank}</span>
               <span>{r.title}</span>
               <span><KpiValue>{r.score.toFixed(1)}</KpiValue></span>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section aria-label="優先度の高い解決策">
+        <Text as="h3" size={500} weight="semibold" block>優先度の高い解決策（効く課題の順位の高い順）</Text>
+        <ol className={s.top5}>
+          {rankedSolutions.map((r, i) => (
+            <li key={r.solution.id} className={s.top5Row} data-testid="solution-rank-row" data-entity-id={r.solution.id}>
+              <span className={s.top5Rank}>{i + 1}</span>
+              <span>{r.solution.title}</span>
             </li>
           ))}
         </ol>

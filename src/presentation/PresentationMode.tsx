@@ -12,6 +12,7 @@ import { usePresentationInk, type AnnotationMode } from '../ink/presentationInk'
 import { countInternal } from '../schema';
 import { usePackStore } from '../store/pack';
 import { currentTopic, usePresentationStore } from '../store/presentation';
+import { useStoryStore } from '../store/story';
 import { flattenTopics, presentationKeyAction, type PresentationTopic } from './model';
 
 const useStyles = makeStyles({
@@ -67,14 +68,17 @@ export function PresentationButton() {
   const active = usePresentationStore((s) => s.active);
   const start = usePresentationStore((s) => s.start);
   const end = usePresentationStore((s) => s.end);
+  const openPicker = useStoryStore((s) => s.openPicker);
   const [confirming, setConfirming] = useState(false);
-  if (active) return <Button icon={<Stop20Regular aria-hidden />} onClick={end}>プレゼンテーションを終了</Button>;
+  // 開始: 議題を巡るプレゼンテーション（FR-016）を始め、ペルソナを選ぶとその上でストーリーを再生する（FR-177）。選ばずに閉じれば議題を巡るまま続く
+  const begin = () => { if (start(topics)) openPicker(); };
+  if (active) return <Button icon={<Stop20Regular aria-hidden />} onClick={() => { useStoryStore.getState().reset(); end(); }}>プレゼンテーションを終了</Button>;
   return (
     <>
       <Button
         icon={<Play20Regular aria-hidden />}
         disabled={topics.length === 0}
-        onClick={() => (internalCount > 0 ? setConfirming(true) : start(topics))}
+        onClick={() => (internalCount > 0 ? setConfirming(true) : begin())}
       >
         プレゼンテーションを開始
       </Button>
@@ -92,7 +96,7 @@ export function PresentationButton() {
               <Button appearance="secondary" onClick={() => setConfirming(false)}>キャンセル</Button>
               <Button
                 appearance="primary"
-                onClick={() => { setConfirming(false); start(topics); }}
+                onClick={() => { setConfirming(false); begin(); }}
               >
                 確認して開始
               </Button>
@@ -111,6 +115,7 @@ function usePresentationKeys(): void {
     if (!active) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.defaultPrevented) return;
+      if (useStoryStore.getState().persona) return; // ストーリー中の ←/→ はシーンの移動（story/StoryHost.tsx）
       const el = e.target instanceof HTMLElement ? e.target : null;
       const action = presentationKeyAction(e, el ? { tagName: el.tagName, role: el.getAttribute('role'), isContentEditable: el.isContentEditable } : null);
       if (!action) return;
