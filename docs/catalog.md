@@ -190,7 +190,12 @@
 | NFR-UX-008 | コンポーネントの移動・最小化・スナップの動き | 承認済み | src/motion/useFoldMotion.ts (useFoldClass・motionAllowed), src/motion/motion.css (prefers-reduced-motion), src/workspace/Workspace.tsx (スナップの候補の出現・見た目の追従。useSnapMotion) | tests/unit/minimize.test.ts (AC-268, AC-269), tests/system/e2e/workspace-ops.spec.ts (E2E-237, E2E-238) | デザイン基盤, ワークスペース, 最小化・復元の動き |
 | FR-153 | KPI と OKR の定義 | 承認済み | src/okr/model.ts, src/store/okr.ts, src/screens/KpiOkrScreen.tsx (「OKR の定義」ダイアログ), src/store/persist.ts, src/store/edit.ts (recordHistory), src/schema/files.ts (customer.okr), examples/mono/public/data/customer.json, examples/koto/public/data/customer.json | tests/unit/okr.test.ts (AC-271, AC-272), tests/unit/okr-view.test.tsx (AC-272), tests/system/e2e/workspace-ops.spec.ts (E2E-239) | KPI・OKR, 企業・Project の端末内保存, デザイン基盤 |
 | FR-154 | KPI/OKR の既定の表示 | 承認済み | src/screens/KpiOkrScreen.tsx, src/screens/registry.ts (kpi-okr), src/workspace/layoutModel.ts (defaultLayout), src/workspace/PaneContext.tsx (非表示中のアイコンの場所を残す) | tests/unit/okr.test.ts (AC-273), tests/unit/okr-view.test.tsx (AC-274), tests/system/e2e/workspace-ops.spec.ts (E2E-240) | KPI・OKR, ワークスペース, デザイン基盤 |
-
+| FR-155 | ユースケースごとのプレゼン用アニメーションの作成 | 承認済み | 未実装 | 未実装 | なし |
+| FR-156 | アニメーションの再生と操作 | 承認済み | 未実装 | 未実装 | なし |
+| FR-157 | 動きの停止・動きを減らす設定・音声への追従 | 承認済み | 未実装 | 未実装 | なし |
+| NFR-A11Y-006 | アニメーションの代替と非色依存 | 承認済み | 未実装 | 未実装 | なし |
+| FR-158 | ユースケースの登録と編集 | 承認済み | 未実装 | 未実装 | なし |
+| NFR-UX-010 | アニメーションの再生画面のレイアウト操作 | 承認済み | 未実装 | 未実装 | なし |
 ## API・イベント
 
 | 名前 | 定義ファイル | 関連する要求 ID |
