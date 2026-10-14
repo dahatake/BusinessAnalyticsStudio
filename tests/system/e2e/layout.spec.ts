@@ -111,7 +111,7 @@ test.describe('FR-012 キャンバス', () => {
 
 test.describe('FR-013 最大化・通常・非表示', () => {
   // FR-013 AC-016
-  test('FR-013 AC-016 Shift+F で最大化、Esc で通常、H で非表示、見出しのダブルクリックで最大化/通常', async ({ page, start }) => {
+  test('FR-013 AC-016 Shift+F で最大化、Esc で通常、H で非表示、見出しのダブルクリックは FR-174 の拡大（最大化にならない）', async ({ page, start }) => {
     await start();
     const c = await openScreen(page, 'gantt');
     const ws = await box(page.getByTestId('workspace'));
@@ -122,10 +122,20 @@ test.describe('FR-013 最大化・通常・非表示', () => {
     await expect.poll(async () => area(await box(c))).toBeGreaterThan(area(ws) * 0.9);
     await page.keyboard.press('Escape');
     await expect.poll(async () => Math.round(area(await box(c)))).toBeLessThan(area(ws) * 0.9);
+    // 見出しのダブルクリックは最大化ではなく FR-174 の拡大（data-expanded）。Q-023 2026-10-15 改訂
     await c.getByRole('heading').first().dblclick();
-    await expect.poll(async () => area(await box(c))).toBeGreaterThan(area(ws) * 0.9);
-    await c.getByRole('heading').first().dblclick();
+    await expect(c).toHaveAttribute('data-expanded', 'true');
+    expect(await c.getAttribute('data-maximized'), 'ダブルクリックで最大化になっている').not.toBe('true');
     await expect.poll(async () => area(await box(c))).toBeLessThan(area(ws) * 0.9);
+    await c.getByRole('heading').first().dblclick();
+    await expect(c).not.toHaveAttribute('data-expanded', 'true');
+    // 最大化は Shift+F（別手段）で行い、Esc で戻る
+    await c.focus();
+    await page.keyboard.press('Shift+F');
+    await expect(c).toHaveAttribute('data-maximized', 'true');
+    await expect.poll(async () => area(await box(c))).toBeGreaterThan(area(ws) * 0.9);
+    await page.keyboard.press('Escape');
+    await expect(c).not.toHaveAttribute('data-maximized', 'true');
     await c.focus();
     await page.keyboard.press('h');
     await expect(c).toBeHidden();
