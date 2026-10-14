@@ -123,6 +123,86 @@
         ],
         "additionalProperties": {}
       }
+    },
+    "okr": {
+      "type": "object",
+      "properties": {
+        "updatedAt": {
+          "type": "string",
+          "minLength": 1
+        },
+        "objectives": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "objective": {
+                "type": "string",
+                "minLength": 1
+              },
+              "keyResults": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "name": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "kpi": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "unit": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "baseline": {
+                          "type": "number"
+                        },
+                        "current": {
+                          "type": "number"
+                        },
+                        "target": {
+                          "type": "number"
+                        },
+                        "due": {
+                          "type": "string"
+                        }
+                      },
+                      "required": [
+                        "name",
+                        "unit",
+                        "baseline",
+                        "current",
+                        "target"
+                      ],
+                      "additionalProperties": {}
+                    }
+                  },
+                  "required": [
+                    "name",
+                    "kpi"
+                  ],
+                  "additionalProperties": {}
+                }
+              }
+            },
+            "required": [
+              "objective",
+              "keyResults"
+            ],
+            "additionalProperties": {}
+          }
+        }
+      },
+      "required": [
+        "objectives"
+      ],
+      "additionalProperties": {}
     }
   },
   "required": [

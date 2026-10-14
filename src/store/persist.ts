@@ -2,6 +2,7 @@
 // サーバー・ほかの端末へは送らない（NFR-SEC-004 AC-218。利用者が書き出す操作は別）。共有・権限の仕組みはない（Q-009 A）。
 import { create } from 'zustand';
 import { useAnalyses, type Analysis } from './analyses';
+import { useOkr, type OkrSet } from './okr';
 import { useProjects, type Company, type Project } from './projects';
 import { useStepper } from './stepper';
 
@@ -15,6 +16,8 @@ interface Snapshot {
   seq: number;
   analyses: Record<string, Analysis>;
   steps: Record<string, number>;
+  /** 作業先ごとの KPI と OKR（FR-153）。古い保存内容にはない */
+  okr?: Record<string, OkrSet>;
 }
 
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
@@ -29,6 +32,7 @@ export function snapshot(): Snapshot {
     seq: p.seq,
     analyses: useAnalyses.getState().byProject,
     steps: useStepper.getState().byProject,
+    okr: useOkr.getState().byTarget,
   };
 }
 
@@ -53,6 +57,8 @@ export function restore(storage: Store): boolean {
   useProjects.setState({ companies, projects, openId, seq: typeof data.seq === 'number' ? data.seq : companies.length + projects.length });
   useAnalyses.setState({ byProject: analyses });
   useStepper.setState({ byProject: steps });
+  const okr = isObj(data.okr) ? (data.okr as Record<string, OkrSet>) : {};
+  useOkr.setState({ byTarget: Object.fromEntries(Object.entries(okr).filter(([, v]) => isObj(v) && Array.isArray(v.objectives))) });
   useStepper.getState().switchTo(openId);
   return true;
 }
@@ -62,7 +68,7 @@ export function startPersistence(storage: Store): () => void {
   const save = () => {
     try { storage.setItem(STORAGE_KEY, JSON.stringify(snapshot())); } catch { /* 保存できなくても使い続けられる */ }
   };
-  const offs = [useProjects.subscribe(save), useAnalyses.subscribe(save), useStepper.subscribe(save)];
+  const offs = [useProjects.subscribe(save), useAnalyses.subscribe(save), useStepper.subscribe(save), useOkr.subscribe(save)];
   return () => offs.forEach((off) => off());
 }
 

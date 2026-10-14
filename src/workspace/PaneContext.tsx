@@ -116,12 +116,13 @@ function IconButton({ label, icon, onClick, testId }: { label: string; icon: Rea
  */
 export function ComponentActions({ pane, title, active, narrow }: { pane: PaneInfo; title: string; active: boolean; narrow: boolean }) {
   const s = useActionStyles();
-  // アイコンは常に描き、フォーカスのないときは隠す（display: none）。隠している間は押せず、Tab でも止まらない。
+  // アイコンは常に描き、フォーカスのないときは隠す。隠している間は押せず、Tab でも止まらない。
+  // 広いときは visibility: hidden で場所を残す（フォーカスが入った瞬間に見出しの折り返しが変わり、押そうとしたボタンが動いてクリックが外れるのを防ぐ）。狭いときは display: none。
   // フォーカスが入ると現れ、操作できる（FR-150）。最小化中は復元のアイコンだけを、フォーカスに関わらず出す
   const shown = (active && !narrow) || pane.minimized;
   return (
     <>
-    <div className={s.actions} data-testid="component-actions" data-minimized={pane.minimized ? 'true' : undefined} style={shown ? undefined : { display: 'none' }}>
+    <div className={s.actions} data-testid="component-actions" data-minimized={pane.minimized ? 'true' : undefined} style={shown ? undefined : narrow ? { display: 'none' } : { visibility: 'hidden' }}>
       {pane.minimized ? (
         // 最小化中は、フォーカスの有無に関わらず復元できる（見出しの操作で元の位置・大きさに戻る。FR-151）
         <IconButton label="元に戻す" icon={<ArrowMaximize20Regular aria-hidden />} onClick={pane.toggleMinimize} />
