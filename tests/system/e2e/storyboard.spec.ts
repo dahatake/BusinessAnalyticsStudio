@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準（docs/requirements/app-experience.md）だけから決める。画面の探し方は tests/system/CONTRACT.md §13。
 // PARAM-018 コントラスト 4.5 / PARAM-021 点滅 3 回/秒 / PARAM-029 幅 320 / PARAM-048 作成→再生可能 2 秒
 // PARAM-052 30 秒 ±PARAM-053 5 秒 / PARAM-054 強調テロップ 20 文字。
-// AC-320・AC-327・AC-329〜331 は BLOCKED のため作らない。
+// AC-327・329〜331 は検証レベルが integration（承認済み）のためここでは作らない。AC-320（system）は末尾の describe「FR-168 再生の既定の演出強度」。
 import type { Page, Locator } from '@playwright/test';
 import { test, expect, hook, contrastRatio, reloadAndEnter } from '../support/fixtures';
 
@@ -470,6 +470,35 @@ test.describe('FR-167 設定画面と字幕の読み上げ（音声はモック�
     await sw.focus();
     await page.keyboard.press('Space');
     await expect(box.getByRole('alert')).toContainText(/未設定|設定/);
+  });
+});
+
+test.describe('FR-164 再生の既定の演出強度（Entertainment）', () => {
+  // FR-164 AC-320
+  test('FR-164 AC-320 再生は Entertainment で始まり、Executive ではない。再読み込み後の再生も同じ', async ({ page, start }) => {
+    await start();
+    await setup(page, [UC_A]);
+    let p = await play(page, UC_A.name);
+    await expect(p.getByTestId('storyboard-intensity')).toContainText('Entertainment');
+    await expect(p.getByTestId('storyboard-intensity')).not.toContainText('Executive');
+    await page.keyboard.press('Escape');
+    await expect(p).toBeHidden();
+    // 異常系（再実行）: 閉じて再度再生しても既定は Entertainment のまま
+    p = await play(page, UC_A.name);
+    await expect(p.getByTestId('storyboard-intensity')).toContainText('Entertainment');
+  });
+  // FR-164 AC-320（G-002: 論理・数値・出典の表示を省かない）
+  test('FR-164 AC-320 Entertainment の再生でも、手順の内容と期待する効果が字幕・シーンから省かれない', async ({ page, start }) => {
+    await start();
+    await setup(page, [UC_A]);
+    const p = await play(page, UC_A.name);
+    await expect(p.getByTestId('storyboard-intensity')).toContainText('Entertainment');
+    await expect(p.getByTestId('storyboard-caption')).not.toHaveText('');
+    await expect(p).toContainText(UC_A.persona);
+    await expect(p).toContainText(UC_A.steps[0].title.split(' ')[0]);
+    await playToEnd(p);
+    // 全シーンを通して、効果の文言が表示に含まれる
+    await expect(p).toContainText(UC_A.effect!);
   });
 });
 

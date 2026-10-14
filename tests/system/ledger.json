@@ -184,7 +184,8 @@
     "AC-325": "sha256:305dd0155574a0b8",
     "AC-326": "sha256:a45d0f069650b597",
     "AC-328": "sha256:1c35a83a5b71e702",
-    "AC-334": "sha256:28e9f4a26b6d23b5"
+    "AC-334": "sha256:28e9f4a26b6d23b5",
+    "AC-320": "sha256:34da361197a9e4b0"
   },
   "cases": [
     {
@@ -4906,6 +4907,68 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-266",
+      "requirement_ids": [
+        "FR-164"
+      ],
+      "ac_ids": [
+        "AC-320"
+      ],
+      "title": "再生は Entertainment で始まり、再生しても Executive にならない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-320",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T01:26:27+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-15T01:26:35+09:00",
+          "by": "test-designer",
+          "change": "command: \"npx playwright test tests/system/e2e/storyboard.spec.ts -g 'AC-320 再生は Entertainment'\" -> 'node tests/system/run.mjs AC-320'",
+          "reason": "既存ケースと同じ run.mjs 形式に合わせる"
+        }
+      ]
+    },
+    {
+      "id": "E2E-267",
+      "requirement_ids": [
+        "FR-164"
+      ],
+      "ac_ids": [
+        "AC-320"
+      ],
+      "title": "Entertainment の再生でも手順の内容と効果が省かれない（G-002）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-320",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T01:26:29+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-15T01:26:35+09:00",
+          "by": "test-designer",
+          "change": "command: \"npx playwright test tests/system/e2e/storyboard.spec.ts -g 'AC-320 Entertainment の再生でも'\" -> 'node tests/system/run.mjs AC-320'",
+          "reason": "既存ケースと同じ run.mjs 形式に合わせる"
         }
       ]
     }
