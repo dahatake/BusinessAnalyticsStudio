@@ -3,7 +3,7 @@
 import { create } from 'zustand';
 import {
   createAnimation, toDraft, validateDraft,
-  type Animation, type UseCase, type UseCaseDraft,
+  type Animation, type UseCase, type UseCaseDraft, type UseCaseSource,
 } from '../usecase/model';
 
 export interface UseCaseSet { items: UseCase[]; animations: Record<string, Animation>; seq: number }
@@ -14,7 +14,7 @@ export type SaveResult = { ok: true; id: string } | { ok: false; errors: string[
 interface UseCaseState {
   byProject: Record<string, UseCaseSet>;
   /** 登録（id なし）または更新（id あり）。誤りがあれば保存せず理由を返す */
-  save: (projectId: string, draft: UseCaseDraft, id?: string) => SaveResult;
+  save: (projectId: string, draft: UseCaseDraft, id?: string, source?: UseCaseSource) => SaveResult;
   remove: (projectId: string, id: string) => void;
   /** アニメーションを作る（作り直しも）。手順が 0 件なら拒否し、何も変えない */
   createAnimation: (projectId: string, id: string) => { ok: true } | { ok: false; errors: string[] };
@@ -23,17 +23,17 @@ interface UseCaseState {
 
 export const useUseCases = create<UseCaseState>((set, get) => ({
   byProject: {},
-  save: (projectId, draft, id) => {
+  save: (projectId, draft, id, source) => {
     const v = validateDraft(draft);
     if (!v.ok) return v;
     const cur = get().byProject[projectId] ?? EMPTY;
     if (id !== undefined) {
       if (!cur.items.some((u) => u.id === id)) return { ok: false, errors: ['ユースケースが見つかりません。'] };
-      set((s) => ({ byProject: { ...s.byProject, [projectId]: { ...cur, items: cur.items.map((u) => (u.id === id ? { ...v.value, id } : u)) } } }));
+      set((s) => ({ byProject: { ...s.byProject, [projectId]: { ...cur, items: cur.items.map((u) => (u.id === id ? { ...v.value, id, ...(u.source ? { source: u.source } : {}) } : u)) } } }));
       return { ok: true, id };
     }
     const newId = `uc-${cur.seq + 1}`;
-    set((s) => ({ byProject: { ...s.byProject, [projectId]: { ...cur, seq: cur.seq + 1, items: [...cur.items, { ...v.value, id: newId }] } } }));
+    set((s) => ({ byProject: { ...s.byProject, [projectId]: { ...cur, seq: cur.seq + 1, items: [...cur.items, { ...v.value, id: newId, ...(source ? { source } : {}) }] } } }));
     return { ok: true, id: newId };
   },
   remove: (projectId, id) => set((s) => {

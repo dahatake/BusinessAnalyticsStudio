@@ -1,6 +1,6 @@
 // 「ユースケース」コンポーネント（FR-158・FR-155）。ステッパーの「ユースケース作成」から開く。Project ごとにユースケースを登録・編集・削除し、
 // ユースケースごとにプレゼン用アニメーションを作って、その場で再生する。端末内だけで動き、AI には接続しない。
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   Badge, Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Input, MessageBar, MessageBarBody, Text, Textarea, makeStyles, tokens,
 } from '@fluentui/react-components';
@@ -13,8 +13,10 @@ import { useProjects } from '../store/projects';
 import { useUseCases, useUseCaseSet } from '../store/usecases';
 import {
   MAX_STEPS, SCENE_SECONDS, addStep, animationState, emptyDraft, toDraft,
-  type Animation, type AnimationState, type UseCase, type UseCaseDraft,
+  type Animation, type AnimationState, type UseCase, type UseCaseDraft, type UseCaseSource,
 } from '../usecase/model';
+import { deriveCandidates, type Candidate } from '../usecase/derive';
+import { usePackStore } from '../store/pack';
 
 const useStyles = makeStyles({
   list: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS },
@@ -45,7 +47,7 @@ const useStyles = makeStyles({
 const STATE_LABEL: Record<AnimationState, string> = { none: '未作成', latest: '最新', stale: '古い' };
 
 /** 登録・編集ダイアログの開閉と入力中の内容。レイアウトの変更でコンポーネントが作り直されても入力が消えないよう、外に持つ（保存しない）。 */
-interface DialogState { editId: string | null; draft: UseCaseDraft; errors: string[] }
+interface DialogState { editId: string | null; draft: UseCaseDraft; errors: string[]; /** 候補を編集して登録するときの導出元 */ source?: UseCaseSource }
 const useUseCaseDialog = create<{ dlg: DialogState | null; set: (d: DialogState | null) => void }>((set) => ({ dlg: null, set: (dlg) => set({ dlg }) }));
 
 /** 再生中のユースケースと再生位置・状態（保存しない）。レイアウト操作でコンポーネントが作り直されても位置と一時停止が残るよう、外に持つ（NFR-UX-010 AC-288）。 */
@@ -76,7 +78,7 @@ function UseCaseDialog({ projectId }: { projectId: string }) {
     else setDlg({ ...dlg, errors: r.errors }); // 既存の手順は変えない（AC-287）
   };
   const onSave = () => {
-    const r = save(projectId, draft, dlg.editId ?? undefined);
+    const r = save(projectId, draft, dlg.editId ?? undefined, dlg.source);
     if (r.ok) setDlg(null);
     else setDlg({ ...dlg, errors: r.errors }); // 入力済みの値は残す（AC-286）
   };
@@ -201,6 +203,22 @@ function UseCaseScreen() {
   const setPlaying = usePlaying((x) => x.set);
   const [message, setMessage] = useState<{ id: string; errors: string[] } | null>(null);
   const [confirmId, setConfirmId] = useState<string | null>(null);
+  const packState = usePackStore((x) => x.state);
+  const save = useUseCases((x) => x.save);
+  const [regErrors, setRegErrors] = useState<string[]>([]);
+  // 導出のやり直し: 押すたびに候補だけを作り直す（登録済みは変えない。AC-291）。候補は保存しない
+  const [deriveRun, setDeriveRun] = useState(0);
+  const data = packState.status === 'ready' ? packState.pack.data : undefined;
+  const derivation = useMemo(
+    () => deriveCandidates(data?.issues.issues, data?.issues.solutions, data?.products.products, set.items.map((u) => u.source)),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [data, set.items, deriveRun],
+  );
+  const registerCandidate = (c: Candidate) => {
+    if (!projectId) return;
+    const r = save(projectId, c.draft, undefined, c.source);
+    setRegErrors(r.ok ? [] : r.errors);
+  };
 
   const playing = playingId ? set.items.find((u) => u.id === playingId) : undefined;
   const playingAnim = playing ? set.animations[playing.id] : undefined;
@@ -221,6 +239,47 @@ function UseCaseScreen() {
               </MessageBar>
             ) : null}
             {set.items.length === 0 ? <EmptyView message="ユースケースはまだありません。「ユースケースを追加」から登録してください。" /> : null}
+            <section aria-label="導出の候補" data-testid="usecase-candidates" className={s.form}>
+              <div className={s.row}>
+                <Text weight="semibold">導出の候補（課題と解決策から導出。登録するまで保存されません）</Text>
+                <Button size="small" onClick={() => setDeriveRun((n) => n + 1)}>導出をやり直す</Button>
+              </div>
+              {regErrors.length > 0 ? (
+                <MessageBar intent="error" layout="multiline" role="alert">
+                  <MessageBarBody><ul className={s.errors}>{regErrors.map((e, i) => <li key={i}>{e}</li>)}</ul></MessageBarBody>
+                </MessageBar>
+              ) : null}
+              {derivation.emptyReason ? <Text>{derivation.emptyReason}</Text> : null}
+              {derivation.issuesWithoutSolution > 0 && !derivation.emptyReason ? (
+                <Text size={200}>{`解決策のない課題 ${derivation.issuesWithoutSolution} 件は、候補に出していません（導出の元になる解決策がないため）。`}</Text>
+              ) : null}
+              {!derivation.emptyReason && derivation.candidates.length === 0 ? <Text size={200}>未登録の候補はありません（すべて登録済みです）。</Text> : null}
+              <ul className={s.list}>
+                {derivation.candidates.map((c) => (
+                  <li key={`${c.source.solutionId}:${c.source.issueId}`} className={s.item}>
+                    <div className={s.row}>
+                      <Badge appearance="outline" color="informative">導出（未登録）</Badge>
+                      <Text size={200}>{`導出元: 解決策 ${c.source.solutionId} ／ 課題 ${c.source.issueId}`}</Text>
+                    </div>
+                    <Text><b>名称:</b> {c.draft.name}</Text>
+                    <Text><b>概要:</b> {c.draft.summary}</Text>
+                    <Text><b>対象ペルソナ:</b> {c.draft.persona || '（なし）'}</Text>
+                    <div>
+                      <Text><b>手順:</b> {c.draft.steps.length === 0 ? '（なし）' : null}</Text>
+                      <div className={s.outline}>
+                        {c.draft.steps.map((st, i) => <Text key={i} size={200}>{`${i + 1}. ${st.description ? `${st.title}: ${st.description}` : st.title}`}</Text>)}
+                      </div>
+                      {c.truncatedFrom ? <Text size={200}>{`手順が ${c.truncatedFrom} 件あるため、先頭の ${MAX_STEPS} 件に切り詰めています。`}</Text> : null}
+                    </div>
+                    <Text><b>期待する効果:</b> {c.draft.effect || '（なし）'}</Text>
+                    <div className={s.row}>
+                      <Button size="small" appearance="primary" onClick={() => registerCandidate(c)}>登録</Button>
+                      <Button size="small" onClick={() => setDlg({ editId: null, draft: toDraft(c.draft), errors: [], source: c.source })}>編集して登録</Button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            </section>
             <ul className={s.list} data-testid="usecase-list" aria-label="ユースケース一覧">
               {set.items.map((uc) => {
                 const anim = set.animations[uc.id];
