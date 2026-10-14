@@ -180,6 +180,7 @@
 | FR-165 | バズを狙う字幕とテロップ | 承認済み | 未実装 | 未実装 | なし |
 | FR-166 | スタイルの選択 | 承認済み | 未実装 | 未実装 | なし |
 | FR-167 | 設定画面と字幕の読み上げ | 承認済み | 未実装 | 未実装 | なし |
+| FR-168 | 音声合成の API キーの保存・変更・削除 | AI提案／承認待ち | 未実装 | 未実装 | なし |
 | NFR-SEC-005 | API キーなど秘密情報の安全な保管 | 承認待ち | 未実装 | 未実装 | なし |
 | FR-141 | 起動スクリプト（Windows・Mac・Linux） | 承認済み | start.cmd, start.ps1, start.sh, README.md | tests/system/launch/fr141-ac220.test.mjs, tests/system/launch/fr141-ac221.test.mjs, tests/system/launch/fr141-ac222.test.mjs | 起動スクリプト |
 | FR-142 | すべてのコンポーネントのドラッグでの移動 | 承認済み | src/workspace/Workspace.tsx (startDrag・hitTest・zoneOf・ドロップ先の表示), src/workspace/layoutModel.ts (dropAt・splitBetween), src/components/Panel.tsx (見出しのつかみ・Alt+Shift+矢印キー), src/workspace/PaneContext.tsx (startDrag), src/store/layout.ts (dropMove) | tests/unit/layout-fluent.test.ts (AC-224, AC-225), tests/system/e2e/workspace-layout.spec.ts (E2E-216) | デザイン基盤, ワークスペース |
