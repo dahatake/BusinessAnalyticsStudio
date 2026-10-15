@@ -230,6 +230,20 @@
 | FR-172 | データエンティティの列（属性）の保持 | 承認済み | src/datacatalog/model.ts (toColumns, entityColumns, NO_COLUMNS_LABEL), src/datacatalog/reconcile.ts (columns・domain の解析), src/store/persist.ts (cleanCatalog) | tests/unit/data-catalog-columns.test.ts (AC-343, AC-344) | 企業・Project の端末内保存, データカタログの導出 |
 | NFR-A11Y-007 | データビュアーのキーボード操作と 3D 非対応時の代替 | 承認済み | src/components/DataViewer.tsx (キー操作・aria-live・表の一覧・detect3D), src/datacatalog/viewer.ts (is3DAvailable, moveIndex, zoomKeyAction) | tests/unit/data-viewer.test.tsx (AC-345, AC-346) | 選択の通知, 3D 基盤, デザイン基盤 |
 | NFR-UX-012 | データビュアーのワークスペースのコンポーネント化 | 承認済み | src/screens/DataCatalogScreen.tsx (データカタログのコンポーネントの中に配置), src/store/dataViewer.ts (表示状態を store に保持) | tests/unit/data-viewer.test.tsx (AC-347) | ワークスペース, デザイン基盤 |
+| FR-188 | 外部連携カタログの管理データ | 承認済み | 未実装 | 未実装 | - |
+| FR-189 | 連携の基本情報（相手先・方向・種別・正本・識別子・状態） | 承認済み | 未実装 | 未実装 | - |
+| FR-190 | 認証・認可と秘密情報の管理 | 承認済み | 未実装 | 未実装 | - |
+| FR-191 | やり取りするデータ項目と個人情報・機密区分 | 承認済み | 未実装 | 未実装 | - |
+| FR-192 | 頻度・量・SLA・タイムアウト | 承認済み | 未実装 | 未実装 | - |
+| FR-193 | 失敗時の振る舞い（再試行・冪等性・縮退） | 承認済み | 未実装 | 未実装 | - |
+| FR-194 | バージョン互換と変更・廃止の通知 | 承認済み | 未実装 | 未実装 | - |
+| FR-195 | 監視と監査ログ | 承認済み | 未実装 | 未実装 | - |
+| FR-196 | 利用規約・ライセンス・コスト | 承認済み | 未実装 | 未実装 | - |
+| FR-197 | テスト用のスタブ・モック | 承認済み | 未実装 | 未実装 | - |
+| FR-198 | 要求定義書との結線（連携の追加・変更・廃止の要求） | 承認済み | 未実装 | 未実装 | - |
+| FR-199 | 外部連携カタログの検査・一覧・影響確認（既存の検査への組み込み） | 承認済み | 未実装 | 未実装 | - |
+| NFR-SEC-006 | 外部連携カタログに秘密情報と個人情報の実データを書かない | 承認待ち | 未実装 | 未実装 | - |
+| NFR-OPS-001 | 外部連携カタログの鮮度 | 承認済み | 未実装 | 未実装 | - |
 ## API・イベント
 
 | 名前 | 定義ファイル | 関連する要求 ID |
