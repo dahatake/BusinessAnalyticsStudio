@@ -207,7 +207,7 @@
     "AC-404": "sha256:2436c1f2d414a827",
     "AC-405": "sha256:fe37e240c0c92402",
     "AC-406": "sha256:c28cfa30b657d244",
-    "AC-407": "sha256:0fd0f14f8384d2ac",
+    "AC-407": "sha256:47cd9f396e75be83",
     "AC-408": "sha256:d44046f8b460d66e",
     "AC-409": "sha256:b10a0e95eb2242de",
     "AC-410": "sha256:8caf62aac0f7fa6f",
@@ -231,7 +231,8 @@
     "AC-428": "sha256:60faf510f74a5628",
     "AC-429": "sha256:22d5ad89479f7b3c",
     "AC-431": "sha256:21bdc125bf205c61",
-    "AC-432": "sha256:98e7f569aa8e5831"
+    "AC-432": "sha256:98e7f569aa8e5831",
+    "AC-430": "sha256:abe9624c69252585"
   },
   "cases": [
     {
@@ -6325,6 +6326,192 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        }
+      ]
+    },
+    {
+      "id": "IT-060",
+      "requirement_ids": [
+        "NFR-SEC-006"
+      ],
+      "ac_ids": [
+        "AC-430"
+      ],
+      "title": "外部連携カタログ秘密検査: Bearer・api_key=・token=・password=・32 文字以上の英数字・-----BEGIN の各形式を検出し失敗する",
+      "layer": "nonfunctional",
+      "command": "node --test --test-name-pattern \"AC-430 \\[形式:\" tests/system/integration-catalog/secrets.test.mjs",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T08:50:57+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-16T08:51:24+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-430 の検証レベルは unit で System Test の対象外（CHK-10）。競合として返す: 受入基準を system にするか unit 側で検証"
+        }
+      ]
+    },
+    {
+      "id": "IT-061",
+      "requirement_ids": [
+        "NFR-SEC-006"
+      ],
+      "ac_ids": [
+        "AC-430"
+      ],
+      "title": "外部連携カタログ秘密検査: 資格情報の欄以外（認証・認可）でも検出する",
+      "layer": "nonfunctional",
+      "command": "node --test --test-name-pattern \"AC-430 \\[欄を問わない\\]\" tests/system/integration-catalog/secrets.test.mjs",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T08:51:00+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-16T08:51:25+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-430 の検証レベルは unit で System Test の対象外（CHK-10）。競合として返す: 受入基準を system にするか unit 側で検証"
+        }
+      ]
+    },
+    {
+      "id": "IT-062",
+      "requirement_ids": [
+        "NFR-SEC-006"
+      ],
+      "ac_ids": [
+        "AC-430"
+      ],
+      "title": "外部連携カタログ秘密検査: commit ハッシュ（40 桁）と SHA のハッシュ値は誤検出しない",
+      "layer": "nonfunctional",
+      "command": "node --test --test-name-pattern \"AC-430 \\[ハッシュ除外\\]\" tests/system/integration-catalog/secrets.test.mjs",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T08:51:02+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-16T08:51:25+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-430 の検証レベルは unit で System Test の対象外（CHK-10）。競合として返す: 受入基準を system にするか unit 側で検証"
+        }
+      ]
+    },
+    {
+      "id": "IT-063",
+      "requirement_ids": [
+        "NFR-SEC-006"
+      ],
+      "ac_ids": [
+        "AC-430"
+      ],
+      "title": "外部連携カタログ秘密検査: 「例」行でも本物らしい値は検出し失敗する",
+      "layer": "nonfunctional",
+      "command": "node --test --test-name-pattern \"AC-430 \\[「例」行\\]\" tests/system/integration-catalog/secrets.test.mjs",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T08:51:05+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-16T08:51:25+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-430 の検証レベルは unit で System Test の対象外（CHK-10）。競合として返す: 受入基準を system にするか unit 側で検証"
+        }
+      ]
+    },
+    {
+      "id": "IT-064",
+      "requirement_ids": [
+        "NFR-SEC-006"
+      ],
+      "ac_ids": [
+        "AC-430"
+      ],
+      "title": "外部連携カタログ秘密検査: 固定のダミー表記のみ失敗にせず、本物が混じれば失敗する",
+      "layer": "nonfunctional",
+      "command": "node --test --test-name-pattern \"AC-430 \\[ダミー値\" tests/system/integration-catalog/secrets.test.mjs",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T08:51:08+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-16T08:51:25+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-430 の検証レベルは unit で System Test の対象外（CHK-10）。競合として返す: 受入基準を system にするか unit 側で検証"
+        }
+      ]
+    },
+    {
+      "id": "IT-065",
+      "requirement_ids": [
+        "NFR-SEC-006"
+      ],
+      "ac_ids": [
+        "AC-430"
+      ],
+      "title": "外部連携カタログ秘密検査: 語だけの説明文（API キー等）は失敗にしない",
+      "layer": "nonfunctional",
+      "command": "node --test --test-name-pattern \"AC-430 \\[語だけの説明文\\]\" tests/system/integration-catalog/secrets.test.mjs",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T08:51:11+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-16T08:51:26+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-430 の検証レベルは unit で System Test の対象外（CHK-10）。競合として返す: 受入基準を system にするか unit 側で検証"
         }
       ]
     }
