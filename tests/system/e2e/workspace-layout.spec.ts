@@ -170,14 +170,28 @@ async function seedProjects(page: Page, company: string, names: string[]): Promi
   }
 }
 
+/**
+ * 再起動（再読込）して起動直後のメイン画面（FR-186・AC-398）を出し、「Project を開く」で作業先の選択画面を開く。
+ * 起動直後には選択画面が出ていないこと（AC-398）も確かめる。
+ */
+async function restartAndOpenPicker(page: Page, app: { reload(o?: { skipOpening?: boolean }): Promise<void> }): Promise<Locator> {
+  await app.reload({ skipOpening: false });
+  await pressOpeningEscape(page);
+  const main = page.getByTestId('main-screen');
+  await expect(main, '起動直後にメイン画面が出ない').toBeVisible();
+  await expect(page.getByRole('dialog', { name: '作業先の選択' }), '起動直後に選択画面が出ている').toHaveCount(0);
+  await main.getByRole('button', { name: 'Project を開く' }).click();
+  const picker = page.getByRole('dialog', { name: '作業先の選択' });
+  await expect(picker).toBeVisible();
+  return picker;
+}
+
 test.describe('FR-144 起動後のデモ／実プロジェクトの選択', () => {
-  // FR-144 AC-229
-  test('FR-144 AC-229 実 Project が 2 件以上ある端末の起動時に選択画面が出て、デモと各 Project を選べ、作業先が常に示される', async ({ page, start }) => {
+  // FR-144 AC-229（Q-026 で改訂: 起動直後はメイン画面。選択画面は「Project を開く」で出る）
+  test('FR-144 AC-229 実 Project が 2 件以上ある端末で、メイン画面から Project を開くと選択画面が出て、デモと各 Project を選べ、作業先が常に示される', async ({ page, start }) => {
     const app = await start();
     await seedProjects(page, '合成株式会社A', ['業務改善 2026', '在庫最適化']);
-    await app.reload({ skipOpening: false });
-    const picker = page.getByRole('dialog', { name: '作業先の選択' });
-    await expect(picker).toBeVisible();
+    const picker = await restartAndOpenPicker(page, app);
     await expect(picker.getByRole('option', { name: /デモ/ })).toBeVisible();
     await expect(picker.getByRole('option', { name: /合成株式会社A.*業務改善 2026/ })).toBeVisible();
     await expect(picker.getByRole('option', { name: /合成株式会社A.*在庫最適化/ })).toBeVisible();
@@ -187,29 +201,30 @@ test.describe('FR-144 起動後のデモ／実プロジェクトの選択', () =
     await expect(page.getByTestId('work-target')).toContainText('合成株式会社A');
     await expect(page.getByTestId('work-target')).toContainText('在庫最適化');
     // 開き直してデモを選ぶと、架空企業のお手本パックで開く
-    await app.reload({ skipOpening: false });
-    await page.getByRole('dialog', { name: '作業先の選択' }).getByRole('option', { name: /デモ/ }).click();
+    const picker2 = await restartAndOpenPicker(page, app);
+    await picker2.getByRole('option', { name: /デモ/ }).click();
     await expect(page.getByTestId('workspace')).toBeVisible();
     await expect(page.getByTestId('work-target')).toContainText('デモ');
     await expect(page.getByText('合成株式会社A')).toHaveCount(0);
   });
 
-  // FR-144 AC-229（異常系: 選択画面を何も選ばずに閉じられない）
-  test('FR-144 AC-229 異常系: 作業先を選ばないまま選択画面を閉じても、作業先が未定のまま本編に入らない', async ({ page, start }) => {
+  // FR-144 AC-229（異常系: 作業先を選ばないまま選択画面を閉じても、作業先が未定のまま本編に入らない。AC-398: 閉じるとメイン画面に戻る）
+  test('FR-144 AC-229 異常系: 作業先を選ばないまま選択画面を閉じると、メイン画面に戻り、作業先が未定のまま本編（分析画面）に入らない', async ({ page, start }) => {
     const app = await start();
     await seedProjects(page, '合成株式会社A', ['業務改善 2026', '在庫最適化']);
-    await app.reload({ skipOpening: false });
-    const picker = page.getByRole('dialog', { name: '作業先の選択' });
-    await expect(picker).toBeVisible();
+    const picker = await restartAndOpenPicker(page, app);
     await page.keyboard.press('Escape');
-    await expect(page.getByTestId('work-target')).toBeVisible();
-    await expect(page.getByTestId('work-target')).not.toBeEmpty();
+    await expect(picker).toBeHidden();
+    await expect(page.getByTestId('main-screen')).toBeVisible();
+    await expect(page.getByTestId('workspace')).toHaveCount(0);
   });
 
-  // FR-144 AC-237（AC-230 を置き換える）
-  test('FR-144 AC-237 実 Project が 0 件でも起動直後に選択画面が出て、デモと「実際の Project を登録」が選べ、デモを選ぶとお手本パックで起動したことが示される', async ({ page, start }) => {
+  // FR-144 AC-237（AC-230 を置き換える。Q-026 で改訂: 起動直後はメイン画面。選択画面はメイン画面から開く）
+  test('FR-144 AC-237 実 Project が 0 件でも、メイン画面から Project を開くと選択画面が出て、デモと「実際の Project を登録」が選べ、デモを選ぶとお手本パックで起動したことが示される', async ({ page, start }) => {
     await start({ skipOpening: false });
     await pressOpeningEscape(page);
+    await expect(page.getByTestId('main-screen')).toBeVisible();
+    await page.getByTestId('main-screen').getByRole('button', { name: 'Project を開く' }).click();
     const picker = page.getByRole('dialog', { name: '作業先の選択' });
     await expect(picker).toBeVisible();
     await expect(picker.getByRole('option', { name: /デモ/ })).toBeVisible();
@@ -221,37 +236,39 @@ test.describe('FR-144 起動後のデモ／実プロジェクトの選択', () =
     await expect(page.getByTestId('work-target')).toContainText('デモ');
   });
 
-  // FR-144 AC-237（異常系: 何も選ばずに閉じられない。企業名・Project 名の候補は出ない）
-  test('FR-144 AC-237 異常系: 0 件の起動時の選択画面は、Esc でも閉じられず、実 Project の候補は出ない', async ({ page, start }) => {
+  // FR-144 AC-237（異常系: 0 件のとき、選択肢はデモと登録の 2 つだけで、企業名・Project 名の候補は出ない）
+  // 注: AC-237 の「何も選ばずに閉じることはできない」は AC-398「選択画面を閉じるとメイン画面に戻れる」と競合する（CONFLICT。ケースの Esc の確認は AC-398 側に従い、メイン画面へ戻ることを確かめる）
+  test('FR-144 AC-237 異常系: 0 件の選択画面には実 Project の候補が出ず（デモと登録の 2 つだけ）、閉じても作業先が未定のまま本編に入らない', async ({ page, start }) => {
     await start({ skipOpening: false });
     await pressOpeningEscape(page);
+    await page.getByTestId('main-screen').getByRole('button', { name: 'Project を開く' }).click();
     const picker = page.getByRole('dialog', { name: '作業先の選択' });
     await expect(picker).toBeVisible();
     await expect(picker.getByRole('option')).toHaveCount(2);
     await page.keyboard.press('Escape');
-    await expect(picker).toBeVisible();
+    await expect(page.getByTestId('main-screen')).toBeVisible();
+    await expect(page.getByTestId('workspace')).toHaveCount(0);
   });
 
-  // FR-144 AC-239
-  test('FR-144 AC-239 実 Project が 2 件以上でも、再読込のたびに選択画面が出る（前回の選択で省略されない）', async ({ page, start }) => {
+  // FR-144 AC-239（Q-026 で改訂: メイン画面から Project を開くたびに選択画面が出る）
+  test('FR-144 AC-239 実 Project が 2 件以上でも、再起動してメイン画面から Project を開くたびに選択画面が出る（前回の選択で省略されない）', async ({ page, start }) => {
     const app = await start();
     await seedProjects(page, '合成株式会社A', ['業務改善 2026', '在庫最適化']);
     for (const target of [/合成株式会社A.*在庫最適化/, /デモ/, /合成株式会社A.*業務改善 2026/]) {
-      await app.reload({ skipOpening: false });
-      await pressOpeningEscape(page);
-      const picker = page.getByRole('dialog', { name: '作業先の選択' });
-      await expect(picker, '前回の選択で選択画面が省略された').toBeVisible();
+      const picker = await restartAndOpenPicker(page, app);
       await picker.getByRole('option', { name: target }).click();
       await expect(picker).toBeHidden();
     }
+    // 開いたまま、メイン画面へ戻って開き直しても、必ず選択画面が出る（分析画面の「メイン画面へ戻る」: FR-187）
+    await page.getByRole('button', { name: 'メイン画面へ戻る' }).click();
+    await page.getByTestId('main-screen').getByRole('button', { name: 'Project を開く' }).click();
+    await expect(page.getByRole('dialog', { name: '作業先の選択' }), '戻って開き直しても選択画面が出ない').toBeVisible();
   });
 
-  // FR-144 AC-239（異常系: 0 件の端末でも再読込のたびに出る。選択を覚えて省略しない）
-  test('FR-144 AC-239 異常系: 実 Project が 0 件の端末でも、デモを選んだ後の再読込で選択画面が省略されない', async ({ page, start }) => {
+  // FR-144 AC-239（異常系: 0 件の端末でも毎回出る。選択を覚えて省略しない）
+  test('FR-144 AC-239 異常系: 実 Project が 0 件の端末でも、デモを選んだ後に再起動して Project を開くと選択画面が省略されない', async ({ page, start }) => {
     const app = await start();
-    await app.reload({ skipOpening: false });
-    await pressOpeningEscape(page);
-    await expect(page.getByRole('dialog', { name: '作業先の選択' })).toBeVisible();
+    await restartAndOpenPicker(page, app);
   });
 
   // FR-144 AC-240
@@ -265,10 +282,7 @@ test.describe('FR-144 起動後のデモ／実プロジェクトの選択', () =
     await expect(picker.getByRole('option', { name: /合成株式会社A.*業務改善 2026/ })).toBeVisible();
     await expect(picker.getByRole('option', { name: /デモ/ })).toHaveCount(0);
     await page.keyboard.press('Escape');
-    await app.reload({ skipOpening: false });
-    await pressOpeningEscape(page);
-    picker = page.getByRole('dialog', { name: '作業先の選択' });
-    await expect(picker).toBeVisible();
+    picker = await restartAndOpenPicker(page, app);
     await expect(picker.getByRole('option', { name: /デモ/ })).toHaveCount(0);
     await picker.getByRole('option', { name: /業務改善 2026/ }).click();
     const s2 = await openScreen(page, 'settings');
@@ -285,6 +299,7 @@ test.describe('FR-144 起動後のデモ／実プロジェクトの選択', () =
       const p2 = await ctx2.newPage();
       await p2.goto(app.url);
       await pressOpeningEscape(p2);
+      await p2.getByTestId('main-screen').getByRole('button', { name: 'Project を開く' }).click();
       const picker = p2.getByRole('dialog', { name: '作業先の選択' });
       await expect(picker).toBeVisible();
       await expect(picker.getByRole('option', { name: /デモ/ })).toBeVisible();

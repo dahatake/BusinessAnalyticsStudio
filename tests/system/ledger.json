@@ -168,10 +168,10 @@
     "AC-282": "sha256:fd4b2277251bd889",
     "AC-285": "sha256:e8089e626bc854fd",
     "AC-289": "sha256:9f181836c85bd4d0",
-    "AC-348": "sha256:f65dd5116df1e6f6",
+    "AC-348": "sha256:9111ef231aa302c6",
     "AC-350": "sha256:371e1ada1ddd799e",
     "AC-352": "sha256:97c669125802611b",
-    "AC-354": "sha256:8e591d37213c2612",
+    "AC-354": "sha256:995801e0e4b7e0af",
     "AC-356": "sha256:40cc7b9b7f9fad18",
     "AC-357": "sha256:3d028f014b2ac4c2",
     "AC-359": "sha256:dae70daa572193fc",
@@ -182,7 +182,16 @@
     "AC-370": "sha256:0925b2fa08c31ef4",
     "AC-369": "sha256:c7fa23d71005adf8",
     "AC-375": "sha256:d23286728dd4824d",
-    "AC-379": "sha256:3746c38c17b1d8ba"
+    "AC-379": "sha256:3746c38c17b1d8ba",
+    "AC-387": "sha256:2a376715517e1a52",
+    "AC-388": "sha256:d1a9b2b81006dfac",
+    "AC-389": "sha256:1e257df1c002c95a",
+    "AC-390": "sha256:8b8790f5c3b06ebe",
+    "AC-392": "sha256:6ff7679b71fb268f",
+    "AC-393": "sha256:611765fba1082411",
+    "AC-395": "sha256:cb67b1a2ef8558d2",
+    "AC-396": "sha256:4513ca85bc231038",
+    "AC-399": "sha256:c2b15973128f347e"
   },
   "cases": [
     {
@@ -3661,11 +3670,11 @@
         "AC-229",
         "AC-239"
       ],
-      "title": "起動時の作業先選択（デモ／各 Project）・作業先の常時表示・再読込のたびに選択画面（AC-229・AC-239）",
+      "title": "起動後メイン画面から Project を開くと作業先の選択画面（デモ・各 Project）が必ず出る（AC-229・AC-239）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-229 AC-239",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "d7995c9",
       "last_run_at": "2026-10-15T16:09:11+09:00",
       "evidence": "work/runs/202610151521/logs/system-test/E2E-218-202610151601.log",
@@ -3681,6 +3690,12 @@
           "by": "test-designer",
           "change": "command: 'node tests/system/run.mjs AC-229' -> 'node tests/system/run.mjs AC-229 AC-239'; title: '起動時の作業先選択（デモ／各 Project）と作業先の常時表示' -> '起動時の作業先選択（デモ／各 Project）・作業先の常時表示・再読込のたびに選択画面（AC-229・AC-239）'; ac_ids: ['AC-229'] -> ['AC-229', 'AC-239']",
           "reason": "Q-013 A: 起動のたびに選択画面（AC-239）を追加で確かめる"
+        },
+        {
+          "at": "2026-10-15T22:31:10+09:00",
+          "by": "test-designer",
+          "change": "title: '起動時の作業先選択（デモ／各 Project）・作業先の常時表示・再読込のたびに選択画面（AC-229・AC-239）' -> '起動後メイン画面から Project を開くと作業先の選択画面（デモ・各 Project）が必ず出る（AC-229・AC-239）'",
+          "reason": "Q-026 改訂（FR-144: 起動直後はメイン画面、選択画面はメイン画面から開く）に合わせテストを更新"
         }
       ]
     },
@@ -3692,11 +3707,11 @@
       "ac_ids": [
         "AC-237"
       ],
-      "title": "Project 0 件でも起動直後に選択画面（デモ・実際の Project を登録）。閉じられない。デモ選択後はお手本パック表示（AC-237）",
+      "title": "Project 0 件でもメイン画面から開くと選択画面（デモ・登録）。デモ選択でお手本パック表示（AC-237）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-237",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "d7995c9",
       "last_run_at": "2026-10-15T16:09:11+09:00",
       "evidence": "work/runs/202610151521/logs/system-test/E2E-219-202610151602.log",
@@ -3712,6 +3727,12 @@
           "by": "test-designer",
           "change": "command: 'node tests/system/run.mjs AC-230' -> 'node tests/system/run.mjs AC-237'; title: 'Project 0 件でのデモ起動と作業先選択からの登録案内' -> 'Project 0 件でも起動直後に選択画面（デモ・実際の Project を登録）。閉じられない。デモ選択後はお手本パック表示（AC-237）'; ac_ids: ['AC-230'] -> ['AC-237']",
           "reason": "AC-230 を AC-237 が置き換え（Q-013 A）。期待値を『選択画面を出さない』から『必ず出す』へ"
+        },
+        {
+          "at": "2026-10-15T22:31:10+09:00",
+          "by": "test-designer",
+          "change": "title: 'Project 0 件でも起動直後に選択画面（デモ・実際の Project を登録）。閉じられない。デモ選択後はお手本パック表示（AC-237）' -> 'Project 0 件でもメイン画面から開くと選択画面（デモ・登録）。デモ選択でお手本パック表示（AC-237）'",
+          "reason": "Q-026 改訂に合わせテストを更新。AC-237「閉じられない」と AC-398「閉じるとメイン画面に戻る」が競合（要報告）"
         }
       ]
     },
@@ -3773,11 +3794,11 @@
       "ac_ids": [
         "AC-240"
       ],
-      "title": "デモの選択肢を表示しない設定の保存と再起動後の維持・別端末に引き継がれない（AC-240）",
+      "title": "デモ非表示設定が選択画面と再起動後に維持される（AC-240）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-240",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "d7995c9",
       "last_run_at": "2026-10-15T16:09:11+09:00",
       "evidence": "work/runs/202610151521/logs/system-test/E2E-222-202610151602.log",
@@ -3787,6 +3808,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-15T22:31:11+09:00",
+          "by": "test-designer",
+          "change": "title: 'デモの選択肢を表示しない設定の保存と再起動後の維持・別端末に引き継がれない（AC-240）' -> 'デモ非表示設定が選択画面と再起動後に維持される（AC-240）'",
+          "reason": "Q-026 改訂（選択画面へはメイン画面の「Project を開く」から）に合わせテストを更新"
         }
       ]
     },
@@ -4404,11 +4431,11 @@
       "ac_ids": [
         "AC-348"
       ],
-      "title": "コンポーネントのヘッダードラッグでの自由移動・重なり・手前表示・再読込後の維持（異常系: キャンバス外・本文ドラッグ）",
+      "title": "コンポーネントのヘッダードラッグでの自由移動・押し出しで重ならない・キャンバス外不可・再読込後の維持（AC-348）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-348",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "d7995c9",
       "last_run_at": "2026-10-15T16:09:11+09:00",
       "evidence": "work/runs/202610151521/logs/system-test/E2E-268-202610151607.log",
@@ -4418,6 +4445,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-15T22:31:12+09:00",
+          "by": "test-designer",
+          "change": "title: 'コンポーネントのヘッダードラッグでの自由移動・重なり・手前表示・再読込後の維持（異常系: キャンバス外・本文ドラッグ）' -> 'コンポーネントのヘッダードラッグでの自由移動・押し出しで重ならない・キャンバス外不可・再読込後の維持（AC-348）'",
+          "reason": "Q-025 改訂（重なる自由配置の廃止、FR-184 の押し出し）に合わせテストを更新"
         }
       ]
     },
@@ -4853,6 +4886,231 @@
           "by": "test-designer",
           "change": "command: \"npx playwright test tests/system/e2e/quality.spec.ts -g 'AC-176 了承の記録がない'\" -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --grep \"AC-176 了承の記録がない\"'",
           "reason": "command をリポジトリ直下で実行できる形（tests/system の playwright 設定を指定）に修正"
+        }
+      ]
+    },
+    {
+      "id": "E2E-284",
+      "requirement_ids": [
+        "FR-183"
+      ],
+      "ac_ids": [
+        "AC-387"
+      ],
+      "title": "ハンドルが全コンポーネントの上部に見え、本体と色が異なり掴みの印が付く（Light/Dark/HC。異常系: ペルソナ切替後）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-387",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T22:31:17+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-285",
+      "requirement_ids": [
+        "FR-183"
+      ],
+      "ac_ids": [
+        "AC-388"
+      ],
+      "title": "ハンドルのドラッグで移動・再読込後も維持・メニューでも移動（異常系: 本体ドラッグで動かない）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-388",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T22:31:23+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-286",
+      "requirement_ids": [
+        "FR-183"
+      ],
+      "ac_ids": [
+        "AC-389"
+      ],
+      "title": "ハンドルのダブルクリックで 75% 拡大・再度で復帰（異常系: 本体では拡大しない）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-389",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T22:31:28+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-287",
+      "requirement_ids": [
+        "FR-184"
+      ],
+      "ac_ids": [
+        "AC-390"
+      ],
+      "title": "A を B の位置へドロップすると B が押し出され全コンポーネントが重ならない（異常系: 連続ドロップ）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-390",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T22:31:33+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-288",
+      "requirement_ids": [
+        "FR-185"
+      ],
+      "ac_ids": [
+        "AC-392"
+      ],
+      "title": "ハンドルのドラッグ中に追従し 30fps 以上、ドロップで位置が飛ばない（異常系: 保持中）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-392",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T22:31:38+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-289",
+      "requirement_ids": [
+        "FR-185"
+      ],
+      "ac_ids": [
+        "AC-393"
+      ],
+      "title": "リサイズ中に連続して変わり 30fps 以上（異常系: 大きく動かしても枠外に出ない）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-393",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T22:31:43+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-290",
+      "requirement_ids": [
+        "FR-186"
+      ],
+      "ac_ids": [
+        "AC-395"
+      ],
+      "title": "メイン画面に手順の案内と操作があり手順外の機能が出ない（異常系: 0 件で分析を開始）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-395",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T22:31:47+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-291",
+      "requirement_ids": [
+        "FR-186"
+      ],
+      "ac_ids": [
+        "AC-396"
+      ],
+      "title": "メイン画面で企業・Project を作って開くと分析画面の最上段と一致・再読込後も保持（異常系: 2 件目を選ぶ）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-396",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T22:31:53+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-292",
+      "requirement_ids": [
+        "FR-187"
+      ],
+      "ac_ids": [
+        "AC-399"
+      ],
+      "title": "分析画面上部の「メイン画面へ戻る」で戻れ、上端が作業先・企業を登録より上にならない（異常系: メイン画面に無い・開き直し）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-399",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T22:31:58+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
         }
       ]
     }

@@ -163,6 +163,21 @@ export async function pressOpeningEscape(page: Page): Promise<void> {
   }
 }
 
+/**
+ * 起動直後のメイン画面（FR-186・FR-144 AC-398。`data-testid="main-screen"`）が出ていれば、ボタン「Project を開く」で
+ * 作業先の選択画面へ進む（選択はこの後の chooseWorkTarget が行う）。メイン画面が出ていなければ何もしない。
+ * メイン画面そのものを確かめるテストは `skipOpening: false` で起動し、`pressOpeningEscape` だけ使う。
+ */
+export async function leaveMainScreen(page: Page): Promise<void> {
+  const main = page.getByTestId('main-screen');
+  try {
+    await main.waitFor({ state: 'visible', timeout: 3_000 });
+  } catch {
+    return;
+  }
+  await main.getByRole('button', { name: 'Project を開く' }).click();
+}
+
 /** オープニングを `Esc` で飛ばし、本編が操作できる状態を待つ。 */
 export async function skipOpening(page: Page, target?: RegExp | string): Promise<void> {
   const opening = page.getByTestId('opening');
@@ -173,6 +188,7 @@ export async function skipOpening(page: Page, target?: RegExp | string): Promise
   } catch {
     /* オープニングがない（すでに本編）場合はそのまま */
   }
+  await leaveMainScreen(page);
   await chooseWorkTarget(page, target);
   await expect(page.getByTestId('workspace')).toBeVisible();
 }
