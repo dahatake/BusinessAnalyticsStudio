@@ -208,7 +208,7 @@
 | FR-175 | 拡大表示の位置の設定 | 承認済み | src/store/settings.ts (expandPosition・EXPAND_RATIO), src/screens/SettingsScreen.tsx (拡大表示の位置のラジオ) | tests/unit/layoutStore.test.ts (AC-353), tests/unit/workspace-free-layout.test.tsx (AC-353: ラジオ・既定に戻す), tests/system/e2e/workspace-free-layout.spec.ts (E2E-270) | 設定ストア |
 | FR-176 | 作業先・企業・Project のメニューを画面の最上位に置く | 承認済み | src/components/AppShell.tsx (projects-head-slot をヘッダーの最上段に), src/projects/ProjectsPanel.tsx | tests/unit/top-menu-order.test.tsx (AC-355), tests/system/e2e/workspace-free-layout.spec.ts (AC-354) | デザイン基盤 |
 | FR-183 | コンポーネント上部の掴み場所（ハンドル）の表示とドラッグでの移動 | 承認済み | 未実装 | 未実装 | デザイン基盤, ワークスペース |
-| FR-184 | 移動中の他のコンポーネントの自動の押し出し・再配置 | 保留 | 未実装 | 未実装 | ワークスペース |
+| FR-184 | 移動中の他のコンポーネントの自動の押し出し・再配置 | 承認済み | 未実装 | 未実装 | ワークスペース |
 | FR-185 | 移動中・リサイズ中の滑らかなアニメーション | 承認済み | 未実装 | 未実装 | ワークスペース, 設定ストア |
 | FR-186 | メイン画面（QuickStart・チュートリアルの手順だけを行う画面） | 承認済み | 未実装 | 未実装 | デザイン基盤 |
 | FR-187 | 分析画面からメイン画面へ戻るボタン | 承認済み | 未実装 | 未実装 | デザイン基盤 |
