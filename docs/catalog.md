@@ -139,7 +139,7 @@
 | FR-129 | 工程ごとの時間計測 | 承認済み | scripts/pipeline/timing.ts (Recorder), scripts/pipeline/pipeline.ts | tests/unit/pipeline-stages.test.ts (AC-157) | 生成パイプライン |
 | FR-130 | 入力変数の指定 | 承認済み | scripts/pipeline/inputs.ts, scripts/pipeline/cli.ts | tests/unit/pipeline.test.ts (AC-158) | 生成パイプライン |
 | FR-131 | 雛形への改善要望の記録 | 承認済み | scripts/pipeline/improvements.ts (extractImprovementRequests, recordImprovementRequests, supportedScreens), scripts/pipeline/pipeline.ts (generate 工程) | tests/unit/pipeline-stages.test.ts (AC-159) | 生成パイプライン |
-| FR-132 | AI 実接続の明示的な有効化（Q-001 回答までの暫定） | 承認済み | src/ai/AiSettings.tsx, src/ai/useAi.ts, scripts/relay/relay.ts | tests/unit/relay.test.ts | AI 呼び出し口, Copilot SDK 中継プロセス |
+| FR-132 | AI 実接続の明示的な有効化 | 承認済み | src/ai/AiSettings.tsx, src/ai/useAi.ts, scripts/relay/relay.ts | tests/unit/relay.test.ts | AI 呼び出し口, Copilot SDK 中継プロセス |
 | NFR-PERF-001 | 顧客パックの生成から起動までの時間 | 承認済み | scripts/pipeline/timing.ts, scripts/pipeline/pipeline.ts | tests/unit/nfr.test.ts | 生成パイプライン |
 | NFR-PERF-002 | 4K 表示での描画性能 | 承認済み | src/three/quality.ts, src/three/SceneCanvas.tsx, src/screens/SettingsScreen.tsx | 未実装 | 3D 基盤 |
 | NFR-PERF-003 | 初回表示の時間 | 承認済み | src/app/Opening.tsx, src/app/App.tsx | tests/system/e2e/quality.spec.ts (IT-001) | なし |
@@ -205,6 +205,8 @@
 | FR-179 | プレゼンテーション: ストーリーの材料と、不足するデータの扱い | 承認済み | src/usecase/demo.ts (kpisForSolution, useCasesForSolution = 材料の読み出し), src/story/model.ts (buildStory の「データなし」のシーン), src/schema/files.ts (okr.keyResults[].solutionIds) | tests/unit/demo-data.test.tsx (AC-362 の材料), tests/unit/story.test.tsx (AC-362, AC-363, AC-365) | ペルソナ別ストーリー, デモのユースケースと解決策の結び付き, KPI・OKR |
 | FR-180 | デモの作業先のユースケースなど不足するデータの補完 | 承認済み | src/usecase/demo.ts (demoUseCases, countByPersona, personasBelowMinimum), src/schema/files.ts (useCases, fictionalNote, USECASE_PERSONAS), src/screens/UseCaseScreen.tsx (デモの読み込み専用の一覧), src/app/App.tsx (ステッパーをデモでも出す), examples/mono/public/data/customer.json, examples/koto/public/data/customer.json (useCases・okr), examples/mono/public/data/issues.json, examples/koto/public/data/issues.json (解決策の追加), examples/mono/public/data/products.json, examples/koto/public/data/products.json, schema/customer.json | tests/unit/demo-data.test.tsx (AC-364, AC-365, AC-366), tests/system/e2e/story.spec.ts (E2E-275) | デモのユースケースと解決策の結び付き, KPI・OKR |
 | NFR-A11Y-008 | ストーリーの代替の手段と動きの配慮 | 承認済み | src/story/StoryHost.tsx (TextView = テキスト表示・シーン名と位置の読み上げ・フォーカストラップと復帰・現在位置の枠線) | tests/unit/story-a11y.test.tsx (AC-367, AC-368, AC-370, AC-371。AC-369 は目視) | ペルソナ別ストーリー |
+| FR-181 | 顧客の了承の確認の入力・記録・表示 | 承認済み | 未実装 | 未実装 | - |
+| FR-182 | 音声合成・手書き認識の実接続の切替（Azure AI Speech・Azure AI Vision） | 承認済み | 未実装 | 未実装 | - |
 ## API・イベント
 
 | 名前 | 定義ファイル | 関連する要求 ID |
