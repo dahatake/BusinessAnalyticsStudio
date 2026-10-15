@@ -4,8 +4,11 @@
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { CONSENT_SELF_DECLARED_NOTICE, buildConsentRecord, consentKeyOf, parseConsentRecord, personalInfoReason } from '../../src/ai/consent';
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { ConsentSettings } from '../../src/ai/ConsentSettings';
+import { CONSENT_EXPORT_FILE, CONSENT_EXPORT_GUIDE, CONSENT_SELF_DECLARED_NOTICE, buildConsentExport, buildConsentRecord, consentKeyOf, parseConsentRecord, personalInfoReason } from '../../src/ai/consent';
 import { useConsentStore } from '../../src/ai/useConsent';
 import { CONSENT_FILE, readConsent } from '../../scripts/pipeline/consent';
 import { runPipeline } from '../../scripts/pipeline/pipeline';
@@ -132,5 +135,47 @@ describe('FR-181 AC-381 パイプラインの了承のゲート', () => {
     expect(readConsent(paths(), input('戊社'))).toBeUndefined();
     fs.writeFileSync(path.join(ws, CONSENT_FILE), JSON.stringify({ records: { [consentKeyOf('戊社', 'P')]: { granted: true, confirmedOn: '2026-10-15', note: '山田様に確認' } } }));
     expect(readConsent(paths(), input('戊社'))).toBeUndefined();
+  });
+});
+
+// FR-181 AC-384 AC-385 AC-386: 了承の記録の consent.json 書き出し
+describe('FR-181 AC-384 AC-385 AC-386 consent.json の書き出し', () => {
+  let root: string;
+  beforeEach(() => { root = fs.mkdtempSync(path.join(os.tmpdir(), 'consent-exp-')); });
+  afterEach(() => { fs.rmSync(root, { recursive: true, force: true }); vi.unstubAllGlobals(); fs.rmSync(root, { recursive: true, force: true }); });
+  const rec = { granted: true as const, confirmedOn: '2026-10-15', note: '顧客側の担当役員（口頭）' };
+
+  it('AC-384 書き出したファイルを作業フォルダーに置くと readConsent で読め、別の案件の鍵では記録なし', () => {
+    const key = consentKeyOf('戊社', 'DX');
+    fs.writeFileSync(path.join(root, CONSENT_FILE), buildConsentExport(key, rec));
+    expect(CONSENT_EXPORT_FILE).toBe(CONSENT_FILE);
+    expect(readConsent({ workspace: root }, { customer: '戊社', projectName: 'DX' })).toEqual(rec);
+    expect(readConsent({ workspace: root }, { customer: '戊社', projectName: '別' })).toBeUndefined();
+    expect(readConsent({ workspace: root }, { customer: 'デモ', projectName: 'デモ' })).toBeUndefined();
+  });
+
+  it('AC-384 記録のない（または不正な）案件は書き出せない', () => {
+    expect(() => buildConsentExport('', rec)).toThrow();
+    expect(() => buildConsentExport('A / P', { granted: true, confirmedOn: '2026-10-15', note: '山田様に確認' })).toThrow();
+  });
+
+  it('AC-385 書き出しは通信 0 回で、この案件の記録以外（キー・パックの内容）を含まない', () => {
+    const fetchSpy = vi.fn();
+    vi.stubGlobal('fetch', fetchSpy);
+    const text = buildConsentExport('己社 / P', { ...rec, apiKey: 'sk-secret', pack: { x: 1 } } as typeof rec);
+    expect(fetchSpy).not.toHaveBeenCalled();
+    const j = JSON.parse(text) as { records: Record<string, Record<string, unknown>> };
+    expect(Object.keys(j)).toEqual(['records']);
+    expect(Object.keys(j.records['己社 / P']!).sort()).toEqual(['confirmedOn', 'granted', 'note']);
+    expect(text).not.toContain('sk-secret');
+  });
+
+  it('AC-386 置き場所の案内と自己申告の注意が画面に表示され、書き出しはボタン（キーボード操作可）', () => {
+    useConsentStore.setState({ records: {} });
+    const html = renderToStaticMarkup(createElement(ConsentSettings, { onRevoke: () => {} }));
+    expect(html).toContain('&lt;workspace&gt;/consent.json');
+    expect(html).toContain('自己申告');
+    expect(html).toMatch(/<button[^>]*>了承の記録を consent\.json として書き出す/);
+    expect(CONSENT_EXPORT_GUIDE).toContain('<workspace>/consent.json');
   });
 });

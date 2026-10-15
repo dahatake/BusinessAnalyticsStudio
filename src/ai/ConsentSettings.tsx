@@ -1,7 +1,8 @@
 // 顧客の了承の記録の入力・表示（FR-181）。設定画面に置く。自己申告の記録で、個人名・連絡先は保存しない。
 import { useState } from 'react';
 import { Button, Field, Input, MessageBar, MessageBarBody, Text, makeStyles, tokens } from '@fluentui/react-components';
-import { CONSENT_SELF_DECLARED_NOTICE } from './consent';
+import { downloadText } from '../analysis/exportFile';
+import { CONSENT_EXPORT_FILE, CONSENT_EXPORT_GUIDE, CONSENT_SELF_DECLARED_NOTICE, buildConsentExport } from './consent';
 import { useConsent, useConsentStore } from './useConsent';
 
 // 無効のボタンは Fluent が forced-color-adjust: none を付ける。強制カラーでは OS の色で描かせる（FR-058 AC-071）
@@ -27,6 +28,10 @@ export function ConsentSettings({ onRevoke }: { onRevoke: () => void | Promise<v
   const save = () => {
     const r = useConsentStore.getState().save(key, date, note);
     if (r.ok) { setNote(''); setError(null); } else setError(r.reason);
+  };
+  const exportFile = () => {
+    if (!record) return;
+    downloadText(CONSENT_EXPORT_FILE, buildConsentExport(key, record), 'application/json');
   };
   const revoke = async () => {
     await onRevoke();
@@ -56,6 +61,13 @@ export function ConsentSettings({ onRevoke }: { onRevoke: () => void | Promise<v
       <div style={{ display: 'flex', gap: 8 }}>
         <Button className={styles.define} appearance="primary" disabled={!key} onClick={save}>了承の記録を保存</Button>
         <Button className={styles.define} disabled={!record} onClick={() => void revoke()}>了承の記録を取り消す</Button>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        <Button className={styles.define} style={{ alignSelf: 'flex-start' }} disabled={!record} aria-describedby="consent-export-guide" onClick={exportFile}>了承の記録を consent.json として書き出す</Button>
+        <Text size={200} id="consent-export-guide" data-testid="consent-export-guide">
+          {record ? CONSENT_EXPORT_GUIDE : `了承の記録がないため書き出せません。先に了承の記録を保存してください。${CONSENT_EXPORT_GUIDE}`}
+          {` ${CONSENT_SELF_DECLARED_NOTICE}`}
+        </Text>
       </div>
     </section>
   );

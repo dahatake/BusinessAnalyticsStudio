@@ -19,6 +19,18 @@ export function consentKeyOf(customerName: string, projectName: string): string 
 export const CONSENT_SELF_DECLARED_NOTICE =
   '了承は利用者の自己申告の記録です。アプリは顧客の了承の事実を検証しません。端末内にだけ保存し、個人名・連絡先は書かないでください。';
 
+/** 書き出す consent.json の置き場所の案内（AC-386）。パイプラインの readConsent が読む場所 */
+export const CONSENT_EXPORT_FILE = 'consent.json';
+export const CONSENT_EXPORT_GUIDE =
+  '書き出した consent.json は、パイプラインの作業フォルダー <workspace> の直下（<workspace>/consent.json）に置くと、パイプラインがこの案件の了承の記録として読みます。アプリは自動では書き込まず、通信もしません。';
+
+/** consent.json の内容（パイプラインの readConsent が読む形）。この案件の記録だけを含む（AC-384・AC-385） */
+export function buildConsentExport(key: string, record: ConsentRecord): string {
+  const checked = parseConsentRecord(record);
+  if (!key || !checked) throw new Error('了承の記録がないため書き出せません。');
+  return `${JSON.stringify({ records: { [key]: { granted: true, confirmedOn: checked.confirmedOn, note: checked.note } } }, null, 2)}\n`;
+}
+
 const EMAIL = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+|[＠@]/;
 const PHONE = /(?:\d[\d\s\-－ー()（）]{6,}\d)/;
 const URL_LIKE = /https?:\/\/|www\./i;

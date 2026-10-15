@@ -10,3 +10,7 @@ __pycache__/
 /work/
 
 test-results/
+
+# 顧客名（案件の鍵）を含む了承の記録（FR-181）
+consent.json
+**/consent.json
