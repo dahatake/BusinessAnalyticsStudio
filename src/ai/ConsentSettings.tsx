@@ -1,8 +1,13 @@
 // 顧客の了承の記録の入力・表示（FR-181）。設定画面に置く。自己申告の記録で、個人名・連絡先は保存しない。
 import { useState } from 'react';
-import { Button, Field, Input, MessageBar, MessageBarBody, Text } from '@fluentui/react-components';
+import { Button, Field, Input, MessageBar, MessageBarBody, Text, makeStyles } from '@fluentui/react-components';
 import { CONSENT_SELF_DECLARED_NOTICE } from './consent';
 import { useConsent, useConsentStore } from './useConsent';
+
+// 無効のボタンは Fluent が forced-color-adjust: none を付ける。強制カラーでは OS の色で描かせる（FR-058 AC-071）
+const useStyles = makeStyles({
+  define: { forcedColorAdjust: 'auto', '@media (forced-colors: active)': { forcedColorAdjust: 'auto', ':disabled': { forcedColorAdjust: 'auto' }, ':disabled:hover': { forcedColorAdjust: 'auto' }, ':disabled:hover:active': { forcedColorAdjust: 'auto' } }, ':disabled': { forcedColorAdjust: 'auto' }, ':disabled:hover': { forcedColorAdjust: 'auto' }, ':disabled:hover:active': { forcedColorAdjust: 'auto' } },
+});
 
 function today(): string {
   const d = new Date();
@@ -11,6 +16,7 @@ function today(): string {
 }
 
 export function ConsentSettings({ onRevoke }: { onRevoke: () => void | Promise<void> }) {
+  const styles = useStyles();
   const { key, record } = useConsent();
   const [note, setNote] = useState('');
   const [date, setDate] = useState(today());
@@ -46,8 +52,8 @@ export function ConsentSettings({ onRevoke }: { onRevoke: () => void | Promise<v
       </Field>
       {error ? <MessageBar intent="error" role="alert"><MessageBarBody>{error}</MessageBarBody></MessageBar> : null}
       <div style={{ display: 'flex', gap: 8 }}>
-        <Button appearance="primary" disabled={!key} onClick={save}>了承の記録を保存</Button>
-        <Button disabled={!record} onClick={() => void revoke()}>了承の記録を取り消す</Button>
+        <Button className={styles.define} appearance="primary" disabled={!key} onClick={save}>了承の記録を保存</Button>
+        <Button className={styles.define} disabled={!record} onClick={() => void revoke()}>了承の記録を取り消す</Button>
       </div>
     </section>
   );
