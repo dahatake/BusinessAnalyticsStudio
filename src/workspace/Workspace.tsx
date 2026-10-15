@@ -1,8 +1,9 @@
 // ワークスペース: レイアウトの木（分割とタブ）を描く。境界はドラッグでもキーボードでも動かせる（FR-109、NFR-A11Y-004）。
-import { createPortal } from 'react-dom';
+import { createPortal, flushSync } from 'react-dom';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type PointerEvent } from 'react';
 import { Button, Tab, TabList, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
-import { useSnapMotion } from '../motion/useFoldMotion';
+import { useSnapMotion, motionAllowed } from '../motion/useFoldMotion';
+import { prefersReducedMotion, useAnimation } from '../store/animation';
 import { SNAP_LABEL, defaultSnapKind, nearestCorner, snapKindsFor, snapRect, type Edge, type SnapKind, type SnapOpts } from './snap';
 import type { ScreenDefinition } from '../screens/types';
 import { effectiveLayout, useLayout, clampFloat, type FloatRect } from '../store/layout';
@@ -12,6 +13,7 @@ import { applyAutoSize, fitMinWidth } from './autosize';
 import { PERSONA_PRIMARY } from './persona';
 import { PaneContext, type PaneInfo } from './PaneContext';
 import { COMPACT_CELL_HEIGHT, isCompactWidth, stackedLeaves } from './compact';
+import { clampInto, placeNew, resolveOverlaps, type PxMap, type PxRect } from './freeLayout';
 
 const useStyles = makeStyles({
   // ドラッグ中に、置ける場所をドロップの前に示す（FR-142）。Fluent 2 のブランドの色トークンと 4px グリッド
@@ -52,9 +54,28 @@ const useStyles = makeStyles({
   treeBox: { display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0, minWidth: 0, boxSizing: 'border-box' },
   // 自由配置・拡大表示のコンポーネントの置き場（作業領域に対する絶対配置。重なりを許す。FR-173）
   floatBox: { position: 'absolute', display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, boxSizing: 'border-box', boxShadow: tokens.shadow16, borderRadius: tokens.borderRadiusMedium, overflow: 'hidden' },
-  freePreview: {
-    position: 'fixed', zIndex: 1000, pointerEvents: 'none', boxSizing: 'border-box',
-    backgroundColor: tokens.colorBrandBackground2, border: `${tokens.strokeWidthThick} dashed ${tokens.colorBrandStroke1}`, borderRadius: tokens.borderRadiusMedium,
+  // 移動中・直後の滑らかな動き（FR-185）。OS の「動きの軽減」が有効なときは途中の動きを省く（AC-394）
+  floatAnimated: {
+    transitionProperty: 'left, top, width, height',
+    transitionDuration: '200ms',
+    transitionTimingFunction: 'ease-out',
+    '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0.01ms' },
+  },
+  // 動かしているコンポーネントは、ポインターに短い遅れでつながって動く（フレームごとに動きが見える速さ。FR-185 AC-392）
+  floatFollow: {
+    transitionProperty: 'left, top, width, height',
+    transitionDuration: '160ms',
+    transitionTimingFunction: 'linear',
+    '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0.01ms' },
+  },
+  // 境界のドラッグ中は、大きさの変化を滑らかにつなぐ（FR-185 AC-393）
+  resizing: {
+    '& [data-cell="true"]': {
+      transitionProperty: 'flex-grow',
+      transitionDuration: '90ms',
+      transitionTimingFunction: 'linear',
+      '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0.01ms' },
+    },
   },
   split: { display: 'flex', flex: '1 1 0', minWidth: 0, minHeight: 0 },
   row: { flexDirection: 'row' },
@@ -83,7 +104,7 @@ const useStyles = makeStyles({
 const KEY_STEP = 0.02;
 
 /** 最小化したコンポーネントの見出しだけの高さと、横に並べたときの幅（4px グリッド。FR-151） */
-export const MINIMIZED_HEIGHT = 48;
+export const MINIMIZED_HEIGHT = 64;
 export const MINIMIZED_WIDTH = 240;
 
 const DRAG_THRESHOLD_PX = 4;
@@ -107,8 +128,8 @@ interface DragState {
   key: string;
   target: { key: string; zone: DropZone; rect: DOMRect } | null;
   snap?: SnapState | null;
-  /** 分割に入れず、置いた位置にそのまま置く（自由配置。FR-173）ときの、置く場所（画面上の座標） */
-  free?: { left: number; top: number; width: number; height: number } | null;
+  /** 自由配置で動かしている間の、すべてのコンポーネントの位置と大きさ（作業領域に対する割合。押し出し済み。ドロップで保存する。FR-173・FR-184） */
+  live?: Record<string, FloatRect> | null;
 }
 
 /** 拡大表示の位置と大きさ（作業領域に対する割合。FR-174・FR-175） */
@@ -176,7 +197,7 @@ function Slot({ host, hidden }: { host: HTMLElement; hidden?: boolean }) {
 }
 
 /** 境界の両側のコンポーネント（それぞれの先頭のキー）で、動かす分割を決める。自動の調整・最小の幅でタブにまとめた見た目でも、保存した木の正しい境界を動かす。 */
-function Separator({ a, b, dir, size }: { a: string; b: string; dir: 'row' | 'col'; size: number }) {
+function Separator({ a, b, dir, size, onActive }: { a: string; b: string; dir: 'row' | 'col'; size: number; onActive: (on: boolean) => void }) {
   const s = useStyles();
   const resizeAt = useLayout((st) => st.resizeByKeys);
   const start = useRef<{ pos: number; total: number; last: number } | null>(null);
@@ -188,6 +209,7 @@ function Separator({ a, b, dir, size }: { a: string; b: string; dir: 'row' | 'co
     const r = parent.getBoundingClientRect();
     start.current = { pos: vertical ? e.clientX : e.clientY, total: vertical ? r.width : r.height, last: 0 };
     e.currentTarget.setPointerCapture(e.pointerId);
+    onActive(true);
     e.preventDefault();
   };
   const onPointerMove = (e: PointerEvent<HTMLDivElement>) => {
@@ -200,6 +222,7 @@ function Separator({ a, b, dir, size }: { a: string; b: string; dir: 'row' | 'co
   };
   const end = (e: PointerEvent<HTMLDivElement>) => {
     start.current = null;
+    onActive(false);
     if (e.currentTarget.hasPointerCapture(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId);
   };
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -266,10 +289,29 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   // 狭い画面（縦積み）では自由配置を使わない。
   const baseKeys = useMemo(() => new Set(keysOf(base)), [base]);
   const expandedOut = expandedKey !== null && baseKeys.has(expandedKey) ? expandedKey : null;
+  const live = drag?.live ?? null;
   const floatKeys = useMemo(
-    () => (compact || expandedOut ? [] : Object.keys(floatMap ?? {}).filter((k) => baseKeys.has(k) && !!byKey(k)?.component)),
-    [compact, expandedOut, floatMap, baseKeys, byKey],
+    () => {
+      if (compact || expandedOut) return [];
+      const usable = (k: string) => baseKeys.has(k) && !!byKey(k)?.component;
+      return Object.keys(live ?? floatMap ?? {}).filter(usable);
+    },
+    [compact, expandedOut, floatMap, live, baseKeys, byKey],
   );
+  // 境界のドラッグ中と、移動の直後（押し出された動きが終わるまで）だけ、動きをつなぐ（FR-185）
+  const [resizing, setResizing] = useState(false);
+  const resizeTimer = useRef<number | null>(null);
+  /** 境界のドラッグの間と、放した直後（動きが終わるまで）だけ、大きさの変化をつなぐ（FR-185） */
+  const onResizeActive = (on: boolean) => {
+    if (resizeTimer.current !== null) { window.clearTimeout(resizeTimer.current); resizeTimer.current = null; }
+    if (on) setResizing(true);
+    else resizeTimer.current = window.setTimeout(() => setResizing(false), 320);
+  };
+  const [settling, setSettling] = useState<string | null>(null);
+  const playing = useAnimation((st) => st.playing);
+  // OS の「動きの軽減」またはアニメーションの停止のときは、途中の動きを省いて結果を直接示す（FR-185 AC-394）
+  const motionOn = motionAllowed(playing, prefersReducedMotion());
+  const animated = motionOn && (!!live || settling !== null);
   const outKeys = useMemo(() => (expandedOut ? [expandedOut] : floatKeys), [expandedOut, floatKeys]);
   const treeBase = useMemo(() => (outKeys.length === 0 ? base : prune(base, new Set([...baseKeys].filter((k) => !outKeys.includes(k))))), [base, baseKeys, outKeys]);
   const inset = expandedOut ? expandInset(expandPos, width, height) : undefined;
@@ -298,9 +340,11 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       toggleExpand: () => actions().toggleExpanded(key),
       floating: isFloat,
       toggleFloat: () => {
-        if (isFloat || (floatMap && key in floatMap)) { actions().unfloat(key); return; }
-        const r = rectOfKey(key);
-        if (r) actions().setFloat(key, r);
+        // 自由配置は、すべてのコンポーネントを重ならない位置に置く配置。戻すときは分割の配置にまとめて戻す（FR-173・FR-184）
+        if (isFloat || (floatMap && key in floatMap)) { actions().clearFloats(); return; }
+        const m = measureAll();
+        const r = m?.rects[key];
+        if (m && r) commitFree(key, r, m);
       },
       z: zRank >= 0 ? 2 + zRank : undefined,
       minimized: minSet.has(key),
@@ -312,11 +356,13 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       restore: () => actions().setMaximized(null),
       hide: () => a.hideComponent(key),
       move: (d) => {
-        // 自由配置のコンポーネントは、同じ向きに作業領域の 5% ずつ動かす（ドラッグなしの手段。FR-173 AC-349）
+        // 自由配置のコンポーネントは、同じ向きに作業領域の 5% ずつ動かす（ドラッグなしの手段。FR-173 AC-349）。ぶつかるものは押し出す（FR-184）
         const cur = isFloat ? floatMap?.[key] : undefined;
-        if (!cur) { a.moveComponent(key, d); return; }
+        const m = cur ? measureAll() : null;
+        if (!cur || !m) { a.moveComponent(key, d); return; }
         const step = 0.05;
-        a.setFloat(key, { ...cur, x: cur.x + (d === 'right' ? step : d === 'left' ? -step : 0), y: cur.y + (d === 'down' ? step : d === 'up' ? -step : 0) });
+        const next = clampFloat({ ...cur, x: cur.x + (d === 'right' ? step : d === 'left' ? -step : 0), y: cur.y + (d === 'down' ? step : d === 'up' ? -step : 0) });
+        commitFree(key, { x: next.x * m.bounds.w, y: next.y * m.bounds.h, w: next.w * m.bounds.w, h: next.h * m.bounds.h }, m);
       },
       toggleDirection: () => a.toggleDirection(key),
       snapTo: (kind) => a.snapTo(key, kind, { tabTarget: keysOf(layout).find((k) => !group.includes(k)) }),
@@ -327,16 +373,45 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     };
   };
 
-  /** 画面上のコンポーネントの、作業領域に対する位置と大きさ（0〜1）。見つからなければ null */
-  const rectOfKey = (key: string): FloatRect | null => {
+  /** 作業領域の中のすべてのコンポーネントの位置と大きさ（px。作業領域の左上が原点）と、作業領域の大きさ。測れなければ null（FR-184） */
+  const measureAll = (): { rects: PxMap; bounds: { w: number; h: number }; viewport: Record<string, DOMRect> } | null => {
     const root = rootRef.current;
-    const el = root?.querySelector(`[data-testid="component-${key}"]`);
-    if (!root || !el) return null;
+    if (!root || compact) return null;
     const a = root.getBoundingClientRect();
-    const r = el.getBoundingClientRect();
-    if (a.width <= 0 || a.height <= 0 || r.width <= 0 || r.height <= 0) return null;
-    return clampFloat({ x: (r.left - a.left) / a.width, y: (r.top - a.top) / a.height, w: r.width / a.width, h: r.height / a.height });
+    if (a.width <= 0 || a.height <= 0) return null;
+    const rects: PxMap = {};
+    const viewport: Record<string, DOMRect> = {};
+    const elOf = (k: string) => root.querySelector(`[data-testid="component-${k}"]`);
+    for (const k of baseKeys) {
+      if (!byKey(k)?.component) continue;
+      let r = elOf(k)?.getBoundingClientRect();
+      // 非表示のタブは、同じまとまりの前面のコンポーネントと同じ場所にある扱い（置いたあと、押し出しで分かれる）
+      if (!r || r.width <= 0 || r.height <= 0) { const act = groups.get(k)?.active; r = act ? elOf(act)?.getBoundingClientRect() : undefined; }
+      if (!r || r.width <= 0 || r.height <= 0) continue;
+      viewport[k] = r;
+      rects[k] = clampInto({ x: r.left - a.left, y: r.top - a.top, w: r.width, h: r.height }, { w: a.width, h: a.height });
+    }
+    return { rects, bounds: { w: a.width, h: a.height }, viewport };
   };
+  const toFractions = (m: PxMap, b: { w: number; h: number }): Record<string, FloatRect> =>
+    Object.fromEntries(Object.entries(m).map(([k, r]) => [k, { x: r.x / b.w, y: r.y / b.h, w: r.w / b.w, h: r.h / b.h }]));
+  /** `key` を `target` に置き、ぶつかるものを押し出して、すべてを自由配置として保存する（FR-173・FR-184） */
+  const commitFree = (key: string, target: PxRect, m: NonNullable<ReturnType<typeof measureAll>>) => {
+    const next = resolveOverlaps({ ...m.rects, [key]: target }, key, m.bounds);
+    actions().setFloats(toFractions(next, m.bounds));
+  };
+
+  // 自由配置があるとき、あとから分割の木へ入ったコンポーネント（再表示など）は、空いた場所へ置く。木のものが自由配置と重ならないようにする（FR-184）
+  const treeFree = useMemo(() => (compact || expandedOut || floatKeys.length === 0 ? [] : keysOf(treeBase).filter((k) => !!byKey(k)?.component)), [compact, expandedOut, floatKeys, treeBase, byKey]);
+  useEffect(() => {
+    if (drag || treeFree.length === 0 || width <= 0 || height <= 0) return;
+    const b = { w: width, h: height };
+    let rects: PxMap = {};
+    for (const [k, r] of Object.entries(floatMap ?? {})) if (baseKeys.has(k)) rects[k] = clampInto({ x: r.x * b.w, y: r.y * b.h, w: r.w * b.w, h: r.h * b.h }, b);
+    for (const k of treeFree) rects = placeNew(rects, k, { w: b.w * 0.3, h: b.h * 0.4 }, b);
+    actions().setFloats(toFractions(rects, b));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [treeFree, width, height]);
 
   const hosts = useRef(new Map<string, HTMLElement>());
   useLayoutEffect(() => {
@@ -408,12 +483,12 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
             : { flex: `0 0 ${MINIMIZED_HEIGHT}px` })
           : { flex: `${anyFolded && open > 0 ? (node.sizes[i] ?? 0) / open : node.sizes[i]} 1 0` };
         const cell = (
-          <div key={`c${i}`} className={mergeClasses(s.cell, folded ? s.cellMin : undefined)} style={cellStyle} data-folded={folded ? 'true' : undefined}>
+          <div key={`c${i}`} data-cell="true" className={mergeClasses(s.cell, folded ? s.cellMin : undefined)} style={cellStyle} data-folded={folded ? 'true' : undefined}>
             {render(child, [...path, i])}
           </div>
         );
         return i < node.children.length - 1
-          ? [cell, <Separator key={`s${i}`} a={keysOf(child)[0]!} b={keysOf(node.children[i + 1]!)[0]!} dir={node.dir} size={node.sizes[i]!} />]
+          ? [cell, <Separator key={`s${i}`} a={keysOf(child)[0]!} b={keysOf(node.children[i + 1]!)[0]!} dir={node.dir} size={node.sizes[i]!} onActive={onResizeActive} />]
           : [cell];
       })}
     </div>
@@ -430,31 +505,29 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     </div>
   );
 
-  /** 画面上の位置にあるコンポーネント（表示中のもの。`except` を除く）と、その中のどこに当たるか */
-  const hitTest = (x: number, y: number, except: string): { key: string; zone: DropZone; rect: DOMRect } | null => {
+  /** 動かし始めたときの、表示中（分割の木の中）のコンポーネントの位置（画面上の座標） */
+  const snapshotRects = (): Record<string, DOMRect> => {
+    const out: Record<string, DOMRect> = {};
     const root = rootRef.current;
-    if (!root) return null;
-    const visible = new Set(keysOf(layout));
-    for (const el of document.elementsFromPoint(x, y)) {
-      if (!root.contains(el)) continue;
-      for (let n: Element | null = el; n && n !== root; n = n.parentElement) {
-        const id = n.getAttribute('data-testid') ?? '';
-        const k = id.startsWith('component-') ? id.slice('component-'.length) : '';
-        if (k && visible.has(k)) {
-          if (k === except) return null;
-          const rect = n.getBoundingClientRect();
-          if (rect.width <= 0 || rect.height <= 0) return null;
-          return { key: k, zone: zoneOf((x - rect.left) / rect.width, (y - rect.top) / rect.height), rect };
-        }
+    if (!root) return out;
+    for (const k of keysOf(layout)) {
+      const r = root.querySelector(`[data-testid="component-${k}"]`)?.getBoundingClientRect();
+      if (r && r.width > 0 && r.height > 0) out[k] = r;
+    }
+    return out;
+  };
+
+  /** 画面上の位置にあるコンポーネント（動かし始めの位置。`except` を除く）と、その中のどこに当たるか */
+  const hitTest = (x: number, y: number, except: string, rects: Record<string, DOMRect>): { key: string; zone: DropZone; rect: DOMRect } | null => {
+    for (const [k, rect] of Object.entries(rects)) {
+      if (x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom) {
+        if (k === except) return null;
+        return { key: k, zone: zoneOf((x - rect.left) / rect.width, (y - rect.top) / rect.height), rect };
       }
     }
     // 境界（分割線）の上など、コンポーネントの外でも、すぐ近く（分割線の太さ程度）なら、いちばん近いコンポーネントに寄せる
     let best: { key: string; rect: DOMRect; dist: number } | null = null;
-    for (const k of visible) {
-      const el = root.querySelector(`[data-testid="component-${k}"]`);
-      if (!el) continue;
-      const rect = el.getBoundingClientRect();
-      if (rect.width <= 0 || rect.height <= 0) continue;
+    for (const [k, rect] of Object.entries(rects)) {
       const dist = Math.hypot(Math.max(rect.left - x, 0, x - rect.right), Math.max(rect.top - y, 0, y - rect.bottom));
       if (!best || dist < best.dist) best = { key: k, rect, dist };
     }
@@ -464,20 +537,29 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     return { key: best.key, zone: zoneOf((cx - best.rect.left) / best.rect.width, (cy - best.rect.top) / best.rect.height), rect: best.rect };
   };
 
-  /** 作業領域の端（PARAM-042 以内）に近づけたときのスナップの候補。候補の上にいる間は、その候補を選ぶ（FR-152） */
-  const snapAt = (x: number, y: number, key: string, hitKey: string | null): SnapState | null => {
+  /** 作業領域の端（PARAM-042 以内）に近づけたときのスナップの候補。候補の上にいる間は、その候補を選ぶ（FR-152）。
+   * `skip`: 動かし始めの位置がすでに端の近く（最上段のコンポーネントのハンドルなど）のときは、その端からいったん離れるまで候補を出さない。 */
+  const edgesAtPoint = (x: number, y: number): Edge[] => {
+    const area = rootRef.current?.getBoundingClientRect();
+    const out: Edge[] = [];
+    if (!area || area.width <= 0 || area.height <= 0) return out;
+    if (x >= area.left && x <= area.right && y >= area.top && y <= area.bottom) {
+      if (x - area.left <= SNAP_EDGE_PX) out.push('left');
+      else if (area.right - x <= SNAP_EDGE_PX) out.push('right');
+      if (y - area.top <= SNAP_EDGE_PX) out.push('top');
+      else if (area.bottom - y <= SNAP_EDGE_PX) out.push('bottom');
+    }
+    return out;
+  };
+  const snapAt = (x: number, y: number, key: string, hitKey: string | null, skip: Set<Edge>): SnapState | null => {
     const root = rootRef.current;
     if (!root) return null;
     const area = root.getBoundingClientRect();
     if (area.width <= 0 || area.height <= 0) return null;
     const prev = dragRef.current?.snap ?? null;
-    const edges: Edge[] = [];
-    if (x >= area.left && x <= area.right && y >= area.top && y <= area.bottom) {
-      if (x - area.left <= SNAP_EDGE_PX) edges.push('left');
-      else if (area.right - x <= SNAP_EDGE_PX) edges.push('right');
-      if (y - area.top <= SNAP_EDGE_PX) edges.push('top');
-      else if (area.bottom - y <= SNAP_EDGE_PX) edges.push('bottom');
-    }
+    const raw = edgesAtPoint(x, y);
+    for (const e of [...skip]) if (!raw.includes(e)) skip.delete(e);
+    const edges: Edge[] = raw.filter((e) => !skip.has(e));
     const panel = document.querySelector('[data-testid="snap-candidates"]')?.getBoundingClientRect();
     const inPanel = !!panel && x >= panel.left - SNAP_KEEP_PX && x <= panel.right + SNAP_KEEP_PX && y >= panel.top - SNAP_KEEP_PX && y <= panel.bottom + SNAP_KEEP_PX;
     if (edges.length === 0 && !(prev && inPanel)) return null;
@@ -504,22 +586,25 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     const sx = e.clientX;
     const sy = e.clientY;
     let active = false;
-    // つかんだ位置（コンポーネントの左上からの差）と大きさ。置いた位置の計算に使う（FR-173）
+    // 動かし始めの配置（画面上の座標）。置き場所の判定と、押し出しの計算の元にする（FR-173・FR-184）
+    const start = measureAll();
+    const hitRects = snapshotRects();
+    const skipEdges = new Set<Edge>(edgesAtPoint(sx, sy));
+    // つかんだ位置（コンポーネントの左上からの差）。置いた位置の計算に使う（FR-173）
     const grabRect = rootRef.current?.querySelector(`[data-testid="component-${key}"]`)?.getBoundingClientRect() ?? null;
     const offX = grabRect ? sx - grabRect.left : 0;
     const offY = grabRect ? sy - grabRect.top : 0;
     useLayout.getState().raise(key);
-    /** ポインターの位置から、自由配置の置き場所（画面上の座標。作業領域の中に収める）を決める */
-    const freeAt = (px: number, py: number): DragState['free'] => {
+    /** ポインターの位置に動かしているコンポーネントを置き、ぶつかるものを押し出した配置（作業領域に対する割合）を求める */
+    const liveAt = (px: number, py: number): DragState['live'] => {
       const area = rootRef.current?.getBoundingClientRect();
-      if (compact || !area || !grabRect || area.width <= 0 || area.height <= 0) return null;
-      const width = Math.min(grabRect.width, area.width);
-      const height = Math.min(grabRect.height, area.height);
-      const left = Math.min(Math.max(px - offX, area.left), area.right - width);
-      const top = Math.min(Math.max(py - offY, area.top), area.bottom - height);
-      return { left, top, width, height };
+      const self = start?.rects[key];
+      if (compact || !start || !area || !self) return null;
+      const target: PxRect = { x: px - offX - area.left, y: py - offY - area.top, w: self.w, h: self.h };
+      return toFractions(resolveOverlaps({ ...start.rects, [key]: target }, key, start.bounds), start.bounds);
     };
-    let lastFree: DragState['free'] = null;
+    let lastLive: DragState['live'] = null;
+    let lastDrag: DragState | null = null;
     const stop = () => {
       window.removeEventListener('pointermove', onMove, true);
       window.removeEventListener('pointerup', onUp, true);
@@ -533,23 +618,29 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
         active = true;
         document.body.style.userSelect = 'none';
       }
-      const hit = hitTest(ev.clientX, ev.clientY, key);
-      const snap = snapAt(ev.clientX, ev.clientY, key, hit?.key ?? null);
-      // 分割へ入れる置き場所（上下左右の辺）でも、端のスナップでもなければ、置いた位置にそのまま置く（自由配置。重なってもよい。FR-173）
+      const hit = hitTest(ev.clientX, ev.clientY, key, hitRects);
+      const snap = snapAt(ev.clientX, ev.clientY, key, hit?.key ?? null, skipEdges);
+      // 分割へ入れる置き場所（上下左右の辺）でも、端のスナップでもなければ、ポインターに追従して置く（自由配置。ぶつかるものは押し出す。FR-173・FR-184）
       const docking = !!snap || (hit !== null && (hit.zone !== 'tabs' || compact));
-      lastFree = docking ? null : freeAt(ev.clientX, ev.clientY);
-      setDrag({ key, target: hit && !snap && docking ? { key: hit.key, zone: hit.zone, rect: hit.rect } : null, snap, free: lastFree });
+      lastLive = docking ? null : liveAt(ev.clientX, ev.clientY);
+      lastDrag = { key, target: hit && !snap && docking ? { key: hit.key, zone: hit.zone, rect: hit.rect } : null, snap, live: lastLive };
+      setDrag(lastDrag);
     };
     const onUp = () => {
-      const d = dragRef.current;
+      const d = lastDrag;
       stop();
-      setDrag(null);
-      const area = rootRef.current?.getBoundingClientRect();
-      if (active && d?.snap) useLayout.getState().snapTo(key, d.snap.kind, d.snap.opts);
-      else if (active && d?.target) useLayout.getState().dropMove(key, d.target.key, d.target.zone);
-      else if (active && lastFree && area && grabRect) {
-        useLayout.getState().setFloat(key, { x: (lastFree.left - area.left) / area.width, y: (lastFree.top - area.top) / area.height, w: lastFree.width / area.width, h: lastFree.height / area.height });
-      }
+      // 放した時点で、置いた位置を画面に反映する（flushSync）。動かしていたものは遅れなく最終の位置になり、押し出されたものだけが動き続ける
+      flushSync(() => {
+        setDrag(null);
+        if (active && d?.snap) useLayout.getState().snapTo(key, d.snap.kind, d.snap.opts);
+        else if (active && d?.target) useLayout.getState().dropMove(key, d.target.key, d.target.zone);
+        else if (active && lastLive) {
+          useLayout.getState().setFloats(lastLive);
+          // 押し出されたものが動き終わるまで、動きをつなぐ（FR-185）
+          setSettling(key);
+        }
+      });
+      if (active && lastLive && !d?.snap && !d?.target) window.setTimeout(() => setSettling(null), 420);
     };
     const onCancel = () => { stop(); setDrag(null); };
     const onKey = (ev: globalThis.KeyboardEvent) => {
@@ -630,7 +721,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       ref={rootRef}
       onFocusCapture={onFocusCapture}
       onPointerDownCapture={onPointerDownRaise}
-      className={mergeClasses(s.root, compact ? s.rootCompact : undefined)}
+      className={mergeClasses(s.root, compact ? s.rootCompact : undefined, resizing && motionOn ? s.resizing : undefined)}
       data-layout={compact ? 'stacked' : 'split'}
     >
       {drag?.target ? (
@@ -675,24 +766,22 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
           </>
         );
       })() : null}
-      {drag?.free ? (
-        <div data-testid="free-indicator" aria-hidden className={s.freePreview} style={{ left: drag.free.left, top: drag.free.top, width: drag.free.width, height: drag.free.height }} />
-      ) : null}
       <div className={s.treeBox} style={inset}>
         {layout ? (compact ? renderStack(layout) : render(layout, [])) : (
           <Text className={s.empty} size={400}>{outKeys.length > 0 ? '' : '表示中のコンポーネントがありません。左のドックから再表示してください。'}</Text>
         )}
       </div>
       {outKeys.map((k) => {
-        const r = expandedOut === k ? expandRect(expandPos) : floatMap?.[k];
+        const r = expandedOut === k ? expandRect(expandPos) : (live?.[k] ?? floatMap?.[k]);
         if (!r || !byKey(k)?.component) return null;
         const rank = zOrder.indexOf(k);
+        const dragged = drag?.key === k && !!live;
         return (
           <div
             key={`float-${k}`}
-            className={s.floatBox}
+            className={mergeClasses(s.floatBox, animated && expandedOut !== k && settling !== k ? (dragged ? s.floatFollow : s.floatAnimated) : undefined)}
             data-float={k}
-            style={{ left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.w * 100}%`, height: `${r.h * 100}%`, zIndex: expandedOut === k ? 500 : 2 + Math.max(rank, 0) }}
+            style={{ left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.w * 100}%`, height: `${r.h * 100}%`, zIndex: expandedOut === k ? 500 : dragged ? 600 : 2 + Math.max(rank, 0), ...(settling !== null ? { transition: 'none' } : {}) }}
           >
             <Slot host={hostOf(k)} />
           </div>

@@ -36,8 +36,12 @@ interface LayoutState {
   /** 手前に出す順（後ろほど手前。保存しない。FR-173） */
   zOrder: string[];
   setFloat: (key: string, r: FloatRect) => void;
+  /** 自由配置のコンポーネントをまとめて置く（押し出しの結果。FR-173・FR-184）。渡したもの以外の自由配置は変えない */
+  setFloats: (rects: FloatMap) => void;
   /** 浮かせたコンポーネントを分割の配置へ戻す */
   unfloat: (key: string) => void;
+  /** 自由配置をすべて解いて、分割の配置へ戻す */
+  clearFloats: () => void;
   /** 直近に操作したものを手前に出す */
   raise: (key: string) => void;
   /** ヘッダーのダブルクリックで拡大表示しているコンポーネント（保存しない。FR-174） */
@@ -112,7 +116,13 @@ export const useLayout = create<LayoutState>()(
           floats: { ...s.floats, [s.persona]: { ...(s.floats[s.persona] ?? {}), [key]: clampFloat(r) } },
           zOrder: [...s.zOrder.filter((k) => k !== key), key],
         })),
+        setFloats: (rects) => set((s) => {
+          const next: FloatMap = { ...(s.floats[s.persona] ?? {}) };
+          for (const [k, r] of Object.entries(rects)) next[k] = clampFloat(r);
+          return { floats: { ...s.floats, [s.persona]: next } };
+        }),
         unfloat: (key) => dropFloat(key),
+        clearFloats: () => set((s) => { const floats = { ...s.floats }; delete floats[s.persona]; return { floats }; }),
         raise: (key) => set((s) => (s.zOrder[s.zOrder.length - 1] === key ? {} : { zOrder: [...s.zOrder.filter((k) => k !== key), key] })),
         setExpanded: (key) => set((s) => ({
           expanded: key,
