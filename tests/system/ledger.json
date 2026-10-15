@@ -1808,9 +1808,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "ed0a7e0",
-      "last_run_at": "2026-10-15T10:02:55+09:00",
-      "evidence": "work/runs/202610150507/logs/system-test/E2E-162-202610151001.log",
+      "last_commit": "f557489",
+      "last_run_at": "2026-10-15T10:14:28+09:00",
+      "evidence": "work/runs/202610150507/logs/system-test/E2E-162-202610151014.log",
       "history": [
         {
           "at": "2026-10-12T14:07:28+09:00",
@@ -4507,9 +4507,9 @@
       "command": "node tests/system/run.mjs AC-356",
       "canary": false,
       "status": "pass",
-      "last_commit": "ed0a7e0",
-      "last_run_at": "2026-10-15T10:02:55+09:00",
-      "evidence": "work/runs/202610150507/logs/system-test/E2E-272-202610151002.log",
+      "last_commit": "f557489",
+      "last_run_at": "2026-10-15T10:14:28+09:00",
+      "evidence": "work/runs/202610150507/logs/system-test/E2E-272-202610151014.log",
       "history": [
         {
           "at": "2026-10-15T05:31:48+09:00",
@@ -4532,9 +4532,9 @@
       "command": "node tests/system/run.mjs AC-357",
       "canary": false,
       "status": "pass",
-      "last_commit": "ed0a7e0",
-      "last_run_at": "2026-10-15T10:02:55+09:00",
-      "evidence": "work/runs/202610150507/logs/system-test/E2E-273-202610151002.log",
+      "last_commit": "f557489",
+      "last_run_at": "2026-10-15T10:14:28+09:00",
+      "evidence": "work/runs/202610150507/logs/system-test/E2E-273-202610151014.log",
       "history": [
         {
           "at": "2026-10-15T05:31:51+09:00",
@@ -4582,9 +4582,9 @@
       "command": "node tests/system/run.mjs AC-364",
       "canary": false,
       "status": "pass",
-      "last_commit": "ed0a7e0",
-      "last_run_at": "2026-10-15T10:02:55+09:00",
-      "evidence": "work/runs/202610150507/logs/system-test/E2E-275-202610151002.log",
+      "last_commit": "f557489",
+      "last_run_at": "2026-10-15T10:14:28+09:00",
+      "evidence": "work/runs/202610150507/logs/system-test/E2E-275-202610151014.log",
       "history": [
         {
           "at": "2026-10-15T05:31:57+09:00",
