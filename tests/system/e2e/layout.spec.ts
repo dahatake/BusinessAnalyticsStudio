@@ -252,7 +252,8 @@ test.describe('FR-110 既定のレイアウトへの復元', () => {
     await expect(component(page, 'gantt')).toBeHidden();
     await page.getByRole('button', { name: '既定のレイアウトに戻す' }).click();
     await expect(component(page, 'gantt')).toBeVisible();
-    expect(await largestComponent(page)).toBe(DEFAULT_PRIMARY['事業部門']);
+    // 復元直後は寸法の遷移中のことがあるため、収束を待って判定する（期待値は変えない）
+    await expect.poll(() => largestComponent(page), { timeout: 5000 }).toBe(DEFAULT_PRIMARY['事業部門']);
     const restored = await layoutSnapshot(page);
     for (const k of Object.keys(defaults)) expect(restored[k] === null, k).toBe(defaults[k] === null);
     await expect(page.getByTestId('selection-indicator')).toContainText(issue.title);
