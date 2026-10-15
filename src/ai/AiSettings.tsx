@@ -17,6 +17,7 @@ export function AiSettings() {
   return (
     <>
     <ConsentSettings onRevoke={disable} />
+    <section aria-label="AI・音声・手書きの接続" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
     <Field label="AI 接続" hint="既定はモックです。実接続は、この顧客パックでだけ有効になり、別の顧客パックで起動するとモックに戻ります。">
       <Switch
         checked={realEnabled}
@@ -49,6 +50,7 @@ export function AiSettings() {
       </Dialog>
     </Field>
     <AzureSettings />
+    </section>
     </>
   );
 }

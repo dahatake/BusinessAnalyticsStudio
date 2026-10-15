@@ -1,13 +1,15 @@
 // 顧客の了承の記録の入力・表示（FR-181）。設定画面に置く。自己申告の記録で、個人名・連絡先は保存しない。
 import { useState } from 'react';
-import { Button, Field, Input, MessageBar, MessageBarBody, Text, makeStyles } from '@fluentui/react-components';
+import { Button, Field, Input, MessageBar, MessageBarBody, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { CONSENT_SELF_DECLARED_NOTICE } from './consent';
 import { useConsent, useConsentStore } from './useConsent';
 
 // 無効のボタンは Fluent が forced-color-adjust: none を付ける。強制カラーでは OS の色で描かせる（FR-058 AC-071）
 const useStyles = makeStyles({
   define: { forcedColorAdjust: 'auto', '@media (forced-colors: active)': { forcedColorAdjust: 'auto', ':disabled': { forcedColorAdjust: 'auto' }, ':disabled:hover': { forcedColorAdjust: 'auto' }, ':disabled:hover:active': { forcedColorAdjust: 'auto' } }, ':disabled': { forcedColorAdjust: 'auto' }, ':disabled:hover': { forcedColorAdjust: 'auto' }, ':disabled:hover:active': { forcedColorAdjust: 'auto' } },
-});
+    // 入力欄の本体にもフォーカスの輪郭を出す（NFR-A11Y-001 AC-170: フォーカスの位置が見える）
+    inputFocus: { '&[data-fui-focus-visible]': { boxShadow: `0 0 0 ${tokens.strokeWidthThick} ${tokens.colorStrokeFocus2}` }, ':focus': { boxShadow: `0 0 0 ${tokens.strokeWidthThick} ${tokens.colorStrokeFocus2}` } },
+  });
 
 function today(): string {
   const d = new Date();
@@ -45,10 +47,10 @@ export function ConsentSettings({ onRevoke }: { onRevoke: () => void | Promise<v
         </Text>
       )}
       <Field label="了承を確認した日">
-        <Input type="date" value={date} onChange={(_, d) => setDate(d.value)} disabled={!key} />
+        <Input input={{ className: styles.inputFocus }} type="date" value={date} onChange={(_, d) => setDate(d.value)} disabled={!key} />
       </Field>
       <Field label="了承を確認した相手の役割と方法のメモ" hint="例: 顧客側の担当役員（口頭）。個人名・連絡先は書かないでください。">
-        <Input value={note} onChange={(_, d) => setNote(d.value)} disabled={!key} maxLength={200} />
+        <Input input={{ className: styles.inputFocus }} value={note} onChange={(_, d) => setNote(d.value)} disabled={!key} maxLength={200} />
       </Field>
       {error ? <MessageBar intent="error" role="alert"><MessageBarBody>{error}</MessageBarBody></MessageBar> : null}
       <div style={{ display: 'flex', gap: 8 }}>
