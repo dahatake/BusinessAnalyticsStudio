@@ -175,7 +175,12 @@
     "AC-356": "sha256:40cc7b9b7f9fad18",
     "AC-357": "sha256:3d028f014b2ac4c2",
     "AC-359": "sha256:dae70daa572193fc",
-    "AC-364": "sha256:60fb013bf6b901aa"
+    "AC-364": "sha256:60fb013bf6b901aa",
+    "AC-371": "sha256:cd7e6150e215a10a",
+    "AC-368": "sha256:d47663a7c39171fa",
+    "AC-367": "sha256:2e62b908136cfc38",
+    "AC-370": "sha256:0925b2fa08c31ef4",
+    "AC-369": "sha256:c7fa23d71005adf8"
   },
   "cases": [
     {
@@ -4586,6 +4591,137 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-276",
+      "requirement_ids": [
+        "NFR-A11Y-008"
+      ],
+      "ac_ids": [
+        "AC-371"
+      ],
+      "title": "ストーリー: 終了後にペルソナを選び直すとそのペルソナで最初から再生（異常系: 最後のシーンで終了）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-371",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "d09a542",
+      "last_run_at": "2026-10-15T10:07:24+09:00",
+      "evidence": "work/runs/202610150507/logs/system-test/E2E-276-202610151006.log",
+      "history": [
+        {
+          "at": "2026-10-15T10:06:25+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "NFR-A11Y-008 の受入基準に対するケースの追加"
+        }
+      ]
+    },
+    {
+      "id": "E2E-277",
+      "requirement_ids": [
+        "NFR-A11Y-008"
+      ],
+      "ac_ids": [
+        "AC-368"
+      ],
+      "title": "ストーリー: 順位が文字でも示され、Space で自動再生を一時停止でき、視差効果を減らすと動きなし（異常系: 既定は自動で進まない）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-368",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "d09a542",
+      "last_run_at": "2026-10-15T10:07:24+09:00",
+      "evidence": "work/runs/202610150507/logs/system-test/E2E-277-202610151006.log",
+      "history": [
+        {
+          "at": "2026-10-15T10:06:30+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "NFR-A11Y-008 の受入基準に対するケースの追加"
+        }
+      ]
+    },
+    {
+      "id": "E2E-278",
+      "requirement_ids": [
+        "NFR-A11Y-008"
+      ],
+      "ac_ids": [
+        "AC-367"
+      ],
+      "title": "ストーリー: テキスト表示で全シーンが同じ順序で読め位置が保たれ、シーン名と位置が通知される（異常系: 先頭で ←）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-367",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "d09a542",
+      "last_run_at": "2026-10-15T10:07:24+09:00",
+      "evidence": "work/runs/202610150507/logs/system-test/E2E-278-202610151007.log",
+      "history": [
+        {
+          "at": "2026-10-15T10:06:33+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "NFR-A11Y-008 の受入基準に対するケースの追加"
+        }
+      ]
+    },
+    {
+      "id": "E2E-279",
+      "requirement_ids": [
+        "NFR-A11Y-008"
+      ],
+      "ac_ids": [
+        "AC-370"
+      ],
+      "title": "ストーリー: Tab がフルスクリーンの外へ抜けず Esc で開く前のフォーカスに戻る（Shift+Tab・テキスト表示中を含む）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-370",
+      "canary": false,
+      "status": "fail",
+      "last_commit": "d09a542",
+      "last_run_at": "2026-10-15T10:07:24+09:00",
+      "evidence": "work/runs/202610150507/logs/system-test/E2E-279-202610151007.log",
+      "history": [
+        {
+          "at": "2026-10-15T10:06:36+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "NFR-A11Y-008 の受入基準に対するケースの追加"
+        }
+      ]
+    },
+    {
+      "id": "E2E-280",
+      "requirement_ids": [
+        "NFR-A11Y-008"
+      ],
+      "ac_ids": [
+        "AC-369"
+      ],
+      "title": "ストーリー: 拡大率 200% と狭い画面での目視確認（manual）",
+      "layer": "e2e",
+      "command": "node -e process.exit(1)",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T10:06:38+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "AC-369 は検証レベル manual。手順書（docs/manual-tests.md）が必要"
+        },
+        {
+          "at": "2026-10-15T10:06:43+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-369 は検証レベル manual（目視）。docs/manual-tests.md に手順の記載が必要"
         }
       ]
     }
