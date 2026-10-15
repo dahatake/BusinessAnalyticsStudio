@@ -4606,7 +4606,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-371",
       "canary": false,
-      "status": "blocked",
+      "status": "not_run",
       "last_commit": "d09a542",
       "last_run_at": "2026-10-15T10:07:24+09:00",
       "evidence": "work/runs/202610150507/logs/system-test/E2E-276-202610151006.log",
@@ -4622,6 +4622,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "対象 AC の検証レベルは integration で System Test の対象外（CHK-10）。テスト story-a11y.spec.ts は残す。レベルの扱いは rd-author が判断する"
+        },
+        {
+          "at": "2026-10-15T11:21:23+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（run 202610151112）"
         }
       ]
     },
@@ -4637,7 +4643,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-368",
       "canary": false,
-      "status": "blocked",
+      "status": "not_run",
       "last_commit": "d09a542",
       "last_run_at": "2026-10-15T10:07:24+09:00",
       "evidence": "work/runs/202610150507/logs/system-test/E2E-277-202610151006.log",
@@ -4653,6 +4659,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "対象 AC の検証レベルは integration で System Test の対象外（CHK-10）。テスト story-a11y.spec.ts は残す。レベルの扱いは rd-author が判断する"
+        },
+        {
+          "at": "2026-10-15T11:21:23+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（run 202610151112）"
         }
       ]
     },
@@ -4668,7 +4680,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-367",
       "canary": false,
-      "status": "blocked",
+      "status": "not_run",
       "last_commit": "d09a542",
       "last_run_at": "2026-10-15T10:07:24+09:00",
       "evidence": "work/runs/202610150507/logs/system-test/E2E-278-202610151007.log",
@@ -4684,6 +4696,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "対象 AC の検証レベルは integration で System Test の対象外（CHK-10）。テスト story-a11y.spec.ts は残す。レベルの扱いは rd-author が判断する"
+        },
+        {
+          "at": "2026-10-15T11:21:23+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（run 202610151112）"
         }
       ]
     },
@@ -4699,7 +4717,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-370",
       "canary": false,
-      "status": "blocked",
+      "status": "not_run",
       "last_commit": "d09a542",
       "last_run_at": "2026-10-15T10:07:24+09:00",
       "evidence": "work/runs/202610150507/logs/system-test/E2E-279-202610151007.log",
@@ -4715,6 +4733,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "対象 AC の検証レベルは integration で System Test の対象外（CHK-10）。テスト story-a11y.spec.ts は残す。レベルの扱いは rd-author が判断する"
+        },
+        {
+          "at": "2026-10-15T11:21:24+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（run 202610151112）"
         }
       ]
     },
