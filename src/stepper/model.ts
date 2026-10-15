@@ -30,9 +30,10 @@ export function stepIndexForScreen(screenKey: string): number | undefined {
 }
 
 /** ステップの状態: 現在より前は完了、現在は進行中、後は未着手。 */
-export function stepState(index: number, current: number): StepState {
+export function stepState(index: number, current: number, tracked = true): StepState {
   if (index === current) return 'current';
-  return index < current ? 'done' : 'not-started';
+  // デモ（tracked=false）は完了済みの状態を持たない（FR-136 AC-372）
+  return tracked && index < current ? 'done' : 'not-started';
 }
 
 export const STEP_STATE_LABEL: Record<StepState, string> = { 'not-started': '未着手', current: '進行中', done: '完了' };
