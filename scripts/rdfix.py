@@ -19,6 +19,8 @@ What is fixed (derived data follows the requirements definition, which is never 
                                     -> through ledger.py with history (G-2)
   gitignore .gitignore              /work/ (CHK-23)
   history   docs/run-history.md     rows duplicated by merge=union (CHK-23)
+  integration docs/integration-catalog.md  creates the template only when the file is missing (CHK-28);
+                                    values of the catalog are never filled in (violations are listed as MANUAL)
 What needs a judgment (changed AC text, reused or hand-numbered IDs, ...) is listed as MANUAL with the role
 that fixes it. Output: "FIX <CHK> <loc> <msg>" / "MANUAL <CHK> <loc> <msg>（担当: role）" and one summary line.
 Exit code: 0 = nothing left to fix automatically, 1 = fixes pending (dry run) or not converged, 2 = refused.
@@ -38,7 +40,7 @@ from typing import Dict, List, Optional, Set, Tuple
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ebaklib as h  # noqa: E402
 
-TARGETS = ("registry", "catalog", "ledger", "gitignore", "history")
+TARGETS = ("registry", "catalog", "ledger", "gitignore", "history", "integration")
 CATALOG_TEMPLATE = (
     "# カタログ\n\n"
     "既存の機能・API・テーブル・共通部品の対応表です。1 行 1 項目の短い表にし、詳細はリンク先のファイルに任せます。\n"
@@ -395,6 +397,23 @@ class Fixer:
                 text += "\n"
             h.write_text_atomic(gi, text + ("\n" if text else "") + f"{GITIGNORE_HEADER}\n/{wd}/\n")
         self.writers.append(write)
+
+    # ------------------------------------------------------------------ integration catalog (FR-199 AC-427)
+    def fix_integration(self) -> None:
+        """外部連携カタログがなければ雛形（見出し・記入の規則）だけを作る。意味に関わる欄は値を入れず MANUAL として示す。"""
+        import integration_catalog as ic
+        rel = ic.path_of(self.cfg)
+        path = self.root / rel
+        t = "integration"
+        if not path.exists():
+            self.act("FIX", "CHK-28", rel, "外部連携カタログがありません。雛形（表の見出しと記入の規則。値なし）から作成します", "", t)
+            self.writers.append(lambda: h.write_text_atomic(path, ic.TEMPLATE))
+            return
+        if not self.doc.exists:
+            return
+        for level, loc, msg in ic.check(self.root, self.cfg, self.doc):
+            if level == "ERROR":
+                self.act("MANUAL", "CHK-28", loc, msg, "rd-author", t)
 
     # ------------------------------------------------------------------ run history
     def fix_history(self) -> None:
