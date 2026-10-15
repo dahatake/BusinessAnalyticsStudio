@@ -6,6 +6,8 @@ import { Badge, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Bot24Regular } from '@fluentui/react-icons';
 import { usePlaying } from '../motion/useMotion';
 import { subtitleDurationMs, splitSubtitles } from './extras';
+import { useAzure } from '../ai/useAzure';
+import { synthesizeSpeech } from '../ai/azureClient';
 
 const useStyles = makeStyles({
   nav: {
@@ -59,6 +61,24 @@ export function Navigator({ script, topicId }: { script: string; topicId: string
     return () => window.clearTimeout(id);
   }, [playing, index, sentences]);
   const text = playing ? sentences[Math.min(index, sentences.length - 1)] ?? '' : sentences.join('');
+  // 音声合成の実接続（FR-182）。有効なときだけ中継プロセスに台本を送る。失敗しても字幕だけで進める
+  const { realEnabled, relayUrl, packId } = useAzure('speech');
+  const [speechError, setSpeechError] = useState<string | null>(null);
+  useEffect(() => {
+    setSpeechError(null);
+    if (!realEnabled || !playing) return undefined;
+    let cancelled = false;
+    let audio: HTMLAudioElement | null = null;
+    void synthesizeSpeech({ relayUrl, realEnabled, packId }, script).then((o) => {
+      if (cancelled) return;
+      if (o.kind === 'error') setSpeechError(o.message);
+      else if (o.kind === 'audio' && typeof Audio !== 'undefined') {
+        audio = new Audio(`data:${o.contentType};base64,${o.audioBase64}`);
+        void audio.play().catch(() => setSpeechError('音声を再生できませんでした。字幕だけで進行します。'));
+      }
+    });
+    return () => { cancelled = true; audio?.pause(); };
+  }, [realEnabled, playing, relayUrl, packId, script, topicId]);
   return (
     <section className={s.nav} data-testid="navigator" aria-label="AI ナビゲーター">
       <div className={s.head}>
@@ -67,7 +87,8 @@ export function Navigator({ script, topicId }: { script: string; topicId: string
         <Badge appearance="outline" color="informative" data-testid="ai-generated-label">AI 生成</Badge>
       </div>
       <div className={s.subtitles} data-testid="subtitles" role="status" aria-live="polite" aria-label="字幕">{text}</div>
-      <Text size={200}>音声: 未設定（字幕のみ）</Text>
+      {speechError ? <Text size={200} role="alert" data-testid="speech-error">{speechError}（字幕だけで進行します）</Text> : null}
+      <Text size={200}>{realEnabled ? '音声: Azure AI Speech' : '音声: 未設定（字幕のみ）'}</Text>
     </section>
   );
 }

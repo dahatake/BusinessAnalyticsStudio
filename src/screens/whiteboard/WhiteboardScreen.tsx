@@ -20,6 +20,7 @@ import { BoardPdfDialog } from '../../export/BoardPdfDialog';
 import { usePane } from '../../workspace/PaneContext';
 import { BoardSurface } from '../../ink/BoardSurface';
 import { RECOGNIZED_LABEL, recognizeHandwriting } from '../../ink/handwriting';
+import { useVisionRecognizer } from '../../ink/useVisionRecognizer';
 import { BACKGROUNDS, type Background, type BoardItem } from '../../ink/model';
 import { KIND_LABEL, useRecognized, type RecognizedKind } from '../../ink/recognized';
 import { useInk } from '../../ink/store';
@@ -149,6 +150,7 @@ export function WhiteboardScreen() {
   const [pdfOpen, setPdfOpen] = useState(false);
   const [mdOpen, setMdOpen] = useState(false);
   const [recBusy, setRecBusy] = useState(false);
+  useVisionRecognizer();
   const recognized = useRecognized((st) => st.items);
   const timerEndsAt = useTimer((st) => st.endsAt);
   const timerPaused = useTimer((st) => st.pausedMs);
