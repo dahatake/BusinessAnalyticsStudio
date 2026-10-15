@@ -88,15 +88,18 @@ export async function setRelayConnection(
   packId: string,
   enable: boolean,
   fetchFn: NonNullable<AiEnv['fetchFn']> = (u, i) => fetch(u, i),
+  /** 案件の了承の記録がある（FR-181）。なければ中継プロセスは有効化を拒否する */
+  consent = false,
 ): Promise<boolean> {
   try {
     const res = await fetchFn(`${relayUrl}/connection`, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ packId, enable, confirmed: enable }),
+      body: JSON.stringify({ packId, enable, confirmed: enable, consent }),
     });
     return res.ok;
   } catch {
     return false;
   }
 }
+

@@ -12,6 +12,7 @@ import {
   assertGitIgnored, checkResearchFreshness, loadResearchCache, reresearchSuggestion, sampleResearcher, saveResearchPart,
   type ResearchAttempt, type ResearchCache, type Researcher,
 } from './research';
+import { readConsent } from './consent';
 import { validateWithRepair } from './repair';
 import { Recorder } from './timing';
 import { formatVerifyReport, verifyPack, type SmokeRunner } from './verify';
@@ -25,6 +26,8 @@ export interface PipelineDeps {
   smoke?: SmokeRunner;
   /** ③の方式。既定 link（node_modules と dist をリンクで共有）、copy はフルコピー */
   cloneMode?: CloneMode;
+  /** 案件の了承の記録があるか（FR-181）。既定は作業フォルダーの consent.json。なければ実調査・外部への送信をしない */
+  consent?: (input: Inputs) => boolean;
   log?: (line: string) => void;
   now?: () => Date;
 }
@@ -60,12 +63,17 @@ function errorList(errors: readonly PackError[]): string {
 export async function runPipeline(command: Command, input: Inputs, deps: PipelineDeps): Promise<PipelineResult> {
   const { paths } = deps;
   const log = deps.log ?? (() => {});
-  const researcher = deps.researcher ?? sampleResearcher;
-  const generator = deps.generator ?? mockGenerator;
+  const consented = deps.consent ? deps.consent(input) : readConsent(paths, input) !== undefined;
+  // FR-181: 了承の記録がない案件は、外部（LLM・WorkIQ・Web）へ送る調査・生成を使わず、サンプル・モックで進める
+  const researcher = (consented ? deps.researcher : undefined) ?? sampleResearcher;
+  const generator = (consented ? deps.generator : undefined) ?? mockGenerator;
   const launcher = deps.launcher ?? startStaticServer;
   const now = deps.now ?? (() => new Date());
 
   const ids = COMMAND_STAGES[command];
+  if (!consented && (deps.researcher || deps.generator)) {
+    log(`顧客の了承の記録がないため、実調査・外部への送信をしません（案件: ${input.customer} / ${input.projectName}）。サンプル・モックで進めます。`);
+  }
   const work = workDirOf(paths, input.customer);
   // 調査キャッシュと顧客パックは、コミットされない場所にだけ作る（NFR-SEC-003）。何かを書く前に確かめる
   if (ids.includes('research-customer')) assertGitIgnored(paths.repoRoot, path.join(researchCacheDir(paths, input.customer), 'meta.json'), '調査キャッシュの保存先');
@@ -195,3 +203,4 @@ export async function runPipeline(command: Command, input: Inputs, deps: Pipelin
   }
   return { command, stages: executed, workDir: work, timingFile: path.join(work, 'logs', 'timing.json'), ...(launched ? { launched } : {}) };
 }
+

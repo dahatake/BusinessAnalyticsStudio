@@ -5,7 +5,7 @@
 import path from 'node:path';
 import readline from 'node:readline/promises';
 import { pathToFileURL } from 'node:url';
-import { COMMANDS, InputError, defaultPaths, type Command, type PipelinePaths } from './common';
+import { COMMANDS, InputError, defaultPaths, type Command, type Inputs, type PipelinePaths } from './common';
 import { parseArgs, resolveInputs, type Ask } from './inputs';
 import { runPipeline, type PipelineDeps } from './pipeline';
 import { mockGenerator, type PackGenerator } from './generate';
@@ -21,6 +21,8 @@ export interface CliDeps {
   /** 差し替え（テスト用）。指定がなければ --generator / --researcher の指定、なければ同梱のモック */
   generator?: PackGenerator;
   researcher?: Researcher;
+  /** 案件の了承の記録の有無の差し替え（テスト用）。指定がなければ作業フォルダーの consent.json（FR-181） */
+  consent?: (input: Inputs) => boolean;
   /** ⑥ verify のブラウザー検査の差し替え（テスト用）。指定がなければ --smoke の指定、なければ Playwright */
   smoke?: SmokeRunner;
 }
@@ -104,6 +106,7 @@ export async function main(argv: readonly string[], deps: CliDeps = {}): Promise
 
     const pdeps: PipelineDeps = {
       paths, generator, researcher, log, cloneMode: args.flags.has('copy') ? 'copy' : 'link',
+      ...(deps.consent ? { consent: deps.consent } : {}),
       ...(smoke ? { smoke } : {}),
     };
     const result = await runPipeline(command, input, pdeps);

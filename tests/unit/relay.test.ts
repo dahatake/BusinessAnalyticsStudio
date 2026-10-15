@@ -1,5 +1,5 @@
 // 中継プロセスの結合検査（Copilot SDK の代わりのスタブ使用）。
-// FR-010 AC-010, FR-011 AC-012, FR-132 AC-190 AC-191
+// FR-010 AC-010, FR-011 AC-012, FR-132 AC-190 AC-191（了承の記録がある案件で検査する）, FR-181 AC-373 AC-374
 import http from 'node:http';
 import { afterEach, describe, expect, it } from 'vitest';
 import { startRelay, type CopilotSdk, type Relay } from '../../scripts/relay/relay';
@@ -56,7 +56,7 @@ describe('FR-010 AC-010 5 種類の処理が 1 つの呼び出し口を通る', 
       realEnabled: true,
       fetchFn: async (u, i) => { urls.push(u); return fetch(u, i); },
     };
-    expect(await setRelayConnection(r.url, 'pack-A', true, env.fetchFn)).toBe(true);
+    expect(await setRelayConnection(r.url, 'pack-A', true, env.fetchFn, true)).toBe(true);
     for (const kind of AI_KINDS) {
       const res = await askAi({ kind, packId: 'pack-A', prompt: `質問-${kind}` }, env);
       expect(res.mode).toBe('connected');
@@ -102,12 +102,12 @@ describe('FR-132 AC-191 確認のあとだけ接続済み', () => {
   it('確認なしの有効化は拒否され、確認つきで有効にした後にだけ SDK が呼ばれる', async () => {
     const sdk = stubSdk();
     const r = await start(sdk);
-    const noConfirm = await fetch(`${r.url}/connection`, { method: 'POST', body: JSON.stringify({ packId: 'pack-A', enable: true }) });
+    const noConfirm = await fetch(`${r.url}/connection`, { method: 'POST', body: JSON.stringify({ packId: 'pack-A', enable: true, consent: true }) });
     expect(noConfirm.status).toBe(400);
     const ask = async (packId: string) => (await (await fetch(`${r.url}/ask`, { method: 'POST', body: JSON.stringify({ kind: 'summary', packId, prompt: 'p' }) })).json()) as { mode: string };
     expect((await ask('pack-A')).mode).toBe('mock');
     expect(sdk.calls).toHaveLength(0);
-    expect(await setRelayConnection(r.url, 'pack-A', true)).toBe(true);
+    expect(await setRelayConnection(r.url, 'pack-A', true, undefined, true)).toBe(true);
     expect((await ask('pack-A')).mode).toBe('connected');
     expect(sdk.calls).toHaveLength(1);
     // 別の顧客パックは有効化されていない
@@ -122,7 +122,7 @@ describe('FR-132 AC-191 確認のあとだけ接続済み', () => {
     const sdk = stubSdk(false);
     const r = await start(sdk);
     expect((await probeRelay(r.url))).toEqual({ ok: false, reason: expect.stringContaining('サインイン') });
-    expect(await setRelayConnection(r.url, 'pack-A', true)).toBe(false);
+    expect(await setRelayConnection(r.url, 'pack-A', true, undefined, true)).toBe(false);
     const j = (await (await fetch(`${r.url}/ask`, { method: 'POST', body: JSON.stringify({ kind: 'chat', packId: 'pack-A', prompt: 'p' }) })).json()) as { mode: string };
     expect(j.mode).toBe('mock');
     expect(sdk.calls).toHaveLength(0);
@@ -131,7 +131,7 @@ describe('FR-132 AC-191 確認のあとだけ接続済み', () => {
   it('中継プロセスを再起動すると有効化は消えてモックに戻る（別の顧客パックの起動も同じ）', async () => {
     const sdk = stubSdk();
     const r1 = await start(sdk);
-    await setRelayConnection(r1.url, 'pack-A', true);
+    await setRelayConnection(r1.url, 'pack-A', true, undefined, true);
     await r1.close();
     const r2 = await start(sdk);
     const j = (await (await fetch(`${r2.url}/ask`, { method: 'POST', body: JSON.stringify({ kind: 'chat', packId: 'pack-A', prompt: 'p' }) })).json()) as { mode: string };
@@ -141,5 +141,34 @@ describe('FR-132 AC-191 確認のあとだけ接続済み', () => {
   it('オフライン・未起動の中継プロセスは「使えない」と判定する', async () => {
     expect((await probeRelay('http://127.0.0.1:1')).ok).toBe(false);
     expect((await probeRelay(undefined)).ok).toBe(false);
+  });
+});
+
+describe('FR-181 AC-373 了承の記録がない案件は実接続を有効にできない', () => {
+  it('了承の記録がないと有効化は拒否され、状態はモックのままで SDK の呼び出しが 0 回', async () => {
+    const sdk = stubSdk();
+    const r = await start(sdk);
+    // クライアント（consent 既定 false）も、中継プロセスへの直接の要求（consent なし）も拒否される
+    expect(await setRelayConnection(r.url, 'pack-A', true)).toBe(false);
+    const direct = await fetch(`${r.url}/connection`, { method: 'POST', body: JSON.stringify({ packId: 'pack-A', enable: true, confirmed: true }) });
+    expect(direct.status).toBe(403);
+    expect(((await direct.json()) as { error: string }).error).toContain('了承の記録がない');
+    const j = (await (await fetch(`${r.url}/ask`, { method: 'POST', body: JSON.stringify({ kind: 'chat', packId: 'pack-A', prompt: '質問' }) })).json()) as { mode: string };
+    expect(j.mode).toBe('mock');
+    expect(sdk.calls).toHaveLength(0);
+  });
+});
+
+describe('FR-181 AC-374 了承の取消でモックに戻る', () => {
+  it('了承の記録がある案件で接続済みにした後、取り消す（解除する）と以後 SDK の呼び出しが 0 回', async () => {
+    const sdk = stubSdk();
+    const r = await start(sdk);
+    const ask = async () => (await (await fetch(`${r.url}/ask`, { method: 'POST', body: JSON.stringify({ kind: 'chat', packId: 'pack-A', prompt: 'q' }) })).json()) as { mode: string };
+    expect(await setRelayConnection(r.url, 'pack-A', true, undefined, true)).toBe(true);
+    expect((await ask()).mode).toBe('connected');
+    expect(sdk.calls).toHaveLength(1);
+    expect(await setRelayConnection(r.url, 'pack-A', false)).toBe(true);
+    expect((await ask()).mode).toBe('mock');
+    expect(sdk.calls).toHaveLength(1);
   });
 });
