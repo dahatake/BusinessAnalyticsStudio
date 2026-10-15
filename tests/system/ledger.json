@@ -4835,7 +4835,7 @@
       ],
       "title": "AC-176 了承の記録がない案件では実接続を有効にできない（異常系）",
       "layer": "e2e",
-      "command": "npx playwright test tests/system/e2e/quality.spec.ts -g 'AC-176 了承の記録がない'",
+      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --grep \"AC-176 了承の記録がない\"",
       "canary": false,
       "status": "not_run",
       "last_commit": null,
@@ -4847,6 +4847,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-15T13:34:30+09:00",
+          "by": "test-designer",
+          "change": "command: \"npx playwright test tests/system/e2e/quality.spec.ts -g 'AC-176 了承の記録がない'\" -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --grep \"AC-176 了承の記録がない\"'",
+          "reason": "command をリポジトリ直下で実行できる形（tests/system の playwright 設定を指定）に修正"
         }
       ]
     }
