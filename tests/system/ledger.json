@@ -6341,7 +6341,7 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[形式:\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "blocked",
+      "status": "not_run",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -6357,6 +6357,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC-430 の検証レベルは unit で System Test の対象外（CHK-10）。競合として返す: 受入基準を system にするか unit 側で検証"
+        },
+        {
+          "at": "2026-10-16T08:53:41+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC-430 の検証レベルが system に変更されたため blocked 解除（password= 形式として扱う）"
         }
       ]
     },
@@ -6372,7 +6378,7 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[欄を問わない\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "blocked",
+      "status": "not_run",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -6388,6 +6394,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC-430 の検証レベルは unit で System Test の対象外（CHK-10）。競合として返す: 受入基準を system にするか unit 側で検証"
+        },
+        {
+          "at": "2026-10-16T08:53:41+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC-430 の検証レベルが system に変更されたため blocked 解除（password= 形式として扱う）"
         }
       ]
     },
@@ -6403,7 +6415,7 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[ハッシュ除外\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "blocked",
+      "status": "not_run",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -6419,6 +6431,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC-430 の検証レベルは unit で System Test の対象外（CHK-10）。競合として返す: 受入基準を system にするか unit 側で検証"
+        },
+        {
+          "at": "2026-10-16T08:53:41+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC-430 の検証レベルが system に変更されたため blocked 解除（password= 形式として扱う）"
         }
       ]
     },
@@ -6434,7 +6452,7 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[「例」行\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "blocked",
+      "status": "not_run",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -6450,6 +6468,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC-430 の検証レベルは unit で System Test の対象外（CHK-10）。競合として返す: 受入基準を system にするか unit 側で検証"
+        },
+        {
+          "at": "2026-10-16T08:53:42+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC-430 の検証レベルが system に変更されたため blocked 解除（password= 形式として扱う）"
         }
       ]
     },
@@ -6465,7 +6489,7 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[ダミー値\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "blocked",
+      "status": "not_run",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -6481,6 +6505,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC-430 の検証レベルは unit で System Test の対象外（CHK-10）。競合として返す: 受入基準を system にするか unit 側で検証"
+        },
+        {
+          "at": "2026-10-16T08:53:42+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC-430 の検証レベルが system に変更されたため blocked 解除（password= 形式として扱う）"
         }
       ]
     },
@@ -6496,7 +6526,7 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[語だけの説明文\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "blocked",
+      "status": "not_run",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -6512,6 +6542,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC-430 の検証レベルは unit で System Test の対象外（CHK-10）。競合として返す: 受入基準を system にするか unit 側で検証"
+        },
+        {
+          "at": "2026-10-16T08:53:42+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC-430 の検証レベルが system に変更されたため blocked 解除（password= 形式として扱う）"
         }
       ]
     }
