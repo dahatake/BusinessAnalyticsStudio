@@ -180,7 +180,9 @@
     "AC-368": "sha256:d47663a7c39171fa",
     "AC-367": "sha256:2e62b908136cfc38",
     "AC-370": "sha256:0925b2fa08c31ef4",
-    "AC-369": "sha256:c7fa23d71005adf8"
+    "AC-369": "sha256:c7fa23d71005adf8",
+    "AC-375": "sha256:d23286728dd4824d",
+    "AC-379": "sha256:3746c38c17b1d8ba"
   },
   "cases": [
     {
@@ -4770,6 +4772,56 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC-369 は検証レベル manual（目視）。docs/manual-tests.md に手順の記載が必要"
+        }
+      ]
+    },
+    {
+      "id": "E2E-281",
+      "requirement_ids": [
+        "FR-181"
+      ],
+      "ac_ids": [
+        "AC-375"
+      ],
+      "title": "設定画面の了承の記録（既定・キーボード操作・実接続不可）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-375",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T12:58:28+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-282",
+      "requirement_ids": [
+        "FR-182"
+      ],
+      "ac_ids": [
+        "AC-379"
+      ],
+      "title": "設定画面の実接続の説明・既定無効・キー非表示",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-379",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T12:58:31+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
         }
       ]
     }
