@@ -59,6 +59,12 @@ const useStyles = makeStyles({
   hint: { color: tokens.colorNeutralForeground3 },
   personaList: { display: 'flex', flexWrap: 'wrap', gap: tokens.spacingHorizontalM },
   forced: { forcedColorAdjust: 'auto' },
+  srOnly: { position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' },
+  segCur: { outlineStyle: 'solid', outlineWidth: '2px', outlineColor: tokens.colorNeutralForeground1 },
+  textView: { flexGrow: 1, minHeight: 0, overflowY: 'auto', padding: tokens.spacingHorizontalXXL, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalL },
+  textList: { listStyleType: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalL },
+  textItem: { padding: tokens.spacingHorizontalL, borderLeft: `${tokens.strokeWidthThickest} solid ${tokens.colorNeutralStroke2}` },
+  textItemCur: { borderLeft: `${tokens.strokeWidthThickest} double ${tokens.colorBrandStroke1}`, fontWeight: tokens.fontWeightSemibold },
 });
 
 /** 現在の作業先のユースケース（デモは顧客パックのお手本、実際の Project はその Project の登録）。ほかの Project のものは混ざらない（FR-138） */
@@ -157,6 +163,30 @@ function SceneView({ scene, motion }: { scene: StoryScene; motion: boolean }) {
   );
 }
 
+/** テキスト表示（NFR-A11Y-008 AC-367）: 全シーンの内容を同じ順序で読める目次。演出なし */
+function TextView({ scenes, cur }: { scenes: StoryScene[]; cur: number }) {
+  const s = useStyles();
+  const curRef = useRef<HTMLLIElement>(null);
+  useEffect(() => { try { curRef.current?.scrollIntoView?.({ block: 'center' }); } catch { /* 無視 */ } }, []);
+  return (
+    <section className={s.textView} data-testid="story-text" aria-label="ストーリーのテキスト表示" tabIndex={0}>
+      <ol className={s.textList}>
+        {scenes.map((sc, i) => (
+          <li key={sc.id} ref={i === cur ? curRef : undefined} className={mergeClasses(s.textItem, i === cur && s.textItemCur)} aria-current={i === cur ? 'step' : undefined} data-testid="story-text-item">
+            <Text as="p" size={200}>{i + 1} / {scenes.length}{i === cur ? '（現在のシーン）' : ''}　{sc.kicker}</Text>
+            {sc.big ? <p>{sc.big.value}　{sc.big.label}</p> : null}
+            <h3>{sc.heading}</h3>
+            {sc.noData ? <p>データなし。理由：{sc.noData.reason}　補うには：{sc.noData.entry}</p> : null}
+            {sc.lines.length > 0 ? <ul>{sc.lines.map((l, k) => <li key={k}>{l}</li>)}</ul> : null}
+            {sc.steps && sc.steps.length > 0 ? <ol aria-label="手順">{sc.steps.map((l, k) => <li key={k}>{l}</li>)}</ol> : null}
+            {sc.cta ? <p>{sc.cta}</p> : null}
+          </li>
+        ))}
+      </ol>
+    </section>
+  );
+}
+
 function StoryPlayer({ persona }: { persona: StoryPersona }) {
   const s = useStyles();
   const scenes = useStoryScenes(persona);
@@ -167,6 +197,10 @@ function StoryPlayer({ persona }: { persona: StoryPersona }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [auto, setAuto] = useState(false);
   const [fs, setFs] = useState(false);
+  const [textMode, setTextMode] = useState(false);
+  const textModeRef = useRef(false);
+  textModeRef.current = textMode;
+  const prevFocus = useRef<Element | null>(typeof document !== 'undefined' ? document.activeElement : null);
   const total = scenes.length;
   const cur = Math.min(index, Math.max(0, total - 1));
   const scene = scenes[cur];
@@ -181,22 +215,39 @@ function StoryPlayer({ persona }: { persona: StoryPersona }) {
     const t = window.setTimeout(() => rootRef.current?.focus(), 60);
     const onFs = () => { setFs(document.fullscreenElement !== null); fsExiting = false; };
     document.addEventListener('fullscreenchange', onFs);
-    return () => { window.clearTimeout(t); document.removeEventListener('fullscreenchange', onFs); exitFs(); fsExiting = false; };
+    const back = prevFocus.current;
+    return () => {
+      window.clearTimeout(t); document.removeEventListener('fullscreenchange', onFs); exitFs(); fsExiting = false;
+      // AC-370: 閉じたら、開く前のフォーカスの位置へ戻す
+      if (back instanceof HTMLElement && back.isConnected && back !== document.body) window.setTimeout(() => back.focus(), 0);
+    };
   }, []);
 
   // 自動再生（PARAM-047 秒ごと。最後のシーンで止まる）
   useEffect(() => {
-    if (!auto) return;
+    if (!auto || textMode) return;
     if (cur >= total - 1) { setAuto(false); return; }
     const t = window.setTimeout(() => go(1), SCENE_SECONDS * 1000);
     return () => window.clearTimeout(t);
-  }, [auto, cur, total, go]);
+  }, [auto, textMode, cur, total, go]);
 
   // キー操作（キャンバスなどより先に捕まえる）
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      // AC-370: Tab はストーリーの外へ抜けない（フォーカストラップ）
+      if (e.key === 'Tab' && rootRef.current) {
+        const items = Array.from(rootRef.current.querySelectorAll<HTMLElement>('button:not([disabled]), [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'));
+        if (items.length === 0) { e.preventDefault(); return; }
+        const first = items[0]!; const last = items[items.length - 1]!;
+        const activeEl = document.activeElement;
+        if (!rootRef.current.contains(activeEl) || (!e.shiftKey && activeEl === last)) { e.preventDefault(); first.focus(); }
+        else if (e.shiftKey && (activeEl === first || activeEl === rootRef.current)) { e.preventDefault(); last.focus(); }
+        return;
+      }
       const act = storyKeyAction(e);
       if (!act) return;
+      // テキスト表示中は、スクロール等の通常の操作を奪わない（Esc だけ扱う）
+      if (textModeRef.current && act !== 'exit') return;
       e.preventDefault();
       e.stopPropagation();
       if (act === 'next') go(1);
@@ -216,16 +267,18 @@ function StoryPlayer({ persona }: { persona: StoryPersona }) {
   return (
     <FluentProvider theme={webDarkTheme} className={s.forced} style={{ background: 'transparent' }}>
       <div ref={rootRef} className={s.root} tabIndex={-1} role="dialog" aria-modal="true" aria-label={`${persona}向けのストーリー`} data-testid="story" data-persona={persona}>
-        {scene ? <SceneView key={scene.id} scene={scene} motion={motion} /> : <section className={s.stage} data-testid="story-scene" data-no-data="true"><h2 className={s.heading}>データなし</h2></section>}
+        <div className={s.srOnly} role="status" aria-live="polite" aria-atomic="true" data-testid="story-announce">{scene ? `${scene.kicker}、${positionText(cur, Math.max(total, 1))}` : ''}</div>
+        {textMode ? <TextView scenes={scenes} cur={cur} /> : scene ? <SceneView key={scene.id} scene={scene} motion={motion} /> : <section className={s.stage} data-testid="story-scene" data-no-data="true"><h2 className={s.heading}>データなし</h2></section>}
         {demoNote ? <Text size={200} className={s.hint} align="center" data-testid="demo-fictional-note">{demoNote}</Text> : null}
         <ol className={s.progress} aria-hidden="true">
-          {scenes.map((sc, i) => <li key={sc.id} className={mergeClasses(s.seg, i <= cur && s.segDone)} />)}
+          {scenes.map((sc, i) => <li key={sc.id} className={mergeClasses(s.seg, i <= cur && s.segDone, i === cur && s.segCur)} />)}
         </ol>
         <div className={s.footer} role="toolbar" aria-label="ストーリーの操作">
           <Button icon={<ArrowReset20Regular aria-hidden />} onClick={() => setIndex(0)} disabled={cur === 0}>先頭へ</Button>
           <Button icon={<ArrowPrevious20Regular aria-hidden />} onClick={() => go(-1)} disabled={cur === 0} aria-label="前のシーン" />
           <Text role="status" aria-live="polite" data-testid="story-position" size={400}>{positionText(cur, Math.max(total, 1))}</Text>
           <Button icon={<ArrowNext20Regular aria-hidden />} onClick={() => go(1)} disabled={cur >= total - 1} aria-label="次のシーン" />
+          <Button onClick={() => { setAuto(false); setTextMode((v) => !v); }} aria-pressed={textMode}>{textMode ? '演出の表示に戻る' : 'テキスト表示'}</Button>
           <Button icon={auto ? <Pause20Regular aria-hidden /> : <Play20Regular aria-hidden />} onClick={() => setAuto((v) => !v)} aria-pressed={auto}>
             {auto ? '自動再生を一時停止' : '自動再生'}
           </Button>
