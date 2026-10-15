@@ -114,7 +114,7 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
       <WorkTargetMenu projects={st.projects} companies={st.companies} openId={st.openId} demoOnly={demoOnly} onChoose={choose} onCreateProject={(company) => setModal({ kind: 'project', company })} />
       <Text weight="semibold">作業先:</Text>
       <Text weight="semibold" data-testid="work-target" aria-live="polite">{workTargetLabel(st.openId, st.projects, st.companies)}</Text>
-      {demoOnly ? <Text data-testid="demo-target-notice">お手本パックのデモで作業しています（実際の Project の内容は混ざりません）</Text> : null}
+      {demoOnly ? <Text data-testid="demo-target-notice">お手本パックのデモで作業中（実際の Project は混ざりません）</Text> : null}
       <Button size="small" onClick={() => setPickerOpen(true)}>作業先</Button>
       <Button size="small" onClick={() => { setDemoOnly(false); setModal({ kind: 'company' }); }}>企業を登録</Button>
       <Button size="small" onClick={backToMain}>メイン画面へ戻る</Button>
