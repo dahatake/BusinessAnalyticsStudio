@@ -1810,9 +1810,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "2e74368",
-      "last_run_at": "2026-10-15T14:14:46+09:00",
-      "evidence": "work/runs/202610151245/logs/system-test/E2E-162-202610151355.log",
+      "last_commit": "c1a357c",
+      "last_run_at": "2026-10-15T14:46:02+09:00",
+      "evidence": "work/runs/202610151245/logs/system-test/E2E-162-202610151445.log",
       "history": [
         {
           "at": "2026-10-12T14:07:28+09:00",
@@ -3190,10 +3190,10 @@
       "layer": "nonfunctional",
       "command": "node tests/system/run.mjs AC-176",
       "canary": false,
-      "status": "fail",
-      "last_commit": "2e74368",
-      "last_run_at": "2026-10-15T14:14:46+09:00",
-      "evidence": "work/runs/202610151245/logs/system-test/IT-023-202610151406.log",
+      "status": "pass",
+      "last_commit": "c1a357c",
+      "last_run_at": "2026-10-15T14:46:02+09:00",
+      "evidence": "work/runs/202610151245/logs/system-test/IT-023-202610151445.log",
       "history": [
         {
           "at": "2026-10-12T14:09:08+09:00",
@@ -4788,9 +4788,9 @@
       "command": "node tests/system/run.mjs AC-375",
       "canary": false,
       "status": "pass",
-      "last_commit": "2e74368",
-      "last_run_at": "2026-10-15T14:14:46+09:00",
-      "evidence": "work/runs/202610151245/logs/system-test/E2E-281-202610151414.log",
+      "last_commit": "c1a357c",
+      "last_run_at": "2026-10-15T14:46:02+09:00",
+      "evidence": "work/runs/202610151245/logs/system-test/E2E-281-202610151445.log",
       "history": [
         {
           "at": "2026-10-15T12:58:28+09:00",
@@ -4813,9 +4813,9 @@
       "command": "node tests/system/run.mjs AC-379",
       "canary": false,
       "status": "pass",
-      "last_commit": "2e74368",
-      "last_run_at": "2026-10-15T14:14:46+09:00",
-      "evidence": "work/runs/202610151245/logs/system-test/E2E-282-202610151414.log",
+      "last_commit": "c1a357c",
+      "last_run_at": "2026-10-15T14:46:02+09:00",
+      "evidence": "work/runs/202610151245/logs/system-test/E2E-282-202610151445.log",
       "history": [
         {
           "at": "2026-10-15T12:58:31+09:00",
@@ -4837,10 +4837,10 @@
       "layer": "e2e",
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --grep \"AC-176 了承の記録がない\"",
       "canary": false,
-      "status": "fail",
-      "last_commit": "2e74368",
-      "last_run_at": "2026-10-15T14:14:46+09:00",
-      "evidence": "work/runs/202610151245/logs/system-test/E2E-283-202610151414.log",
+      "status": "pass",
+      "last_commit": "c1a357c",
+      "last_run_at": "2026-10-15T14:46:02+09:00",
+      "evidence": "work/runs/202610151245/logs/system-test/E2E-283-202610151445.log",
       "history": [
         {
           "at": "2026-10-15T13:17:24+09:00",
