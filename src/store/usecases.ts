@@ -1,12 +1,14 @@
 // Project ごとのユースケースとアニメーション（FR-158・FR-155）。ほかの Project に混ざらない（FR-138）。
 // 保存は store/persist.ts（端末内 localStorage のみ。FR-137・NFR-SEC-004）。
 import { create } from 'zustand';
+import { useDataCatalog } from './datacatalog';
+import { createStoryboard, validateScenes, type Storyboard, type StoryScene } from '../usecase/storyboard';
 import {
   createAnimation, toDraft, validateDraft,
   type Animation, type UseCase, type UseCaseDraft, type UseCaseSource,
 } from '../usecase/model';
 
-export interface UseCaseSet { items: UseCase[]; animations: Record<string, Animation>; seq: number }
+export interface UseCaseSet { items: UseCase[]; animations: Record<string, Animation>; seq: number; /** ストーリーボード（FR-163）。古い保存内容にはない */ storyboards?: Record<string, Storyboard> }
 const EMPTY: UseCaseSet = { items: [], animations: {}, seq: 0 };
 
 export type SaveResult = { ok: true; id: string } | { ok: false; errors: string[] };
@@ -18,6 +20,10 @@ interface UseCaseState {
   remove: (projectId: string, id: string) => void;
   /** アニメーションを作る（作り直しも）。手順が 0 件なら拒否し、何も変えない */
   createAnimation: (projectId: string, id: string) => { ok: true } | { ok: false; errors: string[] };
+  /** ストーリーボードを作る（作り直しも）。手順が 0 件なら拒否し、何も変えない（FR-163） */
+  createStoryboard: (projectId: string, id: string) => { ok: true } | { ok: false; errors: string[] };
+  /** 編集したシーンを保存する。元のユースケースは変えない */
+  saveStoryboardScenes: (projectId: string, id: string, scenes: StoryScene[]) => { ok: true } | { ok: false; errors: string[] };
   reset: () => void;
 }
 
@@ -36,12 +42,17 @@ export const useUseCases = create<UseCaseState>((set, get) => ({
     set((s) => ({ byProject: { ...s.byProject, [projectId]: { ...cur, seq: cur.seq + 1, items: [...cur.items, { ...v.value, id: newId, ...(source ? { source } : {}) }] } } }));
     return { ok: true, id: newId };
   },
-  remove: (projectId, id) => set((s) => {
-    const cur = s.byProject[projectId];
-    if (!cur) return s;
-    const { [id]: _gone, ...animations } = cur.animations;
-    return { byProject: { ...s.byProject, [projectId]: { ...cur, items: cur.items.filter((u) => u.id !== id), animations } } };
-  }),
+  remove: (projectId, id) => {
+    set((s) => {
+      const cur = s.byProject[projectId];
+      if (!cur) return s;
+      const { [id]: _gone, ...animations } = cur.animations;
+      const { [id]: _sb, ...storyboards } = cur.storyboards ?? {};
+      return { byProject: { ...s.byProject, [projectId]: { ...cur, items: cur.items.filter((u) => u.id !== id), animations, storyboards } } };
+    });
+    // FR-160 AC-313: そのユースケースへのデータカタログの明示の紐づけも連動して削除する
+    useDataCatalog.getState().removeByUseCase(projectId, id);
+  },
   createAnimation: (projectId, id) => {
     const cur = get().byProject[projectId] ?? EMPTY;
     const uc = cur.items.find((u) => u.id === id);
@@ -49,6 +60,24 @@ export const useUseCases = create<UseCaseState>((set, get) => ({
     const a = createAnimation(toDraft(uc));
     if (!a.ok) return a;
     set((s) => ({ byProject: { ...s.byProject, [projectId]: { ...cur, animations: { ...cur.animations, [id]: a.value } } } }));
+    return { ok: true };
+  },
+  createStoryboard: (projectId, id) => {
+    const cur = get().byProject[projectId] ?? EMPTY;
+    const uc = cur.items.find((u) => u.id === id);
+    if (!uc) return { ok: false, errors: ['ユースケースが見つかりません。'] };
+    const a = createStoryboard(toDraft(uc));
+    if (!a.ok) return a;
+    set((s) => ({ byProject: { ...s.byProject, [projectId]: { ...cur, storyboards: { ...(cur.storyboards ?? {}), [id]: a.value } } } }));
+    return { ok: true };
+  },
+  saveStoryboardScenes: (projectId, id, scenes) => {
+    const cur = get().byProject[projectId] ?? EMPTY;
+    const sb = cur.storyboards?.[id];
+    if (!sb) return { ok: false, errors: ['ストーリーボードが見つかりません。'] };
+    const v = validateScenes(scenes);
+    if (!v.ok) return v;
+    set((s) => ({ byProject: { ...s.byProject, [projectId]: { ...cur, storyboards: { ...(cur.storyboards ?? {}), [id]: { ...sb, scenes: v.value } } } } }));
     return { ok: true };
   },
   reset: () => set({ byProject: {} }),

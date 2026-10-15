@@ -15,6 +15,8 @@ export interface PackDir {
 export interface RuntimeConfig {
   relayUrl: string;
   aiMock?: { delayMs?: number };
+  /** 音声合成のモック接続（FR-167。CONTRACT.md §13）。未指定なら「未設定」 */
+  speech?: { endpoint: string; key: string };
 }
 
 export interface ServeOptions {

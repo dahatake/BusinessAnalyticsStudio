@@ -6,6 +6,11 @@ import { useOkr, type OkrSet } from './okr';
 import { useProjects, type Company, type Project } from './projects';
 import { useStepper } from './stepper';
 import { useUseCases, type UseCaseSet } from './usecases';
+import { useDataCatalog } from './datacatalog';
+import type { ExplicitLink } from '../datacatalog/model';
+import type { ProjectTask, CatalogItem } from '../datacatalog/reconcile';
+import { toColumns } from '../datacatalog/model';
+import type { ImportedCatalog } from './datacatalog';
 
 export const STORAGE_KEY = 'eabk.projects.v1';
 
@@ -21,6 +26,12 @@ interface Snapshot {
   okr?: Record<string, OkrSet>;
   /** Project ごとのユースケースとアニメーション（FR-158・FR-155）。古い保存内容にはない */
   usecases?: Record<string, UseCaseSet>;
+  /** Project ごとのデータカタログの明示の紐づけ（FR-160）。古い保存内容にはない */
+  dataLinks?: Record<string, ExplicitLink[]>;
+  /** Project ごとの取り込んだ企業データカタログと出典の URL（FR-161）。古い保存内容にはない */
+  dataCatalogs?: Record<string, ImportedCatalog>;
+  /** Project ごとの plan の tasks への追加分（FR-162）。古い保存内容にはない */
+  dataTasks?: Record<string, ProjectTask[]>;
 }
 
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
@@ -37,10 +48,25 @@ export function snapshot(): Snapshot {
     steps: useStepper.getState().byProject,
     okr: useOkr.getState().byTarget,
     usecases: useUseCases.getState().byProject,
+    dataLinks: useDataCatalog.getState().linksByProject,
+    dataCatalogs: useDataCatalog.getState().catalogByProject,
+    dataTasks: useDataCatalog.getState().tasksByProject,
   };
 }
 
 const isObj = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
+
+/** 保存した企業データカタログの列・ドメイン（FR-172）を読む。古い保存内容（欄なし）はそのまま、形が正しくない欄は捨てて項目は読む */
+function cleanCatalog(c: ImportedCatalog): ImportedCatalog {
+  return {
+    ...c,
+    items: c.items.map((it) => {
+      const { columns, domain, ...rest } = it as CatalogItem;
+      const cols = toColumns(columns);
+      return { ...rest, ...(cols.ok && cols.columns.length ? { columns: cols.columns } : {}), ...(typeof domain === 'string' && domain ? { domain } : {}) };
+    }),
+  };
+}
 
 /** 保存した内容を各 store へ戻す。壊れている・なければ何もしない（空の状態で始まる）。 */
 export function restore(storage: Store): boolean {
@@ -72,7 +98,18 @@ export function restore(storage: Store): boolean {
     const { source: _drop, ...rest } = u;
     return rest;
   });
-  useUseCases.setState({ byProject: Object.fromEntries(Object.entries(ucs).filter(([, v]) => isObj(v) && Array.isArray(v.items)).map(([k, v]) => [k, { items: cleanItems(v.items), animations: isObj(v.animations) ? v.animations : {}, seq: typeof v.seq === 'number' ? v.seq : v.items.length }])) });
+  useUseCases.setState({ byProject: Object.fromEntries(Object.entries(ucs).filter(([, v]) => isObj(v) && Array.isArray(v.items)).map(([k, v]) => [k, { items: cleanItems(v.items), animations: isObj(v.animations) ? v.animations : {}, storyboards: isObj(v.storyboards) ? v.storyboards : {}, seq: typeof v.seq === 'number' ? v.seq : v.items.length }])) });
+  const dl = isObj(data.dataLinks) ? data.dataLinks : {};
+  useDataCatalog.setState({
+    linksByProject: Object.fromEntries(Object.entries(dl).filter(([, v]) => Array.isArray(v)).map(([k, v]) => [
+      k, (v as unknown[]).filter((l): l is ExplicitLink => isObj(l) && typeof l.entityKey === 'string' && typeof l.useCaseId === 'string'),
+    ])),
+    catalogByProject: Object.fromEntries(Object.entries(isObj(data.dataCatalogs) ? data.dataCatalogs : {}).filter(([, v]) => isObj(v) && Array.isArray(v.items) && typeof v.sourceUrl === 'string').map(([k, v]) => [k, cleanCatalog(v as unknown as ImportedCatalog)])),
+    tasksByProject: Object.fromEntries(Object.entries(isObj(data.dataTasks) ? data.dataTasks : {}).filter(([, v]) => Array.isArray(v)).map(([k, v]) => [
+      k, (v as unknown[]).filter((x): x is ProjectTask => isObj(x) && typeof x.id === 'string' && typeof x.title === 'string' && typeof x.description === 'string'),
+    ])),
+    selectedKey: null,
+  });
   useStepper.getState().switchTo(openId);
   return true;
 }
@@ -82,7 +119,7 @@ export function startPersistence(storage: Store): () => void {
   const save = () => {
     try { storage.setItem(STORAGE_KEY, JSON.stringify(snapshot())); } catch { /* 保存できなくても使い続けられる */ }
   };
-  const offs = [useProjects.subscribe(save), useAnalyses.subscribe(save), useStepper.subscribe(save), useOkr.subscribe(save), useUseCases.subscribe(save)];
+  const offs = [useProjects.subscribe(save), useAnalyses.subscribe(save), useStepper.subscribe(save), useOkr.subscribe(save), useUseCases.subscribe(save), useDataCatalog.subscribe(save)];
   return () => offs.forEach((off) => off());
 }
 

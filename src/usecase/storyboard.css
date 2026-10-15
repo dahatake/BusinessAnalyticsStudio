@@ -1,0 +1,59 @@
+/* ストーリーボードの再生（FR-164〜FR-166）。色・文字・角丸・余白は Fluent 2 のトークン（CSS 変数）で指定する。
+   動きは状態の変化を伝えるためだけ。停止中（html[data-animation='paused']、P キー・視差効果を減らす）は motion.css がすべて止める。
+   点滅は使わない（繰り返しの周期は 1 秒以上）。 */
+.sbp-root {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: var(--spacingVerticalM, 12px) var(--spacingHorizontalM, 12px);
+  row-gap: var(--spacingVerticalS, 8px);
+  background: linear-gradient(135deg, var(--colorBrandBackground2, #ebf3fc), var(--colorPaletteYellowBackground2, #fdfad7));
+  color: var(--colorNeutralForeground1, #242424);
+  font-family: var(--fontFamilyBase, system-ui, sans-serif);
+  overflow: hidden;
+}
+.sbp-bar { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; column-gap: var(--spacingHorizontalM, 12px); row-gap: var(--spacingVerticalXS, 4px); font-size: var(--fontSizeBase300, 14px); }
+.sbp-bar b { font-weight: var(--fontWeightSemibold, 600); }
+.sbp-notice { flex: 0 0 auto; margin: 0; padding: var(--spacingVerticalXS, 4px) var(--spacingHorizontalS, 8px); border-radius: var(--borderRadiusMedium, 4px); background: var(--colorNeutralBackground1, #fff); border: var(--strokeWidthThin, 1px) solid var(--colorNeutralStroke1, #d1d1d1); font-size: var(--fontSizeBase200, 12px); }
+.sbp-stage { position: relative; flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; row-gap: var(--spacingVerticalM, 12px); perspective: 900px; overflow: hidden; }
+.sbp-heading { margin: 0; text-align: center; font-size: clamp(20px, 5vw, 48px); font-weight: var(--fontWeightBold, 700); overflow-wrap: anywhere; animation: sbp-pop 0.6s ease-out both; }
+.sbp-world { margin-top: var(--spacingVerticalXXL, 24px); display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: var(--spacingHorizontalL, 16px); max-width: 100%; transform-style: preserve-3d; }
+.sbp-shape { display: block; width: clamp(24px, 6vw, 56px); height: clamp(24px, 6vw, 56px); background: var(--colorBrandBackground, #0f6cbd); border: var(--strokeWidthThick, 2px) solid var(--colorNeutralForeground1, #242424); animation-duration: 1.6s; animation-timing-function: ease-in-out; animation-iteration-count: infinite; animation-direction: alternate; }
+.sbp-shape:nth-child(4n+2) { background: var(--colorPaletteRedBackground3, #d13438); }
+.sbp-shape:nth-child(4n+3) { background: var(--colorPaletteGreenBackground3, #107c10); }
+.sbp-shape:nth-child(4n+4) { background: var(--colorPaletteYellowBackground3, #eaa300); }
+.sbp-shape.sbp-lit { outline: var(--strokeWidthThickest, 3px) solid var(--colorNeutralForeground1, #242424); }
+
+/* 2D のアニメ（既定の 2D と、3D を描けないときの代替） */
+.sbp-style-anime .sbp-shape, .sbp-2d .sbp-shape { border-radius: 50%; animation-name: sbp-slide; }
+/* 3D: 立方体が回る */
+.sbp-style-3d:not(.sbp-2d) .sbp-shape { animation-name: sbp-spin; animation-duration: 3s; animation-direction: normal; animation-timing-function: linear; }
+/* Geometric 3D: 角ばった形が傾く */
+.sbp-style-geometric:not(.sbp-2d) .sbp-shape { clip-path: polygon(50% 0, 100% 100%, 0 100%); border: 0; animation-name: sbp-tilt; }
+.sbp-style-geometric:not(.sbp-2d) .sbp-shape:nth-child(even) { clip-path: none; }
+/* Isometric 3D: 床に置いたブロックが上下する */
+.sbp-style-isometric:not(.sbp-2d) .sbp-world { transform: rotateX(55deg) rotateZ(-45deg); }
+.sbp-style-isometric:not(.sbp-2d) .sbp-shape { animation-name: sbp-block; box-shadow: 6px 6px 0 var(--colorNeutralForeground3, #616161); }
+/* Whimsical 3D: ふわふわ弾む */
+.sbp-style-whimsical:not(.sbp-2d) .sbp-shape { border-radius: 40% 60% 55% 45%; animation-name: sbp-bounce; }
+.sbp-shape:nth-child(2) { animation-delay: 0.2s; }
+.sbp-shape:nth-child(3) { animation-delay: 0.4s; }
+.sbp-shape:nth-child(4) { animation-delay: 0.6s; }
+.sbp-shape:nth-child(5) { animation-delay: 0.8s; }
+.sbp-shape:nth-child(6) { animation-delay: 1s; }
+
+.sbp-telop { flex: 0 0 auto; line-height: 1.6; align-self: center; max-width: 100%; box-sizing: border-box; margin: 0; padding: var(--spacingVerticalXS, 4px) var(--spacingHorizontalM, 12px); border-radius: var(--borderRadiusLarge, 8px); background-color: var(--colorBrandBackground, #0f6cbd); color: var(--colorNeutralForegroundOnBrand, #fff); font-size: clamp(18px, 4.5vw, 40px); font-weight: var(--fontWeightSemibold, 600); text-align: center; overflow-wrap: anywhere; }
+.sbp-emphasis { font-weight: var(--fontWeightBold, 700); font-size: 1.3em; text-decoration: underline; text-decoration-thickness: 3px; text-underline-offset: 4px; }
+.sbp-caption { flex: 0 0 auto; align-self: stretch; box-sizing: border-box; margin: 0; padding: var(--spacingVerticalS, 8px) var(--spacingHorizontalM, 12px); border-radius: var(--borderRadiusLarge, 8px); background-color: var(--colorNeutralBackground1, #fff); color: var(--colorNeutralForeground1, #242424); font-size: clamp(18px, 4vw, 36px); font-weight: var(--fontWeightBold, 700); line-height: 1.4; text-align: center; overflow-wrap: anywhere; white-space: pre-wrap; }
+.sbp-controls { flex: 0 0 auto; display: flex; flex-wrap: wrap; gap: var(--spacingHorizontalS, 8px); justify-content: center; }
+.sbp-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+@keyframes sbp-pop { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes sbp-slide { from { transform: translateX(-16px); } to { transform: translateX(16px); } }
+@keyframes sbp-spin { from { transform: rotateX(20deg) rotateY(0deg); } to { transform: rotateX(20deg) rotateY(360deg); } }
+@keyframes sbp-tilt { from { transform: rotate3d(1, 1, 0, -25deg); } to { transform: rotate3d(1, 1, 0, 25deg); } }
+@keyframes sbp-block { from { transform: translateZ(0); } to { transform: translateZ(40px); } }
+@keyframes sbp-bounce { from { transform: translateY(0) scale(1.1, 0.9); } to { transform: translateY(-24px) scale(0.9, 1.1); } }

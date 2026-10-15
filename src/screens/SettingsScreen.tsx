@@ -4,6 +4,7 @@ import { Badge, Button, Dropdown, Field, Input, Option, Switch, Text, makeStyles
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { Panel } from '../components/Panel';
 import { AiSettings } from '../ai/AiSettings';
+import { SpeechSettings } from '../speech/SpeechSettings';
 import { WorkTargetSettings } from '../projects/WorkTargetSettings';
 import { DEFAULT_EXPAND_POSITION, EXPAND_LABEL, EXPAND_POSITIONS, THEME_MODES, useSettings, type ExpandPosition, type Handedness, type ThemeMode } from '../store/settings';
 import { INDUSTRY_PRESETS, useIndustryPreset, useView3D } from '../store/view3d';
@@ -127,6 +128,7 @@ export function SettingsScreen() {
         <Button size="small" appearance="subtle" disabled={expandPosition === DEFAULT_EXPAND_POSITION} onClick={() => setExpandPosition(DEFAULT_EXPAND_POSITION)}>拡大表示の位置を既定（上）に戻す</Button>
       </Field>
       <WorkTargetSettings />
+      <SpeechSettings />
       <div role="group" aria-labelledby="audio-settings-title">
         <Text id="audio-settings-title" as="p" weight="semibold">音声</Text>
         <Switch label="BGM" checked={bgmEnabled} onChange={(_, d) => setBgmEnabled(d.checked)} />

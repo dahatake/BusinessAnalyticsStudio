@@ -3,6 +3,90 @@
 顧客との議論を、課題・解決策・優先度・ナレッジグラフ・アーキテクチャ・議論ツリー・ガント・ホワイトボード・3D ビューなどで見せる、顧客固有の情報を持たない共通アプリ（雛形）です。
 顧客固有の値は、すべて「顧客パック」（`public/data/*.json` など）にあり、アプリ本体のコードには入っていません。顧客パックがないときは、架空企業の「お手本パック」で起動します。
 
+## はじめての方へ（5 分で全体像をつかむ）
+
+### このアプリで「何ができる」か
+
+| 知りたいこと | 使う画面 |
+|---|---|
+| 結論 | サマリー |
+| 何から手を付けるか | 優先順位分析／2×2 マトリクス／ランキング表 |
+| 課題と解決策 | 課題-解決策分析／ナレッジグラフ |
+| ToBe（あるべき姿） | アーキテクチャ図 |
+| いつ・誰が | ガントチャート |
+| 現場のイメージ | 3D ビュー／2D 図面／地図／ミニ・モックアプリ |
+| 議論を残す | 議論テーマ／ホワイトボード／議論ツリー |
+| 資料にする | エクスポート／Engagement サマリーパック |
+
+画面つきの手順は [users-guide/01-quick-start.md](users-guide/01-quick-start.md) を見てください。
+
+### 全体の構成（コンポーネント図）
+
+```mermaid
+flowchart LR
+  User["利用者<br/>(Edge / Chrome / iPad Safari)"]
+  subgraph PC["あなたの PC（127.0.0.1 だけ）"]
+    Board["分析ボード<br/>(dist/ を npm start で配信, 20 種類の画面)"]
+    Pack["顧客パック<br/>(public/data/*.json, public/brand/, assets/)"]
+    Example["お手本パック<br/>(examples/mono/)"]
+    Pipeline["生成パイプライン<br/>(npm run pipeline)"]
+    Relay["中継プロセス<br/>(npm run relay, 任意)"]
+  end
+  Copilot["GitHub Copilot<br/>(未サインインはモック)"]
+  Export["エクスポート<br/>(Markdown・サマリーパック)"]
+  User --> Board
+  Pack --> Board
+  Example -.->|"顧客パックが無いとき"| Board
+  Pipeline --> Pack
+  Board <--> Relay
+  Relay <--> Copilot
+  Board --> Export
+```
+
+| 部品 | 役割 | 場所 |
+|---|---|---|
+| 分析ボード | 20 種類の画面で顧客との議論を見せる | `dist/`（`npm start` で配信） |
+| 顧客パック | 顧客固有の値（データ・ブランド・素材）をすべて持つ | `public/data/*.json`、`public/brand/`、`assets/` |
+| お手本パック | 顧客パックが無いときに使う架空企業のデータ | `examples/mono/` |
+| 生成パイプライン | 顧客パックを調査・生成する | `npm run pipeline` |
+| 中継プロセス | 分析ボードと GitHub Copilot をつなぐ（任意） | `npm run relay` |
+| エクスポート | 議論の結果を資料にする | Markdown・Engagement サマリーパック |
+
+### 作業手順（Step 図）
+
+```mermaid
+flowchart TD
+  S1["Step 1 セットアップ<br/>場所: ターミナル (scripts\setup.ps1 / scripts/setup.sh)"]
+  S2["Step 2 起動<br/>場所: ターミナル (npm run build → npm start)"]
+  S3["Step 3 お手本パックで画面を触る<br/>場所: ブラウザー (http://127.0.0.1:4173)"]
+  S4["Step 4 顧客パックを作る<br/>場所: ターミナル (npm run pipeline -- all --customer ... --project ...)"]
+  S5["Step 5 ブランドを整える<br/>場所: public/brand/brand-profile.json, npm run check:pack"]
+  S6["Step 6 顧客と議論する<br/>場所: ブラウザー (ペルソナ切替・ホワイトボード・議論ツリー)"]
+  S7["Step 7 資料にして渡す<br/>場所: ブラウザー (エクスポート)"]
+  S1 --> S2 --> S3 --> S4 --> S5 --> S6 --> S7
+  S3 -.->|"お手本で十分なら"| S6
+```
+
+| Step | 何を・どこでするか | 何ができるようになるか（完了の目安） | 次へ進む条件 |
+|---|---|---|---|
+| 1 | ターミナルで `powershell -ExecutionPolicy Bypass -File scripts\setup.ps1`（macOS は `bash scripts/setup.sh`）。`-DryRun` / `--dry-run` で内容だけ確認でき、失敗時は `logs/setup.log` を見る | 必要な道具と依存パッケージがそろう | エラーなく終わる |
+| 2 | ターミナルで `npm run build` のあと `npm start`（または `start.cmd` / `./start.sh`） | 分析ボードが起動する。「お手本パックで起動しています」と出れば正常 | 起動メッセージが出る |
+| 3 | ブラウザーで http://127.0.0.1:4173 を開き、左メニューとツールバーのペルソナで画面を切り替える | 20 種類の画面の見方がわかる | 画面を一通り触れた |
+| 4 | ターミナルで `npm run pipeline -- all --customer ... --project ...`（research / build に分けて実行も可） | 顧客パックができる | `npm run check:pack` と `npm run verify:pack` が合格 |
+| 5 | `public/brand/brand-profile.json` などを編集（再ビルド不要）。手順は [ブランド色・ロゴ・フォント・BGM の差し替え](#4-ブランド色ロゴフォントbgmの差し替え手順) | 顧客らしい見た目になる | `npm run check:pack` が合格 |
+| 6 | ブラウザーでペルソナ切替・ホワイトボード・議論ツリーを使う。進め方は [users-guide/02-meeting-playbook.md](users-guide/02-meeting-playbook.md) | 顧客との議論を画面で進め、残せる | 議論の結果がそろった |
+| 7 | ツールバーの「エクスポート」「Engagement サマリーパック」「保存」 | Markdown やサマリーパックとして渡せる | 資料を渡した |
+
+### つまずいたとき
+
+| 症状 | まず確認すること |
+|---|---|
+| node が見つからない | ターミナルを開き直す |
+| 画面が開かない | `npm run build` を実行したか、URL が正しいかを確認する |
+| AI が答えない | `npm run relay` を起動し、`copilot` で `/login` する（未サインインはモックで動きます） |
+| 顧客パックが反映されない | `dist/data/` の JSON を確認し、`npm run check:pack` を実行する |
+| 開発キットで困った | [users-guide/build-kit/01-writing-requests.md](users-guide/build-kit/01-writing-requests.md)、[07-troubleshooting.md](users-guide/build-kit/07-troubleshooting.md) |
+
 ## ドキュメント
 
 全体の索引は [users-guide/README.md](users-guide/README.md) です。役割に合わせて読んでください。
@@ -113,8 +197,13 @@ data/customer-research.md   顧客調査の記録
 brand/BRAND-RESEARCH.md     ブランド調査の記録
 ```
 
-作り方は 2 通りです。
+作り方は 3 通りです。
 
+- **Microsoft 365 Copilot で作る（最もお勧め）**: 社内の情報（メール・会議・Teams・SharePoint）と Web を出典つきで使え、機密区分も付けられるためです。手順は次のとおりです。
+  1. [docs/prompts/m365-copilot-customer-pack.md](docs/prompts/m365-copilot-customer-pack.md) の Prompt を貼ります。
+  2. `schema/` と お手本（`examples/mono/`）を添付します。
+  3. 出力を作業フォルダー（`work/envisioning/<顧客名>/`）に保存します。
+  4. `check:pack` / `verify:pack` で検証します。
 - **生成パイプライン（Skill `envisioning-dashboard`）**: リポジトリのルートで、顧客名を指定して実行します。調査 → 雛形の複製 → 顧客パックの生成 → スキーマ検証 → verify → 起動を、順に行います。
   ```
   npm run pipeline -- all --customer "<顧客名>" --project "<Project 名>"
