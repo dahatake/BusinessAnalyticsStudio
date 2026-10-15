@@ -4606,7 +4606,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-371",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "d09a542",
       "last_run_at": "2026-10-15T10:07:24+09:00",
       "evidence": "work/runs/202610150507/logs/system-test/E2E-276-202610151006.log",
@@ -4616,6 +4616,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "NFR-A11Y-008 の受入基準に対するケースの追加"
+        },
+        {
+          "at": "2026-10-15T10:08:01+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "対象 AC の検証レベルは integration で System Test の対象外（CHK-10）。テスト story-a11y.spec.ts は残す。レベルの扱いは rd-author が判断する"
         }
       ]
     },
@@ -4631,7 +4637,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-368",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "d09a542",
       "last_run_at": "2026-10-15T10:07:24+09:00",
       "evidence": "work/runs/202610150507/logs/system-test/E2E-277-202610151006.log",
@@ -4641,6 +4647,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "NFR-A11Y-008 の受入基準に対するケースの追加"
+        },
+        {
+          "at": "2026-10-15T10:08:02+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "対象 AC の検証レベルは integration で System Test の対象外（CHK-10）。テスト story-a11y.spec.ts は残す。レベルの扱いは rd-author が判断する"
         }
       ]
     },
@@ -4656,7 +4668,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-367",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "d09a542",
       "last_run_at": "2026-10-15T10:07:24+09:00",
       "evidence": "work/runs/202610150507/logs/system-test/E2E-278-202610151007.log",
@@ -4666,6 +4678,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "NFR-A11Y-008 の受入基準に対するケースの追加"
+        },
+        {
+          "at": "2026-10-15T10:08:02+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "対象 AC の検証レベルは integration で System Test の対象外（CHK-10）。テスト story-a11y.spec.ts は残す。レベルの扱いは rd-author が判断する"
         }
       ]
     },
@@ -4681,7 +4699,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-370",
       "canary": false,
-      "status": "fail",
+      "status": "blocked",
       "last_commit": "d09a542",
       "last_run_at": "2026-10-15T10:07:24+09:00",
       "evidence": "work/runs/202610150507/logs/system-test/E2E-279-202610151007.log",
@@ -4691,6 +4709,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "NFR-A11Y-008 の受入基準に対するケースの追加"
+        },
+        {
+          "at": "2026-10-15T10:08:02+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "対象 AC の検証レベルは integration で System Test の対象外（CHK-10）。テスト story-a11y.spec.ts は残す。レベルの扱いは rd-author が判断する"
         }
       ]
     },
