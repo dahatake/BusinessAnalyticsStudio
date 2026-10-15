@@ -13,6 +13,8 @@
   "checks": {
     "id_scan_exclude": [
       "docs/**",
+      "EABK-docs/**",
+      "EABK-Studio/**",
       "work/**",
       ".github/**",
       "scripts/**",
