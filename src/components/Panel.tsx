@@ -11,12 +11,16 @@ import type { Move } from '../workspace/layoutModel';
 import { isEditableTarget, panelKeyAction, runPanelKeyAction, titleDoubleClick, type KeyLike } from './panelKeys';
 
 const useStyles = makeStyles({
-  root: {
+  // 外枠（ワークスペースの外では従来どおりの幅と余白）
+  root: { display: 'flex', flexDirection: 'column', maxWidth: '960px' },
+  // 本体（見出し・説明・画面の中身）。ハンドルとは背景色を分ける（FR-183）
+  body: {
     display: 'flex',
     flexDirection: 'column',
     rowGap: tokens.spacingVerticalL,
     padding: tokens.spacingHorizontalXXL,
-    maxWidth: '960px',
+    backgroundColor: tokens.colorNeutralBackground1,
+    color: tokens.colorNeutralForeground1,
   },
   pane: {
     maxWidth: 'none',
@@ -24,13 +28,12 @@ const useStyles = makeStyles({
     height: '100%',
     minWidth: 0,
     minHeight: 0,
-    overflow: 'auto',
-    rowGap: tokens.spacingVerticalM,
-    padding: tokens.spacingHorizontalL,
+    overflow: 'hidden',
     backgroundColor: tokens.colorNeutralBackground1,
     color: tokens.colorNeutralForeground1,
     ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`, outlineOffset: '-2px' },
   },
+  paneBody: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minHeight: 0, minWidth: 0, overflow: 'auto', boxSizing: 'border-box', rowGap: tokens.spacingVerticalM, padding: tokens.spacingHorizontalL },
   maximized: { position: 'absolute', inset: 0, zIndex: 10, height: 'auto' },
   // 最小化: 見出しだけを残す。中身は mount したまま隠し、入力中の内容・絞り込みを保つ（FR-151 AC-260）
   minimized: {
@@ -39,6 +42,29 @@ const useStyles = makeStyles({
     rowGap: 0,
     '& > *:not(:first-child)': { display: 'none' },
   },
+  // コンポーネント上部の掴み場所（ハンドル）。本体と色を変え、掴みの印（色以外の識別手段）を付ける（FR-183）
+  handle: {
+    flexShrink: 0,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: '20px',
+    boxSizing: 'border-box',
+    backgroundColor: tokens.colorBrandBackground,
+    color: tokens.colorNeutralForegroundOnBrand,
+    userSelect: 'none',
+    touchAction: 'none',
+    '@media (forced-colors: active)': { backgroundColor: 'ButtonFace', color: 'ButtonText', borderBottom: '1px solid ButtonText' },
+  },
+  handleGrab: { cursor: 'grab', ':active': { cursor: 'grabbing' } },
+  grip: {
+    display: 'block',
+    width: '40px',
+    height: '8px',
+    boxSizing: 'border-box',
+    borderTop: '2px solid currentColor',
+    borderBottom: '2px solid currentColor',
+  },
   head: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS },
   headRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', columnGap: tokens.spacingHorizontalS },
   titleRow: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalM, flexGrow: 1, minWidth: 0 },
@@ -46,6 +72,7 @@ const useStyles = makeStyles({
   grab: { flexGrow: 1, cursor: 'grab', userSelect: 'none', touchAction: 'none', ':active': { cursor: 'grabbing' } },
   sample: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS },
 });
+
 
 export interface PanelProps {
   testId: string;
@@ -69,6 +96,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
   const state = usePackStore((st) => st.state);
   const sample = state.status === 'ready' && hasSampleData(state.pack.data);
   const ref = useRef<HTMLElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
   // フォーカス中のコンポーネントだけ、見出しに操作アイコンを出す（FR-150）
   const [focused, setFocused] = useState(false);
   const [narrow, setNarrow] = useState(false);
@@ -79,7 +107,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
   useEffect(() => {
     if (first.current) { first.current = false; return; }
     // 最小化・復元でアイコンのボタンが入れ替わっても、フォーカスをコンポーネントに残す。見出しが隠れないよう、中のスクロールは先頭に戻す
-    if (ref.current) ref.current.scrollTop = 0;
+    if (bodyRef.current) bodyRef.current.scrollTop = 0;
     ref.current?.focus({ preventScroll: true });
   }, [minimized]);
   useEffect(() => {
@@ -109,7 +137,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
       ref={ref}
       onFocus={onFocus}
       onBlur={onBlur}
-      className={mergeClasses(s.root, pane ? s.pane : undefined, pane?.maximized ? s.maximized : undefined, minimized ? s.minimized : undefined, foldMotion)}
+      className={mergeClasses(s.root, pane ? s.pane : undefined, pane?.maximized ? s.maximized : undefined, foldMotion)}
       style={maxWidth && !pane ? { maxWidth } : pane?.z !== undefined && !pane.maximized ? { position: 'relative', zIndex: pane.z } : undefined}
       aria-label={title}
       tabIndex={pane ? 0 : undefined}
@@ -119,6 +147,19 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
       data-expanded={pane?.expanded ? 'true' : undefined}
       data-minimized={minimized ? 'true' : undefined}
     >
+      {pane ? (
+        // 掴み場所（ハンドル）: ドラッグで移動し、ダブルクリックで 75% 表示にする。本体では行わない（FR-183）
+        <div
+          data-testid="panel-handle"
+          className={mergeClasses(s.handle, !pane.maximized && !pane.expanded ? s.handleGrab : undefined)}
+          onDoubleClick={titleDoubleClick(pane)}
+          onMouseDown={!pane.maximized && !pane.expanded ? (e: MouseEvent<HTMLElement>) => { if (e.button === 0 && e.detail < 2) e.preventDefault(); } : undefined}
+          onPointerDown={!pane.maximized && !pane.expanded ? (e: PointerEvent<HTMLElement>) => { if (e.button === 0) { e.preventDefault(); pane.startDrag(e); } } : undefined}
+        >
+          <span data-testid="panel-handle-grip" className={s.grip} aria-hidden />
+        </div>
+      ) : null}
+      <div data-testid="panel-body" ref={bodyRef} className={mergeClasses(s.body, pane ? s.paneBody : undefined, minimized ? s.minimized : undefined)}>
       <div className={s.head}>
         <div className={s.headRow}>
           <div className={s.titleRow}>
@@ -146,6 +187,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
         {description && !minimized ? <Text size={300}>{description}</Text> : null}
       </div>
       {children}
+      </div>
     </section>
   );
 }
