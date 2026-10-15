@@ -267,6 +267,10 @@ test.describe('NFR-SEC-002 外部への通信の限定と明示', () => {
       // FR-132: 明示的に有効にするまではモック
       await expect(page.getByTestId('ai-status')).toContainText('AI: モック');
       const settings = await openScreen(page, 'settings');
+      // FR-132 FR-181: 実接続の有効化は了承の記録がある案件に限る。先に了承を入力して保存する
+      await settings.getByRole('textbox', { name: /了承を確認した相手の役割と方法のメモ/ }).fill('顧客側の担当役員（口頭）');
+      await settings.getByRole('button', { name: '了承の記録を保存' }).click();
+      await expect(settings.getByTestId('consent-state')).toContainText('了承あり');
       await settings.getByRole('switch', { name: /実接続/ }).click();
       const confirm = page.getByRole('alertdialog');
       await expect(confirm).toContainText(/顧客名|議論|顧客パック/);
@@ -283,6 +287,35 @@ test.describe('NFR-SEC-002 外部への通信の限定と明示', () => {
       await expect(chat.getByTestId('chat-answer').last()).toContainText('差し替え部品の回答です。', { timeout: 15_000 });
       expect(relay.received.some((r) => r.body.includes(q))).toBe(true);
       expect([...hosts].filter((h) => !LOOPBACK.has(h)), 'localhost 以外への通信').toEqual([]);
+    } finally {
+      await relay.close();
+    }
+  });
+});
+
+test.describe('NFR-SEC-002 実接続の有効化は了承の記録が条件（異常系）', () => {
+  // NFR-SEC-002 FR-132 FR-181 AC-176（異常系）
+  test('NFR-SEC-002 AC-176 了承の記録がない案件では実接続を有効にできない', async ({ page, start }) => {
+    const relay = await startRelayStub({ delayMs: 0, sourceIds: [mono.sources()[0].id] });
+    try {
+      await start({ relayUrl: relay.url });
+      await expect(page.getByTestId('ai-status')).toContainText('AI: モック');
+      const settings = await openScreen(page, 'settings');
+      await expect(settings.getByTestId('consent-state')).toContainText('記録なし');
+      await expect(settings.getByTestId('consent-required')).toContainText('実接続を有効にできません');
+      const sw = settings.getByRole('switch', { name: /実接続/ });
+      if (await sw.isEnabled()) await sw.click();
+      else await expect(sw).toBeDisabled();
+      await expect(page.getByRole('alertdialog')).toHaveCount(0);
+      await expect(sw).not.toBeChecked();
+      await expect(page.getByTestId('ai-status')).toContainText('AI: モック');
+      await expect(page.getByTestId('ai-status')).not.toContainText('接続済み');
+      // 質問してもモックの回答で、中継プロセスには何も送られない
+      const chat = await openScreen(page, 'chat');
+      await chat.getByRole('textbox', { name: /質問/ }).fill('了承なしの確認ST-176');
+      await chat.getByRole('button', { name: '送信' }).click();
+      await expect(chat.getByTestId('chat-answer').last()).toContainText('AI 生成（モック）', { timeout: 15_000 });
+      expect(relay.received.some((r) => r.body.includes('了承なしの確認ST-176'))).toBe(false);
     } finally {
       await relay.close();
     }

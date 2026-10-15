@@ -4824,6 +4824,31 @@
           "reason": "受入基準からケースを作成"
         }
       ]
+    },
+    {
+      "id": "E2E-283",
+      "requirement_ids": [
+        "NFR-SEC-002"
+      ],
+      "ac_ids": [
+        "AC-176"
+      ],
+      "title": "AC-176 了承の記録がない案件では実接続を有効にできない（異常系）",
+      "layer": "e2e",
+      "command": "npx playwright test tests/system/e2e/quality.spec.ts -g 'AC-176 了承の記録がない'",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-15T13:17:24+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
     }
   ]
 }
