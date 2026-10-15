@@ -110,6 +110,50 @@ describe('FR-182 接続部品の切替', () => {
     expect((await synthesizeSpeech({ relayUrl: r2.url, realEnabled: true, packId: 'p' }, 'x')).kind).toBe('error');
   });
 
+  // FR-182 AC-377 NFR-SEC-001 NFR-SEC-002: 不正な region・endpoint では有効にならず、外部呼び出しは 0 回
+  it.each([
+    ['evil.com/x?', 'https://evil.com'],
+    ['japaneast.evil.com#', 'http://v.cognitiveservices.azure.com'],
+    ['a b', 'https://v.cognitiveservices.azure.com.evil.com'],
+    ['', 'https://evil.com'],
+    ['x/y', 'https://user:pw@v.cognitiveservices.azure.com'],
+  ])('AC-377 不正な設定（region=%s / endpoint=%s）はモックへ縮退し呼び出し 0', async (region, endpoint) => {
+    const { http, calls } = stub();
+    const r = await relayWith({ speechKey: KEY, speechRegion: region, visionKey: KEY, visionEndpoint: endpoint }, http);
+    expect(await setAzureConnection(r.url, 'speech', 'p', true, true)).toMatchObject({ mode: 'mock' });
+    expect(await setAzureConnection(r.url, 'vision', 'p', true, true)).toMatchObject({ mode: 'mock' });
+    expect((await synthesizeSpeech({ relayUrl: r.url, realEnabled: true, packId: 'p' }, 'x')).kind).toBe('subtitle-only');
+    expect((await recognizeViaRelay({ relayUrl: r.url, packId: 'p' }, 'AAAA', 1)).mock).toBe(true);
+    expect(calls).toHaveLength(0);
+  });
+
+  // FR-182 NFR-SEC-003: /azure/* の異常系
+  it('/azure/* の異常系（403・400・413・502）', async () => {
+    const { http, calls } = stub({ status: 500 });
+    const r = await relayWith(cfgFull, http);
+    const post = (p: string, b: unknown) => fetch(`${r.url}${p}`, { method: 'POST', body: JSON.stringify(b) });
+    expect((await post('/azure/connection', { feature: 'speech', packId: 'p', enable: true, confirmed: true })).status).toBe(403);
+    expect((await post('/azure/connection', { feature: 'speech', packId: 'p', enable: true, consent: true })).status).toBe(400);
+    expect((await post('/azure/connection', { feature: 'x', packId: 'p' })).status).toBe(400);
+    expect((await post('/azure/speech', { packId: 'p' })).status).toBe(400);
+    expect((await post('/azure/speech', { packId: 'p', text: 'あ'.repeat(5001) })).status).toBe(413);
+    expect((await post('/azure/vision', { packId: 'p', image: '***', strokeCount: 1 })).status).toBe(400);
+    for (const n of [-1, 1.5, 'a']) expect((await post('/azure/vision', { packId: 'p', image: 'AAAA', strokeCount: n })).status).toBe(400);
+    expect((await post('/azure/vision', { packId: 'p', image: 'A'.repeat(4_000_004), strokeCount: 1 })).status).toBe(413);
+    expect(calls).toHaveLength(0);
+    await post('/azure/connection', { feature: 'speech', packId: 'p', enable: true, consent: true, confirmed: true });
+    expect((await post('/azure/speech', { packId: 'p', text: 'x' })).status).toBe(502);
+  });
+
+  it('上限超過の本文は受信を止めて 413（または切断）で拒否し、外部呼び出し 0', async () => {
+    const { http, calls } = stub();
+    const r = await relayWith(cfgFull, http);
+    let status = 0;
+    try { status = (await fetch(`${r.url}/azure/speech`, { method: 'POST', body: 'x'.repeat(1_500_000) })).status; } catch { status = -1; }
+    expect([413, -1]).toContain(status);
+    expect(calls).toHaveLength(0);
+  });
+
   it('localhost 以外の中継 URL には送信しない（NFR-SEC-002）', async () => {
     let called = 0;
     const fetchFn = async () => { called++; return { ok: true, status: 200, json: async () => ({}) }; };

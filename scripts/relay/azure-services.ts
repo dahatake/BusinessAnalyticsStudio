@@ -33,6 +33,26 @@ export type VisionResult = { mode: 'mock'; text: string } | { mode: 'connected';
 
 export class AzureServiceError extends Error {}
 
+/** 入力の上限（NFR-SEC-003）。中継（relay.ts）と部品の両方で使う */
+export const MAX_SPEECH_TEXT_CHARS = 5000;
+export const MAX_IMAGE_BASE64_CHARS = 4_000_000;
+export const MAX_STROKE_COUNT = 100_000;
+
+/** リージョンは英数字とハイフンだけ（キーを任意のホストへ送らせない。NFR-SEC-001/002） */
+export const isValidSpeechRegion = (r: string | undefined): r is string => !!r && /^[A-Za-z0-9-]{1,64}$/.test(r);
+/** エンドポイントは https かつ Azure 標準ドメイン（*.cognitiveservices.azure.com）だけ */
+export function isValidVisionEndpoint(e: string | undefined): e is string {
+  if (!e) return false;
+  try {
+    const u = new URL(e);
+    return u.protocol === 'https:' && !u.username && !u.password && !u.port && /^[a-z0-9-]+(\.[a-z0-9-]+)*\.cognitiveservices\.azure\.com$/i.test(u.hostname);
+  } catch {
+    return false;
+  }
+}
+export const isValidBase64 = (s: string): boolean => s.length > 0 && s.length % 4 === 0 && /^[A-Za-z0-9+/]+={0,2}$/.test(s);
+export const isValidStrokeCount = (n: unknown): n is number => typeof n === 'number' && Number.isInteger(n) && n >= 0 && n <= MAX_STROKE_COUNT;
+
 export interface AzureServices {
   /** キーが設定されているか（値は返さない） */
   hasKey(feature: AzureFeature): boolean;
@@ -54,7 +74,7 @@ export function createAzureServices(config: AzureConfig, http: HttpPost = fetchP
   const enabled = new Set<string>();
   const slot = (f: AzureFeature, p: string) => `${f}:${p}`;
   const keyOf = (f: AzureFeature) => (f === 'speech' ? config.speechKey : config.visionKey);
-  const ready = (f: AzureFeature) => !!keyOf(f) && (f === 'speech' ? !!config.speechRegion : !!config.visionEndpoint);
+  const ready = (f: AzureFeature) => !!keyOf(f) && (f === 'speech' ? isValidSpeechRegion(config.speechRegion) : isValidVisionEndpoint(config.visionEndpoint));
   /** エラーの文面からキーの値を取り除く */
   const scrub = (m: string): string => {
     let out = m;

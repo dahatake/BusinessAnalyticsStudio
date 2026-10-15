@@ -5,7 +5,7 @@
 // - API キー・トークンは持たない。認証は利用者の GitHub Copilot のサインインを使う（SDK 側）。
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
-import { AZURE_FEATURES, AzureServiceError, type AzureFeature, type AzureServices } from './azure-services';
+import { AZURE_FEATURES, MAX_IMAGE_BASE64_CHARS, MAX_SPEECH_TEXT_CHARS, isValidBase64, isValidStrokeCount, AzureServiceError, type AzureFeature, type AzureServices } from './azure-services';
 
 export const AI_KINDS = ['structure', 'summary', 'recommend', 'chat', 'exec-summary'] as const;
 export type AiKind = (typeof AI_KINDS)[number];
@@ -49,12 +49,21 @@ function originAllowed(origin: string | undefined): boolean {
   }
 }
 
-function readBody(req: http.IncomingMessage): Promise<string> {
+class PayloadTooLarge extends Error {}
+
+function readBody(req: http.IncomingMessage, limit = 1_000_000): Promise<string> {
   return new Promise((resolve, reject) => {
     let body = '';
+    let over = false;
     req.on('data', (c: Buffer) => {
+      if (over) return;
       body += c.toString('utf8');
-      if (body.length > 1_000_000) reject(new Error('too large'));
+      if (body.length > limit) {
+        over = true;
+        body = '';
+        reject(new PayloadTooLarge('request too large'));
+        req.pause();
+      }
     });
     req.on('end', () => resolve(body));
     req.on('error', reject);
@@ -118,12 +127,16 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           if (req.method === 'POST' && path === '/azure/speech') {
             const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; text?: string };
             if (typeof b.packId !== 'string' || typeof b.text !== 'string') return json(400, { error: 'packId・text が必要です' });
+            if (b.text.length > MAX_SPEECH_TEXT_CHARS) return json(413, { error: `text は ${MAX_SPEECH_TEXT_CHARS} 文字までです` });
             return json(200, az ? await az.synthesize(b.packId, b.text) : { mode: 'mock', subtitleOnly: true });
           }
           if (req.method === 'POST' && path === '/azure/vision') {
-            const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; image?: string; strokeCount?: number };
+            const b = JSON.parse((await readBody(req, MAX_IMAGE_BASE64_CHARS + 100_000)) || '{}') as { packId?: string; image?: string; strokeCount?: number };
             if (typeof b.packId !== 'string' || typeof b.image !== 'string') return json(400, { error: 'packId・image が必要です' });
-            const n = Number(b.strokeCount ?? 0);
+            if (b.image.length > MAX_IMAGE_BASE64_CHARS) return json(413, { error: '画像が大きすぎます' });
+            if (!isValidBase64(b.image)) return json(400, { error: 'image は base64 で指定してください' });
+            const n = b.strokeCount ?? 0;
+            if (!isValidStrokeCount(n)) return json(400, { error: 'strokeCount は 0 以上の整数で指定してください' });
             return json(200, az ? await az.recognize(b.packId, b.image, n) : { mode: 'mock', text: `手書きメモ（${n} 画。モックの認識結果）` });
           }
           return json(404, { error: 'not found' });
@@ -142,6 +155,11 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
         }
         return json(404, { error: 'not found' });
       } catch (e) {
+        if (e instanceof PayloadTooLarge) {
+          res.once('finish', () => req.destroy());
+          return json(413, { error: e.message });
+        }
+        if (e instanceof SyntaxError) return json(400, { error: 'JSON の形式が不正です' });
         if (e instanceof AzureServiceError) return json(502, { error: e.message, mode: 'connected' });
         return json(500, { error: e instanceof Error ? e.message : String(e) });
       }
