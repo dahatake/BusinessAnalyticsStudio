@@ -191,7 +191,18 @@
     "AC-393": "sha256:611765fba1082411",
     "AC-395": "sha256:cb67b1a2ef8558d2",
     "AC-396": "sha256:4513ca85bc231038",
-    "AC-399": "sha256:c2b15973128f347e"
+    "AC-399": "sha256:c2b15973128f347e",
+    "AC-305": "sha256:c7a63ddfc4f68753",
+    "AC-321": "sha256:07cfd09cab21d341",
+    "AC-320": "sha256:34da361197a9e4b0",
+    "AC-317": "sha256:93772ee94ec5cfc9",
+    "AC-318": "sha256:7ec18be173ca59ce",
+    "AC-300": "sha256:f143b83de2fa5e5a",
+    "AC-315": "sha256:f2c25bde2cd68456",
+    "AC-297": "sha256:20045253f4fc78d5",
+    "AC-294": "sha256:38023a682076f924",
+    "AC-334": "sha256:28e9f4a26b6d23b5",
+    "AC-323": "sha256:3a1ae62f5e7aa98b"
   },
   "cases": [
     {
@@ -5111,6 +5122,281 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-293",
+      "requirement_ids": [
+        "FR-162"
+      ],
+      "ac_ids": [
+        "AC-305"
+      ],
+      "title": "AC-305 の System Test（既存の e2e テストに対応する台帳ケース）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-305",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T00:40:14+09:00",
+          "by": "conductor",
+          "change": "追加",
+          "reason": "CHK-10 の欠けを補う"
+        }
+      ]
+    },
+    {
+      "id": "E2E-294",
+      "requirement_ids": [
+        "FR-165"
+      ],
+      "ac_ids": [
+        "AC-321"
+      ],
+      "title": "AC-321 の System Test（既存の e2e テストに対応する台帳ケース）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-321",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T00:40:17+09:00",
+          "by": "conductor",
+          "change": "追加",
+          "reason": "CHK-10 の欠けを補う"
+        }
+      ]
+    },
+    {
+      "id": "E2E-295",
+      "requirement_ids": [
+        "FR-164"
+      ],
+      "ac_ids": [
+        "AC-320"
+      ],
+      "title": "AC-320 の System Test（既存の e2e テストに対応する台帳ケース）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-320",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T00:40:19+09:00",
+          "by": "conductor",
+          "change": "追加",
+          "reason": "CHK-10 の欠けを補う"
+        }
+      ]
+    },
+    {
+      "id": "E2E-296",
+      "requirement_ids": [
+        "FR-164"
+      ],
+      "ac_ids": [
+        "AC-317"
+      ],
+      "title": "AC-317 の System Test（既存の e2e テストに対応する台帳ケース）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-317",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T00:40:22+09:00",
+          "by": "conductor",
+          "change": "追加",
+          "reason": "CHK-10 の欠けを補う"
+        }
+      ]
+    },
+    {
+      "id": "E2E-297",
+      "requirement_ids": [
+        "FR-164"
+      ],
+      "ac_ids": [
+        "AC-318"
+      ],
+      "title": "AC-318 の System Test（既存の e2e テストに対応する台帳ケース）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-318",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T00:40:25+09:00",
+          "by": "conductor",
+          "change": "追加",
+          "reason": "CHK-10 の欠けを補う"
+        }
+      ]
+    },
+    {
+      "id": "E2E-298",
+      "requirement_ids": [
+        "FR-161"
+      ],
+      "ac_ids": [
+        "AC-300"
+      ],
+      "title": "AC-300 の System Test（既存の e2e テストに対応する台帳ケース）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-300",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T00:40:28+09:00",
+          "by": "conductor",
+          "change": "追加",
+          "reason": "CHK-10 の欠けを補う"
+        }
+      ]
+    },
+    {
+      "id": "E2E-299",
+      "requirement_ids": [
+        "FR-163"
+      ],
+      "ac_ids": [
+        "AC-315"
+      ],
+      "title": "AC-315 の System Test（既存の e2e テストに対応する台帳ケース）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-315",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T00:40:31+09:00",
+          "by": "conductor",
+          "change": "追加",
+          "reason": "CHK-10 の欠けを補う"
+        }
+      ]
+    },
+    {
+      "id": "E2E-300",
+      "requirement_ids": [
+        "FR-160"
+      ],
+      "ac_ids": [
+        "AC-297"
+      ],
+      "title": "AC-297 の System Test（既存の e2e テストに対応する台帳ケース）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-297",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T00:40:34+09:00",
+          "by": "conductor",
+          "change": "追加",
+          "reason": "CHK-10 の欠けを補う"
+        }
+      ]
+    },
+    {
+      "id": "E2E-301",
+      "requirement_ids": [
+        "FR-159"
+      ],
+      "ac_ids": [
+        "AC-294"
+      ],
+      "title": "AC-294 の System Test（既存の e2e テストに対応する台帳ケース）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-294",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T00:40:38+09:00",
+          "by": "conductor",
+          "change": "追加",
+          "reason": "CHK-10 の欠けを補う"
+        }
+      ]
+    },
+    {
+      "id": "E2E-302",
+      "requirement_ids": [
+        "FR-169"
+      ],
+      "ac_ids": [
+        "AC-334"
+      ],
+      "title": "AC-334 の System Test（既存の e2e テストに対応する台帳ケース）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-334",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T00:40:41+09:00",
+          "by": "conductor",
+          "change": "追加",
+          "reason": "CHK-10 の欠けを補う"
+        }
+      ]
+    },
+    {
+      "id": "E2E-303",
+      "requirement_ids": [
+        "FR-166"
+      ],
+      "ac_ids": [
+        "AC-323"
+      ],
+      "title": "AC-323 の System Test（既存の e2e テストに対応する台帳ケース）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-323",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T00:40:44+09:00",
+          "by": "conductor",
+          "change": "追加",
+          "reason": "CHK-10 の欠けを補う"
         }
       ]
     }
