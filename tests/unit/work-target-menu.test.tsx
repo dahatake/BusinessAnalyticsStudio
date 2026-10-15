@@ -51,7 +51,7 @@ describe('FR-148 作業先メニュー', () => {
     company('合成株式会社A', ['業務改善 2026', '在庫最適化']);
     const [b2] = company('合成株式会社B', ['需要予測', '品質改善']).slice(1);
     await openMenu();
-    act(() => useRestoreStatus.setState({ done: true }));
+    fireEvent.click(screen.getByRole('button', { name: '作業先' })); // 作業先の選択画面を開く（起動直後はメイン画面。FR-144 AC-398）
     const dlg = await screen.findByRole('dialog', { name: '作業先の選択' });
     fireEvent.click(within(dlg).getByRole('option', { name: /デモ/ }));
     await waitFor(() => expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull());
@@ -73,7 +73,7 @@ describe('FR-148 作業先メニュー', () => {
     const [p1] = company('合成株式会社A', ['業務改善 2026', '在庫最適化']);
     st().open(p1 ?? null);
     await openMenu();
-    act(() => useRestoreStatus.setState({ done: true }));
+    fireEvent.click(screen.getByRole('button', { name: '作業先' })); // 作業先の選択画面を開く（起動直後はメイン画面。FR-144 AC-398）
     const dlg = await screen.findByRole('dialog', { name: '作業先の選択' });
     fireEvent.click(within(dlg).getAllByRole('option')[0]!);
     await waitFor(() => expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull());
@@ -95,7 +95,7 @@ describe('FR-148 作業先メニュー', () => {
     st().open(a1 ?? null);
     useAnalyses.getState().setDraft(a1 ?? '', 'param', '9');
     await openMenu();
-    act(() => useRestoreStatus.setState({ done: true }));
+    fireEvent.click(screen.getByRole('button', { name: '作業先' })); // 作業先の選択画面を開く（起動直後はメイン画面。FR-144 AC-398）
     const dlg = await screen.findByRole('dialog', { name: '作業先の選択' });
     fireEvent.click(within(dlg).getByRole('option', { name: /業務改善 2026/ }));
     await waitFor(() => expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull());
@@ -118,7 +118,7 @@ describe('FR-148 作業先メニュー', () => {
   it('FR-148 AC-252 Project が 0 件の企業は、Project がないことと作成への案内が示され、押すと作成の dialog が開く', async () => {
     company('合成株式会社A', []);
     await openMenu();
-    act(() => useRestoreStatus.setState({ done: true }));
+    fireEvent.click(screen.getByRole('button', { name: '作業先' })); // 作業先の選択画面を開く（起動直後はメイン画面。FR-144 AC-398）
     const dlg = await screen.findByRole('dialog', { name: '作業先の選択' });
     fireEvent.click(within(dlg).getByRole('option', { name: /デモ/ }));
     await waitFor(() => expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull());
