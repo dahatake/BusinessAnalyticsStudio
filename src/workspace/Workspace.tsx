@@ -1,5 +1,5 @@
 // ワークスペース: レイアウトの木（分割とタブ）を描く。境界はドラッグでもキーボードでも動かせる（FR-109、NFR-A11Y-004）。
-import { createPortal } from 'react-dom';
+import { createPortal, flushSync } from 'react-dom';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type PointerEvent } from 'react';
 import { Button, Tab, TabList, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { useSnapMotion, motionAllowed } from '../motion/useFoldMotion';
@@ -307,11 +307,11 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     if (on) setResizing(true);
     else resizeTimer.current = window.setTimeout(() => setResizing(false), 320);
   };
-  const [settling, setSettling] = useState(false);
+  const [settling, setSettling] = useState<string | null>(null);
   const playing = useAnimation((st) => st.playing);
   // OS の「動きの軽減」またはアニメーションの停止のときは、途中の動きを省いて結果を直接示す（FR-185 AC-394）
   const motionOn = motionAllowed(playing, prefersReducedMotion());
-  const animated = motionOn && (!!live || settling);
+  const animated = motionOn && (!!live || settling !== null);
   const outKeys = useMemo(() => (expandedOut ? [expandedOut] : floatKeys), [expandedOut, floatKeys]);
   const treeBase = useMemo(() => (outKeys.length === 0 ? base : prune(base, new Set([...baseKeys].filter((k) => !outKeys.includes(k))))), [base, baseKeys, outKeys]);
   const inset = expandedOut ? expandInset(expandPos, width, height) : undefined;
@@ -629,15 +629,18 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     const onUp = () => {
       const d = lastDrag;
       stop();
-      setDrag(null);
-      if (active && d?.snap) useLayout.getState().snapTo(key, d.snap.kind, d.snap.opts);
-      else if (active && d?.target) useLayout.getState().dropMove(key, d.target.key, d.target.zone);
-      else if (active && lastLive) {
-        useLayout.getState().setFloats(lastLive);
-        // 押し出されたものが動き終わるまで、動きをつなぐ（FR-185）
-        setSettling(true);
-        window.setTimeout(() => setSettling(false), 420);
-      }
+      // 放した時点で、置いた位置を画面に反映する（flushSync）。動かしていたものは遅れなく最終の位置になり、押し出されたものだけが動き続ける
+      flushSync(() => {
+        setDrag(null);
+        if (active && d?.snap) useLayout.getState().snapTo(key, d.snap.kind, d.snap.opts);
+        else if (active && d?.target) useLayout.getState().dropMove(key, d.target.key, d.target.zone);
+        else if (active && lastLive) {
+          useLayout.getState().setFloats(lastLive);
+          // 押し出されたものが動き終わるまで、動きをつなぐ（FR-185）
+          setSettling(key);
+        }
+      });
+      if (active && lastLive && !d?.snap && !d?.target) window.setTimeout(() => setSettling(null), 420);
     };
     const onCancel = () => { stop(); setDrag(null); };
     const onKey = (ev: globalThis.KeyboardEvent) => {
@@ -776,9 +779,9 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
         return (
           <div
             key={`float-${k}`}
-            className={mergeClasses(s.floatBox, animated && expandedOut !== k ? (dragged ? s.floatFollow : s.floatAnimated) : undefined)}
+            className={mergeClasses(s.floatBox, animated && expandedOut !== k && settling !== k ? (dragged ? s.floatFollow : s.floatAnimated) : undefined)}
             data-float={k}
-            style={{ left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.w * 100}%`, height: `${r.h * 100}%`, zIndex: expandedOut === k ? 500 : dragged ? 600 : 2 + Math.max(rank, 0) }}
+            style={{ left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.w * 100}%`, height: `${r.h * 100}%`, zIndex: expandedOut === k ? 500 : dragged ? 600 : 2 + Math.max(rank, 0), ...(settling !== null ? { transition: 'none' } : {}) }}
           >
             <Slot host={hostOf(k)} />
           </div>

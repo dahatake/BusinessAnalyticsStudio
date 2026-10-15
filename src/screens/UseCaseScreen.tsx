@@ -280,9 +280,9 @@ function UseCaseScreen() {
                 const sb = set.storyboards?.[uc.id];
                 const sbSt = storyboardState(uc, sb);
                 return (
-                  <li key={uc.id} className={s.item} data-usecase-name={uc.name}>
+                  <li key={uc.id} className={s.item} data-usecase-name={uc.name} data-persona={uc.persona}>
                     <div className={s.row}>
-                      <Text weight="semibold">{uc.name}</Text>
+                      <Text weight="semibold" data-testid="usecase-name">{uc.name}</Text>
                       <Badge appearance="outline" color={st === 'stale' ? 'warning' : st === 'latest' ? 'success' : 'subtle'}>{`アニメーション: ${STATE_LABEL[st]}`}</Badge>
                     </div>
                     <Text size={200}>{`手順 ${uc.steps.length} 件${uc.persona ? ` ／ 対象: ${uc.persona}` : ''}`}</Text>
@@ -363,31 +363,6 @@ function UseCaseScreen() {
                 ))}
               </ul>
             </section>
-            <ul className={s.list} data-testid="usecase-list" aria-label="ユースケース一覧">
-              {set.items.map((uc) => {
-                const anim = set.animations[uc.id];
-                const st = animationState(uc, anim);
-                return (
-                  <li key={uc.id} className={s.item} data-persona={uc.persona}>
-                    <div className={s.row}>
-                      <Text weight="semibold" data-testid="usecase-name">{uc.name}</Text>
-                      <Badge appearance="outline" color={st === 'stale' ? 'warning' : st === 'latest' ? 'success' : 'subtle'}>{`アニメーション: ${STATE_LABEL[st]}`}</Badge>
-                    </div>
-                    <Text size={200}>{`手順 ${uc.steps.length} 件${uc.persona ? ` ／ 対象: ${uc.persona}` : ''}`}</Text>
-                    <div className={s.row}>
-                      <Button size="small" onClick={() => setDlg({ editId: uc.id, draft: toDraft(uc), errors: [] })}>編集</Button>
-                      <Button size="small" onClick={() => setConfirmId(uc.id)}>削除</Button>
-                      <Button size="small" onClick={() => {
-                        const r = createAnimation(projectId, uc.id);
-                        setMessage(r.ok ? null : { id: uc.id, errors: r.errors });
-                      }}>アニメーションを作成</Button>
-                      <Button size="small" className={s.forced} disabled={!anim} onClick={() => setPlaying(uc.id)}>アニメーションを再生</Button>
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-            {playing && playingAnim ? <AnimationPlayer key={`${playing.id}:${playingAnim.createdAt}`} uc={playing} anim={playingAnim} onClose={() => setPlaying(null)} /> : null}
             <UseCaseDialog projectId={projectId} />
             {confirmId ? (
               <Dialog open modalType="alert" onOpenChange={(_, d) => { if (!d.open) setConfirmId(null); }}>
