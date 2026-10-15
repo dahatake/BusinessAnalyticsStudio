@@ -42,37 +42,36 @@ async function dragHeading(page: Page, c: Locator, toX: number, toY: number): Pr
 const overlap = (a: Box, b: Box) => Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
 
 test.describe('FR-173 コンポーネントのキャンバス内での自由な移動', () => {
-  // FR-173 AC-348
-  test('FR-173 AC-348 ヘッダーのドラッグで別の位置に置け、再読込後も同じ位置。重なる位置にも置け、直近に操作したものが手前', async ({ page, start }) => {
+  // FR-173 AC-348（Q-025 で改訂: 重なる位置へ置くと、ぶつかられたものが押し出されて重ならない）
+  test('FR-173 AC-348 ヘッダーのドラッグで別の位置に置け、再読込後も同じ位置。ほかのコンポーネントの上へ置くとそちらが押し出され、重なって表示されない', async ({ page, start }) => {
     const app = await start();
     await selectPersona(page, '事業部門');
     const ks = await topKeys(page);
     expect(ks.length, 'コンポーネントが 2 つ以上必要').toBeGreaterThanOrEqual(2);
     const [a, b] = ks;
-    const ws = await box(workspace(page));
     const ba = await box(component(page, a));
     const bb = await box(component(page, b));
-    // a を b の中央へ（重なる位置）
+    // a を b の中央へ（b を押し出させる）
     await dragHeading(page, component(page, a), bb.x + bb.width / 2, bb.y + bb.height / 2);
+    await expect.poll(async () => {
+      const m = await box(component(page, a));
+      const o = await box(component(page, b));
+      return overlap(m, o);
+    }, { timeout: 5_000, message: '移動後も重なって表示されている（押し出されない）' }).toBeLessThanOrEqual(4);
     const moved = await box(component(page, a));
     expect(Math.abs(moved.x - ba.x) + Math.abs(moved.y - ba.y), '位置が変わらない').toBeGreaterThan(2);
-    const bAfter = await box(component(page, b));
-    expect(overlap(moved, bAfter), '重なる位置に置けない').toBeGreaterThan(0);
-    // 重なりの中心で、直近に操作した a が手前
-    const ox = Math.max(moved.x, bAfter.x) + Math.min(moved.width, bAfter.width) / 2;
-    const oy = Math.max(moved.y, bAfter.y) + Math.min(moved.height, bAfter.height) / 2;
-    const top = async (k: string) => page.evaluate(([x, y, key]) => !!document.elementFromPoint(x as number, y as number)?.closest(`[data-testid="component-${key}"]`), [ox, oy, k] as const);
-    expect(await top(a), '直近に操作したものが手前に出ない').toBe(true);
-    // b を操作すると b が手前になる
-    const hb = await box(heading(component(page, b)));
-    await page.mouse.click(hb.x + hb.width / 2, hb.y + hb.height / 2);
-    expect(await top(b), 'b を操作しても手前に出ない').toBe(true);
+    // すべてのコンポーネントが互いに重ならない
+    const boxes: Record<string, Box> = {};
+    for (const k of await topKeys(page)) boxes[k] = await box(component(page, k));
+    const names = Object.keys(boxes);
+    for (let i = 0; i < names.length; i++) for (let j = i + 1; j < names.length; j++) {
+      expect(overlap(boxes[names[i]], boxes[names[j]]), `${names[i]} と ${names[j]} が重なる`).toBeLessThanOrEqual(4);
+    }
     const pos = await box(component(page, a));
     await app.reload();
     const again = await box(component(page, a));
     expect(Math.abs(again.x - pos.x), '再読込後の x').toBeLessThanOrEqual(2);
     expect(Math.abs(again.y - pos.y), '再読込後の y').toBeLessThanOrEqual(2);
-    expect(ws.width).toBeGreaterThan(0);
   });
 
   // FR-173 AC-348（異常系: キャンバスの外へは出ない）

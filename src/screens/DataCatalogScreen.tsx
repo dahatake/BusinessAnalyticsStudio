@@ -59,6 +59,8 @@ function DataCatalogScreen() {
   const [importErrors, setImportErrors] = useState<string[]>([]);
   const [importedMsg, setImportedMsg] = useState('');
   const [todoResult, setTodoResult] = useState('');
+  const [importing, setImporting] = useState(false);
+  const [wantTodos, setWantTodos] = useState(false);
   const [urlDraft, setUrlDraft] = useState('');
   const [urlError, setUrlError] = useState('');
   const savedUrl = imported?.sourceUrl ?? '';
@@ -120,10 +122,15 @@ function DataCatalogScreen() {
   // 取り込みはブラウザーの中だけで読む（File.text）。ネットワークには送らない（NFR-SEC-004）。拒否したときは既存の内容を変えない
   const onFile = async (file: File | undefined): Promise<void> => {
     if (!projectId || !file) return;
-    let text = '';
-    try { text = file.size > 5 * 1024 * 1024 ? '' : await file.text(); } catch { setImportErrors(['ファイルを読み込めませんでした。ファイルを確認して、選び直してください。']); setImportedMsg(''); return; }
-    const r = importCatalog(projectId, text, file.name, file.size);
-    if (r.ok) { setImportErrors([]); setImportedMsg(`${file.name} から ${r.count} 件の項目を取り込みました。`); setTodoResult(''); } else { setImportErrors(r.errors); setImportedMsg(''); }
+    setImporting(true);
+    try {
+      let text = '';
+      try { text = file.size > 5 * 1024 * 1024 ? '' : await file.text(); } catch { setImportErrors(['ファイルを読み込めませんでした。ファイルを確認して、選び直してください。']); setImportedMsg(''); return; }
+      const r = importCatalog(projectId, text, file.name, file.size);
+      if (r.ok) { setImportErrors([]); setImportedMsg(`${file.name} から ${r.count} 件の項目を取り込みました。`); setTodoResult(''); } else { setImportErrors(r.errors); setImportedMsg(''); }
+    } finally {
+      setImporting(false);
+    }
   };
   const onSaveUrl = (): void => {
     if (!projectId) return;
@@ -132,12 +139,18 @@ function DataCatalogScreen() {
   };
   const onAddTodos = (): void => {
     if (!projectId) return;
+    // 取り込みの読み込み中に押されたときは、取り込みが終わってから追加する（取り込み前の状態で「カタログなし」と判断して、結果を失わない）
+    if (importing) { setWantTodos(true); return; }
     if (!hasCatalog) { setTodoResult(NO_CATALOG_REASON); return; }
     if (counts['BASのみ'] === 0) { setTodoResult(NO_BAS_ONLY_REASON); return; }
     const todos = buildTodos(rows, (e) => relatedUseCases(e, useCases, model.derived, links).map((u) => u.name));
     const n = addTodos(projectId, todos);
     setTodoResult(n > 0 ? `${n} 件の ToDo を plan の tasks に追加しました。` : '追加済みのため、新しく追加した ToDo は 0 件です。');
   };
+  // 取り込み中に押された「未掲載を ToDo に追加」を、取り込みの完了後に 1 回だけ実行する
+  useEffect(() => {
+    if (wantTodos && !importing) { setWantTodos(false); onAddTodos(); }
+  });
 
   const onAdd = (entityName: string, useCaseId: string) => {
     if (!projectId) return;

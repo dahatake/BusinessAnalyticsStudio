@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, entity, hook, countBadge, captureDownload, setEditMode, tableRows } from '../support/fixtures';
+import { test, expect, openScreen, component, entity, hook, countBadge, captureDownload, setEditMode, tableRows, gotoAndEnter } from '../support/fixtures';
 import { examplePack } from '../support/packs';
 
 const require = createRequire(import.meta.url);
@@ -129,9 +129,8 @@ test.describe('FR-028 URL への反映と復元', () => {
     const url = page.url();
     expect(url).toContain('#');
     const tab = await context.newPage();
-    await tab.goto(url);
-    await tab.keyboard.press('Escape').catch(() => {});
-    await tab.getByTestId('workspace').waitFor();
+    // 新しいタブもまずメイン画面（FR-144 AC-398）: 「Project を開く」→作業先選択→分析画面
+    await gotoAndEnter(tab, url);
     await expect.poll(() => selectedIds(tab)).toContain(b.id);
   });
 
@@ -141,8 +140,7 @@ test.describe('FR-028 URL への反映と復元', () => {
     const view = await openScreen(page, 'issue-solution');
     await entity(view, mono.issues()[0].id).first().click();
     const bad = page.url().replace(mono.issues()[0].id, 'does-not-exist-999');
-    await page.goto(bad);
-    await page.getByTestId('workspace').waitFor();
+    await gotoAndEnter(page, bad);
     await expect.poll(() => selectedIds(page)).toEqual([]);
     expect(pageErrors).toEqual([]);
     void app;

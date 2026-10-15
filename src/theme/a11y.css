@@ -28,6 +28,17 @@ input.fui-Combobox__input:focus-visible {
   outline-offset: -2px;
 }
 
+/* 日付・時刻の入力欄の、カレンダーのボタン（入力欄の内部の部品）にフォーカスがあるとき、入力欄自身は :focus・:focus-visible に一致しない。
+   フォーカスの位置が見えなくならないよう、内側のフォーカスでも同じ枠を出す（NFR-A11Y-001 AC-170） */
+input[type='date']:focus-within,
+input[type='time']:focus-within,
+input[type='datetime-local']:focus-within,
+input[type='month']:focus-within,
+input[type='week']:focus-within {
+  outline: 2px solid var(--colorStrokeFocus2, currentColor);
+  outline-offset: -2px;
+}
+
 /* ワークスペースの中の使えないボタン: 文字は AA のコントラスト（4.5:1）で読める。使えないことは、点線の枠・カーソル・無効の属性で示し、色だけに頼らない（NFR-UX-007 AC-234）。
    色は Fluent 2 のトークン（テーマの CSS 変数）から取り、Light/Dark/ハイコントラストに従う。 */
 [data-layout] button:disabled,

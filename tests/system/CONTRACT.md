@@ -46,7 +46,7 @@
 ## 9. コンポーネントの移動・自動サイズ調整・作業先の選択・Fluent 2（FR-142〜144・NFR-UX-007。workspace-layout.spec.ts が前提にする画面の探し方）
 - 移動: コンポーネントの見出し（heading）をつかんでドラッグする。移動中は置ける場所を `data-testid="drop-indicator"` で示す。Esc で中止できる。
 - 自動サイズ調整: フォーカスしたコンポーネントの面積が基準の PARAM-033（1.5）倍になる。switch「サイズの自動調整」で切り替える。
-- 作業先: 常に表示する `data-testid="work-target"`（「デモ」または「企業名 / Project 名」）。ボタン「作業先」で dialog「作業先の選択」を開く。候補は option（「デモ」「<企業名> … <Project 名>」「実際の Project を登録」）。起動のたびに（実 Project が 0 件でも）同じ dialog を必ず出し、何も選ばずには閉じられない（FR-144 AC-237・AC-239）。support/fixtures.ts の `skipOpening` は、この dialog が出ていればデモ（なければ最初の Project）を選んで進む。選択画面そのものを確かめるテストは `skipOpening: false` で起動し `pressOpeningEscape`（オープニングだけ飛ばす）を使う。
+- 作業先: 常に表示する `data-testid="work-target"`（「デモ」または「企業名 / Project 名」）。ボタン「作業先」で dialog「作業先の選択」を開く。候補は option（「デモ」「<企業名> … <Project 名>」「実際の Project を登録」）。起動直後はメイン画面（§15）で、選択画面は「Project を開く」で必ず出る（FR-144 AC-237・AC-239、Q-026 で改訂）。support/fixtures.ts の `skipOpening` は、メイン画面と選択画面を進めてデモ（なければ最初の Project）を選ぶ。選択画面そのものを確かめるテストは `skipOpening: false` で起動し `pressOpeningEscape`（オープニングだけ飛ばす）を使う。
 - デモの非表示（FR-144 AC-240・AC-241）: 設定画面（`nav-settings`）の switch「選択画面にデモを表示」（既定: オン）。オフにすると dialog「作業先の選択」にデモの option が出ない。端末内（localStorage 等）に保存され、再読込後も維持され、別の browser context には引き継がれない。
 - 最初のフレーム（FR-147 AC-246〜250）: 新しいフックは使わない。「最初のフレーム」は `scene.info().frame > 0` かつ `scene.objects()` に `visible` な拠点がある状態。開いた時刻は `openScreen(view3d)` の直前。
 - 3D の描画面（FR-146 AC-243・AC-244）: `data-testid="component-view3d"` の中の `canvas` と、その親要素（表示領域）の大きさを比べる。クリックは `scene.objects` の画面座標へ `page.mouse.click`。
@@ -67,12 +67,20 @@
 - 音声: `t.audio.isAudible()`（既存フック）。
 
 ## 12. 自由配置・拡大表示・ストーリー（FR-173〜180。workspace-free-layout.spec.ts・story.spec.ts が前提にする画面の探し方）
-- 自由配置・拡大（FR-173〜175）: 移動は見出し（heading）のドラッグ。置いた位置は再読込後も維持され、`workspace` の外へ出ない。重なったときは直近に操作したものが手前（`document.elementFromPoint` で判定）。ダブルクリックで拡大中のコンポーネントは `data-expanded="true"`（最大化は `data-maximized="true"` で別。拡大では付かない）。拡大の寸法は `workspace` の境界に対する割合（PARAM-058=75%）。
+- 自由配置・拡大（FR-173〜175）: 移動は見出し（heading）のドラッグ。置いた位置は再読込後も維持され、`workspace` の外へ出ない。重なったときは、ぶつかられたものが押し出されて重ならない（§15。Q-025 で改訂。「手前に出す」は廃止）。ダブルクリックで拡大中のコンポーネントは `data-expanded="true"`（最大化は `data-maximized="true"` で別。拡大では付かない）。拡大の寸法は `workspace` の境界に対する割合（PARAM-058=75%）。
 - 設定（FR-175）: 設定画面（`nav-settings`）の radiogroup「拡大表示の位置」に radio「上」「左」「右」「下」（既定: 上）。
 - 作業先メニュー（FR-176）: `work-target-menu` とボタン「企業を登録」が最上段（ほかの `nav-*`・ペルソナ・編集モード・`stepper` より上端が上か同じ）。
 - ストーリー（FR-177〜179）: ボタン「プレゼンテーションを開始」→ dialog「ペルソナの選択」（button 経営層・事業部門・IT・現場。Esc で閉じるとストーリーは始まらない）→ `data-testid="story"`。現在のシーン `story-scene`（見出し heading は 1 つ。`data-story-part`=1〜4（①解決策②理由③KPI/OKR④ユースケース）、①は `data-solution-id`、不足データのシーンは `data-no-data="true"` で本文に「データなし」・理由・補う入口）。`story-position`（「n / 全体」）。`→`/`←`/`Esc` で操作。
 - ユースケース一覧（FR-180）: ステッパーの「ユースケース作成」→ `usecase-list` の listitem に `data-persona`（経営層・事業部門・IT・現場）、子に `usecase-name`・`usecase-summary`・`usecase-steps`・`usecase-effect`・`usecase-solution`・`usecase-kpi`。
 - 優先順位（FR-177 の期待値の元）: `priority` 画面内の `data-entity-id`（`sol-` で始まる解決策 ID）の出現順。
+## 15. メイン画面・ハンドル・押し出し・アニメーション（FR-183〜187。Q-025・Q-026 の改訂を含む。main-screen.spec.ts・workspace-handle.spec.ts・workspace-layout.spec.ts・workspace-free-layout.spec.ts が前提にする画面の探し方）
+- 起動（FR-186・FR-144 AC-398。改訂）: オープニングの後、最初に `data-testid="main-screen"`（メイン画面）が出る。作業先の選択画面（dialog「作業先の選択」）は起動直後には出ない。`support/fixtures.ts` の `skipOpening` は、メイン画面が出ていれば main-screen 内のボタン「Project を開く」を押して選択画面へ進み、デモ（なければ最初の Project）を選ぶ。選択画面は Esc で閉じられ、閉じるとメイン画面に戻る（作業先が未定のまま `workspace` には入らない）。メイン画面から Project を開く（ボタン「Project を開く」）たびに、実 Project の件数によらず選択画面が必ず出る。
+- メイン画面の中身: 案内 `data-testid="main-guide"`（listitem が 4 つ: 企業を登録・Project を作成・Project を開く・分析を開始、この順）と、各手順の button（名前は手順名と同じ）。企業は region「企業 <企業名>」（§8 と同じ。その中のボタン「Project を作成」）。メイン画面には `workspace`・`nav-*`・`component-*`・`work-target-menu` は出ない。企業・Project が 0 件で「分析を開始」を押しても分析画面へは進まず、role=alert か案内で示す。
+- メイン画面へ戻る（FR-187）: 分析画面（Project を開いたとき）の上部に button「メイン画面へ戻る」。上端は `work-target-menu`・ボタン「企業を登録」より上にならない。メイン画面には出ない。
+- ハンドル（FR-183）: すべてのコンポーネントの上部に `data-testid="panel-handle"`（コンポーネントの内側）。その内側に掴みの印 `data-testid="panel-handle-grip"`。本体は `data-testid="panel-body"`。ハンドルの背景色は本体の背景色と異なる（ハイコントラストを除く）。ドラッグ移動・ダブルクリック拡大（`data-expanded`）はハンドルで行い、本体では行わない。ドラッグなしの移動は §4 の `component-menu` のメニュー項目（名前に「移動」を含む）。
+- 押し出し（FR-184）: コンポーネントを別のコンポーネントの位置へドロップしたとき、ぶつかられたものが重ならない位置へ移り、すべての `component-*`（最上位）の `boundingBox` が互いに重ならない（許容 4px²）。FR-173 の「重なる位置に置け、手前に出る」は廃止。
+- アニメーション（FR-185）: 移動・リサイズ中に requestAnimationFrame ごとに `boundingBox` を記録し、位置・大きさが変わったフレーム数 ÷ 経過秒 ≥ 30（PARAM-065）。ドロップの前後で位置の飛び ≤ 24px。リサイズは §4 の `separator`（role）をドラッグする。
+
 ## 12. データカタログ（FR-159〜162・NFR-UX-011。data-catalog.spec.ts が前提にする画面の探し方）
 - 画面: component key `data-catalog`（`nav-data-catalog`、`component-data-catalog`）。ユースケース一覧 `usecase-list` の各 listitem に `data-usecase-name`。
 - 一覧・詳細（FR-159）: `entity-list` の listitem（`data-entity-name`・`data-entity-description`。表示と同じ値）。行を選ぶと `entity-detail` にラベル「名称」「説明」「導出元」「関連するユースケース」と値。0 件のときは `entity-list-empty-reason` に理由（「導出の元がない」または「顧客パックがない」）。

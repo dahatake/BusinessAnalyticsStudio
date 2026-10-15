@@ -1,0 +1,155 @@
+// 自由配置の押し出し・再配置の純粋なモデル（FR-173・FR-184）。React に依存しない。
+// 動かしているコンポーネント（pinned）に重なったものを、重ならない位置へ移す（動かせなければ縮める）。
+// どうしても解けないときは、全体を格子に並べ直して、重なりが残らないことを保証する。
+export interface PxRect { x: number; y: number; w: number; h: number }
+export type PxMap = Record<string, PxRect>;
+export interface Bounds { w: number; h: number }
+
+/** これ未満の重なり（面積 px²）は、重なりとして扱わない（描画の丸め誤差） */
+const EPS = 1;
+/** 縮めてよい最小の大きさ（px） */
+export const MIN_W = 160;
+export const MIN_H = 120;
+
+export const overlapArea = (a: PxRect, b: PxRect): number =>
+  Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
+
+/** 作業領域の中に収める（大きさが領域より大きければ縮める） */
+export function clampInto(r: PxRect, b: Bounds): PxRect {
+  const w = Math.min(Math.max(r.w, 1), b.w);
+  const h = Math.min(Math.max(r.h, 1), b.h);
+  return { x: Math.min(Math.max(r.x, 0), b.w - w), y: Math.min(Math.max(r.y, 0), b.h - h), w, h };
+}
+
+const overlapsAny = (r: PxRect, others: PxRect[]): boolean => others.some((o) => overlapArea(r, o) > EPS);
+
+/** `o` を、`p` と重ならない位置へ移す。まず平行移動（最小の距離）、できなければ縮める。移せなければ null。 */
+function pushAway(o: PxRect, p: PxRect, pinned: PxRect, b: Bounds): PxRect | null {
+  const cands: Array<{ r: PxRect; cost: number }> = [];
+  const moves: PxRect[] = [
+    { ...o, x: p.x + p.w },
+    { ...o, x: p.x - o.w },
+    { ...o, y: p.y + p.h },
+    { ...o, y: p.y - o.h },
+  ];
+  for (const m of moves) {
+    if (m.x < -0.01 || m.y < -0.01 || m.x + m.w > b.w + 0.01 || m.y + m.h > b.h + 0.01) continue;
+    if (overlapArea(m, pinned) > EPS) continue;
+    cands.push({ r: m, cost: Math.abs(m.x - o.x) + Math.abs(m.y - o.y) });
+  }
+  if (cands.length > 0) return cands.reduce((a, c) => (c.cost < a.cost ? c : a)).r;
+  // 縮める: p と重ならない側だけを残す（残る面積が最大のもの）
+  const cuts: PxRect[] = [
+    { x: o.x, y: o.y, w: p.x - o.x, h: o.h },
+    { x: p.x + p.w, y: o.y, w: o.x + o.w - (p.x + p.w), h: o.h },
+    { x: o.x, y: o.y, w: o.w, h: p.y - o.y },
+    { x: o.x, y: p.y + p.h, w: o.w, h: o.y + o.h - (p.y + p.h) },
+  ].filter((c) => c.w >= MIN_W && c.h >= MIN_H && overlapArea(c, pinned) <= EPS);
+  if (cuts.length === 0) return null;
+  return cuts.reduce((a, c) => (c.w * c.h > a.w * a.h ? c : a));
+}
+
+/** 全体を格子に並べ直す（最後の手段）。いまの位置の順（上から下、左から右）を保つ。 */
+export function packGrid(rects: PxMap, b: Bounds): PxMap {
+  const keys = Object.keys(rects);
+  const n = keys.length;
+  if (n === 0) return {};
+  const cols = Math.max(1, Math.round(Math.sqrt((n * b.w) / Math.max(b.h, 1))));
+  const rows = Math.ceil(n / cols);
+  const cy = (k: string) => rects[k]!.y + rects[k]!.h / 2;
+  const cx = (k: string) => rects[k]!.x + rects[k]!.w / 2;
+  const byY = [...keys].sort((a, c) => cy(a) - cy(c) || cx(a) - cx(c));
+  const out: PxMap = {};
+  for (let r = 0; r < rows; r++) {
+    const line = byY.slice(r * cols, (r + 1) * cols).sort((a, c) => cx(a) - cx(c));
+    const cw = b.w / line.length;
+    const ch = b.h / rows;
+    line.forEach((k, i) => { out[k] = { x: i * cw, y: r * ch, w: cw, h: ch }; });
+  }
+  return out;
+}
+
+export function hasOverlap(rects: PxMap): boolean {
+  const ks = Object.keys(rects);
+  for (let i = 0; i < ks.length; i++) for (let j = i + 1; j < ks.length; j++) if (overlapArea(rects[ks[i]!]!, rects[ks[j]!]!) > EPS) return true;
+  return false;
+}
+
+/**
+ * `pinned`（動かしている・置いたコンポーネント）に重なるものを押し出して、すべてが重ならない配置にする（FR-184）。
+ * 押し出されたものがさらにほかと重なるときは、それも押し出す。入力は変えない。
+ */
+export function resolveOverlaps(input: PxMap, pinned: string, b: Bounds): PxMap {
+  const r: PxMap = {};
+  for (const [k, v] of Object.entries(input)) r[k] = clampInto(v, b);
+  if (!r[pinned]) return r;
+  const keys = Object.keys(r);
+  const queue = [pinned];
+  let guard = 0;
+  while (queue.length > 0 && guard++ < 400) {
+    const p = queue.shift()!;
+    const hits = keys
+      .filter((o) => o !== pinned && o !== p && overlapArea(r[p]!, r[o]!) > EPS)
+      .sort((a, c) => overlapArea(r[p]!, r[c]!) - overlapArea(r[p]!, r[a]!));
+    for (const o of hits) {
+      if (overlapArea(r[p]!, r[o]!) <= EPS) continue;
+      const moved = pushAway(r[o]!, r[p]!, r[pinned]!, b);
+      if (!moved) continue;
+      r[o] = moved;
+      queue.push(o);
+    }
+  }
+  if (!hasOverlap(r)) return r;
+  // 局所の押し出しで解けない: 置いたものを動かさずに、残りを空いた所へ（必要なら縮めて）並べ直す。それでも解けなければ、全体を格子に並べ直す（重ならないことを保証）
+  return repack(input, pinned, b) ?? packGrid(r, b);
+}
+
+/** 縮める倍率（大きい順）と、置く位置を探す格子の間隔（px） */
+const SHRINK = [1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4];
+const STEP = 16;
+
+/** `pinned` を動かさず、ほかを元の位置にできるだけ近い空きへ置く。入らなければ縮める。置けないものがあれば null。 */
+export function repack(input: PxMap, pinned: string, b: Bounds): PxMap | null {
+  const out: PxMap = { [pinned]: clampInto(input[pinned]!, b) };
+  const placed: PxRect[] = [out[pinned]!];
+  const order = Object.keys(input).filter((k) => k !== pinned).sort((a, c) => input[a]!.y - input[c]!.y || input[a]!.x - input[c]!.x);
+  for (const k of order) {
+    const o = clampInto(input[k]!, b);
+    let found: PxRect | null = null;
+    for (const f of SHRINK) {
+      const w = Math.min(b.w, Math.max(Math.min(MIN_W, o.w), o.w * f));
+      const h = Math.min(b.h, Math.max(Math.min(MIN_H, o.h), o.h * f));
+      let best: { r: PxRect; d: number } | null = null;
+      for (let y = 0; y <= b.h - h + 0.5; y += STEP) {
+        for (let x = 0; x <= b.w - w + 0.5; x += STEP) {
+          const c = { x: Math.min(x, b.w - w), y: Math.min(y, b.h - h), w, h };
+          if (overlapsAny(c, placed)) continue;
+          const d = Math.abs(c.x - o.x) + Math.abs(c.y - o.y);
+          if (!best || d < best.d) best = { r: c, d };
+        }
+      }
+      if (best) { found = best.r; break; }
+    }
+    if (!found) return null;
+    out[k] = found;
+    placed.push(found);
+  }
+  return hasOverlap(out) ? null : out;
+}
+
+/** 新しく現れたコンポーネント（`key`）を、空いている所へ置く。空きがなければ押し出す。 */
+export function placeNew(rects: PxMap, key: string, size: { w: number; h: number }, b: Bounds): PxMap {
+  const w = Math.min(size.w, b.w);
+  const h = Math.min(size.h, b.h);
+  const others = Object.entries(rects).filter(([k]) => k !== key).map(([, v]) => v);
+  const step = 16;
+  let best: PxRect | null = null;
+  for (let y = 0; y + h <= b.h + 0.5 && !best; y += step) {
+    for (let x = 0; x + w <= b.w + 0.5; x += step) {
+      const c = { x, y, w, h };
+      if (!overlapsAny(c, others)) { best = c; break; }
+    }
+  }
+  const at = best ?? { x: Math.max(0, (b.w - w) / 2), y: Math.max(0, (b.h - h) / 2), w, h };
+  return resolveOverlaps({ ...rects, [key]: at }, key, b);
+}

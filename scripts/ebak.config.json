@@ -44,7 +44,7 @@
     "commands": [
       { "name": "typecheck", "run": "npm run typecheck" },
       { "name": "build", "run": "npm run build" },
-      { "name": "unit", "run": "npx vitest run tests/unit/projects.test.ts tests/unit/stepper.test.ts tests/unit/analysis-methods.test.ts tests/unit/persist.test.ts tests/unit/ai-layout.test.ts tests/unit/work-target.test.ts tests/unit/work-target-ui.test.tsx tests/unit/layout-fluent.test.ts tests/unit/layoutStore.test.ts tests/unit/workspace.test.ts tests/unit/minimize.test.ts tests/unit/snap.test.ts tests/unit/usecase.test.tsx tests/unit/demo-data.test.tsx tests/unit/story.test.tsx tests/unit/story-a11y.test.tsx" }
+      { "name": "unit", "run": "npx vitest run tests/unit/projects.test.ts tests/unit/stepper.test.ts tests/unit/analysis-methods.test.ts tests/unit/persist.test.ts tests/unit/ai-layout.test.ts tests/unit/work-target.test.ts tests/unit/work-target-ui.test.tsx tests/unit/work-target-menu.test.tsx tests/unit/main-screen.test.tsx tests/unit/layout-fluent.test.ts tests/unit/layoutStore.test.ts tests/unit/workspace.test.ts tests/unit/minimize.test.ts tests/unit/snap.test.ts tests/unit/usecase.test.tsx tests/unit/demo-data.test.tsx tests/unit/story.test.tsx tests/unit/story-a11y.test.tsx tests/unit/free-layout.test.ts tests/unit/panel-handle.test.tsx tests/unit/workspace-free-layout.test.tsx" }
     ]
   },
   "models": {
