@@ -32,6 +32,7 @@ DEFAULT_CONFIG: dict = {
         "run_history": "docs/run-history.md",
         "ledger": "tests/system/ledger.json",
         "manual_tests": "docs/manual-tests.md",
+        "integration_catalog": "docs/integration-catalog.md",
     },
     "base_branch": "main",
     "work": {"dir": "work", "retention_days": 14},
