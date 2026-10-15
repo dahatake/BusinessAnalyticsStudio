@@ -22,12 +22,12 @@ const useStyles = makeStyles({
     alignItems: 'center',
     flexWrap: 'wrap',
     columnGap: tokens.spacingHorizontalM,
-    rowGap: tokens.spacingVerticalS,
-    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalXL}`,
+    rowGap: 0, // FR-176・FR-180 で段が増えても、ワークスペースの縦の領域を削らないよう、段の間隔は詰める（各段の部品に余白がある）
+    padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalXL}`,
     backgroundColor: tokens.colorNeutralBackground3,
     borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
   },
-  topRow: { flexBasis: '100%', display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalS, minWidth: 0 },
+  topRow: { flexBasis: 'auto', flexShrink: 1, display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalS, minWidth: 0 },
   actions: { marginLeft: 'auto', display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalS },
   nav: {
     display: 'flex',
