@@ -70,7 +70,7 @@ describe('FR-121 事前調査と調査キャッシュ', () => {
   // FR-121 AC-147
   it('FR-121 AC-147 WorkIQ と Web の差し替え部品を利用不可にして research を実行すると、サンプルで調査キャッシュが作られ「推定（サンプル）」と記録され、成功で終了する', async () => {
     const researcher = chainResearcher([{ source: 'WorkIQ' }, { source: 'Web', researcher: ok('Web'), available: () => false }]);
-    const r = await runPipeline('research', input(), { paths: paths(), researcher, log });
+    const r = await runPipeline('research', input(), { paths: paths(), consent: () => true, researcher, log });
     expect(r.stages).toEqual(['research-customer', 'research-brand']);
     const dir = researchCacheDir(paths(), 'A社');
     expect(fs.existsSync(path.join(dir, 'customer-research.md'))).toBe(true);
@@ -83,7 +83,7 @@ describe('FR-121 事前調査と調査キャッシュ', () => {
   });
 
   it('FR-121 AC-147 コマンドから research を実行すると（既定は WorkIQ・Web とも利用不可）、サンプルの調査キャッシュを作って終了コード 0', async () => {
-    const code = await main(['research', '--customer', 'B社', '--workspace', workspace, '--template', template], { log, ask: async () => '' });
+    const code = await main(['research', '--customer', 'B社', '--workspace', workspace, '--template', template], { consent: () => true, log, ask: async () => '' });
     expect(code, logs.join('\n')).toBe(0);
     expect(readMeta('B社').customerSource).toBe('推定（サンプル）');
   });
@@ -92,7 +92,7 @@ describe('FR-121 事前調査と調査キャッシュ', () => {
   it('FR-121 AC-147 差し替え部品が上限時間を超えて応答しないときは、上限で打ち切って次の情報源（Web）に切り替える', async () => {
     const researcher = chainResearcher([{ source: 'WorkIQ', researcher: hanging }, { source: 'Web', researcher: ok('Web') }], { limitMs: 300 });
     const t0 = Date.now();
-    await runPipeline('research', input(), { paths: paths(), researcher, log });
+    await runPipeline('research', input(), { paths: paths(), consent: () => true, researcher, log });
     expect(Date.now() - t0).toBeLessThan(2000);
     const meta = readMeta();
     expect(meta.customerSource).toBe('Web');
@@ -103,7 +103,7 @@ describe('FR-121 事前調査と調査キャッシュ', () => {
   it('FR-121 AC-147 すべての情報源が応答しなくても、上限の時間内にサンプルで成功する', async () => {
     const researcher = chainResearcher([{ source: 'WorkIQ', researcher: hanging }, { source: 'Web', researcher: hanging }], { limitMs: 300 });
     const t0 = Date.now();
-    await runPipeline('research', input(), { paths: paths(), researcher, log });
+    await runPipeline('research', input(), { paths: paths(), consent: () => true, researcher, log });
     expect(Date.now() - t0).toBeLessThan(1500);
     expect(readMeta().customerSource).toBe('推定（サンプル）');
     expect(readMeta().customerAttempts?.map((a) => a.outcome)).toEqual(['timeout', 'timeout', 'used']);
@@ -134,7 +134,7 @@ describe('FR-121 事前調査と調査キャッシュ', () => {
       return part(source, source);
     };
     const researcher = chainResearcher([{ source: 'WorkIQ', researcher: { researchCustomer: slow('WorkIQ'), researchBrand: slow('WorkIQ') } }]);
-    const r = await runPipeline('research', input(), { paths: paths(), researcher, log });
+    const r = await runPipeline('research', input(), { paths: paths(), consent: () => true, researcher, log });
     expect(peak).toBe(2);
     expect(r.stages).toEqual(['research-customer', 'research-brand']);
     const timing = JSON.parse(fs.readFileSync(path.join(workDir(paths(), 'A社'), 'logs', 'timing.json'), 'utf8')) as { stages: Array<{ id: string }> };
@@ -146,7 +146,7 @@ describe('FR-121 事前調査と調査キャッシュ', () => {
       researchCustomer: async () => { throw new Error('顧客調査の失敗'); },
       researchBrand: async () => ({ source: 'Web', markdown: '# ブランド\n' }),
     };
-    await expect(runPipeline('research', input(), { paths: paths(), researcher, log })).rejects.toThrow('顧客調査の失敗');
+    await expect(runPipeline('research', input(), { paths: paths(), consent: () => true, researcher, log })).rejects.toThrow('顧客調査の失敗');
     expect(fs.existsSync(path.join(researchCacheDir(paths(), 'A社'), 'brand-research.md'))).toBe(true);
   });
 

@@ -106,7 +106,7 @@ describe('FR-120 Skill のコマンド', () => {
 
   it('FR-120 AC-146 build は調査キャッシュがなくても前提を置いたサンプルで続け、推定として記録する', async () => {
     const r = await runPipeline('build', { customer: 'A社', projectName: 'A', intensity: 'Showcase', materials: [] },
-      { paths: paths(), generator: mockGenerator, launcher: async () => ({ url: 'http://127.0.0.1:1/', close: async () => {} }), log });
+      { paths: paths(), consent: () => true, generator: mockGenerator, launcher: async () => ({ url: 'http://127.0.0.1:1/', close: async () => {} }), log });
     expect(r.stages).toEqual(COMMAND_STAGES.build);
     const meta = JSON.parse(fs.readFileSync(path.join(researchCacheDir(paths(), 'A社'), 'meta.json'), 'utf8')) as { customerSource: string };
     expect(meta.customerSource).toBe('推定（サンプル）');
@@ -120,7 +120,7 @@ describe('FR-120 Skill のコマンド', () => {
         return v;
       },
     };
-    const code = await main(['build', '--customer', 'B社', '--no-keep', '--workspace', workspace, '--template', template], { log, generator: bad });
+    const code = await main(['build', '--customer', 'B社', '--no-keep', '--workspace', workspace, '--template', template], { consent: () => true, log, generator: bad });
     expect(code).toBe(1);
     expect(logs.join('\n')).toContain('issues.json');
   });
@@ -291,7 +291,7 @@ describe('FR-125 顧客パックの生成', () => {
     const calls: string[] = [];
     const spy: PackGenerator = { generate: async (req) => { calls.push(req.key); return mockGenerator.generate(req); } };
     await runPipeline('build', { customer: 'ミライ商事', projectName: 'ミライ 改革', intensity: 'Executive', materials: [] },
-      { paths: paths(), generator: spy, launcher: async () => ({ url: 'http://127.0.0.1:1/', close: async () => {} }), log });
+      { paths: paths(), consent: () => true, generator: spy, launcher: async () => ({ url: 'http://127.0.0.1:1/', close: async () => {} }), log });
     const wd = workDir(paths(), 'ミライ商事');
     expect(calls.sort()).toEqual([...PACK_FILE_KEYS].sort()); // ファイル単位で 1 回ずつ生成する
     for (const key of PACK_FILE_KEYS) expect(fs.existsSync(path.join(wd, packFilePath(key))), key).toBe(true);

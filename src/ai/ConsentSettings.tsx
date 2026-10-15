@@ -1,0 +1,55 @@
+// 顧客の了承の記録の入力・表示（FR-181）。設定画面に置く。自己申告の記録で、個人名・連絡先は保存しない。
+import { useState } from 'react';
+import { Button, Field, Input, MessageBar, MessageBarBody, Text } from '@fluentui/react-components';
+import { CONSENT_SELF_DECLARED_NOTICE } from './consent';
+import { useConsent, useConsentStore } from './useConsent';
+
+function today(): string {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
+export function ConsentSettings({ onRevoke }: { onRevoke: () => void | Promise<void> }) {
+  const { key, record } = useConsent();
+  const [note, setNote] = useState('');
+  const [date, setDate] = useState(today());
+  const [error, setError] = useState<string | null>(null);
+
+  const save = () => {
+    const r = useConsentStore.getState().save(key, date, note);
+    if (r.ok) { setNote(''); setError(null); } else setError(r.reason);
+  };
+  const revoke = async () => {
+    await onRevoke();
+    useConsentStore.getState().revoke(key);
+    setError(null);
+  };
+
+  return (
+    <section aria-label="顧客の了承の記録" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <Text weight="semibold">顧客の了承の記録（この案件）</Text>
+      <Text size={200} data-testid="consent-notice">{CONSENT_SELF_DECLARED_NOTICE}</Text>
+      <Text size={200} data-testid="consent-state">
+        {record ? `了承あり（確認日 ${record.confirmedOn}）　確認した相手の役割と方法: ${record.note}` : '記録なし'}
+      </Text>
+      {record ? null : (
+        <Text size={200} data-testid="consent-required">
+          顧客の了承の記録がない間は、AI・音声合成・手書き認識の実接続を有効にできません（顧客情報は外部へ送信しません）。
+        </Text>
+      )}
+      <Field label="了承を確認した日">
+        <Input type="date" value={date} onChange={(_, d) => setDate(d.value)} disabled={!key} />
+      </Field>
+      <Field label="了承を確認した相手の役割と方法のメモ" hint="例: 顧客側の担当役員（口頭）。個人名・連絡先は書かないでください。">
+        <Input value={note} onChange={(_, d) => setNote(d.value)} disabled={!key} maxLength={200} />
+      </Field>
+      {error ? <MessageBar intent="error" role="alert"><MessageBarBody>{error}</MessageBarBody></MessageBar> : null}
+      <div style={{ display: 'flex', gap: 8 }}>
+        <Button appearance="primary" disabled={!key} onClick={save}>了承の記録を保存</Button>
+        <Button disabled={!record} onClick={() => void revoke()}>了承の記録を取り消す</Button>
+      </div>
+    </section>
+  );
+}
+

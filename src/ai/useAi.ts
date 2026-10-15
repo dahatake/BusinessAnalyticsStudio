@@ -4,6 +4,7 @@ import { useCallback, useEffect } from 'react';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { usePackStore } from '../store/pack';
+import { useConsent } from './useConsent';
 import { askAi, probeRelay, setRelayConnection, type AiKind, type AiMode, type AiResult } from './client';
 
 interface AiState {
@@ -33,7 +34,9 @@ export function useAi() {
   const enabledPackId = useAiStore((s) => s.enabledPackId);
   const notice = useAiStore((s) => s.notice);
   const packId = pack.status === 'ready' ? pack.pack.data.customer.name : '';
-  const realEnabled = packId !== '' && enabledPackId === packId;
+  const { granted: consentGranted } = useConsent();
+  // FR-181: 了承の記録がない案件は、有効にしていても実接続にしない（取消でモックに戻る）
+  const realEnabled = packId !== '' && enabledPackId === packId && consentGranted;
   const mode: AiMode = realEnabled ? 'connected' : 'mock';
 
   const ask = useCallback(
@@ -45,16 +48,17 @@ export function useAi() {
   /** 確認のあとに呼ぶ。中継プロセスが使える状態のときだけ「接続済み」になる。 */
   const enable = useCallback(async (): Promise<boolean> => {
     const { setEnabledPackId, setNotice } = useAiStore.getState();
+    if (!consentGranted) { setNotice('顧客の了承の記録がないため、実接続を有効にできません。モックのまま動作します。'); return false; }
     const p = await probeRelay(runtime.relayUrl);
     if (!p.ok) { setNotice(`${p.reason}モックのまま動作します。`); return false; }
-    if (!(await setRelayConnection(runtime.relayUrl as string, packId, true))) {
+    if (!(await setRelayConnection(runtime.relayUrl as string, packId, true, undefined, true))) {
       setNotice('中継プロセスに接続を登録できませんでした。モックのまま動作します。');
       return false;
     }
     setNotice(null);
     setEnabledPackId(packId);
     return true;
-  }, [runtime.relayUrl, packId]);
+  }, [runtime.relayUrl, packId, consentGranted]);
 
   const disable = useCallback(async (): Promise<void> => {
     const { setEnabledPackId, setNotice } = useAiStore.getState();
@@ -73,11 +77,16 @@ export function useAiSync(): void {
   useEffect(() => {
     if (!packId) return;
     const { setEnabledPackId, setNotice } = useAiStore.getState();
-    if (enabledPackId && !realEnabled) { setEnabledPackId(null); return; }
+    if (enabledPackId && !realEnabled) {
+      // 別の顧客パック、または了承の記録がなくなった: モックに戻し、中継プロセスの登録も外す
+      setEnabledPackId(null);
+      if (relayUrl && enabledPackId === packId) void setRelayConnection(relayUrl, packId, false);
+      return;
+    }
     if (!realEnabled || !relayUrl) return;
     let cancelled = false;
     void (async () => {
-      const ok = (await probeRelay(relayUrl)).ok && (await setRelayConnection(relayUrl, packId, true));
+      const ok = (await probeRelay(relayUrl)).ok && (await setRelayConnection(relayUrl, packId, true, undefined, true));
       if (!ok && !cancelled) { setEnabledPackId(null); setNotice('中継プロセスに接続できないため、モックに戻しました。'); }
     })();
     return () => { cancelled = true; };

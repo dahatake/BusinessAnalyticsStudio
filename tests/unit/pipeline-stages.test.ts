@@ -82,7 +82,7 @@ describe('FR-126 エラー箇所だけの自己修正', () => {
   // FR-126 AC-153
   it('FR-126 AC-153 1 項目だけを不正に返す生成器では、再生成の依頼がその項目だけを対象にし、2 回目で正しい値が返ればエラー 0 件で次の段階へ進む', async () => {
     const { generator, requests } = corrupting('fixes-on-second');
-    const r = await runPipeline('build', input(), { paths: paths(), generator, launcher: stubLauncher, smoke: mockSmoke, log });
+    const r = await runPipeline('build', input(), { paths: paths(), consent: () => true, generator, launcher: stubLauncher, smoke: mockSmoke, log });
     expect(r.stages).toEqual(COMMAND_STAGES.build); // ⑥ verify・⑦ 起動まで進んだ
     // 最初の生成はファイルごとに 1 回（全体の再生成は 1 回だけ）。再生成の依頼は 1 件で、issues.json の issues[0].title だけ
     const whole = requests.filter((q) => !q.target);
@@ -107,7 +107,7 @@ describe('FR-126 エラー箇所だけの自己修正', () => {
   it('FR-126 AC-153 常に不正を返す生成器では PARAM-006 の回数で止まり、エラーの一覧が出力される', async () => {
     expect(PARAMS.selfRepairMax).toBe(3); // PARAM-006
     const { generator, requests } = corrupting('never-fixes');
-    const err = await runPipeline('build', input('B社'), { paths: paths(), generator, launcher: stubLauncher, smoke: mockSmoke, log }).catch((e: unknown) => e);
+    const err = await runPipeline('build', input('B社'), { paths: paths(), consent: () => true, generator, launcher: stubLauncher, smoke: mockSmoke, log }).catch((e: unknown) => e);
     expect(err).toBeInstanceOf(PipelineError);
     const pe = err as PipelineError;
     expect(pe.errors).toHaveLength(1);
@@ -117,7 +117,7 @@ describe('FR-126 エラー箇所だけの自己修正', () => {
     expect(requests.filter((q) => q.target)).toHaveLength(PARAMS.selfRepairMax); // 3 回で止まる（全体の再生成はしない）
     expect(requests.filter((q) => !q.target)).toHaveLength(PACK_FILE_KEYS.length);
     // 終了コードは失敗（CLI）で、エラーの一覧が画面に出る
-    const code = await main(['build', '--customer', 'C社', '--no-keep', '--workspace', workspace, '--template', template], { log, generator: corrupting('never-fixes').generator, smoke: mockSmoke });
+    const code = await main(['build', '--customer', 'C社', '--no-keep', '--workspace', workspace, '--template', template], { consent: () => true, log, generator: corrupting('never-fixes').generator, smoke: mockSmoke });
     expect(code).toBe(1);
     expect(logs.join('\n')).toContain('issues[0].title');
   });
@@ -227,7 +227,7 @@ describe('FR-129 工程ごとの時間計測', () => {
   // FR-129 AC-157
   it('FR-129 AC-157 工程が失敗しても、そこまでの時間と失敗の印を timing.json に残し、合計を表示する', async () => {
     const generator: PackGenerator = { generate: async (req: GenerateRequest) => (req.key === 'issues' ? 7 : mockGenerator.generate(req)) };
-    const code = await main(['build', '--customer', '失敗社', '--no-keep', '--workspace', workspace, '--template', template], { log, generator, smoke: mockSmoke });
+    const code = await main(['build', '--customer', '失敗社', '--no-keep', '--workspace', workspace, '--template', template], { consent: () => true, log, generator, smoke: mockSmoke });
     expect(code).toBe(1);
     const t = readTiming('失敗社');
     expect(t.stages.at(-1)).toMatchObject({ id: 'validate', ok: false });

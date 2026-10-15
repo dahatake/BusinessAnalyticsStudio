@@ -85,10 +85,12 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           return json(200, { status: 'ready', copilot: (await signedIn()) ? 'signed-in' : 'signed-out' });
         }
         if (req.method === 'POST' && path === '/connection') {
-          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; enable?: boolean; confirmed?: boolean };
+          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; enable?: boolean;           confirmed?: boolean; consent?: boolean };
           if (typeof b.packId !== 'string' || !b.packId) return json(400, { error: 'packId が必要です' });
           if (b.enable) {
-            if (b.confirmed !== true) return json(400, { error: '送信内容の確認が必要です' });
+                      // FR-181: 顧客の了承の記録（利用者の自己申告）がない案件は、実接続を有効にできない
+                      if (b.consent !== true) return json(403, { error: '顧客の了承の記録がないため、実接続を有効にできません', mode: 'mock' });
+                      if (b.confirmed !== true) return json(400, { error: '送信内容の確認が必要です' });
             if (!(await signedIn())) return json(409, { error: 'Copilot にサインインしていません', mode: 'mock' });
             enabled.add(b.packId);
           } else {

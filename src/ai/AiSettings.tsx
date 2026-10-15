@@ -4,17 +4,22 @@ import {
   Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, MessageBar, MessageBarBody, Switch, Text,
 } from '@fluentui/react-components';
 import { useAi } from './useAi';
+import { useConsent } from './useConsent';
+import { ConsentSettings } from './ConsentSettings';
 
 export function AiSettings() {
   const { mode, realEnabled, enable, disable, notice, packId } = useAi();
+  const { granted } = useConsent();
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
 
   return (
+    <>
+    <ConsentSettings onRevoke={disable} />
     <Field label="AI 接続" hint="既定はモックです。実接続は、この顧客パックでだけ有効になり、別の顧客パックで起動するとモックに戻ります。">
       <Switch
         checked={realEnabled}
-        disabled={busy || !packId}
+        disabled={busy || !packId || !granted}
         label="AI の実接続を有効にする（GitHub Copilot）"
         onChange={(_, d) => { if (d.checked) setConfirming(true); else void disable(); }}
       />
@@ -42,5 +47,7 @@ export function AiSettings() {
         </DialogSurface>
       </Dialog>
     </Field>
+    </>
   );
 }
+
