@@ -49,7 +49,24 @@ SUBITEMS = (
       ("保持と削除", r"保持|削除|保存"), ("国外移転の有無", r"国外|移転|リージョン")), "FR-191 AC-409"),
     ("失敗時・再試行・冪等性",
      (("利用者への見え方", r"利用者|表示|切り替|代替|エラー|サンプル"), ("再試行", r"再試行"), ("冪等性", r"冪等"), ("部分失敗の扱い", r"部分失敗|一部")), "FR-193 AC-413"),
+    ("バージョン・互換・変更の通知",
+     (("相手側の版", r"版|バージョン|v\d|ver"), ("互換の方針", r"互換|移行|古い|新しい"), ("変更の通知の窓口", r"通知|窓口|告知"),
+      ("確認の頻度", r"頻度|毎|ごと|定期|確認")), "FR-194 AC-415"),
+    ("監視・監査ログ",
+     (("状態を確かめる手段", r"表示|確かめ|状態|確認"), ("失敗の検知と通知", r"失敗|検知|通知"), ("監査で記録する事項", r"監査"),
+      ("記録に含めてはならないもの", r"含めない|含めてはならない|含めません|記録しない|禁止"), ("記録の保持期間", r"保持|期間")), "FR-195 AC-417"),
+    ("テスト用スタブ・実接続の確認",
+     (("テスト用の手段", r"モック|スタブ|録画|サンプル|手段"), ("本番との差", r"差|違い"), ("実接続の確認の条件", r"実接続|条件")), "FR-197 AC-421"),
 )
+# 費用・規約の小項目（FR-196 AC-419）。状態が「計画」の連携にも課す
+TERMS_SUBITEMS = (
+    ("規約・ライセンスの確認結果", r"規約|ライセンス|条件"), ("確認日", r"確認日|\d{4}-\d{2}-\d{2}"), ("費用の有無", r"費用|無料|課金|料金"),
+)
+
+
+def _exempt(cell: str) -> bool:
+    """欄全体が TBD、または「なし／ない／不要＋理由」で小項目の検査を免れる記載か。"""
+    return bool(TBD_RE.search(cell) or re.match(r"^なし\s*[（(]", cell) or (re.search(r"理由\s*[:：]", cell) and re.search(r"なし|ない|不要|受け取らない", cell)))
 
 TEMPLATE = (
     "# 外部連携カタログ\n\n"
@@ -192,11 +209,17 @@ def check(root: Path, cfg: dict, doc, today: Optional[_dt.date] = None) -> List[
         if state in ("稼働", "廃止予定"):
             for col, terms_, ac in SUBITEMS:
                 cell = _clean(r.get(col))
-                if is_empty(cell) or TBD_RE.search(cell):
+                if is_empty(cell) or _exempt(cell):
                     continue
                 missing = [label for label, rx in terms_ if not re.search(rx, cell)]
                 if missing:
                     err(r, col, f"小項目「{'・'.join(missing)}」の記載がありません（{ac}）")
+        if state in ("計画", "稼働", "廃止予定"):
+            tcell = _clean(r.get("規約・ライセンス・コスト"))
+            if not is_empty(tcell) and not _exempt(tcell):
+                tmiss = [label for label, rx in TERMS_SUBITEMS if not re.search(rx, tcell)]
+                if tmiss:
+                    err(r, "規約・ライセンス・コスト", f"小項目「{'・'.join(tmiss)}」の記載がありません（FR-196 AC-419）")
         for col, rx, msg in REASONLESS:
             if re.search(rx, _clean(r.get(col))) or (col == "認証・認可" and _clean(r.get(col)) == "なし"):
                 err(r, col, msg)
