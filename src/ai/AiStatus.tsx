@@ -1,9 +1,11 @@
 // 常時表示する AI 接続の状態（FR-011 AC-013、NFR-SEC-002）。ヘッダーに置く。
 import { Badge } from '@fluentui/react-components';
 import { useAi, useAiSync } from './useAi';
+import { useAzureSync } from './useAzure';
 
 export function AiStatus() {
   useAiSync();
+  useAzureSync();
   const { mode } = useAi();
   return (
     <Badge

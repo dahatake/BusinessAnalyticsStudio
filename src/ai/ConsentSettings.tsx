@@ -41,7 +41,7 @@ export function ConsentSettings({ onRevoke }: { onRevoke: () => void | Promise<v
       </Text>
       {record ? null : (
         <Text size={200} data-testid="consent-required">
-          顧客の了承の記録がない間は、AI・音声合成・手書き認識の実接続を有効にできません（顧客情報は外部へ送信しません）。
+          顧客の了承の記録がない間は、AI・音声・手書きの実接続を有効にできません（顧客情報は外部へ送信しません）。
         </Text>
       )}
       <Field label="了承を確認した日">

@@ -6,6 +6,7 @@ import {
 import { useAi } from './useAi';
 import { useConsent } from './useConsent';
 import { ConsentSettings } from './ConsentSettings';
+import { AzureSettings } from './AzureSettings';
 
 export function AiSettings() {
   const { mode, realEnabled, enable, disable, notice, packId } = useAi();
@@ -47,6 +48,7 @@ export function AiSettings() {
         </DialogSurface>
       </Dialog>
     </Field>
+    <AzureSettings />
     </>
   );
 }

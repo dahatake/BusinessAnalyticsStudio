@@ -5,6 +5,7 @@
 // - API キー・トークンは持たない。認証は利用者の GitHub Copilot のサインインを使う（SDK 側）。
 import http from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { AZURE_FEATURES, MAX_IMAGE_BASE64_CHARS, MAX_SPEECH_TEXT_CHARS, isValidBase64, isValidStrokeCount, AzureServiceError, type AzureFeature, type AzureServices } from './azure-services';
 
 export const AI_KINDS = ['structure', 'summary', 'recommend', 'chat', 'exec-summary'] as const;
 export type AiKind = (typeof AI_KINDS)[number];
@@ -18,6 +19,8 @@ export interface CopilotSdk {
 
 export interface RelayOptions {
   sdk: CopilotSdk | null;
+  /** 音声合成・手書き認識の接続部品（FR-182）。なければ常にモック */
+  azure?: AzureServices;
   host?: string;
   port?: number;
 }
@@ -46,12 +49,21 @@ function originAllowed(origin: string | undefined): boolean {
   }
 }
 
-function readBody(req: http.IncomingMessage): Promise<string> {
+class PayloadTooLarge extends Error {}
+
+function readBody(req: http.IncomingMessage, limit = 1_000_000): Promise<string> {
   return new Promise((resolve, reject) => {
     let body = '';
+    let over = false;
     req.on('data', (c: Buffer) => {
+      if (over) return;
       body += c.toString('utf8');
-      if (body.length > 1_000_000) reject(new Error('too large'));
+      if (body.length > limit) {
+        over = true;
+        body = '';
+        reject(new PayloadTooLarge('request too large'));
+        req.pause();
+      }
     });
     req.on('end', () => resolve(body));
     req.on('error', reject);
@@ -98,6 +110,37 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           }
           return json(200, { mode: enabled.has(b.packId) ? 'connected' : 'mock' });
         }
+        // ---- FR-182: 音声合成（Azure AI Speech）・手書き認識（Azure AI Vision）。キーは中継側の環境変数だけ ----
+        if (path.startsWith('/azure/')) {
+          const az = opts.azure;
+          if (req.method === 'POST' && path === '/azure/connection') {
+            const b = JSON.parse((await readBody(req)) || '{}') as { feature?: string; packId?: string; enable?: boolean; confirmed?: boolean; consent?: boolean };
+            if (!AZURE_FEATURES.includes(b.feature as AzureFeature) || typeof b.packId !== 'string' || !b.packId) return json(400, { error: 'feature・packId が必要です' });
+            const feature = b.feature as AzureFeature;
+            if (!b.enable) { az?.disable(feature, b.packId); return json(200, { mode: 'mock' }); }
+            if (b.consent !== true) return json(403, { error: '顧客の了承の記録がないため、実接続を有効にできません', mode: 'mock' });
+            if (b.confirmed !== true) return json(400, { error: '送信内容の確認が必要です' });
+            if (!az) return json(200, { mode: 'mock', reason: 'キーが未設定のため、モックのまま動作します' });
+            const r = az.enable(feature, b.packId, true);
+            return json(200, r.ok ? { mode: 'connected' } : { mode: 'mock', reason: r.reason });
+          }
+          if (req.method === 'POST' && path === '/azure/speech') {
+            const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; text?: string };
+            if (typeof b.packId !== 'string' || typeof b.text !== 'string') return json(400, { error: 'packId・text が必要です' });
+            if (b.text.length > MAX_SPEECH_TEXT_CHARS) return json(413, { error: `text は ${MAX_SPEECH_TEXT_CHARS} 文字までです` });
+            return json(200, az ? await az.synthesize(b.packId, b.text) : { mode: 'mock', subtitleOnly: true });
+          }
+          if (req.method === 'POST' && path === '/azure/vision') {
+            const b = JSON.parse((await readBody(req, MAX_IMAGE_BASE64_CHARS + 100_000)) || '{}') as { packId?: string; image?: string; strokeCount?: number };
+            if (typeof b.packId !== 'string' || typeof b.image !== 'string') return json(400, { error: 'packId・image が必要です' });
+            if (b.image.length > MAX_IMAGE_BASE64_CHARS) return json(413, { error: '画像が大きすぎます' });
+            if (!isValidBase64(b.image)) return json(400, { error: 'image は base64 で指定してください' });
+            const n = b.strokeCount ?? 0;
+            if (!isValidStrokeCount(n)) return json(400, { error: 'strokeCount は 0 以上の整数で指定してください' });
+            return json(200, az ? await az.recognize(b.packId, b.image, n) : { mode: 'mock', text: `手書きメモ（${n} 画。モックの認識結果）` });
+          }
+          return json(404, { error: 'not found' });
+        }
         if (req.method === 'POST' && path === '/ask') {
           const b = JSON.parse((await readBody(req)) || '{}') as { kind?: string; packId?: string; prompt?: string };
           if (!AI_KINDS.includes(b.kind as AiKind) || typeof b.prompt !== 'string' || typeof b.packId !== 'string') {
@@ -112,6 +155,12 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
         }
         return json(404, { error: 'not found' });
       } catch (e) {
+        if (e instanceof PayloadTooLarge) {
+          res.once('finish', () => req.destroy());
+          return json(413, { error: e.message });
+        }
+        if (e instanceof SyntaxError) return json(400, { error: 'JSON の形式が不正です' });
+        if (e instanceof AzureServiceError) return json(502, { error: e.message, mode: 'connected' });
         return json(500, { error: e instanceof Error ? e.message : String(e) });
       }
     })();
