@@ -231,11 +231,11 @@
 | NFR-A11Y-007 | データビュアーのキーボード操作と 3D 非対応時の代替 | 承認済み | src/components/DataViewer.tsx (キー操作・aria-live・表の一覧・detect3D), src/datacatalog/viewer.ts (is3DAvailable, moveIndex, zoomKeyAction) | tests/unit/data-viewer.test.tsx (AC-345, AC-346) | 選択の通知, 3D 基盤, デザイン基盤 |
 | NFR-UX-012 | データビュアーのワークスペースのコンポーネント化 | 承認済み | src/screens/DataCatalogScreen.tsx (データカタログのコンポーネントの中に配置), src/store/dataViewer.ts (表示状態を store に保持) | tests/unit/data-viewer.test.tsx (AC-347) | ワークスペース, デザイン基盤 |
 | FR-188 | 外部連携カタログの管理データ | 承認済み | docs/integration-catalog.md, scripts/integration_catalog.py | tests/toolkit/test_integration_catalog.py, tests/system/integration-catalog/basic.test.mjs | 外部連携カタログの検査 |
-| FR-189 | 連携の基本情報（相手先・方向・種別・正本・識別子・状態） | 承認済み | 未実装 | 未実装 | - |
-| FR-190 | 認証・認可と秘密情報の管理 | 承認済み | 未実装 | 未実装 | - |
-| FR-191 | やり取りするデータ項目と個人情報・機密区分 | 承認済み | 未実装 | 未実装 | - |
-| FR-192 | 頻度・量・SLA・タイムアウト | 承認済み | 未実装 | 未実装 | - |
-| FR-193 | 失敗時の振る舞い（再試行・冪等性・縮退） | 承認済み | 未実装 | 未実装 | - |
+| FR-189 |連携の基本情報（相手先・方向・種別・正本・識別子・状態）| 承認済み | scripts/integration_catalog.py (check の欄ごとの検査), docs/integration-catalog.md | tests/toolkit/test_integration_fields_a.py (AC-405, AC-406) | 外部連携カタログの検査 |
+| FR-190 |認証・認可と秘密情報の管理| 承認済み | scripts/integration_catalog.py (check の欄ごとの検査), docs/integration-catalog.md | tests/toolkit/test_integration_fields_a.py (AC-407, AC-408) | 外部連携カタログの検査 |
+| FR-191 |やり取りするデータ項目と個人情報・機密区分| 承認済み | scripts/integration_catalog.py (check の欄ごとの検査), docs/integration-catalog.md | tests/toolkit/test_integration_fields_a.py (AC-409, AC-410) | 外部連携カタログの検査 |
+| FR-192 |頻度・量・SLA・タイムアウト| 承認済み | scripts/integration_catalog.py (check の欄ごとの検査), docs/integration-catalog.md | tests/toolkit/test_integration_fields_a.py (AC-411, AC-412) | 外部連携カタログの検査 |
+| FR-193 |失敗時の振る舞い（再試行・冪等性・縮退）| 承認済み | scripts/integration_catalog.py (check の欄ごとの検査), docs/integration-catalog.md | tests/toolkit/test_integration_fields_a.py (AC-413, AC-414) | 外部連携カタログの検査 |
 | FR-194 | バージョン互換と変更・廃止の通知 | 承認済み | 未実装 | 未実装 | - |
 | FR-195 | 監視と監査ログ | 承認済み | 未実装 | 未実装 | - |
 | FR-196 | 利用規約・ライセンス・コスト | 承認済み | 未実装 | 未実装 | - |
@@ -353,5 +353,5 @@
 | ストーリーボード | src/usecase/storyboard.ts, src/usecase/StoryboardPlayer.tsx, src/usecase/storyboard.css, src/store/storyboardStyle.ts, src/store/storyboardUi.ts | ユースケースのユーザーストーリーから、導入（対象ペルソナ）+ 手順 + 効果のシーン（見出し・字幕・強調テロップ `*強調語*`）を作る（端末内・AI なし）。全画面（Portal・Esc・全画面にできないときは覆う表示）・約 30 秒（PARAM-052 = 30 秒をシーン数で割る）・P/←/→・字幕とテロップ（PARAM-054 = 20 文字、コントラスト、折り返し）・スタイル 5 種（既定 Isometric 3D、端末内に保存 `eabk.storyboard-style.v1`、WebGL なしは 2D）。再生位置は外に保持 | FR-163, FR-164, FR-165, FR-166, FR-167 |
 | 字幕の読み上げ | src/speech/speech.ts, src/speech/useCaptionSpeech.ts, src/speech/SpeechSettings.tsx | 字幕の文言を音声合成の接続先（Azure AI Speech 想定。接続先とキーは runtime-config.json の speech）へ送って読み上げる。未設定・失敗・タイムアウト・オフラインは字幕だけで続け、原因と直し方を表示。既定はミュート。キーの保存・削除と中継経由の読み上げは FR-168（relayUrl があるとき中継経由） | FR-167, FR-168 |
 | データカタログの導出 | src/datacatalog/model.ts, src/datacatalog/reconcile.ts, src/store/datacatalog.ts, src/screens/DataCatalogScreen.tsx | データエンティティの導出（課題・解決策・フローの `entityIds`／`relatedIds`・フローの from/to が参照する顧客パックのエンティティ。名称は NFKC・大文字小文字・空白を正規化して 1 件にまとめる。保存しない）、登録済みユースケースの導出元に基づく「導出」の対応、対応表、「明示」の紐づけの追加・削除・連動削除（Project ごとに端末内保存。`dataLinks`）。企業データカタログ（JSON/CSV。PARAM-050・051 の上限）の取り込みと 4 区分の突合（dataCatalogs）、未掲載の ToDo の冪等な追加（鍵 data-catalog:<正規化名>。Project 内の追加分 dataTasks。schema/plan.json は変えない）。端末内だけで AI に接続せず、URL は出典として記録するだけで取得しない | FR-159, FR-160, FR-161, FR-162, NFR-UX-011, FR-170, FR-172 |
-| 外部連携カタログの検査 | scripts/integration_catalog.py | 外部連携カタログ（docs/integration-catalog.md）の列ごとの検査・§8 との突合・鮮度（CHK-28。rdcheck check／verify の docs 検査から呼ぶ）、連携名からの trace・一覧、雛形の作成（rdfix）。docs/catalog.md の検査（CHK-07・CHK-27）とは独立 | FR-188, FR-199, NFR-OPS-001 |
+| 外部連携カタログの検査 | scripts/integration_catalog.py | 外部連携カタログ（docs/integration-catalog.md）の列ごとの検査・§8 との突合・鮮度（CHK-28。rdcheck check／verify の docs 検査から呼ぶ）、連携名からの trace・一覧、雛形の作成（rdfix）。docs/catalog.md の検査（CHK-07・CHK-27）とは独立 | FR-188, FR-189, FR-190, FR-191, FR-192, FR-193, FR-199, NFR-OPS-001 |
 

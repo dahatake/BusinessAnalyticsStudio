@@ -32,7 +32,7 @@ ITEM_COLUMNS = (
     "失敗時・再試行・冪等性", "バージョン・互換・変更の通知", "監視・監査ログ", "規約・ライセンス・コスト",
     "テスト用スタブ・実接続の確認",
 )
-BASIC_COLUMNS = ("連携先", "方向", "種別", "状態", "正本・識別子")
+BASIC_COLUMNS = ("連携先", "方向", "種別", "状態", "正本・識別子", "送受信するデータ・個人情報・機密区分")
 TBD_RE = re.compile(r"TBD\s*[（(]\s*Q-\d+\s*[）)]")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 REASONLESS = (
@@ -40,6 +40,15 @@ REASONLESS = (
     ("失敗時・再試行・冪等性", r"再試行\s*[:：]\s*なし(?!\s*[（(])", "再試行が「なし」で理由がありません（FR-193 AC-414）"),
     ("失敗時・再試行・冪等性", r"冪等性\s*[:：]\s*不要(?!\s*[（(])", "冪等性が「不要」で理由がありません（FR-193 AC-414）"),
     ("テスト用スタブ・実接続の確認", r"テスト用の手段\s*[:：]\s*なし(?!\s*[（(])", "テスト用の手段が「なし」で理由がありません（FR-197 AC-422）"),
+)
+
+# 状態「稼働」「廃止予定」で、欄の中に書く小項目（欄全体が TBD のときは検査しない）
+SUBITEMS = (
+    ("送受信するデータ・個人情報・機密区分",
+     (("送信するデータ項目", r"送信"), ("受信するデータ項目", r"受信"), ("個人情報の有無", r"個人情報"), ("機密区分", r"機密区分|internal|shareable"),
+      ("保持と削除", r"保持|削除|保存"), ("国外移転の有無", r"国外|移転|リージョン")), "FR-191 AC-409"),
+    ("失敗時・再試行・冪等性",
+     (("利用者への見え方", r"利用者|表示|切り替|代替|エラー|サンプル"), ("再試行", r"再試行"), ("冪等性", r"冪等"), ("部分失敗の扱い", r"部分失敗|一部")), "FR-193 AC-413"),
 )
 
 TEMPLATE = (
@@ -179,6 +188,15 @@ def check(root: Path, cfg: dict, doc, today: Optional[_dt.date] = None) -> List[
                     err(r, col, f"状態「{state}」の連携で空です（FR-190〜FR-197）")
         elif state in ("計画",) and is_empty(r.get("規約・ライセンス・コスト")):
             err(r, "規約・ライセンス・コスト", "空です（FR-196 AC-419）")
+        # 欄の中の小項目の検査（FR-191 AC-409・FR-193 AC-413）。TBD（Q-xxx）が欄にあれば、その欄は未決として通す
+        if state in ("稼働", "廃止予定"):
+            for col, terms_, ac in SUBITEMS:
+                cell = _clean(r.get(col))
+                if is_empty(cell) or TBD_RE.search(cell):
+                    continue
+                missing = [label for label, rx in terms_ if not re.search(rx, cell)]
+                if missing:
+                    err(r, col, f"小項目「{'・'.join(missing)}」の記載がありません（{ac}）")
         for col, rx, msg in REASONLESS:
             if re.search(rx, _clean(r.get(col))) or (col == "認証・認可" and _clean(r.get(col)) == "なし"):
                 err(r, col, msg)
