@@ -1,18 +1,17 @@
 // 企業の登録と Project の一覧・作成・名称変更・アーカイブ・切替（FR-137）。
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import {
-  Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Input, MessageBar, MessageBarBody, Text, makeStyles, tokens,
-} from '@fluentui/react-components';
+import { Button, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { AnalysisPanel } from './AnalysisPanel';
-import { useProjects, type Company, type Project, type Result } from '../store/projects';
+import { NameDialog, UnsavedDialog } from './dialogs';
+import { useProjects, type Company, type Project } from '../store/projects';
 import { useAnalyses } from '../store/analyses';
-import { useRestoreStatus } from '../store/persist';
+import { useMainScreen } from '../store/mainScreen';
 import { useSettings } from '../store/settings';
 import { useWorkTargetUi } from './workTargetUi';
 import { WorkTargetPicker } from './WorkTargetPicker';
 import { WorkTargetMenu } from './WorkTargetMenu';
-import { shouldShowStartupPicker, workTargetLabel, type TargetChoice } from './workTarget';
+import { workTargetLabel, type TargetChoice } from './workTarget';
 
 const useStyles = makeStyles({
   root: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXXS, padding: `${tokens.spacingVerticalXXS} ${tokens.spacingHorizontalM}`, borderBottom: `1px solid ${tokens.colorNeutralStroke2}` },
@@ -21,36 +20,6 @@ const useStyles = makeStyles({
   row: { display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS, flexWrap: 'wrap' },
   list: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXXS },
 });
-
-/** 1 項目の名前を入力する dialog（登録・作成・名称変更で共通） */
-function NameDialog(props: { title: string; label: string; submit: string; initial?: string; onSubmit: (name: string) => Result; onClose: () => void }) {
-  const [name, setName] = useState(props.initial ?? '');
-  const [error, setError] = useState<string | null>(null);
-  const go = () => {
-    const r = props.onSubmit(name);
-    if (r.ok) props.onClose();
-    else setError(r.reason);
-  };
-  return (
-    <Dialog open modalType="modal" onOpenChange={(_, d) => { if (!d.open) props.onClose(); }}>
-      <DialogSurface aria-label={props.title}>
-        <DialogBody>
-          <DialogTitle>{props.title}</DialogTitle>
-          <DialogContent>
-            <Field label={props.label}>
-              <Input value={name} onChange={(_, d) => setName(d.value)} onKeyDown={(e) => { if (e.key === 'Enter') go(); }} autoFocus />
-            </Field>
-            {error ? <MessageBar intent="error" role="alert"><MessageBarBody>{error}</MessageBarBody></MessageBar> : null}
-          </DialogContent>
-          <DialogActions>
-            <Button appearance="secondary" onClick={props.onClose}>キャンセル</Button>
-            <Button appearance="primary" onClick={go}>{props.submit}</Button>
-          </DialogActions>
-        </DialogBody>
-      </DialogSurface>
-    </Dialog>
-  );
-}
 
 type Modal = { kind: 'company' } | { kind: 'project'; company: Company } | { kind: 'rename'; project: Project };
 
@@ -98,19 +67,13 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
   const st = useProjects();
   const [modal, setModal] = useState<Modal | null>(null);
   /** 未保存の入力があるときの切替の確認（FR-138 AC-210）。target は切替先（null は一覧へ） */
-  const [pending, setPending] = useState<{ target: string | null; demo: boolean; register: boolean } | null>(null);
+  const [pending, setPending] = useState<{ target: string | null; demo: boolean; register: boolean; toMain?: boolean } | null>(null);
   /** FR-144: デモを選んでいる間は、実際の企業・Project の一覧を出さない（デモと実際の内容を混ぜない。AC-231） */
   const demoOnly = useWorkTargetUi((u) => u.demoOnly);
   const setDemoOnly = useWorkTargetUi((u) => u.setDemoOnly);
   const showDemo = useSettings((x) => x.showDemoInPicker);
-  /** FR-144: 作業先の選択画面。起動のたびに、件数によらず（0 件でも）開く（AC-237・AC-239）。起動時は何も選ばずには閉じられない */
+  /** FR-144: 作業先の選択画面（「作業先」ボタンで開く。起動直後はメイン画面（FR-186）で、そこから Project を開くときにも出る） */
   const [pickerOpen, setPickerOpen] = useState(false);
-  const [startup, setStartup] = useState(false);
-  // 保存内容の読込が終わってから 1 回だけ評価する（読込前の空の状態で判定して出し損ねない）
-  const restored = useRestoreStatus((r) => r.done);
-  useEffect(() => {
-    if (restored && shouldShowStartupPicker(useProjects.getState().projects)) { setStartup(true); setPickerOpen(true); }
-  }, [restored]);
   const hasUnsaved = useAnalyses((a) => (st.openId ? Object.keys(a.drafts[st.openId] ?? {}).length > 0 : false));
   const demoRequest = useWorkTargetUi((u) => u.demoRequest);
   const handledDemoRequest = useRef(demoRequest);
@@ -126,10 +89,14 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
   };
   const choose = (c: TargetChoice) => {
     setPickerOpen(false);
-    setStartup(false);
     if (c.kind === 'demo') requestOpen(null, true);
     else if (c.kind === 'register') requestOpen(null, false, true);
     else requestOpen(c.id);
+  };
+  /** FR-187: メイン画面へ戻る。未保存の入力があれば、作業先の移動と同じ確認を経由する（AC-400）。入力は Project に残る */
+  const backToMain = () => {
+    if (hasUnsaved) setPending({ target: st.openId, demo: demoOnly, register: false, toMain: true });
+    else useMainScreen.getState().show();
   };
   const close = () => setModal(null);
   // 設定の「デモへ切り替える」（AC-241）。未保存の入力があれば、他の切替と同じ確認を経由する（AC-231）
@@ -150,6 +117,7 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
       {demoOnly ? <Text data-testid="demo-target-notice">お手本パックのデモで作業しています（実際の Project の内容は混ざりません）</Text> : null}
       <Button size="small" onClick={() => setPickerOpen(true)}>作業先</Button>
       <Button size="small" onClick={() => { setDemoOnly(false); setModal({ kind: 'company' }); }}>企業を登録</Button>
+      <Button size="small" onClick={backToMain}>メイン画面へ戻る</Button>
       {current ? <Button size="small" onClick={() => requestOpen(null)}>Project 一覧へ</Button> : null}
       {current && currentCompany ? <Text data-testid="current-project">開いている Project: {currentCompany.name} / {current.name}</Text> : null}
     </div>
@@ -161,21 +129,14 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
     <div className={s.root} data-testid="projects-panel" style={hasBody ? undefined : { display: 'contents' }}>
       {slot ? null : head}
       {demoOnly ? null : st.companies.map((c) => <CompanyRegion key={c.id} company={c} onModal={setModal} onOpen={(id) => requestOpen(id)} />)}
-      {pickerOpen ? <WorkTargetPicker projects={st.projects} companies={st.companies} showDemo={showDemo} currentId={st.openId} dismissable={!startup} onChoose={choose} onClose={() => setPickerOpen(false)} /> : null}
+      {pickerOpen ? <WorkTargetPicker projects={st.projects} companies={st.companies} showDemo={showDemo} currentId={st.openId} onChoose={choose} onClose={() => setPickerOpen(false)} /> : null}
       {current ? <AnalysisPanel projectId={current.id} onNavigate={onNavigate} /> : null}
       {pending ? (
-        <Dialog open modalType="alert" onOpenChange={(_, d) => { if (!d.open) setPending(null); }}>
-          <DialogSurface role="alertdialog" aria-label="未保存の入力があります">
-            <DialogBody>
-              <DialogTitle>未保存の入力があります</DialogTitle>
-              <DialogContent>確定していない入力は、この Project に残したまま切り替えます。切り替えますか？</DialogContent>
-              <DialogActions>
-                <Button appearance="secondary" onClick={() => setPending(null)}>キャンセル</Button>
-                <Button appearance="primary" onClick={() => { apply(pending.target, pending.demo, pending.register); setPending(null); }}>切り替える</Button>
-              </DialogActions>
-            </DialogBody>
-          </DialogSurface>
-        </Dialog>
+        <UnsavedDialog
+          message={pending.toMain ? '確定していない入力は、この Project に残したままメイン画面へ戻ります。戻りますか？' : undefined}
+          onCancel={() => setPending(null)}
+          onConfirm={() => { if (pending.toMain) useMainScreen.getState().show(); else apply(pending.target, pending.demo, pending.register); setPending(null); }}
+        />
       ) : null}
       {modal?.kind === 'company' ? (
         <NameDialog title="企業を登録" label="企業名" submit="登録" onSubmit={st.addCompany} onClose={close} />

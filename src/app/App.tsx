@@ -44,6 +44,8 @@ import { LaserPointer, PresenterView, ShowControlActions, ShowShortcuts } from '
 import { ShortVideoButton, ShortVideoDialog } from '../show/ShortVideo';
 import { currentTopic } from '../store/presentation';
 import { ProjectsPanel } from '../projects/ProjectsPanel';
+import { MainScreen } from '../projects/MainScreen';
+import { useMainScreen } from '../store/mainScreen';
 
 setAvailableComponents(SCREENS.map((s) => s.key));
 
@@ -73,6 +75,7 @@ export function App() {
   const load = usePackStore((s) => s.load);
   const brand = useEffectiveBrand();
   const opened = useOpening((s) => s.opened);
+  const mainShown = useMainScreen((s) => s.shown);
   const finishOpening = useOpening((s) => s.finish);
   // BGM のシーン: オープニング、プレゼンテーション中は章ごと、それ以外は通常（FR-073）
   const topic = usePresentationStore(currentTopic);
@@ -87,6 +90,19 @@ export function App() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+  // モーダルのダイアログ（メイン画面の作業先の選択など）を閉じた後に、背景（#root）の aria-hidden が残ると、画面全体が支援技術から見えなくなる。
+  // 開いているモーダルがないときは外す（AppShell の背景の扱いと同じ考え方。FR-186・FR-187）
+  useEffect(() => {
+    const fix = (): void => {
+      const open = document.querySelector('[role="dialog"][aria-modal="true"], [role="alertdialog"][aria-modal="true"], dialog[open]') !== null;
+      const root = document.getElementById('root');
+      if (!open && root?.getAttribute('aria-hidden') === 'true') root.removeAttribute('aria-hidden');
+    };
+    fix();
+    const mo = new MutationObserver(fix);
+    mo.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['aria-hidden'] });
+    return () => mo.disconnect();
+  }, []);
   // 顧客パックの読み込み中に Esc が押されたら、オープニングを飛ばす（読み込みが終わってから出るオープニングが、先の Esc を取りこぼさない）
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') finishOpening(); };
@@ -122,6 +138,16 @@ export function App() {
   const { name, projectName } = state.pack.data.customer;
   // FR-106: 顧客パックの対応する雛形のバージョンが、雛形のバージョンと互換でないときの警告
   const version = checkTemplateVersion(state.pack.data.customer.templateVersion);
+  // FR-186・FR-144 AC-398: 起動直後はメイン画面（QuickStart の手順だけの画面）。分析画面（AppShell）には、Project を開いてから入る
+  if (mainShown) {
+    return (
+      <>
+        {!opened ? <Opening customerName={name} projectName={projectName} onDone={finishOpening} /> : null}
+        <AudioDirector scene={scene} />
+        <MainScreen />
+      </>
+    );
+  }
   return (
     <>
       {!opened ? <Opening customerName={name} projectName={projectName} onDone={finishOpening} /> : null}
