@@ -187,6 +187,17 @@ function TextView({ scenes, cur }: { scenes: StoryScene[]; cur: number }) {
   );
 }
 
+let openerFocus: Element | null = null;
+if (typeof document !== 'undefined') {
+  // ペルソナの選択が開く瞬間（描画の前）のフォーカス位置を覚える（NFR-A11Y-008 AC-370）
+  useStoryStore.subscribe((st, prev) => {
+    if (st.picking && !prev.picking) {
+      const a = document.activeElement;
+      openerFocus = a && a !== document.body ? a : null;
+    }
+  });
+}
+
 function StoryPlayer({ persona }: { persona: StoryPersona }) {
   const s = useStyles();
   const scenes = useStoryScenes(persona);
@@ -200,7 +211,8 @@ function StoryPlayer({ persona }: { persona: StoryPersona }) {
   const [textMode, setTextMode] = useState(false);
   const textModeRef = useRef(false);
   textModeRef.current = textMode;
-  const prevFocus = useRef<Element | null>(typeof document !== 'undefined' ? document.activeElement : null);
+  // 開く前のフォーカス位置は、ペルソナの選択を開いた時点で記録したもの（選択ダイアログのボタンは閉じると消えるため）
+  const prevFocus = useRef<Element | null>(openerFocus ?? (typeof document !== 'undefined' ? document.activeElement : null));
   const total = scenes.length;
   const cur = Math.min(index, Math.max(0, total - 1));
   const scene = scenes[cur];
