@@ -29,11 +29,12 @@ export function Stepper({ onNavigate }: StepperProps) {
   const s = useStyles();
   const current = useStepper((st) => st.current);
   const setCurrent = useStepper((st) => st.setCurrent);
+  const tracked = useStepper((st) => st.projectId !== null); // FR-136 AC-372: Project を開いていないデモは完了済みを持たない
   return (
     <nav aria-label="業務改善ステップ" data-testid="stepper" className={s.root}>
       <ol className={s.list}>
         {STEPS.map((step, i) => {
-          const state = stepState(i, current);
+          const state = stepState(i, current, tracked);
           return (
             <li key={step.key} className={s.item} data-step-state={state}>
               <Button

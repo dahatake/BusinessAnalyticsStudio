@@ -39,4 +39,30 @@ describe('FR-136 業務改善ステッパー', () => {
       expect(stepIndexForScreen(step.screen)).toBe(i);
     });
   });
+
+  // FR-136 AC-372（デモ = Project を開いていない）
+  it('AC-372 デモでは 5 ステップが並び現在が区別できるが、完了済みを持たず、進捗は保存されない', () => {
+    useStepper.getState().switchTo(null);
+    useStepper.getState().followScreen('gantt');
+    const cur = useStepper.getState().current;
+    expect(cur).toBe(4);
+    const states = STEPS.map((_, i) => stepState(i, cur, useStepper.getState().projectId !== null));
+    expect(states).toEqual(['not-started', 'not-started', 'not-started', 'not-started', 'current']);
+    expect(useStepper.getState().byProject).toEqual({});
+  });
+
+  // FR-136 AC-372 AC-202
+  it('AC-372 デモで進めても実際の Project の進捗は変わらず、Project を開くと AC-202 のとおり完了済みを持つ', () => {
+    const st = useStepper.getState();
+    st.switchTo('p1');
+    st.followScreen('priority');
+    expect(useStepper.getState().byProject).toEqual({ p1: 2 });
+    st.switchTo(null); // デモへ
+    expect(useStepper.getState().current).toBe(0);
+    useStepper.getState().followScreen('gantt');
+    expect(useStepper.getState().byProject).toEqual({ p1: 2 });
+    useStepper.getState().switchTo('p1');
+    expect(useStepper.getState().current).toBe(2);
+    expect(STEPS.map((_, i) => stepState(i, 2, true))).toEqual(['done', 'done', 'current', 'not-started', 'not-started']);
+  });
 });
