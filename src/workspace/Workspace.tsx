@@ -346,7 +346,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
         const r = m?.rects[key];
         if (m && r) commitFree(key, r, m);
       },
-      z: zRank >= 0 ? 2 + zRank : undefined,
+      // 重なるのは自由配置のコンポーネントだけ。分割の配置では、手前に出す操作で見た目の位置の基準を変えない（クリックの途中で作業領域のスクロールが動かないように）
+      z: isFloat && zRank >= 0 ? 2 + zRank : undefined,
       minimized: minSet.has(key),
       toggleMinimize: () => a.setMinimized(key, !minSet.has(key)),
       visible: group.length === 1 || active === key,
