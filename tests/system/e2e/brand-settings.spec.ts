@@ -5,7 +5,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import AxeBuilder from '@axe-core/playwright';
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, hook, MAIN_SCREENS, hexToRgb, contrastRatio } from '../support/fixtures';
+import { test, expect, openScreen, component, hook, MAIN_SCREENS, hexToRgb, contrastRatio, pressOpeningEscape, leaveMainScreen, chooseWorkTarget } from '../support/fixtures';
 import { examplePack, makeVariant } from '../support/packs';
 import { DIST_DIR } from '../support/server';
 
@@ -295,6 +295,10 @@ test.describe('FR-074 ミュートと音量', () => {
     await expect(muteButton(page)).toHaveAttribute('aria-pressed', 'false');
     await page.waitForTimeout(300);
     await app.reload({ skipOpening: false });
+    // 再読込の後はオープニング→メイン画面（ツールバー・ミュートなし: FR-186）。「Project を開く」→作業先選択→分析画面へ
+    await pressOpeningEscape(page);
+    await leaveMainScreen(page);
+    await chooseWorkTarget(page);
     await page.mouse.move(210, 210);
     await expect(muteButton(page)).toHaveAttribute('aria-pressed', 'false');
     await page.mouse.click(500, 400);

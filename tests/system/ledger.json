@@ -1054,10 +1054,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-033",
       "canary": false,
-      "status": "fail",
-      "last_commit": "bec602d",
-      "last_run_at": "2026-10-16T02:05:24+09:00",
-      "evidence": "work/runs/202610152209/logs/system-test/E2E-131-202610160143.log",
+      "status": "pass",
+      "last_commit": "98f0d22",
+      "last_run_at": "2026-10-16T03:43:56+09:00",
+      "evidence": "work/runs/202610152209/logs/system-test/E2E-131-202610160343.log",
       "history": [
         {
           "at": "2026-10-12T14:06:32+09:00",
@@ -2079,10 +2079,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-088",
       "canary": false,
-      "status": "fail",
-      "last_commit": "bec602d",
-      "last_run_at": "2026-10-16T02:05:24+09:00",
-      "evidence": "work/runs/202610152209/logs/system-test/E2E-172-202610160148.log",
+      "status": "pass",
+      "last_commit": "98f0d22",
+      "last_run_at": "2026-10-16T03:43:56+09:00",
+      "evidence": "work/runs/202610152209/logs/system-test/E2E-172-202610160343.log",
       "history": [
         {
           "at": "2026-10-12T14:07:42+09:00",
@@ -2129,10 +2129,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-193",
       "canary": false,
-      "status": "fail",
-      "last_commit": "bec602d",
-      "last_run_at": "2026-10-16T02:05:24+09:00",
-      "evidence": "work/runs/202610152209/logs/system-test/E2E-174-202610160149.log",
+      "status": "pass",
+      "last_commit": "98f0d22",
+      "last_run_at": "2026-10-16T03:43:56+09:00",
+      "evidence": "work/runs/202610152209/logs/system-test/E2E-174-202610160343.log",
       "history": [
         {
           "at": "2026-10-12T14:07:45+09:00",
@@ -2154,10 +2154,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-093",
       "canary": false,
-      "status": "fail",
-      "last_commit": "bec602d",
-      "last_run_at": "2026-10-16T02:05:24+09:00",
-      "evidence": "work/runs/202610152209/logs/system-test/E2E-175-202610160149.log",
+      "status": "pass",
+      "last_commit": "98f0d22",
+      "last_run_at": "2026-10-16T03:43:56+09:00",
+      "evidence": "work/runs/202610152209/logs/system-test/E2E-175-202610160343.log",
       "history": [
         {
           "at": "2026-10-12T14:07:47+09:00",

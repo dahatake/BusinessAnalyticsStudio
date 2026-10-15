@@ -1,7 +1,7 @@
 // System Test: オープニング・プレゼンテーションモード・番組構成・演出・ショーコントロールバー
 // 期待値は要求定義書の受入基準（app-core.md・app-experience.md・quality.md）と、お手本パックの show.json から決める。
 import type { Page } from '@playwright/test';
-import { test, expect, openScreen, component, hook, captureDownload, saveEvidence, setEditMode, chooseWorkTarget } from '../support/fixtures';
+import { test, expect, openScreen, component, hook, captureDownload, saveEvidence, setEditMode, chooseWorkTarget, leaveMainScreen } from '../support/fixtures';
 import { examplePack, packWithInternal, countInternal, PACK_FILES } from '../support/packs';
 
 const mono = examplePack('mono');
@@ -93,6 +93,9 @@ test.describe('FR-076 オープニング', () => {
     const sec = (Date.now() - t0) / 1000;
     expect(sec, `オープニングの長さ ${sec} 秒`).toBeGreaterThanOrEqual(15 - 1);
     expect(sec).toBeLessThanOrEqual(30 + 1);
+    // オープニングの後はメイン画面（FR-144 AC-398）。「Project を開く」→作業先選択→分析画面
+    await leaveMainScreen(page);
+    await chooseWorkTarget(page);
     await expect(page.getByTestId('workspace')).toBeVisible();
   });
 
@@ -100,17 +103,20 @@ test.describe('FR-076 オープニング', () => {
   test('FR-076 AC-093 スキップのボタンと Esc で本編に移る', async ({ page, start }) => {
     const app = await start({ skipOpening: false });
     await expect(page.getByTestId('opening')).toBeVisible();
-    // 起動直後はオープニングの上に作業先の選択画面が重なる（FR-144 AC-237）ので、先に作業先を選ぶ
-    await chooseWorkTarget(page);
     await page.getByRole('button', { name: 'スキップ' }).click();
     await expect(page.getByTestId('opening')).toBeHidden({ timeout: 3_000 });
+    // スキップの後はメイン画面（FR-144 AC-398）。「Project を開く」→作業先選択→分析画面
+    await leaveMainScreen(page);
+    await chooseWorkTarget(page);
     await expect(page.getByTestId('workspace')).toBeVisible();
     // 開き直して、今度は Esc で飛ばす（選択画面は再読込のたびに出る: FR-144 AC-239）
     await page.goto(app.url);
     await expect(page.getByTestId('opening')).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(page.getByTestId('opening')).toBeHidden({ timeout: 3_000 });
+    await leaveMainScreen(page);
     await chooseWorkTarget(page);
+    await expect(page.getByTestId('workspace')).toBeVisible();
   });
 });
 
@@ -125,6 +131,9 @@ test.describe('FR-072 動きを減らす設定', () => {
     const running = await page.evaluate(() => document.getAnimations().filter((a) => a.playState === 'running').length);
     expect(running, '静止画の版なのに動いているアニメーションがある').toBe(0);
     await page.keyboard.press('Escape');
+    // オープニングの後はメイン画面（FR-144 AC-398）。「Project を開く」→作業先選択→分析画面へ進む
+    await leaveMainScreen(page);
+    await chooseWorkTarget(page);
     await expect(page.getByTestId('animation-state')).toContainText('停止中');
   });
 });
