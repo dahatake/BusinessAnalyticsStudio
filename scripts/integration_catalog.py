@@ -148,6 +148,46 @@ def fresh_days(doc) -> int:
         return DEFAULT_FRESH_DAYS
 
 
+_DUMMY_RE = re.compile(r"^(?:<[^<>]*>|[xX]{3,}|REDACTED|\*+)$")
+_BEARER_RE = re.compile(r"Bearer\s+([A-Za-z0-9._~+/\-]+=*)")
+_KV_RE = re.compile(r"(?i)(?:api[_-]?key|token|password)\s*=\s*([^\s,;、。)）\]\"'`]+)")
+_LONG_RE = re.compile(r"(?<![A-Za-z0-9])[A-Za-z0-9]{32,}(?![A-Za-z0-9])")
+_PEM_RE = re.compile(r"-----BEGIN[^-\n]*-----\s*([A-Za-z0-9+/=]{16,})")
+_HASH_LENGTHS = (40, 56, 64, 96, 128)
+
+
+def _is_dummy(value: str) -> bool:
+    return bool(_DUMMY_RE.match(value.strip()))
+
+
+def secret_kinds(cell: str) -> List[str]:
+    """資格情報の形式の検出（NFR-SEC-006 AC-430）。検出した形式の名前を返す（値は返さない）。
+    固定のダミー表記と、ハッシュ値（40・64 桁などの 16 進）は除く。「例」の行でも検出の対象にする。"""
+    found: List[str] = []
+    for m in _BEARER_RE.finditer(cell):
+        v = m.group(1)
+        if not _is_dummy(v) and len(v) >= 8 and re.search(r"\d", v):
+            found.append("Bearer の値")
+            break
+    for m in _KV_RE.finditer(cell):
+        if not _is_dummy(m.group(1)):
+            found.append("api_key=・token=・password= の値")
+            break
+    for m in _LONG_RE.finditer(cell):
+        v = m.group(0)
+        if len(set(v.lower())) <= 2:
+            continue
+        if re.fullmatch(r"[0-9a-fA-F]+", v) and len(v) in _HASH_LENGTHS:
+            continue
+        found.append("32 文字以上の連続した英数字")
+        break
+    for m in _PEM_RE.finditer(cell):
+        if not _is_dummy(m.group(1)):
+            found.append("鍵・証明書の本文（-----BEGIN）")
+            break
+    return found
+
+
 def check(root: Path, cfg: dict, doc, today: Optional[_dt.date] = None) -> List[Tuple[str, str, str]]:
     """[(level, loc, msg)]。FR-188〜FR-198 の欄ごとの検査・§8 との突合・NFR-OPS-001 の鮮度。"""
     rel = path_of(cfg)
@@ -178,6 +218,9 @@ def check(root: Path, cfg: dict, doc, today: Optional[_dt.date] = None) -> List[
         else:
             seen[r.name] = r.line
             cat_names[r.name] = r
+        for col_, cell_ in r.cells.items():
+            for kind_ in secret_kinds(cell_):
+                err(r, col_, f"資格情報とみなす形式（{kind_}）を含んでいます。値は書かず、保管場所と管理手順だけを書きます（NFR-SEC-006 AC-430）")
         state = _clean(r.get("状態"))
         for col in BASIC_COLUMNS:
             if is_empty(r.get(col)):
