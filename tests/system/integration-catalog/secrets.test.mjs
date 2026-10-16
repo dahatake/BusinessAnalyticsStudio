@@ -62,3 +62,19 @@ test('NFR-SEC-006 AC-430 [語だけの説明文] 「API キー」「トークン
   expectNoNew(assert, { mutate: put('auth', 'API キーによる認証。トークンは短命で、パスワードは使わない。Bearer 認証は採用しない'), rowIdx: 0 });
   expectNoNew(assert, { mutate: put('cred', 'API キーは Key Vault に保管し、手順は運用手順書の鍵の更新の節。証明書は別途管理'), rowIdx: 0 });
 });
+
+// NFR-SEC-006 AC-430 [山括弧の抜け道]（山括弧で包んだ本物は失敗、固定ダミー <ここに値> は成功）
+test('NFR-SEC-006 AC-430 [山括弧の抜け道] 山括弧で包んだ本物の値は失敗し、<ここに値> は失敗にしない', T, () => {
+  expectNew(assert, { mutate: put('cred', 'api_key=<k7Hq2ZpL9dVx4TnB>'), rowIdx: 0 });
+  expectNoNew(assert, { mutate: put('cred', 'api_key=<ここに値>'), rowIdx: 0 });
+});
+
+// NFR-SEC-006 AC-430 [引用符付き]
+test('NFR-SEC-006 AC-430 [引用符付き] 値を引用符で囲んだ api_key="..." は失敗する', T, () => {
+  expectNew(assert, { mutate: put('cred', 'api_key="k7Hq2ZpL9dVx4TnB"'), rowIdx: 0 });
+});
+
+// NFR-SEC-006 AC-430 [BEGIN 単独行]
+test('NFR-SEC-006 AC-430 [BEGIN 単独行] 値のない -----BEGIN 行単独も鍵本文として失敗する', T, () => {
+  expectNew(assert, { mutate: put('cred', '-----BEGIN PRIVATE KEY-----'), rowIdx: 0 });
+});
