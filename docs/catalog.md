@@ -246,7 +246,7 @@
 | NFR-OPS-001 | 外部連携カタログの鮮度 | 承認済み | scripts/integration_catalog.py (check の最終確認日の鮮度) | tests/toolkit/test_integration_catalog.py, tests/system/integration-catalog/tooling.test.mjs | 外部連携カタログの検査 |
 | FR-201 | Project ごとの外部連携の選択 | 承認済み | 未実装 | 未実装 | なし |
 | FR-202 | Project ごとの連携設定の記録 | 承認済み | 未実装 | 未実装 | なし |
-| FR-203 | 連携の選択と外部送信の了承 | AI提案／承認待ち | 未実装 | 未実装 | なし |
+| FR-203 | 連携の選択と外部送信の了承 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-SEC-008 | Project の連携設定に秘密情報を値で持たない | 承認済み | 未実装 | 未実装 | なし |
 ## API・イベント
 
