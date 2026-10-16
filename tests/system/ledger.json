@@ -232,7 +232,8 @@
     "AC-429": "sha256:22d5ad89479f7b3c",
     "AC-431": "sha256:21bdc125bf205c61",
     "AC-432": "sha256:98e7f569aa8e5831",
-    "AC-430": "sha256:f0bd9661cd5ff3ff"
+    "AC-430": "sha256:f0bd9661cd5ff3ff",
+    "AC-440": "sha256:085d31c03614a265"
   },
   "cases": [
     {
@@ -6820,6 +6821,31 @@
       "history": [
         {
           "at": "2026-10-16T21:20:31+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-304",
+      "requirement_ids": [
+        "FR-201"
+      ],
+      "ac_ids": [
+        "AC-440"
+      ],
+      "title": "A=X・B=Y を保存し開き直すと各 Project の選択だけが表示される",
+      "layer": "e2e",
+      "command": "npx playwright test -c tests/system/playwright.config.ts -g \"FR-201 AC-440\"",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T23:26:55+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
