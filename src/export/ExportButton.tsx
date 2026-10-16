@@ -8,6 +8,7 @@ import { loadJapaneseFont } from './pdf';
 import { buildSummaryPack } from './summaryPack';
 import { installDiscussionChangeLog } from './changelog';
 import { registerEditChangeLog, registerPackSnapshot } from './snapshot';
+import { registerProjectIntegrationsSnapshot } from '../store/projectIntegrations';
 import { useExportShortcuts } from './commands';
 import { ExportDialog, type ExportScreenRef } from './ExportDialog';
 import { useExportUi } from './ui';
@@ -54,6 +55,7 @@ export function ExportHost({ screens }: { screens: readonly ExportScreenRef[] })
   useExportShortcuts();
   useEffect(() => installDiscussionChangeLog(), []);
   useEffect(() => registerPackSnapshot(), []);
+  useEffect(() => registerProjectIntegrationsSnapshot(), []);
   useEffect(() => registerEditChangeLog(), []);
   return (
     <>
