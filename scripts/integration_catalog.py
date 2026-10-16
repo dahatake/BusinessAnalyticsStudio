@@ -148,11 +148,13 @@ def fresh_days(doc) -> int:
         return DEFAULT_FRESH_DAYS
 
 
-_DUMMY_RE = re.compile(r"^(?:<[^<>]*>|[xX]{3,}|REDACTED|\*+)$")
+_DUMMY_RE = re.compile(r"^(?:<ここに値>|[xX]{3,}|REDACTED|\*+)$")
 _BEARER_RE = re.compile(r"Bearer\s+([A-Za-z0-9._~+/\-]+=*)")
-_KV_RE = re.compile(r"(?i)(?:api[_-]?key|token|password)\s*=\s*([^\s,;、。)）\]\"'`]+)")
+_KV_RE = re.compile(r"(?i)(?:api[_-]?key|token|password)\s*=\s*[\"'`]?([^\s,;、。)）\]\"'`]+)")
 _LONG_RE = re.compile(r"(?<![A-Za-z0-9])[A-Za-z0-9]{32,}(?![A-Za-z0-9])")
-_PEM_RE = re.compile(r"-----BEGIN[^-\n]*-----\s*([A-Za-z0-9+/=]{16,})")
+_PEM_RE = re.compile(r"-----BEGIN[^-\n]*-----")
+# 「Bearer 認証」の英語の説明語（値ではない）。数字を含むかどうかでは判定しない。
+_BEARER_WORDS = {"authentication", "authorization", "scheme", "header", "tokens"}
 _HASH_LENGTHS = (40, 56, 64, 96, 128)
 
 
@@ -166,7 +168,7 @@ def secret_kinds(cell: str) -> List[str]:
     found: List[str] = []
     for m in _BEARER_RE.finditer(cell):
         v = m.group(1)
-        if not _is_dummy(v) and len(v) >= 8 and re.search(r"\d", v):
+        if not _is_dummy(v) and len(v) >= 8 and v.lower() not in _BEARER_WORDS:
             found.append("Bearer の値")
             break
     for m in _KV_RE.finditer(cell):
@@ -181,10 +183,8 @@ def secret_kinds(cell: str) -> List[str]:
             continue
         found.append("32 文字以上の連続した英数字")
         break
-    for m in _PEM_RE.finditer(cell):
-        if not _is_dummy(m.group(1)):
-            found.append("鍵・証明書の本文（-----BEGIN）")
-            break
+    if _PEM_RE.search(cell):
+        found.append("鍵・証明書の本文（-----BEGIN）")
     return found
 
 
