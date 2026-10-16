@@ -156,6 +156,8 @@ export function installUrlSync(): () => void {
   const on = () => useSelectionStore.getState().syncFromUrl();
   window.addEventListener('popstate', on);
   window.addEventListener('hashchange', on);
+  // メイン画面の表示中は分析画面（この購読の置き場）が外れていて、その間の戻る/進む・ハッシュの書き換えを取りこぼす。置き直すときに URL から選択を復元する（FR-028 AC-033）
+  if (useSelectionStore.getState().selectedIds.join('|') !== parseSelectionHash(adapter.hash()).ids.join('|')) on();
   return () => {
     window.removeEventListener('popstate', on);
     window.removeEventListener('hashchange', on);

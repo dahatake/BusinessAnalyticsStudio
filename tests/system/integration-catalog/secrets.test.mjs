@@ -78,3 +78,56 @@ test('NFR-SEC-006 AC-430 [引用符付き] 値を引用符で囲んだ api_key="
 test('NFR-SEC-006 AC-430 [BEGIN 単独行] 値のない -----BEGIN 行単独も鍵本文として失敗する', T, () => {
   expectNew(assert, { mutate: put('cred', '-----BEGIN PRIVATE KEY-----'), rowIdx: 0 });
 });
+
+// NFR-SEC-006 AC-430 [最小長]（Bearer は 8 文字以上、= の後は 1 文字以上を検出。短い値を見逃さない）
+test('NFR-SEC-006 AC-430 [最小長] Bearer の後 8 文字と = の後 1 文字の値は失敗し、Bearer の後 7 文字は失敗にしない', T, () => {
+  expectNew(assert, { mutate: put('cred', 'Bearer aB3dE5gH'), rowIdx: 0 });
+  expectNew(assert, { mutate: put('cred', 'api_key=a'), rowIdx: 0 });
+  expectNew(assert, { mutate: put('cred', 'token=7'), rowIdx: 0 });
+  expectNoNew(assert, { mutate: put('cred', 'Bearer aB3dE5g'), rowIdx: 0 });
+});
+
+// NFR-SEC-006 AC-430 [ダミー x の下限]（x の並びは 3 文字以上・大小無視でダミー。2 文字以下は失敗）
+test('NFR-SEC-006 AC-430 [ダミー x の下限] token=xxx・XXX はダミーで失敗にせず、token=xx・x は失敗する', T, () => {
+  expectNoNew(assert, { mutate: put('cred', 'token=xxx'), rowIdx: 0 });
+  expectNoNew(assert, { mutate: put('cred', 'api_key=XXX'), rowIdx: 0 });
+  expectNew(assert, { mutate: put('cred', 'token=xx'), rowIdx: 0 });
+  expectNew(assert, { mutate: put('cred', 'api_key=x'), rowIdx: 0 });
+});
+
+// NFR-SEC-006 AC-430 [Bearer 一般語]（Bearer の後が説明文の語なら検出しない）
+test('NFR-SEC-006 AC-430 [Bearer 一般語] Bearer の後が authentication・authorization・scheme・header・tokens の説明文は失敗にしない', T, () => {
+  for (const w of ['authentication', 'authorization', 'scheme', 'header', 'tokens']) {
+    expectNoNew(assert, { mutate: put('auth', `Bearer ${w} を用いる`), rowIdx: 0 });
+  }
+});
+
+// NFR-SEC-006 AC-430 [Bearer 一般語の抜け道なし]（一般語でない 8 文字以上の値は検出する）
+test('NFR-SEC-006 AC-430 [Bearer 一般語の抜け道なし] Bearer の後が一般語でない 8 文字以上の値なら失敗する', T, () => {
+  expectNew(assert, { mutate: put('auth', 'Bearer q8Zk3LmN7vR2tXw9'), rowIdx: 0 });
+});
+
+// NFR-SEC-006 AC-430 [使う文字 2 種以下]
+test('NFR-SEC-006 AC-430 [使う文字 2 種以下] 32 文字以上でも使う文字が 2 種類以下の並びは失敗にしない', T, () => {
+  expectNoNew(assert, { mutate: append('区切り ' + 'a'.repeat(40)), rowIdx: 0 });
+  expectNoNew(assert, { mutate: append('区切り ' + 'ab'.repeat(20)), rowIdx: 0 });
+});
+
+// NFR-SEC-006 AC-430 [使う文字 3 種]（3 種以上の 32 文字は検出する）
+test('NFR-SEC-006 AC-430 [使う文字 3 種] 32 文字以上で使う文字が 3 種類以上の並びは失敗する', T, () => {
+  expectNew(assert, { mutate: put('cred', 'abc'.repeat(11)), rowIdx: 0 });
+});
+
+// NFR-SEC-006 AC-430 [ハッシュ桁数]（16 進 40・56・64・96・128 桁は検出しない）
+test('NFR-SEC-006 AC-430 [ハッシュ桁数] 16 進の 40・56・64・96・128 桁（SHA-1・224・256・384・512 相当）は失敗にしない', T, () => {
+  const hex = (n) => Array.from({ length: n }, (_, i) => '0123456789abcdef'[(i * 7 + 3) % 16]).join('');
+  for (const n of [40, 56, 64, 96, 128]) {
+    expectNoNew(assert, { mutate: append(`ハッシュ: ${hex(n)}`), rowIdx: 0 });
+  }
+});
+
+// NFR-SEC-006 AC-430 [ハッシュ桁数の外]（上記以外の桁の 16 進は検出する）
+test('NFR-SEC-006 AC-430 [ハッシュ桁数の外] 16 進でも 41 桁など定めた桁以外は失敗する', T, () => {
+  const hex = Array.from({ length: 41 }, (_, i) => '0123456789abcdef'[(i * 7 + 3) % 16]).join('');
+  expectNew(assert, { mutate: put('cred', hex), rowIdx: 0 });
+});

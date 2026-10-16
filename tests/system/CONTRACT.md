@@ -100,3 +100,7 @@
 - データカタログ画面（`openScreen(page,'data-catalog')`）の `data-testid="data-viewer"`。`data-view-mode="2d|3d"`、`data-detail-level="bird|entity|column"`（表示している詳細度。文字でも表示）。radiogroup「表示モード」の radio「2D」「3D」。ボタン「拡大」「縮小」「全体表示に戻す」。
 - 列の詳細度では、各エンティティ要素 `[data-viewer-entity="<名称>"]` の中に `[data-viewer-column]`（列名の文字）が出る。選択中は `aria-selected="true"`。
 - 列を含む企業データカタログは、`entities[].columns: [{name,type}]` の JSON（FR-172）で取り込む（file input は §12 と同じ）。
+
+## 20. Project の外部連携選択（FR-201 AC-440。project-integrations.spec.ts が前提にする画面の探し方）
+- Project 画面（stepper が見える）に region「外部連携」。外部連携カタログの各連携が checkbox（aria-label は連携の名称。状態が「廃止」のものは disabled）。button「連携の選択を保存」で保存（端末内。開き直しても残る）。保存しない選択は残らない。
+- 入口: メイン画面の Project 名のリンク（role=link、名前は Project 名）をクリックすると、その Project 画面（stepper が見える）が開く。ブラウザーの戻る（history back）でメイン画面に戻る。

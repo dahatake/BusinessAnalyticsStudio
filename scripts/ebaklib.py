@@ -33,6 +33,7 @@ DEFAULT_CONFIG: dict = {
         "ledger": "tests/system/ledger.json",
         "manual_tests": "docs/manual-tests.md",
         "integrations": "docs/integrations.md",
+        "integration_catalog": "docs/integration-catalog.md",
     },
     "base_branch": "main",
     "work": {"dir": "work", "retention_days": 14},
