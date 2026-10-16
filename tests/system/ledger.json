@@ -6837,7 +6837,7 @@
       ],
       "title": "A=X・B=Y を保存し開き直すと各 Project の選択だけが表示される",
       "layer": "e2e",
-      "command": "npx playwright test -c tests/system/playwright.config.ts -g \"FR-201 AC-440\"",
+      "command": "node tests/system/run.mjs AC-440",
       "canary": false,
       "status": "not_run",
       "last_commit": null,
@@ -6849,6 +6849,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-17T01:04:35+09:00",
+          "by": "test-designer",
+          "change": "command: 'npx playwright test -c tests/system/playwright.config.ts -g \"FR-201 AC-440\"' -> 'node tests/system/run.mjs AC-440'",
+          "reason": "root npx playwright (別版) で fail。E2E-301 の run.mjs 書式に合わせる"
         }
       ]
     }

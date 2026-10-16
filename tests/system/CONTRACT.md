@@ -103,3 +103,4 @@
 
 ## 20. Project の外部連携選択（FR-201 AC-440。project-integrations.spec.ts が前提にする画面の探し方）
 - Project 画面（stepper が見える）に region「外部連携」。外部連携カタログの各連携が checkbox（aria-label は連携の名称。状態が「廃止」のものは disabled）。button「連携の選択を保存」で保存（端末内。開き直しても残る）。保存しない選択は残らない。
+- 入口: メイン画面の Project 名のリンク（role=link、名前は Project 名）をクリックすると、その Project 画面（stepper が見える）が開く。ブラウザーの戻る（history back）でメイン画面に戻る。
