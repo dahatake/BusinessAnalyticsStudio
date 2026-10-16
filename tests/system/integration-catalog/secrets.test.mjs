@@ -3,10 +3,11 @@
 // 判定は「既存の指摘（ベースライン）に対して、カタログの変更で増えた指摘」で行う（support.mjs）。
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { expectNew, expectNoNew, setCell } from './support.mjs';
+import { cellOf, expectNew, expectNoNew, setCell } from './support.mjs';
 
 const T = { timeout: 300_000 };
 const put = (key, value) => (sb) => setCell(sb, 0, key, value);
+const append = (s) => (sb) => setCell(sb, 0, 'ver', `${cellOf(sb, 0, 'ver')} ${s}`);
 
 // 検出すべき資格情報の形式。ここの値はすべて合成した偽物（実在の資格情報ではない）。
 const REAL = {
@@ -34,8 +35,8 @@ test('NFR-SEC-006 AC-430 [欄を問わない] 認証・認可の欄に Bearer �
 test('NFR-SEC-006 AC-430 [ハッシュ除外] git の commit ハッシュ（40 桁の 16 進）と SHA のハッシュ値は検出しない', T, () => {
   const sha1 = '9fceb02d0ae598e95dc970b74767f19372d61af8';
   const sha256 = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
-  expectNoNew(assert, { mutate: put('ver', `確認した版: commit ${sha1}`), rowIdx: 0 });
-  expectNoNew(assert, { mutate: put('ver', `配布物の SHA-256: ${sha256}`), rowIdx: 0 });
+  expectNoNew(assert, { mutate: append(`確認した版: commit ${sha1}`), rowIdx: 0 });
+  expectNoNew(assert, { mutate: append(`配布物の SHA-256: ${sha256}`), rowIdx: 0 });
 });
 
 // NFR-SEC-006 AC-430 [「例」行]（「例」と書いてあっても検出の対象外にしない）
