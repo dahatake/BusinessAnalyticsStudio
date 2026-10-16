@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { AnalysisPanel } from './AnalysisPanel';
+import { IntegrationsPanel } from './IntegrationsPanel';
 import { NameDialog, UnsavedDialog } from './dialogs';
 import { useProjects, type Company, type Project } from '../store/projects';
 import { useAnalyses } from '../store/analyses';
@@ -130,6 +131,7 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
       {slot ? null : head}
       {demoOnly ? null : st.companies.map((c) => <CompanyRegion key={c.id} company={c} onModal={setModal} onOpen={(id) => requestOpen(id)} />)}
       {pickerOpen ? <WorkTargetPicker projects={st.projects} companies={st.companies} showDemo={showDemo} currentId={st.openId} onChoose={choose} onClose={() => setPickerOpen(false)} /> : null}
+      {current ? <IntegrationsPanel key={current.id} projectId={current.id} /> : null}
       {current ? <AnalysisPanel projectId={current.id} onNavigate={onNavigate} /> : null}
       {pending ? (
         <UnsavedDialog

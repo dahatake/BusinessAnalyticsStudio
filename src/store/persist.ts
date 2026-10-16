@@ -5,6 +5,7 @@ import { useAnalyses, type Analysis } from './analyses';
 import { useOkr, type OkrSet } from './okr';
 import { useProjects, type Company, type Project } from './projects';
 import { useStepper } from './stepper';
+import { useProjectIntegrations, sanitizeIntegrations, type ProjectIntegrations } from './projectIntegrations';
 import { useUseCases, type UseCaseSet } from './usecases';
 import { useDataCatalog } from './datacatalog';
 import type { ExplicitLink } from '../datacatalog/model';
@@ -32,6 +33,8 @@ interface Snapshot {
   dataCatalogs?: Record<string, ImportedCatalog>;
   /** Project ごとの plan の tasks への追加分（FR-162）。古い保存内容にはない */
   dataTasks?: Record<string, ProjectTask[]>;
+  /** Project ごとの外部連携の選択と設定（FR-201・FR-202）。古い保存内容にはない */
+  integrations?: Record<string, ProjectIntegrations>;
 }
 
 type Store = Pick<Storage, 'getItem' | 'setItem'>;
@@ -51,6 +54,7 @@ export function snapshot(): Snapshot {
     dataLinks: useDataCatalog.getState().linksByProject,
     dataCatalogs: useDataCatalog.getState().catalogByProject,
     dataTasks: useDataCatalog.getState().tasksByProject,
+    integrations: useProjectIntegrations.getState().byProject,
   };
 }
 
@@ -110,6 +114,7 @@ export function restore(storage: Store): boolean {
     ])),
     selectedKey: null,
   });
+  useProjectIntegrations.setState({ byProject: sanitizeIntegrations(data.integrations).value });
   useStepper.getState().switchTo(openId);
   return true;
 }
@@ -119,7 +124,7 @@ export function startPersistence(storage: Store): () => void {
   const save = () => {
     try { storage.setItem(STORAGE_KEY, JSON.stringify(snapshot())); } catch { /* 保存できなくても使い続けられる */ }
   };
-  const offs = [useProjects.subscribe(save), useAnalyses.subscribe(save), useStepper.subscribe(save), useOkr.subscribe(save), useUseCases.subscribe(save), useDataCatalog.subscribe(save)];
+  const offs = [useProjects.subscribe(save), useAnalyses.subscribe(save), useStepper.subscribe(save), useOkr.subscribe(save), useUseCases.subscribe(save), useDataCatalog.subscribe(save), useProjectIntegrations.subscribe(save)];
   return () => offs.forEach((off) => off());
 }
 

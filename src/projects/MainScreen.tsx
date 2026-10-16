@@ -109,7 +109,12 @@ export function MainScreen() {
             <Button size="small" onClick={() => setModal({ kind: 'project', company: c })}>Project を作成</Button>
           </div>
           <ul className={s.plain} aria-label="進行中の Project">
-            {active.filter((p) => p.companyId === c.id).map((p) => <li key={p.id}><Text>{p.name}</Text></li>)}
+            {active.filter((p) => p.companyId === c.id).map((p) => (
+              <li key={p.id}>
+                {/* 一覧から直接開ける（FR-201 の画面の入口。分析画面の一覧と同じ「Project の名前のリンク」） */}
+                <a href={`#${p.id}`} onClick={(e) => { e.preventDefault(); requestGo(p.id, false); }}>{p.name}</a>
+              </li>
+            ))}
           </ul>
         </section>
       ))}
