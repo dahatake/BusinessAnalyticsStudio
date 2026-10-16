@@ -47,7 +47,7 @@
     "commands": [
       {
         "name": "toolkit-integration-catalog",
-        "run": "python -m pytest tests/toolkit/test_integration_catalog.py tests/toolkit/test_integration_fields_a.py tests/toolkit/test_integration_fields_b.py -q"
+        "run": "python -m pytest tests/toolkit/test_integration_catalog.py tests/toolkit/test_integration_fields_a.py tests/toolkit/test_integration_fields_b.py tests/toolkit/test_integration_secrets_boundary.py -q"
       },
       {
         "name": "typecheck",

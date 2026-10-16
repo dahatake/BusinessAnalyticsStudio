@@ -242,7 +242,7 @@
 | FR-197 | テスト用のスタブ・モック | 承認済み | scripts/integration_catalog.py (check の欄ごとの検査), docs/integration-catalog.md | tests/toolkit/test_integration_fields_b.py (AC-421, AC-422) | 外部連携カタログの検査 |
 | FR-198 | 要求定義書との結線（連携の追加・変更・廃止の要求） | 承認済み | scripts/integration_catalog.py (check の欄ごとの検査), docs/integration-catalog.md | tests/toolkit/test_integration_fields_b.py (AC-423, AC-424, AC-425) | 外部連携カタログの検査 |
 | FR-199 | 外部連携カタログの検査・一覧・影響確認（既存の検査への組み込み） | 承認済み | scripts/rdcheck.py (chk28・trace・list --kind 外部連携), scripts/rdfix.py (fix_integration), scripts/ebaklib.py, scripts/integration_catalog.py | tests/toolkit/test_integration_catalog.py, tests/system/integration-catalog/tooling.test.mjs | 外部連携カタログの検査 |
-| NFR-SEC-006 | 外部連携カタログに秘密情報と個人情報の実データを書かない | 承認済み | scripts/integration_catalog.py (secret_kinds・check の資格情報形式の検出) | tests/toolkit/test_integration_secrets.py (AC-430), tests/system/integration-catalog/secrets.test.mjs | 外部連携カタログの検査 |
+| NFR-SEC-006 | 外部連携カタログに秘密情報と個人情報の実データを書かない | 承認済み | scripts/integration_catalog.py (secret_kinds・check の資格情報形式の検出) | tests/toolkit/test_integration_secrets.py (AC-430), tests/toolkit/test_integration_secrets_boundary.py (AC-433), tests/system/integration-catalog/secrets.test.mjs | 外部連携カタログの検査 |
 | NFR-OPS-001 | 外部連携カタログの鮮度 | 承認済み | scripts/integration_catalog.py (check の最終確認日の鮮度) | tests/toolkit/test_integration_catalog.py, tests/system/integration-catalog/tooling.test.mjs | 外部連携カタログの検査 |
 ## API・イベント
 
