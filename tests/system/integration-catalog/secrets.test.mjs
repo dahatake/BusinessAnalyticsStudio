@@ -78,3 +78,19 @@ test('NFR-SEC-006 AC-430 [引用符付き] 値を引用符で囲んだ api_key="
 test('NFR-SEC-006 AC-430 [BEGIN 単独行] 値のない -----BEGIN 行単独も鍵本文として失敗する', T, () => {
   expectNew(assert, { mutate: put('cred', '-----BEGIN PRIVATE KEY-----'), rowIdx: 0 });
 });
+
+// NFR-SEC-006 AC-430 [最小長]（Bearer は 8 文字以上、= の後は 1 文字以上を検出。短い値を見逃さない）
+test('NFR-SEC-006 AC-430 [最小長] Bearer の後 8 文字と = の後 1 文字の値は失敗し、Bearer の後 7 文字は失敗にしない', T, () => {
+  expectNew(assert, { mutate: put('cred', 'Bearer aB3dE5gH'), rowIdx: 0 });
+  expectNew(assert, { mutate: put('cred', 'api_key=a'), rowIdx: 0 });
+  expectNew(assert, { mutate: put('cred', 'token=7'), rowIdx: 0 });
+  expectNoNew(assert, { mutate: put('cred', 'Bearer aB3dE5g'), rowIdx: 0 });
+});
+
+// NFR-SEC-006 AC-430 [ダミー x の下限]（x の並びは 3 文字以上・大小無視でダミー。2 文字以下は失敗）
+test('NFR-SEC-006 AC-430 [ダミー x の下限] token=xxx・XXX はダミーで失敗にせず、token=xx・x は失敗する', T, () => {
+  expectNoNew(assert, { mutate: put('cred', 'token=xxx'), rowIdx: 0 });
+  expectNoNew(assert, { mutate: put('cred', 'api_key=XXX'), rowIdx: 0 });
+  expectNew(assert, { mutate: put('cred', 'token=xx'), rowIdx: 0 });
+  expectNew(assert, { mutate: put('cred', 'api_key=x'), rowIdx: 0 });
+});
