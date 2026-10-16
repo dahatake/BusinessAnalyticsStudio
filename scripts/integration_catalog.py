@@ -148,7 +148,20 @@ def fresh_days(doc) -> int:
         return DEFAULT_FRESH_DAYS
 
 
-_DUMMY_RE = re.compile(r"^(?:<ここに値>|[xX]{3,}|REDACTED|\*+)$")
+DEFAULT_DUMMY_X_MIN = 3  # PARAM-067 を読めないときの退避値
+
+
+def dummy_x_min(doc) -> int:
+    """PARAM-067（ダミー表記とみなす x の並びの最小の長さ）。読めないときは 3（NFR-SEC-006 AC-433）。"""
+    try:
+        n = int(re.search(r"\d+", h.strip_md(doc.params["PARAM-067"]["value"])).group(0))
+        return n if n >= 1 else DEFAULT_DUMMY_X_MIN
+    except Exception:  # noqa: BLE001
+        return DEFAULT_DUMMY_X_MIN
+
+
+def _dummy_re(x_min: int):
+    return re.compile(r"^(?:<ここに値>|[xX]{%d,}|REDACTED|\*+)$" % x_min)
 _BEARER_RE = re.compile(r"Bearer\s+([A-Za-z0-9._~+/\-]+=*)")
 _KV_RE = re.compile(r"(?i)(?:api[_-]?key|token|password)\s*=\s*[\"'`]?([^\s,;、。)）\]\"'`]+)")
 _LONG_RE = re.compile(r"(?<![A-Za-z0-9])[A-Za-z0-9]{32,}(?![A-Za-z0-9])")
@@ -158,21 +171,22 @@ _BEARER_WORDS = {"authentication", "authorization", "scheme", "header", "tokens"
 _HASH_LENGTHS = (40, 56, 64, 96, 128)
 
 
-def _is_dummy(value: str) -> bool:
-    return bool(_DUMMY_RE.match(value.strip()))
+def _is_dummy(value: str, x_min: int = DEFAULT_DUMMY_X_MIN) -> bool:
+    return bool(_dummy_re(x_min).match(value.strip()))
 
 
-def secret_kinds(cell: str) -> List[str]:
+def secret_kinds(cell: str, doc=None) -> List[str]:
     """資格情報の形式の検出（NFR-SEC-006 AC-430）。検出した形式の名前を返す（値は返さない）。
     固定のダミー表記と、ハッシュ値（40・64 桁などの 16 進）は除く。「例」の行でも検出の対象にする。"""
     found: List[str] = []
+    xm = dummy_x_min(doc)
     for m in _BEARER_RE.finditer(cell):
         v = m.group(1)
-        if not _is_dummy(v) and len(v) >= 8 and v.lower() not in _BEARER_WORDS:
+        if not _is_dummy(v, xm) and len(v) >= 8 and v.lower() not in _BEARER_WORDS:
             found.append("Bearer の値")
             break
     for m in _KV_RE.finditer(cell):
-        if not _is_dummy(m.group(1)):
+        if not _is_dummy(m.group(1), xm):
             found.append("api_key=・token=・password= の値")
             break
     for m in _LONG_RE.finditer(cell):
@@ -219,7 +233,7 @@ def check(root: Path, cfg: dict, doc, today: Optional[_dt.date] = None) -> List[
             seen[r.name] = r.line
             cat_names[r.name] = r
         for col_, cell_ in r.cells.items():
-            for kind_ in secret_kinds(cell_):
+            for kind_ in secret_kinds(cell_, doc):
                 err(r, col_, f"資格情報とみなす形式（{kind_}）を含んでいます。値は書かず、保管場所と管理手順だけを書きます（NFR-SEC-006 AC-430）")
         state = _clean(r.get("状態"))
         for col in BASIC_COLUMNS:
