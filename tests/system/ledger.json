@@ -232,7 +232,7 @@
     "AC-429": "sha256:22d5ad89479f7b3c",
     "AC-431": "sha256:21bdc125bf205c61",
     "AC-432": "sha256:98e7f569aa8e5831",
-    "AC-430": "sha256:9a1b824d246a74ca"
+    "AC-430": "sha256:f0bd9661cd5ff3ff"
   },
   "cases": [
     {
@@ -6670,6 +6670,156 @@
       "history": [
         {
           "at": "2026-10-16T14:51:48+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "IT-071",
+      "requirement_ids": [
+        "NFR-SEC-006"
+      ],
+      "ac_ids": [
+        "AC-430"
+      ],
+      "title": "Bearer 一般語",
+      "layer": "nonfunctional",
+      "command": "node --test --test-name-pattern \"AC-430 \\[Bearer 一般語\\]\" tests/system/integration-catalog/secrets.test.mjs",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T21:20:16+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "IT-072",
+      "requirement_ids": [
+        "NFR-SEC-006"
+      ],
+      "ac_ids": [
+        "AC-430"
+      ],
+      "title": "Bearer 一般語の抜け道なし",
+      "layer": "nonfunctional",
+      "command": "node --test --test-name-pattern \"AC-430 \\[Bearer 一般語の抜け道なし\\]\" tests/system/integration-catalog/secrets.test.mjs",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T21:20:19+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "IT-073",
+      "requirement_ids": [
+        "NFR-SEC-006"
+      ],
+      "ac_ids": [
+        "AC-430"
+      ],
+      "title": "使う文字 2 種以下",
+      "layer": "nonfunctional",
+      "command": "node --test --test-name-pattern \"AC-430 \\[使う文字 2 種以下\\]\" tests/system/integration-catalog/secrets.test.mjs",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T21:20:22+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "IT-074",
+      "requirement_ids": [
+        "NFR-SEC-006"
+      ],
+      "ac_ids": [
+        "AC-430"
+      ],
+      "title": "使う文字 3 種",
+      "layer": "nonfunctional",
+      "command": "node --test --test-name-pattern \"AC-430 \\[使う文字 3 種\\]\" tests/system/integration-catalog/secrets.test.mjs",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T21:20:25+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "IT-075",
+      "requirement_ids": [
+        "NFR-SEC-006"
+      ],
+      "ac_ids": [
+        "AC-430"
+      ],
+      "title": "ハッシュ桁数",
+      "layer": "nonfunctional",
+      "command": "node --test --test-name-pattern \"AC-430 \\[ハッシュ桁数\\]\" tests/system/integration-catalog/secrets.test.mjs",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T21:20:28+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "IT-076",
+      "requirement_ids": [
+        "NFR-SEC-006"
+      ],
+      "ac_ids": [
+        "AC-430"
+      ],
+      "title": "ハッシュ桁数の外",
+      "layer": "nonfunctional",
+      "command": "node --test --test-name-pattern \"AC-430 \\[ハッシュ桁数の外\\]\" tests/system/integration-catalog/secrets.test.mjs",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-16T21:20:31+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
