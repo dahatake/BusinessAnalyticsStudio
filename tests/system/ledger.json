@@ -6342,9 +6342,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[形式:\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "pass",
-      "last_commit": "7616fea",
-      "last_run_at": "2026-10-16T21:49:04+09:00",
-      "evidence": "work/runs/202610162108/logs/system-test/IT-060-202610162137.log",
+      "last_commit": "21da47c",
+      "last_run_at": "2026-10-16T22:52:15+09:00",
+      "evidence": "work/runs/202610162108/logs/system-test/IT-060-202610162149.log",
       "history": [
         {
           "at": "2026-10-16T08:50:57+09:00",
@@ -6379,9 +6379,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[欄を問わない\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "pass",
-      "last_commit": "7616fea",
-      "last_run_at": "2026-10-16T21:49:04+09:00",
-      "evidence": "work/runs/202610162108/logs/system-test/IT-061-202610162138.log",
+      "last_commit": "21da47c",
+      "last_run_at": "2026-10-16T22:52:15+09:00",
+      "evidence": "work/runs/202610162108/logs/system-test/IT-061-202610162149.log",
       "history": [
         {
           "at": "2026-10-16T08:51:00+09:00",
@@ -6416,9 +6416,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[ハッシュ除外\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "pass",
-      "last_commit": "7616fea",
-      "last_run_at": "2026-10-16T21:49:04+09:00",
-      "evidence": "work/runs/202610162108/logs/system-test/IT-062-202610162138.log",
+      "last_commit": "21da47c",
+      "last_run_at": "2026-10-16T22:52:15+09:00",
+      "evidence": "work/runs/202610162108/logs/system-test/IT-062-202610162150.log",
       "history": [
         {
           "at": "2026-10-16T08:51:02+09:00",
@@ -6453,9 +6453,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[「例」行\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "pass",
-      "last_commit": "7616fea",
-      "last_run_at": "2026-10-16T21:49:04+09:00",
-      "evidence": "work/runs/202610162108/logs/system-test/IT-063-202610162139.log",
+      "last_commit": "21da47c",
+      "last_run_at": "2026-10-16T22:52:15+09:00",
+      "evidence": "work/runs/202610162108/logs/system-test/IT-063-202610162150.log",
       "history": [
         {
           "at": "2026-10-16T08:51:05+09:00",
@@ -6490,9 +6490,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[ダミー値\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "pass",
-      "last_commit": "7616fea",
-      "last_run_at": "2026-10-16T21:49:04+09:00",
-      "evidence": "work/runs/202610162108/logs/system-test/IT-064-202610162139.log",
+      "last_commit": "21da47c",
+      "last_run_at": "2026-10-16T22:52:15+09:00",
+      "evidence": "work/runs/202610162108/logs/system-test/IT-064-202610162150.log",
       "history": [
         {
           "at": "2026-10-16T08:51:08+09:00",
@@ -6527,9 +6527,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[語だけの説明文\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "pass",
-      "last_commit": "7616fea",
-      "last_run_at": "2026-10-16T21:49:04+09:00",
-      "evidence": "work/runs/202610162108/logs/system-test/IT-065-202610162139.log",
+      "last_commit": "21da47c",
+      "last_run_at": "2026-10-16T22:52:15+09:00",
+      "evidence": "work/runs/202610162108/logs/system-test/IT-065-202610162151.log",
       "history": [
         {
           "at": "2026-10-16T08:51:11+09:00",
@@ -6564,9 +6564,9 @@
       "command": "node --test tests/system/integration-catalog/secrets.test.mjs --test-name-pattern=\"\\[山括弧の抜け道\\]\"",
       "canary": false,
       "status": "pass",
-      "last_commit": "7616fea",
-      "last_run_at": "2026-10-16T21:49:04+09:00",
-      "evidence": "work/runs/202610162108/logs/system-test/IT-066-202610162139.log",
+      "last_commit": "21da47c",
+      "last_run_at": "2026-10-16T22:52:15+09:00",
+      "evidence": "work/runs/202610162108/logs/system-test/IT-066-202610162151.log",
       "history": [
         {
           "at": "2026-10-16T10:39:35+09:00",
@@ -6589,9 +6589,9 @@
       "command": "node --test tests/system/integration-catalog/secrets.test.mjs --test-name-pattern=\"\\[引用符付き\\]\"",
       "canary": false,
       "status": "pass",
-      "last_commit": "7616fea",
-      "last_run_at": "2026-10-16T21:49:04+09:00",
-      "evidence": "work/runs/202610162108/logs/system-test/IT-067-202610162142.log",
+      "last_commit": "21da47c",
+      "last_run_at": "2026-10-16T22:54:50+09:00",
+      "evidence": "work/runs/202610162108/logs/system-test/IT-067-202610162252.log",
       "history": [
         {
           "at": "2026-10-16T10:39:39+09:00",
@@ -6614,9 +6614,9 @@
       "command": "node --test tests/system/integration-catalog/secrets.test.mjs --test-name-pattern=\"\\[BEGIN 単独行\\]\"",
       "canary": false,
       "status": "pass",
-      "last_commit": "7616fea",
-      "last_run_at": "2026-10-16T21:49:04+09:00",
-      "evidence": "work/runs/202610162108/logs/system-test/IT-068-202610162144.log",
+      "last_commit": "21da47c",
+      "last_run_at": "2026-10-16T22:52:15+09:00",
+      "evidence": "work/runs/202610162108/logs/system-test/IT-068-202610162246.log",
       "history": [
         {
           "at": "2026-10-16T10:39:42+09:00",
@@ -6639,9 +6639,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[最小長\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "pass",
-      "last_commit": "7616fea",
-      "last_run_at": "2026-10-16T21:49:04+09:00",
-      "evidence": "work/runs/202610162108/logs/system-test/IT-069-202610162146.log",
+      "last_commit": "21da47c",
+      "last_run_at": "2026-10-16T22:52:15+09:00",
+      "evidence": "work/runs/202610162108/logs/system-test/IT-069-202610162249.log",
       "history": [
         {
           "at": "2026-10-16T14:51:44+09:00",
@@ -6664,9 +6664,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[ダミー x の下限\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "pass",
-      "last_commit": "7616fea",
-      "last_run_at": "2026-10-16T21:49:04+09:00",
-      "evidence": "work/runs/202610162108/logs/system-test/IT-070-202610162146.log",
+      "last_commit": "21da47c",
+      "last_run_at": "2026-10-16T22:52:15+09:00",
+      "evidence": "work/runs/202610162108/logs/system-test/IT-070-202610162249.log",
       "history": [
         {
           "at": "2026-10-16T14:51:48+09:00",
@@ -6689,9 +6689,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[Bearer 一般語\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "pass",
-      "last_commit": "7616fea",
-      "last_run_at": "2026-10-16T21:49:04+09:00",
-      "evidence": "work/runs/202610162108/logs/system-test/IT-071-202610162147.log",
+      "last_commit": "21da47c",
+      "last_run_at": "2026-10-16T22:52:15+09:00",
+      "evidence": "work/runs/202610162108/logs/system-test/IT-071-202610162249.log",
       "history": [
         {
           "at": "2026-10-16T21:20:16+09:00",
@@ -6714,9 +6714,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[Bearer 一般語の抜け道なし\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "pass",
-      "last_commit": "7616fea",
-      "last_run_at": "2026-10-16T21:49:04+09:00",
-      "evidence": "work/runs/202610162108/logs/system-test/IT-072-202610162147.log",
+      "last_commit": "21da47c",
+      "last_run_at": "2026-10-16T22:52:15+09:00",
+      "evidence": "work/runs/202610162108/logs/system-test/IT-072-202610162250.log",
       "history": [
         {
           "at": "2026-10-16T21:20:19+09:00",
@@ -6739,9 +6739,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[使う文字 2 種以下\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "pass",
-      "last_commit": "7616fea",
-      "last_run_at": "2026-10-16T21:49:04+09:00",
-      "evidence": "work/runs/202610162108/logs/system-test/IT-073-202610162147.log",
+      "last_commit": "21da47c",
+      "last_run_at": "2026-10-16T22:52:15+09:00",
+      "evidence": "work/runs/202610162108/logs/system-test/IT-073-202610162250.log",
       "history": [
         {
           "at": "2026-10-16T21:20:22+09:00",
@@ -6764,9 +6764,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[使う文字 3 種\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "pass",
-      "last_commit": "7616fea",
-      "last_run_at": "2026-10-16T21:49:04+09:00",
-      "evidence": "work/runs/202610162108/logs/system-test/IT-074-202610162148.log",
+      "last_commit": "21da47c",
+      "last_run_at": "2026-10-16T22:52:15+09:00",
+      "evidence": "work/runs/202610162108/logs/system-test/IT-074-202610162251.log",
       "history": [
         {
           "at": "2026-10-16T21:20:25+09:00",
@@ -6789,9 +6789,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[ハッシュ桁数\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "pass",
-      "last_commit": "7616fea",
-      "last_run_at": "2026-10-16T21:49:04+09:00",
-      "evidence": "work/runs/202610162108/logs/system-test/IT-075-202610162148.log",
+      "last_commit": "21da47c",
+      "last_run_at": "2026-10-16T22:52:15+09:00",
+      "evidence": "work/runs/202610162108/logs/system-test/IT-075-202610162251.log",
       "history": [
         {
           "at": "2026-10-16T21:20:28+09:00",
@@ -6814,9 +6814,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[ハッシュ桁数の外\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "pass",
-      "last_commit": "7616fea",
-      "last_run_at": "2026-10-16T21:49:04+09:00",
-      "evidence": "work/runs/202610162108/logs/system-test/IT-076-202610162148.log",
+      "last_commit": "21da47c",
+      "last_run_at": "2026-10-16T22:52:15+09:00",
+      "evidence": "work/runs/202610162108/logs/system-test/IT-076-202610162251.log",
       "history": [
         {
           "at": "2026-10-16T21:20:31+09:00",
