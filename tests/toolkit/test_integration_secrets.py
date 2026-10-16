@@ -39,6 +39,15 @@ def test_example_line_still_detected_but_dummy_allowed(tmp_path):
     assert secret_errs(tmp_path, "例: token=xxxx / token=t6Yw3MsR8cEj5UaQ")
 
 
+# NFR-SEC-006 AC-430（抜け道: 山括弧・引用符・BEGIN 単独行・数字なしの Bearer）
+def test_loopholes_closed(tmp_path):
+    for v in ("api_key=<k7Hq2ZpL9dVx4TnB>", 'api_key="k7Hq2ZpL9dVx4TnB"', "token='abcdefghijkl'",
+              "-----BEGIN PRIVATE KEY-----", "Bearer abcdefghijklmnop"):
+        assert secret_errs(tmp_path, f"値: {v}"), v
+    for v in ("api_key=<ここに値>", 'token="xxxx"', "password=REDACTED"):
+        assert not secret_errs(tmp_path, f"例: {v}"), v
+
+
 # NFR-SEC-006 AC-430
 def test_words_only_not_detected(tmp_path):
     assert not secret_errs(tmp_path, "API キーは Key Vault に保管。トークンは短命、パスワードは使わない。証明書は別途管理")
