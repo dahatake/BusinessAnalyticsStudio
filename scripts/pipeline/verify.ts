@@ -8,7 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { formatPackError, type PackError } from '../../src/schema';
+import { UNCLASSIFIED_LABEL, countUnclassified, formatPackError, type PackError } from '../../src/schema';
 import { contrastRatio, isHexColor } from '../../src/theme/brand';
 import { buildBrandTheme } from '../../src/theme/brandTheme';
 import { validatePackDir } from '../lib/pack-fs';
@@ -246,7 +246,13 @@ export async function verifyPack(opts: VerifyOptions): Promise<VerifyResult> {
     };
 
   const list: VerifyItemResult[] = VERIFY_ITEMS.map((m) => ({ id: m.id, name: m.name, ...items[m.id] }));
-  return { ok: list.every((i) => i.ok), items: list, warnings: primary.warnings, elapsedMs, limitSec };
+  // FR-213 AC-490: 世界区分のないエンティティは合否に含めず、件数を警告にする（既存の顧客パックを壊さない）
+  const unclassified = countUnclassified(readJson(path.join(workDir, 'public', 'data', 'entities.json')));
+  const warnings = [...primary.warnings];
+  if (unclassified > 0) {
+    warnings.push(`世界区分（world）のないエンティティが ${unclassified} 件あります（「${UNCLASSIFIED_LABEL}」として扱います）。public/data/entities.json の各エンティティに world と kind を付けてください（FR-213）。`);
+  }
+  return { ok: list.every((i) => i.ok), items: list, warnings, elapsedMs, limitSec };
 }
 
 /** 顧客パックの JSON 全体（サンプルの項目の有無の判定用） */

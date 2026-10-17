@@ -141,10 +141,48 @@ function sameShadow(actual: number[][] | null, level: number): boolean {
   return key(actual) === key(want);
 }
 
+/**
+ * ハイコントラスト（forced-colors）のエレベーションの代わりの境界線（NFR-UX-015 AC-476・A-56）。
+ * 面（要素・その子孫・近い祖先 2 段。影の探し方と同じ範囲）のどれかが、4 辺すべてに計算済みの太さ 1px 以上で
+ * 線種が none・hidden でない境界線、または同じ条件の輪郭線（outline）を持てば true。
+ */
+async function hasHcBoundary(loc: Locator): Promise<boolean> {
+  return loc.evaluate((root) => {
+    const ok = (w: string, st: string) => parseFloat(w) >= 1 && st !== 'none' && st !== 'hidden';
+    const boundary = (e: Element) => {
+      const s = getComputedStyle(e);
+      const border =
+        ok(s.borderTopWidth, s.borderTopStyle) &&
+        ok(s.borderRightWidth, s.borderRightStyle) &&
+        ok(s.borderBottomWidth, s.borderBottomStyle) &&
+        ok(s.borderLeftWidth, s.borderLeftStyle);
+      const outline = ok(s.outlineWidth, s.outlineStyle); // outline は 4 辺に同じ線を描く
+      return border || outline;
+    };
+    // 面の輪郭として数えるのは、面とほぼ同じ大きさの要素だけ（中のボタンや項目の枠を面の境界線と誤認しない）
+    const area = (e: Element) => { const r = e.getBoundingClientRect(); return r.width * r.height; };
+    const a0 = area(root);
+    const anc: Element[] = [];
+    for (let p = root.parentElement, i = 0; p && i < 2 && p !== document.body; p = p.parentElement, i++) if (area(p) <= a0 * 1.5) anc.push(p);
+    const desc = Array.from(root.querySelectorAll('*')).slice(0, 200).filter((d) => area(d) >= a0 * 0.9);
+    return [root, ...desc, ...anc].some(boundary);
+  });
+}
+
+/**
+ * 役割の面のエレベーションの判定（NFR-UX-015 AC-476）。Light・Dark は役割の段の影と一致、
+ * ハイコントラストは 4 辺の境界線か輪郭線。合わないときは理由の文字列、合えば null。
+ */
+async function surfaceOk(loc: Locator, theme: Theme, level: number): Promise<string | null> {
+  if (theme === 'hc') return (await hasHcBoundary(loc)) ? null : '4 辺の境界線（1px 以上・none/hidden でない）も輪郭線もない';
+  const shape = await shadowShape(loc);
+  return sameShadow(shape, level) ? null : `影 ${JSON.stringify(shape)} が段 ${level} と一致しない`;
+}
+
 test.describe('NFR-UX-015 デザイントークンによる見た目の一元化', () => {
   for (const theme of THEMES) {
     // NFR-UX-015 AC-476
-    test(`NFR-UX-015 AC-476 ${theme}: 全画面で文字の大きさと行の高さが Fluent 2 の文字の段、角丸が角丸のトークン、ダイアログ・メニュー・ツールチップ・カードの影が役割の段`, async ({ page, start }) => {
+    test(`NFR-UX-015 AC-476 ${theme}: 全画面で文字の大きさと行の高さが Fluent 2 の文字の段、角丸が角丸のトークン、ダイアログ・メニュー・ツールチップ・カードの影が役割の段（ハイコントラストは 4 辺の境界線）`, async ({ page, start }) => {
       test.setTimeout(300_000);
       await applyTheme(page, theme);
       await start();
@@ -163,8 +201,9 @@ test.describe('NFR-UX-015 デザイントークンによる見た目の一元化
         for (let i = 0; i < n; i++) {
           if (!(await cardLocs.nth(i).isVisible())) continue;
           cards++;
-          // ハイコントラスト（forced-colors）では、ブラウザーが影を描かないため影の段は判定しない（CONFLICTS に報告）
-          if (theme !== 'hc' && !sameShadow(await shadowShape(cardLocs.nth(i)), ROLE_LEVEL.card)) shadowBad.push(`${key} カード ${i}`);
+          // Light・Dark は影の段、ハイコントラスト（forced-colors）は 4 辺の境界線か輪郭線（A-56・SRC-027）
+          const r = await surfaceOk(cardLocs.nth(i), theme, ROLE_LEVEL.card);
+          if (r) shadowBad.push(`${key} カード ${i}: ${r}`);
         }
         // メニュー（その他の操作）
         await c.focus();
@@ -173,7 +212,8 @@ test.describe('NFR-UX-015 デザイントークンによる見た目の一元化
         await expect(menu, `${key}: その他の操作のメニューが開かない`).toBeVisible();
         const mv = await tokenViolations(menu);
         bad.push(...mv.type.map((x) => `${key} メニューの文字: ${x}`), ...mv.radius.map((x) => `${key} メニューの角丸: ${x}`));
-        if (theme !== 'hc' && !sameShadow(await shadowShape(menu), ROLE_LEVEL.menu)) shadowBad.push(`${key} メニュー: ${JSON.stringify(await shadowShape(menu))}`);
+        const mr = await surfaceOk(menu, theme, ROLE_LEVEL.menu);
+        if (mr) shadowBad.push(`${key} メニュー: ${mr}`);
         await page.keyboard.press('Escape');
         await expect(menu).toBeHidden();
         // ツールチップ（見出しの操作アイコン）
@@ -184,7 +224,8 @@ test.describe('NFR-UX-015 デザイントークンによる見た目の一元化
         await expect(tip, `${key}: ツールチップが出ない`).toBeVisible();
         const tv = await tokenViolations(tip);
         bad.push(...tv.type.map((x) => `${key} ツールチップの文字: ${x}`), ...tv.radius.map((x) => `${key} ツールチップの角丸: ${x}`));
-        if (theme !== 'hc' && !sameShadow(await shadowShape(tip), ROLE_LEVEL.tooltip)) shadowBad.push(`${key} ツールチップ: ${JSON.stringify(await shadowShape(tip))}`);
+        const tr = await surfaceOk(tip, theme, ROLE_LEVEL.tooltip);
+        if (tr) shadowBad.push(`${key} ツールチップ: ${tr}`);
         await page.mouse.move(1, 1);
       }
       // ダイアログ（コマンドパレット）
@@ -193,12 +234,13 @@ test.describe('NFR-UX-015 デザイントークンによる見た目の一元化
       await expect(dlg).toBeVisible();
       const dv = await tokenViolations(dlg);
       bad.push(...dv.type.map((x) => `ダイアログの文字: ${x}`), ...dv.radius.map((x) => `ダイアログの角丸: ${x}`));
-      if (theme !== 'hc' && !sameShadow(await shadowShape(dlg), ROLE_LEVEL.dialog)) shadowBad.push(`ダイアログ: ${JSON.stringify(await shadowShape(dlg))}`);
+      const dr = await surfaceOk(dlg, theme, ROLE_LEVEL.dialog);
+      if (dr) shadowBad.push(`ダイアログ: ${dr}`);
       await page.keyboard.press('Escape');
 
       expect(bad, '文字の段・角丸のトークンに合わない表示').toEqual([]);
-      expect(cards, 'カード（data-surface="card"）が全画面で 1 つも見つからない（影の段を判定できない）').toBeGreaterThan(0);
-      expect(shadowBad, '役割に対応付けた段の影と一致しない').toEqual([]);
+      expect(cards, 'カード（data-surface="card"）が全画面で 1 つも見つからない（エレベーションを判定できない）').toBeGreaterThan(0);
+      expect(shadowBad, theme === 'hc' ? 'ハイコントラストで面の境界線（4 辺・1px 以上）がない' : '役割に対応付けた段の影と一致しない').toEqual([]);
     });
   }
 

@@ -4,6 +4,7 @@ import { z } from 'zod';
 import {
   ClassificationSchema, ConfidenceSchema, CreatedBySchema, IdSchema, entityShape,
 } from './common';
+import { EntityKindSchema, TwinSchema, WorldSchema, checkWorldStructure } from './world';
 
 /** ユースケースの対象ペルソナ（FR-180）。ワークスペースのペルソナ（経営層・事業部門・IT・現場）と同じ。スキーマは画面の部品を参照しないので、ここに持つ */
 export const USECASE_PERSONAS = ['経営層', '事業部門', 'IT', '現場'] as const;
@@ -126,7 +127,13 @@ export const EntitiesSchema = z.looseObject({
     /** 位置（拠点）。なければ地図には出さず「位置情報なし」として数える（FR-113） */
     location: LocationSchema.optional(),
     metrics: z.array(MetricSchema).optional(),
+    /** 世界区分（FR-213）。real＝現実世界／digital＝デジタル世界。ないものは「区分なし」 */
+    world: WorldSchema.optional(),
+    /** 種別（FR-213。§3.7 の分類の体系）。世界区分と組み合わせの合うものだけ（現実世界: site〜event／デジタル世界: data〜metric） */
+    kind: EntityKindSchema.optional(),
   })),
+  /** ツイン関係（FR-214）。現実世界のエンティティ（realId）と、それを表す・計測する・記録する・表示するデジタル世界のエンティティ（digitalId）の対応。1 対多・多対 1 を許す */
+  twins: z.array(TwinSchema).optional(),
   /** 物流・データの流れ（FR-021）。拠点から拠点への流れを、時間軸（0〜23 時）に応じた量の粒子で示す */
   flows: z.array(entity({
     from: IdSchema,
@@ -140,6 +147,9 @@ export const EntitiesSchema = z.looseObject({
     /** 流れが最も多い時刻（0〜23 時）。時刻ごとの量は、この時刻を頂点とする山形 */
     peakHour: z.number().min(0).max(23).optional(),
   })).optional(),
+}).superRefine((v, ctx) => {
+  // FR-213 AC-489・FR-214 AC-491: 種別と世界区分の組み合わせ・上位の循環と世界区分・ツイン関係の両端
+  for (const issue of checkWorldStructure(v.entities, v.twins)) ctx.addIssue({ code: 'custom', path: issue.path, message: issue.message });
 });
 
 /** 課題の区分（FR-002）。社内向け／社外向けのどちらか（機密区分 classification とは別） */

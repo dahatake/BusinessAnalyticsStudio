@@ -107,7 +107,8 @@
 
 ## 21. Fluent 2 の全画面適用・ピン止め・ビュー切替（NFR-UX-015〜017・NFR-A11Y-009・FR-215〜218。fluent-design.spec.ts・a11y-all-screens.spec.ts・pin.spec.ts・view-switch.spec.ts が前提にする画面の探し方）
 - 全画面（画面の登録）: 左メニュー navigation「画面」の `nav-<key>`（`nav-toggle` を除く）を表示の順に走査する（`support/screens.ts` の `listScreenKeys`）。§4 の主要画面がすべて含まれること。表示幅が狭く左メニューが隠れるときは button「メニュー」から開く。
-- カード: Fluent のカードの面に `data-surface="card"`（影の段 4 の判定に使う）。メニューは role=menu、ツールチップは role=tooltip、ダイアログは role=dialog（コマンドパレット）。
+- カード: Fluent のカードの面に `data-surface="card"`（影の段 4 の判定に使う。ハイコントラストでは 4 辺の境界線か輪郭線の判定に使う。AC-476）。メニューは role=menu、ツールチップは role=tooltip、ダイアログは role=dialog（コマンドパレット）。
+- 拡大・縮小できる面（AC-483。A-51）: ビュアー・グラフ・キャンバス・ホワイトボード・地図・3D の、拡大・縮小する描画領域の要素に `data-zoom-surface`（値は `viewer`／`graph`／`canvas`／`whiteboard`／`map`／`3d`）。見出し・ハンドル・ツールバーなど面の外の部品には付けない。この中の文字は文字 200% の切れ・重なりの数え方から除き、表示しきれない文字は省略記号（text-overflow: ellipsis か line-clamp）＋全文のアクセシブルな名前（aria-label・title・aria-labelledby）かツールチップ（role=tooltip）、または面の中のスクロール（overflow: auto/scroll）で読めることを判定する。3D と地図のラベルは NFR-A11Y-003 AC-173 と同じ button「表で見る」の表で読めることを判定する。
 - ピン止め（FR-215）: フォーカスしたコンポーネントの `component-actions` に button 1 つ。名前は「ピン止めする」（固定なし）／「ピン止めを外す」（固定中）。`aria-pressed`（false／true）と `data-icon-variant`（`regular`／`filled`）を持ち、ツールチップ（role=tooltip）の文言も名前と同じ。状態は端末内のレイアウトとして保存され、再読込で復元される。
 - ビュー（FR-217・FR-218・NFR-UX-018）: `component-actions` に button 1 つ。名前は「ビュー」で始まり、見える文字に現在の表示モード（「2D」か「3D」）と世界の表示（「現実世界」「デジタル世界」「両方」）を含む。押すと role=menu が開き、menuitemradio「2D」「3D」「現実世界」「デジタル世界」「両方」（選べないものは disabled と理由の文字）。Esc で何も変えずに閉じる。
 - フック `t.view.state(key)`（§6 に追加）: そのコンポーネントが表示している状態 `{ mode: '2d'|'3d', world: 'real'|'digital'|'both', itemIds: string[], selectedIds: string[], twinLinks: [realId, digitalId][] }`。itemIds は表示中の項目（非表示の世界の項目を含めない）、twinLinks は線か印で表示中のツイン関係。

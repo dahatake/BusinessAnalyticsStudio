@@ -153,6 +153,30 @@
               ],
               "additionalProperties": {}
             }
+          },
+          "world": {
+            "type": "string",
+            "enum": [
+              "real",
+              "digital"
+            ]
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "site",
+              "equipment",
+              "person",
+              "organization",
+              "operation",
+              "thing",
+              "event",
+              "data",
+              "model",
+              "system",
+              "ui-component",
+              "metric"
+            ]
           }
         },
         "required": [
@@ -160,6 +184,46 @@
           "createdBy",
           "type",
           "name"
+        ],
+        "additionalProperties": {}
+      }
+    },
+    "twins": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "realId": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "digitalId": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "relation": {
+            "type": "string",
+            "enum": [
+              "represents",
+              "measures",
+              "records",
+              "displays"
+            ]
+          },
+          "sourceIds": {
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]*$"
+            }
+          }
+        },
+        "required": [
+          "realId",
+          "digitalId",
+          "relation",
+          "sourceIds"
         ],
         "additionalProperties": {}
       }
