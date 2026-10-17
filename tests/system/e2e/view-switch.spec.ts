@@ -15,10 +15,16 @@ const viewState = (page: Page, key: string) => hook<ViewState>(page, 't.view.sta
 
 /** 選択・絞り込み・時刻・期間（NFR-UX-001 の保持の対象）を読む */
 async function keptState(page: Page) {
-  const period = page.getByRole('combobox', { name: /期間/ }).or(page.getByRole('slider', { name: /期間/ })).first();
+  // 期間・時刻の操作も裏のタブに回ることがあるため、隠れた要素も含めて読む（表示の有無で値が変わったと誤判定しない）
+  const period = page
+    .getByRole('combobox', { name: /期間/, includeHidden: true })
+    .or(page.getByRole('slider', { name: /期間/, includeHidden: true }))
+    .first();
   return {
     selection: await page.getByTestId('selection-indicator').innerText(),
-    filter: await component(page, 'table').getByRole('textbox', { name: /絞り込み/ }).inputValue(),
+    // 一覧表は最小の幅の規則（FR-150 など）でほかの画面と同じタブにまとまり裏のタブに回ることがある。
+    // 裏のタブでも絞り込みの値は保たれているべきなので、隠れた要素も含めて読む（値の一致の判定は緩めない）。
+    filter: await component(page, 'table').getByRole('textbox', { name: /絞り込み/, includeHidden: true }).inputValue(),
     time: await page.getByRole('slider', { name: '時間軸' }).first().getAttribute('aria-valuenow'),
     period: (await period.count()) ? ((await period.getAttribute('aria-valuenow')) ?? (await period.inputValue().catch(() => ''))) : null,
   };
