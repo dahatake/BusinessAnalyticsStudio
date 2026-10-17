@@ -11,7 +11,7 @@ import type { Move } from '../workspace/layoutModel';
 import { getEntityGraph } from '../selection/hooks';
 import { useSelectionStore } from '../store/selection';
 import { useComponentView } from '../view/useView';
-import { HIDDEN_SELECTION_TEXT, WORLD_VIEW_LABELS, hiddenSelected } from '../view/viewModel';
+import { HIDDEN_SELECTION_TEXT, selectionHiddenIn, singleWorldNote } from '../view/viewModel';
 import { isEditableTarget, panelKeyAction, runPanelKeyAction, titleDoubleClick, type KeyLike } from './panelKeys';
 
 /** これより狭いコンポーネントは、見出しの操作アイコンを出さず「…」メニューに任せる（FR-150 AC-259）。
@@ -100,16 +100,10 @@ function useWorldView(key: string): { single: boolean; hideAll: boolean; note: s
   const selectedIds = useSelectionStore((st) => st.selectedIds);
   const single = v.decl.world === 'real' || v.decl.world === 'digital' ? v.decl.world : null;
   const hideAll = single !== null && v.world !== 'both' && v.world !== single;
-  let hidden = false;
-  if (hideAll) hidden = selectedIds.length > 0;
-  else if (v.decl.world === 'items' && v.world !== 'both' && selectedIds.length > 0) {
-    // 項目ごとの世界区分は、エンティティ関係グラフ（パックごとに 1 回作る）から読む
-    const graph = getEntityGraph();
-    if (graph) hidden = hiddenSelected(selectedIds, (id) => graph.node(id)?.world, (id) => graph.has(id), v.world).length > 0;
-  }
-  const note = hideAll && single
-    ? `この画面の項目は${WORLD_VIEW_LABELS[single]}の項目です。「ビュー」で「${WORLD_VIEW_LABELS[single]}」か「両方」を選ぶと表示します。`
-    : null;
+  // 選択中の項目がこの画面の項目で、いまの世界の表示で隠れているときだけ示す（項目の種類と世界区分はエンティティ関係グラフから読む）
+  const graph = selectedIds.length > 0 && v.world !== 'both' ? getEntityGraph() : null;
+  const hidden = graph ? selectionHiddenIn(v.decl, v.world, selectedIds, (id) => graph.node(id)) : false;
+  const note = hideAll ? singleWorldNote(v.decl) : null;
   return { single: single !== null, hideAll, note, hiddenNote: hidden };
 }
 

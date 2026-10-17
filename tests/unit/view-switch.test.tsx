@@ -17,9 +17,11 @@ import { useRetainedStore } from '../../src/store/retained';
 import type { ScreenDefinition } from '../../src/screens/types';
 import { setCan3DForTest } from '../../src/view/render3d';
 import { applyScreenView, viewStateOf, viewTestState } from '../../src/view/useView';
+import { ModeRadio } from '../../src/view/ModeRadio';
+import { readFileSync } from 'node:fs';
 import {
   HIDDEN_SELECTION_TEXT, NO_2D_REASON, NO_3D_ENV_REASON, NO_3D_REASON, NO_WORLD_REASON, defaultModeOf, effectiveMode, filterByWorld,
-  hiddenSelected, isShownInWorld, modeOptions, registerViewDecls, twinLinksAmong, viewDeclOf, viewText, worldOptions,
+  canRender3D, hiddenSelected, isShownInWorld, modeOptions, registerViewDecls, selectionHiddenIn, singleWorldNote, twinLinksAmong, viewDeclOf, viewText, worldOptions,
   type ViewDecl, type WorldView,
 } from '../../src/view/viewModel';
 
@@ -334,5 +336,110 @@ describe('FR-218 世界の表示のコンポーネント共通の扱い（結合
     expect(s.world).toBe('both');
     expect(viewText('3d', 'real')).toBe('3D・現実世界');
     expect(viewDeclOf('g')).toBe(BOTH);
+  });
+});
+
+describe('FR-218 AC-502 全画面の世界区分の宣言が §3.7 の分類表と合う', () => {
+  // FR-218 AC-502
+  it('FR-218 AC-502 登録している全画面の world 宣言が §3.7 の分類（課題・解決策・工程・ユースケース・議題＝現実世界、出典・議論ツリー・付箋・議論テーマ・KPI/OKR・アーキテクチャ・データカタログ＝デジタル世界）と合い、1 つの世界の画面は根拠と理由を持つ', async () => {
+    const { SCREENS } = await import('../../src/screens/registry');
+    const want: Record<string, 'real' | 'digital' | 'items' | false> = {
+      canvas: 'real', 'issue-solution': 'real', priority: 'real', summary: false, matrix: 'real', ranking: 'real',
+      'knowledge-graph': 'items', architecture: 'digital', 'discussion-tree': 'digital', table: 'items', gantt: 'real',
+      view3d: 'items', drawing2d: 'items', map: 'items', 'kpi-okr': 'digital', sources: 'digital', 'mock-app': false,
+      usecase: 'real', 'data-catalog': 'digital', whiteboard: 'digital', themes: 'digital', settings: false, chat: false,
+    };
+    expect(SCREENS.map((x) => x.key).sort()).toEqual(Object.keys(want).sort());
+    for (const sc of SCREENS) {
+      expect(sc.view!.world, `${sc.key} の世界区分の宣言が §3.7 と合わない`).toBe(want[sc.key]);
+      if (sc.view!.world === 'real' || sc.view!.world === 'digital') {
+        expect(sc.view!.basis, `${sc.key} に §3.7 の根拠がない`).toBeTruthy();
+        expect(singleWorldNote(sc.view!)).toContain(sc.view!.basis!);
+      }
+    }
+    // §3.7 の分類表の行（要求定義書）と、根拠のエンティティの世界区分が一致する
+    const rd = readFileSync('docs/requirements-definition.md', 'utf8');
+    const row = (name: string) => rd.match(new RegExp(`^\\| ${name} \\| (現実世界|デジタル世界) \\|`, 'm'))?.[1];
+    const check: Array<[string, string]> = [
+      ['課題', 'issue-solution'], ['解決策', 'priority'], ['工程', 'gantt'], ['ユースケース', 'usecase'], ['議題', 'canvas'],
+      ['出典', 'sources'], ['議論ツリー', 'discussion-tree'], ['付箋', 'whiteboard'], ['議論テーマ', 'themes'], ['KPI', 'kpi-okr'],
+      ['アーキテクチャ', 'architecture'], ['データエンティティ', 'data-catalog'],
+    ];
+    const byKey = new Map(SCREENS.map((x) => [x.key, x.view!]));
+    for (const [entity, key] of check) {
+      expect(row(entity), `§3.7 に ${entity} の行がない`).toBeTruthy();
+      expect(byKey.get(key)!.world).toBe(row(entity) === '現実世界' ? 'real' : 'digital');
+    }
+  });
+
+  // FR-218（「隠れている」の表示は、この画面の項目の選択のときだけ）
+  it('FR-218 AC-504 「選択中の項目はこの表示では隠れています」は、選択がその画面の項目で、いまの世界の表示で隠れているときだけ', () => {
+    const nodes: Record<string, { kind: string; world?: 'real' | 'digital' }> = {
+      i1: { kind: 'issue' }, e1: { kind: 'entity', world: 'real' }, e2: { kind: 'entity', world: 'digital' }, s1: { kind: 'source' },
+    };
+    const nodeOf = (id: string) => nodes[id];
+    const issues: ViewDecl = { has2D: true, has3D: false, world: 'real', kinds: ['issue'] };
+    expect(selectionHiddenIn(issues, 'digital', ['i1'], nodeOf)).toBe(true);
+    expect(selectionHiddenIn(issues, 'digital', ['e1', 's1'], nodeOf)).toBe(false);
+    expect(selectionHiddenIn(issues, 'real', ['i1'], nodeOf)).toBe(false);
+    const ents: ViewDecl = { has2D: true, has3D: true, world: 'items', kinds: ['entity'] };
+    expect(selectionHiddenIn(ents, 'real', ['e2'], nodeOf)).toBe(true);
+    expect(selectionHiddenIn(ents, 'real', ['e1', 'i1'], nodeOf)).toBe(false);
+    expect(selectionHiddenIn(ents, 'both', ['e2'], nodeOf)).toBe(false);
+    expect(selectionHiddenIn(TWO, 'real', ['e2'], nodeOf)).toBe(false);
+  });
+
+  // FR-218（結合: 関係のない選択では出ず、この画面の項目の選択で出る）
+  it('FR-218 AC-504 結合: 1 つの世界の画面で別の世界を選んだとき、ほかの画面の項目を選んでいても「隠れています」は出ない', () => {
+    registerViewDecls([{ key: 'k', view: DIGITAL }]);
+    render(wrap(<Panel testId="component-k" title="KPI"><p>x</p></Panel>));
+    act(() => { useSelectionStore.setState({ selectedIds: ['zzz-unrelated'] }); useLayout.getState().setView('k', { world: 'real' }); });
+    expect(screen.queryByTestId('view-hidden-selection')).toBeNull();
+  });
+});
+
+describe('FR-217 AC-500・AC-507 画面の中の既存の切替（共通の ModeRadio）', () => {
+  // FR-217 AC-500
+  it('FR-217 AC-500 3D を描画できない環境では、画面の中の 3D の選択肢も無効で「この環境では 3D を描画できません」を示し、選んでも変わらない', () => {
+    setCan3DForTest(false);
+    render(wrap(<ModeRadio viewKey="g" />));
+    const three = screen.getByRole('radio', { name: '3D' }) as HTMLInputElement;
+    expect(three.disabled).toBe(true);
+    expect(screen.getByText(NO_3D_ENV_REASON)).toBeTruthy();
+    fireEvent.click(three);
+    expect(viewStateOf('g').mode).toBe('2d');
+  });
+
+  // FR-217 AC-500（FR-022 を後退させない: 2.5D は canvas 2D なので描画できない環境でも選べる）
+  it('FR-217 AC-500 ガントの 2.5D（canvas 2D）は、WebGPU・WebGL2 がなくても選べ、見出しの状態と同じ値になる', async () => {
+    setCan3DForTest(false);
+    const { SCREENS } = await import('../../src/screens/registry');
+    const gantt = SCREENS.find((x) => x.key === 'gantt')!.view!;
+    expect(canRender3D(gantt, false)).toBe(true);
+    registerViewDecls([{ key: 'gantt', view: gantt }]);
+    render(wrap(<ModeRadio viewKey="gantt" labels={{ '3d': '2.5D' }} />));
+    const r = screen.getByRole('radio', { name: '2.5D' }) as HTMLInputElement;
+    expect(r.disabled).toBe(false);
+    fireEvent.click(r);
+    expect(viewStateOf('gantt').mode).toBe('3d');
+    expect(screen.queryByText(NO_3D_ENV_REASON)).toBeNull();
+  });
+
+  // FR-217 AC-507（見出しの切替と画面の中の切替が同じ状態）
+  it('FR-217 AC-507 見出しで 3D にすると画面の中の切替も 3D を示し、画面の中で 2D にすると見出しの状態も 2D になる', () => {
+    render(wrap(<ModeRadio viewKey="g" />));
+    act(() => useLayout.getState().setView('g', { mode: '3d' }));
+    expect((screen.getByRole('radio', { name: '3D' }) as HTMLInputElement).checked).toBe(true);
+    fireEvent.click(screen.getByRole('radio', { name: '2D' }));
+    expect(viewStateOf('g').mode).toBe('2d');
+  });
+
+  // FR-217 AC-507（既存の切替は二重に置かず、共通の部品を使う）
+  it('FR-217 AC-507 ナレッジグラフ・アーキテクチャ図・ガントの画面の中の切替は共通の ModeRadio だけを使う', () => {
+    for (const f of ['KnowledgeGraphScreen', 'ArchitectureScreen', 'GanttScreen']) {
+      const src = readFileSync(`src/screens/${f}.tsx`, 'utf8');
+      expect(src, f).toMatch(/<ModeRadio viewKey=/);
+      expect(src, f).not.toMatch(/value="2\.?5?d"|value="3d"/);
+    }
   });
 });

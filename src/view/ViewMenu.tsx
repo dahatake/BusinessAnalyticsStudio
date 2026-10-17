@@ -11,7 +11,7 @@ import {
 import { paneAction } from '../workspace/paneActions';
 import { applyScreenView, useComponentView, useScreenView } from './useView';
 import {
-  FALLBACK_DECL, modeOptions, viewText, worldOptions, type ViewMode, type ViewOption, type WorldView,
+  FALLBACK_DECL, modeOptions, viewDeclKeys, viewDeclOf, viewText, worldOptions, type ViewMode, type ViewOption, type WorldView,
 } from './viewModel';
 import { detect3D } from './render3d';
 
@@ -122,7 +122,9 @@ export function ScreenViewButton() {
   const checked: Checked = { mode: [cur.mode], world: [cur.world] };
   const text = viewText(cur.mode, cur.world);
   // 画面全体の切替は、どれかのコンポーネントが持つ表現を選べる。3D は描画できない環境では選べない
-  const modes = modeOptions({ ...FALLBACK_DECL, has3D: true, world: 'items' }, detect3D());
+  // 描画できない環境でも、canvas 2D で描ける 3D 相当の表現（ガントの 2.5D）を持つ画面があれば 3D を選べる
+  const cpu3D = viewDeclKeys().some((k) => { const d = viewDeclOf(k); return d.has3D && d.cpu3D === true && !d.fixed; });
+  const modes = modeOptions({ ...FALLBACK_DECL, has3D: true, cpu3D, world: 'items' }, detect3D());
   const worlds = worldOptions({ ...FALLBACK_DECL, world: 'items' });
   return (
     <Menu

@@ -40,6 +40,17 @@ export interface ViewDecl {
   world: 'items' | World | false;
   /** 表現を固定したコンポーネント（FR-020 の 3D ビューと 2D 図面）。画面の見出しの切替の対象にしない（AC-507） */
   fixed?: boolean;
+  /** 3D 相当の表現を WebGPU・WebGL2 なしで描ける（ガントの 2.5D は canvas 2D。FR-022 を後退させない） */
+  cpu3D?: boolean;
+  /** 画面が表示する項目の種類（エンティティ関係グラフの節の種類）。選択中の項目がこの画面の項目かの判定に使う。省略はすべて */
+  kinds?: readonly string[];
+  /** 1 つの世界の画面（world が 'real'／'digital'）の根拠: §3.7 の分類表のエンティティの名前（例: 「課題・解決策」） */
+  basis?: string;
+}
+
+/** 3D 相当の表現を、この環境で描けるか */
+export function canRender3D(decl: ViewDecl, envCan3D: boolean): boolean {
+  return decl.cpu3D === true || envCan3D;
 }
 
 /** 宣言の既定の表示モード */
@@ -51,7 +62,7 @@ export function defaultModeOf(decl: ViewDecl): ViewMode {
 /** 保存した値（なければ既定）と、描画できるかから、いま表示する表示モードを決める。表現のないモードは選ばない */
 export function effectiveMode(decl: ViewDecl, stored: ViewMode | undefined, can3D: boolean): ViewMode {
   const want = stored ?? defaultModeOf(decl);
-  if (want === '3d' && (!decl.has3D || (!can3D && decl.has2D))) return '2d';
+  if (want === '3d' && (!decl.has3D || (!canRender3D(decl, can3D) && decl.has2D))) return '2d';
   if (want === '2d' && !decl.has2D) return '3d';
   return want;
 }
@@ -75,7 +86,7 @@ export function modeOptions(decl: ViewDecl, can3D: boolean): ViewOption<ViewMode
     : { value: '2d', label: MODE_LABELS['2d'], enabled: false, reason: NO_2D_REASON };
   const three: ViewOption<ViewMode> = !decl.has3D
     ? { value: '3d', label: MODE_LABELS['3d'], enabled: false, reason: NO_3D_REASON }
-    : !can3D
+    : !canRender3D(decl, can3D)
       ? { value: '3d', label: MODE_LABELS['3d'], enabled: false, reason: NO_3D_ENV_REASON }
       : { value: '3d', label: MODE_LABELS['3d'], enabled: true };
   return [two, three];
@@ -132,6 +143,32 @@ export function twinLinksAmong(twins: readonly TwinPair[] | undefined, shown: Re
     out.push([t.realId, t.digitalId]);
   }
   return out;
+}
+
+/**
+ * 「選択中の項目はこの表示では隠れています」を出すか（FR-218）。選択中の項目のうち、この画面の項目（宣言の kinds に当たる節）が、
+ * いまの世界の表示で隠れているときだけ true。ほかの画面の項目の選択では出さない。
+ *  - 項目ごとの画面: 節の世界区分（区分なしは「両方」でだけ表示）で判定する
+ *  - 1 つの世界の画面: 別の世界を選んでいれば、この画面の項目はすべて隠れている
+ */
+export function selectionHiddenIn(
+  decl: ViewDecl, view: WorldView, selectedIds: readonly string[], nodeOf: (id: string) => { kind: string; world?: World } | undefined,
+): boolean {
+  if (decl.world === false || view === 'both') return false;
+  const mine = (id: string) => {
+    const n = nodeOf(id);
+    return n && (decl.kinds === undefined || decl.kinds.includes(n.kind)) ? n : undefined;
+  };
+  if (decl.world === 'items') return selectedIds.some((id) => { const n = mine(id); return !!n && !isShownInWorld(n.world, view); });
+  return view !== decl.world && selectedIds.some((id) => !!mine(id));
+}
+
+/** 1 つの世界の画面で、別の世界を選んだときに示す理由（§3.7 の分類） */
+export function singleWorldNote(decl: ViewDecl): string | null {
+  if (decl.world !== 'real' && decl.world !== 'digital') return null;
+  const w = WORLD_VIEW_LABELS[decl.world];
+  const what = decl.basis ? `この画面の項目（${decl.basis}）` : 'この画面の項目';
+  return `${what}は §3.7 の分類で${w}の項目です。「ビュー」で「${w}」か「両方」を選ぶと表示します。`;
 }
 
 /** 画面の見出しの切替（全コンポーネントにまとめて効く）で、このコンポーネントに入れる値。対象外・表現のないものは変えない（undefined） */

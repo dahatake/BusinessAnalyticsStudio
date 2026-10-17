@@ -5,7 +5,6 @@ import {
   Badge, Button, Checkbox, DialogActions, DialogBody, DialogContent, DialogTitle, Dropdown, Field, Input, Option, Text, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
 import { Dialog, DialogSurface } from '../components/Dialog';
-import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { Add24Regular, Delete24Regular, Link24Regular } from '@fluentui/react-icons';
 import { ADDABLE_KINDS, addEdge, addNode, removeEdge, removeNode, type AddableKind } from '../analysis/graphEdit';
 import {
@@ -26,6 +25,7 @@ import { registerTestHook } from '../testing/hook';
 import { MIN_TARGET_PX } from '../theme/tokens';
 import { Graph3D } from '../three/Graph3D';
 import { useComponentView, usePublishViewItems } from '../view/useView';
+import { ModeRadio } from '../view/ModeRadio';
 import { isShownInWorld } from '../view/viewModel';
 
 const ORIGIN = 'knowledge-graph';
@@ -260,7 +260,6 @@ function KnowledgeGraphScreen() {
   // 2D/3D と世界の表示は、見出しの「ビュー」と同じ状態（FR-217・FR-218。この画面の「表示」の切替も同じ状態を変える）
   const cv = useComponentView(ORIGIN);
   const view = cv.mode;
-  const setView = cv.setMode;
   const worldView = cv.world;
   const [hop, setHop] = useState(HOP_DEFAULT);
   const [hidden, setHidden] = useState<ReadonlySet<NodeKind>>(new Set());
@@ -345,12 +344,8 @@ function KnowledgeGraphScreen() {
       <ExecutiveSummary scope="knowledge-graph" />
 
       <div className={s.toolbar} role="toolbar" aria-label="ナレッジグラフの操作">
-        <Field label="表示">
-          <RadioGroup layout="horizontal" value={view} onChange={(_, d) => setView(d.value as '2d' | '3d')}>
-            <Radio value="2d" label="2D" />
-            <Radio value="3d" label="3D" />
-          </RadioGroup>
-        </Field>
+        {/* 見出しの「ビュー」と同じ 1 つの切替（3D を描画できない環境では無効にし理由を示す。FR-217 AC-500・AC-507） */}
+        <ModeRadio viewKey={ORIGIN} />
         <Field label={`ホップ数（${HOP_MIN}〜${HOP_MAX}）`}>
           <span className={s.hop}>
             <input

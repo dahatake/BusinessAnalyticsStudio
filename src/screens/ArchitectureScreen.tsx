@@ -23,6 +23,7 @@ import { usePackStore } from '../store/pack';
 import { ArchitectureStack } from '../three/ArchitectureStack';
 
 import { useComponentView, usePublishViewItems } from '../view/useView';
+import { ModeRadio } from '../view/ModeRadio';
 const ORIGIN = 'architecture';
 
 const useStyles = makeStyles({
@@ -99,7 +100,6 @@ function ArchitectureScreen() {
   // 2D/3D は見出しの「ビュー」と同じ状態（FR-217。この画面の「表示」の切替も同じ状態を変える）
   const cv = useComponentView(ORIGIN);
   const dim = cv.mode;
-  const setDim = cv.setMode;
   const [scope, setScope] = useState<'all' | 'business' | 'app'>('all');
   const [jsonOpen, setJsonOpen] = useState(false);
   const [jsonText, setJsonText] = useState('');
@@ -192,12 +192,8 @@ function ArchitectureScreen() {
             <Radio value="tobe" label="ToBe" />
           </RadioGroup>
         </Field>
-        <Field label="表示">
-          <RadioGroup layout="horizontal" value={dim} onChange={(_, d) => setDim(d.value as '2d' | '3d')}>
-            <Radio value="2d" label="2D" />
-            <Radio value="3d" label="3D" />
-          </RadioGroup>
-        </Field>
+        {/* 見出しの「ビュー」と同じ 1 つの切替（FR-217 AC-500・AC-507） */}
+        <ModeRadio viewKey={ORIGIN} />
         <Field label="範囲">
           <RadioGroup layout="horizontal" value={scope} onChange={(_, d) => setScope(d.value as typeof scope)}>
             <Radio value="all" label="すべて" />
