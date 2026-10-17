@@ -248,6 +248,18 @@
 | FR-202 | Project ごとの連携設定の記録 | 承認済み | src/store/projectIntegrations.ts (saveSetting・validateSetting・sanitizeIntegrations・registerProjectIntegrationsSnapshot), src/integrations/credentialShape.ts, src/store/persist.ts, src/export/ExportButton.tsx, src/projects/IntegrationsPanel.tsx | tests/unit/project-integrations.test.ts (AC-442, AC-443, AC-446, AC-447), tests/unit/project-integrations-ui.test.tsx (AC-442, AC-443, AC-446) | Project の連携の選択と設定, 資格情報形式の検出, デザイン基盤, 企業・Project の端末内保存 |
 | FR-203 | 連携の選択と外部送信の了承 | 承認済み | src/integrations/sendGate.ts, src/projects/IntegrationsPanel.tsx | tests/unit/project-integrations-ui.test.tsx (AC-444) | 顧客の了承の記録, 連携の外部送信の了承表示, デザイン基盤 |
 | NFR-SEC-008 | Project の連携設定に秘密情報を値で持たない | 承認済み | src/integrations/credentialShape.ts, src/store/projectIntegrations.ts (validateSetting・sanitizeIntegrations) | tests/unit/project-integrations.test.ts (AC-445) | 資格情報形式の検出, Project の連携の選択と設定, 企業・Project の端末内保存 |
+| NFR-UX-015 | デザイントークンによる見た目の一元化（タイポグラフィ・余白・形状・ストローク・エレベーション） | 承認済み | 未実装 | 未実装 | なし |
+| NFR-UX-016 | 色の役割（ニュートラル・共有・ブランド・意味の色）とコントラスト | 承認済み | 未実装 | 未実装 | なし |
+| NFR-UX-017 | Fluent 2 のモーション（所要時間・イージング・遷移の型）の全画面への適用 | 承認済み | 未実装 | 未実装 | なし |
+| NFR-UX-018 | 焦点を保つ見出しの操作と、操作のアイコン・名前の一貫性 | 承認済み | 未実装 | 未実装 | なし |
+| NFR-A11Y-009 | インクルーシブデザインとアクセシビリティの全画面での確認（リフロー・焦点・見出し・操作の大きさ） | 承認済み | 未実装 | 未実装 | なし |
+| FR-212 | 管理データのエンティティの分類（世界区分・種別・階層・整理の軸・ツイン） | 承認済み | 未実装 | 未実装 | なし |
+| FR-213 | 顧客パックのエンティティの世界区分・種別・階層 | 承認済み | 未実装 | 未実装 | なし |
+| FR-214 | 顧客パックのツイン関係（現実世界とデジタル世界の対応付け） | 承認済み | 未実装 | 未実装 | なし |
+| FR-215 | コンポーネントのピン止めの切替（アイコン） | 承認済み | 未実装 | 未実装 | なし |
+| FR-216 | ピン止めしたコンポーネントの固定と、画面の幅の変化での比率の保持 | 承認済み | 未実装 | 未実装 | なし |
+| FR-217 | 全画面・全コンポーネントでの 2D/3D の切替（共通の仕組み） | 承認済み | 未実装 | 未実装 | なし |
+| FR-218 | 現実世界／デジタル世界／両方の表示の切替とツイン関係の表示 | 承認済み | 未実装 | 未実装 | なし |
 ## API・イベント
 
 | 名前 | 定義ファイル | 関連する要求 ID |
