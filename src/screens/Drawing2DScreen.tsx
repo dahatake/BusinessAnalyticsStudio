@@ -126,7 +126,7 @@ export function Drawing2DScreen() {
                       onKeyDown={(e) => { onEntityKey(e, o.entityId, ORIGIN); }}
                     >
                       <TableCell className={s.cell}><Badge appearance="outline" color="informative">{typeLabel(o.type)}</Badge></TableCell>
-                      <TableCell className={s.cell}><span style={{ paddingLeft: `${o.depth * 12}px` }}>{o.name}</span></TableCell>
+                      <TableCell className={s.cell}><span style={{ paddingLeft: `calc(${o.depth} * ${tokens.spacingHorizontalM})` }}>{o.name}</span></TableCell>
                       <TableCell className={s.cell}><Text size={200}>{o.parentId ? byName.get(o.parentId) ?? '' : '—'}</Text></TableCell>
                     </TableRow>
                   );

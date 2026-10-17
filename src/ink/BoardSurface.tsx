@@ -34,14 +34,14 @@ const useStyles = makeStyles({
     color: tokens.colorNeutralForeground1,
     ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`, outlineOffset: '-2px' },
   },
-  plate: { backgroundColor: tokens.colorNeutralBackground1, border: `1px solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium },
+  plate: { backgroundColor: tokens.colorNeutralBackground1, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium },
   layer: { position: 'absolute', left: 0, top: 0, width: '100%', height: '100%', pointerEvents: 'none' },
   editor: {
     position: 'absolute',
     boxSizing: 'border-box',
     resize: 'none',
     overflow: 'hidden',
-    border: `1px dashed ${tokens.colorBrandStroke1}`,
+    border: `${tokens.strokeWidthThin} dashed ${tokens.colorBrandStroke1}`,
     outline: 'none',
     margin: 0,
     lineHeight: 1.4,
@@ -773,7 +773,7 @@ function Minimap({ board, onCenter }: { board: Board; onCenter: (wx: number, wy:
       aria-label="ミニマップ（クリックで表示位置を移動）"
       style={{
         position: 'absolute', right: 8, bottom: 8, width: MM_W, height: MM_H, cursor: 'pointer',
-        backgroundColor: tokens.colorNeutralBackground2, border: `1px solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusSmall,
+        backgroundColor: tokens.colorNeutralBackground2, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusSmall,
       }}
       onPointerDown={(e) => { e.stopPropagation(); dragging.current = true; e.currentTarget.setPointerCapture(e.pointerId); move(e); }}
       onPointerMove={(e) => { e.stopPropagation(); if (dragging.current) move(e); }}

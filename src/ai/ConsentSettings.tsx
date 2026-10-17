@@ -40,7 +40,7 @@ export function ConsentSettings({ onRevoke }: { onRevoke: () => void | Promise<v
   };
 
   return (
-    <section aria-label="顧客の了承の記録" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <section aria-label="顧客の了承の記録" style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS }}>
       <Text weight="semibold">顧客の了承の記録（この案件）</Text>
       <Text size={200} data-testid="consent-notice">{CONSENT_SELF_DECLARED_NOTICE}</Text>
       <Text size={200} data-testid="consent-state">
@@ -58,11 +58,11 @@ export function ConsentSettings({ onRevoke }: { onRevoke: () => void | Promise<v
         <Input input={{ className: styles.inputFocus }} value={note} onChange={(_, d) => setNote(d.value)} disabled={!key} maxLength={200} />
       </Field>
       {error ? <MessageBar intent="error" role="alert"><MessageBarBody>{error}</MessageBarBody></MessageBar> : null}
-      <div style={{ display: 'flex', gap: 8 }}>
+      <div style={{ display: 'flex', gap: tokens.spacingVerticalS }}>
         <Button className={styles.define} appearance="primary" disabled={!key} onClick={save}>了承の記録を保存</Button>
         <Button className={styles.define} disabled={!record} onClick={() => void revoke()}>了承の記録を取り消す</Button>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXS }}>
         <Button className={styles.define} style={{ alignSelf: 'flex-start' }} disabled={!record} aria-describedby="consent-export-guide" onClick={exportFile}>了承の記録を consent.json として書き出す</Button>
         <Text size={200} id="consent-export-guide" data-testid="consent-export-guide">
           {record ? CONSENT_EXPORT_GUIDE : `了承の記録がないため書き出せません。先に了承の記録を保存してください。${CONSENT_EXPORT_GUIDE}`}

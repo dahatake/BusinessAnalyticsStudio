@@ -14,7 +14,8 @@ import { onEntityKey, useEntityBinding } from '../selection/hooks';
 const ORIGIN = 'ranking';
 
 const useStyles = makeStyles({
-  scroll: { overflowX: 'auto' },
+  // 表の領域は縮めない（文字を拡大しても下の注記と重ならない。NFR-A11Y-009 AC-483）
+  scroll: { overflowX: 'auto', flexShrink: 0 },
   table: { minWidth: '600px' },
   row: {
     cursor: 'pointer',

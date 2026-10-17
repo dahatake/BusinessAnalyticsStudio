@@ -10,6 +10,10 @@ import { ComponentActions, usePane } from '../workspace/PaneContext';
 import type { Move } from '../workspace/layoutModel';
 import { isEditableTarget, panelKeyAction, runPanelKeyAction, titleDoubleClick, type KeyLike } from './panelKeys';
 
+/** これより狭いコンポーネントは、見出しの操作アイコンを出さず「…」メニューに任せる（FR-150 AC-259）。
+ *  アイコン 4 個（各 24px 以上）と「…」が見出しの横に収まる幅。既定の配置の列（約 300px）でもアイコンが出る（NFR-UX-015 AC-476 のツールチップ） */
+const NARROW_PANE_PX = 240;
+
 const useStyles = makeStyles({
   // 外枠（ワークスペースの外では従来どおりの幅と余白）
   root: { display: 'flex', flexDirection: 'column', maxWidth: '960px' },
@@ -54,7 +58,7 @@ const useStyles = makeStyles({
     color: tokens.colorNeutralForegroundOnBrand,
     userSelect: 'none',
     touchAction: 'none',
-    '@media (forced-colors: active)': { backgroundColor: 'ButtonFace', color: 'ButtonText', borderBottom: '1px solid ButtonText' },
+    '@media (forced-colors: active)': { backgroundColor: 'ButtonFace', color: 'ButtonText', borderBottom: `${tokens.strokeWidthThin} solid ButtonText` },
   },
   handleGrab: { cursor: 'grab', ':active': { cursor: 'grabbing' } },
   grip: {
@@ -62,8 +66,8 @@ const useStyles = makeStyles({
     width: '40px',
     height: '8px',
     boxSizing: 'border-box',
-    borderTop: '2px solid currentColor',
-    borderBottom: '2px solid currentColor',
+    borderTop: `${tokens.strokeWidthThick} solid currentColor`,
+    borderBottom: `${tokens.strokeWidthThick} solid currentColor`,
   },
   head: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS },
   headRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', columnGap: tokens.spacingHorizontalS },
@@ -113,7 +117,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(() => setNarrow(el.getBoundingClientRect().width < 360));
+    const ro = new ResizeObserver(() => setNarrow(el.getBoundingClientRect().width < NARROW_PANE_PX));
     ro.observe(el);
     return () => ro.disconnect();
   }, []);

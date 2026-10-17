@@ -5,12 +5,12 @@
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import {
-  Badge, Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, DialogTrigger, Dropdown, Field, Menu, MenuItem, MenuList,
-  MenuPopover, MenuTrigger, Option, SpinButton, Tab, TabList, Text, makeStyles, tokens,
+  Badge, Button, DialogActions, DialogBody, DialogContent, DialogTitle, DialogTrigger, Dropdown, Field, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, Option, SpinButton, Tab, TabList, Text, makeStyles, tokens,
 } from '@fluentui/react-components';
+import { Dialog, DialogSurface } from '../../components/Dialog';
 import {
   Add20Regular, AlignTop20Regular, DocumentMarkdown20Regular, DocumentPdf20Regular, Frame20Regular, Group20Regular, GroupDismiss20Regular, Link20Regular, Sparkle20Regular,
-  TaskListSquareLtr20Regular, Timer20Regular, VoteRegular, ZoomFit20Regular, ZoomIn20Regular, ZoomOut20Regular,
+  TaskListSquareLtr20Regular, Timer20Regular, Vote20Regular, ZoomFit20Regular, ZoomIn20Regular, ZoomOut20Regular,
 } from '@fluentui/react-icons';
 import { useAi } from '../../ai/useAi';
 import { Panel } from '../../components/Panel';
@@ -48,7 +48,7 @@ const useStyles = makeStyles({
     position: 'absolute', top: tokens.spacingVerticalXS, left: tokens.spacingHorizontalS, right: tokens.spacingHorizontalS, zIndex: 1,
     pointerEvents: 'none', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', color: tokens.colorNeutralForeground2,
   },
-  clock: { fontVariantNumeric: 'tabular-nums', fontSize: tokens.fontSizeHero700, fontWeight: tokens.fontWeightSemibold },
+  clock: { fontVariantNumeric: 'tabular-nums', fontSize: tokens.fontSizeHero700, lineHeight: tokens.lineHeightHero700, fontWeight: tokens.fontWeightSemibold },
   timerBody: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM, alignItems: 'flex-start' },
 });
 
@@ -346,7 +346,7 @@ export function WhiteboardScreen() {
           <Button size="small" icon={<Sparkle20Regular aria-hidden />} disabled={busy} onClick={() => { void runCluster(); }}>クラスタリング</Button>
           <Button size="small" icon={<Sparkle20Regular aria-hidden />} disabled={selStrokes.length === 0 || recBusy} onClick={() => { void reflect('decision'); }}>決定事項に反映</Button>
           <Button size="small" icon={<TaskListSquareLtr20Regular aria-hidden />} disabled={selStrokes.length === 0 || recBusy} onClick={() => { void reflect('action'); }}>次のアクションに反映</Button>
-          <Button size="small" icon={<VoteRegular aria-hidden />} appearance={voteMode ? 'primary' : 'secondary'} className={s.forcedAuto} aria-pressed={voteMode} onClick={toggleVote}>ドット投票</Button>
+          <Button size="small" icon={<Vote20Regular aria-hidden />} appearance={voteMode ? 'primary' : 'secondary'} className={s.forcedAuto} aria-pressed={voteMode} onClick={toggleVote}>ドット投票</Button>
           {voteMode && votes > 0 ? <Button size="small" onClick={() => { if (active) useInk.getState().updateItems(active.id, resetVotes); }}>票をリセット</Button> : null}
           <TimerDialog open={timerOpen} onOpenChange={setTimerOpen} />
           {!timerOpen && timerShown ? <TimerReadout /> : null}

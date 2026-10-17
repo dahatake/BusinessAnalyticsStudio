@@ -1,12 +1,14 @@
 // 設定パネルの AI 実接続の切替（FR-132）。有効にする前に、送信される情報の種類を示して確認を求める。
 import { useState } from 'react';
 import {
-  Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, MessageBar, MessageBarBody, Switch, Text,
+  Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, MessageBar, MessageBarBody, Switch, Text,
 } from '@fluentui/react-components';
+import { Dialog, DialogSurface } from '../components/Dialog';
 import { useAi } from './useAi';
 import { useConsent } from './useConsent';
 import { ConsentSettings } from './ConsentSettings';
 import { AzureSettings } from './AzureSettings';
+import { tokens } from '../theme/tokens';
 
 export function AiSettings() {
   const { mode, realEnabled, enable, disable, notice, packId } = useAi();
@@ -17,7 +19,7 @@ export function AiSettings() {
   return (
     <>
     <ConsentSettings onRevoke={disable} />
-    <section aria-label="AI・音声・手書きの接続" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <section aria-label="AI・音声・手書きの接続" style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalM }}>
     <Field label="AI 接続" hint="既定はモックです。実接続は、この顧客パックでだけ有効になり、別の顧客パックで起動するとモックに戻ります。">
       <Switch
         checked={realEnabled}

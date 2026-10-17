@@ -1,8 +1,9 @@
 // 企業・Project の画面（ProjectsPanel と、メイン画面 MainScreen）が共有する dialog（FR-137・FR-138・FR-144・FR-186・FR-187）。
 import { useState } from 'react';
 import {
-  Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Input, MessageBar, MessageBarBody,
+  Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Input, MessageBar, MessageBarBody,
 } from '@fluentui/react-components';
+import { Dialog, DialogSurface } from '../components/Dialog';
 import type { Result } from '../store/projects';
 
 /** 1 項目の名前を入力する dialog（登録・作成・名称変更で共通）。不正な入力は原因を示し、入力済みの内容を残す（AC-397） */

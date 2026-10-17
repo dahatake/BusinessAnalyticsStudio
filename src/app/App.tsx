@@ -9,6 +9,7 @@ import { BrandLockup } from '../components/Brand';
 import { TimeAxis } from '../components/TimeAxis';
 import { AnimationStatus } from '../motion/AnimationController';
 import { runTransition } from '../motion/fluent';
+import { fadeInScreen, screenMotionAllowed } from '../motion/transitions';
 import type { Intensity } from '../motion/tone';
 import { useIntensity } from '../motion/useMotion';
 import { usePresentationStore } from '../store/presentation';
@@ -67,7 +68,13 @@ function selectComponent(key: string, ctx: { presenting: boolean; intensity: Int
   // View Transition は、演出の動きが意味を持つときだけ（プレゼンテーションモード中で、演出強度が Executive でなく、停止中でも reduced-motion でもない）。
   // 通常の操作・Executive・停止中は、遷移を挟まず即時に切り替える（遷移中は当たり判定が実要素に届かず、直後の操作を妨げるため）。
   const animate = ctx.presenting && ctx.intensity !== 'Executive' && useAnimation.getState().playing && !prefersReducedMotion() && !isComponentVisible(key);
-  runTransition(() => (animate ? flushSync(() => openComponent(key)) : openComponent(key)), animate);
+  if (animate) {
+    runTransition(() => flushSync(() => openComponent(key)), animate);
+    return;
+  }
+  // 通常の画面の切替は、開いた画面の面をフェードで現す（NFR-UX-017。覆いは操作を妨げない。停止中・視差効果を減らすでは動かさない）
+  flushSync(() => openComponent(key));
+  fadeInScreen(document.querySelector<HTMLElement>(`[data-testid="component-${key}"]`), screenMotionAllowed());
 }
 
 export function App() {

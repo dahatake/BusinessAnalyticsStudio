@@ -32,9 +32,10 @@ const useStyles = makeStyles({
   track: { position: 'relative', height: '28px' },
   bar: {
     position: 'absolute',
-    top: '4px',
-    height: '20px',
-    minWidth: '8px',
+    // 当たり判定は幅・高さとも 24px 以上（NFR-A11Y-009 AC-485・PARAM-040）
+    top: '2px',
+    height: '24px',
+    minWidth: '24px',
     padding: 0,
     border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`,
     borderRadius: tokens.borderRadiusSmall,
@@ -217,7 +218,7 @@ function GanttScreen() {
         onMouseEnter={() => { props.onMouseEnter?.(); setHoverId(g.task.id); }}
         onMouseLeave={() => { props.onMouseLeave?.(); setHoverId(undefined); }}
       >
-        <div role="gridcell" className={s.taskLabelCell} style={{ paddingInlineStart: `${depth * 20}px` }}>
+        <div role="gridcell" className={s.taskLabelCell} style={{ paddingInlineStart: `calc(${depth} * ${tokens.spacingHorizontalXL})` }}>
           {hasChildren ? (
             <Button
               size="small" appearance="subtle" icon={expanded ? <ChevronDown16Regular aria-hidden /> : <ChevronRight16Regular aria-hidden />}

@@ -6,6 +6,8 @@ import { useSettings } from '../store/settings';
 const useStyles = makeStyles({
   slider: {
     width: '110px',
+    // 当たり判定は 24px 以上（NFR-A11Y-009 AC-485・PARAM-040）
+    height: '24px',
     accentColor: tokens.colorBrandForeground1,
     cursor: 'pointer',
     // Windows のハイコントラストでも、OS の色で描く

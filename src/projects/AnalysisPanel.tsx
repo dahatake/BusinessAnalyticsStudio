@@ -14,17 +14,17 @@ import { STEPS } from '../stepper/model';
 import { METHODS, VIEWERS, filterItems, getMethod, type ResultItem, type ViewerId } from '../methods/model';
 
 const useStyles = makeStyles({
-  root: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS, padding: tokens.spacingHorizontalM, borderBottom: `1px solid ${tokens.colorNeutralStroke2}` },
+  root: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS, padding: tokens.spacingHorizontalM, borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}` },
   row: { display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalS, flexWrap: 'wrap' },
   list: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXXS },
-  option: { padding: tokens.spacingHorizontalS, border: `1px solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium, cursor: 'pointer' },
+  option: { padding: tokens.spacingHorizontalS, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium, cursor: 'pointer' },
   params: { display: 'grid', gridTemplateColumns: 'minmax(8em, 1fr) auto auto', gap: tokens.spacingHorizontalS, alignItems: 'center' },
-  item: { padding: tokens.spacingHorizontalS, border: `1px solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium, cursor: 'pointer' },
-  selected: { borderTopWidth: '3px', borderRightWidth: '3px', borderBottomWidth: '3px', borderLeftWidth: '3px', borderTopColor: tokens.colorBrandStroke1, borderRightColor: tokens.colorBrandStroke1, borderBottomColor: tokens.colorBrandStroke1, borderLeftColor: tokens.colorBrandStroke1, fontWeight: tokens.fontWeightSemibold },
+  item: { padding: tokens.spacingHorizontalS, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium, cursor: 'pointer' },
+  selected: { borderTopWidth: tokens.strokeWidthThicker, borderRightWidth: tokens.strokeWidthThicker, borderBottomWidth: tokens.strokeWidthThicker, borderLeftWidth: tokens.strokeWidthThicker, borderTopColor: tokens.colorBrandStroke1, borderRightColor: tokens.colorBrandStroke1, borderBottomColor: tokens.colorBrandStroke1, borderLeftColor: tokens.colorBrandStroke1, fontWeight: tokens.fontWeightSemibold },
   matrix: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(14em, 1fr))', gap: tokens.spacingHorizontalS },
   cell: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXS },
   bar: { height: '0.75em', backgroundColor: tokens.colorBrandBackground, borderRadius: tokens.borderRadiusSmall },
-  panel: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXS, padding: tokens.spacingHorizontalS, border: `1px solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium, backgroundColor: tokens.colorNeutralBackground1, boxSizing: 'border-box' },
+  panel: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXS, padding: tokens.spacingHorizontalS, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium, backgroundColor: tokens.colorNeutralBackground1, boxSizing: 'border-box' },
   handle: { cursor: 'move', touchAction: 'none', userSelect: 'none', padding: tokens.spacingHorizontalXS, backgroundColor: tokens.colorNeutralBackground3, borderRadius: tokens.borderRadiusSmall },
   table: { borderCollapse: 'collapse', width: '100%' },
 });

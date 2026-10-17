@@ -2,9 +2,9 @@
 // AsIs/ToBe を切り替えると差分（追加・削除・変更）を色とラベルでハイライトする。図は Mermaid・SVG・PNG で出力でき、JSON で編集できる。
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Badge, Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger,
-  Text, Textarea, makeStyles, mergeClasses, tokens,
+  Badge, Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, Text, Textarea, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
+import { Dialog, DialogSurface } from '../components/Dialog';
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { ArrowDownload24Regular, Code24Regular } from '@fluentui/react-icons';
 import {

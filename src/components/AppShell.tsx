@@ -35,6 +35,8 @@ const useStyles = makeStyles({
     rowGap: tokens.spacingVerticalXS,
     padding: tokens.spacingHorizontalM,
     overflowY: 'auto',
+    // 画面が多くても項目を縮めない（当たり判定 24px 以上を保ち、はみ出す分はスクロールで届く。NFR-A11Y-009 AC-485）
+    '& > *': { flexShrink: 0 },
     backgroundColor: tokens.colorNeutralBackground2,
     borderRight: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     '@media (max-width: 720px)': {

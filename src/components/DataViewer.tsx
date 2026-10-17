@@ -163,7 +163,7 @@ export function DataViewer({ entities, selectedKey, onSelect, relations = NO_REL
     return (
       <div
         key={e.key} role="option" aria-selected={on} tabIndex={0} data-viewer-entity={e.name} data-highlight={h} className={mergeClasses(s.card, on && s.on)}
-        style={h === 'dimmed' ? { opacity: 0.4 } : h === 'related' ? { borderStyle: 'dashed', borderWidth: 2 } : undefined} onClick={() => { setUseCase(null); onSelect(e.key); }}
+        style={h === 'dimmed' ? { opacity: 0.4 } : h === 'related' ? { borderStyle: 'dashed', borderWidth: tokens.strokeWidthThick } : undefined} onClick={() => { setUseCase(null); onSelect(e.key); }}
       >
         <Text weight="semibold">{e.name}{on ? '（選択中）' : h === 'related' ? '（関連）' : ''}</Text>
         <Text size={200}>{e.description}</Text>

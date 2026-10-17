@@ -38,6 +38,14 @@ const FG_TOKENS: TokenKey[] = [
   'colorBrandForeground1', 'colorBrandForeground2', 'colorBrandForegroundLink', 'colorBrandForegroundLinkHover',
   'colorBrandForegroundLinkPressed', 'colorBrandForegroundLinkSelected', 'colorCompoundBrandForeground1',
   'colorCompoundBrandForeground1Hover', 'colorCompoundBrandForeground1Pressed',
+  // ボタン・メニューのアイコンの色（ホバー・押下・選択中。NFR-UX-016 AC-477: アイコンは隣の色と 3:1 以上。文字にも使うので 4.5 にそろえる）
+  'colorNeutralForeground2BrandHover', 'colorNeutralForeground2BrandPressed', 'colorNeutralForeground2BrandSelected',
+  'colorNeutralForeground3BrandHover', 'colorNeutralForeground3BrandPressed', 'colorNeutralForeground3BrandSelected',
+];
+/** 文字・アイコンの色が載る面（既定の面と、ホバー・押下の面）。どの面の上でも比を満たす */
+const FG_BACKGROUNDS: TokenKey[] = [
+  'colorNeutralBackground1', 'colorNeutralBackground1Hover', 'colorNeutralBackground1Pressed',
+  'colorSubtleBackgroundHover', 'colorSubtleBackgroundPressed',
 ];
 /** 枠線など UI 部品の色（3.0 以上） */
 const STROKE_TOKENS: TokenKey[] = ['colorBrandStroke1', 'colorCompoundBrandStroke', 'colorCompoundBrandStrokeHover', 'colorCompoundBrandStrokePressed'];
@@ -60,7 +68,13 @@ export function buildBrandTheme(mode: 'light' | 'dark', primaryHex: string, bran
     theme[key] = record(r);
     if (key === 'colorBrandBackground') effectivePrimary = r.color;
   }
-  for (const key of FG_TOKENS) theme[key] = record(ensureContrast(theme[key]!, bg1, MIN_CONTRAST_TEXT));
+  for (const key of FG_TOKENS) {
+    const original = theme[key]!;
+    let color = original;
+    for (const bg of FG_BACKGROUNDS) color = ensureContrast(color, theme[bg] ?? bg1, MIN_CONTRAST_TEXT).color;
+    const worst = Math.min(...FG_BACKGROUNDS.map((bg) => ensureContrast(color, theme[bg] ?? bg1, MIN_CONTRAST_TEXT).ratio));
+    theme[key] = record({ color, corrected: color !== original.toUpperCase(), original: original.toUpperCase(), ratio: worst, required: MIN_CONTRAST_TEXT });
+  }
   for (const key of STROKE_TOKENS) theme[key] = record(ensureContrast(theme[key]!, bg1, MIN_CONTRAST_UI));
   theme.fontFamilyBase = fontStack(brandFont);
   // 色の切替（上書き・テーマ）で、ボタンの背景が途中の色（遷移中）で止まって見えないよう、短い遷移を即時にする

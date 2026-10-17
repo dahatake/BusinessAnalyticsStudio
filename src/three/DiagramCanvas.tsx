@@ -6,6 +6,7 @@ import { OrbitControls } from '@react-three/drei';
 import { useAnimation } from '../store/animation';
 import { countFrame, useIndustryPreset, useView3D } from '../store/view3d';
 import { QUALITY_PROFILES } from './quality';
+import { tokens } from '../theme/tokens';
 
 class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   override state = { failed: false };
@@ -34,7 +35,7 @@ export function DiagramCanvas({ children, cameraPosition = [9, 8, 11], label }: 
   const preset = useIndustryPreset();
   const profile = QUALITY_PROFILES[quality];
   return (
-    <div style={{ position: 'relative', width: '100%', height: '60vh', minHeight: 320, flexShrink: 0, overflow: 'hidden', borderRadius: 4 }} role="img" aria-label={label} data-testid="diagram-3d">
+    <div style={{ position: 'relative', width: '100%', height: '60vh', minHeight: 320, flexShrink: 0, overflow: 'hidden', borderRadius: tokens.borderRadiusMedium }} role="img" aria-label={label} data-testid="diagram-3d">
       <Boundary>
         <Canvas
           gl={{ antialias: profile.antialias, preserveDrawingBuffer: true, powerPreference: 'high-performance' }}

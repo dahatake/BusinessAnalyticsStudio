@@ -57,24 +57,24 @@ const useStyles = makeStyles({
   // 移動中・直後の滑らかな動き（FR-185）。OS の「動きの軽減」が有効なときは途中の動きを省く（AC-394）
   floatAnimated: {
     transitionProperty: 'left, top, width, height',
-    transitionDuration: '200ms',
-    transitionTimingFunction: 'ease-out',
-    '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0.01ms' },
+    transitionDuration: tokens.durationNormal,
+    transitionTimingFunction: tokens.curveDecelerateMid,
+    '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0s' },
   },
   // 動かしているコンポーネントは、ポインターに短い遅れでつながって動く（フレームごとに動きが見える速さ。FR-185 AC-392）
   floatFollow: {
     transitionProperty: 'left, top, width, height',
-    transitionDuration: '160ms',
-    transitionTimingFunction: 'linear',
-    '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0.01ms' },
+    transitionDuration: tokens.durationFast,
+    transitionTimingFunction: tokens.curveDecelerateMin,
+    '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0s' },
   },
   // 境界のドラッグ中は、大きさの変化を滑らかにつなぐ（FR-185 AC-393）
   resizing: {
     '& [data-cell="true"]': {
       transitionProperty: 'flex-grow',
-      transitionDuration: '90ms',
-      transitionTimingFunction: 'linear',
-      '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0.01ms' },
+      transitionDuration: tokens.durationFast,
+      transitionTimingFunction: tokens.curveEasyEase,
+      '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0s' },
     },
   },
   split: { display: 'flex', flex: '1 1 0', minWidth: 0, minHeight: 0 },

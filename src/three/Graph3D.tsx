@@ -8,10 +8,9 @@ import { EDGE_STYLE, KIND_STYLE, to3D } from '../analysis/graphView';
 import type { GraphEdge, GraphNode } from '../selection/graph';
 import { useAnimation } from '../store/animation';
 import { DiagramCanvas } from './DiagramCanvas';
+import { sceneLabelStyle } from './labelStyles';
 
-const labelStyle = {
-  color: '#ffffff', backgroundColor: 'rgba(0,0,0,0.6)', padding: '1px 4px', borderRadius: '3px', fontSize: '11px', whiteSpace: 'nowrap', pointerEvents: 'none',
-} as const;
+const labelStyle = sceneLabelStyle;
 
 /** 関係（relation）の線の上を流れる粒子 */
 function Particles({ from, to }: { from: [number, number, number]; to: [number, number, number] }) {

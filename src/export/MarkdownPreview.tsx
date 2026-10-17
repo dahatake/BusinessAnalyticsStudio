@@ -73,14 +73,14 @@ const useStyles = makeStyles({
   ul: { margin: 0, paddingInlineStart: tokens.spacingHorizontalXXL, fontSize: tokens.fontSizeBase300 },
   quote: {
     margin: 0, paddingInlineStart: tokens.spacingHorizontalM, borderInlineStartWidth: tokens.strokeWidthThick, borderInlineStartStyle: 'solid', borderInlineStartColor: tokens.colorNeutralStroke1,
-    color: tokens.colorNeutralForeground2, fontSize: tokens.fontSizeBase300, whiteSpace: 'pre-wrap',
+    color: tokens.colorNeutralForeground2, fontSize: tokens.fontSizeBase300, lineHeight: tokens.lineHeightBase300, whiteSpace: 'pre-wrap',
   },
   code: {
     margin: 0, padding: tokens.spacingHorizontalS, backgroundColor: tokens.colorNeutralBackground3, borderRadius: tokens.borderRadiusMedium,
     fontFamily: tokens.fontFamilyMonospace, fontSize: tokens.fontSizeBase200, overflowX: 'auto', whiteSpace: 'pre-wrap',
   },
   tableWrap: { overflowX: 'auto', maxWidth: '100%' },
-  table: { borderCollapse: 'collapse', fontSize: tokens.fontSizeBase200, width: '100%' },
+  table: { borderCollapse: 'collapse', fontSize: tokens.fontSizeBase200, lineHeight: tokens.lineHeightBase200, width: '100%' },
   th: { textAlign: 'start', padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalS}`, backgroundColor: tokens.colorNeutralBackground3, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}` },
   td: { padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalS}`, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`, verticalAlign: 'top' },
 });
