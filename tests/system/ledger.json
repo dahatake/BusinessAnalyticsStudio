@@ -1871,9 +1871,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "cc8a0e1",
-      "last_run_at": "2026-10-18T01:46:28+09:00",
-      "evidence": "work/runs/202610172040/logs/system-test/E2E-162-202610180146.log",
+      "last_commit": "c772753",
+      "last_run_at": "2026-10-18T02:23:04+09:00",
+      "evidence": "work/runs/202610172040/logs/system-test/E2E-162-202610180222.log",
       "history": [
         {
           "at": "2026-10-12T14:07:28+09:00",
