@@ -44,6 +44,10 @@ interface LayoutState {
   clearFloats: () => void;
   /** 直近に操作したものを手前に出す */
   raise: (key: string) => void;
+  /** ピン止めしたコンポーネントと、ピン止めした時点の位置と大きさ（作業領域に対する割合。ペルソナ別。保存する。FR-215・FR-216） */
+  pinned: Partial<Record<Persona, Record<string, FloatRect>>>;
+  /** ピン止めする（`rect` を渡す）／外す（null）。ピン止めすると、その位置と大きさを自由配置にも置く */
+  setPinned: (key: string, rect: FloatRect | null) => void;
   /** ヘッダーのダブルクリックで拡大表示しているコンポーネント（保存しない。FR-174） */
   expanded: string | null;
   setExpanded: (key: string | null) => void;
@@ -93,6 +97,11 @@ export function effectiveLayout(s: Pick<LayoutState, 'persona' | 'layouts'>): La
   return kept ?? prune(defaultLayout(s.persona), available) ?? arrangeAll([...available]);
 }
 
+/** ピン止めしているか（いまのペルソナ。FR-215） */
+export function isPinned(s: Pick<LayoutState, 'persona' | 'pinned'>, key: string): boolean {
+  return !!s.pinned[s.persona]?.[key];
+}
+
 export const useLayout = create<LayoutState>()(
   persist(
     (set, get) => {
@@ -118,11 +127,31 @@ export const useLayout = create<LayoutState>()(
         })),
         setFloats: (rects) => set((s) => {
           const next: FloatMap = { ...(s.floats[s.persona] ?? {}) };
-          for (const [k, r] of Object.entries(rects)) next[k] = clampFloat(r);
+          const pins = s.pinned[s.persona] ?? {};
+          // ピン止めしたものは、ピン止めした位置と大きさのまま（FR-216）
+          for (const [k, r] of Object.entries(rects)) next[k] = clampFloat(pins[k] ?? r);
           return { floats: { ...s.floats, [s.persona]: next } };
         }),
-        unfloat: (key) => dropFloat(key),
-        clearFloats: () => set((s) => { const floats = { ...s.floats }; delete floats[s.persona]; return { floats }; }),
+        unfloat: (key) => { if (!isPinned(get(), key)) dropFloat(key); },
+        // ピン止めしたものは自由配置のまま残す（FR-216。外すまで固定）
+        clearFloats: () => set((s) => {
+          const floats = { ...s.floats };
+          const pins = s.pinned[s.persona] ?? {};
+          const keep = Object.fromEntries(Object.entries(floats[s.persona] ?? {}).filter(([k]) => k in pins));
+          if (Object.keys(keep).length > 0) floats[s.persona] = keep;
+          else delete floats[s.persona];
+          return { floats };
+        }),
+        pinned: {},
+        setPinned: (key, rect) => set((s) => {
+          const cur = { ...(s.pinned[s.persona] ?? {}) };
+          if (rect) cur[key] = clampFloat(rect);
+          else delete cur[key];
+          return {
+            pinned: { ...s.pinned, [s.persona]: cur },
+            ...(rect ? { floats: { ...s.floats, [s.persona]: { ...(s.floats[s.persona] ?? {}), [key]: clampFloat(rect) } } } : {}),
+          };
+        }),
         raise: (key) => set((s) => (s.zOrder[s.zOrder.length - 1] === key ? {} : { zOrder: [...s.zOrder.filter((k) => k !== key), key] })),
         setExpanded: (key) => set((s) => ({
           expanded: key,
@@ -144,8 +173,9 @@ export const useLayout = create<LayoutState>()(
           return { minimized: { ...st.minimized, [st.persona]: on ? [...cur, key] : cur }, ...(on && st.maximized === key ? { maximized: null } : {}) };
         }),
         setNavMin: (navMin) => set({ navMin }),
-        dropMove: (key, target, zone) => { dropFloat(key); apply((l) => dropAt(l, key, target, zone)); },
+        dropMove: (key, target, zone) => { if (isPinned(get(), key) || isPinned(get(), target)) return; dropFloat(key); apply((l) => dropAt(l, key, target, zone)); },
         snapTo: (key, kind, opts) => {
+          if (isPinned(get(), key) || (kind === 'tabs' && opts?.tabTarget && isPinned(get(), opts.tabTarget))) return;
           set((st) => (kind === 'tabs' ? {} : { manual: { ...st.manual, [st.persona]: [...new Set([...(st.manual[st.persona] ?? []), ...keysOf(effectiveLayout(st))])] } }));
           dropFloat(key);
           apply((l) => snapLayout(l, key, kind, opts));
@@ -161,10 +191,10 @@ export const useLayout = create<LayoutState>()(
         setPersona: (persona) => set({ persona, maximized: null, expanded: null }),
         hideComponent: (key) => { dropFloat(key); if (get().expanded === key) set({ expanded: null }); apply((l) => hide(l, key), get().maximized === key ? null : get().maximized); },
         showComponent: (key) => { apply((l) => show(l, key)); set({ revealed: { key } }); },
-        moveComponent: (key, dir) => apply((l) => move(l, key, dir)),
-        toggleDirection: (key) => apply((l) => toggleDirection(l, key)),
-        mergeTabs: (key, target) => { dropFloat(key); apply((l) => mergeIntoTabs(l, key, target)); },
-        untab: (key) => { dropFloat(key); apply((l) => splitFromTabs(l, key)); },
+        moveComponent: (key, dir) => { if (!isPinned(get(), key)) apply((l) => move(l, key, dir)); },
+        toggleDirection: (key) => { if (!isPinned(get(), key)) apply((l) => toggleDirection(l, key)); },
+        mergeTabs: (key, target) => { if (isPinned(get(), key) || isPinned(get(), target)) return; dropFloat(key); apply((l) => mergeIntoTabs(l, key, target)); },
+        untab: (key) => { if (isPinned(get(), key)) return; dropFloat(key); apply((l) => splitFromTabs(l, key)); },
         resizeAt: (path, index, delta) => {
           const l = effectiveLayout(get());
           const keys = l ? resizedKeys(getAt(l, path), index) : [];
@@ -187,16 +217,19 @@ export const useLayout = create<LayoutState>()(
           delete minimized[s.persona];
           const floats = { ...s.floats };
           delete floats[s.persona];
-          return { layouts, manual, minimized, floats, navMin: false, maximized: null, expanded: null, resetCount: s.resetCount + 1 };
+          // 既定のレイアウトは固定なし（FR-215）
+          const pinned = { ...s.pinned };
+          delete pinned[s.persona];
+          return { layouts, manual, minimized, floats, pinned, navMin: false, maximized: null, expanded: null, resetCount: s.resetCount + 1 };
         }),
       };
     },
     {
       name: 'edb.layout',
       version: 1,
-      partialize: (s) => ({ persona: s.persona, floats: s.floats, zOrder: s.zOrder, layouts: s.layouts, autoSize: s.autoSize, manual: s.manual, minimized: s.minimized, navMin: s.navMin }),
+      partialize: (s) => ({ persona: s.persona, floats: s.floats, pinned: s.pinned, zOrder: s.zOrder, layouts: s.layouts, autoSize: s.autoSize, manual: s.manual, minimized: s.minimized, navMin: s.navMin }),
       merge: (persisted, current) => {
-        const p = (persisted ?? {}) as Partial<Pick<LayoutState, 'persona' | 'floats' | 'zOrder' | 'layouts' | 'autoSize' | 'manual' | 'minimized' | 'navMin'>>;
+        const p = (persisted ?? {}) as Partial<Pick<LayoutState, 'persona' | 'floats' | 'pinned' | 'zOrder' | 'layouts' | 'autoSize' | 'manual' | 'minimized' | 'navMin'>>;
         const minimized: Partial<Record<Persona, string[]>> = {};
         for (const name of PERSONAS) {
           const v = (p.minimized as Record<string, unknown> | undefined)?.[name];
@@ -222,8 +255,19 @@ export const useLayout = create<LayoutState>()(
             floats[name] = m;
           }
         }
+        const pinned: Partial<Record<Persona, Record<string, FloatRect>>> = {};
+        for (const name of PERSONAS) {
+          const v = (p.pinned as Record<string, unknown> | undefined)?.[name];
+          if (v && typeof v === 'object') {
+            const m: Record<string, FloatRect> = {};
+            for (const [k, r] of Object.entries(v as Record<string, unknown>)) if (isFloatRect(r)) m[k] = clampFloat(r);
+            pinned[name] = m;
+            // ピン止めしたものは、保存した自由配置がなくても、その位置に置く
+            floats[name] = { ...(floats[name] ?? {}), ...m };
+          }
+        }
         const zOrder = Array.isArray(p.zOrder) && p.zOrder.every((k) => typeof k === 'string') ? p.zOrder : [];
-        return { ...current, floats, zOrder, persona, layouts, manual, minimized, navMin: p.navMin === true, autoSize: typeof p.autoSize === 'boolean' ? p.autoSize : true };
+        return { ...current, floats, pinned, zOrder, persona, layouts, manual, minimized, navMin: p.navMin === true, autoSize: typeof p.autoSize === 'boolean' ? p.autoSize : true };
       },
     },
   ),
