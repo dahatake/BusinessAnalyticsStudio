@@ -131,7 +131,7 @@ export function EntityTwin({ layout, preset }: { layout: TwinLayout; preset: Ind
             zIndexRange={[5, 0]}
             style={{ pointerEvents: 'none' }}
           >
-            <div style={labelStyle}>{o.name}</div>
+            <div style={labelStyle} title={o.name}>{o.name}</div>
           </Html>
         );
       })}

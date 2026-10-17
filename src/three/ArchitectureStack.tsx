@@ -32,7 +32,7 @@ export function ArchitectureStack({ sections, model, onSelect }: ArchitectureSta
             <meshStandardMaterial color={DIFF_COLOR_3D[it.diff]} />
           </mesh>
           <Html center position={[0, 0.55, 0]} zIndexRange={[5, 0]}>
-            <span style={labelStyle}>{it.diff === 'same' ? '' : `【${DIFF_LABEL[it.diff]}】`}{it.element.name}</span>
+            <span style={labelStyle} title={`${it.diff === 'same' ? '' : `【${DIFF_LABEL[it.diff]}】`}${it.element.name}`}>{it.diff === 'same' ? '' : `【${DIFF_LABEL[it.diff]}】`}{it.element.name}</span>
           </Html>
         </group>
       )))}

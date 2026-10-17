@@ -107,7 +107,7 @@ function Graph2D({ nodes, edges, pos, size, selected, related, matches, edgeSel,
   const svgRef = useRef<SVGSVGElement>(null);
   const hit = useNodeHitSize(svgRef, size);
   return (
-    <svg ref={svgRef} viewBox={`0 0 ${size.width} ${size.height}`} className={s.svg} role="group" aria-label="ナレッジグラフ（2D）">
+    <svg ref={svgRef} data-zoom-surface="graph" viewBox={`0 0 ${size.width} ${size.height}`} className={s.svg} role="group" aria-label="ナレッジグラフ（2D）">
       {edges.map((e) => {
         const a = pos(e.from);
         const b = pos(e.to);

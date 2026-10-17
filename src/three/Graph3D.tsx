@@ -75,7 +75,7 @@ export function Graph3D({ nodes, edges, pos, size, selected, onSelect }: Graph3D
               {st.geometry === 'tetrahedron' && <tetrahedronGeometry args={[0.28]} />}
               <meshStandardMaterial color={st.hex} emissive={on ? st.hex : '#000000'} emissiveIntensity={on ? 0.6 : 0} />
             </mesh>
-            <Html center position={[0, 0.42, 0]} zIndexRange={[5, 0]}><span style={labelStyle}>{n.label}</span></Html>
+            <Html center position={[0, 0.42, 0]} zIndexRange={[5, 0]}><span style={labelStyle} title={n.label}>{n.label}</span></Html>
           </group>
         );
       })}

@@ -12,6 +12,11 @@ export const sceneLabelStyle: CSSProperties = {
   borderRadius: tokens.borderRadiusMedium,
   ...TEXT.caption1,
   whiteSpace: 'nowrap',
+  // 文字を拡大しても 1 行に収め、収まらない分は省略記号にする。全文は要素の title と「表で見る」の表で読む（NFR-A11Y-009 AC-483・A-51）
+  display: 'inline-block',
+  maxWidth: '20em',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
   pointerEvents: 'none',
 };
 

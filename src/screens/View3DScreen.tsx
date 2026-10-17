@@ -82,7 +82,7 @@ export function View3DScreen() {
       ) : (
         <>
           {scene === 'hero' && lod.layout && lod.layout.objects.length > 0 && <Breadcrumb chain={lod.chain} />}
-          <div className={s.stage} ref={registerSceneArea}>
+          <div className={s.stage} ref={registerSceneArea} data-zoom-surface="3d">
             <SceneCanvas toBe={toBe} />
             {scene === 'hero' && lod.layout && lod.layout.objects.length > 0 && <Minimap layout={lod.layout} chain={lod.chain} />}
             <AnnotationLayer viewKey="view3d" label="3D ビュー" active={annotating} />

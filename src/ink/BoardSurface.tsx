@@ -644,6 +644,7 @@ export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, ove
     <div
       ref={rootRef}
       data-testid={testId}
+      data-zoom-surface={overlay ? undefined : 'whiteboard'}
       className={`${s.root} ${overlay ? '' : s.plate}`}
       style={{ cursor, pointerEvents: overlay && !active ? 'none' : 'auto', position: overlay ? 'absolute' : 'relative', inset: overlay ? 0 : undefined }}
       tabIndex={overlay && !active ? -1 : 0}
