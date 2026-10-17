@@ -3,7 +3,7 @@
 // PARAM-029=320 CSS px（拡大率 400% 相当の表示幅）、PARAM-040=24 CSS px（操作の対象の最小の大きさ）。200% は WCAG 2.2 の 1.4.4 による固定値。
 // 「全画面」は画面の登録＝左メニューの画面の一覧を走査する（support/screens.ts・CONTRACT.md §21）。
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, selectPersona } from '../support/fixtures';
+import { test, expect, selectPersona, openScreen, scene, hook } from '../support/fixtures';
 import { listScreenKeys, gotoScreen, INTERACTIVE_SELECTOR } from '../support/screens';
 
 const REFLOW_WIDTH = 320; // PARAM-029
@@ -41,24 +41,33 @@ async function zoomTextOnly(page: Page, factor: number): Promise<number> {
 /**
  * 文字の切れ（はみ出した文字が overflow: hidden/clip の祖先で切られる、または省略記号で省かれる）と、
  * 文字どうしの重なり（祖先・子孫の関係にない、見えている文字の要素の矩形の交わり）を数える。
- * 拡大・縮小できる面（SVG・canvas）の中は除く。スクロールできる祖先（auto/scroll）は切れに数えない。
+ * SVG・canvas の中と、拡大・縮小できる面（`[data-zoom-surface]`。CONTRACT.md §21）の中の文字は数えない（AC-483・A-51）。
+ * スクロールできる祖先（auto/scroll）は切れに数えない。
+ * 面の中で表示しきれない文字（面の中のスクロールで読めるものを除く）は zoomItems に返す（ellipsis: 省略記号が見えるか、
+ * named: 全文がアクセシブルな名前で得られるか）。ツールチップでの確認のため、要素に data-st-zoom-item="<番号>" を付ける（テストだけの印）。
  */
-async function clippedOrOverlapping(root: Locator): Promise<{ clipped: string[]; overlap: string[] }> {
+async function clippedOrOverlapping(root: Locator): Promise<{
+  clipped: string[];
+  overlap: string[];
+  zoomItems: Array<{ idx: number; text: string; ellipsis: boolean; named: boolean }>;
+}> {
   return root.evaluate((el) => {
-    const leaves = Array.from(el.querySelectorAll<HTMLElement>('*')).filter((e) => {
-      if (e instanceof SVGElement || e.closest('svg, canvas')) return false;
-      const hasText = Array.from(e.childNodes).some((n) => n.nodeType === Node.TEXT_NODE && (n.textContent ?? '').trim());
-      if (!hasText) return false;
+    const isText = (e: Element) => Array.from(e.childNodes).some((n) => n.nodeType === Node.TEXT_NODE && (n.textContent ?? '').trim());
+    const shown = (e: Element) => {
       const r = e.getBoundingClientRect();
       const s = getComputedStyle(e);
       return r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && Number(s.opacity) > 0;
-    });
+    };
+    const all = Array.from(el.querySelectorAll<HTMLElement>('*')).filter((e) => !(e instanceof SVGElement) && !e.closest('svg, canvas') && isText(e) && shown(e));
+    const inZoom = (e: Element) => !!e.closest('[data-zoom-surface]');
+    const leaves = all.filter((e) => !inZoom(e));
     const name = (e: Element) => `"${(e.textContent ?? '').trim().slice(0, 16)}"`;
+    const overflows = (e: HTMLElement) => e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1;
     const clipped: string[] = [];
     for (const e of leaves) {
       const s = getComputedStyle(e);
       if (s.textOverflow === 'ellipsis' && e.scrollWidth > e.clientWidth + 1) { clipped.push(`${name(e)} 省略`); continue; }
-      if (/hidden|clip/.test(s.overflowX + s.overflowY) && (e.scrollWidth > e.clientWidth + 1 || e.scrollHeight > e.clientHeight + 1)) { clipped.push(`${name(e)} 自身で切れる`); continue; }
+      if (/hidden|clip/.test(s.overflowX + s.overflowY) && overflows(e)) { clipped.push(`${name(e)} 自身で切れる`); continue; }
       const r = e.getBoundingClientRect();
       for (let p = e.parentElement; p && p !== document.body; p = p.parentElement) {
         const ps = getComputedStyle(p);
@@ -81,8 +90,64 @@ async function clippedOrOverlapping(root: Locator): Promise<{ clipped: string[];
         if (w > 2 && h > 2) overlap.push(`${name(a.e)} × ${name(b.e)}`);
       }
     }
-    return { clipped: [...new Set(clipped)], overlap: [...new Set(overlap)] };
+    // 拡大・縮小できる面の中で、表示しきれない文字（自身か面の内側の祖先で切られるもの）
+    const zoomItems: Array<{ idx: number; text: string; ellipsis: boolean; named: boolean }> = [];
+    const norm = (t: string | null | undefined) => (t ?? '').replace(/\s+/g, ' ').trim();
+    for (const e of all.filter(inZoom)) {
+      const surface = e.closest('[data-zoom-surface]')!;
+      const s = getComputedStyle(e);
+      const r = e.getBoundingClientRect();
+      let cut = /hidden|clip/.test(s.overflowX + s.overflowY) && overflows(e);
+      if (!cut && !(/auto|scroll/.test(s.overflowX + s.overflowY))) {
+        // 面の内側の祖先を辿る。スクロールできる祖先があれば、面の中のスクロールで読める（切れに数えない）
+        for (let p = e.parentElement; p; p = p.parentElement) {
+          const ps = getComputedStyle(p);
+          if (/auto|scroll/.test(ps.overflowX + ps.overflowY)) break;
+          if (/hidden|clip/.test(ps.overflowX + ps.overflowY)) {
+            const pr = p.getBoundingClientRect();
+            if (r.right > pr.right + 1 || r.bottom > pr.bottom + 1 || r.left < pr.left - 1 || r.top < pr.top - 1) { cut = true; break; }
+          }
+          if (p === surface) break;
+        }
+      }
+      if (!cut) continue; // 表示しきれている、または面の中のスクロールで読める
+      const full = norm(e.textContent);
+      const clamp = s.getPropertyValue('-webkit-line-clamp').trim();
+      const ellipsis = s.textOverflow === 'ellipsis' || (clamp !== '' && clamp !== 'none');
+      let named = false;
+      for (let p: Element | null = e; p && !named; p = p === surface ? null : p.parentElement) {
+        const ids = (p.getAttribute('aria-labelledby') ?? '').split(/\s+/).filter(Boolean);
+        const byRef = ids.map((id) => norm(document.getElementById(id)?.textContent)).join(' ');
+        named = [p.getAttribute('aria-label'), p.getAttribute('title'), byRef].some((v) => norm(v).includes(full));
+      }
+      const idx = zoomItems.length;
+      e.setAttribute('data-st-zoom-item', String(idx));
+      zoomItems.push({ idx, text: full.slice(0, 40), ellipsis, named });
+    }
+    return { clipped: [...new Set(clipped)], overlap: [...new Set(overlap)], zoomItems };
   });
+}
+
+/**
+ * 面の中で表示しきれない文字の代わりの判定（AC-483。A-51）。省略記号が見えることと、
+ * 全文がアクセシブルな名前か、ポイントしたときのツールチップ（role=tooltip）で得られることを確かめ、満たさないものを返す。
+ */
+async function zoomItemFailures(page: Page, items: Awaited<ReturnType<typeof clippedOrOverlapping>>['zoomItems']): Promise<string[]> {
+  const out: string[] = [];
+  for (const it of items.slice(0, 30)) {
+    if (!it.ellipsis) { out.push(`"${it.text}" 省略記号なしで切れる`); continue; }
+    if (it.named) continue;
+    const loc = page.locator(`[data-st-zoom-item="${it.idx}"]`);
+    let tipOk = false;
+    if (await loc.isVisible().catch(() => false)) {
+      await loc.hover().catch(() => undefined);
+      const tip = page.getByRole('tooltip').last();
+      tipOk = await expect.poll(async () => ((await tip.isVisible().catch(() => false)) ? ((await tip.innerText()).replace(/\s+/g, ' ').includes(it.text) ? 1 : 0) : 0), { timeout: 2_000 }).toBe(1).then(() => true, () => false);
+      await page.mouse.move(1, 1);
+    }
+    if (!tipOk) out.push(`"${it.text}" 全文がツールチップにもアクセシブルな名前にもない`);
+  }
+  return out;
 }
 
 test.describe('NFR-A11Y-009 リフローと文字の拡大', () => {
@@ -114,8 +179,8 @@ test.describe('NFR-A11Y-009 リフローと文字の拡大', () => {
     expect(bad, `表示幅 ${REFLOW_WIDTH}px でのリフロー`).toEqual([]);
   });
 
-  // NFR-A11Y-009 AC-483（文字だけを 200%）
-  test('NFR-A11Y-009 AC-483 表示幅を戻し、文字だけを 200% に拡大すると、全画面で文字の切れ・重なりが 0 件', async ({ page, start }) => {
+  // NFR-A11Y-009 AC-483（文字だけを 200%。拡大・縮小できる面の中の文字は除き、代わりに省略記号＋全文・面の中のスクロールで判定）
+  test('NFR-A11Y-009 AC-483 表示幅を戻し、文字だけを 200% に拡大すると、全画面で文字の切れ・重なりが 0 件（拡大・縮小できる面の中で表示しきれない文字は、省略記号が見え全文がツールチップかアクセシブルな名前で得られるか、面の中のスクロールで読める）', async ({ page, start }) => {
     test.setTimeout(300_000);
     await page.setViewportSize({ width: 1600, height: 900 });
     const app = await start();
@@ -129,8 +194,36 @@ test.describe('NFR-A11Y-009 リフローと文字の拡大', () => {
       await page.waitForTimeout(300);
       const r = await clippedOrOverlapping(c);
       bad.push(...r.clipped.map((x) => `${key} 切れ: ${x}`), ...r.overlap.map((x) => `${key} 重なり: ${x}`));
+      bad.push(...(await zoomItemFailures(page, r.zoomItems)).map((x) => `${key} 面の中: ${x}`));
     }
     expect(bad, '文字の 200% 拡大での切れ・重なり').toEqual([]);
+  });
+
+  // NFR-A11Y-009 AC-483（3D と地図のラベルは、文字 200% でも代替の表・テキストで同じ情報を読める）
+  test('NFR-A11Y-009 AC-483 文字だけを 200% に拡大しても、3D と地図のラベルの情報が「表で見る」の表で同じ件数読め、その表の文字に切れ・重なりがない', async ({ page, start }) => {
+    test.setTimeout(180_000);
+    await page.setViewportSize({ width: 1600, height: 900 });
+    const app = await start();
+    const labels: Record<string, () => Promise<string[]>> = {
+      view3d: async () => (await scene.objects(page)).filter((o) => o.visible).map((o) => o.entityId),
+      map: async () => (await hook<Array<{ entityId: string }>>(page, 't.map.markers()')).map((m) => m.entityId),
+    };
+    for (const key of Object.keys(labels)) {
+      await app.reload();
+      const c = await openScreen(page, key);
+      const ids = await labels[key]();
+      expect(ids.length, `${key} にラベルを持つ項目がない`).toBeGreaterThan(0);
+      await c.getByRole('button', { name: '表で見る' }).click();
+      const t = c.getByRole('table').or(c.getByRole('grid')).first();
+      await expect(t, `${key}: 代替の表が出ない`).toBeVisible();
+      expect(await zoomTextOnly(page, TEXT_ZOOM)).toBeGreaterThan(0); // 表を出してから文字だけを 200% に
+      await page.waitForTimeout(300);
+      const rows = t.locator('[role="row"][data-entity-id], tr[data-entity-id]');
+      await expect(rows, `${key}: 代替の表の行数がラベルの数と違う`).toHaveCount(ids.length);
+      expect((await rows.evaluateAll((els) => els.map((e) => e.getAttribute('data-entity-id')!))).sort()).toEqual([...ids].sort());
+      const r = await clippedOrOverlapping(t);
+      expect([...r.clipped, ...r.overlap], `${key}: 代替の表の文字が 200% で切れる・重なる`).toEqual([]);
+    }
   });
 
   // NFR-A11Y-009 AC-483（異常系: 2 次元の操作が本質の面を除く画面で、320px の幅でも情報（見出し・操作）が欠けない）
@@ -152,9 +245,12 @@ test.describe('NFR-A11Y-009 リフローと文字の拡大', () => {
   });
 });
 
-/** その画面でキーボードで開けるメニュー・ダイアログの入口（aria-haspopup を持つ操作と、その他の操作のメニュー） */
+/**
+ * その画面でキーボードで開ける一時的な表示（ダイアログ・メニュー・ポップオーバー・ドロップダウンの一覧）の入口
+ * （aria-haspopup を持つ操作と、その他の操作のメニュー）。AC-484 の「一時的な表示」の範囲（A-51）。
+ */
 async function popupTriggers(c: Locator): Promise<Locator[]> {
-  const loc = c.locator('[aria-haspopup="menu"], [aria-haspopup="true"], [aria-haspopup="dialog"], [data-testid="component-menu"]');
+  const loc = c.locator('[aria-haspopup="menu"], [aria-haspopup="true"], [aria-haspopup="dialog"], [aria-haspopup="listbox"], [data-testid="component-menu"]');
   const out: Locator[] = [];
   const n = await loc.count();
   for (let i = 0; i < n && out.length < 12; i++) {
@@ -168,9 +264,32 @@ async function activeIs(page: Page, loc: Locator): Promise<boolean> {
   return loc.evaluate((e) => e === document.activeElement || e.contains(document.activeElement));
 }
 
+/** 一時的な表示の役割（AC-484。ダイアログ・メニュー・ポップオーバー・ツールチップ・ドロップダウンの一覧・コマンドパレット） */
+const TRANSIENT_ROLES = '[role="menu"], [role="dialog"], [role="alertdialog"], [role="listbox"], [role="tooltip"]';
+
+/**
+ * 開く前から見えている部品（キャンバスの listbox「議題」、常設のパネル・一覧・タブ）に印を付ける。
+ * 開いた後に新しく現れたものだけを一時的な表示として扱い、常設の部品は対象外にする（AC-484。A-51）。
+ */
+async function markPersistent(page: Page): Promise<void> {
+  await page.evaluate((sel) => {
+    document.querySelectorAll('[data-st-persistent]').forEach((e) => e.removeAttribute('data-st-persistent'));
+    for (const e of Array.from(document.querySelectorAll(sel))) {
+      const r = e.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden') e.setAttribute('data-st-persistent', '');
+    }
+  }, TRANSIENT_ROLES);
+}
+
+function newTransient(page: Page): Locator {
+  // Enter で開くもの（ツールチップはフォーカスでも出るので、開いた表示の候補から除く）
+  const sel = ['[role="menu"]', '[role="dialog"]', '[role="alertdialog"]', '[role="listbox"]'].map((s) => `${s}:visible:not([data-st-persistent])`).join(', ');
+  return page.locator(sel).last();
+}
+
 test.describe('NFR-A11Y-009 焦点の戻りと見出しの段', () => {
   // NFR-A11Y-009 AC-484
-  test('NFR-A11Y-009 AC-484 全画面のダイアログ・メニューをキーボードで開いて Esc で閉じると、フォーカスが開いた操作の要素に戻る', async ({ page, start }) => {
+  test('NFR-A11Y-009 AC-484 全画面のダイアログ・メニュー（一時的な表示）をキーボードで開いて Esc で閉じると、フォーカスが開いた操作の要素に戻る（常設の listbox「議題」・パネル・一覧・タブは対象外）', async ({ page, start }) => {
     test.setTimeout(300_000);
     await start();
     await selectPersona(page, '事業部門');
@@ -182,13 +301,14 @@ test.describe('NFR-A11Y-009 焦点の戻りと見出しの段', () => {
       await c.focus();
       for (const t of await popupTriggers(c)) {
         const label = ((await t.getAttribute('aria-label')) || (await t.innerText()) || '').trim().slice(0, 30);
+        await markPersistent(page);
         await t.focus();
         await page.keyboard.press('Enter');
-        const popup = page.locator('[role="menu"]:visible, [role="dialog"]:visible, [role="alertdialog"]:visible, [role="listbox"]:visible').last();
+        const popup = newTransient(page);
         if (!(await popup.isVisible().catch(() => false))) continue;
         checked++;
         await page.keyboard.press('Escape');
-        await expect(popup).toBeHidden();
+        await expect(popup, `${key}: 「${label}」が Esc で閉じない`).toBeHidden();
         if (!(await activeIs(page, t))) bad.push(`${key}: 「${label}」を閉じた後にフォーカスが戻らない`);
       }
       // ダイアログ（コマンドパレット）: 画面の操作要素から開いて閉じる
@@ -203,6 +323,25 @@ test.describe('NFR-A11Y-009 焦点の戻りと見出しの段', () => {
     }
     expect(checked, '確かめたダイアログ・メニューが画面の数より少ない').toBeGreaterThanOrEqual(keys.length * 2);
     expect(bad).toEqual([]);
+  });
+
+  // NFR-A11Y-009 AC-484（異常系: 常設の listbox「議題」は一時的な表示ではない。メニューを開いて Esc で閉じても常設のまま残り、フォーカスはメニューを開いた操作に戻る）
+  test('NFR-A11Y-009 AC-484 異常系: キャンバスでその他の操作のメニューを開いて Esc で閉じても、常設の listbox「議題」は表示されたままで、フォーカスはメニューを開いた操作に戻る', async ({ page, start }) => {
+    await start();
+    const c = await gotoScreen(page, 'canvas');
+    const agenda = page.getByRole('listbox', { name: '議題' });
+    await expect(agenda, '常設の listbox「議題」がない').toBeVisible();
+    const opener = c.getByTestId('component-menu').first();
+    await c.focus();
+    await markPersistent(page);
+    await opener.focus();
+    await page.keyboard.press('Enter');
+    const popup = newTransient(page);
+    await expect(popup).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(popup).toBeHidden();
+    await expect(agenda, '常設の listbox「議題」が Esc で閉じた').toBeVisible();
+    expect(await activeIs(page, opener), 'フォーカスがメニューを開いた操作に戻らない').toBe(true);
   });
 
   // NFR-A11Y-009 AC-484（作業先のダイアログ）
