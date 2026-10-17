@@ -2,6 +2,14 @@
 // 画面（コンポーネント）が作り直されても、2D/3D を切り替えても、ここに持つので失われない（AC-337、NFR-UX-012）。
 import { create } from 'zustand';
 import { ZOOM_HOME, clampZoom, levelOfZoom, nextLevel, scaleZoom, stepZoom, type DetailLevel } from '../datacatalog/viewer';
+import { useLayout } from './layout';
+
+/** 表示モードは、データカタログの見出しの「ビュー」と同じ状態（FR-217 AC-507）。正本はレイアウトの views（保存する）で、ここはその写し */
+export const DATA_VIEWER_VIEW_KEY = 'data-catalog';
+const layoutMode = (): ViewMode => {
+  const s = useLayout.getState();
+  return s.views[s.persona]?.[DATA_VIEWER_VIEW_KEY]?.mode ?? '2d';
+};
 
 export type ViewMode = '2d' | '3d';
 
@@ -25,11 +33,11 @@ interface DataViewerState {
   reset: () => void;
 }
 
-const INITIAL = { mode: '2d' as ViewMode, zoom: ZOOM_HOME, level: levelOfZoom(ZOOM_HOME), filter: '', cluster: null as string | null, useCase: null as string | null };
+const INITIAL = { mode: layoutMode(), zoom: ZOOM_HOME, level: levelOfZoom(ZOOM_HOME), filter: '', cluster: null as string | null, useCase: null as string | null };
 
 export const useDataViewer = create<DataViewerState>((set) => ({
   ...INITIAL,
-  setMode: (mode) => set({ mode }),
+  setMode: (mode) => { set({ mode }); useLayout.getState().setView(DATA_VIEWER_VIEW_KEY, { mode }); },
   setZoom: (z) => set((s) => { const zoom = clampZoom(z); return { zoom, level: nextLevel(s.level, zoom) }; }),
   zoomBy: (factor) => set((s) => { const zoom = scaleZoom(s.zoom, factor); return { zoom, level: nextLevel(s.level, zoom) }; }),
   step: (dir) => set((s) => { const zoom = stepZoom(s.zoom, dir); return { zoom, level: nextLevel(s.level, zoom) }; }),
@@ -37,5 +45,11 @@ export const useDataViewer = create<DataViewerState>((set) => ({
   setFilter: (filter) => set({ filter }),
   setCluster: (cluster) => set({ cluster }),
   setUseCase: (useCase) => set({ useCase }),
-  reset: () => set({ ...INITIAL }),
+  reset: () => { set({ ...INITIAL, mode: '2d' }); useLayout.getState().setView(DATA_VIEWER_VIEW_KEY, { mode: '2d' }); },
 }));
+
+// 見出しの「ビュー」・既定のレイアウトに戻す・ペルソナの切替で変わった表示モードを写す
+useLayout.subscribe(() => {
+  const m = layoutMode();
+  if (useDataViewer.getState().mode !== m) useDataViewer.setState({ mode: m });
+});

@@ -8,6 +8,16 @@ import {
 } from '../workspace/layoutModel';
 import { resizedKeys } from '../workspace/autosize';
 import { snapLayout, type SnapKind, type SnapOpts } from '../workspace/snap';
+import { VIEW_MODES, WORLD_VIEWS, type ViewMode, type WorldView } from '../view/viewModel';
+
+/** コンポーネントごとのビューの切替の状態（FR-217・FR-218）。持たない項目は既定（表示モードは画面の既定、世界の表示は「両方」） */
+export interface ViewSetting { mode?: ViewMode; world?: WorldView }
+export type ViewMap = Record<string, ViewSetting>;
+const isViewSetting = (v: unknown): v is ViewSetting => {
+  if (!v || typeof v !== 'object') return false;
+  const o = v as Record<string, unknown>;
+  return (o.mode === undefined || (VIEW_MODES as readonly unknown[]).includes(o.mode)) && (o.world === undefined || (WORLD_VIEWS as readonly unknown[]).includes(o.world));
+};
 
 /** 画面の registry に登録されたコンポーネントのキー。App が起動時に設定する。 */
 let available: ReadonlySet<string> = new Set();
@@ -48,6 +58,14 @@ interface LayoutState {
   pinned: Partial<Record<Persona, Record<string, FloatRect>>>;
   /** ピン止めする（`rect` を渡す）／外す（null）。ピン止めすると、その位置と大きさを自由配置にも置く */
   setPinned: (key: string, rect: FloatRect | null) => void;
+  /** コンポーネントごとの表示モード・世界の表示（ペルソナ別。保存する。FR-217・FR-218）。「既定のレイアウトに戻す」で既定に戻る（AC-506） */
+  views: Partial<Record<Persona, ViewMap>>;
+  /** 画面の見出しの切替で最後に選んだ値（ペルソナ別。保存する）。画面の見出しの「ビュー」ボタンの文字に使う */
+  screenView: Partial<Record<Persona, ViewSetting>>;
+  /** コンポーネントの見出しの切替（そのコンポーネントだけに効く） */
+  setView: (key: string, patch: ViewSetting) => void;
+  /** 画面の見出しの切替（渡したコンポーネントにまとめて効く。値は対象ごとに求めたもの。undefined の項目は変えない） */
+  setViews: (patches: Record<string, ViewSetting>, screen: ViewSetting) => void;
   /** ヘッダーのダブルクリックで拡大表示しているコンポーネント（保存しない。FR-174） */
   expanded: string | null;
   setExpanded: (key: string | null) => void;
@@ -152,6 +170,23 @@ export const useLayout = create<LayoutState>()(
             ...(rect ? { floats: { ...s.floats, [s.persona]: { ...(s.floats[s.persona] ?? {}), [key]: clampFloat(rect) } } } : {}),
           };
         }),
+        views: {},
+        screenView: {},
+        setView: (key, patch) => set((s) => {
+          const cur = { ...(s.views[s.persona] ?? {}) };
+          cur[key] = { ...(cur[key] ?? {}), ...patch };
+          return { views: { ...s.views, [s.persona]: cur } };
+        }),
+        setViews: (patches, screen) => set((s) => {
+          const cur = { ...(s.views[s.persona] ?? {}) };
+          for (const [k, p] of Object.entries(patches)) {
+            const clean: ViewSetting = {};
+            if (p.mode !== undefined) clean.mode = p.mode;
+            if (p.world !== undefined) clean.world = p.world;
+            cur[k] = { ...(cur[k] ?? {}), ...clean };
+          }
+          return { views: { ...s.views, [s.persona]: cur }, screenView: { ...s.screenView, [s.persona]: { ...(s.screenView[s.persona] ?? {}), ...screen } } };
+        }),
         raise: (key) => set((s) => (s.zOrder[s.zOrder.length - 1] === key ? {} : { zOrder: [...s.zOrder.filter((k) => k !== key), key] })),
         setExpanded: (key) => set((s) => ({
           expanded: key,
@@ -220,16 +255,21 @@ export const useLayout = create<LayoutState>()(
           // 既定のレイアウトは固定なし（FR-215）
           const pinned = { ...s.pinned };
           delete pinned[s.persona];
-          return { layouts, manual, minimized, floats, pinned, navMin: false, maximized: null, expanded: null, resetCount: s.resetCount + 1 };
+          // 表示モード・世界の表示もレイアウトの一部として既定に戻す（FR-217 AC-506。選択・絞り込みは別の状態なので変わらない）
+          const views = { ...s.views };
+          delete views[s.persona];
+          const screenView = { ...s.screenView };
+          delete screenView[s.persona];
+          return { layouts, manual, minimized, floats, pinned, views, screenView, navMin: false, maximized: null, expanded: null, resetCount: s.resetCount + 1 };
         }),
       };
     },
     {
       name: 'edb.layout',
       version: 1,
-      partialize: (s) => ({ persona: s.persona, floats: s.floats, pinned: s.pinned, zOrder: s.zOrder, layouts: s.layouts, autoSize: s.autoSize, manual: s.manual, minimized: s.minimized, navMin: s.navMin }),
+      partialize: (s) => ({ persona: s.persona, floats: s.floats, pinned: s.pinned, views: s.views, screenView: s.screenView, zOrder: s.zOrder, layouts: s.layouts, autoSize: s.autoSize, manual: s.manual, minimized: s.minimized, navMin: s.navMin }),
       merge: (persisted, current) => {
-        const p = (persisted ?? {}) as Partial<Pick<LayoutState, 'persona' | 'floats' | 'pinned' | 'zOrder' | 'layouts' | 'autoSize' | 'manual' | 'minimized' | 'navMin'>>;
+        const p = (persisted ?? {}) as Partial<Pick<LayoutState, 'persona' | 'floats' | 'pinned' | 'views' | 'screenView' | 'zOrder' | 'layouts' | 'autoSize' | 'manual' | 'minimized' | 'navMin'>>;
         const minimized: Partial<Record<Persona, string[]>> = {};
         for (const name of PERSONAS) {
           const v = (p.minimized as Record<string, unknown> | undefined)?.[name];
@@ -266,8 +306,20 @@ export const useLayout = create<LayoutState>()(
             floats[name] = { ...(floats[name] ?? {}), ...m };
           }
         }
+        const views: Partial<Record<Persona, ViewMap>> = {};
+        const screenView: Partial<Record<Persona, ViewSetting>> = {};
+        for (const name of PERSONAS) {
+          const v = (p.views as Record<string, unknown> | undefined)?.[name];
+          if (v && typeof v === 'object') {
+            const m: ViewMap = {};
+            for (const [k, x] of Object.entries(v as Record<string, unknown>)) if (isViewSetting(x)) m[k] = x;
+            views[name] = m;
+          }
+          const sv = (p.screenView as Record<string, unknown> | undefined)?.[name];
+          if (isViewSetting(sv)) screenView[name] = sv;
+        }
         const zOrder = Array.isArray(p.zOrder) && p.zOrder.every((k) => typeof k === 'string') ? p.zOrder : [];
-        return { ...current, floats, pinned, zOrder, persona, layouts, manual, minimized, navMin: p.navMin === true, autoSize: typeof p.autoSize === 'boolean' ? p.autoSize : true };
+        return { ...current, floats, pinned, views, screenView, zOrder, persona, layouts, manual, minimized, navMin: p.navMin === true, autoSize: typeof p.autoSize === 'boolean' ? p.autoSize : true };
       },
     },
   ),
