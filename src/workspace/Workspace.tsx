@@ -597,6 +597,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     const root = rootRef.current;
     if (!root) return out;
     for (const k of keysOf(layout)) {
+      // ピン止めしたものは置き先（分割・タブへの入れ先）にしない。上へ置いたものは自由配置で重ならない最寄りの位置へ（FR-216 AC-496）
+      if (pinSet.has(k)) continue;
       const r = root.querySelector(`[data-testid="component-${k}"]`)?.getBoundingClientRect();
       if (r && r.width > 0 && r.height > 0) out[k] = r;
     }
@@ -660,9 +662,10 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       corner: edges.length > 0
         ? (horizontal && vertical ? (`${vertical === 'top' ? 't' : 'b'}${horizontal === 'left' ? 'l' : 'r'}` as SnapOpts['corner']) : nearestCorner((x - area.left) / area.width, (y - area.top) / area.height))
         : prev!.opts.corner,
-      tabTarget: (edges.length > 0 ? hitKey : null) ?? prev?.opts.tabTarget ?? keysOf(layout).find((k) => k !== key),
+      tabTarget: (edges.length > 0 ? hitKey : null) ?? prev?.opts.tabTarget ?? keysOf(layout).find((k) => k !== key && !pinSet.has(k)),
     };
-    if (opts.tabTarget === key) opts.tabTarget = keysOf(layout).find((k) => k !== key);
+    // タブ化の相手にピン止めしたものを選ばない（FR-216 AC-496・AC-505）
+    if (opts.tabTarget === key || (opts.tabTarget && pinSet.has(opts.tabTarget))) opts.tabTarget = keysOf(layout).find((k) => k !== key && !pinSet.has(k));
     return { edges: useEdges, kind, opts, px: edges.length > 0 ? x : prev!.px, py: edges.length > 0 ? y : prev!.py };
   };
 

@@ -359,3 +359,135 @@ describe('FR-216 ピン止めしたコンポーネントの固定', () => {
     expect((status()).textContent).toContain(PIN_NO_ROOM_REASON);
   });
 });
+
+/** 描かれた自由配置の箱の位置と大きさ（作業領域に対する割合。style の % から） */
+function drawnRects(): Record<string, FloatRect> {
+  const out: Record<string, FloatRect> = {};
+  document.querySelectorAll<HTMLElement>('[data-float]').forEach((el) => {
+    out[el.dataset.float!] = { x: parseFloat(el.style.left) / 100, y: parseFloat(el.style.top) / 100, w: parseFloat(el.style.width) / 100, h: parseFloat(el.style.height) / 100 };
+  });
+  return out;
+}
+const ptr = (target: Element | Window, type: string, x: number, y: number) =>
+  fireEvent(target, new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, clientX: x, clientY: y }));
+
+describe('FR-216 AC-496 AC-505 ポインターの操作と表示上の配置', () => {
+  let efp: unknown;
+  beforeEach(() => {
+    efp = (document as unknown as { elementsFromPoint?: unknown }).elementsFromPoint;
+    (document as unknown as { elementsFromPoint: () => Element[] }).elementsFromPoint = () => [];
+    // a をピン止め（左 1/3・上半分）。b・c は自由配置（DOM の測定と同じ位置）
+    useLayout.setState({
+      pinned: { [persona()]: { a: { x: 0, y: 0, w: 1 / 3, h: 0.5 } } },
+      floats: { [persona()]: { a: { x: 0, y: 0, w: 1 / 3, h: 0.5 }, b: { x: 1 / 3, y: 0, w: 1 / 3, h: 0.5 }, c: { x: 2 / 3, y: 0, w: 1 / 3, h: 0.5 } } },
+    });
+  });
+  afterEach(() => { (document as unknown as { elementsFromPoint: unknown }).elementsFromPoint = efp; });
+
+  // FR-216 AC-496（ポインターで、ピン止めしたものの辺の上へ置く）
+  it('FR-216 AC-496 ピン止めしたものの左の辺の上へドラッグして置くと、ピン止めしたものは変わらず、置いたものが重ならない最寄りの位置に置かれる（分割・タブへ入れない）', () => {
+    render(wrap(<Workspace screens={screens} />));
+    const layoutsBefore = JSON.stringify(st().layouts);
+    const a0 = { ...floats().a! };
+    // b のハンドル（600, 8）をつかみ、a の左の辺の領域（60, 200。画面端のスナップの範囲 32px の外）へ
+    ptr(within(section('b')).getByTestId('panel-handle'), 'pointerdown', 600, 8);
+    ptr(window, 'pointermove', 500, 200);
+    ptr(window, 'pointermove', 60, 200);
+    expect(screen.queryByTestId('snap-candidates')).toBeNull();
+    expect(screen.queryByTestId('drop-indicator'), 'ピン止めしたものが置き先になっている').toBeNull();
+    ptr(window, 'pointerup', 60, 200);
+    expect(floats().a).toEqual(a0);
+    expect(pins().a).toEqual(a0);
+    expect(overlapsFr(floats().b!, a0)).toBe(false);
+    expect(overlapsFr(floats().b!, floats().c!)).toBe(false);
+    // 最寄り: a のすぐ下（y = 0.5）
+    expect(floats().b!.y).toBeCloseTo(0.5, 2);
+    expect(JSON.stringify(st().layouts)).toBe(layoutsBefore);
+    const drawn = drawnRects();
+    expect(drawn.a).toEqual(expect.objectContaining({ x: 0, y: 0 }));
+    expect(overlapsFr(drawn.b!, drawn.a!)).toBe(false);
+  });
+
+  // FR-216 AC-496（スナップの候補は、ピン止めしたものを動かさない）
+  it('FR-216 AC-496 画面端のスナップの候補で置いても、ピン止めしたものの位置と大きさは変わらず、置いたものはピン止めしたものと重ならない', () => {
+    render(wrap(<Workspace screens={screens} />));
+    const a0 = { ...floats().a! };
+    // c を左の端へ（端から 32px 以内）→ 候補（左半分）が出る
+    ptr(within(section('c')).getByTestId('panel-handle'), 'pointerdown', 1000, 8);
+    ptr(window, 'pointermove', 700, 400);
+    ptr(window, 'pointermove', 10, 400);
+    expect(screen.getByTestId('snap-candidates')).toBeTruthy();
+    ptr(window, 'pointerup', 10, 400);
+    expect(floats().a).toEqual(a0);
+    expect(pins().a).toEqual(a0);
+    const f = floats();
+    for (const k of ['b', 'c']) if (f[k]) expect(overlapsFr(f[k]!, a0), `${k} が重なる`).toBe(false);
+    const drawn = drawnRects();
+    expect(drawn.a).toEqual(expect.objectContaining({ x: 0, y: 0 }));
+    for (const k of ['b', 'c']) if (drawn[k]) expect(overlapsFr(drawn[k]!, drawn.a!), `${k} が表示上で重なる`).toBe(false);
+    // メニューの「画面に配置」で、ピン止めしたもの自身は動かせない（無効と理由）
+    focus('a');
+    fireEvent.click(within(section('a')).getByTestId('component-menu'));
+    const place = screen.getByRole('menuitem', { name: /画面に配置/ });
+    expect(place.getAttribute('aria-disabled')).toBe('true');
+    expect(place.textContent).toContain(PIN_MOVE_REASON);
+  });
+
+  // FR-216 AC-505（表示上の配置: 最大化・最小化から戻したとき）
+  it('FR-216 AC-505 最大化・最小化から戻すと、描かれた位置がピン止めした比率の配置に戻り、ほかと重ならない', () => {
+    render(wrap(<Workspace screens={screens} />));
+    const a0 = { ...pins().a! };
+    const check = (tag: string) => {
+      const d = drawnRects();
+      for (const p of ['x', 'y', 'w', 'h'] as const) expect(Math.abs(d.a![p] - a0[p]), `${tag}: ${p}`).toBeLessThanOrEqual(0.01);
+      const ks = Object.keys(d);
+      for (let i = 0; i < ks.length; i++) for (let j = i + 1; j < ks.length; j++) {
+        expect(overlapsFr(d[ks[i]!]!, d[ks[j]!]!), `${tag}: ${ks[i]} × ${ks[j]}`).toBe(false);
+      }
+      focus('a');
+      expect(nameOf(pinBtn('a')), `${tag}: ピン止めの状態`).toBe('ピン止めを外す');
+    };
+    focus('a');
+    fireEvent.click(within(actionsOf('a')).getByRole('button', { name: '最大化' }));
+    expect(st().maximized).toBe('a');
+    focus('a');
+    fireEvent.click(within(actionsOf('a')).getByRole('button', { name: '通常表示' }));
+    expect(st().maximized).toBeNull();
+    check('最大化から戻す');
+    focus('a');
+    fireEvent.click(within(actionsOf('a')).getByRole('button', { name: '最小化' }));
+    fireEvent.click(within(actionsOf('a')).getByRole('button', { name: '元に戻す' }));
+    check('最小化から戻す');
+  });
+});
+
+describe('NFR-UX-018 AC-482 メニューの名前', () => {
+  // NFR-UX-018 AC-482（メニューの名前も、見出しのボタンと同じ操作の定義）
+  it('NFR-UX-018 AC-482 「その他の操作」メニューのピン止め・最小化・最大化・タブ化・非表示の名前は、操作の定義と同じ（状態に応じて替わる）', () => {
+    render(wrap(<Workspace screens={screens} />));
+    const menuNames = () => {
+      fireEvent.click(within(section('a')).getByTestId('component-menu'));
+      const names = screen.getAllByRole('menuitem').map((m) => (m.firstChild?.textContent ?? m.textContent ?? '').trim());
+      fireEvent.keyDown(screen.getAllByRole('menuitem')[0]!, { key: 'Escape' });
+      return names;
+    };
+    const has = (names: string[], label: string) => names.some((n) => n === label || n.startsWith(label));
+    let names = menuNames();
+    for (const [id, on] of [['pin', false], ['minimize', false], ['maximize', false], ['tabs', false], ['hide', false]] as const) {
+      expect(has(names, paneAction(id, on).label), `メニューに「${paneAction(id, on).label}」がない`).toBe(true);
+    }
+    // 最大化中・ピン止め中は、オンの名前（見出しのボタンと同じ）
+    act(() => st().setMaximized('a'));
+    focus('a');
+    expect(within(actionsOf('a')).getByRole('button', { name: paneAction('maximize', true).label })).toBeTruthy();
+    names = menuNames();
+    expect(has(names, paneAction('maximize', true).label)).toBe(true);
+    expect(names).not.toContain('通常表示に戻す');
+    act(() => st().setMaximized(null));
+    focus('a');
+    fireEvent.click(pinBtn('a'));
+    names = menuNames();
+    expect(has(names, paneAction('pin', true).label)).toBe(true);
+  });
+});
+

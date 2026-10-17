@@ -92,7 +92,7 @@ export function ComponentMenu({ pane, title }: { pane: PaneInfo; title: string }
             </MenuPopover>
           </Menu>
           )}
-          <MenuItem onClick={pane.toggleMaximize}>{pane.maximized ? '通常表示に戻す' : '最大化'}</MenuItem>
+          <MenuItem onClick={pane.toggleMaximize}>{paneAction('maximize', pane.maximized).label}</MenuItem>
           <MenuItem onClick={pane.toggleExpand}>{pane.expanded ? '拡大表示を戻す' : '拡大表示（75%）'}</MenuItem>
           <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={pane.toggleFloat}>{pane.floating ? '分割の配置に戻す' : '自由に動かせる配置にする'}</MenuItem>
           {pane.pinned ? <MenuItem disabled secondaryContent={PIN_TABS_REASON}>{paneAction('tabs').label}</MenuItem> : pane.peers.length > 0 ? (
