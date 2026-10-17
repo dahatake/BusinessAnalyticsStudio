@@ -100,7 +100,7 @@ describe('FR-214 顧客パックのツイン関係', () => {
   it('FR-214 AC-491 両端が存在し世界区分が異なるツイン関係は合格し、1 対多・多対 1 も合格する', () => {
     const errs = errorsAfter((j) => {
       j.twins = [
-        { realId: 'ent-mono-robot', digitalId: 'ent-mono-dt-robot-model', relation: 'represents', sourceIds: ['src-mono-001'] },
+        { realId: 'ent-mono-robot', digitalId: 'ent-mono-dt-plant-model', relation: 'represents', sourceIds: ['src-mono-001'] },
         { realId: 'ent-mono-robot', digitalId: 'ent-mono-dt-robot-metric', relation: 'measures', sourceIds: ['src-mono-001'] }, // 1 対多
         { realId: 'ent-mono-press', digitalId: 'ent-mono-dt-mes', relation: 'records', sourceIds: ['src-mono-001'] },
         { realId: 'ent-mono-conveyor', digitalId: 'ent-mono-dt-mes', relation: 'records', sourceIds: ['src-mono-001'] }, // 多対 1

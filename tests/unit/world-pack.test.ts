@@ -7,6 +7,8 @@ import {
   DIGITAL_KINDS, DATA_SCHEMAS, type EntityKind, type PackData,
 } from '../../src/schema';
 import { buildEntityGraph } from '../../src/selection/graph';
+import { buildTwinLayout } from '../../src/three/entityLayout';
+import { twinEntitiesOf } from '../../src/three/twin';
 import { REPO_ROOT, readPackFiles, validatePackDir } from '../../scripts/lib/pack-fs';
 import { mockSmoke, verifyPack } from '../../scripts/pipeline/verify';
 
@@ -85,6 +87,29 @@ describe('FR-213 お手本パックの世界区分・種別', () => {
     expect(w, JSON.stringify(r.warnings)).toBeTruthy();
     expect(w).toContain(`${j.entities.length} 件`);
     expect(w).toContain('区分なし');
+  });
+});
+
+describe('FR-213 世界区分と 3D の配置（デジタルツインの配置への反映）', () => {
+  // FR-213 AC-490（世界区分のないパックは従来どおり。世界区分のあるパックでは、デジタル世界の最上位を左の帯にまとめる）
+  it('FR-213 AC-490 世界区分を外したパックの配置は、世界区分を持たない入力の配置と同じで、世界区分があるとデジタル世界の項目は現実世界の項目より左に並ぶ', () => {
+    const data = loadPack('mono');
+    const withWorld = twinEntitiesOf(data);
+    // デジタル世界のない入力では、世界区分の有無で配置が変わらない（帯が 1 つ）
+    const realOnly = withWorld.filter((e) => e.world !== 'digital' && !withWorld.some((p) => p.id === e.parentId && p.world === 'digital'));
+    const plain = realOnly.map(({ world: _w, ...rest }) => rest); // eslint-disable-line @typescript-eslint/no-unused-vars
+    const a = buildTwinLayout(realOnly);
+    const b = buildTwinLayout(plain);
+    expect(a.objects.map((o) => [o.entityId, ...o.position])).toEqual(b.objects.map((o) => [o.entityId, ...o.position]));
+    const l = buildTwinLayout(withWorld);
+    const worldOf = new Map(withWorld.map((e) => [e.id, e.world]));
+    const right = (id: string) => { const o = l.byId.get(id)!; return o.position[0] + o.size[0] / 2; };
+    const left = (id: string) => { const o = l.byId.get(id)!; return o.position[0] - o.size[0] / 2; };
+    const digitalRoots = l.objects.filter((o) => o.depth === 0 && worldOf.get(o.entityId) === 'digital').map((o) => o.entityId);
+    const realRoots = l.objects.filter((o) => o.depth === 0 && worldOf.get(o.entityId) !== 'digital').map((o) => o.entityId);
+    expect(digitalRoots.length).toBeGreaterThan(0);
+    expect(Math.max(...digitalRoots.map(right))).toBeLessThan(Math.min(...realRoots.map(left)));
+    expect(l.objects).toHaveLength(data.entities.entities.length);
   });
 });
 
