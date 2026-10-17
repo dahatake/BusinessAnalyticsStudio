@@ -33,7 +33,7 @@ const useStyles = makeStyles({
     justifyContent: 'center',
     width: '36px',
     height: '36px',
-    borderRadius: '50%',
+    borderRadius: tokens.borderRadiusCircular,
     backgroundColor: tokens.colorBrandBackground,
     color: tokens.colorNeutralForegroundOnBrand,
   },

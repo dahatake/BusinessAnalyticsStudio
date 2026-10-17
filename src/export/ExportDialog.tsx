@@ -2,9 +2,9 @@
 // 書き出しは File System Access API（保存先を利用者が指定）か、非対応の環境では ZIP のダウンロード（NFR-UX-004: 失敗しても設定と編集中のデータは残る）。
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Button, Checkbox, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, MessageBar, MessageBarBody, MessageBarTitle,
-  Select, Spinner, Text, makeStyles, tokens,
+  Button, Checkbox, DialogActions, DialogBody, DialogContent, DialogTitle, Field, MessageBar, MessageBarBody, MessageBarTitle, Select, Spinner, Text, makeStyles, tokens,
 } from '@fluentui/react-components';
+import { Dialog, DialogSurface } from '../components/Dialog';
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { ArrowDownload24Regular, ArrowExport24Regular, Dismiss24Regular } from '@fluentui/react-icons';
 import { packKeyOf } from '../discussion/model';

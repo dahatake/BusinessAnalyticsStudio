@@ -17,7 +17,7 @@ const useStyles = makeStyles({
   scroll: { overflowX: 'auto', paddingBottom: tokens.spacingVerticalS },
   sankey: { position: 'relative', minWidth: '900px' },
   heads: { display: 'grid', gridTemplateColumns: 'repeat(5, 20%)', marginBottom: tokens.spacingVerticalS },
-  head: { paddingInlineStart: '1%' },
+  head: { paddingInlineStart: tokens.spacingHorizontalXS },
   canvas: { position: 'relative' },
   svg: { position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' },
   node: {
@@ -50,7 +50,9 @@ const useStyles = makeStyles({
     lineHeight: tokens.lineHeightBase200,
   },
   clamp: { display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' },
-  links: { display: 'flex', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalS, fontSize: tokens.fontSizeBase200 },
+  links: { display: 'flex', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalS, fontSize: tokens.fontSizeBase200, lineHeight: tokens.lineHeightBase200,
+    // 出典のリンクの当たり判定は 24px 以上（NFR-A11Y-009 AC-485）
+    '& a': { display: 'inline-flex', alignItems: 'center', minHeight: '24px' } },
   chip: {
     display: 'flex',
     flexDirection: 'column',

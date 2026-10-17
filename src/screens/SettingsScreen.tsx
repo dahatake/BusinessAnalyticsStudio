@@ -133,7 +133,7 @@ export function SettingsScreen() {
         <Text id="audio-settings-title" as="p" weight="semibold">音声</Text>
         <Switch label="BGM" checked={bgmEnabled} onChange={(_, d) => setBgmEnabled(d.checked)} />
         <Switch label="効果音" checked={seEnabled} onChange={(_, d) => setSeEnabled(d.checked)} />
-        <Text as="p" size={200}>ミュートと音量は、画面下のショーコントロールバー（M キー）で操作します。</Text>
+        <Text as="p" block size={200}>ミュートと音量は、画面下のショーコントロールバー（M キー）で操作します。</Text>
       </div>
       <Field label="3D の品質">
         <RadioGroup layout="horizontal" value={quality} onChange={(_, d) => setQuality(d.value as Quality)}>

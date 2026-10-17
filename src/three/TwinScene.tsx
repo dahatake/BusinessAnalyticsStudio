@@ -12,6 +12,7 @@ import type { IndustryPreset } from './presets';
 import { registerSceneCanvas, viewportAspect } from './sceneViewport';
 import { buildDrawables, disposeDrawables, entityIdOfHit, planDraw, setDrawOpacity } from './twinDraw';
 import { twinGeometry, twinScale } from './twinGeometry';
+import { sceneLabelStyle } from './labelStyles';
 
 const ORIGIN = 'view3d';
 
@@ -33,17 +34,7 @@ function emissiveOf(id: string, selected: ReadonlySet<string>, related: Readonly
   return 0;
 }
 
-const labelStyle: CSSProperties = {
-  pointerEvents: 'none',
-  whiteSpace: 'nowrap',
-  padding: '2px 8px',
-  borderRadius: 4,
-  fontSize: 12,
-  lineHeight: '16px',
-  background: 'rgba(15, 23, 42, 0.78)',
-  color: '#ffffff',
-  border: '1px solid rgba(255, 255, 255, 0.35)',
-};
+const labelStyle: CSSProperties = sceneLabelStyle;
 
 type HitEvent = { object: THREE.Object3D; instanceId?: number; shiftKey: boolean; ctrlKey: boolean; metaKey: boolean; stopPropagation: () => void };
 
@@ -140,7 +131,7 @@ export function EntityTwin({ layout, preset }: { layout: TwinLayout; preset: Ind
             zIndexRange={[5, 0]}
             style={{ pointerEvents: 'none' }}
           >
-            <div style={labelStyle}>{o.name}</div>
+            <div style={labelStyle} title={o.name}>{o.name}</div>
           </Html>
         );
       })}

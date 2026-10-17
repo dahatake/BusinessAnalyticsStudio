@@ -49,6 +49,10 @@ const useStyles = makeStyles({
     fontSize: tokens.fontSizeBase200,
     lineHeight: tokens.lineHeightBase200,
     whiteSpace: 'nowrap',
+    // 文字を拡大しても 1 行に収め、収まらない分は省略記号にする（全文はボタンの名前と「表で見る」の表。NFR-A11Y-009 AC-483・A-51）
+    maxWidth: '20em',
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
     ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`, outlineOffset: '1px' },
   },
   legend: { margin: 0, padding: 0, listStyle: 'none', display: 'flex', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalL, rowGap: tokens.spacingVerticalXS },
@@ -108,7 +112,7 @@ export function MapScreen() {
           rows={siteTableRows(data.sites)}
         />
       ) : (
-        <div className={s.stage}>
+        <div className={s.stage} data-zoom-surface="map">
           <RenderCanvas cameraPosition={[0, 0, 3]} paused={!visible}>
             <MapScene data={data} mode={mode} hour={hour} quality={quality} selected={selected} markerRefs={markerRefs} />
           </RenderCanvas>

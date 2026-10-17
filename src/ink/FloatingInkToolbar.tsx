@@ -24,7 +24,7 @@ const useStyles = makeStyles({
   panel: {
     display: 'flex', flexDirection: 'column', alignItems: 'stretch',
     boxShadow: tokens.shadow16, borderRadius: tokens.borderRadiusMedium, backgroundColor: tokens.colorNeutralBackground1,
-    transitionProperty: 'opacity', transitionDuration: '120ms',
+    transitionProperty: 'opacity', transitionDuration: tokens.durationFast, transitionTimingFunction: tokens.curveEasyEase,
   },
   dim: { opacity: 0.25, pointerEvents: 'none' },
   forcedAuto: { forcedColorAdjust: 'auto', '@media (forced-colors: active)': { forcedColorAdjust: 'auto' } },

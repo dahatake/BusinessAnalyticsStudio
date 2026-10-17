@@ -1,10 +1,10 @@
 // ナレッジグラフ（2D/3D。FR-037）。ノードの種別を色・形・アイコンで、エッジの関係種別を線種・太さ・粒子で区別する。
 // ホップ数（PARAM-014: 1〜3）・種別フィルター・検索・ノード/エッジの編集ができる。選択は共通のストア（useEntityBinding）で他のビューと連動する。
-import { useEffect, useMemo, useRef, useState, type SVGProps } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject, type SVGProps } from 'react';
 import {
-  Badge, Button, Checkbox, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Dropdown, Field, Input, Option,
-  Text, makeStyles, mergeClasses, tokens,
+  Badge, Button, Checkbox, DialogActions, DialogBody, DialogContent, DialogTitle, Dropdown, Field, Input, Option, Text, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
+import { Dialog, DialogSurface } from '../components/Dialog';
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { Add24Regular, Delete24Regular, Link24Regular } from '@fluentui/react-icons';
 import { ADDABLE_KINDS, addEdge, addNode, removeEdge, removeNode, type AddableKind } from '../analysis/graphEdit';
@@ -23,6 +23,7 @@ import { useAnimation } from '../store/animation';
 import { useEditStore } from '../store/edit';
 import { usePackStore } from '../store/pack';
 import { registerTestHook } from '../testing/hook';
+import { MIN_TARGET_PX } from '../theme/tokens';
 import { Graph3D } from '../three/Graph3D';
 
 const ORIGIN = 'knowledge-graph';
@@ -36,7 +37,7 @@ const useStyles = makeStyles({
   node: { cursor: 'pointer', outline: 'none', ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}` } },
   nodeLabel: {
     width: '92px', height: '34px', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center', fontSize: tokens.fontSizeBase200,
-    lineHeight: tokens.lineHeightBase100, color: tokens.colorNeutralForeground1, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+    lineHeight: tokens.lineHeightBase200, color: tokens.colorNeutralForeground1, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
     overflowWrap: 'anywhere', pointerEvents: 'none',
   },
   shape: { strokeWidth: 2 },
@@ -61,6 +62,28 @@ function useReducedMotion(): boolean {
   return reduced;
 }
 
+/**
+ * 節の当たり判定の大きさ（図の座標）。図が縮小して描かれても、画面上で幅・高さとも {PARAM-040}（24px）以上にする（NFR-A11Y-009 AC-485）。
+ * 既定は節の絵とラベルを覆う 92×78。
+ */
+function useNodeHitSize(ref: RefObject<SVGSVGElement | null>, size: { width: number; height: number }): { w: number; h: number } {
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const update = (): void => {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) setScale(Math.min(r.width / size.width, r.height / size.height));
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref, size.width, size.height]);
+  const min = MIN_TARGET_PX / Math.max(scale, 0.01);
+  return { w: Math.max(92, min), h: Math.max(78, min) };
+}
+
 interface ViewProps {
   nodes: GraphNode[];
   edges: GraphEdge[];
@@ -81,8 +104,10 @@ function Graph2D({ nodes, edges, pos, size, selected, related, matches, edgeSel,
   const playing = useAnimation((st) => st.playing);
   const reduced = useReducedMotion();
   const animate = playing && !reduced;
+  const svgRef = useRef<SVGSVGElement>(null);
+  const hit = useNodeHitSize(svgRef, size);
   return (
-    <svg viewBox={`0 0 ${size.width} ${size.height}`} className={s.svg} role="group" aria-label="ナレッジグラフ（2D）">
+    <svg ref={svgRef} data-zoom-surface="graph" viewBox={`0 0 ${size.width} ${size.height}`} className={s.svg} role="group" aria-label="ナレッジグラフ（2D）">
       {edges.map((e) => {
         const a = pos(e.from);
         const b = pos(e.to);
@@ -134,7 +159,7 @@ function Graph2D({ nodes, edges, pos, size, selected, related, matches, edgeSel,
               onEntityKey(e as never, n.id, ORIGIN);
             }}
           >
-            <rect x={-46} y={-24} width={92} height={78} fill="transparent" />
+            <rect x={-hit.w / 2} y={15 - hit.h / 2} width={hit.w} height={hit.h} fill="transparent" />
             <path
               d={shapePath(style.shape)} className={s.shape} fill={style.color} fillOpacity={words.includes('selected') ? 0.55 : 0.22} stroke={style.color}
               strokeWidth={words.includes('selected') ? 5 : words.includes('related') || words.includes('hover') ? 3.5 : 2}

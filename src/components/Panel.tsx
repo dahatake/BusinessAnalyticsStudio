@@ -10,6 +10,13 @@ import { ComponentActions, usePane } from '../workspace/PaneContext';
 import type { Move } from '../workspace/layoutModel';
 import { isEditableTarget, panelKeyAction, runPanelKeyAction, titleDoubleClick, type KeyLike } from './panelKeys';
 
+/** これより狭いコンポーネントは、見出しの操作アイコンを出さず「…」メニューに任せる（FR-150 AC-259）。
+ *  アイコン 4 個（各 24px 以上）と「…」が見出しの横に収まる幅。既定の配置の列（約 300px）でもアイコンが出る（NFR-UX-015 AC-476 のツールチップ） */
+const NARROW_PANE_PX = 240;
+/** これより狭いコンポーネントは、見出しを詰める（見出しの文字を 1 段小さい Fluent 2 の段にし、操作アイコンと「…」をまとめて見出しの下の行の右へ置く）。
+ *  細い列で見出しが何行にも折れて、画面の上部の情報（FR-041 のサマリーなど）が下へ押し出されるのを防ぐ */
+const COMPACT_PANE_PX = 360;
+
 const useStyles = makeStyles({
   // 外枠（ワークスペースの外では従来どおりの幅と余白）
   root: { display: 'flex', flexDirection: 'column', maxWidth: '960px' },
@@ -54,7 +61,7 @@ const useStyles = makeStyles({
     color: tokens.colorNeutralForegroundOnBrand,
     userSelect: 'none',
     touchAction: 'none',
-    '@media (forced-colors: active)': { backgroundColor: 'ButtonFace', color: 'ButtonText', borderBottom: '1px solid ButtonText' },
+    '@media (forced-colors: active)': { backgroundColor: 'ButtonFace', color: 'ButtonText', borderBottom: `${tokens.strokeWidthThin} solid ButtonText` },
   },
   handleGrab: { cursor: 'grab', ':active': { cursor: 'grabbing' } },
   grip: {
@@ -62,12 +69,15 @@ const useStyles = makeStyles({
     width: '40px',
     height: '8px',
     boxSizing: 'border-box',
-    borderTop: '2px solid currentColor',
-    borderBottom: '2px solid currentColor',
+    borderTop: `${tokens.strokeWidthThick} solid currentColor`,
+    borderBottom: `${tokens.strokeWidthThick} solid currentColor`,
   },
   head: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS },
-  headRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', columnGap: tokens.spacingHorizontalS },
-  titleRow: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalM, flexGrow: 1, minWidth: 0 },
+  headRow: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: tokens.spacingHorizontalS, rowGap: tokens.spacingVerticalXS },
+  titleRow: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalM, flex: '1 1 0', minWidth: 0 },
+  // 詰めた見出し: 見出しの文字の行を全幅にし、操作アイコンと「…」は次の行の右へまとめて置く
+  titleRowCompact: { flexBasis: '100%' },
+  actionGroup: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS, marginInlineStart: 'auto' },
   // 見出しをつかんで動かす（FR-142）。つかめることをカーソルで示し、動かしている間に文字が選択されないようにする
   grab: { flexGrow: 1, cursor: 'grab', userSelect: 'none', touchAction: 'none', ':active': { cursor: 'grabbing' } },
   sample: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS },
@@ -100,6 +110,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
   // フォーカス中のコンポーネントだけ、見出しに操作アイコンを出す（FR-150）
   const [focused, setFocused] = useState(false);
   const [narrow, setNarrow] = useState(false);
+  const [compact, setCompact] = useState(false);
   const minimized = pane?.minimized === true;
   // 最小化・復元の動き（NFR-UX-008。レイアウトは即座に切り替え、見た目だけを 200ms で整える）
   const foldMotion = useFoldClass(minimized);
@@ -113,7 +124,11 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(() => setNarrow(el.getBoundingClientRect().width < 360));
+    const ro = new ResizeObserver(() => {
+      const w = el.getBoundingClientRect().width;
+      setNarrow(w < NARROW_PANE_PX);
+      setCompact(w < COMPACT_PANE_PX);
+    });
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
@@ -162,10 +177,10 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
       <div data-testid="panel-body" ref={bodyRef} className={mergeClasses(s.body, pane ? s.paneBody : undefined, minimized ? s.minimized : undefined)}>
       <div className={s.head}>
         <div className={s.headRow}>
-          <div className={s.titleRow}>
+          <div className={mergeClasses(s.titleRow, pane && compact ? s.titleRowCompact : undefined)}>
             <Text
               as="h2"
-              size={600}
+              size={pane && compact ? 500 : 600}
               weight="semibold"
               block
               className={pane && !pane.maximized && !pane.expanded ? s.grab : undefined}
@@ -182,7 +197,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
               </span>
             ) : null}
           </div>
-          {pane ? <ComponentActions pane={pane} title={title} active={focused || minimized} narrow={narrow} /> : null}
+          {pane ? <span className={s.actionGroup}><ComponentActions pane={pane} title={title} active={focused || minimized} narrow={narrow} /></span> : null}
         </div>
         {description && !minimized ? <Text size={300}>{description}</Text> : null}
       </div>

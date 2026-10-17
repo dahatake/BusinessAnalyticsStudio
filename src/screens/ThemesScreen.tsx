@@ -2,9 +2,9 @@
 // 顧客の決定と AI の提案は、文字のラベル（「顧客決定」「AI 提案」）と別の欄で区別する（色だけに頼らない）。
 import { useEffect, useRef, useState } from 'react';
 import {
-  Badge, Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Dropdown, Field, Input,
-  Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, Option, Spinner, Text, Textarea, makeStyles, mergeClasses, tokens,
+  Badge, Button, DialogActions, DialogBody, DialogContent, DialogTitle, Dropdown, Field, Input, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, Option, Spinner, Text, Textarea, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
+import { Dialog, DialogSurface } from '../components/Dialog';
 import {
   Add24Regular, ArrowRedo24Regular, ArrowUndo24Regular, Delete24Regular, Edit24Regular, Sparkle24Regular,
 } from '@fluentui/react-icons';
@@ -324,7 +324,7 @@ export function ThemesScreen() {
         <Button icon={<Sparkle24Regular aria-hidden />} disabled={proposing} onClick={() => void propose()}>テーマを提案</Button>
         <Button icon={<ArrowUndo24Regular aria-hidden />} disabled={!canUndo} onClick={() => st.undo(target.key)}>元に戻す</Button>
         <Button icon={<ArrowRedo24Regular aria-hidden />} disabled={!canRedo} onClick={() => st.redo(target.key)}>やり直し</Button>
-        {proposing ? <span role="status" style={{ display: 'inline-flex', alignItems: 'center', columnGap: 8 }}><Spinner size="tiny" /><Text>提案を生成中…</Text></span> : null}
+        {proposing ? <span role="status" style={{ display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS }}><Spinner size="tiny" /><Text>提案を生成中…</Text></span> : null}
       </div>
       {aiError ? <ErrorView title="テーマを提案できませんでした" messages={[aiError]} action="接続の設定を確認して、もう一度お試しください。" /> : null}
 

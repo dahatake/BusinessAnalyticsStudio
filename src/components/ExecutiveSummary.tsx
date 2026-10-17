@@ -1,7 +1,7 @@
 // エグゼクティブサマリー（FR-041）。各コンポーネントの上部に、結論・根拠の数値・推奨アクションを置く。
 // 接続していないときは「AI 生成（モック）」のテンプレート。利用者が編集・固定でき、「編集版」と表示して AI 版と区別する。
 // 編集・固定は編集モード（FR-047）が ON のときだけ。数値は出典つき（NumericValue）で示す。
-import { useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 import { Badge, Button, Field, Text, Textarea, makeStyles, tokens } from '@fluentui/react-components';
 import { Edit16Regular, Pin16Regular, PinOff16Regular } from '@fluentui/react-icons';
 import { MOCK_LABEL, REAL_LABEL } from '../ai/client';
@@ -16,14 +16,16 @@ import { usePriorityStore } from '../store/priority';
 import { activeEdited, useSummaryStore } from '../store/summary';
 import { useTreeStore } from '../store/tree';
 import { NumericValue } from './NumericValue';
+import { elevationStyles } from '../theme/tokens';
 
 const useStyles = makeStyles({
   root: {
     display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS,
     padding: tokens.spacingHorizontalM,
-    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     borderRadius: tokens.borderRadiusMedium,
-    backgroundColor: tokens.colorNeutralBackground2,
+    // Fluent 2 のカード: ニュートラルの面と、カードの役割の影（段 4。ハイコントラストでは境界線。NFR-UX-015・NFR-UX-016）
+    backgroundColor: tokens.colorNeutralBackground1,
+    ...elevationStyles('card'),
   },
   head: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalS, rowGap: tokens.spacingVerticalXS },
   grow: { flexGrow: 1 },
@@ -84,7 +86,7 @@ export function ExecutiveSummary({ scope }: ExecutiveSummaryProps) {
   };
 
   return (
-    <section className={s.root} data-testid="executive-summary" aria-label="エグゼクティブサマリー">
+    <section className={s.root} data-surface="card" data-testid="executive-summary" aria-label="エグゼクティブサマリー">
       <div className={s.head}>
         <Text as="h3" weight="semibold" size={400}>エグゼクティブサマリー</Text>
         <Badge appearance={edited?.human ? 'filled' : 'tint'} color={edited?.human ? 'brand' : 'informative'} data-testid="summary-origin">{label}</Badge>
@@ -127,7 +129,7 @@ export function ExecutiveSummary({ scope }: ExecutiveSummaryProps) {
             <Text weight="semibold" className={s.label}>根拠の数値</Text>
             <Text className={s.body} data-testid="summary-evidence">
               {edited ? shown.evidence : generated.evidence.map((p, i) => (
-                typeof p === 'string' ? <span key={i}>{p}</span> : <NumericValue key={i} sourceIds={p.sourceIds}>{partText(p)}</NumericValue>
+                typeof p === 'string' ? <Fragment key={i}>{p}</Fragment> : <NumericValue key={i} sourceIds={p.sourceIds}>{partText(p)}</NumericValue>
               ))}
             </Text>
           </div>

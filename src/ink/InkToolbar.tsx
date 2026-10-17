@@ -6,6 +6,7 @@ import {
   Eraser24Regular, EraserSegment24Regular, Flow24Regular, Highlight24Regular, ImageAdd24Regular, Lasso24Regular, Line24Regular, Note24Regular,
   RectangleLandscape24Regular, TextT24Regular,
 } from '@fluentui/react-icons';
+import { MIN_TARGET_PX } from '../theme/tokens';
 import type { FluentIcon } from '@fluentui/react-icons';
 import { newId, type ToolId } from './model';
 import { selectCanRedo, selectCanUndo, selectBoard, useInk } from './store';
@@ -45,9 +46,9 @@ const useStyles = makeStyles({
     padding: tokens.spacingHorizontalXS,
     backgroundColor: tokens.colorNeutralBackground2,
     borderRadius: tokens.borderRadiusMedium,
-    border: `1px solid ${tokens.colorNeutralStroke2}`,
+    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
   },
-  swatch: { width: '16px', height: '16px', borderRadius: '50%', border: `1px solid ${tokens.colorNeutralStroke1}`, display: 'inline-block' },
+  swatch: { width: '16px', height: '16px', borderRadius: tokens.borderRadiusCircular, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`, display: 'inline-block' },
   size: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalXS, minWidth: '140px' },
   compact: { width: '96px', boxSizing: 'border-box' },
   sizeCompact: { minWidth: '72px', width: '72px' },
@@ -142,7 +143,7 @@ export function InkToolbar({ boardId, label = 'インクの道具', whiteboard =
         ))}
         <span className={mergeClasses(s.size, compact && s.sizeCompact)}>
           {!compact && <Text size={200}>太さ</Text>}
-          <Slider aria-label="線の太さ" style={compact ? { minWidth: 0, width: 72 } : undefined} min={1} max={12} step={1} value={size} onChange={(_, d) => st().setSize(d.value)} />
+          <Slider aria-label="線の太さ" style={compact ? { minWidth: 0, width: 72, minHeight: MIN_TARGET_PX } : undefined} input={{ style: { height: '100%' } }} min={1} max={12} step={1} value={size} onChange={(_, d) => st().setSize(d.value)} />
         </span>
       </div>
       {message && <Text role="status" size={200}>{message}</Text>}

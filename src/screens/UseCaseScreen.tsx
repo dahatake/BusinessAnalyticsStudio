@@ -2,8 +2,9 @@
 // ユースケースごとにプレゼン用アニメーションを作って、その場で再生する。端末内だけで動き、AI には接続しない。
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Badge, Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Input, MessageBar, MessageBarBody, Text, Textarea, makeStyles, tokens,
+  Badge, Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Input, MessageBar, MessageBarBody, Text, Textarea, makeStyles, tokens,
 } from '@fluentui/react-components';
+import { Dialog, DialogSurface } from '../components/Dialog';
 import { Add24Regular } from '@fluentui/react-icons';
 import { create } from 'zustand';
 import { Panel } from '../components/Panel';
@@ -32,7 +33,8 @@ const useStyles = makeStyles({
   row: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalS, rowGap: tokens.spacingVerticalXS },
   form: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM },
   /** 画面の下に浮かぶショーコントロールバーに、最後の操作が隠れないよう余白を取る（狭い画面でも押せる） */
-  editor: { paddingBottom: '96px' },
+  // （余白の段ではなく、重なるバーの高さの分の領域として確保する）
+  editor: { '::after': { content: '""', display: 'block', height: '96px' } },
   stepForm: {
     display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS, padding: tokens.spacingHorizontalM,
     border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium,
