@@ -104,3 +104,12 @@
 ## 20. Project の外部連携選択（FR-201 AC-440。project-integrations.spec.ts が前提にする画面の探し方）
 - Project 画面（stepper が見える）に region「外部連携」。外部連携カタログの各連携が checkbox（aria-label は連携の名称。状態が「廃止」のものは disabled）。button「連携の選択を保存」で保存（端末内。開き直しても残る）。保存しない選択は残らない。
 - 入口: メイン画面の Project 名のリンク（role=link、名前は Project 名）をクリックすると、その Project 画面（stepper が見える）が開く。ブラウザーの戻る（history back）でメイン画面に戻る。
+
+## 21. Fluent 2 の全画面適用・ピン止め・ビュー切替（NFR-UX-015〜017・NFR-A11Y-009・FR-215〜218。fluent-design.spec.ts・a11y-all-screens.spec.ts・pin.spec.ts・view-switch.spec.ts が前提にする画面の探し方）
+- 全画面（画面の登録）: 左メニュー navigation「画面」の `nav-<key>`（`nav-toggle` を除く）を表示の順に走査する（`support/screens.ts` の `listScreenKeys`）。§4 の主要画面がすべて含まれること。表示幅が狭く左メニューが隠れるときは button「メニュー」から開く。
+- カード: Fluent のカードの面に `data-surface="card"`（影の段 4 の判定に使う）。メニューは role=menu、ツールチップは role=tooltip、ダイアログは role=dialog（コマンドパレット）。
+- ピン止め（FR-215）: フォーカスしたコンポーネントの `component-actions` に button 1 つ。名前は「ピン止めする」（固定なし）／「ピン止めを外す」（固定中）。`aria-pressed`（false／true）と `data-icon-variant`（`regular`／`filled`）を持ち、ツールチップ（role=tooltip）の文言も名前と同じ。状態は端末内のレイアウトとして保存され、再読込で復元される。
+- ビュー（FR-217・FR-218・NFR-UX-018）: `component-actions` に button 1 つ。名前は「ビュー」で始まり、見える文字に現在の表示モード（「2D」か「3D」）と世界の表示（「現実世界」「デジタル世界」「両方」）を含む。押すと role=menu が開き、menuitemradio「2D」「3D」「現実世界」「デジタル世界」「両方」（選べないものは disabled と理由の文字）。Esc で何も変えずに閉じる。
+- フック `t.view.state(key)`（§6 に追加）: そのコンポーネントが表示している状態 `{ mode: '2d'|'3d', world: 'real'|'digital'|'both', itemIds: string[], selectedIds: string[], twinLinks: [realId, digitalId][] }`。itemIds は表示中の項目（非表示の世界の項目を含めない）、twinLinks は線か印で表示中のツイン関係。
+- 顧客パックの世界区分（FR-213・FR-214。§3 の項目名）: `entities.json` の `entities[].world`（`"real"`／`"digital"`。ないときは区分なし）と `entities[].kind`（種別）、ツイン関係は `entities.json` の `twins: [{ realId, digitalId, relation, sourceIds }]`。お手本パック（mono・koto）は全エンティティに world を持ち、設備（エンティティの階層の「設備」のレベル）のツイン関係を含む。区分なしの項目は「両方」で文字「区分なし」を示す。
+- 選択・絞り込み・時刻: `selection-indicator`（選択中の対象の文字）、一覧表（`component-table`）の textbox「絞り込み」、slider「時間軸」（§15 の AC-185 と同じ）。
