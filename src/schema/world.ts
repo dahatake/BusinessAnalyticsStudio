@@ -145,5 +145,27 @@ export function countUnclassified(entitiesJson: unknown): number {
   return list.filter((e) => !(e && typeof e === 'object' && isWorld((e as EntityLike).world))).length;
 }
 
+/**
+ * 世界区分（world）か種別（kind）のないエンティティの位置（FR-213 AC-509）。
+ * 生成パイプラインが作る顧客パックでは「区分なし」を許さないので、⑤スキーマ検証と ⑥verify がこれをエラーにする。
+ * 手作りの顧客パックでは使わない（区分なしは警告だけ。AC-490）。位置（path）は entities.json の中の位置。
+ */
+export function listUnclassified(entitiesJson: unknown): Array<Issue & { id?: string }> {
+  const list = (entitiesJson as { entities?: unknown } | undefined)?.entities;
+  if (!Array.isArray(list)) return [];
+  const out: Array<Issue & { id?: string }> = [];
+  list.forEach((e, i) => {
+    const o = (e && typeof e === 'object' ? e : {}) as EntityLike;
+    const id = typeof o.id === 'string' ? { id: o.id } : {};
+    if (o.world === undefined) {
+      out.push({ path: ['entities', i, 'world'], message: `世界区分（world）がありません（${WORLDS.join('／')} のどれかを付けてください）`, ...id });
+    }
+    if (o.kind === undefined) {
+      out.push({ path: ['entities', i, 'kind'], message: `種別（kind）がありません（${ENTITY_KINDS.join('／')} のどれかを付けてください）`, ...id });
+    }
+  });
+  return out;
+}
+
 /** エンティティの世界区分（ないものは undefined＝区分なし） */
 export const worldOf = (e: { world?: unknown } | undefined): World | undefined => (isWorld(e?.world) ? e!.world as World : undefined);
