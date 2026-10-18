@@ -11,6 +11,9 @@ const PALETTE = ['#4fc3f7', '#ffb74d', '#81c784', '#ba68c8', '#e57373', '#4db6ac
 
 /** ラベルを全部出すと重なるので、項目が多いときは選択中のものだけに出す */
 export const LABEL_LIMIT = 40;
+/** これを超えると簡略表示（粗い球・つながりの上限） */
+export const HEAVY_LIMIT = 200;
+const LINK_LIMIT = 300;
 
 export interface Items3DSceneProps {
   label: string;
@@ -30,13 +33,16 @@ export default function Items3DScene({ label, items, links, selected, axes, onSe
   const pos = useMemo(() => new Map(items.map((i) => [i.id, [toSpace(i.x), toSpace(i.y), toSpace(i.z)] as [number, number, number]])), [items]);
   const half = 5.4;
   const showAll = items.length <= LABEL_LIMIT;
+  // 件数が多いときは球を粗い形にし、つながりの線も上限までにする（FR-147・FR-171 の負荷対策。選択中のつながりは常に描く）
+  const heavy = items.length > HEAVY_LIMIT;
+  const drawLinks = heavy ? links.filter((l, i) => i < LINK_LIMIT || selected.has(l.from) || selected.has(l.to)) : links;
   return (
     <DiagramCanvas label={label} cameraPosition={[9, 7, 11]}>
       <gridHelper args={[10, 10, '#607d8b', '#37474f']} position={[0, -5, 0]} />
       {axes?.x ? <Axis at={[half, -5, 0]} text={`${axes.x} →`} /> : null}
       {axes?.y ? <Axis at={[-half, half - 0.4, 0]} text={`↑ ${axes.y}`} /> : null}
       {axes?.z ? <Axis at={[0, -5, half]} text={`${axes.z} →`} /> : null}
-      {links.map((l) => {
+      {drawLinks.map((l) => {
         const a = pos.get(l.from);
         const b = pos.get(l.to);
         if (!a || !b) return null;
@@ -51,7 +57,7 @@ export default function Items3DScene({ label, items, links, selected, axes, onSe
         return (
           <group key={it.id} position={p}>
             <mesh onClick={(ev) => { ev.stopPropagation(); onSelect(it.id, ev.ctrlKey || ev.metaKey || ev.shiftKey); }} scale={on ? 1.4 : 1}>
-              <sphereGeometry args={[r, 16, 12]} />
+              <sphereGeometry args={heavy ? [r, 6, 4] : [r, 16, 12]} />
               <meshStandardMaterial color={color} emissive={on ? color : '#000000'} emissiveIntensity={on ? 0.6 : 0} />
             </mesh>
             {showAll || on ? <Html center position={[0, r + 0.25, 0]} zIndexRange={[5, 0]}><span style={sceneLabelStyle} title={it.label}>{it.label}</span></Html> : null}

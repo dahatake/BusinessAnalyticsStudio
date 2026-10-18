@@ -110,13 +110,10 @@ function TableScreen() {
   const [text, setText] = useRetainedState('table.filter', '');
   const q = text.trim().toLowerCase();
   const base = fallbackNodes ?? (editMode ? nodes : filtered);
-  // 文字での絞り込みは、行に見えている文字（状態「選択中」「関連」・名称・ID・種別）に当てる。選択を保ったまま、行の先頭の文字で絞り込んでも、その行が残る
   const selected = useMemo(() => new Set(selectedIds), [selectedIds]);
-  const rowState = (n: GraphNode): string => (selected.has(n.id) ? '選択中' : related?.has(n.id) ? '関連' : '');
   const visible = useMemo(
-    () => (q ? base.filter((n) => `${rowState(n)} ${n.label} ${n.id} ${KIND_LABELS[n.kind]}`.toLowerCase().includes(q)) : base),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [base, q, selected, related],
+    () => (q ? base.filter((n) => `${n.label} ${n.id} ${KIND_LABELS[n.kind]}`.toLowerCase().includes(q)) : base),
+    [base, q],
   );
   const count = q ? visible.length : fallbackNodes ? fallbackNodes.length : filteredCount;
   // FR-035: 親子（parentId）のある項目は、上位の行を展開すると下位の行が出て、折りたたむと隠れる（既定は展開）
