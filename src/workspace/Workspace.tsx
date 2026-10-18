@@ -1,19 +1,23 @@
 // ワークスペース: レイアウトの木（分割とタブ）を描く。境界はドラッグでもキーボードでも動かせる（FR-109、NFR-A11Y-004）。
 import { createPortal, flushSync } from 'react-dom';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type PointerEvent } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties, type FocusEvent, type KeyboardEvent, type PointerEvent } from 'react';
 import { Button, Tab, TabList, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { MOTION, followDurationOverride } from '../theme/tokens';
 import { useSnapMotion, motionAllowed } from '../motion/useFoldMotion';
 import { prefersReducedMotion, useAnimation } from '../store/animation';
 import { SNAP_LABEL, defaultSnapKind, nearestCorner, snapKindsFor, snapRect, type Edge, type SnapKind, type SnapOpts } from './snap';
 import type { ScreenDefinition } from '../screens/types';
-import { effectiveLayout, useLayout, clampFloat, type FloatRect } from '../store/layout';
+import { effectiveLayout, useLayout, clampFloat, isPinned, type FloatRect } from '../store/layout';
 import { EXPAND_RATIO, useSettings, type ExpandPosition } from '../store/settings';
 import { keysOf, prune, type DropZone, type LayoutNode, type Path, type SplitNode } from './layoutModel';
-import { applyAutoSize, fitMinWidth } from './autosize';
+import { MIN_COMPONENT_WIDTH, applyAutoSize, fitMinWidth } from './autosize';
 import { PERSONA_PRIMARY } from './persona';
 import { PaneContext, type PaneInfo } from './PaneContext';
 import { COMPACT_CELL_HEIGHT, isCompactWidth, stackedLeaves } from './compact';
-import { clampInto, placeNew, resolveOverlaps, type PxMap, type PxRect } from './freeLayout';
+import { clampInto, placeNew, resolveAround, resolveOverlaps, type PxMap, type PxRect } from './freeLayout';
+import { PIN_MOVE_REASON, PIN_NO_ROOM_REASON, PIN_TABS_REASON } from './paneActions';
+import { paneCommands } from './paneCommands';
+import { registerCommands } from '../commands/registry';
 
 const useStyles = makeStyles({
   // ドラッグ中に、置ける場所をドロップの前に示す（FR-142）。Fluent 2 のブランドの色トークンと 4px グリッド
@@ -50,6 +54,14 @@ const useStyles = makeStyles({
     border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`,
   },
   root: { position: 'relative', display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0, minWidth: 0 },
+  // 操作の結果・できない理由の通知（ピン止めの切替・ピン止め中の移動など。FR-215 AC-494・FR-216 AC-496/505）。支援技術には role=status で伝える
+  notice: {
+    position: 'absolute', zIndex: 1100, top: tokens.spacingVerticalS, left: '50%', transform: 'translateX(-50%)', maxWidth: '90%',
+    paddingBlock: tokens.spacingVerticalXS, paddingInline: tokens.spacingHorizontalM, borderRadius: tokens.borderRadiusMedium,
+    backgroundColor: tokens.colorNeutralBackgroundInverted, color: tokens.colorNeutralForegroundInverted, boxShadow: tokens.shadow8,
+    pointerEvents: 'none',
+  },
+  noticeIdle: { position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' },
   // 分割の木を入れる箱。拡大表示中は、余白で残りの領域に収める（FR-174）
   treeBox: { display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0, minWidth: 0, boxSizing: 'border-box' },
   // 自由配置・拡大表示のコンポーネントの置き場（作業領域に対する絶対配置。重なりを許す。FR-173）
@@ -57,24 +69,28 @@ const useStyles = makeStyles({
   // 移動中・直後の滑らかな動き（FR-185）。OS の「動きの軽減」が有効なときは途中の動きを省く（AC-394）
   floatAnimated: {
     transitionProperty: 'left, top, width, height',
-    transitionDuration: '200ms',
-    transitionTimingFunction: 'ease-out',
-    '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0.01ms' },
+    transitionDuration: tokens.durationNormal,
+    transitionTimingFunction: tokens.curveDecelerateMid,
+    '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0s' },
   },
   // 動かしているコンポーネントは、ポインターに短い遅れでつながって動く（フレームごとに動きが見える速さ。FR-185 AC-392）
   floatFollow: {
+    ...followDurationOverride,
     transitionProperty: 'left, top, width, height',
-    transitionDuration: '160ms',
-    transitionTimingFunction: 'linear',
-    '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0.01ms' },
+    // ポインターへの追従: 等速・短時間（Q-039 A）
+    transitionDuration: MOTION.follow.duration,
+    transitionTimingFunction: MOTION.follow.easing,
+    '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0s' },
   },
   // 境界のドラッグ中は、大きさの変化を滑らかにつなぐ（FR-185 AC-393）
   resizing: {
     '& [data-cell="true"]': {
+      ...followDurationOverride,
       transitionProperty: 'flex-grow',
-      transitionDuration: '90ms',
-      transitionTimingFunction: 'linear',
-      '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0.01ms' },
+      // ポインターへの追従: 等速・短時間（Q-039 A。遷移のアニメーションの対象外）
+      transitionDuration: MOTION.follow.duration,
+      transitionTimingFunction: MOTION.follow.easing,
+      '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0s' },
     },
   },
   split: { display: 'flex', flex: '1 1 0', minWidth: 0, minHeight: 0 },
@@ -196,6 +212,11 @@ function Slot({ host, hidden }: { host: HTMLElement; hidden?: boolean }) {
   return <div ref={ref} style={hidden ? { display: 'none' } : FILL} />;
 }
 
+/** 画面の本体を、PaneInfo と画面が変わらない限り再描画しない箱（境界のドラッグ中の再描画を減らす。FR-185 AC-393） */
+const PanePortalBody = memo(function PanePortalBody({ Screen, info }: { Screen: ComponentType; info: PaneInfo }) {
+  return <PaneContext.Provider value={info}><Screen /></PaneContext.Provider>;
+});
+
 /** 境界の両側のコンポーネント（それぞれの先頭のキー）で、動かす分割を決める。自動の調整・最小の幅でタブにまとめた見た目でも、保存した木の正しい境界を動かす。 */
 function Separator({ a, b, dir, size, onActive }: { a: string; b: string; dir: 'row' | 'col'; size: number; onActive: (on: boolean) => void }) {
   const s = useStyles();
@@ -266,6 +287,18 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   const snapMotion = useSnapMotion();
   const minimizedKeys = useLayout((st) => st.minimized[st.persona]);
   const minSet = useMemo(() => new Set(minimizedKeys ?? []), [minimizedKeys]);
+  // ピン止めしたコンポーネントと、ピン止めした位置と大きさ（作業領域に対する割合。FR-215・FR-216）
+  const pinnedMap = useLayout((st) => st.pinned[st.persona]);
+  const pinSet = useMemo(() => new Set(Object.keys(pinnedMap ?? {})), [pinnedMap]);
+  // 操作の結果・できない理由の通知（role=status）
+  const [notice, setNotice] = useState<{ text: string; n: number } | null>(null);
+  const noticeTimer = useRef<number | null>(null);
+  const announce = useCallback((text: string) => {
+    setNotice((cur) => ({ text, n: (cur?.n ?? 0) + 1 }));
+    if (noticeTimer.current !== null) window.clearTimeout(noticeTimer.current);
+    noticeTimer.current = window.setTimeout(() => setNotice(null), 4000);
+  }, []);
+  useEffect(() => () => { if (noticeTimer.current !== null) window.clearTimeout(noticeTimer.current); }, []);
   const actions = useLayout.getState;
   const byKey = useCallback((k: string) => screens.find((sc) => sc.key === k), [screens]);
   /** 操作中（フォーカスのある）コンポーネント、最後に選んだタブ、ワークスペースの幅 */
@@ -284,19 +317,22 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   dragRef.current = drag;
   // 幅が狭い（または拡大率が高い）ときは、分割を縦に積む。レイアウトの木は変えず、描き方だけを替える。
   const rootRef = useRef<HTMLDivElement>(null);
-  const [compact, setCompact] = useState(false);
+  const [narrowWs, setCompact] = useState(false);
   // 木の外に出して描くコンポーネント: 拡大表示中はそれ 1 つだけ（ほかは残りの領域に収める）、それ以外は自由配置したもの（FR-173・FR-174）。
   // 狭い画面（縦積み）では自由配置を使わない。
   const baseKeys = useMemo(() => new Set(keysOf(base)), [base]);
+  // 縮退: 幅が狭いとき、または、ピン止めの比率から求めた幅が最小の幅（PARAM-034）を下回るときは、縦積みにする（FR-216 AC-497）
+  const pinTooNarrow = width > 0 && Object.entries(pinnedMap ?? {}).some(([k, r]) => baseKeys.has(k) && r.w * width < MIN_COMPONENT_WIDTH);
+  const compact = narrowWs || pinTooNarrow;
   const expandedOut = expandedKey !== null && baseKeys.has(expandedKey) ? expandedKey : null;
   const live = drag?.live ?? null;
   const floatKeys = useMemo(
     () => {
       if (compact || expandedOut) return [];
       const usable = (k: string) => baseKeys.has(k) && !!byKey(k)?.component;
-      return Object.keys(live ?? floatMap ?? {}).filter(usable);
+      return [...new Set([...Object.keys(live ?? floatMap ?? {}), ...pinSet])].filter(usable);
     },
-    [compact, expandedOut, floatMap, live, baseKeys, byKey],
+    [compact, expandedOut, floatMap, live, baseKeys, byKey, pinSet],
   );
   // 境界のドラッグ中と、移動の直後（押し出された動きが終わるまで）だけ、動きをつなぐ（FR-185）
   const [resizing, setResizing] = useState(false);
@@ -333,13 +369,34 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     const isMax = maximized === key;
     const isFloat = floatKeys.includes(key);
     const zRank = zOrder.indexOf(key);
+    const pinned = pinSet.has(key);
+    const label = byKey(key)?.label ?? key;
     return {
       key,
+      pinned,
+      togglePin: () => {
+        // ピン止めを外す: すぐに動かせる（FR-216。一時的な固定）
+        if (isPinned(actions(), key)) { actions().setPinned(key, null); announce(`${label}のピン止めを外しました`); return; }
+        // ピン止めする: いまの位置と大きさを、作業領域に対する比率で保持する。ほかは自由配置にして、重ならない位置に置く（FR-216）
+        // 操作中のコンポーネントを大きくする自動の調整（FR-143）は、利用者が置いた配置ではないので、外した配置で測る（ピン止め中は大きさを変えない。FR-143 の例外）
+        if (focusKey !== null && !compact) flushSync(() => setFocusKey(null));
+        const m = measureAll();
+        if (m && m.rects[key]) {
+          const next = resolveAround(m.rects, key, m.bounds, pinSet) ?? m.rects;
+          const fr = toFractions(next, m.bounds);
+          actions().setFloats(fr);
+          actions().setPinned(key, fr[key]!);
+        } else {
+          actions().setPinned(key, floatMap?.[key] ?? { x: 0, y: 0, w: 0.5, h: 0.5 });
+        }
+        announce(`${label}をピン止めしました`);
+      },
       maximized: isMax,
       expanded: expandedOut === key,
       toggleExpand: () => actions().toggleExpanded(key),
       floating: isFloat,
       toggleFloat: () => {
+        if (pinned) { announce(PIN_MOVE_REASON); return; }
         // 自由配置は、すべてのコンポーネントを重ならない位置に置く配置。戻すときは分割の配置にまとめて戻す（FR-173・FR-184）
         if (isFloat || (floatMap && key in floatMap)) { actions().clearFloats(); return; }
         const m = measureAll();
@@ -352,11 +409,12 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       toggleMinimize: () => a.setMinimized(key, !minSet.has(key)),
       visible: group.length === 1 || active === key,
       inTabs: group.length > 1,
-      peers: keysOf(layout).filter((k) => !group.includes(k)).map((k) => ({ key: k, label: byKey(k)?.label ?? k })),
+      peers: keysOf(layout).filter((k) => !group.includes(k) && !pinSet.has(k)).map((k) => ({ key: k, label: byKey(k)?.label ?? k })),
       toggleMaximize: () => actions().setMaximized(actions().maximized === key ? null : key),
       restore: () => actions().setMaximized(null),
       hide: () => a.hideComponent(key),
       move: (d) => {
+        if (pinned) { announce(PIN_MOVE_REASON); return; }
         // 自由配置のコンポーネントは、同じ向きに作業領域の 5% ずつ動かす（ドラッグなしの手段。FR-173 AC-349）。ぶつかるものは押し出す（FR-184）
         const cur = isFloat ? floatMap?.[key] : undefined;
         const m = cur ? measureAll() : null;
@@ -365,13 +423,35 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
         const next = clampFloat({ ...cur, x: cur.x + (d === 'right' ? step : d === 'left' ? -step : 0), y: cur.y + (d === 'down' ? step : d === 'up' ? -step : 0) });
         commitFree(key, { x: next.x * m.bounds.w, y: next.y * m.bounds.h, w: next.w * m.bounds.w, h: next.h * m.bounds.h }, m);
       },
-      toggleDirection: () => a.toggleDirection(key),
-      snapTo: (kind) => a.snapTo(key, kind, { tabTarget: keysOf(layout).find((k) => !group.includes(k)) }),
+      toggleDirection: () => (pinned ? announce(PIN_MOVE_REASON) : a.toggleDirection(key)),
+      snapTo: (kind) => (pinned ? announce(PIN_MOVE_REASON) : a.snapTo(key, kind, { tabTarget: keysOf(layout).find((k) => !group.includes(k) && !pinSet.has(k)) })),
       snapKinds: snapKindsFor(compact),
-      mergeInto: (t) => a.mergeTabs(key, t),
-      untab: () => a.untab(key),
+      mergeInto: (t) => (pinned || pinSet.has(t) ? announce(PIN_TABS_REASON) : a.mergeTabs(key, t)),
+      untab: () => (pinned ? announce(PIN_TABS_REASON) : a.untab(key)),
       startDrag: (e) => startDrag(key, e),
     };
+  };
+
+  /**
+   * 各コンポーネントへ渡す PaneInfo を、値が変わらない限り同じ参照にする。境界のドラッグ中などに作業領域が再描画されても、
+   * 中身の画面（重い）を再描画しないため（FR-185 AC-393）。操作の関数は、呼ばれた時点の最新の関数に委ねる（古い状態を掴まない）。
+   */
+  const paneCache = useRef(new Map<string, { sig: string; info: PaneInfo; latest: PaneInfo }>());
+  const stablePane = (key: string, group: string[], active: string): PaneInfo => {
+    const fresh = pane(key, group, active);
+    const data: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(fresh)) if (typeof v !== 'function') data[k] = v;
+    const sig = JSON.stringify(data);
+    const hit = paneCache.current.get(key);
+    if (hit && hit.sig === sig) { hit.latest = fresh; return hit.info; }
+    const entry: { sig: string; info: PaneInfo; latest: PaneInfo } = { sig, info: fresh, latest: fresh };
+    const info: Record<string, unknown> = { ...data };
+    for (const [k, v] of Object.entries(fresh)) {
+      if (typeof v === 'function') info[k] = (...args: unknown[]) => (entry.latest as unknown as Record<string, (...a: unknown[]) => unknown>)[k]!(...args);
+    }
+    entry.info = info as unknown as PaneInfo;
+    paneCache.current.set(key, entry);
+    return entry.info;
   };
 
   /** 作業領域の中のすべてのコンポーネントの位置と大きさ（px。作業領域の左上が原点）と、作業領域の大きさ。測れなければ null（FR-184） */
@@ -390,26 +470,52 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       if (!r || r.width <= 0 || r.height <= 0) { const act = groups.get(k)?.active; r = act ? elOf(act)?.getBoundingClientRect() : undefined; }
       if (!r || r.width <= 0 || r.height <= 0) continue;
       viewport[k] = r;
-      rects[k] = clampInto({ x: r.left - a.left, y: r.top - a.top, w: r.width, h: r.height }, { w: a.width, h: a.height });
+      // ピン止めしたものは、保持している比率の位置と大きさ（測った値の丸め誤差を持ち込まない）
+      const pr = floatKeys.includes(k) ? pinnedMap?.[k] : undefined;
+      rects[k] = pr
+        ? { x: pr.x * a.width, y: pr.y * a.height, w: pr.w * a.width, h: pr.h * a.height }
+        : clampInto({ x: r.left - a.left, y: r.top - a.top, w: r.width, h: r.height }, { w: a.width, h: a.height });
     }
     return { rects, bounds: { w: a.width, h: a.height }, viewport };
   };
   const toFractions = (m: PxMap, b: { w: number; h: number }): Record<string, FloatRect> =>
     Object.fromEntries(Object.entries(m).map(([k, r]) => [k, { x: r.x / b.w, y: r.y / b.h, w: r.w / b.w, h: r.h / b.h }]));
   /** `key` を `target` に置き、ぶつかるものを押し出して、すべてを自由配置として保存する（FR-173・FR-184） */
-  const commitFree = (key: string, target: PxRect, m: NonNullable<ReturnType<typeof measureAll>>) => {
-    const next = resolveOverlaps({ ...m.rects, [key]: target }, key, m.bounds);
+  const commitFree = (key: string, target: PxRect, m: NonNullable<ReturnType<typeof measureAll>>): boolean => {
+    // ピン止めしたものは動かさない。置き場所が残っていなければ、元の位置のまま理由を示す（FR-216 AC-496・AC-505）
+    const next = resolveAround({ ...m.rects, [key]: target }, key, m.bounds, pinSet);
+    if (!next) { announce(PIN_NO_ROOM_REASON); return false; }
     actions().setFloats(toFractions(next, m.bounds));
+    return true;
   };
 
   // 自由配置があるとき、あとから分割の木へ入ったコンポーネント（再表示など）は、空いた場所へ置く。木のものが自由配置と重ならないようにする（FR-184）
-  const treeFree = useMemo(() => (compact || expandedOut || floatKeys.length === 0 ? [] : keysOf(treeBase).filter((k) => !!byKey(k)?.component)), [compact, expandedOut, floatKeys, treeBase, byKey]);
+  // ピン止めしたもので、自由配置に位置がないもの（非表示から再表示したものなど）も、ピン止めした位置へ置き直す（FR-216 AC-505）
+  const treeFree = useMemo(() => {
+    if (compact || expandedOut || floatKeys.length === 0) return [];
+    const pending = [...pinSet].filter((k) => baseKeys.has(k) && !!byKey(k)?.component && !(floatMap && k in floatMap));
+    return [...pending, ...keysOf(treeBase).filter((k) => !!byKey(k)?.component)];
+  }, [compact, expandedOut, floatKeys, treeBase, byKey, pinSet, baseKeys, floatMap]);
   useEffect(() => {
     if (drag || treeFree.length === 0 || width <= 0 || height <= 0) return;
     const b = { w: width, h: height };
     let rects: PxMap = {};
     for (const [k, r] of Object.entries(floatMap ?? {})) if (baseKeys.has(k)) rects[k] = clampInto({ x: r.x * b.w, y: r.y * b.h, w: r.w * b.w, h: r.h * b.h }, b);
-    for (const k of treeFree) rects = placeNew(rects, k, { w: b.w * 0.3, h: b.h * 0.4 }, b);
+    for (const k of treeFree) {
+      const pr = pinnedMap?.[k];
+      if (pr) {
+        // ピン止めしたものが再表示されたとき: ピン止めした比率の位置に戻し、そこにあるものを押し出す（FR-216 AC-505）
+        const others = new Set([...pinSet].filter((p) => p !== k && p in rects));
+        const at = { x: pr.x * b.w, y: pr.y * b.h, w: pr.w * b.w, h: pr.h * b.h };
+        rects = resolveAround({ ...rects, [k]: at }, k, b, others) ?? resolveOverlaps({ ...rects, [k]: at }, k, b);
+      } else {
+        const fixed = new Set([...pinSet].filter((p) => p in rects));
+        const placed = placeNew(rects, k, { w: b.w * 0.3, h: b.h * 0.4 }, b);
+        // 新しく置いたものがピン止めしたものを動かしたときは、ピン止めしたものを動かさずに置き直す
+        const moved = [...fixed].some((p) => placed[p]!.x !== rects[p]!.x || placed[p]!.y !== rects[p]!.y || placed[p]!.w !== rects[p]!.w || placed[p]!.h !== rects[p]!.h);
+        rects = moved ? (resolveAround({ ...rects, [k]: placed[k]! }, k, b, fixed) ?? placed) : placed;
+      }
+    }
     actions().setFloats(toFractions(rects, b));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [treeFree, width, height]);
@@ -443,6 +549,16 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   };
   if (layout) collect(layout);
   outKeys.forEach((k) => groups.set(k, { tabs: [k], active: k }));
+
+  // 見出しのメニューの操作を、コマンドパレットからも実行できるようにする（操作中のコンポーネントが対象。NFR-UX-018 AC-481・FR-215 AC-494）
+  const lastPaneKey = useRef<string | null>(null);
+  const currentPane = useRef<() => PaneInfo | null>(() => null);
+  currentPane.current = () => {
+    const k = focusKey ?? lastPaneKey.current;
+    const g = k ? groups.get(k) : undefined;
+    return k && g ? pane(k, g.tabs, g.active) : null;
+  };
+  useEffect(() => registerCommands(() => paneCommands(() => currentPane.current(), announce)), [announce]);
 
   const renderLeaf = (key: string, hidden = false) => {
     if (!byKey(key)?.component) return null;
@@ -498,7 +614,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
 
   const renderStack = (root: LayoutNode): JSX.Element => (
     <div className={s.stack}>
-      {stackedLeaves(root).map((leafNode, i) => (
+      {/* ピン止めしたものを先頭に置く（FR-216 AC-497） */}
+      {[...stackedLeaves(root)].sort((x, y) => Number(y.tabs.some((k) => pinSet.has(k))) - Number(x.tabs.some((k) => pinSet.has(k)))).map((leafNode, i) => (
         <div key={`k${leafNode.tabs.join('+')}`} className={s.stackCell} data-stacked={i} style={leafNode.tabs.every((k) => minSet.has(k)) && maximized === null ? { height: MINIMIZED_HEIGHT } : undefined}>
           {render(leafNode, [i])}
         </div>
@@ -512,6 +629,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     const root = rootRef.current;
     if (!root) return out;
     for (const k of keysOf(layout)) {
+      // ピン止めしたものは置き先（分割・タブへの入れ先）にしない。上へ置いたものは自由配置で重ならない最寄りの位置へ（FR-216 AC-496）
+      if (pinSet.has(k)) continue;
       const r = root.querySelector(`[data-testid="component-${k}"]`)?.getBoundingClientRect();
       if (r && r.width > 0 && r.height > 0) out[k] = r;
     }
@@ -575,9 +694,10 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       corner: edges.length > 0
         ? (horizontal && vertical ? (`${vertical === 'top' ? 't' : 'b'}${horizontal === 'left' ? 'l' : 'r'}` as SnapOpts['corner']) : nearestCorner((x - area.left) / area.width, (y - area.top) / area.height))
         : prev!.opts.corner,
-      tabTarget: (edges.length > 0 ? hitKey : null) ?? prev?.opts.tabTarget ?? keysOf(layout).find((k) => k !== key),
+      tabTarget: (edges.length > 0 ? hitKey : null) ?? prev?.opts.tabTarget ?? keysOf(layout).find((k) => k !== key && !pinSet.has(k)),
     };
-    if (opts.tabTarget === key) opts.tabTarget = keysOf(layout).find((k) => k !== key);
+    // タブ化の相手にピン止めしたものを選ばない（FR-216 AC-496・AC-505）
+    if (opts.tabTarget === key || (opts.tabTarget && pinSet.has(opts.tabTarget))) opts.tabTarget = keysOf(layout).find((k) => k !== key && !pinSet.has(k));
     return { edges: useEdges, kind, opts, px: edges.length > 0 ? x : prev!.px, py: edges.length > 0 ? y : prev!.py };
   };
 
@@ -586,6 +706,15 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     if (e.button !== 0) return;
     const sx = e.clientX;
     const sy = e.clientY;
+    if (pinSet.has(key)) {
+      // ピン止め中は動かさず、理由を示す（FR-216 AC-496）。外した後は同じドラッグで動かせる
+      const off = () => { window.removeEventListener('pointermove', mv, true); window.removeEventListener('pointerup', off, true); window.removeEventListener('pointercancel', off, true); };
+      const mv = (ev: globalThis.PointerEvent) => { if (Math.hypot(ev.clientX - sx, ev.clientY - sy) >= DRAG_THRESHOLD_PX) { off(); announce(PIN_MOVE_REASON); } };
+      window.addEventListener('pointermove', mv, true);
+      window.addEventListener('pointerup', off, true);
+      window.addEventListener('pointercancel', off, true);
+      return;
+    }
     let active = false;
     // 動かし始めの配置（画面上の座標）。置き場所の判定と、押し出しの計算の元にする（FR-173・FR-184）
     const start = measureAll();
@@ -602,8 +731,12 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       const self = start?.rects[key];
       if (compact || !start || !area || !self) return null;
       const target: PxRect = { x: px - offX - area.left, y: py - offY - area.top, w: self.w, h: self.h };
-      return toFractions(resolveOverlaps({ ...start.rects, [key]: target }, key, start.bounds), start.bounds);
+      // ピン止めしたものは動かさず、置いたものを重ならない最寄りの位置へ。置き場所がなければ動かし始めの配置のまま（FR-216）
+      const next = resolveAround({ ...start.rects, [key]: target }, key, start.bounds, pinSet);
+      noRoom = next === null;
+      return toFractions(next ?? start.rects, start.bounds);
     };
+    let noRoom = false;
     let lastLive: DragState['live'] = null;
     let lastDrag: DragState | null = null;
     const stop = () => {
@@ -635,6 +768,10 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
         setDrag(null);
         if (active && d?.snap) useLayout.getState().snapTo(key, d.snap.kind, d.snap.opts);
         else if (active && d?.target) useLayout.getState().dropMove(key, d.target.key, d.target.zone);
+        else if (active && lastLive && noRoom) {
+          // 重ならない位置が作業領域に残っていない: ドラッグ前の位置に戻し、理由を示す（FR-216 AC-505）
+          announce(PIN_NO_ROOM_REASON);
+        }
         else if (active && lastLive) {
           useLayout.getState().setFloats(lastLive);
           // 押し出されたものが動き終わるまで、動きをつなぐ（FR-185）
@@ -674,6 +811,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     refocusing.current = false;
   }, [layout]);
   const pendingFocus = useRef<string | null>(null);
+  const focusTimer = useRef<number | null>(null);
+  const focusTimerKey = useRef<string | null>(null);
   useEffect(() => {
     const down = () => { pointerDown.current = true; };
     const up = () => {
@@ -683,12 +822,33 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       // click は pointerup の直後に届くので、その後で反映する
       // ダブルクリック（ヘッダーの拡大表示・復帰など）の途中で、1 回目のクリックのあとにレイアウトが動いて 2 回目が外れたり、
       // 拡大・復帰の前後で大きさが変わったりしないよう、マウスで操作した場合は、ダブルクリックの間隔が過ぎてから反映する（FR-174）。
-      if (k) setTimeout(() => { if (!expandedRef.current) setFocusKey(k); }, POINTER_FOCUS_DELAY_MS);
+      if (focusTimer.current !== null) window.clearTimeout(focusTimer.current);
+      focusTimer.current = null;
+      if (k) {
+        focusTimer.current = window.setTimeout(() => {
+          focusTimer.current = null;
+          if (!expandedRef.current) setFocusKey(k);
+        }, POINTER_FOCUS_DELAY_MS);
+        focusTimerKey.current = k;
+      }
     };
+    // 予約のあいだにほかの手段（ナビ・キーボードなど）でフォーカスが別の場所へ移ったら、予約を捨てる（FR-143・FR-216）。
+    // 捨てないと、画面を切り替えた直後に配置が動き、操作中のコンポーネントの位置が変わる。
+    const focusIn = (e: Event) => {
+      if (focusTimer.current === null) return;
+      const t = e.target as Element | null;
+      const holder = t?.closest?.(`[data-testid="component-${focusTimerKey.current}"]`);
+      if (holder) return;
+      window.clearTimeout(focusTimer.current);
+      focusTimer.current = null;
+    };
+    window.addEventListener('focusin', focusIn, true);
     window.addEventListener('pointerdown', down, true);
     window.addEventListener('pointerup', up, true);
     window.addEventListener('pointercancel', up, true);
     return () => {
+      window.removeEventListener('focusin', focusIn, true);
+      if (focusTimer.current !== null) window.clearTimeout(focusTimer.current);
       window.removeEventListener('pointerdown', down, true);
       window.removeEventListener('pointerup', up, true);
       window.removeEventListener('pointercancel', up, true);
@@ -696,6 +856,10 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   }, []);
   const onFocusCapture = (e: FocusEvent<HTMLDivElement>) => {
     lastFocused.current = e.target as HTMLElement;
+    for (let n: Element | null = e.target as Element; n && n !== e.currentTarget; n = n.parentElement) {
+      const id = n.getAttribute('data-testid') ?? '';
+      if (id.startsWith('component-') && id !== 'component-menu' && id !== 'component-actions') { lastPaneKey.current = id.slice('component-'.length); break; }
+    }
     if (dragRef.current || expandedRef.current || refocusing.current) return;
     const visible = new Set(keysOf(base));
     for (let n: Element | null = e.target as Element; n && n !== e.currentTarget; n = n.parentElement) {
@@ -767,13 +931,14 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
           </>
         );
       })() : null}
+      <div data-testid="workspace-notice" role="status" aria-live="polite" className={notice ? s.notice : s.noticeIdle}>{notice?.text ?? ''}</div>
       <div className={s.treeBox} style={inset}>
         {layout ? (compact ? renderStack(layout) : render(layout, [])) : (
           <Text className={s.empty} size={400}>{outKeys.length > 0 ? '' : '表示中のコンポーネントがありません。左のドックから再表示してください。'}</Text>
         )}
       </div>
       {outKeys.map((k) => {
-        const r = expandedOut === k ? expandRect(expandPos) : (live?.[k] ?? floatMap?.[k]);
+        const r = expandedOut === k ? expandRect(expandPos) : (pinnedMap?.[k] ?? live?.[k] ?? floatMap?.[k]);
         if (!r || !byKey(k)?.component) return null;
         const rank = zOrder.indexOf(k);
         const dragged = drag?.key === k && !!live;
@@ -782,6 +947,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
             key={`float-${k}`}
             className={mergeClasses(s.floatBox, animated && expandedOut !== k && settling !== k ? (dragged ? s.floatFollow : s.floatAnimated) : undefined)}
             data-float={k}
+            data-pinned={pinSet.has(k) ? 'true' : undefined}
             style={{ left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.w * 100}%`, height: `${r.h * 100}%`, zIndex: expandedOut === k ? 500 : dragged ? 600 : 2 + Math.max(rank, 0), ...(settling !== null ? { transition: 'none' } : {}) }}
           >
             <Slot host={hostOf(k)} />
@@ -791,7 +957,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       {[...groups.entries()].map(([key, g]) => {
         const Screen = byKey(key)?.component;
         if (!Screen) return null;
-        return createPortal(<PaneContext.Provider value={pane(key, g.tabs, g.active)}><Screen /></PaneContext.Provider>, hostOf(key), key);
+        return createPortal(<PanePortalBody Screen={Screen} info={stablePane(key, g.tabs, g.active)} />, hostOf(key), key);
       })}
     </div>
   );

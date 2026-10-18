@@ -5,12 +5,12 @@ import { makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 const useStyles = makeStyles({
   selected: {
     backgroundColor: tokens.colorBrandBackground2,
-    boxShadow: `inset 4px 0 0 ${tokens.colorBrandStroke1}`,
+    boxShadow: `inset ${tokens.strokeWidthThickest} 0 0 ${tokens.colorBrandStroke1}`,
     ':hover': { backgroundColor: tokens.colorBrandBackground2Hover },
   },
   related: {
     backgroundColor: tokens.colorNeutralBackground1Selected,
-    boxShadow: `inset 4px 0 0 ${tokens.colorNeutralStroke1}`,
+    boxShadow: `inset ${tokens.strokeWidthThickest} 0 0 ${tokens.colorNeutralStroke1}`,
   },
   hover: {
     outline: `${tokens.strokeWidthThin} dashed ${tokens.colorBrandStroke1}`,

@@ -2,10 +2,12 @@
 // キーは中継プロセスの .env だけに置く。この画面にキーの入力欄・表示はない。
 import { useState } from 'react';
 import {
-  Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, MessageBar, MessageBarBody, Switch, Text,
+  Button, DialogActions, DialogBody, DialogContent, DialogTitle, MessageBar, MessageBarBody, Switch, Text,
 } from '@fluentui/react-components';
+import { Dialog, DialogSurface } from '../components/Dialog';
 import { useAzure } from './useAzure';
 import type { AzureFeature } from './azureClient';
+import { tokens } from '../theme/tokens';
 
 const COPY: Record<AzureFeature, { title: string; service: string; sends: string; fallback: string; label: string }> = {
   speech: {
@@ -24,7 +26,7 @@ function AzureFeatureSettings({ feature }: { feature: AzureFeature }) {
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   return (
-    <section aria-label={`${c.title}の実接続`} style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+    <section aria-label={`${c.title}の実接続`} style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalSNudge }}>
       <Text weight="semibold">{c.title}（{c.service}）</Text>
       <Text size={200}>送信するもの: {c.sends}。{c.fallback}</Text>
       <Switch

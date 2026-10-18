@@ -2,9 +2,9 @@
 // 操作にショートカットがあれば、操作名の横に表示する。? でショートカット一覧を開く。
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from 'react';
 import {
-  Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, DialogTrigger, Input, Table, TableBody, TableCell, TableHeader,
-  TableHeaderCell, TableRow, Text, makeStyles, mergeClasses, tokens,
+  Button, DialogActions, DialogBody, DialogContent, DialogTitle, DialogTrigger, Input, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
+import { Dialog, DialogSurface } from '../components/Dialog';
 import { isEditableTarget } from '../components/panelKeys';
 import type { ScreenDefinition } from '../screens/types';
 import { builtinCommands } from './builtin';
@@ -32,7 +32,7 @@ const useStyles = makeStyles({
     border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`,
     backgroundColor: tokens.colorNeutralBackground3,
     fontFamily: tokens.fontFamilyMonospace,
-    fontSize: tokens.fontSizeBase200,
+    fontSize: tokens.fontSizeBase200, lineHeight: tokens.lineHeightBase200,
   },
 });
 

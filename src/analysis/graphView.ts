@@ -69,6 +69,7 @@ export const EDGE_STYLE: Record<EdgeKind, EdgeStyle> = {
   ref: { dash: '', width: 1.5, particles: false, label: '参照（実線）' },
   relation: { dash: '6 4', width: 2.5, particles: true, label: '接続（破線・粒子）' },
   contain: { dash: '2 4', width: 1, particles: false, label: '包含（点線）' },
+  twin: { dash: '8 3 2 3', width: 2, particles: false, label: 'ツイン関係（一点鎖線）' },
 };
 
 /** 無向の隣接。辺の集合から作る。 */

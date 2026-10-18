@@ -125,9 +125,9 @@ describe('FR-187 メイン画面へ戻るボタン', () => {
     useMainScreen.setState({ shown: false });
     render(wrap(<ProjectsPanel />));
     fireEvent.click(screen.getByRole('button', { name: 'メイン画面へ戻る' }));
-    const confirm = await screen.findByRole('alertdialog', { name: '未保存の入力があります' });
+    await screen.findByRole('alertdialog', { name: '未保存の入力があります' });
     expect(useMainScreen.getState().shown).toBe(false);
-    fireEvent.click(within(confirm).getByRole('button', { name: 'キャンセル' }));
+    await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog', { name: '未保存の入力があります' })).getByRole('button', { name: 'キャンセル' })));
     await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
     expect(useMainScreen.getState().shown).toBe(false);
     expect(useAnalyses.getState().drafts[id]?.param).toBe('7');

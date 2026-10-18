@@ -148,6 +148,8 @@ export async function runPipeline(command: Command, input: Inputs, deps: Pipelin
       const r = await validateWithRepair({
         workDir: work, generator, input, cache: c, sample: readSample(paths.samplePack), materials: readMaterials(input.materials),
         maxRounds: PARAMS.selfRepairMax, log,
+        // 生成した顧客パックは、全エンティティに世界区分と種別を持つ。区分なしはエラーにして、その箇所を再生成する（FR-213 AC-509）
+        requireClassified: true,
       });
       if (r.errors.length) {
         throw new PipelineError(
@@ -160,14 +162,16 @@ export async function runPipeline(command: Command, input: Inputs, deps: Pipelin
     },
     verify: async () => {
       // 受け入れ判定（9 項目。FR-127）。不合格なら、原因と対処を出して止まる
-      const r = await verifyPack({ workDir: work, customer: input.customer, projectName: input.projectName, ...(deps.smoke ? { smoke: deps.smoke } : {}) });
+      const r = await verifyPack({
+        workDir: work, customer: input.customer, projectName: input.projectName, requireClassified: true, ...(deps.smoke ? { smoke: deps.smoke } : {}),
+      });
       const report = formatVerifyReport(r);
       for (const line of report) log(line);
       if (!r.ok) {
         // 9 項目の結果・原因・対処は、上で画面に出した。止まる理由は不合格の項目だけを挙げる
         throw new PipelineError(`⑥ verify が不合格でした（${r.items.filter((i) => !i.ok).map((i) => i.name).join('、')}）。原因と対処は上の出力を見てください。`);
       }
-      return { items: r.items.length, warnings: r.warnings.length, limitSec: r.limitSec };
+      return { items: r.items.length, warnings: r.warnings.length, unclassified: r.unclassified, limitSec: r.limitSec };
     },
     launch: async () => {
       rec.recordCommand(`serve ${path.join(work, 'dist')} (127.0.0.1)`);

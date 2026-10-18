@@ -4,7 +4,7 @@
 //    行の data-entity-id・data-highlight・aria-selected は、ほかの表現と同じ。横にあふれるときは、キーボードでスクロールできる。
 import type { ReactNode } from 'react';
 import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
-import { ArrowLeft24Regular, Table24Regular } from '@fluentui/react-icons';
+import { paneAction } from '../workspace/paneActions';
 import { onEntityKey, useEntityBinding } from '../selection/hooks';
 import { useHighlightClass } from './highlight';
 import { isSelectedHighlight } from './roving';
@@ -21,9 +21,12 @@ export interface ViewAsTableButtonProps {
 
 /** 「表で見る」と「元の表示に戻る」を切り替えるボタン（表示中かどうかは、ボタンの名前で伝わる）。 */
 export function ViewAsTableButton({ asTable, onToggle }: ViewAsTableButtonProps) {
+  // 名前とアイコンは、全画面で共通の操作の定義を使う（NFR-UX-018 AC-482。表示中は Filled）
+  const v = paneAction('tableView', asTable);
+  const Icon = v.Icon;
   return (
-    <Button icon={asTable ? <ArrowLeft24Regular aria-hidden /> : <Table24Regular aria-hidden />} onClick={onToggle}>
-      {asTable ? '元の表示に戻る' : '表で見る'}
+    <Button icon={<Icon aria-hidden />} data-icon-variant={v.variant} onClick={onToggle}>
+      {v.label}
     </Button>
   );
 }

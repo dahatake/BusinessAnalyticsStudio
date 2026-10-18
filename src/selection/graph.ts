@@ -2,7 +2,10 @@
 // 選択状態ストア（src/store/selection.ts）と並んで、すべてのビューが唯一の情報源として購読する。
 // 画面の部品（src/components, src/app）を参照しない純粋なモジュール。後続のビュー（ナレッジグラフ・3D・ガントなど）は、
 // ここから節・辺・関連を取り、独自に ID の参照を数え直さない。
-import { REFERENCE_KEYS, type PackData } from '../schema';
+import {
+  ENTITY_KINDS, REFERENCE_KEYS, TWIN_RELATIONS, TWIN_RELATION_LABELS, WORLDS, tableWorldOf,
+  type EntityKind, type PackData, type TwinRelation, type World,
+} from '../schema';
 
 /** 節の種類。後続の項目が種類を足すときは、ここと KIND_LABELS に足す。 */
 export const NODE_KINDS = [
@@ -24,6 +27,31 @@ export const KIND_LABELS: Record<NodeKind, string> = {
   source: '出典',
 };
 
+/**
+ * 世界区分の項目を持たない節の種類が当たる、§3.7 の分類表の行（FR-218・A-57）。null は世界区分の項目を持つ節（entity）だけ。
+ * task は data.plan.tasks（工程）で、ガントチャートの画面の宣言（registry.ts の tableWorldDecl(['工程'])）と同じ行を当て、
+ * 画面間で世界区分を一致させる。mock は data.mocks.mocks で、§3.7 の「モック」の行を当てる。
+ */
+export const NODE_KIND_TABLE_ROW: Record<NodeKind, string | null> = {
+  entity: null,
+  issue: '課題',
+  solution: '解決策',
+  product: 'Microsoft 製品',
+  feature: 'Feature',
+  task: '工程',
+  architecture: 'アーキテクチャ',
+  mock: 'モック',
+  chapter: 'チャプター',
+  topic: '議題',
+  source: '出典',
+};
+
+/** 世界区分の項目を持たない節の種類の、§3.7 の分類表による既定の世界区分（FR-218・A-57）。決まらないものは undefined */
+export function defaultWorldOfNodeKind(kind: NodeKind): World | undefined {
+  const row = NODE_KIND_TABLE_ROW[kind];
+  return row ? tableWorldOf(row) : undefined;
+}
+
 export interface GraphNode {
   id: string;
   kind: NodeKind;
@@ -31,9 +59,30 @@ export interface GraphNode {
   label: string;
   /** エンティティの type（拠点・部品など）。ほかの種類では undefined */
   type?: string;
+  /**
+   * 世界区分（FR-213・FR-218）。エンティティは world の値（書かれていなければ undefined＝区分なし）。
+   * 世界区分の項目を持たない節（課題・解決策など）は §3.7 の分類表の世界区分（defaultWorldOfNodeKind。A-57）。
+   * 工程（task）は現実世界、モック（mock）はデジタル世界。
+   */
+  world?: World;
+  /** エンティティの種別（FR-213。§3.7 の分類の体系） */
+  entityKind?: EntityKind;
 }
 
-export type EdgeKind = 'ref' | 'relation' | 'contain';
+/** ツイン関係の相手（FR-214）。twinsOf の結果 */
+export interface TwinLink {
+  /** 相手のエンティティの ID */
+  id: string;
+  /** 相手の世界区分 */
+  world: World;
+  relation: TwinRelation;
+  /** 関係の種類の表示名（表す・計測する・記録する・表示する） */
+  relationLabel: string;
+  sourceIds: readonly string[];
+}
+
+/** twin: 現実世界とデジタル世界のツイン関係（FR-214。from が現実世界、to がデジタル世界、label が関係の種類） */
+export type EdgeKind = 'ref' | 'relation' | 'contain' | 'twin';
 
 export interface GraphEdge {
   id: string;
@@ -54,6 +103,8 @@ export interface EntityGraph {
   neighbors(id: string): ReadonlySet<string>;
   /** 自分自身と直接つながっている節 */
   related(id: string): ReadonlySet<string>;
+  /** ツイン関係の相手の一覧（FR-214 AC-492）。現実世界の項目ならデジタル世界の相手、デジタル世界の項目なら現実世界の相手を、関係の種類つきで返す */
+  twinsOf(id: string): readonly TwinLink[];
 }
 
 type Rec = Record<string, unknown>;
@@ -83,7 +134,15 @@ export function buildEntityGraph(data: PackData): EntityGraph {
       if (isStr(raw.from) && isStr(raw.to)) { relationRecords.push(raw); continue; }
       if (records.has(raw.id)) continue;
       records.set(raw.id, raw);
-      nodes.push({ id: raw.id, kind, label: labelOf(raw), type: kind === 'entity' && isStr(raw.type) ? raw.type : undefined });
+      const node: GraphNode = { id: raw.id, kind, label: labelOf(raw), type: kind === 'entity' && isStr(raw.type) ? raw.type : undefined };
+      if (kind === 'entity') {
+        if ((WORLDS as readonly unknown[]).includes(raw.world)) node.world = raw.world as World;
+        if ((ENTITY_KINDS as readonly unknown[]).includes(raw.kind)) node.entityKind = raw.kind as EntityKind;
+      } else {
+        const w = defaultWorldOfNodeKind(kind);
+        if (w) node.world = w;
+      }
+      nodes.push(node);
       if (parent) containEdges.push([parent, raw.id]);
       if (kind === 'chapter') add('topic', raw.topics as unknown[] | undefined, raw.id);
     }
@@ -133,6 +192,31 @@ export function buildEntityGraph(data: PackData): EntityGraph {
     for (const l of variant?.links ?? []) link(l.from, l.to, 'relation', isStr(l.label) ? l.label : undefined);
   }
 
+  // FR-214: ツイン関係を辺にする。両端が存在し、現実世界とデジタル世界の組のものだけ（検証は src/schema が受け持つ）
+  const twinMap = new Map<string, TwinLink[]>();
+  const nodeById = new Map(nodes.map((n) => [n.id, n]));
+  for (const raw of (data.entities.twins ?? []) as unknown[]) {
+    if (!isRec(raw) || !isStr(raw.realId) || !isStr(raw.digitalId)) continue;
+    const real = nodeById.get(raw.realId);
+    const digital = nodeById.get(raw.digitalId);
+    // ツイン関係はエンティティ（entities.json）どうしだけ（課題などの既定の世界区分では結ばない）
+    if (real?.kind !== 'entity' || digital?.kind !== 'entity') continue;
+    if (real.world !== 'real' || digital.world !== 'digital') continue;
+    if (!(TWIN_RELATIONS as readonly unknown[]).includes(raw.relation)) continue;
+    const relation = raw.relation as TwinRelation;
+    const sourceIds = Array.isArray(raw.sourceIds) ? raw.sourceIds.filter(isStr) : [];
+    const before = edges.length;
+    link(real.id, digital.id, 'twin', relation);
+    if (edges.length === before) continue; // 同じ組・同じ種類の重複
+    const push = (from: string, to: GraphNode): void => {
+      const list = twinMap.get(from) ?? [];
+      list.push({ id: to.id, world: to.world!, relation, relationLabel: TWIN_RELATION_LABELS[relation], sourceIds });
+      twinMap.set(from, list);
+    };
+    push(real.id, digital);
+    push(digital.id, real);
+  }
+
   const adjacency = new Map<string, Set<string>>();
   const touch = (a: string, b: string): void => {
     const s = adjacency.get(a) ?? new Set<string>();
@@ -141,7 +225,7 @@ export function buildEntityGraph(data: PackData): EntityGraph {
   };
   for (const e of edges) { touch(e.from, e.to); touch(e.to, e.from); }
 
-  const byId = new Map(nodes.map((n) => [n.id, n]));
+  const byId = nodeById;
   const relatedCache = new Map<string, ReadonlySet<string>>();
   return {
     nodes,
@@ -157,5 +241,6 @@ export function buildEntityGraph(data: PackData): EntityGraph {
       }
       return r;
     },
+    twinsOf: (id) => twinMap.get(id) ?? [],
   };
 }

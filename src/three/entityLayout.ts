@@ -5,6 +5,8 @@
 //   - 子を持つ項目は薄い台（プラットフォーム）で、子はその上に格子状に並ぶ。台の前側（+z）には、何も置かない帯を残す（クリックしやすくする）。
 //   - 子を持たない項目は、種別で形が決まる。部品＝箱か円柱、担当＝カプセル、拠点＝建屋、その他＝球。
 //   - 親が見つからない項目は、最上位として扱う。
+//   - 最上位の項目は、世界区分（FR-213）ごとの帯に分けて並べる。デジタル世界の帯を左（-x）、現実世界・区分なしの帯を右に置く。
+//     世界区分を持たないパックは帯が 1 つで、従来どおりの並びになる。
 export type Vec3 = [number, number, number];
 export type TwinShape = 'box' | 'cylinder' | 'sphere' | 'capsule';
 /** 色分けの区分 */
@@ -15,6 +17,8 @@ export interface TwinEntity {
   type: string;
   name: string;
   parentId?: string | null;
+  /** 世界区分（FR-213）。real・digital。ないものは区分なし */
+  world?: 'real' | 'digital';
 }
 
 export interface TwinObject {
@@ -35,6 +39,8 @@ export interface TwinObject {
   size: Vec3;
   /** 上面の高さ */
   top: number;
+  /** 世界区分（FR-213）。ないものは区分なし。世界の表示の切替（FR-218）に使う */
+  world?: 'real' | 'digital';
 }
 
 export interface TwinLayout {
@@ -141,7 +147,10 @@ export function buildTwinLayout(entities: readonly TwinEntity[]): TwinLayout {
 
   const out: TwinObject[] = [];
   const place = (n: Node, cx: number, cz: number, baseY: number, depth: number, parentId: string | null): void => {
-    const base = { entityId: n.e.id, name: n.e.name, type: n.e.type, tone: toneOf(n.e.type), depth, parentId, childIds: n.children.map((c) => c.e.id) };
+    const base = {
+      entityId: n.e.id, name: n.e.name, type: n.e.type, tone: toneOf(n.e.type), depth, parentId, childIds: n.children.map((c) => c.e.id),
+      ...(n.e.world ? { world: n.e.world } : {}),
+    };
     if (n.children.length === 0) {
       const l = leafSpec(n.e);
       out.push({ ...base, shape: l.shape, platform: false, position: [cx, baseY + l.h / 2, cz], size: [l.w, l.h, l.d], top: baseY + l.h });
@@ -160,17 +169,24 @@ export function buildTwinLayout(entities: readonly TwinEntity[]): TwinLayout {
     });
   };
 
-  // 最上位は、台の外側に同じ格子で並べ、全体を原点の中央にそろえる
-  const g = measureGrid(roots, LAYOUT.rootGap);
-  const startX = -g.gridW / 2;
-  const startZ = -g.gridD / 2;
-  roots.forEach((r, i) => {
-    const col = i % g.cols;
-    const row = Math.floor(i / g.cols);
-    const x0 = startX + g.colW.slice(0, col).reduce((a, b) => a + b, 0) + LAYOUT.rootGap * col;
-    const z0 = startZ + g.rowD.slice(0, row).reduce((a, b) => a + b, 0) + LAYOUT.rootGap * row;
-    // 列の中では前（+z）にそろえる
-    place(r, x0 + (g.colW[col] ?? r.w) / 2, z0 + (g.rowD[row] ?? r.d) - r.d / 2, 0, 0, null);
+  // 最上位は、台の外側に同じ格子で並べ、全体を原点の中央にそろえる。世界区分の帯ごとに格子を作り、帯を左右に並べる
+  const bands = [roots.filter((r) => r.e.world === 'digital'), roots.filter((r) => r.e.world !== 'digital')].filter((b) => b.length > 0);
+  const grids = bands.map((b) => measureGrid(b, LAYOUT.rootGap));
+  const totalW = grids.reduce((a, g) => a + g.gridW, 0) + LAYOUT.rootGap * (grids.length - 1);
+  let bandX = -totalW / 2;
+  bands.forEach((band, bi) => {
+    const g = grids[bi]!;
+    const startX = bandX;
+    const startZ = -g.gridD / 2;
+    band.forEach((r, i) => {
+      const col = i % g.cols;
+      const row = Math.floor(i / g.cols);
+      const x0 = startX + g.colW.slice(0, col).reduce((a, b) => a + b, 0) + LAYOUT.rootGap * col;
+      const z0 = startZ + g.rowD.slice(0, row).reduce((a, b) => a + b, 0) + LAYOUT.rootGap * row;
+      // 列の中では前（+z）にそろえる
+      place(r, x0 + (g.colW[col] ?? r.w) / 2, z0 + (g.rowD[row] ?? r.d) - r.d / 2, 0, 0, null);
+    });
+    bandX += g.gridW + LAYOUT.rootGap;
   });
 
   out.sort((a, b) => (nodes.get(a.entityId)?.index ?? 0) - (nodes.get(b.entityId)?.index ?? 0));

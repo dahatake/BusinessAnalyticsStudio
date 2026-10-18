@@ -222,10 +222,9 @@ class LandLock:
             pass
 
 
-def land_tmp_path(primary: Path) -> Path:
-    rc, out = h.git(["rev-parse", "--git-common-dir"], primary)
-    d = Path(out.strip()) if rc == 0 and out.strip() else primary / ".git"
-    return (d if d.is_absolute() else primary / d) / "ebak-land-wt"
+def land_tmp_path(primary: Path, cfg: dict) -> Path:
+    # .git 配下だと vite/vitest がファイルを読めないため、主の作業ツリーの work/ 配下（git 管理外）に置く
+    return h.work_dir(primary, cfg) / "ebak-land-wt"
 
 
 def remove_land_tmp(primary: Path, tmp: Path) -> None:
@@ -358,7 +357,7 @@ def cmd_land(args) -> int:
             if rc != 0 or not old:
                 print(f"ERROR run-state: {base} を解決できません: {old[:200]}")
                 return 1
-            tmp = land_tmp_path(primary)
+            tmp = land_tmp_path(primary, cfg)
             remove_land_tmp(primary, tmp)
             try:
                 rc, out = h.git(["worktree", "add", "--detach", str(tmp), old], primary)

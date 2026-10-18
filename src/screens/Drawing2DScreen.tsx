@@ -10,6 +10,8 @@ import { EmptyView, LoadingView } from '../components/StateViews';
 import { onEntityKey, useEntityBinding } from '../selection/hooks';
 import type { TwinObject } from '../three/entityLayout';
 import { useTwinLayout } from '../three/twin';
+import { useComponentView, usePublishViewItems } from '../view/useView';
+import { isShownInWorld } from '../view/viewModel';
 
 const ORIGIN = 'drawing2d';
 
@@ -76,8 +78,17 @@ export function Drawing2DScreen() {
   const layout = useTwinLayout();
   const bind = useEntityBinding(ORIGIN);
 
-  const shapes = useMemo(() => (layout ? [...layout.objects].sort((a, b) => a.depth - b.depth) : []), [layout]);
-  const listed = useMemo(() => (layout ? hierarchyOrder(layout.objects) : []), [layout]);
+  // 世界の表示（FR-218）: 選んだ世界の項目だけを描く。位置は 3D と同じ配置のまま
+  const { world } = useComponentView(ORIGIN);
+  const objects = useMemo(() => (layout?.objects ?? []).filter((o) => isShownInWorld(o.world, world)), [layout, world]);
+  const shapes = useMemo(() => [...objects].sort((a, b) => a.depth - b.depth), [objects]);
+  const listed = useMemo(() => {
+    const ids = new Set(objects.map((o) => o.entityId));
+    // 上位が隠れた項目は、最上位として並べる
+    return hierarchyOrder(objects.map((o) => (o.parentId && !ids.has(o.parentId) ? { ...o, parentId: null } : o)));
+  }, [objects]);
+  const itemIds = useMemo(() => objects.map((o) => o.entityId), [objects]);
+  usePublishViewItems(ORIGIN, itemIds);
   const byName = useMemo(() => new Map((layout?.objects ?? []).map((o) => [o.entityId, o.name])), [layout]);
 
   if (!layout) return <LoadingView label="図面を読み込み中" />;
@@ -126,7 +137,7 @@ export function Drawing2DScreen() {
                       onKeyDown={(e) => { onEntityKey(e, o.entityId, ORIGIN); }}
                     >
                       <TableCell className={s.cell}><Badge appearance="outline" color="informative">{typeLabel(o.type)}</Badge></TableCell>
-                      <TableCell className={s.cell}><span style={{ paddingLeft: `${o.depth * 12}px` }}>{o.name}</span></TableCell>
+                      <TableCell className={s.cell}><span style={{ paddingLeft: `calc(${o.depth} * ${tokens.spacingHorizontalM})` }}>{o.name}</span></TableCell>
                       <TableCell className={s.cell}><Text size={200}>{o.parentId ? byName.get(o.parentId) ?? '' : '—'}</Text></TableCell>
                     </TableRow>
                   );

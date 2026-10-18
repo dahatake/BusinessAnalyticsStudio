@@ -1,6 +1,7 @@
 // ストーリーボードの再生と編集（FR-163〜FR-166）。端末内だけで動き、AI には接続しない。
 import { useEffect, useRef, useState } from 'react';
-import { Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, Field, Input, MessageBar, MessageBarBody, Portal, Text, Textarea, makeStyles, tokens } from '@fluentui/react-components';
+import { Button, DialogActions, DialogBody, DialogContent, Field, Input, MessageBar, MessageBarBody, Portal, Text, Textarea, makeStyles, tokens } from '@fluentui/react-components';
+import { Dialog, DialogSurface } from '../components/Dialog';
 import { RadioGroup, Radio } from '../components/ChoiceRadio';
 import { useAnimation } from '../store/animation';
 import { useStoryStyle } from '../store/storyboardStyle';

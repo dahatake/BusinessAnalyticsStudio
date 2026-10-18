@@ -1,11 +1,10 @@
 // ナレッジグラフ（2D/3D。FR-037）。ノードの種別を色・形・アイコンで、エッジの関係種別を線種・太さ・粒子で区別する。
 // ホップ数（PARAM-014: 1〜3）・種別フィルター・検索・ノード/エッジの編集ができる。選択は共通のストア（useEntityBinding）で他のビューと連動する。
-import { useEffect, useMemo, useRef, useState, type SVGProps } from 'react';
+import { useEffect, useMemo, useRef, useState, type RefObject, type SVGProps } from 'react';
 import {
-  Badge, Button, Checkbox, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Dropdown, Field, Input, Option,
-  Text, makeStyles, mergeClasses, tokens,
+  Badge, Button, Checkbox, DialogActions, DialogBody, DialogContent, DialogTitle, Dropdown, Field, Input, Option, Text, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
-import { Radio, RadioGroup } from '../components/ChoiceRadio';
+import { Dialog, DialogSurface } from '../components/Dialog';
 import { Add24Regular, Delete24Regular, Link24Regular } from '@fluentui/react-icons';
 import { ADDABLE_KINDS, addEdge, addNode, removeEdge, removeNode, type AddableKind } from '../analysis/graphEdit';
 import {
@@ -23,7 +22,11 @@ import { useAnimation } from '../store/animation';
 import { useEditStore } from '../store/edit';
 import { usePackStore } from '../store/pack';
 import { registerTestHook } from '../testing/hook';
+import { MIN_TARGET_PX } from '../theme/tokens';
 import { Graph3D } from '../three/Graph3D';
+import { useComponentView, usePublishViewItems } from '../view/useView';
+import { ModeRadio } from '../view/ModeRadio';
+import { isShownInWorld } from '../view/viewModel';
 
 const ORIGIN = 'knowledge-graph';
 
@@ -36,7 +39,7 @@ const useStyles = makeStyles({
   node: { cursor: 'pointer', outline: 'none', ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}` } },
   nodeLabel: {
     width: '92px', height: '34px', overflow: 'hidden', textOverflow: 'ellipsis', textAlign: 'center', fontSize: tokens.fontSizeBase200,
-    lineHeight: tokens.lineHeightBase100, color: tokens.colorNeutralForeground1, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+    lineHeight: tokens.lineHeightBase200, color: tokens.colorNeutralForeground1, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
     overflowWrap: 'anywhere', pointerEvents: 'none',
   },
   shape: { strokeWidth: 2 },
@@ -61,6 +64,28 @@ function useReducedMotion(): boolean {
   return reduced;
 }
 
+/**
+ * 節の当たり判定の大きさ（図の座標）。図が縮小して描かれても、画面上で幅・高さとも {PARAM-040}（24px）以上にする（NFR-A11Y-009 AC-485）。
+ * 既定は節の絵とラベルを覆う 92×78。
+ */
+function useNodeHitSize(ref: RefObject<SVGSVGElement | null>, size: { width: number; height: number }): { w: number; h: number } {
+  const [scale, setScale] = useState(1);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const update = (): void => {
+      const r = el.getBoundingClientRect();
+      if (r.width > 0 && r.height > 0) setScale(Math.min(r.width / size.width, r.height / size.height));
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref, size.width, size.height]);
+  const min = MIN_TARGET_PX / Math.max(scale, 0.01);
+  return { w: Math.max(92, min), h: Math.max(78, min) };
+}
+
 interface ViewProps {
   nodes: GraphNode[];
   edges: GraphEdge[];
@@ -81,8 +106,10 @@ function Graph2D({ nodes, edges, pos, size, selected, related, matches, edgeSel,
   const playing = useAnimation((st) => st.playing);
   const reduced = useReducedMotion();
   const animate = playing && !reduced;
+  const svgRef = useRef<SVGSVGElement>(null);
+  const hit = useNodeHitSize(svgRef, size);
   return (
-    <svg viewBox={`0 0 ${size.width} ${size.height}`} className={s.svg} role="group" aria-label="ナレッジグラフ（2D）">
+    <svg ref={svgRef} data-zoom-surface="graph" viewBox={`0 0 ${size.width} ${size.height}`} className={s.svg} role="group" aria-label="ナレッジグラフ（2D）">
       {edges.map((e) => {
         const a = pos(e.from);
         const b = pos(e.to);
@@ -134,7 +161,7 @@ function Graph2D({ nodes, edges, pos, size, selected, related, matches, edgeSel,
               onEntityKey(e as never, n.id, ORIGIN);
             }}
           >
-            <rect x={-46} y={-24} width={92} height={78} fill="transparent" />
+            <rect x={-hit.w / 2} y={15 - hit.h / 2} width={hit.w} height={hit.h} fill="transparent" />
             <path
               d={shapePath(style.shape)} className={s.shape} fill={style.color} fillOpacity={words.includes('selected') ? 0.55 : 0.22} stroke={style.color}
               strokeWidth={words.includes('selected') ? 5 : words.includes('related') || words.includes('hover') ? 3.5 : 2}
@@ -230,7 +257,10 @@ function KnowledgeGraphScreen() {
   const editEnabled = useEditStore((st) => st.editMode);
   const { graph, selectedIds, primaryId, related, select } = useSelection();
 
-  const [view, setView] = useState<'2d' | '3d'>('2d');
+  // 2D/3D と世界の表示は、見出しの「ビュー」と同じ状態（FR-217・FR-218。この画面の「表示」の切替も同じ状態を変える）
+  const cv = useComponentView(ORIGIN);
+  const view = cv.mode;
+  const worldView = cv.world;
   const [hop, setHop] = useState(HOP_DEFAULT);
   const [hidden, setHidden] = useState<ReadonlySet<NodeKind>>(new Set());
   const [query, setQuery] = useState('');
@@ -243,10 +273,19 @@ function KnowledgeGraphScreen() {
   const [message, setMessage] = useState<string | null>(null);
 
   const centers = useMemo(() => selectedIds.filter((id) => graph?.has(id)), [selectedIds, graph]);
-  const visibleIds = useMemo(() => (graph ? visibleNodeIds(graph, { centers, hop, hiddenKinds: hidden }) : new Set<string>()), [graph, centers, hop, hidden]);
+  const visibleIds = useMemo(() => {
+    if (!graph) return new Set<string>();
+    const ids = visibleNodeIds(graph, { centers, hop, hiddenKinds: hidden });
+    // 世界の表示（FR-218）: 選んだ世界の項目だけ。「両方」は区分なしを含めてすべて
+    return worldView === 'both' ? ids : new Set([...ids].filter((id) => isShownInWorld(graph.node(id)?.world, worldView)));
+  }, [graph, centers, hop, hidden, worldView]);
   const nodes = useMemo(() => (graph ? graph.nodes.filter((n) => visibleIds.has(n.id)) : []), [graph, visibleIds]);
   const edges = useMemo(() => (graph ? graph.edges.filter((e) => visibleIds.has(e.from) && visibleIds.has(e.to)) : []), [graph, visibleIds]);
   const layout = useMemo(() => layoutGraph(nodes, edges, centers), [nodes, edges, centers]);
+  // 表示中の項目とツイン関係の線（t.view.state。ツイン関係は twin の辺として線で描く）
+  const shownIds = useMemo(() => nodes.map((n) => n.id), [nodes]);
+  const twinLinks = useMemo(() => edges.filter((e) => e.kind === 'twin').map((e) => [e.from, e.to] as const), [edges]);
+  usePublishViewItems(ORIGIN, shownIds, twinLinks);
   const pos = (id: string): Pt => {
     const base = layout.positions.get(id) ?? { x: 0, y: 0 };
     const o = offsets[id];
@@ -305,12 +344,8 @@ function KnowledgeGraphScreen() {
       <ExecutiveSummary scope="knowledge-graph" />
 
       <div className={s.toolbar} role="toolbar" aria-label="ナレッジグラフの操作">
-        <Field label="表示">
-          <RadioGroup layout="horizontal" value={view} onChange={(_, d) => setView(d.value as '2d' | '3d')}>
-            <Radio value="2d" label="2D" />
-            <Radio value="3d" label="3D" />
-          </RadioGroup>
-        </Field>
+        {/* 見出しの「ビュー」と同じ 1 つの切替（3D を描画できない環境では無効にし理由を示す。FR-217 AC-500・AC-507） */}
+        <ModeRadio viewKey={ORIGIN} />
         <Field label={`ホップ数（${HOP_MIN}〜${HOP_MAX}）`}>
           <span className={s.hop}>
             <input
@@ -371,7 +406,7 @@ function KnowledgeGraphScreen() {
 
       <div className={s.legend} aria-label="凡例">
         <Text size={200} weight="semibold">線: </Text>
-        {(['ref', 'relation', 'contain'] as const).map((k) => <Text key={k} size={200}>{EDGE_STYLE[k].label}</Text>)}
+        {(['ref', 'relation', 'contain', ...(twinLinks.length > 0 ? ['twin' as const] : [])] as const).map((k) => <Text key={k} size={200}>{EDGE_STYLE[k].label}</Text>)}
         <Text size={200}>／ ノードの種別は色・形・アイコンで区別します。</Text>
       </div>
 
