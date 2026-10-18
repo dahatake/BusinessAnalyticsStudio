@@ -72,6 +72,14 @@ export function elevationStyles(role: ElevationRole) {
 /** モーション（NFR-UX-017）。出入り・エレベーション・コンテナーの変形の所要時間の上限 {PARAM-074}（ms） */
 export const MOTION_MAX_MS = 500;
 
+/**
+ * ポインターへの追従の所要時間（ms）。ブランドのテーマは色の遷移を即時にするため durationFaster を 0 にしているので、
+ * 追従の範囲（境界のドラッグ・コンポーネントのドラッグ）でだけ、この値で上書きして使う。短時間（PARAM-074 以下）の等速。
+ */
+export const FOLLOW_DURATION_MS = 90;
+/** ポインターへの追従の範囲に付ける、所要時間のトークンの上書き（makeStyles 用） */
+export const followDurationOverride = { '--durationFaster': `${FOLLOW_DURATION_MS}ms` } as const;
+
 /** 役割ごとの動き（所要時間とイージングのトークン） */
 export const MOTION = {
   /** 画面（最上位の行き先）の切替: フェード */
@@ -86,6 +94,8 @@ export const MOTION = {
   container: { duration: tokens.durationNormal, easing: tokens.curveDecelerateMid },
   /** 回転（一定の速さが要る動きだけ。等速） */
   rotate: { easing: tokens.curveLinear },
+  /** ポインターへの追従（境界のドラッグ・リサイズ・コンポーネントのドラッグ中の位置・大きさ。等速・短時間。FR-185 AC-393・NFR-UX-017 AC-479・Q-039 A） */
+  follow: { duration: tokens.durationFaster, easing: tokens.curveLinear },
 } as const;
 
 /** Fluent 2 の角丸の段の値（SRC-024 Shapes）。Fluent UI React v9 の既定（Large 6・X-Large 8）を Fluent 2 の段（Large 8・X-Large 12）に合わせる */

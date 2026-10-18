@@ -1,7 +1,8 @@
 // ワークスペース: レイアウトの木（分割とタブ）を描く。境界はドラッグでもキーボードでも動かせる（FR-109、NFR-A11Y-004）。
 import { createPortal, flushSync } from 'react-dom';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type FocusEvent, type KeyboardEvent, type PointerEvent } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties, type FocusEvent, type KeyboardEvent, type PointerEvent } from 'react';
 import { Button, Tab, TabList, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { MOTION, followDurationOverride } from '../theme/tokens';
 import { useSnapMotion, motionAllowed } from '../motion/useFoldMotion';
 import { prefersReducedMotion, useAnimation } from '../store/animation';
 import { SNAP_LABEL, defaultSnapKind, nearestCorner, snapKindsFor, snapRect, type Edge, type SnapKind, type SnapOpts } from './snap';
@@ -74,17 +75,21 @@ const useStyles = makeStyles({
   },
   // 動かしているコンポーネントは、ポインターに短い遅れでつながって動く（フレームごとに動きが見える速さ。FR-185 AC-392）
   floatFollow: {
+    ...followDurationOverride,
     transitionProperty: 'left, top, width, height',
-    transitionDuration: tokens.durationFast,
-    transitionTimingFunction: tokens.curveDecelerateMin,
+    // ポインターへの追従: 等速・短時間（Q-039 A）
+    transitionDuration: MOTION.follow.duration,
+    transitionTimingFunction: MOTION.follow.easing,
     '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0s' },
   },
   // 境界のドラッグ中は、大きさの変化を滑らかにつなぐ（FR-185 AC-393）
   resizing: {
     '& [data-cell="true"]': {
+      ...followDurationOverride,
       transitionProperty: 'flex-grow',
-      transitionDuration: tokens.durationFast,
-      transitionTimingFunction: tokens.curveEasyEase,
+      // ポインターへの追従: 等速・短時間（Q-039 A。遷移のアニメーションの対象外）
+      transitionDuration: MOTION.follow.duration,
+      transitionTimingFunction: MOTION.follow.easing,
       '@media (prefers-reduced-motion: reduce)': { transitionDuration: '0s' },
     },
   },
@@ -206,6 +211,11 @@ function Slot({ host, hidden }: { host: HTMLElement; hidden?: boolean }) {
   });
   return <div ref={ref} style={hidden ? { display: 'none' } : FILL} />;
 }
+
+/** 画面の本体を、PaneInfo と画面が変わらない限り再描画しない箱（境界のドラッグ中の再描画を減らす。FR-185 AC-393） */
+const PanePortalBody = memo(function PanePortalBody({ Screen, info }: { Screen: ComponentType; info: PaneInfo }) {
+  return <PaneContext.Provider value={info}><Screen /></PaneContext.Provider>;
+});
 
 /** 境界の両側のコンポーネント（それぞれの先頭のキー）で、動かす分割を決める。自動の調整・最小の幅でタブにまとめた見た目でも、保存した木の正しい境界を動かす。 */
 function Separator({ a, b, dir, size, onActive }: { a: string; b: string; dir: 'row' | 'col'; size: number; onActive: (on: boolean) => void }) {
@@ -420,6 +430,28 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       untab: () => (pinned ? announce(PIN_TABS_REASON) : a.untab(key)),
       startDrag: (e) => startDrag(key, e),
     };
+  };
+
+  /**
+   * 各コンポーネントへ渡す PaneInfo を、値が変わらない限り同じ参照にする。境界のドラッグ中などに作業領域が再描画されても、
+   * 中身の画面（重い）を再描画しないため（FR-185 AC-393）。操作の関数は、呼ばれた時点の最新の関数に委ねる（古い状態を掴まない）。
+   */
+  const paneCache = useRef(new Map<string, { sig: string; info: PaneInfo; latest: PaneInfo }>());
+  const stablePane = (key: string, group: string[], active: string): PaneInfo => {
+    const fresh = pane(key, group, active);
+    const data: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(fresh)) if (typeof v !== 'function') data[k] = v;
+    const sig = JSON.stringify(data);
+    const hit = paneCache.current.get(key);
+    if (hit && hit.sig === sig) { hit.latest = fresh; return hit.info; }
+    const entry: { sig: string; info: PaneInfo; latest: PaneInfo } = { sig, info: fresh, latest: fresh };
+    const info: Record<string, unknown> = { ...data };
+    for (const [k, v] of Object.entries(fresh)) {
+      if (typeof v === 'function') info[k] = (...args: unknown[]) => (entry.latest as unknown as Record<string, (...a: unknown[]) => unknown>)[k]!(...args);
+    }
+    entry.info = info as unknown as PaneInfo;
+    paneCache.current.set(key, entry);
+    return entry.info;
   };
 
   /** 作業領域の中のすべてのコンポーネントの位置と大きさ（px。作業領域の左上が原点）と、作業領域の大きさ。測れなければ null（FR-184） */
@@ -902,7 +934,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       {[...groups.entries()].map(([key, g]) => {
         const Screen = byKey(key)?.component;
         if (!Screen) return null;
-        return createPortal(<PaneContext.Provider value={pane(key, g.tabs, g.active)}><Screen /></PaneContext.Provider>, hostOf(key), key);
+        return createPortal(<PanePortalBody Screen={Screen} info={stablePane(key, g.tabs, g.active)} />, hostOf(key), key);
       })}
     </div>
   );
