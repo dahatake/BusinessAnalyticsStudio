@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準（docs/requirements/quality.md）と PARAM（§3.3）から決める。
 import AxeBuilder from '@axe-core/playwright';
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, entity, hook, scene, MAIN_SCREENS, captureDownload, selectPersona, setEditMode } from '../support/fixtures';
+import { test, expect, openScreen, component, entity, hook, scene, MAIN_SCREENS, captureDownload, recordExportConsent, selectPersona, setEditMode } from '../support/fixtures';
 import { examplePack } from '../support/packs';
 import { startRelayStub } from '../support/relay-stub';
 
@@ -60,6 +60,7 @@ test.describe('NFR-ENV-002 外部サーバーなし・オフライン', () => {
       return route.continue();
     });
     const app = await start();
+    await recordExportConsent(page); // FR-219: 了承の記録を先に入力する
     for (const [key] of MAIN_SCREENS) await openScreen(page, key);
     await openScreen(page, 'view3d');
     await page.waitForTimeout(1_000);

@@ -1,7 +1,7 @@
 // System Test: オープニング・プレゼンテーションモード・番組構成・演出・ショーコントロールバー
 // 期待値は要求定義書の受入基準（app-core.md・app-experience.md・quality.md）と、お手本パックの show.json から決める。
 import type { Page } from '@playwright/test';
-import { test, expect, openScreen, component, hook, captureDownload, saveEvidence, setEditMode, chooseWorkTarget, leaveMainScreen } from '../support/fixtures';
+import { test, expect, openScreen, component, hook, captureDownload, recordExportConsent, saveEvidence, setEditMode, chooseWorkTarget, leaveMainScreen } from '../support/fixtures';
 import { examplePack, packWithInternal, countInternal, PACK_FILES } from '../support/packs';
 
 const mono = examplePack('mono');
@@ -395,6 +395,7 @@ test.describe('NFR-A11Y-002 演出を OFF にしたときの利用', () => {
   test('NFR-A11Y-002 AC-172 ミュートと停止のままプレゼンを最後まで進め、選択・編集・エクスポートができ、テロップとランキングが文字で出る', async ({ page, start }) => {
     test.setTimeout(180_000);
     await start();
+    await recordExportConsent(page); // FR-219: 了承の記録を先に入力する
     await expect(page.getByRole('button', { name: /ミュート/ }).first()).toBeVisible();
     await page.keyboard.press('p');
     await expect(page.getByTestId('animation-state')).toContainText('停止中');
