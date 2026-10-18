@@ -111,4 +111,36 @@ test.describe('FR-219 種別「人」を含むパックのエクスポート前�
     await dl;
     expect(downloads()).toBe(1);
   });
+
+  // FR-219 AC-514 / A-59（頻度: 中止の後は再び出る。続行の後、了承の記録・パックの内容が変わらない間は同じ確認を繰り返さない）
+  test('FR-219 AC-514 確認の頻度: 中止後は再び出る。続行後は同じ内容・了承の記録のまま続けて出力しても再確認せずファイルが作られる', async ({ page, start }) => {
+    await start();
+    await recordConsent(page);
+    const downloads = countDownloads(page);
+    // 1 回目: 中止（ファイルなし）
+    let dlg = await openExport(page);
+    await dlg.getByRole('button', { name: 'エクスポート', exact: true }).click();
+    let confirm = confirmDialog(page);
+    await expect(confirm).toBeVisible();
+    await confirm.getByRole('button', { name: /中止|キャンセル/ }).first().focus();
+    await page.keyboard.press('Enter');
+    await expect(confirm).toBeHidden();
+    // 2 回目: 中止は引き継がれず、操作ごとに確認が出る。続行する
+    dlg = await openExport(page);
+    await dlg.getByRole('button', { name: 'エクスポート', exact: true }).click();
+    confirm = confirmDialog(page);
+    await expect(confirm).toBeVisible();
+    const dl1 = page.waitForEvent('download', { timeout: 30_000 });
+    await confirm.getByRole('button', { name: /続行|出力する|エクスポートする/ }).first().focus();
+    await page.keyboard.press('Enter');
+    await dl1;
+    expect(downloads()).toBe(1);
+    // 3 回目: 同じ内容・同じ了承の記録のまま同じ操作 → 確認は繰り返さず、ファイルが作られる
+    const dl2 = page.waitForEvent('download', { timeout: 30_000 });
+    dlg = await openExport(page);
+    await dlg.getByRole('button', { name: 'エクスポート', exact: true }).click();
+    await dl2;
+    expect(downloads(), '続行の選択が引き継がれず、ファイルが作られない').toBe(2);
+    await expect(confirmDialog(page), '同じ内容・了承の記録のまま同じ確認が繰り返された').toBeHidden();
+  });
 });
