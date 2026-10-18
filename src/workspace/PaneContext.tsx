@@ -1,13 +1,11 @@
 // コンポーネント（パネル）がワークスペースの中にいるときの文脈と、見出しのメニュー（FR-013/FR-109）。
 import { createContext, useContext } from 'react';
 import { Button, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, Tooltip, makeStyles, tokens } from '@fluentui/react-components';
-import {
-  ArrowMaximize20Regular, ArrowMinimize20Regular, EyeOff20Regular, FullScreenMaximize20Regular, FullScreenMinimize20Regular,
-  MoreHorizontal20Regular, TabDesktop20Regular, TabDesktopMultiple20Regular,
-} from '@fluentui/react-icons';
-import type { ReactElement } from 'react';
+import { MoreHorizontal20Regular } from '@fluentui/react-icons';
 import type { Move } from './layoutModel';
 import { SNAP_LABEL, type SnapKind } from './snap';
+import { PIN_MOVE_REASON, PIN_TABS_REASON, paneAction, type PaneActionId } from './paneActions';
+import { ComponentViewButton, ComponentViewSubmenu } from '../view/ViewMenu';
 
 const useActionStyles = makeStyles({
   actions: { display: 'flex', alignItems: 'center', columnGap: tokens.spacingHorizontalXXS, flexShrink: 0 },
@@ -47,6 +45,10 @@ export interface PaneInfo {
   snapKinds: readonly SnapKind[];
   mergeInto: (target: string) => void;
   untab: () => void;
+  /** ピン止めしているか（FR-215） */
+  pinned: boolean;
+  /** ピン止めする／外す（FR-215） */
+  togglePin: () => void;
   /** 見出しのポインター操作で移動を始める（FR-142）。キーボードの代わりはメニューと Alt+Shift+矢印キー（NFR-A11Y-004） */
   startDrag: (e: { button: number; clientX: number; clientY: number; pointerId?: number }) => void;
 }
@@ -55,6 +57,7 @@ export const PaneContext = createContext<PaneInfo | null>(null);
 export const usePane = (): PaneInfo | null => useContext(PaneContext);
 
 export function ComponentMenu({ pane, title }: { pane: PaneInfo; title: string }) {
+  const pinNote = pane.pinned ? PIN_MOVE_REASON : undefined;
   return (
     <Menu>
       <MenuTrigger disableButtonEnhancement>
@@ -68,12 +71,15 @@ export function ComponentMenu({ pane, title }: { pane: PaneInfo; title: string }
       </MenuTrigger>
       <MenuPopover>
         <MenuList>
-          <MenuItem onClick={pane.toggleMinimize}>{pane.minimized ? '元に戻す' : '最小化'}</MenuItem>
-          <MenuItem onClick={() => pane.move('up')}>上へ移動</MenuItem>
-          <MenuItem onClick={() => pane.move('down')}>下へ移動</MenuItem>
-          <MenuItem onClick={() => pane.move('left')}>左へ移動</MenuItem>
-          <MenuItem onClick={() => pane.move('right')}>右へ移動</MenuItem>
-          <MenuItem onClick={pane.toggleDirection}>並べる方向を変える（横/縦）</MenuItem>
+          <MenuItem onClick={pane.togglePin}>{paneAction('pin', pane.pinned).label}</MenuItem>
+          <MenuItem onClick={pane.toggleMinimize}>{paneAction('minimize', pane.minimized).label}</MenuItem>
+          {/* ピン止め中は動かす操作を無効にし、理由を示す（FR-216 AC-496） */}
+          <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={() => pane.move('up')}>上へ移動</MenuItem>
+          <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={() => pane.move('down')}>下へ移動</MenuItem>
+          <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={() => pane.move('left')}>左へ移動</MenuItem>
+          <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={() => pane.move('right')}>右へ移動</MenuItem>
+          <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={pane.toggleDirection}>並べる方向を変える（横/縦）</MenuItem>
+          {pane.pinned ? <MenuItem disabled secondaryContent={PIN_MOVE_REASON}>画面に配置</MenuItem> : (
           <Menu>
             <MenuTrigger disableButtonEnhancement>
               <MenuItem>画面に配置</MenuItem>
@@ -86,10 +92,11 @@ export function ComponentMenu({ pane, title }: { pane: PaneInfo; title: string }
               </MenuList>
             </MenuPopover>
           </Menu>
-          <MenuItem onClick={pane.toggleMaximize}>{pane.maximized ? '通常表示に戻す' : '最大化'}</MenuItem>
+          )}
+          <MenuItem onClick={pane.toggleMaximize}>{paneAction('maximize', pane.maximized).label}</MenuItem>
           <MenuItem onClick={pane.toggleExpand}>{pane.expanded ? '拡大表示を戻す' : '拡大表示（75%）'}</MenuItem>
-          <MenuItem onClick={pane.toggleFloat}>{pane.floating ? '分割の配置に戻す' : '自由に動かせる配置にする'}</MenuItem>
-          {pane.peers.length > 0 ? (
+          <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={pane.toggleFloat}>{pane.floating ? '分割の配置に戻す' : '自由に動かせる配置にする'}</MenuItem>
+          {pane.pinned ? <MenuItem disabled secondaryContent={PIN_TABS_REASON}>{paneAction('tabs').label}</MenuItem> : pane.peers.length > 0 ? (
             <Menu>
               <MenuTrigger disableButtonEnhancement>
                 <MenuItem>タブにまとめる</MenuItem>
@@ -103,8 +110,10 @@ export function ComponentMenu({ pane, title }: { pane: PaneInfo; title: string }
               </MenuPopover>
             </Menu>
           ) : null}
-          {pane.inTabs ? <MenuItem onClick={pane.untab}>タブから出す</MenuItem> : null}
-          <MenuItem onClick={pane.hide}>非表示</MenuItem>
+          {pane.inTabs && !pane.pinned ? <MenuItem onClick={pane.untab}>{paneAction('untab').label}</MenuItem> : null}
+          <MenuItem onClick={pane.hide}>{paneAction('hide').label}</MenuItem>
+          {/* ビューの切替（FR-217・FR-218）。見出しのボタンが隠れるときも、ここから操作できる */}
+          <ComponentViewSubmenu paneKey={pane.key} />
         </MenuList>
       </MenuPopover>
     </Menu>
@@ -112,11 +121,27 @@ export function ComponentMenu({ pane, title }: { pane: PaneInfo; title: string }
 }
 
 
-function IconButton({ label, icon, onClick, testId }: { label: string; icon: ReactElement; onClick?: () => void; testId?: string }) {
+/**
+ * 見出しの操作のボタン。名前・アイコンは操作の定義（paneActions）から取る（NFR-UX-018 AC-482）。
+ * `pressed` を渡すと切替のボタンになり、押下の状態（aria-pressed）を持つ。アイコンの種類（Regular／Filled）は data-icon-variant で示す。
+ */
+function ActionButton({ action, on = false, pressed, onClick, disabledReason }: { action: PaneActionId; on?: boolean; pressed?: boolean; onClick?: () => void; disabledReason?: string }) {
   const s = useActionStyles();
+  const v = paneAction(action, on);
+  const Icon = v.Icon;
   return (
-    <Tooltip content={label} relationship="label" withArrow>
-      <Button data-testid={testId} className={s.icon} appearance="subtle" size="small" icon={icon} onClick={onClick} />
+    <Tooltip content={disabledReason ? `${v.label}（${disabledReason}）` : v.label} relationship="label" withArrow>
+      <Button
+        className={s.icon}
+        appearance="subtle"
+        size="small"
+        icon={<Icon aria-hidden />}
+        data-action={action}
+        data-icon-variant={v.variant}
+        aria-pressed={pressed}
+        disabledFocusable={!!disabledReason}
+        onClick={disabledReason ? undefined : onClick}
+      />
     </Tooltip>
   );
 }
@@ -131,28 +156,40 @@ export function ComponentActions({ pane, title, active, narrow }: { pane: PaneIn
   // 広いときは visibility: hidden で場所を残す（フォーカスが入った瞬間に見出しの折り返しが変わり、押そうとしたボタンが動いてクリックが外れるのを防ぐ）。狭いときは display: none。
   // フォーカスが入ると現れ、操作できる（FR-150）。最小化中は復元のアイコンだけを、フォーカスに関わらず出す
   const shown = (active && !narrow) || pane.minimized;
+  // 狭いときも、フォーカス中は「ビュー」ボタンだけを出す（現在の表示モードを文字で示す。FR-217・FR-218・D-01）。ほかの操作は「…」メニューから行う
+  const viewOnly = active && narrow && !pane.minimized;
+  const TabsIcon = paneAction('tabs').Icon;
+  if (viewOnly) {
+    return (
+      <>
+        <div className={s.actions} data-testid="component-actions"><ComponentViewButton paneKey={pane.key} /></div>
+        <ComponentMenu pane={pane} title={title} />
+      </>
+    );
+  }
   return (
     <>
     <div className={s.actions} data-testid="component-actions" data-minimized={pane.minimized ? 'true' : undefined} style={shown ? undefined : narrow ? { display: 'none' } : { visibility: 'hidden' }}>
+      {/* ピン止めの切替（FR-215）: 現在の状態に応じたアイコンを 1 つだけ出す。固定なし＝「ピン止めする」Regular、固定中＝「ピン止めを外す」Filled */}
+      <ActionButton action="pin" on={pane.pinned} pressed={pane.pinned} onClick={pane.togglePin} />
       {pane.minimized ? (
         // 最小化中は、フォーカスの有無に関わらず復元できる（見出しの操作で元の位置・大きさに戻る。FR-151）
-        <IconButton label="元に戻す" icon={<ArrowMaximize20Regular aria-hidden />} onClick={pane.toggleMinimize} />
+        <ActionButton action="minimize" on onClick={pane.toggleMinimize} />
       ) : null}
       {!pane.minimized ? (
         <>
-          <IconButton
-            label={pane.maximized ? '通常表示' : '最大化'}
-            icon={pane.maximized ? <FullScreenMinimize20Regular aria-hidden /> : <FullScreenMaximize20Regular aria-hidden />}
-            onClick={pane.toggleMaximize}
-          />
-          <IconButton label="最小化" icon={<ArrowMinimize20Regular aria-hidden />} onClick={pane.toggleMinimize} />
-          {pane.inTabs ? (
-            <IconButton label="タブから出す" icon={<TabDesktop20Regular aria-hidden />} onClick={pane.untab} />
+          <ActionButton action="maximize" on={pane.maximized} onClick={pane.toggleMaximize} />
+          <ActionButton action="minimize" onClick={pane.toggleMinimize} />
+          {pane.pinned ? (
+            // ピン止め中はタブにまとめない（FR-216 AC-505）。理由をツールチップと名前で示す
+            <ActionButton action="tabs" disabledReason={PIN_TABS_REASON} />
+          ) : pane.inTabs ? (
+            <ActionButton action="untab" onClick={pane.untab} />
           ) : pane.peers.length > 0 ? (
             <Menu>
-              <Tooltip content="タブにまとめる" relationship="label" withArrow>
+              <Tooltip content={paneAction('tabs').label} relationship="label" withArrow>
                 <MenuTrigger disableButtonEnhancement>
-                  <Button className={s.icon} appearance="subtle" size="small" icon={<TabDesktopMultiple20Regular aria-hidden />} />
+                  <Button className={s.icon} appearance="subtle" size="small" data-action="tabs" data-icon-variant="regular" icon={<TabsIcon aria-hidden />} />
                 </MenuTrigger>
               </Tooltip>
               <MenuPopover>
@@ -164,7 +201,9 @@ export function ComponentActions({ pane, title, active, narrow }: { pane: PaneIn
               </MenuPopover>
             </Menu>
           ) : null}
-          <IconButton label="非表示" icon={<EyeOff20Regular aria-hidden />} onClick={pane.hide} />
+          <ActionButton action="hide" onClick={pane.hide} />
+          {/* 2D/3D と世界の表示の切替を 1 つにまとめた「ビュー」（FR-217・FR-218。PARAM-073 の 6 個目） */}
+          <ComponentViewButton paneKey={pane.key} />
         </>
       ) : null}
     </div>

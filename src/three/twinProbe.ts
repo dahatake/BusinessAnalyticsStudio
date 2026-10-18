@@ -11,6 +11,9 @@ import { pickPoints, type TwinLayout } from './entityLayout';
 import { ensureCanvasInView, flushSceneSize, viewportAspect, viewportRect, type ViewportRect } from './sceneViewport';
 import { getTwinLayout } from './twin';
 import { twinGeometry, twinScale } from './twinGeometry';
+import { twinPartnersOfSelection } from './twinLinks';
+import { viewStateOf } from '../view/useView';
+import { isShownInWorld, type WorldView } from '../view/viewModel';
 
 export { registerSceneCanvas, viewportRect } from './sceneViewport';
 
@@ -26,16 +29,16 @@ export interface SceneObjectInfo {
   related: boolean;
 }
 
-interface Probe { layout: TwinLayout; key: string; meshes: THREE.Mesh[] }
+interface Probe { layout: TwinLayout; key: string; world: WorldView; meshes: THREE.Mesh[] }
 let probe: Probe | null = null;
 const camera = new THREE.PerspectiveCamera(CAMERA_FOV, 16 / 9, 0.1, 1000);
 const raycaster = new THREE.Raycaster();
 
-/** 投影の対象は、今生成している（表示中のレベルの）項目だけ。下位のレベルは、カメラが近づくまで生成しない（FR-036） */
-function ensureProbe(layout: TwinLayout, key: string): Probe {
-  if (probe && probe.layout === layout && probe.key === key) return probe;
+/** 投影の対象は、今生成している（表示中のレベルの）項目と、いまの世界の表示（FR-218）で描いている項目だけ。下位のレベルは、カメラが近づくまで生成しない（FR-036） */
+function ensureProbe(layout: TwinLayout, key: string, world: WorldView): Probe {
+  if (probe && probe.layout === layout && probe.key === key && probe.world === world) return probe;
   const mat = new THREE.MeshBasicMaterial();
-  const meshes = layout.objects.filter((o) => key[o.depth] === '1').map((o) => {
+  const meshes = layout.objects.filter((o) => key[o.depth] === '1' && isShownInWorld(o.world, world)).map((o) => {
     const m = new THREE.Mesh(twinGeometry(o.shape), mat);
     m.position.set(...o.position);
     m.scale.set(...twinScale(o.shape, o.size));
@@ -43,7 +46,7 @@ function ensureProbe(layout: TwinLayout, key: string): Probe {
     m.updateMatrixWorld(true);
     return m;
   });
-  probe = { layout, key, meshes };
+  probe = { layout, key, world, meshes };
   return probe;
 }
 
@@ -71,19 +74,22 @@ export function sceneObjects(): SceneObjectInfo[] {
   rehomeIfPristine(viewportAspect());
   syncLod();
   const key = useLod.getState().key;
-  const { meshes } = ensureProbe(layout, key);
+  const world = viewStateOf('view3d').world;
+  const { meshes } = ensureProbe(layout, key, world);
   const rect = viewportRect();
   syncCamera(rect);
   const sel = useSelectionStore.getState();
   const selected = new Set(sel.selectedIds);
   const graph = getEntityGraph();
   const related = graph ? relatedSet(graph, sel.selectedIds, sel.mode) : null;
+  // 選択中の項目のツイン関係の相手は、選択と同じく強調する（FR-218 AC-503）
+  const twins = twinPartnersOfSelection(graph, sel.selectedIds);
   const out: SceneObjectInfo[] = [];
   for (const o of layout.objects) {
     let found: { x: number; y: number } | null = null;
     let first: { x: number; y: number } | null = null;
-    // 生成していないレベルの項目は、画面にない（visible=false）
-    const generated = key[o.depth] === '1';
+    // 生成していないレベルの項目と、いまの世界の表示で描いていない項目は、画面にない（visible=false）
+    const generated = key[o.depth] === '1' && isShownInWorld(o.world, world);
     for (const p of generated ? pickPoints(o) : []) {
       v.set(p[0], p[1], p[2]).project(camera);
       const x = rect.left + ((v.x + 1) / 2) * rect.width;
@@ -103,7 +109,7 @@ export function sceneObjects(): SceneObjectInfo[] {
       x: Math.round(at.x * 10) / 10,
       y: Math.round(at.y * 10) / 10,
       visible: found !== null,
-      highlighted: isSel || sel.hoverId === o.entityId,
+      highlighted: isSel || sel.hoverId === o.entityId || (isShownInWorld(o.world, world) && twins.has(o.entityId)),
       selected: isSel,
       related: !isSel && (related?.has(o.entityId) ?? false),
     });

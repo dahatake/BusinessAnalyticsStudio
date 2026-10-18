@@ -26,9 +26,9 @@ const useStyles = makeStyles({
   svg: { width: '100%', height: 'auto', maxHeight: '70vh', minHeight: '280px', flexShrink: 0, display: 'block' },
   axis: { stroke: tokens.colorNeutralStroke1, strokeWidth: 1 },
   mid: { stroke: tokens.colorNeutralStroke2, strokeWidth: 1.5, strokeDasharray: '6 4' },
-  quad: { fill: tokens.colorNeutralForeground3, fontSize: '15px' },
-  label: { fill: tokens.colorNeutralForeground1, fontSize: '14px', pointerEvents: 'none' },
-  axisLabel: { fill: tokens.colorNeutralForeground2, fontSize: '15px' },
+  quad: { fill: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase400 },
+  label: { fill: tokens.colorNeutralForeground1, fontSize: tokens.fontSizeBase300, pointerEvents: 'none' },
+  axisLabel: { fill: tokens.colorNeutralForeground2, fontSize: tokens.fontSizeBase400 },
   bubble: {
     fill: tokens.colorBrandBackground2, stroke: tokens.colorBrandStroke1, strokeWidth: 2, cursor: 'pointer',
   },

@@ -4,7 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { formatPackError, type PackError } from '../../src/schema';
-import { validatePackDir } from '../lib/pack-fs';
+import { validateGeneratedPackDir, validatePackDir } from '../lib/pack-fs';
 import type { Inputs } from './common';
 import { PACK_FILE_KEYS, packFilePath, type GenerateTarget, type Material, type PackFileKey, type PackGenerator } from './generate';
 import { getAt, parsePath, setAt } from './jsonpath';
@@ -65,6 +65,8 @@ export interface RepairContext {
   materials: Material[];
   /** 最大回数（PARAM-006） */
   maxRounds: number;
+  /** 生成した顧客パックとして、世界区分・種別のないエンティティ（区分なし）もエラーにする（FR-213 AC-509）。既定 false */
+  requireClassified?: boolean;
   log?: (line: string) => void;
 }
 
@@ -103,7 +105,8 @@ export async function validateWithRepair(ctx: RepairContext): Promise<RepairResu
   const log = ctx.log ?? (() => {});
   const repaired: RepairedItem[] = [];
   let requests = 0;
-  let errors = validatePackDir(ctx.workDir).errors;
+  const validate = (): PackError[] => (ctx.requireClassified ? validateGeneratedPackDir : validatePackDir)(ctx.workDir).errors;
+  let errors = validate();
   let rounds = 0;
   while (errors.length > 0 && rounds < ctx.maxRounds) {
     const targets = groupTargets(errors);
@@ -130,7 +133,7 @@ export async function validateWithRepair(ctx: RepairContext): Promise<RepairResu
     for (const { t, value } of results) {
       if (applyValue(ctx.workDir, t, value)) repaired.push({ file: t.file, path: t.path, round: rounds });
     }
-    errors = validatePackDir(ctx.workDir).errors;
+    errors = validate();
   }
   return { rounds, repaired, errors, requests };
 }

@@ -1,6 +1,7 @@
 // インクの Markdown 出力のダイアログ（FR-093）。このボード／すべてのボードを選び、ボードごとの `.md` と `assets/` の画像を ZIP にして出力する。
 import { useState } from 'react';
-import { Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Text, makeStyles, tokens } from '@fluentui/react-components';
+import { Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Text, makeStyles, tokens } from '@fluentui/react-components';
+import { Dialog, DialogSurface } from '../components/Dialog';
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { useInk } from '../ink/store';
 import { downloadBlob } from './deliver';

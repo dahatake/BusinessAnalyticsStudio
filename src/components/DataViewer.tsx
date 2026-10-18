@@ -2,13 +2,15 @@
 // 鳥観図（塊）→ エンティティ（名称・説明）→ 列（列名・型）と詳細度が変わる。2D と 3D を切り替えても、選択・倍率・絞り込みは store に残る。
 // NFR-A11Y-007: キーボードだけで移動・選択・拡大縮小・全体表示ができ、変化は aria-live で通知する。3D が使えない環境では 2D にし、表の一覧を常に持つ。
 import { Suspense, lazy, useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Input, Radio, RadioGroup, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { Button, Input, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { Radio, RadioGroup } from './ChoiceRadio';
 import { NO_COLUMNS_LABEL, KIND_LABELS } from '../datacatalog/model';
 import {
-  DETAIL_LABELS, NO_3D_REASON, filterEntities, groupClusters, is3DAvailable, layoutViewer, zoomKeyAction,
+  DETAIL_LABELS, NO_3D_REASON, filterEntities, groupClusters, layoutViewer, zoomKeyAction,
   type ViewerEntity,
 } from '../datacatalog/viewer';
 import { useDataViewer } from '../store/dataViewer';
+import { detect3D } from '../view/render3d';
 import {
   RELATION_KIND_LABELS, RELATION_KINDS, decideViewMode, describeRelation, highlightOf, lineStyleOf, relatedOf, relationAnnouncement, simplifySelection,
   type RelationKind, type ViewerRelation,
@@ -34,16 +36,8 @@ const useStyles = makeStyles({
   hidden: { position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' },
 });
 
-/** 3D を使えるかの判定（WebGPU・WebGL2 のどちらも使えなければ使えない。FR-065 の判定とは別に、ここでは表示モードの可否だけ見る） */
-let cached3D: boolean | undefined;
-export function detect3D(): boolean {
-  if (cached3D !== undefined) return cached3D;
-  let hasWebGPU = false; let hasWebGL2 = false;
-  try { hasWebGPU = !!(navigator as unknown as { gpu?: unknown }).gpu; } catch { hasWebGPU = false; }
-  try { hasWebGL2 = !!document.createElement('canvas').getContext('webgl2'); } catch { hasWebGL2 = false; }
-  cached3D = is3DAvailable({ hasWebGPU, hasWebGL2 });
-  return cached3D;
-}
+/** 3D を使えるかの判定（WebGPU・WebGL2 のどちらも使えなければ使えない）。ビューの切替と共通（src/view/render3d.ts） */
+export { detect3D };
 
 export interface DataViewerProps {
   entities: readonly ViewerEntity[];
@@ -163,7 +157,7 @@ export function DataViewer({ entities, selectedKey, onSelect, relations = NO_REL
     return (
       <div
         key={e.key} role="option" aria-selected={on} tabIndex={0} data-viewer-entity={e.name} data-highlight={h} className={mergeClasses(s.card, on && s.on)}
-        style={h === 'dimmed' ? { opacity: 0.4 } : h === 'related' ? { borderStyle: 'dashed', borderWidth: 2 } : undefined} onClick={() => { setUseCase(null); onSelect(e.key); }}
+        style={h === 'dimmed' ? { opacity: 0.4 } : h === 'related' ? { borderStyle: 'dashed', borderWidth: tokens.strokeWidthThick } : undefined} onClick={() => { setUseCase(null); onSelect(e.key); }}
       >
         <Text weight="semibold">{e.name}{on ? '（選択中）' : h === 'related' ? '（関連）' : ''}</Text>
         <Text size={200}>{e.description}</Text>

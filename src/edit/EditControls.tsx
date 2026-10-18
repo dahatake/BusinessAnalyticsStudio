@@ -2,10 +2,9 @@
 // 詳細パネルの追加・複製・削除（FR-044）。状態はすべて src/store/edit.ts（編集の共通ストア）にある。
 import { useRef, useState, type ReactNode } from 'react';
 import {
-  Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, DialogTrigger, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger,
-  MessageBar, MessageBarBody, MessageBarTitle, Switch, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
-  makeStyles, tokens,
+  Button, DialogActions, DialogBody, DialogContent, DialogTitle, DialogTrigger, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, MessageBar, MessageBarBody, MessageBarTitle, Switch, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, tokens,
 } from '@fluentui/react-components';
+import { Dialog, DialogSurface } from '../components/Dialog';
 import {
   ArrowDownload20Regular, ArrowRedo20Regular, ArrowReset20Regular, ArrowUndo20Regular, ArrowUpload20Regular, Copy20Regular, Delete20Regular,
   History20Regular, Add20Regular,

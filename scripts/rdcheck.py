@@ -25,6 +25,7 @@ from typing import Dict, List, Optional, Set
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ebaklib as h  # noqa: E402
 import entities as ent  # noqa: E402
+import entity_classes as ec  # noqa: E402
 import integration_catalog as ic  # noqa: E402
 
 # requirements that must have a row in the function table of the catalog (same as rdfix.CATALOG_STATES)
@@ -131,7 +132,7 @@ class Checker:
         for fn in (self.chk01_02, self.chk03, self.chk04, self.chk05, self.chk06_22, self.chk07_08,
                    self.chk09, self.chk10_11, self.chk12, self.chk13_14_15, self.chk16, self.chk17,
                    self.chk18, self.chk19, self.chk20, self.chk21, self.chk23, self.chk25, self.chk26,
-                   self.chk27, self.chk24, self.chk28, self.chk28_catalog):
+                   self.chk27, self.chk24, self.chk28, self.chk28_catalog, self.chk29):
             fn()
         return self.findings
 
@@ -879,6 +880,15 @@ class Checker:
         """外部連携カタログ docs/integration-catalog.md（FR-188〜FR-199・NFR-OPS-001）。INT-xxx の chk28 とは独立で、同じ CHK-28 に出す。"""
         for level, loc, msg in ic.check(self.root, self.cfg, self.doc):
             self.add(level, "CHK-28", loc, msg)
+
+    # ------------------------------------------------------------------ CHK-29 (FR-212)
+    def chk29(self) -> None:
+        """要求定義書 §3.7 のエンティティの分類表（欄と許容値は scripts/metadata.json の entity_classification）。"""
+        _, _, irows = ic.parse(self.root, self.cfg)
+        int_ids = set(self.integ.by_id()) if self.integ.exists else set()
+        problems = ec.check(self.doc, ec.load_definition(), self.catalog_names(), int_ids, [r.name for r in irows if r.name])
+        for f, ln, msg in problems:
+            self.err("CHK-29", self.loc(f, ln), msg)
 
 # ---------------------------------------------------------------------- commands
 

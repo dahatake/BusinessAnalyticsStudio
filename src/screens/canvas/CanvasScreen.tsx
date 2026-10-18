@@ -35,8 +35,9 @@ const useStyles = makeStyles({
     borderRadius: tokens.borderRadiusXLarge,
     boxShadow: tokens.shadow8,
   },
-  body: { display: 'flex', flex: '1 1 0', minHeight: '240px', columnGap: tokens.spacingHorizontalM, '@media (max-width: 720px)': { flexDirection: 'column', rowGap: tokens.spacingVerticalM } },
-  list: { flex: '0 0 220px', maxHeight: '100%', overflowY: 'auto', '@media (max-width: 720px)': { flex: '0 0 auto', maxHeight: '160px' } },
+  body: { display: 'flex', flex: '1 0 auto', minHeight: '240px', columnGap: tokens.spacingHorizontalM, '@media (max-width: 720px)': { flexDirection: 'column', rowGap: tokens.spacingVerticalM } },
+  // 議題の一覧は内側でスクロールさせず、文字を拡大しても全項目を並べる（一覧の外の部品と重ならない。NFR-A11Y-009 AC-483）。狭い幅では高さを抑えて内側でスクロールする
+  list: { flex: '0 0 220px', '@media (max-width: 720px)': { flex: '0 0 auto', maxHeight: '160px', overflowY: 'auto' } },
   surface: {
     position: 'relative',
     flex: '1 1 0',
@@ -68,6 +69,8 @@ const useStyles = makeStyles({
     borderRadius: tokens.borderRadiusLarge,
     boxShadow: tokens.shadow4,
   },
+  // 固定サイズのカードの文字は、文字を拡大しても 1 行に収め、収まらない分は省略記号にする（全文はカードの名前。NFR-A11Y-009 AC-483・A-51）
+  cardText: { display: 'block', minWidth: 0, maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' },
   stage: { position: 'relative', flex: '1 1 0', minWidth: 0, minHeight: '200px', display: 'flex' },
   zoomInfo: { position: 'absolute', right: tokens.spacingHorizontalS, bottom: tokens.spacingVerticalS, pointerEvents: 'none' },
 });
@@ -214,6 +217,7 @@ export function CanvasScreen() {
           <div
             ref={surface}
             data-testid="canvas-surface"
+            data-zoom-surface="canvas"
             role="application"
             aria-label="キャンバス（矢印キーで移動、+/- で拡大縮小）"
             aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight + -"
@@ -235,8 +239,8 @@ export function CanvasScreen() {
                   role="group"
                   aria-label={`中核オブジェクト: ${core.name}`}
                 >
-                  <Text size={200}>中核オブジェクト</Text>
-                  <Text weight="semibold" size={500}>{core.name}</Text>
+                  <Text className={s.cardText} size={200}>中核オブジェクト</Text>
+                  <Text className={s.cardText} weight="semibold" size={500}>{core.name}</Text>
                 </div>
               ) : null}
               {cards.map((c) => (
@@ -246,9 +250,10 @@ export function CanvasScreen() {
                   data-highlight={selected === c.id ? 'selected' : undefined}
                   className={s.card}
                   style={{ left: c.x, top: c.y, borderColor: selected === c.id ? tokens.colorBrandStroke1 : undefined }}
+                  title={`${c.chapter}: ${c.title}`}
                 >
-                  <Text size={200}>{c.chapter}</Text>
-                  <Text weight="semibold">{c.title}</Text>
+                  <Text className={s.cardText} size={200}>{c.chapter}</Text>
+                  <Text className={s.cardText} weight="semibold">{c.title}</Text>
                 </div>
               ))}
             </div>

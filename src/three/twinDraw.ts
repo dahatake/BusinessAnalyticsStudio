@@ -18,11 +18,13 @@ export interface DrawGroup {
   ids: string[];
 }
 
-/** 描画の計画。生成するレベルの項目だけを、形・色・階層でまとめる。 */
-export function planDraw(layout: TwinLayout, colorOf: (o: TwinObject) => string, isRenderedDepth: (depth: number) => boolean): DrawGroup[] {
+/** 描画の計画。生成するレベルの項目だけを、形・色・階層でまとめる。`include` は世界の表示（FR-218）などで描く項目を絞る */
+export function planDraw(
+  layout: TwinLayout, colorOf: (o: TwinObject) => string, isRenderedDepth: (depth: number) => boolean, include: (o: TwinObject) => boolean = () => true,
+): DrawGroup[] {
   const groups = new Map<string, DrawGroup>();
   for (const o of layout.objects) {
-    if (!isRenderedDepth(o.depth)) continue;
+    if (!isRenderedDepth(o.depth) || !include(o)) continue;
     const color = colorOf(o);
     const key = `${o.shape}|${color}|${o.depth}|${o.platform ? 'p' : 'l'}`;
     let g = groups.get(key);

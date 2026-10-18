@@ -3,11 +3,10 @@
 import { Html, Line } from '@react-three/drei';
 import { DIFF_LABEL, type ArchSection, type DiffKind, type DiffModel } from '../analysis/architecture';
 import { DiagramCanvas } from './DiagramCanvas';
+import { sceneLabelStyle } from './labelStyles';
 
 const DIFF_COLOR_3D: Record<DiffKind, string> = { same: '#8a8a8a', added: '#2ea043', removed: '#d1242f', changed: '#d4a72c' };
-const labelStyle = {
-  color: '#ffffff', backgroundColor: 'rgba(0,0,0,0.6)', padding: '1px 4px', borderRadius: '3px', fontSize: '11px', whiteSpace: 'nowrap', pointerEvents: 'none',
-} as const;
+const labelStyle = sceneLabelStyle;
 
 export interface ArchitectureStackProps {
   sections: readonly ArchSection[];
@@ -33,7 +32,7 @@ export function ArchitectureStack({ sections, model, onSelect }: ArchitectureSta
             <meshStandardMaterial color={DIFF_COLOR_3D[it.diff]} />
           </mesh>
           <Html center position={[0, 0.55, 0]} zIndexRange={[5, 0]}>
-            <span style={labelStyle}>{it.diff === 'same' ? '' : `【${DIFF_LABEL[it.diff]}】`}{it.element.name}</span>
+            <span style={labelStyle} title={`${it.diff === 'same' ? '' : `【${DIFF_LABEL[it.diff]}】`}${it.element.name}`}>{it.diff === 'same' ? '' : `【${DIFF_LABEL[it.diff]}】`}{it.element.name}</span>
           </Html>
         </group>
       )))}

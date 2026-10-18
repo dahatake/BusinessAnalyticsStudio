@@ -28,7 +28,7 @@ const useStyles = makeStyles({
     backgroundColor: tokens.colorNeutralBackground1,
     border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
   },
-  pre: { whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontFamily: tokens.fontFamilyMonospace, fontSize: tokens.fontSizeBase200 },
+  pre: { whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontFamily: tokens.fontFamilyMonospace, fontSize: tokens.fontSizeBase200, lineHeight: tokens.lineHeightBase200 },
   // 強制カラー（ハイコントラスト）では OS の色で描く。主ボタンの色の固定を外す（FR-058 AC-071）
   osColors: { '@media (forced-colors: active)': { forcedColorAdjust: 'auto' } },
 });

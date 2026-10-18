@@ -107,9 +107,9 @@ describe('FR-144 ProjectsPanel（描画）', () => {
       fireEvent.click(within(picker).getByRole('option', { name: /業務改善 2026/ }));
       await waitFor(() => expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull());
       fireEvent.click(screen.getByRole('button', { name: 'デモへ切り替える' }));
-      const confirm = await screen.findByRole('alertdialog', { name: '未保存の入力があります' });
+      await screen.findByRole('alertdialog', { name: '未保存の入力があります' });
       expect(st().openId).toBe(p1); // 確認の前は切り替わらない
-      fireEvent.click(within(confirm).getByRole('button', { name: 'キャンセル' }));
+      await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog', { name: '未保存の入力があります' })).getByRole('button', { name: 'キャンセル' })));
       await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
       expect(st().openId).toBe(p1);
       fireEvent.click(screen.getByRole('button', { name: 'デモへ切り替える' }));
@@ -175,16 +175,17 @@ describe('FR-144 ProjectsPanel（描画）', () => {
     expect(screen.getAllByText(/合成株式会社A/).length).toBeGreaterThan(0);
     fireEvent.click(within(picker).getByRole('option', { name: /デモ/ }));
     // 確認ダイアログ（FR-138 AC-210 と同じ条件）。切替は確定されていない
-    const confirm = await screen.findByRole('alertdialog', { name: '未保存の入力があります' });
+    await screen.findByRole('alertdialog', { name: '未保存の入力があります' });
     expect(st().openId).toBe(p1);
-    fireEvent.click(within(confirm).getByRole('button', { name: 'キャンセル' }));
+    await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog', { name: '未保存の入力があります' })).getByRole('button', { name: 'キャンセル' })));
     await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
     expect(st().openId).toBe(p1);
     expect(useAnalyses.getState().drafts[p1 ?? '']?.param).toBe('123');
 
     // もう一度デモへ → 「切り替える」で切替。入力は Project に残り、企業一覧は出ない
     fireEvent.click(screen.getByRole('button', { name: '作業先' }));
-    fireEvent.click(within(await screen.findByRole('dialog', { name: '作業先の選択' })).getByRole('option', { name: /デモ/ }));
+    // 確認ダイアログを閉じた後、選択画面の aria-hidden は非同期に戻るため、触れられるようになるまで待つ
+    await waitFor(() => fireEvent.click(within(screen.getByRole('dialog', { name: '作業先の選択' })).getByRole('option', { name: /デモ/ })));
     await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: '切り替える' })));
     await waitFor(() => expect(st().openId).toBeNull());
     expect(screen.getByTestId('work-target').textContent).toBe('デモ');

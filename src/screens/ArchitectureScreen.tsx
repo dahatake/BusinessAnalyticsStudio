@@ -2,9 +2,9 @@
 // AsIs/ToBe を切り替えると差分（追加・削除・変更）を色とラベルでハイライトする。図は Mermaid・SVG・PNG で出力でき、JSON で編集できる。
 import { useEffect, useMemo, useState } from 'react';
 import {
-  Badge, Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger,
-  Text, Textarea, makeStyles, mergeClasses, tokens,
+  Badge, Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, Text, Textarea, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
+import { Dialog, DialogSurface } from '../components/Dialog';
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { ArrowDownload24Regular, Code24Regular } from '@fluentui/react-icons';
 import {
@@ -22,6 +22,8 @@ import { useEditStore } from '../store/edit';
 import { usePackStore } from '../store/pack';
 import { ArchitectureStack } from '../three/ArchitectureStack';
 
+import { useComponentView, usePublishViewItems } from '../view/useView';
+import { ModeRadio } from '../view/ModeRadio';
 const ORIGIN = 'architecture';
 
 const useStyles = makeStyles({
@@ -95,7 +97,9 @@ function ArchitectureScreen() {
   const state = usePackStore((st) => st.state);
   const editEnabled = useEditStore((st) => st.editMode);
   const [view, setView] = useState<ArchView>('tobe');
-  const [dim, setDim] = useState<'2d' | '3d'>('2d');
+  // 2D/3D は見出しの「ビュー」と同じ状態（FR-217。この画面の「表示」の切替も同じ状態を変える）
+  const cv = useComponentView(ORIGIN);
+  const dim = cv.mode;
   const [scope, setScope] = useState<'all' | 'business' | 'app'>('all');
   const [jsonOpen, setJsonOpen] = useState(false);
   const [jsonText, setJsonText] = useState('');
@@ -110,6 +114,9 @@ function ArchitectureScreen() {
     const all = sectionsOf(model);
     return scope === 'all' ? all : all.filter((x) => (scope === 'business') === (x.kind !== 'layer'));
   }, [model, scope]);
+  // 表示中の項目（t.view.state。2D と 3D で同じ要素を描く）
+  const shownIds = useMemo(() => sections.flatMap((x) => x.items.map((e) => e.element.id)), [sections]);
+  usePublishViewItems(ORIGIN, shownIds);
   const names = useMemo(() => new Map((model?.elements ?? []).map((e) => [e.element.id, e.element.name])), [model]);
 
   useEffect(() => { if (jsonOpen && variants) { setJsonText(archToJson(variants)); setJsonError(null); } }, [jsonOpen, variants]);
@@ -185,12 +192,8 @@ function ArchitectureScreen() {
             <Radio value="tobe" label="ToBe" />
           </RadioGroup>
         </Field>
-        <Field label="表示">
-          <RadioGroup layout="horizontal" value={dim} onChange={(_, d) => setDim(d.value as '2d' | '3d')}>
-            <Radio value="2d" label="2D" />
-            <Radio value="3d" label="3D" />
-          </RadioGroup>
-        </Field>
+        {/* 見出しの「ビュー」と同じ 1 つの切替（FR-217 AC-500・AC-507） */}
+        <ModeRadio viewKey={ORIGIN} />
         <Field label="範囲">
           <RadioGroup layout="horizontal" value={scope} onChange={(_, d) => setScope(d.value as typeof scope)}>
             <Radio value="all" label="すべて" />

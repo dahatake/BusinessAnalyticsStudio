@@ -1,0 +1,113 @@
+/* デザイン基盤のグローバルの規則（FR-058・NFR-UX-007・NFR-UX-015〜017・NFR-A11Y-009）。
+   値はすべて Fluent 2 のトークン（テーマの CSS 変数。AppThemeProvider が :root にも書き出す）を参照し、直書きしない。
+   部品の個別の指定（Fluent UI のクラス）があればそちらが優先され、ここは「指定のないもの」を Fluent 2 の段にそろえる。 */
+
+/* ── 文字（NFR-UX-015）: ネイティブの部品・見出し・小さな文字が、ブラウザーの既定（13.33px／normal・1.17em など）のまま残らないようにする ── */
+:where(button, input, select, textarea, optgroup) {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+:where(kbd, code, samp, pre, small, sub, sup) {
+  font-size: var(--fontSizeBase200);
+  line-height: var(--lineHeightBase200);
+}
+.fui-TableHeaderCell__button.fui-TableHeaderCell__button {
+  line-height: inherit;
+}
+:where(h1) { font-size: var(--fontSizeHero700); line-height: var(--lineHeightHero700); font-weight: var(--fontWeightSemibold); }
+:where(h2) { font-size: var(--fontSizeBase600); line-height: var(--lineHeightBase600); font-weight: var(--fontWeightSemibold); }
+:where(h3) { font-size: var(--fontSizeBase500); line-height: var(--lineHeightBase500); font-weight: var(--fontWeightSemibold); }
+:where(h4) { font-size: var(--fontSizeBase400); line-height: var(--lineHeightBase400); font-weight: var(--fontWeightSemibold); }
+:where(h5, h6) { font-size: var(--fontSizeBase300); line-height: var(--lineHeightBase300); font-weight: var(--fontWeightSemibold); }
+
+/* ── 影（エレベーション。NFR-UX-015）: 役割ごとに 1 つの段。メニュー・ツールチップは 8、ダイアログは 64、カードは 4 ── */
+.fui-MenuPopover.fui-MenuPopover {
+  box-shadow: var(--shadow8);
+}
+.fui-Tooltip__content.fui-Tooltip__content {
+  box-shadow: var(--shadow8);
+  filter: none;
+}
+.fui-DialogSurface.fui-DialogSurface {
+  box-shadow: var(--shadow64);
+}
+[data-surface='card'] {
+  box-shadow: var(--shadow4);
+}
+/* ハイコントラスト（forced-colors）ではブラウザーが影を描かない。影の代わりに、システムの文字色の境界線で面の境界を表す */
+@media (forced-colors: active) {
+  .fui-MenuPopover.fui-MenuPopover,
+  .fui-Tooltip__content.fui-Tooltip__content,
+  .fui-DialogSurface.fui-DialogSurface,
+  [data-surface='card'] {
+    box-shadow: none;
+    outline: var(--strokeWidthThin) solid CanvasText;
+    outline-offset: calc(-1 * var(--strokeWidthThin));
+  }
+}
+
+/* ── 入力欄の境界（NFR-UX-016・WCAG 1.4.11）: 入力する要素そのものに、背景と 3:1 以上の下線を持たせる。
+   外枠の下線は入力の要素の下線に置き換える（二重にしない）。フォーカスの下線（外枠の ::after）はそのまま ── */
+.fui-Input.fui-Input,
+.fui-SpinButton.fui-SpinButton,
+.fui-Combobox.fui-Combobox,
+.fui-Dropdown.fui-Dropdown,
+.fui-Textarea.fui-Textarea {
+  border-bottom-color: transparent;
+}
+.fui-Input__input.fui-Input__input,
+.fui-SpinButton__input.fui-SpinButton__input,
+.fui-Combobox__input.fui-Combobox__input,
+.fui-Dropdown__button.fui-Dropdown__button,
+.fui-Textarea__textarea.fui-Textarea__textarea {
+  border-bottom: var(--strokeWidthThin) solid var(--colorNeutralStrokeAccessible);
+}
+@media (forced-colors: active) {
+  .fui-Input__input.fui-Input__input,
+  .fui-SpinButton__input.fui-SpinButton__input,
+  .fui-Combobox__input.fui-Combobox__input,
+  .fui-Dropdown__button.fui-Dropdown__button,
+  .fui-Textarea__textarea.fui-Textarea__textarea {
+    border-bottom-color: FieldText;
+  }
+}
+
+/* ── 画面（最上位の行き先）の切替のフェード（NFR-UX-017）: 開いた画面の面を、面の色からフェードで現す。
+   覆いはポインターを受けず（操作を妨げない）、終わると外す。所要時間とイージングは Fluent 2 のモーションのトークン ── */
+:where([data-screen-fade]:not([data-maximized])) {
+  position: relative;
+}
+[data-screen-fade]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-color: var(--colorNeutralBackground1);
+  animation-name: edb-screen-fade;
+  animation-duration: var(--durationNormal);
+  animation-timing-function: var(--curveDecelerateMid);
+  animation-fill-mode: both;
+}
+@keyframes edb-screen-fade {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* ── OS の「視差効果を減らす」（NFR-UX-017・FR-072）: すべての画面で、動きを付けずに最終の状態を示す ── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
+    scroll-behavior: auto !important;
+  }
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

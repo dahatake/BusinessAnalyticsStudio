@@ -8,7 +8,7 @@ const cache = new WeakMap<object, TwinLayout>();
 
 /** パックのエンティティ（entities.json）を、配置の入力にする。 */
 export function twinEntitiesOf(data: PackData): TwinEntity[] {
-  return data.entities.entities.map((e) => ({ id: e.id, type: e.type, name: e.name, parentId: e.parentId ?? null }));
+  return data.entities.entities.map((e) => ({ id: e.id, type: e.type, name: e.name, parentId: e.parentId ?? null, ...(e.world ? { world: e.world } : {}) }));
 }
 
 export function twinLayoutOf(data: PackData): TwinLayout {

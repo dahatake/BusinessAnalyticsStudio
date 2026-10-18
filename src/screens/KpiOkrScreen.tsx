@@ -3,8 +3,9 @@
 // 定義は編集モード（FR-047）のときだけ「OKR を定義」から行う。
 import { useState } from 'react';
 import {
-  Badge, Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Input, MessageBar, MessageBarBody, Text, makeStyles, tokens,
+  Badge, Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Input, MessageBar, MessageBarBody, Text, makeStyles, tokens,
 } from '@fluentui/react-components';
+import { Dialog, DialogSurface } from '../components/Dialog';
 import { Add24Regular, CheckmarkCircle20Regular, CircleHalfFill20Regular, Circle20Regular, QuestionCircle20Regular } from '@fluentui/react-icons';
 import { Panel } from '../components/Panel';
 import { LoadingView } from '../components/StateViews';

@@ -28,7 +28,7 @@ const useStyles = makeStyles({
     position: 'absolute',
     width: '16px',
     height: '16px',
-    marginLeft: '-8px',
+    marginLeft: `calc(-1 * ${tokens.spacingHorizontalS})`,
     borderRadius: tokens.borderRadiusCircular,
     backgroundColor: tokens.colorBrandBackground,
     border: `${tokens.strokeWidthThick} solid ${tokens.colorNeutralBackground1}`,

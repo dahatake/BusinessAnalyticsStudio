@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { DATA_FILE_NAMES, dataFilePath, BRAND_PROFILE_PATH, validateLayout, validatePack } from '../../src/schema';
+import { DATA_FILE_NAMES, dataFilePath, BRAND_PROFILE_PATH, listUnclassified, validateLayout, validatePack } from '../../src/schema';
 import type { PackError, PackFiles, PackValidation } from '../../src/schema';
 
 export const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -39,4 +39,29 @@ export function validatePackDir(root: string): PackValidation {
   const reported = new Set(layout.map((e) => e.file));
   const errors = [...layout, ...content.errors.filter((e) => !(e.code === 'missing-file' && reported.has(e.file)))];
   return { errors, unsourcedNumbers: content.unsourcedNumbers };
+}
+
+/**
+ * 生成パイプラインが作る顧客パックの「区分なし」（world か kind のないエンティティ）を、位置つきの検証エラーにする（FR-213 AC-509）。
+ * 手作りの顧客パックの検証（validatePackDir・verify:pack の既定）では使わない（区分なしは警告だけ。AC-490）。
+ */
+export function unclassifiedErrors(root: string): PackError[] {
+  const file = dataFilePath('entities');
+  const abs = path.join(root, file);
+  if (!fs.existsSync(abs)) return []; // ファイルがないことは構成の検査が報告する
+  let json: unknown;
+  try { json = readJson(abs); } catch { return []; } // 壊れた JSON は中身の検査が報告する
+  return listUnclassified(json).map((u) => ({
+    code: 'schema' as const,
+    file,
+    path: u.path.reduce<string>((acc, s) => (typeof s === 'number' ? `${acc}[${s}]` : acc ? `${acc}.${s}` : s), ''),
+    ...(u.id ? { id: u.id } : {}),
+    message: u.message,
+  }));
+}
+
+/** 生成した顧客パックの検証（validatePackDir に、区分なしのエラーを加える。FR-213 AC-509） */
+export function validateGeneratedPackDir(root: string): PackValidation {
+  const v = validatePackDir(root);
+  return { ...v, errors: [...v.errors, ...unclassifiedErrors(root)] };
 }

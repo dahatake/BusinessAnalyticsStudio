@@ -10,6 +10,8 @@ const useStyles = makeStyles({
     textDecorationStyle: 'dotted',
     textUnderlineOffset: '3px',
     cursor: 'help',
+    // 数値は途中で折り返さない（文字を 200% にしても数値の表示が割れて周りと重ならない。NFR-A11Y-009 AC-483）
+    whiteSpace: 'nowrap',
     ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`, borderRadius: tokens.borderRadiusSmall },
   },
   tip: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS },

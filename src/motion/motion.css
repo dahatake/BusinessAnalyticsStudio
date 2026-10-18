@@ -14,8 +14,8 @@ html[data-animation='paused'] *::after {
 /* 画面遷移（View Transitions API）。Fluent 2 の時間（Normal 200ms）とイージング（Decelerate）。テンポは --edb-tempo で伸縮する */
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: calc(200ms * var(--edb-tempo, 1));
-  animation-timing-function: cubic-bezier(0, 0, 0, 1);
+  animation-duration: calc(var(--durationNormal) * var(--edb-tempo, 1));
+  animation-timing-function: var(--curveDecelerateMid);
 }
 
 /* 遷移中も操作を受ける: View Transitions の擬似要素がポインター操作を奪わないようにする（キャンバスのドラッグなどが遷移の最中に始まっても効く） */

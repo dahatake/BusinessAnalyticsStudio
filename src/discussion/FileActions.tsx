@@ -2,9 +2,9 @@
 // 保存は既定のファイル名（<yyyymmdd>-顧客名-Project名-discussion-memo.md）を提示し、読み込みは Markdown の JSON ブロックから復元する。
 import { useRef, useState } from 'react';
 import {
-  Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, Field, Input, MessageBar, MessageBarActions,
-  MessageBarBody, MessageBarTitle, makeStyles, tokens,
+  Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Input, MessageBar, MessageBarActions, MessageBarBody, MessageBarTitle, makeStyles, tokens,
 } from '@fluentui/react-components';
+import { Dialog, DialogSurface } from '../components/Dialog';
 import { Dismiss24Regular, FolderOpen24Regular, Save24Regular } from '@fluentui/react-icons';
 import { defaultMemoFileName } from './model';
 import { buildMemoForPack, restoreFromMemo } from './restore';

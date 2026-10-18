@@ -4,8 +4,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  Button, Dialog, DialogBody, DialogContent, DialogSurface, DialogTitle, FluentProvider, Text, makeStyles, mergeClasses, tokens, webDarkTheme,
+  Button, DialogBody, DialogContent, DialogTitle, FluentProvider, Text, makeStyles, mergeClasses, tokens, webDarkTheme,
 } from '@fluentui/react-components';
+import { Dialog, DialogSurface } from '../components/Dialog';
 import {
   ArrowPrevious20Regular, ArrowNext20Regular, ArrowReset20Regular, FullScreenMaximize20Regular, Play20Regular, Pause20Regular, Dismiss20Regular,
 } from '@fluentui/react-icons';
@@ -53,14 +54,14 @@ const useStyles = makeStyles({
     display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalS,
     padding: tokens.spacingVerticalM, backgroundColor: tokens.colorNeutralBackground3, borderTop: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
   },
-  progress: { display: 'flex', columnGap: '2px', height: '6px', margin: 0, padding: 0, listStyleType: 'none' },
+  progress: { display: 'flex', columnGap: tokens.spacingHorizontalXXS, height: '6px', margin: 0, padding: 0, listStyleType: 'none' },
   seg: { flexGrow: 1, backgroundColor: tokens.colorNeutralBackground5 },
   segDone: { backgroundColor: tokens.colorBrandBackground },
   hint: { color: tokens.colorNeutralForeground3 },
   personaList: { display: 'flex', flexWrap: 'wrap', gap: tokens.spacingHorizontalM },
   forced: { forcedColorAdjust: 'auto' },
   srOnly: { position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' },
-  segCur: { outlineStyle: 'solid', outlineWidth: '2px', outlineColor: tokens.colorNeutralForeground1 },
+  segCur: { outlineStyle: 'solid', outlineWidth: tokens.strokeWidthThick, outlineColor: tokens.colorNeutralForeground1 },
   textView: { flexGrow: 1, minHeight: 0, overflowY: 'auto', padding: tokens.spacingHorizontalXXL, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalL },
   textList: { listStyleType: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalL },
   textItem: { padding: tokens.spacingHorizontalL, borderLeft: `${tokens.strokeWidthThickest} solid ${tokens.colorNeutralStroke2}` },

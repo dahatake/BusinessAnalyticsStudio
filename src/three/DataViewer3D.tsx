@@ -5,15 +5,14 @@ import { useEffect, useMemo } from 'react';
 import { useThree } from '@react-three/fiber';
 import { Html, Line } from '@react-three/drei';
 import { DiagramCanvas } from './DiagramCanvas';
+import { sceneCardSelectedStyle, sceneCardStyle, sceneRelationLabelStyle } from './labelStyles';
+import { TEXT, tokens } from '../theme/tokens';
 import { DETAIL_LABELS, fitDistance, type DetailLevel, type ViewerCluster, type ViewerLayout } from '../datacatalog/viewer';
 import { highlightOf, lineStyleOf, type relatedOf, type ViewerRelation } from '../datacatalog/relations';
 import { NO_COLUMNS_LABEL } from '../datacatalog/model';
 
-const card = {
-  background: 'rgba(255,255,255,0.95)', color: '#111', border: '2px solid #5b6b7b', borderRadius: 6, padding: '4px 8px', minWidth: 110, maxWidth: 200,
-  fontSize: 12, textAlign: 'left', cursor: 'pointer', boxSizing: 'border-box',
-} as const;
-const cardOn = { ...card, border: '3px solid #0f6cbd', background: '#ffffff' } as const;
+const card = sceneCardStyle;
+const cardOn = sceneCardSelectedStyle;
 
 function CameraDriver({ zoom, focus, extent }: { zoom: number; focus: [number, number, number]; extent: number }) {
   const camera = useThree((s) => s.camera);
@@ -63,7 +62,7 @@ export function DataViewer3D({ clusters, layout, level, zoom, selectedKey, activ
             <Line points={[[a.x, 0.3, a.z], [b.x, 0.3, b.z]]} color={hot ? '#0f6cbd' : '#8a8a8a'} lineWidth={hot ? 3 : 1} transparent opacity={hot ? 1 : 0.3} />
             {hot && level !== 'bird' ? (
               <Html center position={[(a.x + b.x) / 2, 0.5, (a.z + b.z) / 2]} zIndexRange={[4, 0]}>
-                <div style={{ background: '#fff', color: '#111', border: '1px solid #5b6b7b', borderRadius: 4, padding: '0 4px', fontSize: 11 }} data-relation-label={r.label}>{lineStyleOf(r).label}: {r.label}</div>
+                <div style={sceneRelationLabelStyle} data-relation-label={r.label}>{lineStyleOf(r).label}: {r.label}</div>
               </Html>
             ) : null}
           </group>
@@ -107,11 +106,11 @@ export function DataViewer3D({ clusters, layout, level, zoom, selectedKey, activ
                   onClick={() => onSelect(e.key)}
                 >
                   <strong>{on ? `${e.name}（選択中）` : h === 'related' ? `${e.name}（関連）` : e.name}</strong>
-                  <div style={{ fontSize: 11 }}>{e.description}</div>
+                  <div style={TEXT.caption1}>{e.description}</div>
                   {level === 'column' ? (
                     e.columns.length === 0
                       ? <div data-viewer-nocolumns>{NO_COLUMNS_LABEL}</div>
-                      : <ul style={{ margin: '2px 0 0', paddingLeft: 14 }}>{e.columns.map((col, i) => <li key={i} data-viewer-column={col.name}>{col.name}{col.type ? `（${col.type}）` : ''}</li>)}</ul>
+                      : <ul style={{ margin: `${tokens.spacingVerticalXXS} 0 0`, paddingLeft: tokens.spacingHorizontalM }}>{e.columns.map((col, i) => <li key={i} data-viewer-column={col.name}>{col.name}{col.type ? `（${col.type}）` : ''}</li>)}</ul>
                   ) : null}
                 </div>
               </Html>
