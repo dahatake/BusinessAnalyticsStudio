@@ -8,7 +8,7 @@ import {
   type DialogProps,
   type DialogSurfaceProps,
 } from '@fluentui/react-components';
-import { createContext, forwardRef, useContext, useEffect, useRef } from 'react';
+import { createContext, forwardRef, useCallback, useContext, useEffect, useRef } from 'react';
 import { useMotionAllowed } from '../motion/transitions';
 
 /** フォーカスが行き場を失っている（body にある・どこにもない）なら、開く前の要素へ戻す */
@@ -88,9 +88,37 @@ export function Dialog(props: DialogProps) {
   );
 }
 
+/**
+ * 開いているダイアログ自身は、支援技術から隠さない。ダイアログどうしが入れ替わる（選択画面を閉じて確認を開く）と、
+ * 閉じた側の modalizer の後始末の順序によって、開いた側の面に aria-hidden が残ることがある（確認が読み上げられなくなる）。
+ */
+function useSurfaceVisible(): (el: HTMLDivElement | null) => void {
+  const cleanup = useRef<(() => void) | null>(null);
+  return useCallback((el: HTMLDivElement | null) => {
+    cleanup.current?.();
+    cleanup.current = null;
+    if (!el || typeof MutationObserver === 'undefined') return;
+    const show = (): void => {
+      if (el.getAttribute('aria-hidden') !== 'true') return;
+      const modals = el.ownerDocument.querySelectorAll('[aria-modal="true"]');
+      if (modals[modals.length - 1] === el) el.removeAttribute('aria-hidden'); // 上に別のダイアログが重なっているときは隠れてよい
+    };
+    show();
+    const mo = new MutationObserver(show);
+    mo.observe(el, { attributes: true, attributeFilter: ['aria-hidden'] });
+    cleanup.current = () => mo.disconnect();
+  }, []);
+}
+
 export const DialogSurface = forwardRef<HTMLDivElement, DialogSurfaceProps>(function DialogSurface(props, ref) {
   const fromDialog = useContext(DialogMotionContext);
   const allowed = useMotionAllowed();
   const motion = fromDialog ?? allowed;
-  return <FluentDialogSurface ref={ref} {...props} backdropMotion={motion ? props.backdropMotion : null} />;
+  const visible = useSurfaceVisible();
+  const setRef = useCallback((el: HTMLDivElement | null) => {
+    visible(el);
+    if (typeof ref === 'function') ref(el);
+    else if (ref) (ref as { current: HTMLDivElement | null }).current = el;
+  }, [ref, visible]);
+  return <FluentDialogSurface ref={setRef} {...props} backdropMotion={motion ? props.backdropMotion : null} />;
 });
