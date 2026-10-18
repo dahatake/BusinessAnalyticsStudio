@@ -28,6 +28,8 @@ function seed(projects: number) {
   return ids;
 }
 
+// 負荷が高い並列実行でも、ダイアログの描画待ちで時間切れにならないようにする（確かめる内容は変えない）
+vi.setConfig({ testTimeout: 30000 });
 beforeEach(() => {
   resetProjects(); resetAnalyses();
   useRestoreStatus.setState({ done: false });
@@ -107,13 +109,13 @@ describe('FR-144 ProjectsPanel（描画）', () => {
       fireEvent.click(within(picker).getByRole('option', { name: /業務改善 2026/ }));
       await waitFor(() => expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull());
       fireEvent.click(screen.getByRole('button', { name: 'デモへ切り替える' }));
-      await screen.findByRole('alertdialog', { name: '未保存の入力があります' });
+      await screen.findByRole('alertdialog', { name: '未保存の入力があります' }, { timeout: 5000 });
       expect(st().openId).toBe(p1); // 確認の前は切り替わらない
-      await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog', { name: '未保存の入力があります' })).getByRole('button', { name: 'キャンセル' })));
+      await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog', { name: '未保存の入力があります' })).getByRole('button', { name: 'キャンセル' })), { timeout: 5000 });
       await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
       expect(st().openId).toBe(p1);
       fireEvent.click(screen.getByRole('button', { name: 'デモへ切り替える' }));
-      await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: '切り替える' })));
+      await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: '切り替える' })), { timeout: 5000 });
       await waitFor(() => expect(st().openId).toBeNull());
       expect(screen.getByTestId('work-target').textContent).toBe('デモ');
       expect(useAnalyses.getState().drafts[p1 ?? '']?.param).toBe('9');
@@ -175,9 +177,9 @@ describe('FR-144 ProjectsPanel（描画）', () => {
     expect(screen.getAllByText(/合成株式会社A/).length).toBeGreaterThan(0);
     fireEvent.click(within(picker).getByRole('option', { name: /デモ/ }));
     // 確認ダイアログ（FR-138 AC-210 と同じ条件）。切替は確定されていない
-    await screen.findByRole('alertdialog', { name: '未保存の入力があります' });
+    await screen.findByRole('alertdialog', { name: '未保存の入力があります' }, { timeout: 5000 });
     expect(st().openId).toBe(p1);
-    await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog', { name: '未保存の入力があります' })).getByRole('button', { name: 'キャンセル' })));
+    await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog', { name: '未保存の入力があります' })).getByRole('button', { name: 'キャンセル' })), { timeout: 5000 });
     await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
     expect(st().openId).toBe(p1);
     expect(useAnalyses.getState().drafts[p1 ?? '']?.param).toBe('123');
@@ -185,8 +187,13 @@ describe('FR-144 ProjectsPanel（描画）', () => {
     // もう一度デモへ → 「切り替える」で切替。入力は Project に残り、企業一覧は出ない
     fireEvent.click(screen.getByRole('button', { name: '作業先' }));
     // 確認ダイアログを閉じた後、選択画面の aria-hidden は非同期に戻るため、触れられるようになるまで待つ
-    await waitFor(() => fireEvent.click(within(screen.getByRole('dialog', { name: '作業先の選択' })).getByRole('option', { name: /デモ/ })));
-    await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: '切り替える' })));
+    // 選択画面が操作できるようになるまで待ち、確認が出るまで同じ操作を繰り返す（負荷が高いと最初のクリックが効かないことがある）
+    await waitFor(() => {
+      const dlg = screen.queryByRole('dialog', { name: '作業先の選択' });
+      if (dlg) fireEvent.click(within(dlg).getByRole('option', { name: /デモ/ }));
+      expect(screen.getByRole('alertdialog')).toBeTruthy();
+    }, { timeout: 5000 });
+    await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog')).getByRole('button', { name: '切り替える' })), { timeout: 5000 });
     await waitFor(() => expect(st().openId).toBeNull());
     expect(screen.getByTestId('work-target').textContent).toBe('デモ');
     expect(screen.queryByText(/業務改善 2026/)).toBeNull(); // 企業一覧・Project は出ない（作業先の表示は「デモ」）

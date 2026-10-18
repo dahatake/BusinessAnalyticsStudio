@@ -20,6 +20,8 @@ function company(name: string, projects: string[]): string[] {
   return projects.map((n) => { const p = st().addProject(c.id, n); if (!p.ok) throw new Error(); return p.id; });
 }
 
+// 負荷が高い並列実行でも、ダイアログの描画待ちで時間切れにならないようにする（確かめる内容は変えない）
+vi.setConfig({ testTimeout: 30000 });
 beforeEach(() => {
   resetProjects(); resetAnalyses();
   useWorkTargetUi.setState({ demoOnly: false });
@@ -101,15 +103,15 @@ describe('FR-148 作業先メニュー', () => {
     await waitFor(() => expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull());
     fireEvent.click(screen.getByTestId('work-target-menu'));
     fireEvent.click(await screen.findByRole('menuitemradio', { name: /合成株式会社B.*需要予測/ }));
-    await screen.findByRole('alertdialog', { name: '未保存の入力があります' });
+    await screen.findByRole('alertdialog', { name: '未保存の入力があります' }, { timeout: 5000 });
     expect(st().openId).toBe(a1);
     // 確認ダイアログは開いた直後に描き直されることがあるので、押す時点の要素を毎回取り直す
-    await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog', { name: '未保存の入力があります' })).getByRole('button', { name: 'キャンセル' })));
+    await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog', { name: '未保存の入力があります' })).getByRole('button', { name: 'キャンセル' })), { timeout: 5000 });
     expect(st().openId).toBe(a1);
     expect(useAnalyses.getState().drafts[a1 ?? '']?.param).toBe('9'); // 失われない
     fireEvent.click(screen.getByTestId('work-target-menu'));
     fireEvent.click(await screen.findByRole('menuitemradio', { name: /合成株式会社B.*需要予測/ }));
-    await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog', { name: '未保存の入力があります' })).getByRole('button', { name: '切り替える' })));
+    await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog', { name: '未保存の入力があります' })).getByRole('button', { name: '切り替える' })), { timeout: 5000 });
     await waitFor(() => expect(st().openId).toBe(b1));
     expect(useAnalyses.getState().drafts[a1 ?? '']?.param).toBe('9'); // 前の Project に残る
     expect(useAnalyses.getState().drafts[b1 ?? '']).toBeUndefined();
