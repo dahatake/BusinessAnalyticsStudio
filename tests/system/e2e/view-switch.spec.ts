@@ -117,18 +117,53 @@ test.describe('FR-217 全画面での 2D/3D の切替', () => {
 
 type World = 'real' | 'digital' | 'none';
 
-/** お手本パックの全ファイルから、ID ごとの世界区分（world がなければ「区分なし」）を集める */
+/**
+ * 顧客パックのうち、スキーマに世界区分の項目を持たないデータの世界区分（FR-218・A-57）。
+ * §3.7 のエンティティの分類表の世界区分に従う（パックのファイル名と JSON の位置 → 分類表の行）。
+ * 分類表に対応する行が一意に決まらないもの（customer.coreObject.criteria・plan.tasks・mocks）は載せず、件数の判定に使わない。
+ */
+const TABLE_WORLDS: Record<string, World> = {
+  'entities:.flows[]': 'real', // 流れ（現実世界・業務）
+  'issues:.issues[]': 'real', // 課題（現実世界・コト）
+  'issues:.issues[].causes[]': 'real', // 原因（現実世界・コト）
+  'issues:.solutions[]': 'real', // 解決策（現実世界・コト）
+  'issues:.solutions[].effects[]': 'real', // 効果（現実世界・コト）
+  'customer:.coreObject.candidates[]': 'real', // 中核オブジェクト（現実世界・モノ。Q-038 の回答までは分類表のまま）
+  'customer:.useCases[]': 'real', // ユースケース（現実世界・業務）
+  'customer:.okr.objectives[].keyResults[]': 'digital', // OKR（デジタル世界・センサー/指標）
+  'architecture:.nodes[]': 'digital', // アーキテクチャ（デジタル世界・モデル）
+  'architecture:.edges[]': 'digital',
+  'architecture:.asis.elements[]': 'digital',
+  'architecture:.tobe.elements[]': 'digital',
+  'plan:.features[]': 'digital', // Feature（デジタル世界・システム）
+  'products:.products[]': 'digital', // Microsoft 製品（デジタル世界・システム）
+  'sources:.sources[]': 'digital', // 出典（デジタル世界・データ）
+  'show:.chapters[]': 'digital', // チャプター（デジタル世界・画面コンポーネント）
+  'show:.chapters[].topics[]': 'real', // 議題（現実世界・コト）
+  'show:.chapters[].topics[].quiz.questions[]': 'digital', // ショー（クイズ）→ ショー（デジタル世界・画面コンポーネント）
+};
+
+/**
+ * お手本パックの全ファイルから、ID ごとの世界区分を集める（FR-218・A-57）。
+ * - 世界区分の項目を持つエンティティ（entities.json の entities[]）: world の値。書かれていなければ「区分なし」。
+ * - スキーマに世界区分の項目を持たないデータ（課題・原因・解決策など）: §3.7 の分類表の世界区分（TABLE_WORLDS）。「区分なし」にはしない。
+ */
 function worldsOf(pack: Pack): Map<string, World> {
   const m = new Map<string, World>();
-  const walk = (v: any) => {
-    if (Array.isArray(v)) v.forEach(walk);
+  const walk = (f: string, v: any, p: string) => {
+    if (Array.isArray(v)) v.forEach((x) => walk(f, x, `${p}[]`));
     else if (v && typeof v === 'object') {
-      if (typeof v.id === 'string') m.set(v.id, v.world === 'real' || v.world === 'digital' ? v.world : (m.get(v.id) ?? 'none'));
-      Object.values(v).forEach(walk);
+      if (typeof v.id === 'string') {
+        if (f === 'entities' && p === '.entities[]') m.set(v.id, v.world === 'real' || v.world === 'digital' ? v.world : 'none');
+        else if (TABLE_WORLDS[`${f}:${p}`] && !m.has(v.id)) m.set(v.id, TABLE_WORLDS[`${f}:${p}`]);
+      }
+      for (const [k, x] of Object.entries(v)) walk(f, x, `${p}.${k}`);
     }
   };
   for (const f of PACK_FILES) {
-    try { walk(pack.json(f)); } catch { /* ないファイルは数えない */ }
+    let j: any;
+    try { j = pack.json(f); } catch { continue; /* ないファイルは数えない */ }
+    walk(f, j, '');
   }
   return m;
 }
@@ -174,6 +209,9 @@ async function checkWorlds(page: Page, pack: Pack, key: 'table' | 'knowledge-gra
   await chooseView(page, c, '現実世界');
   const real = inPack(await shownIds(page, key));
   expect(real.sort(), `${key}: 「現実世界」で現実世界の項目だけにならない`).toEqual(of(both, 'real'));
+  // A-57: 世界区分の項目を持たない課題は、どの画面でも §3.7 の分類表どおり現実世界として出る（「区分なし」として「両方」だけに出さない）
+  const issueIds = new Set(pack.issues().map((i: any) => i.id));
+  for (const id of both.filter((i) => issueIds.has(i))) expect(real, `${key}: 課題 ${id} が「現実世界」に出ない（A-57）`).toContain(id);
   expect((await viewState(page, key)).twinLinks, `${key}: 「現実世界」でツイン関係が出る`).toEqual([]);
 
   await chooseView(page, c, 'デジタル世界');
@@ -225,8 +263,9 @@ test.describe('FR-218 現実世界／デジタル世界／両方の表示の切�
     }
   });
 
-  // FR-218 AC-503（異常系: 世界区分のないパックでは、「現実世界」「デジタル世界」に項目が出ず、「両方」で全件が「区分なし」として出る）
-  test('FR-218 AC-503 異常系: 世界区分とツイン関係のない顧客パックでは、「現実世界」「デジタル世界」に項目が 0 件、「両方」は全件でツイン関係の線は出ない', async ({ page, start }) => {
+  // FR-218 AC-503（異常系: エンティティに世界区分のないパックでは、そのエンティティは「現実世界」「デジタル世界」に出ず、「両方」で「区分なし」として出る。
+  // 世界区分の項目を持たない課題などは A-57 のとおり §3.7 の分類表の世界区分（課題は現実世界）に従う）
+  test('FR-218 AC-503 異常系: エンティティに世界区分とツイン関係のない顧客パックでは、そのエンティティは「現実世界」「デジタル世界」に 0 件で「両方」に「区分なし」として出てツイン関係の線は出ず、課題は「現実世界」に出る', async ({ page, start }) => {
     const plain = makeVariant('mono', 'no-world', (p) => {
       p.edit('entities', (j) => {
         delete j.twins;
@@ -241,10 +280,17 @@ test.describe('FR-218 現実世界／デジタル世界／両方の表示の切�
     await expect(c, '区分なしの項目に「区分なし」の表示がない').toContainText('区分なし');
     expect((await viewState(page, 'table')).twinLinks).toEqual([]);
     const entIds = new Set((plain.json('entities').entities as any[]).map((e) => e.id));
+    expect(both.filter((i) => entIds.has(i)).length, '「両方」に区分なしのエンティティが出ない').toBeGreaterThan(0);
+    const issueIds = new Set(plain.issues().map((i: any) => i.id));
+    const issuesInBoth = both.filter((i) => issueIds.has(i));
     for (const w of ['現実世界', 'デジタル世界'] as const) {
       await chooseView(page, c, w);
-      const shown = (await shownIds(page, 'table')).filter((i) => entIds.has(i));
+      const shownAll = await shownIds(page, 'table');
+      const shown = shownAll.filter((i) => entIds.has(i));
       expect(shown, `「${w}」に区分なしのエンティティが出る`).toEqual([]);
+      // A-57: 課題は世界区分の項目を持たないが「区分なし」ではなく現実世界
+      if (w === '現実世界') for (const id of issuesInBoth) expect(shownAll, `「現実世界」に課題 ${id} が出ない（A-57）`).toContain(id);
+      else expect(shownAll.filter((i) => issueIds.has(i)), '「デジタル世界」に課題が出る（A-57）').toEqual([]);
     }
   });
 });
