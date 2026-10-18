@@ -39,6 +39,49 @@ export const ENTITY_KIND_LABELS: Record<EntityKind, string> = {
 /** 種別が属する世界区分 */
 export const worldOfKind = (kind: EntityKind): World => ((REAL_KINDS as readonly string[]).includes(kind) ? 'real' : 'digital');
 
+/**
+ * §3.7 のエンティティの分類表の世界区分のうち、世界区分の項目を持たないデータ（課題・原因・解決策など）と、
+ * 1 つの世界の画面が当てる行（FR-218・A-57）。世界区分を当てる唯一の表で、グラフの節（src/selection/graph.ts）と
+ * 画面の登録の宣言（src/screens/registry.ts）はここから引く。行を足すときは §3.7 の分類表と同じ値にする。
+ */
+export const TABLE_WORLDS: Readonly<Record<string, World>> = {
+  工程: 'real',
+  ユースケース: 'real',
+  課題: 'real',
+  原因: 'real',
+  解決策: 'real',
+  効果: 'real',
+  議題: 'real',
+  出典: 'digital',
+  アーキテクチャ: 'digital',
+  議論ツリー: 'digital',
+  KPI: 'digital',
+  OKR: 'digital',
+  企業データカタログ: 'digital',
+  データエンティティ: 'digital',
+  議論テーマ: 'digital',
+  ストローク: 'digital',
+  付箋: 'digital',
+  Feature: 'digital',
+  'Microsoft 製品': 'digital',
+  チャプター: 'digital',
+};
+
+/** §3.7 の分類表の行の世界区分。表にない名前は undefined（推測で当てない） */
+export const tableWorldOf = (name: string): World | undefined =>
+  (Object.prototype.hasOwnProperty.call(TABLE_WORLDS, name) ? TABLE_WORLDS[name] : undefined);
+
+/** 複数の行がすべて同じ世界区分のときの、その世界区分。表にない行や、世界区分の異なる行を含むときは例外（宣言の誤り） */
+export function tableWorldOfAll(names: readonly string[]): World {
+  const ws = new Set(names.map((n) => {
+    const w = tableWorldOf(n);
+    if (!w) throw new Error(`§3.7 の分類表に「${n}」の世界区分がありません`);
+    return w;
+  }));
+  if (ws.size !== 1) throw new Error(`「${names.join('・')}」の世界区分が 1 つに決まりません`);
+  return [...ws][0]!;
+}
+
 /** ツイン関係の種類（FR-214）。デジタル世界の側が、現実世界の側を「表す・計測する・記録する・表示する」 */
 export const TWIN_RELATIONS = ['represents', 'measures', 'records', 'displays'] as const;
 export type TwinRelation = (typeof TWIN_RELATIONS)[number];

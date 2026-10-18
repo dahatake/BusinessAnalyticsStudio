@@ -19,6 +19,7 @@ import { setCan3DForTest } from '../../src/view/render3d';
 import { applyScreenView, viewStateOf, viewTestState } from '../../src/view/useView';
 import { ModeRadio } from '../../src/view/ModeRadio';
 import { readFileSync } from 'node:fs';
+import { NODE_KINDS, defaultWorldOfNodeKind } from '../../src/selection/graph';
 import {
   HIDDEN_SELECTION_TEXT, NO_2D_REASON, NO_3D_ENV_REASON, NO_3D_REASON, NO_WORLD_REASON, defaultModeOf, effectiveMode, filterByWorld,
   canRender3D, hiddenSelected, isShownInWorld, modeOptions, registerViewDecls, selectionHiddenIn, singleWorldNote, twinLinksAmong, viewDeclOf, viewText, worldOptions,
@@ -370,6 +371,25 @@ describe('FR-218 AC-502 全画面の世界区分の宣言が §3.7 の分類表�
       expect(row(entity), `§3.7 に ${entity} の行がない`).toBeTruthy();
       expect(byKey.get(key)!.world).toBe(row(entity) === '現実世界' ? 'real' : 'digital');
     }
+  });
+
+  // FR-218 AC-502（A-57: 1 つの世界の画面の宣言と、グラフの節の既定の世界区分は同じ §3.7 の表から引く）
+  it('FR-218 AC-502 画面の登録: 1 つの世界の画面の宣言は、表示する節の種類の §3.7 の既定の世界区分と一致する（同じ表から引く）', async () => {
+    const { SCREENS } = await import('../../src/screens/registry');
+    let checked = 0;
+    for (const sc of SCREENS) {
+      const v = sc.view!;
+      if (v.world !== 'real' && v.world !== 'digital') continue;
+      expect(v.basis, sc.key).toBeTruthy();
+      const kinds = (v.kinds ?? []) as Array<(typeof NODE_KINDS)[number]>;
+      // キャンバスは章（チャプター＝デジタル世界）と議題（現実世界）をともに含み、根拠は議題（既存の宣言のまま）
+      if (sc.key === 'canvas' || kinds.length === 0) continue;
+      const ws = kinds.map((kd) => defaultWorldOfNodeKind(kd));
+      if (ws.some((w) => w === undefined)) continue; // 工程（task）は行が 1 つに決まらないため節には当てない
+      for (const w of ws) expect(w, `${sc.key} の宣言（${v.world}）と節の既定の世界区分が合わない`).toBe(v.world);
+      checked++;
+    }
+    expect(checked).toBeGreaterThanOrEqual(6);
   });
 
   // FR-218（「隠れている」の表示は、この画面の項目の選択のときだけ）
