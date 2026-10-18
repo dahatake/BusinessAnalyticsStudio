@@ -5,7 +5,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { usePackStore } from '../store/pack';
 import { useConsent } from './useConsent';
-import { askAi, probeRelay, setRelayConnection, type AiKind, type AiMode, type AiResult } from './client';
+import { probeRelay, setRelayConnection, type AiKind, type AiMode, type AiResult } from './client';
+import { askAiWithPersonConfirm } from './personConfirm';
 
 interface AiState {
   /** 実接続を確認つきで有効にした顧客パック。null は未有効 */
@@ -34,15 +35,17 @@ export function useAi() {
   const enabledPackId = useAiStore((s) => s.enabledPackId);
   const notice = useAiStore((s) => s.notice);
   const packId = pack.status === 'ready' ? pack.pack.data.customer.name : '';
-  const { granted: consentGranted } = useConsent();
+  const { granted: consentGranted, record: consentRecord } = useConsent();
   // FR-181: 了承の記録がない案件は、有効にしていても実接続にしない（取消でモックに戻る）
   const realEnabled = packId !== '' && enabledPackId === packId && consentGranted;
   const mode: AiMode = realEnabled ? 'connected' : 'mock';
 
   const ask = useCallback(
     (kind: AiKind, prompt: string): Promise<AiResult> =>
-      askAi({ kind, packId, prompt }, { relayUrl: runtime.relayUrl, mockDelayMs: runtime.aiMock?.delayMs, realEnabled }),
-    [packId, runtime, realEnabled],
+      // FR-219: 実接続で種別「人」を含む顧客パックの内容を送る操作は、確認を通す（モックは送信がないので確認しない）
+      askAiWithPersonConfirm({ kind, packId, prompt }, { relayUrl: runtime.relayUrl, mockDelayMs: runtime.aiMock?.delayMs, realEnabled },
+        { data: pack.status === 'ready' ? pack.pack.data : undefined, consent: consentRecord }),
+    [packId, runtime, realEnabled, pack, consentRecord],
   );
 
   /** 確認のあとに呼ぶ。中継プロセスが使える状態のときだけ「接続済み」になる。 */

@@ -3,7 +3,7 @@
 import JSZip from 'jszip';
 import path from 'node:path';
 import type { Page } from '@playwright/test';
-import { test, expect, openScreen, entity, captureDownload, setEditMode, failingFsAccess, component, gotoAndEnter } from '../support/fixtures';
+import { test, expect, openScreen, entity, captureDownload, recordExportConsent, continuePersonConfirm, setEditMode, failingFsAccess, component, gotoAndEnter } from '../support/fixtures';
 import { examplePack, packWithInternal, SYNTHETIC_INTERNAL_TOKEN, ANONYMIZED_LABEL } from '../support/packs';
 
 const mono = examplePack('mono');
@@ -80,6 +80,7 @@ test.describe('FR-052 全量エクスポート', () => {
   // FR-052 AC-064
   test('FR-052 AC-064 Ctrl+Shift+E でエクスポートの画面が開き、File System Access API がないと ZIP がダウンロードされる', async ({ page, start }) => {
     await start({ disableFileSystemAccess: true });
+    await recordExportConsent(page); // FR-219: 了承の記録を先に入力する
     const dlg = await openExport(page);
     await dlg.getByRole('radio', { name: '.zip' }).check().catch(() => {});
     const { name, data } = await captureDownload(page, () => dlg.getByRole('button', { name: 'エクスポート', exact: true }).click());
@@ -115,6 +116,7 @@ test.describe('FR-054 出力範囲・匿名化・形式', () => {
   test('FR-054 AC-066 internal を含むデータで匿名化を ON にすると、出力に internal の値が含まれず置き換えた旨の表記がある', async ({ page, start }) => {
     const pack = packWithInternal('mono');
     await start({ pack });
+    await recordExportConsent(page); // FR-219: 了承の記録を先に入力する
     const dlg = await openExport(page);
     await dlg.getByRole('radio', { name: '全体' }).check();
     await dlg.getByRole('checkbox', { name: /匿名化/ }).check();
@@ -144,6 +146,7 @@ test.describe('FR-054 出力範囲・匿名化・形式', () => {
   // FR-054 AC-067
   test('FR-054 AC-067 .zip を選ぶと .md と assets/ の画像を含む ZIP ができ、画像リンクが ZIP 内の相対パスを指す', async ({ page, start }) => {
     await start();
+    await recordExportConsent(page); // FR-219: 了承の記録を先に入力する
     const dlg = await openExport(page);
     await dlg.getByRole('radio', { name: '全体' }).check();
     await dlg.getByRole('radio', { name: '.zip' }).check();
@@ -173,6 +176,7 @@ test.describe('FR-055 フォローアップ文書', () => {
   // FR-055 AC-068
   test('FR-055 AC-068 フォローアップ文書の生成を選ぶと 3 種類の文書が出力に含まれ、未決事項と決定事項がそれぞれに載る', async ({ page, start }) => {
     await start();
+    await recordExportConsent(page); // FR-219: 了承の記録を先に入力する
     await prepareDiscussion(page);
     const dlg = await openExport(page);
     await dlg.getByRole('radio', { name: '.zip' }).check();
@@ -206,6 +210,7 @@ test.describe('FR-056 Markdown からの復元', () => {
   // FR-056 AC-069
   test('FR-056 AC-069 編集後の全量 Markdown を、初期状態に戻したアプリで読み込むとデータ・議論・決定事項が元どおり', async ({ page, start }) => {
     await start();
+    await recordExportConsent(page); // FR-219: 了承の記録を先に入力する
     const { issue } = await prepareDiscussion(page);
     const table = await openScreen(page, 'table');
     const cell = table.getByRole('gridcell').filter({ hasText: issue.title }).first();
@@ -232,6 +237,7 @@ test.describe('FR-056 Markdown からの復元', () => {
   // FR-056 AC-069（異常系: 壊れた JSON ブロック）
   test('FR-056 AC-069 異常系: 壊れた JSON ブロックを含むファイルは読み込まれず原因が表示され、現在のデータは変わらない', async ({ page, start }) => {
     await start();
+    await recordExportConsent(page); // FR-219: 了承の記録を先に入力する
     const { issue } = await prepareDiscussion(page);
     const { name, data } = await exportFullMd(page);
     const broken = data.toString('utf8').replace(/```json\s*\{/, '```json\n{ "broken": [ ,,, ');
@@ -252,11 +258,13 @@ test.describe('NFR-UX-004 エラーの原因と次の行動', () => {
   test('NFR-UX-004 AC-188 書き込みが失敗する保存先へのエクスポートで原因と「ZIP でダウンロード」が出て、設定と編集中のデータが残る', async ({ page, start }) => {
     await failingFsAccess(page);
     await start({ disableFileSystemAccess: false });
+    await recordExportConsent(page); // FR-219: 了承の記録を先に入力する
     const { issue } = await prepareDiscussion(page);
     const dlg = await openExport(page);
     await dlg.getByRole('radio', { name: '決定事項のみ' }).check();
     await dlg.getByRole('radio', { name: '.md' }).check();
     await dlg.getByRole('button', { name: 'エクスポート', exact: true }).click();
+    await continuePersonConfirm(page); // 種別「人」の確認が出たら続行する（出なければそのまま）
     const alert = page.getByRole('alert').filter({ hasText: /失敗|できません/ }).first();
     await expect(alert).toBeVisible();
     await expect(alert).toContainText(/書き込み|保存先|権限/);

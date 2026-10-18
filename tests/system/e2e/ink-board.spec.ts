@@ -3,7 +3,7 @@
 import JSZip from 'jszip';
 import path from 'node:path';
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, entity, hook, captureDownload, setEditMode, measureFrameTimes, saveEvidence, gotoAndEnter } from '../support/fixtures';
+import { test, expect, openScreen, component, entity, hook, captureDownload, recordExportConsent, setEditMode, measureFrameTimes, saveEvidence, gotoAndEnter } from '../support/fixtures';
 import { examplePack } from '../support/packs';
 
 const mono = examplePack('mono');
@@ -307,6 +307,7 @@ test.describe('FR-094 Engagement サマリーパック', () => {
   // FR-094 AC-115
   test('FR-094 AC-115 「Engagement サマリーパック」を押すと PDF と Markdown を含む 1 つの ZIP がダウンロードされる', async ({ page, start }) => {
     await start();
+    await recordExportConsent(page); // FR-219: 了承の記録を先に入力する
     const { name, data } = await captureDownload(page, () => page.getByRole('button', { name: 'Engagement サマリーパック' }).click(), 60_000);
     expect(name).toMatch(/\.zip$/);
     const zip = await JSZip.loadAsync(data);

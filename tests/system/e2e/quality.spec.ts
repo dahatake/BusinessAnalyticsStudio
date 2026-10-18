@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準（docs/requirements/quality.md）と PARAM（§3.3）から決める。
 import AxeBuilder from '@axe-core/playwright';
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, entity, hook, scene, MAIN_SCREENS, captureDownload, selectPersona, setEditMode } from '../support/fixtures';
+import { test, expect, openScreen, component, entity, hook, scene, MAIN_SCREENS, captureDownload, recordExportConsent, continuePersonConfirm, selectPersona, setEditMode } from '../support/fixtures';
 import { examplePack } from '../support/packs';
 import { startRelayStub } from '../support/relay-stub';
 
@@ -60,6 +60,7 @@ test.describe('NFR-ENV-002 外部サーバーなし・オフライン', () => {
       return route.continue();
     });
     const app = await start();
+    await recordExportConsent(page); // FR-219: 了承の記録を先に入力する
     for (const [key] of MAIN_SCREENS) await openScreen(page, key);
     await openScreen(page, 'view3d');
     await page.waitForTimeout(1_000);
@@ -280,6 +281,10 @@ test.describe('NFR-SEC-002 外部への通信の限定と明示', () => {
       const q = '送信内容の確認ST-176';
       await chat.getByRole('textbox', { name: /質問/ }).fill(q);
       await chat.getByRole('button', { name: '送信' }).click();
+      // FR-219 AC-511 AC-512: 種別「人」を含み了承がある案件では送信前に確認が出る。出たら続行まで進める（出なければそのまま）
+      const personConfirm = page.locator('[role="alertdialog"], [role="dialog"]').filter({ hasText: /種別「人」/ }).filter({ hasText: /了承/ });
+      await expect(personConfirm.or(page.getByTestId('sending-indicator')).first()).toBeVisible();
+      await continuePersonConfirm(page, () => false, 1_500);
       await expect(page.getByTestId('sending-indicator')).toBeVisible();
       await expect(page.getByTestId('sending-indicator')).toContainText(/送信中/);
       await page.getByTestId('sending-indicator').getByRole('button', { name: /送信内容/ }).click();

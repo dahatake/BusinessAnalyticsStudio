@@ -106,7 +106,11 @@ function useSurfaceVisible(): (el: HTMLDivElement | null) => void {
     show();
     const mo = new MutationObserver(show);
     mo.observe(el, { attributes: true, attributeFilter: ['aria-hidden'] });
-    cleanup.current = () => mo.disconnect();
+    // 上に重なっていた別のダイアログが閉じて取り除かれたとき（FR-219 の確認など）、この面に残った aria-hidden も外す
+    const body = el.ownerDocument.body;
+    const mb = new MutationObserver(show);
+    mb.observe(body, { childList: true });
+    cleanup.current = () => { mo.disconnect(); mb.disconnect(); };
   }, []);
 }
 

@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準と、お手本パック（モノ／コト）の内容から決める。
 // 3D・地図の内部の状態は、CONTRACT.md §6 のテスト用フック（window.__edbTest）で読む。
 import type { Page } from '@playwright/test';
-import { test, expect, openScreen, component, entity, hook, scene, expectCanvasDrawn, waitFirstFrame, captureDownload, setEditMode } from '../support/fixtures';
+import { test, expect, openScreen, component, entity, hook, scene, expectCanvasDrawn, waitFirstFrame, captureDownload, recordExportConsent, setEditMode } from '../support/fixtures';
 import { examplePack, makeVariant } from '../support/packs';
 
 const mono = examplePack('mono');
@@ -411,6 +411,7 @@ test.describe('FR-071 グローバルのアニメーション停止', () => {
   // FR-071 AC-087
   test('FR-071 AC-087 P で CSS アニメ・3D の連続描画・動画が止まり、停止中も選択・編集・エクスポートができ、もう一度 P で再開', async ({ page, start }) => {
     await start();
+    await recordExportConsent(page); // FR-219: 了承の記録を先に入力する
     await openScreen(page, 'view3d');
     await toggleAnimation(page, '再生中');
     const f0 = await waitFirstFrame(page);

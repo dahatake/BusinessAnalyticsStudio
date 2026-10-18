@@ -52,6 +52,10 @@ export const TABLE_WORLDS: Readonly<Record<string, World>> = {
   解決策: 'real',
   効果: 'real',
   議題: 'real',
+  // 中核オブジェクトの種別（モノ／コト）は顧客パックの種別に従うが、どちらも現実世界（Q-038 A・A-59）
+  中核オブジェクト: 'real',
+  // 改善要望（FR-131）はアプリへの改善の希望の記録で、デジタル世界（データ）。顧客パックのファイルにはない（Q-038 A・A-59）
+  改善要望: 'digital',
   出典: 'digital',
   アーキテクチャ: 'digital',
   議論ツリー: 'digital',

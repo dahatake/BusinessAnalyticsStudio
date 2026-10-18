@@ -19,3 +19,20 @@ export function readConsent(paths: Pick<PipelinePaths, 'workspace'>, input: Pick
     return undefined;
   }
 }
+
+/** 作業フォルダーの顧客パック（public/data/entities.json）にある種別「人」のエンティティの件数。パックがなければ 0（FR-219） */
+export function countPersonsInWorkDir(workDir: string): number {
+  const file = path.join(workDir, 'public', 'data', 'entities.json');
+  if (!fs.existsSync(file)) return 0;
+  try {
+    const j = JSON.parse(fs.readFileSync(file, 'utf8')) as { entities?: Array<{ kind?: string }> };
+    return (j.entities ?? []).filter((e) => e.kind === 'person').length;
+  } catch {
+    return 0;
+  }
+}
+
+/** 実行の出力に示す 1 行（FR-219。パイプラインは対話の確認を出さない）。個人名・連絡先の値は出さない */
+export function personConsentLine(count: number, record: ConsentRecord | undefined): string {
+  return `種別「人」のエンティティ: ${count} 件を含む顧客パックです。顧客の了承の確認日: ${record?.confirmedOn ?? '（consent.json から確認日を読めません）'}。種別「人」の値は匿名化の対象ではありません。続行します。`;
+}

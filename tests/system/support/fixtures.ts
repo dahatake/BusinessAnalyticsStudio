@@ -293,9 +293,41 @@ export async function waitFirstFrame(page: Page): Promise<number> {
   return (await scene.info(page)).frame;
 }
 
-/** ダウンロードを待って中身を返す。 */
+/**
+ * 了承の記録（FR-181 AC-375 と同じ入力欄・button「了承を保存」）を設定画面で入力する（FR-219 AC-514 の共通の手順）。
+ * 種別「人」を含むパック（お手本パック mono）をエクスポートする既存ケースは、手順の冒頭でこれを呼ぶ（CONTRACT.md §22）。
+ */
+export async function recordExportConsent(page: Page, note = '顧客側の担当役員（口頭）'): Promise<void> {
+  const settings = await openScreen(page, 'settings');
+  const box = settings.getByRole('textbox', { name: /了承.*(メモ|役割)|(メモ|役割).*了承|確認した相手/ }).first();
+  await box.fill(note);
+  await settings.getByRole('button', { name: /了承.*保存|保存.*了承/ }).first().click();
+  await expect(settings.getByText(note).first()).toBeVisible();
+}
+
+/** 種別「人」の確認（FR-219 AC-514）。出ていれば続行（出力する）まで進める。出ていなければ何もしない。 */
+export async function continuePersonConfirm(page: Page, isDone: () => boolean = () => false, waitMs = 5_000): Promise<void> {
+  const confirm = page.locator('[role="alertdialog"], [role="dialog"]').filter({ hasText: /種別「人」/ }).filter({ hasText: /了承/ });
+  const proceed = confirm.getByRole('button', { name: /続行|出力する|エクスポートする/ }).first();
+  const until = Date.now() + waitMs;
+  while (!isDone() && Date.now() < until) {
+    if (await proceed.isVisible().catch(() => false)) {
+      await proceed.click({ timeout: 5_000 }).catch(() => {});
+      return;
+    }
+    await page.waitForTimeout(150).catch(() => {});
+  }
+}
+
+/** ダウンロードを待って中身を返す。種別「人」の確認が出たら続行する（了承の記録は recordExportConsent で先に入れておく）。 */
 export async function captureDownload(page: Page, action: () => Promise<unknown>, timeout = 30_000): Promise<{ name: string; data: Buffer; download: Download }> {
-  const [download] = await Promise.all([page.waitForEvent('download', { timeout }), action()]);
+  let done = false;
+  const dlP = page.waitForEvent('download', { timeout }).finally(() => { done = true; });
+  dlP.catch(() => {});
+  await action();
+  const guard = continuePersonConfirm(page, () => done, 29_000).catch(() => {});
+  const download = await dlP;
+  await guard;
   const p = await download.path();
   const data = fs.readFileSync(p!);
   return { name: download.suggestedFilename(), data, download };

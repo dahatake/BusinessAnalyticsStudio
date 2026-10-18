@@ -11,6 +11,8 @@ import { registerEditChangeLog, registerPackSnapshot } from './snapshot';
 import { registerProjectIntegrationsSnapshot } from '../store/projectIntegrations';
 import { useExportShortcuts } from './commands';
 import { ExportDialog, type ExportScreenRef } from './ExportDialog';
+import { PersonConfirmDialog } from '../ai/PersonConfirmDialog';
+import { confirmViaUi, consentOf, gatePersonConfirm } from '../ai/personConfirm';
 import { useExportUi } from './ui';
 
 const useStyles = makeStyles({
@@ -30,6 +32,12 @@ export function ExportButton() {
     if (!input) { setNotice({ kind: 'error', title: 'サマリーパックを作れません', lines: ['データの読み込みが終わってから、もう一度押してください。'] }); return; }
     setBusy(true);
     try {
+      // FR-219: 種別「人」を含むときは出力の前に確認を通す（了承の記録がなければ出力しない）
+      const gate = await gatePersonConfirm({ destination: 'export', scopeLabel: 'Engagement サマリーパック（PDF と Markdown）', data: input.data, consent: consentOf(input.data), confirm: confirmViaUi });
+      if (!gate.allowed) {
+        if (gate.reason) setNotice({ kind: 'error', title: 'サマリーパックを出力しませんでした', lines: [gate.reason] });
+        return;
+      }
       const r = await buildSummaryPack(input, await loadJapaneseFont());
       downloadBlob(r.fileName, new Blob([r.bytes.slice().buffer], { type: 'application/zip' }));
       setNotice({ kind: 'success', title: 'Engagement サマリーパックを出力しました', lines: [r.fileName, 'PDF と Markdown を 1 つの ZIP にまとめました。'] });
@@ -60,6 +68,7 @@ export function ExportHost({ screens }: { screens: readonly ExportScreenRef[] })
   return (
     <>
       <ExportDialog screens={screens} />
+      <PersonConfirmDialog />
       {notice ? (
         <div className={s.notice} role={notice.kind === 'error' ? 'alert' : 'status'} data-testid="export-notice">
           <MessageBar intent={notice.kind} layout="multiline">

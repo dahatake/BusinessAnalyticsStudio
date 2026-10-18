@@ -194,7 +194,7 @@ const TABLE_WORLDS: Record<string, World> = {
   'issues:.issues[].causes[]': 'real', // 原因（現実世界・コト）
   'issues:.solutions[]': 'real', // 解決策（現実世界・コト）
   'issues:.solutions[].effects[]': 'real', // 効果（現実世界・コト）
-  'customer:.coreObject.candidates[]': 'real', // 中核オブジェクト（現実世界・モノ。Q-038 の回答までは分類表のまま）
+  'customer:.coreObject.candidates[]': 'real', // 中核オブジェクト（Q-038 A: 顧客パックの種別（モノ/コト）に従う。モノもコトも現実世界なので mono・koto とも現実世界。改善要望はデジタル世界のデータだが、顧客パックのファイルに行がなく、この表には載せない）
   'customer:.useCases[]': 'real', // ユースケース（現実世界・業務）
   'customer:.okr.objectives[].keyResults[]': 'digital', // OKR（デジタル世界・センサー/指標）
   'architecture:.nodes[]': 'digital', // アーキテクチャ（デジタル世界・モデル）
