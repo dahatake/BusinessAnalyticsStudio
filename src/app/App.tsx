@@ -9,6 +9,7 @@ import { BrandLockup } from '../components/Brand';
 import { TimeAxis } from '../components/TimeAxis';
 import { AnimationStatus } from '../motion/AnimationController';
 import { runTransition } from '../motion/fluent';
+import { fadeInScreen, screenMotionAllowed } from '../motion/transitions';
 import type { Intensity } from '../motion/tone';
 import { useIntensity } from '../motion/useMotion';
 import { usePresentationStore } from '../store/presentation';
@@ -32,6 +33,9 @@ import { usePackStore } from '../store/pack';
 import { checkTemplateVersion, versionWarning } from '../version';
 import { AutoSizeSwitch, Dock, PersonaMenu, ResetLayoutButton } from '../workspace/Controls';
 import { Workspace } from '../workspace/Workspace';
+import { registerViewDecls } from '../view/viewModel';
+import { registerViewTestHook } from '../view/useView';
+import { ScreenViewButton } from '../view/ViewMenu';
 import { IntensityIndicator } from '../show/IntensityIndicator';
 import { ShowStage } from '../show/ShowStage';
 import { useOpening } from '../store/opening';
@@ -48,6 +52,8 @@ import { MainScreen } from '../projects/MainScreen';
 import { useMainScreen } from '../store/mainScreen';
 
 setAvailableComponents(SCREENS.map((s) => s.key));
+// 各画面の 2D・3D の表現の有無と世界区分の扱い（FR-217・FR-218）
+registerViewDecls(SCREENS);
 
 /** ナビゲーションの選択: 非表示なら再表示し、そのコンポーネントへフォーカスを移す。 */
 function openComponent(key: string): void {
@@ -67,7 +73,13 @@ function selectComponent(key: string, ctx: { presenting: boolean; intensity: Int
   // View Transition は、演出の動きが意味を持つときだけ（プレゼンテーションモード中で、演出強度が Executive でなく、停止中でも reduced-motion でもない）。
   // 通常の操作・Executive・停止中は、遷移を挟まず即時に切り替える（遷移中は当たり判定が実要素に届かず、直後の操作を妨げるため）。
   const animate = ctx.presenting && ctx.intensity !== 'Executive' && useAnimation.getState().playing && !prefersReducedMotion() && !isComponentVisible(key);
-  runTransition(() => (animate ? flushSync(() => openComponent(key)) : openComponent(key)), animate);
+  if (animate) {
+    runTransition(() => flushSync(() => openComponent(key)), animate);
+    return;
+  }
+  // 通常の画面の切替は、開いた画面の面をフェードで現す（NFR-UX-017。覆いは操作を妨げない。停止中・視差効果を減らすでは動かさない）
+  flushSync(() => openComponent(key));
+  fadeInScreen(document.querySelector<HTMLElement>(`[data-testid="component-${key}"]`), screenMotionAllowed());
 }
 
 export function App() {
@@ -110,6 +122,8 @@ export function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, [finishOpening]);
   useEffect(() => installEditKeys(), []);
+  // テスト用フック t.view.state(key)（CONTRACT.md §21）
+  useEffect(() => registerViewTestHook(), []);
 
   const customer = state.status === 'ready' ? state.pack.data.customer : undefined;
   useEffect(() => {
@@ -169,7 +183,7 @@ export function App() {
         onSelect={onSelect}
         stepper={<Stepper onNavigate={onSelect} />}
         headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><AiStatus /></>}
-        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><AutoSizeSwitch /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /></>}
+        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><AutoSizeSwitch /><ScreenViewButton /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /></>}
         dock={<Dock screens={SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
       >

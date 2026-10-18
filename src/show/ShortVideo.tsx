@@ -2,8 +2,9 @@
 // 動画には「サンプル」の透かしが入る（画面にも明記する）。録画はブラウザーの中だけで行い、外部へは送らない。
 import { useMemo, useRef, useState } from 'react';
 import {
-  Button, Dialog, DialogActions, DialogBody, DialogContent, DialogSurface, DialogTitle, MessageBar, MessageBarBody, ProgressBar, Text,
+  Button, DialogActions, DialogBody, DialogContent, DialogTitle, MessageBar, MessageBarBody, ProgressBar, Text,
 } from '@fluentui/react-components';
+import { Dialog, DialogSurface } from '../components/Dialog';
 import { Video20Regular } from '@fluentui/react-icons';
 import { usePackStore } from '../store/pack';
 import { useShowUi } from '../store/show';

@@ -1,7 +1,7 @@
 // 2×2 マトリクス（FR-039）。インパクト × 実現性の配置で、バブルの大きさはコスト。重みを変えると配置がすぐ変わる。
 // 軸の値は、その軸に属する観点の重み付き平均（インパクト側=インパクト・ROI、実現性側=実現性・リスク低減）。
 // 位置・大きさだけに頼らず、「表で見る」で同じ値を表にして読める（NFR-A11Y-003）。
-import { useState, type SVGProps } from 'react';
+import { useMemo, useState, type SVGProps } from 'react';
 import { Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { QUADRANT_LABEL } from '../analysis/priority';
 import { usePriority } from '../analysis/usePriority';
@@ -9,6 +9,9 @@ import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
 import { ViewAsTableButton, ViewTable } from '../components/ViewTable';
 import { onEntityKey, useEntityBinding } from '../selection/hooks';
+import { Items3DSurface } from '../three/Items3DSurface';
+import { norm, type Item3D } from '../view/items3d';
+import { useComponentView, usePublishViewItems } from '../view/useView';
 
 const ORIGIN = 'matrix';
 const W = 640;
@@ -26,9 +29,9 @@ const useStyles = makeStyles({
   svg: { width: '100%', height: 'auto', maxHeight: '70vh', minHeight: '280px', flexShrink: 0, display: 'block' },
   axis: { stroke: tokens.colorNeutralStroke1, strokeWidth: 1 },
   mid: { stroke: tokens.colorNeutralStroke2, strokeWidth: 1.5, strokeDasharray: '6 4' },
-  quad: { fill: tokens.colorNeutralForeground3, fontSize: '15px' },
-  label: { fill: tokens.colorNeutralForeground1, fontSize: '14px', pointerEvents: 'none' },
-  axisLabel: { fill: tokens.colorNeutralForeground2, fontSize: '15px' },
+  quad: { fill: tokens.colorNeutralForeground3, fontSize: tokens.fontSizeBase400 },
+  label: { fill: tokens.colorNeutralForeground1, fontSize: tokens.fontSizeBase300, pointerEvents: 'none' },
+  axisLabel: { fill: tokens.colorNeutralForeground2, fontSize: tokens.fontSizeBase400 },
   bubble: {
     fill: tokens.colorBrandBackground2, stroke: tokens.colorBrandStroke1, strokeWidth: 2, cursor: 'pointer',
   },
@@ -43,6 +46,13 @@ function MatrixScreen() {
   const bind = useEntityBinding(ORIGIN);
   const { ready, points } = usePriority();
   const [asTable, setAsTable] = useState(false);
+  const { mode } = useComponentView(ORIGIN);
+  // 2D と 3D で同じ項目（FR-217 AC-501）。位置=実現性（横）×インパクト（高さ）、大きさ=コスト、色=象限
+  const items3d = useMemo<Item3D[]>(() => {
+    const maxCost = Math.max(1, ...points.map((p) => p.cost));
+    return points.map((p) => ({ id: p.id, label: p.title, x: norm(p.x, 1, 5), y: norm(p.y, 1, 5), z: 0.5, size: Math.sqrt(p.cost / maxCost), group: QUADRANT_LABEL[p.quadrant] }));
+  }, [points]);
+  usePublishViewItems(ORIGIN, useMemo(() => points.map((p) => p.id), [points]));
   if (!ready) return <LoadingView label="マトリクスを読み込み中" />;
 
   const maxCost = Math.max(1, ...points.map((p) => p.cost));
@@ -67,6 +77,8 @@ function MatrixScreen() {
           columns={['課題', '実現性（軸）', 'インパクト（軸）', 'コスト（万円）', '象限']}
           rows={points.map((p) => ({ id: p.id, cells: [p.title, p.x.toFixed(1), p.y.toFixed(1), p.cost.toLocaleString('ja-JP'), QUADRANT_LABEL[p.quadrant]] }))}
         />
+      ) : mode === '3d' ? (
+        <Items3DSurface viewKey={ORIGIN} origin={ORIGIN} label="インパクト×実現性の 2×2 マトリクス" items={items3d} axes={{ x: '実現性', y: 'インパクト' }} />
       ) : (
         <svg viewBox={`0 0 ${W} ${H}`} className={s.svg} role="group" aria-label="インパクト×実現性の 2×2 マトリクス">
           <line className={s.axis} x1={L} y1={H - B} x2={W - R} y2={H - B} />

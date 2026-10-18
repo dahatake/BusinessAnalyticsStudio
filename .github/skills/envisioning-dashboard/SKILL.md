@@ -61,6 +61,11 @@ npm run pipeline -- all --customer "<顧客名>"
 ## 規則
 
 - ⑤スキーマ検証でエラーが出たら、エラーの箇所だけを再生成して直します（自己修正。FR-126）。全体は再生成しません。最大 3 回（PARAM-006）で、上限に達したらエラーの一覧を出して止まります。
+- ④で生成する `public/data/entities.json` は、全エンティティに世界区分 `world`（`real`＝現実世界／`digital`＝デジタル世界）と種別 `kind` を付けます（FR-213。値は要求定義書 §3.7 の「顧客パックに書く値」）。
+  種別は、現実世界が `site`・`equipment`・`person`・`organization`・`operation`・`thing`・`event`、デジタル世界が `data`・`model`・`system`・`ui-component`・`metric` です。上位（`parentId`）は同じ世界区分の中だけで指します。
+  デジタル世界と現実世界の対応は `twins[]`（`realId`・`digitalId`・`relation`＝`represents`／`measures`／`records`／`displays`・出典 `sourceIds`）に書きます（FR-214）。
+  種別 `person` は役割の単位（例: 「保守担当」）だけで書き、個人名・連絡先を入れません（Q-037 の回答まで）。
+  生成した顧客パックでは「区分なし」（`world` か `kind` のないエンティティ）を許しません。⑤スキーマ検証は区分なしを位置つきのエラー（例: `public/data/entities.json entities[3].world`）にして、その箇所を再生成します。⑥verify も区分なしを項目 1 の不合格にします（単独では `npm run verify:pack -- <作業フォルダー> --generated`）。手作りの顧客パックの検証（`--generated` なし）では、区分なしは件数の警告だけです。
 - ⑥verify は、顧客パックの受け入れを 9 項目（スキーマ検証エラー 0 件・起動時のページエラー 0 件・Primary 色の反映と AA コントラスト・タイトルとオープニングの顧客名・Project 名・出典のない数値項目 0 件・主要画面の「サンプル」「AI 生成」の表示・`P`/`M`/`Esc` の動作・Markdown の保存と復元・所要時間）で判定します。1 分（PARAM-020）以内に行い、不合格の項目は原因と対処を出して止まります。ブラウザー検査は `tests/system` の Playwright（Chromium）を使うので、`tests/system` で `npm install` と `npx playwright install chromium` を済ませておきます。単独では `npm run verify:pack -- <作業フォルダー>` で実行できます。
 - ⑦起動は、127.0.0.1 だけで待ち受ける静的サーバーで `dist` と顧客パックを配信し、URL を表示します。ポートが使用中なら別のポートで起動します。
 - 追加資料（`--material`）に、雛形が持たない画面種別の要望（行頭に `画面種別: ○○`）や、`雛形への要望: ○○` の行があれば、顧客パックでは実装せず、作業フォルダーの親の `template-improvement-requests.md` に「雛形への改善要望」として追記します（FR-131。コミットしません）。

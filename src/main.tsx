@@ -5,6 +5,7 @@ import { restoreInk, startInkAutosave } from './ink/persist';
 import { AnimationController } from './motion/AnimationController';
 import './motion/motion.css';
 import './theme/a11y.css';
+import './theme/design.css';
 import { installTabsterDummyFix } from './theme/tabsterDummies';
 import { AppThemeProvider } from './theme/AppThemeProvider';
 import { initProjectPersistence } from './store/persist';

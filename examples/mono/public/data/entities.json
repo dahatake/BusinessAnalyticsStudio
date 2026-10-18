@@ -7,20 +7,37 @@
   ],
   "entities": [
     {
-      "id": "ent-mono-line-a", "createdBy": "sample", "type": "site", "name": "第 1 組立ライン", "parentId": "ent-mono-plant", "location": { "lat": 35.083, "lng": 137.156 }, "sourceIds": ["src-mono-001"],
+      "id": "ent-mono-line-a", "createdBy": "sample", "type": "site", "name": "第 1 組立ライン", "parentId": "ent-mono-plant", "location": {"lat": 35.083, "lng": 137.156}, "sourceIds": ["src-mono-001"], "world": "real", "kind": "operation",
       "metrics": [
         { "label": "月間の計画外停止", "value": 14, "unit": "回", "sourceIds": ["src-mono-001"] }
       ]
     },
-    { "id": "ent-mono-robot", "createdBy": "sample", "type": "part", "name": "組立ロボット", "parentId": "ent-mono-line-a", "sourceIds": ["src-mono-001"] },
-    { "id": "ent-mono-press", "createdBy": "sample", "type": "part", "name": "プレス機", "parentId": "ent-mono-line-a", "sourceIds": ["src-mono-001"] },
-    { "id": "ent-mono-motor", "createdBy": "sample", "type": "part", "name": "サーボモーター", "parentId": "ent-mono-robot", "relatedIds": ["ent-mono-leader"], "sourceIds": ["src-mono-001"] },
-    { "id": "ent-mono-gripper", "createdBy": "sample", "type": "part", "name": "グリッパー", "parentId": "ent-mono-robot", "sourceIds": ["src-mono-001"] },
-    { "id": "ent-mono-sensor", "createdBy": "sample", "type": "part", "name": "圧力センサー", "parentId": "ent-mono-press", "sourceIds": ["src-mono-001"] },
-    { "id": "ent-mono-die", "createdBy": "sample", "type": "part", "name": "金型", "parentId": "ent-mono-press", "sourceIds": ["src-mono-001"] },
-    { "id": "ent-mono-plant", "createdBy": "sample", "type": "site", "name": "ミズホ精機 本社工場", "location": { "lat": 35.1815, "lng": 136.9066 }, "sourceIds": ["src-mono-001"] },
-    { "id": "ent-mono-line-b", "createdBy": "sample", "type": "site", "name": "第 2 組立ライン", "parentId": "ent-mono-plant", "location": { "lat": 34.7108, "lng": 137.7261 }, "sourceIds": ["src-mono-001"] },
-    { "id": "ent-mono-conveyor", "createdBy": "sample", "type": "part", "name": "搬送コンベア", "parentId": "ent-mono-line-b", "sourceIds": ["src-mono-001"] },
-    { "id": "ent-mono-leader", "createdBy": "sample", "type": "role", "name": "現場リーダー", "sourceIds": ["src-mono-002"] }
+    { "id": "ent-mono-dt-plant-model", "createdBy": "sample", "type": "model", "name": "本社工場の 3D モデル", "world": "digital", "kind": "model", "sourceIds": ["src-mono-001"] },
+    { "id": "ent-mono-org-mfg", "createdBy": "sample", "type": "organization", "name": "製造部", "world": "real", "kind": "organization", "sourceIds": ["src-mono-002"] },
+    { "id": "ent-mono-robot", "createdBy": "sample", "type": "part", "name": "組立ロボット", "parentId": "ent-mono-line-a", "sourceIds": ["src-mono-001"], "world": "real", "kind": "equipment" },
+    { "id": "ent-mono-press", "createdBy": "sample", "type": "part", "name": "プレス機", "parentId": "ent-mono-line-a", "sourceIds": ["src-mono-001"], "world": "real", "kind": "equipment" },
+    { "id": "ent-mono-motor", "createdBy": "sample", "type": "part", "name": "サーボモーター", "parentId": "ent-mono-robot", "relatedIds": ["ent-mono-leader"], "sourceIds": ["src-mono-001"], "world": "real", "kind": "thing" },
+    { "id": "ent-mono-gripper", "createdBy": "sample", "type": "part", "name": "グリッパー", "parentId": "ent-mono-robot", "sourceIds": ["src-mono-001"], "world": "real", "kind": "thing" },
+    { "id": "ent-mono-sensor", "createdBy": "sample", "type": "part", "name": "圧力センサー", "parentId": "ent-mono-press", "sourceIds": ["src-mono-001"], "world": "real", "kind": "thing" },
+    { "id": "ent-mono-die", "createdBy": "sample", "type": "part", "name": "金型", "parentId": "ent-mono-press", "sourceIds": ["src-mono-001"], "world": "real", "kind": "thing" },
+    { "id": "ent-mono-plant", "createdBy": "sample", "type": "site", "name": "ミズホ精機 本社工場", "location": {"lat": 35.1815, "lng": 136.9066}, "sourceIds": ["src-mono-001"], "world": "real", "kind": "site" },
+    { "id": "ent-mono-line-b", "createdBy": "sample", "type": "site", "name": "第 2 組立ライン", "parentId": "ent-mono-plant", "location": {"lat": 34.7108, "lng": 137.7261}, "sourceIds": ["src-mono-001"], "world": "real", "kind": "operation" },
+    { "id": "ent-mono-conveyor", "createdBy": "sample", "type": "part", "name": "搬送コンベア", "parentId": "ent-mono-line-b", "sourceIds": ["src-mono-001"], "world": "real", "kind": "equipment" },
+    { "id": "ent-mono-dt-robot-metric", "createdBy": "sample", "type": "metric", "name": "組立ロボットの稼働率", "parentId": "ent-mono-dt-plant-model", "world": "digital", "kind": "metric", "sourceIds": ["src-mono-001"] },
+    { "id": "ent-mono-dt-maintenance-log", "createdBy": "sample", "type": "data", "name": "保守点検の記録", "parentId": "ent-mono-dt-plant-model", "world": "digital", "kind": "data", "sourceIds": ["src-mono-002"] },
+    { "id": "ent-mono-dt-mes", "createdBy": "sample", "type": "system", "name": "生産管理システム", "parentId": "ent-mono-dt-plant-model", "world": "digital", "kind": "system", "sourceIds": ["src-mono-001"] },
+    { "id": "ent-mono-dt-line-dashboard", "createdBy": "sample", "type": "ui-component", "name": "ライン稼働ダッシュボード", "parentId": "ent-mono-dt-plant-model", "world": "digital", "kind": "ui-component", "sourceIds": ["src-mono-001"] },
+    { "id": "ent-mono-leader", "createdBy": "sample", "type": "role", "name": "現場リーダー", "parentId": "ent-mono-org-mfg", "sourceIds": ["src-mono-002"], "world": "real", "kind": "person" }
+  ],
+  "twins": [
+    { "realId": "ent-mono-plant", "digitalId": "ent-mono-dt-plant-model", "relation": "represents", "sourceIds": ["src-mono-001"] },
+    { "realId": "ent-mono-robot", "digitalId": "ent-mono-dt-plant-model", "relation": "represents", "sourceIds": ["src-mono-001"] },
+    { "realId": "ent-mono-robot", "digitalId": "ent-mono-dt-robot-metric", "relation": "measures", "sourceIds": ["src-mono-001"] },
+    { "realId": "ent-mono-robot", "digitalId": "ent-mono-dt-maintenance-log", "relation": "records", "sourceIds": ["src-mono-002"] },
+    { "realId": "ent-mono-press", "digitalId": "ent-mono-dt-maintenance-log", "relation": "records", "sourceIds": ["src-mono-002"] },
+    { "realId": "ent-mono-motor", "digitalId": "ent-mono-dt-plant-model", "relation": "represents", "sourceIds": ["src-mono-001"] },
+    { "realId": "ent-mono-plant", "digitalId": "ent-mono-dt-mes", "relation": "records", "sourceIds": ["src-mono-001"] },
+    { "realId": "ent-mono-line-a", "digitalId": "ent-mono-dt-line-dashboard", "relation": "displays", "sourceIds": ["src-mono-001"] },
+    { "realId": "ent-mono-line-b", "digitalId": "ent-mono-dt-line-dashboard", "relation": "displays", "sourceIds": ["src-mono-001"] }
   ]
 }

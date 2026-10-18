@@ -8,10 +8,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { formatPackError, type PackError } from '../../src/schema';
+import { UNCLASSIFIED_LABEL, countUnclassified, formatPackError, type PackError } from '../../src/schema';
 import { contrastRatio, isHexColor } from '../../src/theme/brand';
 import { buildBrandTheme } from '../../src/theme/brandTheme';
-import { validatePackDir } from '../lib/pack-fs';
+import { validateGeneratedPackDir, validatePackDir } from '../lib/pack-fs';
 import { PARAMS } from './common';
 import { startStaticServer } from './launch';
 
@@ -76,6 +76,8 @@ export interface VerifyResult {
   items: VerifyItemResult[];
   /** 合否に含めない警告（例: 補正前の Primary 色が AA を満たさない） */
   warnings: string[];
+  /** 世界区分（world）のないエンティティ（区分なし）の件数（FR-213 AC-490・AC-509） */
+  unclassified: number;
   elapsedMs: number;
   limitSec: number;
 }
@@ -88,6 +90,11 @@ export interface VerifyOptions {
   projectName?: string;
   smoke?: SmokeRunner;
   limitSec?: number;
+  /**
+   * 生成パイプラインが作った顧客パックとして判定する（FR-213 AC-509）。世界区分か種別のないエンティティを、
+   * 項目 1（スキーマ検証）の位置つきのエラーにする。既定 false（手作りの顧客パックでは区分なしを警告だけにする。AC-490）
+   */
+  requireClassified?: boolean;
   /** 経過時間の測定（テスト用） */
   clock?: () => number;
 }
@@ -156,7 +163,7 @@ export async function verifyPack(opts: VerifyOptions): Promise<VerifyResult> {
   const limitSec = opts.limitSec ?? PARAMS.verifyLimitSec;
   const { workDir } = opts;
 
-  const validation = validatePackDir(workDir);
+  const validation = opts.requireClassified ? validateGeneratedPackDir(workDir) : validatePackDir(workDir);
   const sourceErrors = validation.errors.filter((e) => e.code === 'missing-source');
   // 数値項目の sourceIds がないことは、スキーマ違反としても報告される。同じ原因は、出典の項目（5）にだけ数える
   const missingAt = new Set(sourceErrors.map((e) => `${e.file}\u0000${e.path}`));
@@ -246,7 +253,14 @@ export async function verifyPack(opts: VerifyOptions): Promise<VerifyResult> {
     };
 
   const list: VerifyItemResult[] = VERIFY_ITEMS.map((m) => ({ id: m.id, name: m.name, ...items[m.id] }));
-  return { ok: list.every((i) => i.ok), items: list, warnings: primary.warnings, elapsedMs, limitSec };
+  // FR-213 AC-490: 世界区分のないエンティティは合否に含めず、件数を警告にする（既存の顧客パックを壊さない）
+  // FR-213 AC-509: 生成した顧客パック（requireClassified）では、区分なしは項目 1 のエラーとして上で数えている
+  const unclassified = countUnclassified(readJson(path.join(workDir, 'public', 'data', 'entities.json')));
+  const warnings = [...primary.warnings];
+  if (unclassified > 0 && !opts.requireClassified) {
+    warnings.push(`世界区分（world）のないエンティティが ${unclassified} 件あります（「${UNCLASSIFIED_LABEL}」として扱います）。public/data/entities.json の各エンティティに world と kind を付けてください（FR-213）。`);
+  }
+  return { ok: list.every((i) => i.ok), items: list, warnings, unclassified, elapsedMs, limitSec };
 }
 
 /** 顧客パックの JSON 全体（サンプルの項目の有無の判定用） */
@@ -276,8 +290,10 @@ export async function main(argv: readonly string[], log: (l: string) => void = (
     const i = argv.indexOf(`--${name}`);
     return i >= 0 ? argv[i + 1] : undefined;
   };
-  const dir = argv.find((a, i) => !a.startsWith('--') && !(i > 0 && argv[i - 1]!.startsWith('--')));
-  if (!dir) { log('使い方: npm run verify:pack -- <作業フォルダー> [--customer 顧客名] [--project Project名] [--smoke mock]'); return 2; }
+  // 値を取るオプション（--customer など）の次の引数は、作業フォルダーとして扱わない。--generated は値を取らない
+  const valueOpts = new Set(['--customer', '--project', '--smoke']);
+  const dir = argv.find((a, i) => !a.startsWith('--') && !(i > 0 && valueOpts.has(argv[i - 1]!)));
+  if (!dir) { log('使い方: npm run verify:pack -- <作業フォルダー> [--customer 顧客名] [--project Project名] [--smoke mock] [--generated]'); return 2; }
   const customer = opt('customer');
   const projectName = opt('project');
   const r = await verifyPack({
@@ -285,6 +301,8 @@ export async function main(argv: readonly string[], log: (l: string) => void = (
     ...(customer ? { customer } : {}),
     ...(projectName ? { projectName } : {}),
     ...(opt('smoke') === 'mock' ? { smoke: mockSmoke } : {}),
+    // 生成パイプラインが作った顧客パックとして判定する（区分なしをエラーにする。FR-213 AC-509）
+    ...(argv.includes('--generated') ? { requireClassified: true } : {}),
   });
   for (const l of formatVerifyReport(r)) log(l);
   return r.ok ? 0 : 1;

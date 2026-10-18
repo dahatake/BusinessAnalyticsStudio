@@ -8,18 +8,25 @@ import type { TwinLayout, TwinObject } from '../three/entityLayout';
 import { focusChain, minimapModel, minimapNeighbor } from '../three/lod';
 import { viewportAspect } from '../three/sceneViewport';
 import { useTwinLayout } from '../three/twin';
+import { elevationStyles } from '../theme/tokens';
 
 const useStyles = makeStyles({
-  nav: { marginBottom: tokens.spacingVerticalS },
+  // 面の色を明示する（ハイコントラストでもリンクの文字と背景の比を判定・確保できる。NFR-UX-016）
+  nav: { marginBottom: tokens.spacingVerticalS, backgroundColor: tokens.colorNeutralBackground1 },
   list: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', listStyleType: 'none', margin: 0, padding: 0, columnGap: tokens.spacingHorizontalXS },
   item: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalXS },
   sep: { color: tokens.colorNeutralForeground3 },
-  chip: { width: '10px', height: '10px', borderRadius: '50%', flexShrink: 0, border: `1px solid ${tokens.colorNeutralStroke1}` },
+  chip: { width: '10px', height: '10px', borderRadius: tokens.borderRadiusCircular, flexShrink: 0, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}` },
   link: {
     color: tokens.colorBrandForegroundLink,
     textDecorationLine: 'underline',
     cursor: 'pointer',
     ':hover': { color: tokens.colorBrandForegroundLinkHover },
+    // 当たり判定は 24px 以上（NFR-A11Y-009 AC-485）。ハイコントラストではシステムのリンクの色（NFR-UX-016）
+    display: 'inline-flex',
+    alignItems: 'center',
+    minHeight: '24px',
+    '@media (forced-colors: active)': { color: 'LinkText' },
   },
   current: { fontWeight: tokens.fontWeightSemibold, color: tokens.colorNeutralForeground1 },
   minimap: {
@@ -30,11 +37,12 @@ const useStyles = makeStyles({
     padding: tokens.spacingHorizontalXS,
     borderRadius: tokens.borderRadiusMedium,
     backgroundColor: tokens.colorNeutralBackground1,
-    border: `1px solid ${tokens.colorNeutralStroke1}`,
-    boxShadow: tokens.shadow8,
+    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`,
+    ...elevationStyles('callout'),
   },
   mapSvg: { display: 'block', cursor: 'pointer' },
-  srOnly: { position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' },
+  // 支援技術にだけ伝える文字。描画は clip-path で隠す（overflow で切らないので、文字の拡大で「切れ」にならない。NFR-A11Y-009 AC-483）
+  srOnly: { position: 'absolute', width: '1px', height: '1px', clipPath: 'inset(50%)', whiteSpace: 'nowrap' },
 });
 
 /** 項目の階層の視点へ移動する（フライスルー。アニメーション停止中は即座に切り替わる）。選択は変えない。 */

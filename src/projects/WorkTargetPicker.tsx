@@ -1,10 +1,11 @@
 // 作業先の選択画面（FR-144）。キーボードだけで、開き・候補を矢印キーで選び・Enter で確定できる（AC-232）。
-import { Dialog, DialogBody, DialogContent, DialogSurface, DialogTitle, Listbox, Option, Text, makeStyles, tokens } from '@fluentui/react-components';
+import { DialogBody, DialogContent, DialogTitle, Listbox, Option, Text, makeStyles, tokens } from '@fluentui/react-components';
+import { Dialog, DialogSurface } from '../components/Dialog';
 import type { Company, Project } from '../store/projects';
 import { parseChoice, targetOptions, type TargetChoice } from './workTarget';
 
 const useStyles = makeStyles({
-  hint: { color: tokens.colorNeutralForeground2, marginBottom: tokens.spacingVerticalS, display: 'block', fontSize: tokens.fontSizeBase200 },
+  hint: { color: tokens.colorNeutralForeground2, marginBottom: tokens.spacingVerticalS, display: 'block', fontSize: tokens.fontSizeBase200, lineHeight: tokens.lineHeightBase200 },
   list: { minWidth: '320px', maxHeight: '60vh' },
 });
 
