@@ -116,3 +116,9 @@
 - ピン止めしたコンポーネント（Q-036 B。AC-510）: 画面の見出しの 2D/3D・世界の表示の切替の対象外で、そのコンポーネントの見出しの「ビュー」だけで変わる（統合テストの範囲で、この契約の spec では扱わない）。
 - 顧客パックの世界区分（FR-213・FR-214。§3 の項目名）: `entities.json` の `entities[].world`（`"real"`／`"digital"`。ないときは区分なし）と `entities[].kind`（種別）、ツイン関係は `entities.json` の `twins: [{ realId, digitalId, relation, sourceIds }]`。お手本パック（mono・koto）は全エンティティに world を持ち、設備（エンティティの階層の「設備」のレベル）のツイン関係を含む。区分なしの項目は「両方」で文字「区分なし」を示す。
 - 選択・絞り込み・時刻: `selection-indicator`（選択中の対象の文字）、一覧表（`component-table`）の textbox「絞り込み」、slider「時間軸」（§15 の AC-185 と同じ）。
+
+## 22. 種別「人」を含むパックのエクスポート前の確認（FR-219 AC-514。export-person-confirm.spec.ts が前提にする画面の探し方）
+- 入口: §21 までと同じエクスポートの画面（Ctrl+Shift+E、role=dialog「エクスポート」）の button「エクスポート」。種別「人」（`entities[].kind` が `person`）を 1 件以上含むパック（お手本 mono）では、プレビューの後・出力の前に確認（role=alertdialog か role=dialog）が出る。
+- 確認の文字: 「種別「人」」の語、「<件数> 件」、了承の記録の有無（なし: 「了承の記録なし」／あり: 確認日 YYYY-MM-DD か YYYY年M月D日）。個人名・連絡先の値は出さない。
+- 操作: button「中止」（またはキャンセル）と button「続行」（出力する）。了承の記録がないときは「続行」がないか disabled。Tab だけで両方へ到達でき、Enter で押せる。確認を開いた直後のフォーカスは確認の中。
+- 了承の記録は設定画面（§ FR-181 AC-375 と同じ入力欄・button「了承を保存」）で入力する。中止したときと了承なしのときは、ダウンロード（download イベント）が 0 件。

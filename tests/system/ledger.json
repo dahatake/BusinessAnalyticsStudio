@@ -244,7 +244,8 @@
     "AC-495": "sha256:993c4a32aa8e6bff",
     "AC-499": "sha256:737e480ca6126b4b",
     "AC-503": "sha256:5bad05d89a9be885",
-    "AC-501": "sha256:d20565407fd62f48"
+    "AC-501": "sha256:d20565407fd62f48",
+    "AC-514": "sha256:6eb4a89f232ae566"
   },
   "cases": [
     {
@@ -7171,6 +7172,31 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-316",
+      "requirement_ids": [
+        "FR-219"
+      ],
+      "ac_ids": [
+        "AC-514"
+      ],
+      "title": "種別「人」を含むお手本パックのエクスポート前の確認: 了承なしは件数と「了承の記録なし」が文字で出て続行できずファイルなし（異常系）、了承ありは確認日が出てキーボードだけで中止（ファイルなし）・続行（ファイルあり）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-514",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-19T04:50:41+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610190439: FR-219 AC-514 のケース（実装前・not_run）"
         }
       ]
     }
