@@ -5,6 +5,7 @@ import { MoreHorizontal20Regular } from '@fluentui/react-icons';
 import type { Move } from './layoutModel';
 import { SNAP_LABEL, type SnapKind } from './snap';
 import { PIN_MOVE_REASON, PIN_TABS_REASON, paneAction, type PaneActionId } from './paneActions';
+import { ComponentViewButton, ComponentViewSubmenu } from '../view/ViewMenu';
 
 const useActionStyles = makeStyles({
   actions: { display: 'flex', alignItems: 'center', columnGap: tokens.spacingHorizontalXXS, flexShrink: 0 },
@@ -111,6 +112,8 @@ export function ComponentMenu({ pane, title }: { pane: PaneInfo; title: string }
           ) : null}
           {pane.inTabs && !pane.pinned ? <MenuItem onClick={pane.untab}>{paneAction('untab').label}</MenuItem> : null}
           <MenuItem onClick={pane.hide}>{paneAction('hide').label}</MenuItem>
+          {/* ビューの切替（FR-217・FR-218）。見出しのボタンが隠れるときも、ここから操作できる */}
+          <ComponentViewSubmenu paneKey={pane.key} />
         </MenuList>
       </MenuPopover>
     </Menu>
@@ -153,7 +156,17 @@ export function ComponentActions({ pane, title, active, narrow }: { pane: PaneIn
   // 広いときは visibility: hidden で場所を残す（フォーカスが入った瞬間に見出しの折り返しが変わり、押そうとしたボタンが動いてクリックが外れるのを防ぐ）。狭いときは display: none。
   // フォーカスが入ると現れ、操作できる（FR-150）。最小化中は復元のアイコンだけを、フォーカスに関わらず出す
   const shown = (active && !narrow) || pane.minimized;
+  // 狭いときも、フォーカス中は「ビュー」ボタンだけを出す（現在の表示モードを文字で示す。FR-217・FR-218・D-01）。ほかの操作は「…」メニューから行う
+  const viewOnly = active && narrow && !pane.minimized;
   const TabsIcon = paneAction('tabs').Icon;
+  if (viewOnly) {
+    return (
+      <>
+        <div className={s.actions} data-testid="component-actions"><ComponentViewButton paneKey={pane.key} /></div>
+        <ComponentMenu pane={pane} title={title} />
+      </>
+    );
+  }
   return (
     <>
     <div className={s.actions} data-testid="component-actions" data-minimized={pane.minimized ? 'true' : undefined} style={shown ? undefined : narrow ? { display: 'none' } : { visibility: 'hidden' }}>
@@ -189,6 +202,8 @@ export function ComponentActions({ pane, title, active, narrow }: { pane: PaneIn
             </Menu>
           ) : null}
           <ActionButton action="hide" onClick={pane.hide} />
+          {/* 2D/3D と世界の表示の切替を 1 つにまとめた「ビュー」（FR-217・FR-218。PARAM-073 の 6 個目） */}
+          <ComponentViewButton paneKey={pane.key} />
         </>
       ) : null}
     </div>

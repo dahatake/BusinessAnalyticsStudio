@@ -39,6 +39,8 @@ export interface TwinObject {
   size: Vec3;
   /** 上面の高さ */
   top: number;
+  /** 世界区分（FR-213）。ないものは区分なし。世界の表示の切替（FR-218）に使う */
+  world?: 'real' | 'digital';
 }
 
 export interface TwinLayout {
@@ -145,7 +147,10 @@ export function buildTwinLayout(entities: readonly TwinEntity[]): TwinLayout {
 
   const out: TwinObject[] = [];
   const place = (n: Node, cx: number, cz: number, baseY: number, depth: number, parentId: string | null): void => {
-    const base = { entityId: n.e.id, name: n.e.name, type: n.e.type, tone: toneOf(n.e.type), depth, parentId, childIds: n.children.map((c) => c.e.id) };
+    const base = {
+      entityId: n.e.id, name: n.e.name, type: n.e.type, tone: toneOf(n.e.type), depth, parentId, childIds: n.children.map((c) => c.e.id),
+      ...(n.e.world ? { world: n.e.world } : {}),
+    };
     if (n.children.length === 0) {
       const l = leafSpec(n.e);
       out.push({ ...base, shape: l.shape, platform: false, position: [cx, baseY + l.h / 2, cz], size: [l.w, l.h, l.d], top: baseY + l.h });

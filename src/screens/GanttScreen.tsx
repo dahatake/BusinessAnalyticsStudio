@@ -3,9 +3,10 @@
 // FR-022: 2D と 2.5D（斜め上から見た奥行き付きの描画）を切り替えられる。切り替えても工程の件数・期間・選択は変わらない。
 // FR-035: 下位の工程を持つ工程は、展開すると下位の工程が出て、折りたたむと隠れる。
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Button, Field, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { useComponentView, usePublishViewItems } from '../view/useView';
+import { ModeRadio } from '../view/ModeRadio';
+import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { ChevronDown16Regular, ChevronRight16Regular } from '@fluentui/react-icons';
-import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { flattenTree, type TreeRow } from '../plan/hierarchy';
 import { useEntityBinding, useSelection } from '../selection/hooks';
 import { Panel } from '../components/Panel';
@@ -143,7 +144,9 @@ function GanttScreen() {
   const [featureId, setFeatureId] = useState<string | undefined>();
   const [focusId, setFocusId] = useState<string | undefined>();
   const [hoverId, setHoverId] = useState<string | undefined>();
-  const [view, setView] = useState<View>('2d');
+  // 2D/2.5D は見出しの「ビュー」の 2D/3D と同じ状態（FR-217 AC-507。2.5D がこの画面の 3D 相当の表現）。ここの切替も同じ状態を変える
+  const cv = useComponentView('gantt');
+  const view: View = cv.mode === '3d' ? '2.5d' : '2d';
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const { graph, selectedIds, related, select, clear } = useSelection();
@@ -162,6 +165,9 @@ function GanttScreen() {
   const toggle = (id: string): void => setCollapsed((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   // FR-035: 下位の工程は、上位の工程を展開したときだけ出す（既定は展開）
   const groupRows = useMemo(() => model.groups.map((g) => ({ g, rows: flattenTree(g.tasks, taskIdOf, parentOfTask, collapsed) })), [model, collapsed]);
+  // 表示中の項目（t.view.state。2D と 2.5D で同じ工程を描く）
+  const shownTaskIds = useMemo(() => (tasks ?? []).map((t) => t.id), [tasks]);
+  usePublishViewItems('gantt', shownTaskIds);
   const orphanRows = useMemo(() => flattenTree(model.orphans, taskIdOf, parentOfTask, collapsed), [model, collapsed]);
 
   const highlight = (g: GanttTask): Hl =>
@@ -261,12 +267,8 @@ function GanttScreen() {
         <EmptyView message="工程がありません。" />
       ) : (
         <>
-          <Field label="表示">
-            <RadioGroup layout="horizontal" value={view} onChange={(_, d) => setView(d.value as View)}>
-              <Radio value="2d" label="2D" />
-              <Radio value="2.5d" label="2.5D" />
-            </RadioGroup>
-          </Field>
+          {/* 見出しの「ビュー」と同じ 1 つの切替。2.5D は canvas 2D で描くので WebGL2 がなくても選べる（FR-022・FR-217 AC-507） */}
+          <ModeRadio viewKey="gantt" labels={{ '3d': '2.5D' }} />
           {otherSelected.length > 0 ? (
             <div className={s.chips} role="status" aria-label="選択中の項目">
               <Text weight="semibold">選択中:</Text>

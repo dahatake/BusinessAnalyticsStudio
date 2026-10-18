@@ -21,6 +21,9 @@ import { onEntityKey, useEntityBinding, useSelection, useSelectionFilter } from 
 import { useEditStore } from '../store/edit';
 import { useRetainedState } from '../store/retained';
 import { useFallbackStore } from '../store/fallback';
+import { UNCLASSIFIED_LABEL } from '../schema/world';
+import { useComponentView, usePublishViewItems } from '../view/useView';
+import { WORLD_VIEW_LABELS, filterByWorld } from '../view/viewModel';
 
 const ORIGIN = 'table';
 
@@ -34,6 +37,8 @@ const useStyles = makeStyles({
   },
   cell: { overflowWrap: 'anywhere', minWidth: 0 },
   idCell: { color: tokens.colorNeutralForeground3, fontFamily: tokens.fontFamilyMonospace },
+  // ツイン関係の印（FR-218）。セルの幅で折り返す
+  twin: { display: 'block', color: tokens.colorBrandForeground1, fontSize: tokens.fontSizeBase200, lineHeight: tokens.lineHeightBase200, overflowWrap: 'anywhere' },
   hideNarrow: { '@media (max-width: 560px)': { display: 'none' } },
 });
 
@@ -88,7 +93,9 @@ function TableScreen() {
   // FR-113: 表現が成り立たない項目（位置情報なしなど）を「表で見る」要求があるときは、その項目だけを出す
   const fallback = useFallbackStore((st) => st.request);
   const clearFallback = useFallbackStore((st) => st.clear);
-  const nodes = useMemo(() => graph?.nodes ?? [], [graph]);
+  // 世界の表示（FR-218）: 選んだ世界の項目だけ。「両方」は区分なしを含めてすべて
+  const { world: worldView } = useComponentView(ORIGIN);
+  const nodes = useMemo(() => filterByWorld(graph?.nodes ?? [], (n) => n.world, worldView), [graph, worldView]);
   const { visible: filtered, count: filteredCount } = useSelectionFilter(nodes, idOf);
   const fallbackNodes = useMemo(() => {
     if (!fallback) return null;
@@ -119,6 +126,19 @@ function TableScreen() {
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
   const toggle = (id: string): void => setCollapsed((c) => { const n = new Set(c); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   const rows = useMemo(() => flattenTree(visible, idOf, (n) => parentById.get(n.id), collapsed), [visible, parentById, collapsed]);
+  // 表示中の行と、印（「ツイン: 相手」）で示しているツイン関係（t.view.state。FR-218 AC-503）
+  const shownIds = useMemo(() => rows.map((r) => r.item.id), [rows]);
+  const twinLinks = useMemo(() => {
+    if (!graph || worldView !== 'both') return [];
+    const shown = new Set(shownIds);
+    return graph.edges.filter((e) => e.kind === 'twin' && shown.has(e.from) && shown.has(e.to)).map((e) => [e.from, e.to] as const);
+  }, [graph, shownIds, worldView]);
+  usePublishViewItems(ORIGIN, shownIds, twinLinks);
+  const twinPartners = useMemo(() => {
+    const m = new Map<string, string[]>();
+    for (const [a, b] of twinLinks) { m.set(a, [...(m.get(a) ?? []), b]); m.set(b, [...(m.get(b) ?? []), a]); }
+    return m;
+  }, [twinLinks]);
 
   if (!graph) return <LoadingView label="一覧を読み込み中" />;
 
@@ -182,6 +202,7 @@ function TableScreen() {
             <TableRow>
               <TableHeaderCell>状態</TableHeaderCell>
               <TableHeaderCell>種別</TableHeaderCell>
+              <TableHeaderCell>世界</TableHeaderCell>
               <TableHeaderCell>名称</TableHeaderCell>
               <TableHeaderCell className={s.hideNarrow}>ID</TableHeaderCell>
             </TableRow>
@@ -216,6 +237,15 @@ function TableScreen() {
                     />
                   ) : null}{state ? <Badge appearance="outline" color={state === '選択中' ? 'brand' : 'informative'}>{state}</Badge> : null}</TableCell>
                   <TableCell className={s.cell}>{KIND_LABELS[n.kind]}{n.type ? `（${n.type}）` : ''}</TableCell>
+                  {/* 世界区分（FR-218）。区分なしは「両方」でだけ出る。ツイン関係は相手の名前の印で示す */}
+                  <TableCell className={s.cell}>
+                    {n.world ? WORLD_VIEW_LABELS[n.world] : UNCLASSIFIED_LABEL}
+                    {(twinPartners.get(n.id) ?? []).map((t) => {
+                      const rel = graph.twinsOf(n.id).find((x) => x.id === t)?.relationLabel;
+                      // 文字を拡大しても重ならないよう、折り返す 1 行の文字で示す（NFR-A11Y-009）
+                      return <span key={t} className={s.twin} data-twin-of={t}>{`⇄ ツイン: ${graph.node(t)?.label ?? t}${rel ? `（${rel}）` : ''}`}</span>;
+                    })}
+                  </TableCell>
                   <NameCell node={n} className={s.cell} indent={depth} />
                   <TableCell className={mergeClasses(s.cell, s.idCell, s.hideNarrow)}>{n.id}</TableCell>
                 </TableRow>

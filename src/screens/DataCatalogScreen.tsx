@@ -12,6 +12,7 @@ import {
   CATEGORIES, NO_BAS_ONLY_REASON, NO_CATALOG_REASON, buildTodos, countByCategory, reconcile,
 } from '../datacatalog/reconcile';
 import { DataViewer } from '../components/DataViewer';
+import { usePublishViewItems } from '../view/useView';
 import { toViewerEntities } from '../datacatalog/viewer';
 import { deriveViewerRelations } from '../datacatalog/relations';
 import { usePackStore } from '../store/pack';
@@ -105,6 +106,9 @@ function DataCatalogScreen() {
     ),
     [entities, imported, useCases, model.derived, links, rows],
   );
+  // 表示中の項目（t.view.state。データビュアーの 2D と 3D で同じエンティティを描く。FR-217）
+  const viewerKeys = useMemo(() => viewerEntities.map((e) => e.key), [viewerEntities]);
+  usePublishViewItems('data-catalog', viewerKeys);
   const counts = countByCategory(rows);
   // FR-170: ①エンティティ間の関係は顧客パックのフロー（from・to）。端点（顧客パックのエンティティ ID）を鍵に直す
   const viewerRelations = useMemo(() => {

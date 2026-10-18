@@ -8,14 +8,19 @@ import { usePackStore } from '../store/pack';
 import { useFoldClass } from '../motion/useFoldMotion';
 import { ComponentActions, usePane } from '../workspace/PaneContext';
 import type { Move } from '../workspace/layoutModel';
+import { getEntityGraph } from '../selection/hooks';
+import { useSelectionStore } from '../store/selection';
+import { useComponentView } from '../view/useView';
+import { HIDDEN_SELECTION_TEXT, selectionHiddenIn, singleWorldNote } from '../view/viewModel';
 import { isEditableTarget, panelKeyAction, runPanelKeyAction, titleDoubleClick, type KeyLike } from './panelKeys';
 
 /** これより狭いコンポーネントは、見出しの操作アイコンを出さず「…」メニューに任せる（FR-150 AC-259）。
  *  アイコン 4 個（各 24px 以上）と「…」が見出しの横に収まる幅。既定の配置の列（約 300px）でもアイコンが出る（NFR-UX-015 AC-476 のツールチップ） */
 const NARROW_PANE_PX = 240;
 /** これより狭いコンポーネントは、見出しを詰める（見出しの文字を 1 段小さい Fluent 2 の段にし、操作アイコンと「…」をまとめて見出しの下の行の右へ置く）。
- *  細い列で見出しが何行にも折れて、画面の上部の情報（FR-041 のサマリーなど）が下へ押し出されるのを防ぐ */
-const COMPACT_PANE_PX = 360;
+ *  細い列で見出しが何行にも折れて、画面の上部の情報（FR-041 のサマリーなど）が下へ押し出されるのを防ぐ。
+ *  見出しの操作に「ビュー」ボタン（文字で現在の表示を示す。FR-217・FR-218）が加わった分（約 60px）だけ、360px から広げた */
+const COMPACT_PANE_PX = 420;
 
 const useStyles = makeStyles({
   // 外枠（ワークスペースの外では従来どおりの幅と余白）
@@ -81,7 +86,26 @@ const useStyles = makeStyles({
   // 見出しをつかんで動かす（FR-142）。つかめることをカーソルで示し、動かしている間に文字が選択されないようにする
   grab: { flexGrow: 1, cursor: 'grab', userSelect: 'none', touchAction: 'none', ':active': { cursor: 'grabbing' } },
   sample: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS },
+  // 世界の表示の注記（FR-218）
+  worldNote: { color: tokens.colorNeutralForeground2 },
 });
+
+/**
+ * 世界の表示（FR-218）の、コンポーネント共通の扱い。
+ *  - 画面の項目がすべて 1 つの世界に属する画面（KPI/OKR など。宣言の world が 'real'／'digital'）は、別の世界を選ぶと中身を隠す（作り直さずに隠し、入力中の内容を保つ）
+ *  - 選択中の項目がいまの世界の表示で隠れているときは、選択は変えずに「選択中の項目はこの表示では隠れています」と示す
+ */
+function useWorldView(key: string): { single: boolean; hideAll: boolean; note: string | null; hiddenNote: boolean } {
+  const v = useComponentView(key);
+  const selectedIds = useSelectionStore((st) => st.selectedIds);
+  const single = v.decl.world === 'real' || v.decl.world === 'digital' ? v.decl.world : null;
+  const hideAll = single !== null && v.world !== 'both' && v.world !== single;
+  // 選択中の項目がこの画面の項目で、いまの世界の表示で隠れているときだけ示す（項目の種類と世界区分はエンティティ関係グラフから読む）
+  const graph = selectedIds.length > 0 && v.world !== 'both' ? getEntityGraph() : null;
+  const hidden = graph ? selectionHiddenIn(v.decl, v.world, selectedIds, (id) => graph.node(id)) : false;
+  const note = hideAll ? singleWorldNote(v.decl) : null;
+  return { single: single !== null, hideAll, note, hiddenNote: hidden };
+}
 
 
 export interface PanelProps {
@@ -112,6 +136,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
   const [narrow, setNarrow] = useState(false);
   const [compact, setCompact] = useState(false);
   const minimized = pane?.minimized === true;
+  const world = useWorldView(pane?.key ?? testId.replace(/^component-/, ''));
   // 最小化・復元の動き（NFR-UX-008。レイアウトは即座に切り替え、見た目だけを 200ms で整える）
   const foldMotion = useFoldClass(minimized);
   const first = useRef(true);
@@ -200,8 +225,11 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
           {pane ? <span className={s.actionGroup}><ComponentActions pane={pane} title={title} active={focused || minimized} narrow={narrow} /></span> : null}
         </div>
         {description && !minimized ? <Text size={300}>{description}</Text> : null}
+        {world.note && !minimized ? <Text size={300} className={s.worldNote} data-testid="view-world-note">{world.note}</Text> : null}
+        {world.hiddenNote && !minimized ? <Text size={300} role="status" className={s.worldNote} data-testid="view-hidden-selection">{HIDDEN_SELECTION_TEXT}</Text> : null}
       </div>
-      {children}
+      {/* 1 つの世界の画面は、いつも同じ包みに入れて表示・非表示だけを変える（中身を作り直さない） */}
+      {world.single ? <div data-testid="view-world-body" style={{ display: world.hideAll ? 'none' : 'contents' }}>{children}</div> : children}
       </div>
     </section>
   );

@@ -33,6 +33,9 @@ import { usePackStore } from '../store/pack';
 import { checkTemplateVersion, versionWarning } from '../version';
 import { AutoSizeSwitch, Dock, PersonaMenu, ResetLayoutButton } from '../workspace/Controls';
 import { Workspace } from '../workspace/Workspace';
+import { registerViewDecls } from '../view/viewModel';
+import { registerViewTestHook } from '../view/useView';
+import { ScreenViewButton } from '../view/ViewMenu';
 import { IntensityIndicator } from '../show/IntensityIndicator';
 import { ShowStage } from '../show/ShowStage';
 import { useOpening } from '../store/opening';
@@ -49,6 +52,8 @@ import { MainScreen } from '../projects/MainScreen';
 import { useMainScreen } from '../store/mainScreen';
 
 setAvailableComponents(SCREENS.map((s) => s.key));
+// 各画面の 2D・3D の表現の有無と世界区分の扱い（FR-217・FR-218）
+registerViewDecls(SCREENS);
 
 /** ナビゲーションの選択: 非表示なら再表示し、そのコンポーネントへフォーカスを移す。 */
 function openComponent(key: string): void {
@@ -117,6 +122,8 @@ export function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, [finishOpening]);
   useEffect(() => installEditKeys(), []);
+  // テスト用フック t.view.state(key)（CONTRACT.md §21）
+  useEffect(() => registerViewTestHook(), []);
 
   const customer = state.status === 'ready' ? state.pack.data.customer : undefined;
   useEffect(() => {
@@ -176,7 +183,7 @@ export function App() {
         onSelect={onSelect}
         stepper={<Stepper onNavigate={onSelect} />}
         headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><AiStatus /></>}
-        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><AutoSizeSwitch /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /></>}
+        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><AutoSizeSwitch /><ScreenViewButton /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /></>}
         dock={<Dock screens={SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
       >

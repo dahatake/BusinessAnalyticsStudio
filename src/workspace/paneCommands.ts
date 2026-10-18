@@ -4,6 +4,9 @@ import type { Command } from '../commands/registry';
 import type { PaneInfo } from './PaneContext';
 import { SNAP_LABEL } from './snap';
 import { PIN_MOVE_REASON, PIN_TABS_REASON } from './paneActions';
+import { useLayout } from '../store/layout';
+import { detect3D } from '../view/render3d';
+import { MODE_LABELS, VIEW_MODES, WORLD_VIEWS, WORLD_VIEW_LABELS, modeOptions, viewDeclOf, worldOptions } from '../view/viewModel';
 
 const TARGET = '（操作中のコンポーネント）';
 export const NO_TARGET_MESSAGE = 'コンポーネントを選んでから実行してください';
@@ -49,5 +52,26 @@ export function paneCommands(current: () => PaneInfo | null, notify: (text: stri
     },
     { id: 'pane.untab', label: `タブから出す${TARGET}`, keywords: [...kw, 'タブ', 'untab'], run: on((p) => { if (p.inTabs && !p.pinned) p.untab(); }) },
     { id: 'pane.hide', label: `非表示${TARGET}`, keywords: [...kw, '非表示', 'hide'], run: on((p) => p.hide()) },
+    // ビューの切替（FR-217・FR-218）。選べないものは変えずに理由を示す（AC-500・AC-502）
+    ...VIEW_MODES.map<Command>((m) => ({
+      id: `pane.view.mode.${m}`,
+      label: `ビュー: ${MODE_LABELS[m]}${TARGET}`,
+      keywords: [...kw, 'ビュー', '表示モード', '2D', '3D', 'view'],
+      run: on((p) => {
+        const o = modeOptions(viewDeclOf(p.key), detect3D()).find((x) => x.value === m)!;
+        if (!o.enabled) { notify(o.reason ?? ''); return; }
+        useLayout.getState().setView(p.key, { mode: m });
+      }),
+    })),
+    ...WORLD_VIEWS.map<Command>((w) => ({
+      id: `pane.view.world.${w}`,
+      label: `ビュー: ${WORLD_VIEW_LABELS[w]}${TARGET}`,
+      keywords: [...kw, 'ビュー', '世界', '現実世界', 'デジタル世界', '両方', 'view'],
+      run: on((p) => {
+        const o = worldOptions(viewDeclOf(p.key)).find((x) => x.value === w)!;
+        if (!o.enabled) { notify(o.reason ?? ''); return; }
+        useLayout.getState().setView(p.key, { world: w });
+      }),
+    })),
   ];
 }

@@ -13,6 +13,10 @@ import { registerSceneCanvas, viewportAspect } from './sceneViewport';
 import { buildDrawables, disposeDrawables, entityIdOfHit, planDraw, setDrawOpacity } from './twinDraw';
 import { twinGeometry, twinScale } from './twinGeometry';
 import { sceneLabelStyle } from './labelStyles';
+import { getEntityGraph } from '../selection/hooks';
+import { useComponentView } from '../view/useView';
+import { isShownInWorld } from '../view/viewModel';
+import { twinPairsOf, twinPartnersOfSelection } from './twinLinks';
 
 const ORIGIN = 'view3d';
 
@@ -26,10 +30,10 @@ export function toneColor(tone: TwinTone, preset: IndustryPreset, platform: bool
 /** 選択があるとき、関連しない項目を薄くする不透明度 */
 const DIM_OPACITY = 0.38;
 
-/** 強調の度合い。選択＞ホバー＞関連。強調しない項目は 0 */
-function emissiveOf(id: string, selected: ReadonlySet<string>, related: ReadonlySet<string> | null, hover: string | null): number {
+/** 強調の度合い。選択＞ホバー＝ツイン関係の相手（FR-218）＞関連。強調しない項目は 0 */
+function emissiveOf(id: string, selected: ReadonlySet<string>, related: ReadonlySet<string> | null, hover: string | null, twins: ReadonlySet<string>): number {
   if (selected.has(id)) return 1;
-  if (hover === id) return 0.55;
+  if (hover === id || twins.has(id)) return 0.55;
   if (related?.has(id)) return 0.3;
   return 0;
 }
@@ -74,14 +78,17 @@ export function EntityTwin({ layout, preset }: { layout: TwinLayout; preset: Ind
   const invalidate = useThree((s) => s.invalidate);
   const key = useLod((s) => s.key);
   const levels = useLod((s) => s.levels);
+  // 世界の表示（FR-218）: 選んだ世界の項目だけを描く。位置は変えない（切り替えても配置・カメラが動かない）
+  const { world } = useComponentView(ORIGIN);
+  const include = useMemo(() => (o: TwinObject) => isShownInWorld(o.world, world), [world]);
   const bind = useMemo(() => ({
     select: (id: string, additive: boolean) => select(id, { origin: ORIGIN, additive }),
     hover: (id: string | null) => setHover(id),
   }), [select, setHover]);
 
   const groups = useMemo(
-    () => planDraw(layout, (o) => toneColor(o.tone, preset, o.platform), (d) => key[d] === '1'),
-    [layout, preset, key],
+    () => planDraw(layout, (o) => toneColor(o.tone, preset, o.platform), (d) => key[d] === '1', include),
+    [layout, preset, key, include],
   );
   const root = useMemo(() => buildDrawables(layout, groups), [layout, groups]);
   useEffect(() => () => disposeDrawables(root), [root]);
@@ -111,11 +118,15 @@ export function EntityTwin({ layout, preset }: { layout: TwinLayout; preset: Ind
     bind.hover(id);
   };
 
-  const shown = layout.objects.filter((o) => key[o.depth] === '1');
-  const lit = shown.map((o) => ({ o, emissive: emissiveOf(o.entityId, selected, related, hoverId) })).filter((x) => x.emissive > 0);
+  const shown = layout.objects.filter((o) => key[o.depth] === '1' && include(o));
+  const twins = twinPartnersOfSelection(getEntityGraph(), selectedIds);
+  const lit = shown.map((o) => ({ o, emissive: emissiveOf(o.entityId, selected, related, hoverId, twins) })).filter((x) => x.emissive > 0);
+  // ツイン関係の線（「両方」のときだけ。両端を描いているもの）
+  const pairs = world === 'both' ? twinPairsOf(getEntityGraph(), layout, (o) => key[o.depth] === '1') : [];
   return (
     <group name="entity-twin">
       <primitive object={root} onClick={onClick} onPointerOver={onOver} onPointerOut={() => bind.hover(null)} />
+      {pairs.length > 0 ? <TwinLines layout={layout} pairs={pairs} color={preset.accent} /> : null}
       {lit.map(({ o, emissive }) => (
         <Highlight key={o.entityId} o={o} preset={preset} emissive={emissive} opacity={levels[o.depth]?.opacity ?? 0} />
       ))}
@@ -136,6 +147,28 @@ export function EntityTwin({ layout, preset }: { layout: TwinLayout; preset: Ind
         );
       })}
     </group>
+  );
+}
+
+/** ツイン関係の線（FR-218）。現実世界の項目の上面とデジタル世界の項目の上面を結ぶ。当たり判定はもたない */
+function TwinLines({ layout, pairs, color }: { layout: TwinLayout; pairs: ReadonlyArray<readonly [string, string]>; color: string }) {
+  const geometry = useMemo(() => {
+    const pts: number[] = [];
+    for (const [a, b] of pairs) {
+      const p = layout.byId.get(a);
+      const q = layout.byId.get(b);
+      if (!p || !q) continue;
+      pts.push(p.position[0], p.top + 0.15, p.position[2], q.position[0], q.top + 0.15, q.position[2]);
+    }
+    const g = new THREE.BufferGeometry();
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    return g;
+  }, [layout, pairs]);
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  return (
+    <lineSegments geometry={geometry} raycast={() => null} name="twin-links">
+      <lineBasicMaterial color={color} />
+    </lineSegments>
   );
 }
 

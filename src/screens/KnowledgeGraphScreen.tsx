@@ -5,7 +5,6 @@ import {
   Badge, Button, Checkbox, DialogActions, DialogBody, DialogContent, DialogTitle, Dropdown, Field, Input, Option, Text, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
 import { Dialog, DialogSurface } from '../components/Dialog';
-import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { Add24Regular, Delete24Regular, Link24Regular } from '@fluentui/react-icons';
 import { ADDABLE_KINDS, addEdge, addNode, removeEdge, removeNode, type AddableKind } from '../analysis/graphEdit';
 import {
@@ -25,6 +24,9 @@ import { usePackStore } from '../store/pack';
 import { registerTestHook } from '../testing/hook';
 import { MIN_TARGET_PX } from '../theme/tokens';
 import { Graph3D } from '../three/Graph3D';
+import { useComponentView, usePublishViewItems } from '../view/useView';
+import { ModeRadio } from '../view/ModeRadio';
+import { isShownInWorld } from '../view/viewModel';
 
 const ORIGIN = 'knowledge-graph';
 
@@ -255,7 +257,10 @@ function KnowledgeGraphScreen() {
   const editEnabled = useEditStore((st) => st.editMode);
   const { graph, selectedIds, primaryId, related, select } = useSelection();
 
-  const [view, setView] = useState<'2d' | '3d'>('2d');
+  // 2D/3D と世界の表示は、見出しの「ビュー」と同じ状態（FR-217・FR-218。この画面の「表示」の切替も同じ状態を変える）
+  const cv = useComponentView(ORIGIN);
+  const view = cv.mode;
+  const worldView = cv.world;
   const [hop, setHop] = useState(HOP_DEFAULT);
   const [hidden, setHidden] = useState<ReadonlySet<NodeKind>>(new Set());
   const [query, setQuery] = useState('');
@@ -268,10 +273,19 @@ function KnowledgeGraphScreen() {
   const [message, setMessage] = useState<string | null>(null);
 
   const centers = useMemo(() => selectedIds.filter((id) => graph?.has(id)), [selectedIds, graph]);
-  const visibleIds = useMemo(() => (graph ? visibleNodeIds(graph, { centers, hop, hiddenKinds: hidden }) : new Set<string>()), [graph, centers, hop, hidden]);
+  const visibleIds = useMemo(() => {
+    if (!graph) return new Set<string>();
+    const ids = visibleNodeIds(graph, { centers, hop, hiddenKinds: hidden });
+    // 世界の表示（FR-218）: 選んだ世界の項目だけ。「両方」は区分なしを含めてすべて
+    return worldView === 'both' ? ids : new Set([...ids].filter((id) => isShownInWorld(graph.node(id)?.world, worldView)));
+  }, [graph, centers, hop, hidden, worldView]);
   const nodes = useMemo(() => (graph ? graph.nodes.filter((n) => visibleIds.has(n.id)) : []), [graph, visibleIds]);
   const edges = useMemo(() => (graph ? graph.edges.filter((e) => visibleIds.has(e.from) && visibleIds.has(e.to)) : []), [graph, visibleIds]);
   const layout = useMemo(() => layoutGraph(nodes, edges, centers), [nodes, edges, centers]);
+  // 表示中の項目とツイン関係の線（t.view.state。ツイン関係は twin の辺として線で描く）
+  const shownIds = useMemo(() => nodes.map((n) => n.id), [nodes]);
+  const twinLinks = useMemo(() => edges.filter((e) => e.kind === 'twin').map((e) => [e.from, e.to] as const), [edges]);
+  usePublishViewItems(ORIGIN, shownIds, twinLinks);
   const pos = (id: string): Pt => {
     const base = layout.positions.get(id) ?? { x: 0, y: 0 };
     const o = offsets[id];
@@ -330,12 +344,8 @@ function KnowledgeGraphScreen() {
       <ExecutiveSummary scope="knowledge-graph" />
 
       <div className={s.toolbar} role="toolbar" aria-label="ナレッジグラフの操作">
-        <Field label="表示">
-          <RadioGroup layout="horizontal" value={view} onChange={(_, d) => setView(d.value as '2d' | '3d')}>
-            <Radio value="2d" label="2D" />
-            <Radio value="3d" label="3D" />
-          </RadioGroup>
-        </Field>
+        {/* 見出しの「ビュー」と同じ 1 つの切替（3D を描画できない環境では無効にし理由を示す。FR-217 AC-500・AC-507） */}
+        <ModeRadio viewKey={ORIGIN} />
         <Field label={`ホップ数（${HOP_MIN}〜${HOP_MAX}）`}>
           <span className={s.hop}>
             <input
@@ -396,7 +406,7 @@ function KnowledgeGraphScreen() {
 
       <div className={s.legend} aria-label="凡例">
         <Text size={200} weight="semibold">線: </Text>
-        {(['ref', 'relation', 'contain'] as const).map((k) => <Text key={k} size={200}>{EDGE_STYLE[k].label}</Text>)}
+        {(['ref', 'relation', 'contain', ...(twinLinks.length > 0 ? ['twin' as const] : [])] as const).map((k) => <Text key={k} size={200}>{EDGE_STYLE[k].label}</Text>)}
         <Text size={200}>／ ノードの種別は色・形・アイコンで区別します。</Text>
       </div>
 

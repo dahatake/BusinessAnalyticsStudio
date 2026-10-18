@@ -2,7 +2,7 @@
 // この 1 つの定義（Fluent のシステムアイコンと名前）を使う。オンの状態を持つ操作は、オンで Filled、オフで Regular の種類を返す。
 // 操作のアイコンは 20px（Fluent 2 のアイコンの段。12px は情報の表示だけに使い、操作の対象にしない）。
 import {
-  ArrowMinimize20Filled, ArrowMinimize20Regular, EyeOff20Filled, EyeOff20Regular, FullScreenMaximize20Filled, FullScreenMaximize20Regular,
+  ArrowMinimize20Filled, ArrowMinimize20Regular, EyeOff20Filled, Glasses20Filled, Glasses20Regular, EyeOff20Regular, FullScreenMaximize20Filled, FullScreenMaximize20Regular,
   Pin20Filled, Pin20Regular, TabDesktop20Filled, TabDesktop20Regular, TabDesktopMultiple20Filled, TabDesktopMultiple20Regular,
   Table20Filled, Table20Regular, type FluentIcon,
 } from '@fluentui/react-icons';
@@ -12,7 +12,7 @@ export const HEADER_ACTION_LIMIT = 6;
 /** 操作のボタンのアイコンの大きさ（CSS px）。12px より大きい（NFR-UX-018） */
 export const ACTION_ICON_PX = 20;
 
-export type PaneActionId = 'pin' | 'maximize' | 'minimize' | 'tabs' | 'untab' | 'hide' | 'tableView';
+export type PaneActionId = 'pin' | 'maximize' | 'minimize' | 'tabs' | 'untab' | 'hide' | 'tableView' | 'view';
 
 export interface PaneActionDef {
   id: PaneActionId;
@@ -33,6 +33,8 @@ export const PANE_ACTIONS: Readonly<Record<PaneActionId, PaneActionDef>> = {
   tabs: { id: 'tabs', label: 'タブにまとめる', regular: TabDesktopMultiple20Regular, filled: TabDesktopMultiple20Filled, size: ACTION_ICON_PX },
   untab: { id: 'untab', label: 'タブから出す', regular: TabDesktop20Regular, filled: TabDesktop20Filled, size: ACTION_ICON_PX },
   hide: { id: 'hide', label: '非表示', regular: EyeOff20Regular, filled: EyeOff20Filled, size: ACTION_ICON_PX },
+  // 2D/3D と世界の表示の切替を 1 つにまとめた「ビュー」（FR-217・FR-218。D-01）。ボタンの文字で現在の表示モードを示す
+  view: { id: 'view', label: 'ビュー', regular: Glasses20Regular, filled: Glasses20Filled, size: ACTION_ICON_PX },
   tableView: { id: 'tableView', label: '表で見る', onLabel: '元の表示に戻る', regular: Table20Regular, filled: Table20Filled, size: ACTION_ICON_PX },
 };
 

@@ -14,6 +14,11 @@ import { Breadcrumb, Minimap, useLodNavigation } from '../three/LodNavigator';
 import { useTwinLayout, twinTableRows } from '../three/twin';
 import { sceneObjects } from '../three/twinProbe';
 import { registerSceneArea } from '../three/sceneViewport';
+import { twinPairsOf } from '../three/twinLinks';
+import { useSelection } from '../selection/hooks';
+import { useLod } from '../store/lod';
+import { useComponentView, usePublishViewItems } from '../view/useView';
+import { isShownInWorld } from '../view/viewModel';
 
 const useStyles = makeStyles({
   tabs: { marginBottom: tokens.spacingVerticalM },
@@ -48,6 +53,17 @@ export function View3DScreen() {
     setAsTable((v) => !v);
   };
   const shownRows = useMemo<ViewTableRow[]>(() => twinTableRows(layout, shownIds), [shownIds, layout]);
+
+  // 世界の表示（FR-218）で描いている項目と、線で結んでいるツイン関係（t.view.state）
+  const { world } = useComponentView('view3d');
+  const { graph } = useSelection();
+  const lodKey = useLod((st) => st.key);
+  const itemIds = useMemo(() => (layout?.objects ?? []).filter((o) => isShownInWorld(o.world, world)).map((o) => o.entityId), [layout, world]);
+  const twinLinks = useMemo(
+    () => (layout && world === 'both' ? twinPairsOf(graph, layout, (o) => lodKey[o.depth] === '1') : []),
+    [layout, world, graph, lodKey],
+  );
+  usePublishViewItems('view3d', itemIds, twinLinks);
 
   const pane = usePane();
   // ワークスペースのタブで隠れているときは、3D を表示していないものとして扱う（FPS の計測・自動の品質低下の対象にしない）
