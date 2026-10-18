@@ -63,7 +63,7 @@
       },
       {
         "name": "unit-world",
-        "run": "npx vitest run tests/unit/world.test.ts tests/unit/world-pack.test.ts"
+        "run": "npx vitest run tests/unit/world.test.ts tests/unit/world-pack.test.ts tests/unit/world-default.test.ts"
       }
     ]
   },

@@ -3,7 +3,7 @@
 // 画面の部品（src/components, src/app）を参照しない純粋なモジュール。後続のビュー（ナレッジグラフ・3D・ガントなど）は、
 // ここから節・辺・関連を取り、独自に ID の参照を数え直さない。
 import {
-  ENTITY_KINDS, REFERENCE_KEYS, TWIN_RELATIONS, TWIN_RELATION_LABELS, WORLDS,
+  ENTITY_KINDS, REFERENCE_KEYS, TWIN_RELATIONS, TWIN_RELATION_LABELS, WORLDS, tableWorldOf,
   type EntityKind, type PackData, type TwinRelation, type World,
 } from '../schema';
 
@@ -27,6 +27,31 @@ export const KIND_LABELS: Record<NodeKind, string> = {
   source: '出典',
 };
 
+/**
+ * 世界区分の項目を持たない節の種類が当たる、§3.7 の分類表の行（FR-218・A-57）。null は世界区分の項目を持つ節（entity）だけ。
+ * task は data.plan.tasks（工程）で、ガントチャートの画面の宣言（registry.ts の tableWorldDecl(['工程'])）と同じ行を当て、
+ * 画面間で世界区分を一致させる。mock は data.mocks.mocks で、§3.7 の「モック」の行を当てる。
+ */
+export const NODE_KIND_TABLE_ROW: Record<NodeKind, string | null> = {
+  entity: null,
+  issue: '課題',
+  solution: '解決策',
+  product: 'Microsoft 製品',
+  feature: 'Feature',
+  task: '工程',
+  architecture: 'アーキテクチャ',
+  mock: 'モック',
+  chapter: 'チャプター',
+  topic: '議題',
+  source: '出典',
+};
+
+/** 世界区分の項目を持たない節の種類の、§3.7 の分類表による既定の世界区分（FR-218・A-57）。決まらないものは undefined */
+export function defaultWorldOfNodeKind(kind: NodeKind): World | undefined {
+  const row = NODE_KIND_TABLE_ROW[kind];
+  return row ? tableWorldOf(row) : undefined;
+}
+
 export interface GraphNode {
   id: string;
   kind: NodeKind;
@@ -34,7 +59,11 @@ export interface GraphNode {
   label: string;
   /** エンティティの type（拠点・部品など）。ほかの種類では undefined */
   type?: string;
-  /** エンティティの世界区分（FR-213）。ないもの・エンティティ以外は undefined（区分なし） */
+  /**
+   * 世界区分（FR-213・FR-218）。エンティティは world の値（書かれていなければ undefined＝区分なし）。
+   * 世界区分の項目を持たない節（課題・解決策など）は §3.7 の分類表の世界区分（defaultWorldOfNodeKind。A-57）。
+   * 工程（task）は現実世界、モック（mock）はデジタル世界。
+   */
   world?: World;
   /** エンティティの種別（FR-213。§3.7 の分類の体系） */
   entityKind?: EntityKind;
@@ -109,6 +138,9 @@ export function buildEntityGraph(data: PackData): EntityGraph {
       if (kind === 'entity') {
         if ((WORLDS as readonly unknown[]).includes(raw.world)) node.world = raw.world as World;
         if ((ENTITY_KINDS as readonly unknown[]).includes(raw.kind)) node.entityKind = raw.kind as EntityKind;
+      } else {
+        const w = defaultWorldOfNodeKind(kind);
+        if (w) node.world = w;
       }
       nodes.push(node);
       if (parent) containEdges.push([parent, raw.id]);
@@ -167,7 +199,9 @@ export function buildEntityGraph(data: PackData): EntityGraph {
     if (!isRec(raw) || !isStr(raw.realId) || !isStr(raw.digitalId)) continue;
     const real = nodeById.get(raw.realId);
     const digital = nodeById.get(raw.digitalId);
-    if (real?.world !== 'real' || digital?.world !== 'digital') continue;
+    // ツイン関係はエンティティ（entities.json）どうしだけ（課題などの既定の世界区分では結ばない）
+    if (real?.kind !== 'entity' || digital?.kind !== 'entity') continue;
+    if (real.world !== 'real' || digital.world !== 'digital') continue;
     if (!(TWIN_RELATIONS as readonly unknown[]).includes(raw.relation)) continue;
     const relation = raw.relation as TwinRelation;
     const sourceIds = Array.isArray(raw.sourceIds) ? raw.sourceIds.filter(isStr) : [];

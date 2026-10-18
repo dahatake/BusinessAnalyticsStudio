@@ -1,7 +1,7 @@
 // ビューの切替（FR-217 の 2D/3D と、FR-218 の現実世界／デジタル世界／両方）の規則。画面の部品・ストアに依存しない純粋なモジュール。
 // 各画面は、2D・3D の表現の有無と、世界区分を持つデータを表示するかを宣言する（ScreenDefinition.view）。
 // 切替の状態はレイアウトとして保存する（src/store/layout.ts の views。FR-014・FR-110）。
-import { WORLD_LABELS, type World } from '../schema/world';
+import { WORLD_LABELS, tableWorldOfAll, type World } from '../schema/world';
 
 /** 表示モード（FR-217） */
 export type ViewMode = '2d' | '3d';
@@ -33,8 +33,9 @@ export interface ViewDecl {
   defaultMode?: ViewMode;
   /**
    * 世界区分を持つデータを表示するか。
-   *  - 'items': 項目ごとの世界区分で表示・非表示を決める（顧客パックの entities[].world）
-   *  - 'real' / 'digital': 画面の項目がすべてその世界に属する（§3.7 の分類。例: KPI・OKR はデジタル世界）
+   *  - 'items': 項目ごとの世界区分で表示・非表示を決める（エンティティ関係グラフの節の world。顧客パックの entities[].world と、
+   *    世界区分の項目を持たない課題などに §3.7 の分類表から当てた世界区分。A-57）
+   *  - 'real' / 'digital': 画面の項目がすべてその世界に属する（§3.7 の分類。例: KPI・OKR はデジタル世界。tableWorldDecl で表から引く）
    *  - false: 世界区分を持つデータを表示しない（切替は無効で理由を示す）
    */
   world: 'items' | World | false;
@@ -57,6 +58,14 @@ export function canRender3D(decl: ViewDecl, envCan3D: boolean): boolean {
 export function defaultModeOf(decl: ViewDecl): ViewMode {
   if (decl.defaultMode) return decl.defaultMode;
   return decl.has3D && !decl.has2D ? '3d' : '2d';
+}
+
+/**
+ * 1 つの世界の画面の宣言（world と basis）を、§3.7 の分類表の行の名前から作る（FR-218・A-57）。世界区分は TABLE_WORLDS から引き、
+ * 画面ごとに書き直さない。basis を省くと行の名前を「・」でつないだもの。表にない行・世界区分の異なる行は例外（宣言の誤り）。
+ */
+export function tableWorldDecl(rows: readonly string[], basis: string = rows.join('・')): { world: World; basis: string } {
+  return { world: tableWorldOfAll(rows), basis };
 }
 
 /** 保存した値（なければ既定）と、描画できるかから、いま表示する表示モードを決める。表現のないモードは選ばない */
@@ -105,7 +114,7 @@ export function viewText(mode: ViewMode, world: WorldView): string {
 }
 
 /**
- * 世界区分 `world`（undefined は区分なし）の項目を、世界の表示 `view` で表示するか（FR-218 AC-504）。
+ * 世界区分 `world`（undefined は区分なし。世界区分の項目を持つエンティティで値がないもの。課題などは §3.7 の分類表の世界区分を持つ）の項目を、世界の表示 `view` で表示するか（FR-218 AC-504・A-57）。
  *  - 現実世界: 現実世界の項目だけ
  *  - デジタル世界: デジタル世界の項目だけ
  *  - 両方: すべて（区分なしは「両方」でだけ表示する）
