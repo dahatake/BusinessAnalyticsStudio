@@ -357,7 +357,8 @@ def cmd_land(args) -> int:
             if rc != 0 or not old:
                 print(f"ERROR run-state: {base} を解決できません: {old[:200]}")
                 return 1
-            tmp =             land_tmp_path(primary, cfg)            remove_land_tmp(primary, tmp)
+            tmp = land_tmp_path(primary, cfg)
+            remove_land_tmp(primary, tmp)
             try:
                 rc, out = h.git(["worktree", "add", "--detach", str(tmp), old], primary)
                 if rc != 0:
