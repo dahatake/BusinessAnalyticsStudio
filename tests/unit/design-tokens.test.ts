@@ -275,18 +275,19 @@ describe('NFR-UX-017 AC-479 モーションの静的検査', () => {
     expect(hits.map(fmt).join('\n')).toBe('');
   });
 
-  // NFR-UX-017 AC-479
-  it('NFR-UX-017 AC-479 等速（linear）は回転の動きだけに使う', () => {
+  // NFR-UX-017 AC-479（Q-039 A: 等速は回転と、ポインターへの追従（follow）にだけ使う）
+  it('NFR-UX-017 AC-479 等速（linear）は回転の動きとポインターへの追従だけに使う', () => {
     const bad: string[] = [];
     for (const f of walk(SRC)) {
       if (excepted(f, 'motion')) continue;
       const lines = stripComments(readFileSync(f, 'utf8')).split('\n');
       lines.forEach((l, i) => {
-        if (/curveLinear|\blinear\b/.test(l) && /(Timing|timing|easing|animation|transition)/.test(l) && !/rotate|spin/i.test(lines.slice(Math.max(0, i - 3), i + 4).join('\n'))) bad.push(`${f}:${i + 1} ${l.trim().slice(0, 100)}`);
+        if (/curveLinear|\blinear\b/.test(l) && /(Timing|timing|easing|animation|transition)/.test(l) && !/rotate|spin|follow/i.test(lines.slice(Math.max(0, i - 3), i + 4).join('\n'))) bad.push(`${f}:${i + 1} ${l.trim().slice(0, 100)}`);
       });
     }
     expect(bad.join('\n')).toBe('');
     expect(MOTION.rotate.easing).toBe(tokens.curveLinear);
+    expect(MOTION.follow.easing).toBe(tokens.curveLinear);
   });
 
   // NFR-UX-017 AC-479 AC-480
