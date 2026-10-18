@@ -811,6 +811,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     refocusing.current = false;
   }, [layout]);
   const pendingFocus = useRef<string | null>(null);
+  const focusTimer = useRef<number | null>(null);
+  const focusTimerKey = useRef<string | null>(null);
   useEffect(() => {
     const down = () => { pointerDown.current = true; };
     const up = () => {
@@ -820,12 +822,33 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       // click は pointerup の直後に届くので、その後で反映する
       // ダブルクリック（ヘッダーの拡大表示・復帰など）の途中で、1 回目のクリックのあとにレイアウトが動いて 2 回目が外れたり、
       // 拡大・復帰の前後で大きさが変わったりしないよう、マウスで操作した場合は、ダブルクリックの間隔が過ぎてから反映する（FR-174）。
-      if (k) setTimeout(() => { if (!expandedRef.current) setFocusKey(k); }, POINTER_FOCUS_DELAY_MS);
+      if (focusTimer.current !== null) window.clearTimeout(focusTimer.current);
+      focusTimer.current = null;
+      if (k) {
+        focusTimer.current = window.setTimeout(() => {
+          focusTimer.current = null;
+          if (!expandedRef.current) setFocusKey(k);
+        }, POINTER_FOCUS_DELAY_MS);
+        focusTimerKey.current = k;
+      }
     };
+    // 予約のあいだにほかの手段（ナビ・キーボードなど）でフォーカスが別の場所へ移ったら、予約を捨てる（FR-143・FR-216）。
+    // 捨てないと、画面を切り替えた直後に配置が動き、操作中のコンポーネントの位置が変わる。
+    const focusIn = (e: Event) => {
+      if (focusTimer.current === null) return;
+      const t = e.target as Element | null;
+      const holder = t?.closest?.(`[data-testid="component-${focusTimerKey.current}"]`);
+      if (holder) return;
+      window.clearTimeout(focusTimer.current);
+      focusTimer.current = null;
+    };
+    window.addEventListener('focusin', focusIn, true);
     window.addEventListener('pointerdown', down, true);
     window.addEventListener('pointerup', up, true);
     window.addEventListener('pointercancel', up, true);
     return () => {
+      window.removeEventListener('focusin', focusIn, true);
+      if (focusTimer.current !== null) window.clearTimeout(focusTimer.current);
       window.removeEventListener('pointerdown', down, true);
       window.removeEventListener('pointerup', up, true);
       window.removeEventListener('pointercancel', up, true);
