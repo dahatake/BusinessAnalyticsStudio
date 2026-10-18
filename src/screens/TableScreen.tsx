@@ -24,6 +24,9 @@ import { useFallbackStore } from '../store/fallback';
 import { UNCLASSIFIED_LABEL } from '../schema/world';
 import { useComponentView, usePublishViewItems } from '../view/useView';
 import { WORLD_VIEW_LABELS, filterByWorld } from '../view/viewModel';
+import { ViewAsTableButton } from '../components/ViewTable';
+import { Items3DSurface } from '../three/Items3DSurface';
+import { groupGrid, type Item3D, type Link3D } from '../view/items3d';
 
 const ORIGIN = 'table';
 
@@ -107,12 +110,15 @@ function TableScreen() {
   const [text, setText] = useRetainedState('table.filter', '');
   const q = text.trim().toLowerCase();
   const base = fallbackNodes ?? (editMode ? nodes : filtered);
+  // 文字での絞り込みは、行に見えている文字（状態「選択中」「関連」・名称・ID・種別）に当てる。選択を保ったまま、行の先頭の文字で絞り込んでも、その行が残る
+  const selected = useMemo(() => new Set(selectedIds), [selectedIds]);
+  const rowState = (n: GraphNode): string => (selected.has(n.id) ? '選択中' : related?.has(n.id) ? '関連' : '');
   const visible = useMemo(
-    () => (q ? base.filter((n) => `${n.label} ${n.id} ${KIND_LABELS[n.kind]}`.toLowerCase().includes(q)) : base),
-    [base, q],
+    () => (q ? base.filter((n) => `${rowState(n)} ${n.label} ${n.id} ${KIND_LABELS[n.kind]}`.toLowerCase().includes(q)) : base),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [base, q, selected, related],
   );
   const count = q ? visible.length : fallbackNodes ? fallbackNodes.length : filteredCount;
-  const selected = useMemo(() => new Set(selectedIds), [selectedIds]);
   // FR-035: 親子（parentId）のある項目は、上位の行を展開すると下位の行が出て、折りたたむと隠れる（既定は展開）
   const packState = usePackStore((st) => st.state);
   const parentById = useMemo(() => {
@@ -134,6 +140,18 @@ function TableScreen() {
     return graph.edges.filter((e) => e.kind === 'twin' && shown.has(e.from) && shown.has(e.to)).map((e) => [e.from, e.to] as const);
   }, [graph, shownIds, worldView]);
   usePublishViewItems(ORIGIN, shownIds, twinLinks);
+  // 3D（FR-217 AC-501）: 同じ項目（表の行と同じ ID・件数）を、種別ごとの列に並べた 3D 空間に置く。つながり=親子・ツイン
+  const { mode: viewMode } = useComponentView(ORIGIN);
+  const [asTable, setAsTable] = useState(false);
+  const items3d = useMemo<Item3D[]>(() => {
+    const byId = new Map(rows.map((r) => [r.item.id, r.item]));
+    return groupGrid(shownIds.map((id) => byId.get(id) as GraphNode), idOf, (n) => n.label, (n) => KIND_LABELS[n.kind]);
+  }, [rows, shownIds]);
+  const links3d = useMemo<Link3D[]>(() => {
+    const shown = new Set(shownIds);
+    const parents = shownIds.filter((id) => parentById.has(id) && shown.has(parentById.get(id) as string)).map((id) => ({ from: parentById.get(id) as string, to: id }));
+    return [...parents, ...twinLinks.map(([a, b]) => ({ from: a, to: b }))];
+  }, [shownIds, parentById, twinLinks]);
   const twinPartners = useMemo(() => {
     const m = new Map<string, string[]>();
     for (const [a, b] of twinLinks) { m.set(a, [...(m.get(a) ?? []), b]); m.set(b, [...(m.get(b) ?? []), a]); }
@@ -183,7 +201,7 @@ function TableScreen() {
         </Button>
       </div>
       <DataTransferButtons />
-
+      {viewMode === '3d' ? <div><ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} /></div> : null}
       {/* 編集モードでは、選択の表示の出入りで表がずれない（ダブルクリックが別の行に当たらない）ように、1 行分の場所を常に確保する */}
       <div className={editMode ? s.summarySlot : undefined}>
         {selectedIds.length > 0 ? (
@@ -196,6 +214,8 @@ function TableScreen() {
 
       {visible.length === 0 ? (
         <EmptyView message="選択に関連する項目はありません。「フィルター解除」で全件に戻せます。" />
+      ) : viewMode === '3d' && !asTable ? (
+        <Items3DSurface viewKey={ORIGIN} origin={ORIGIN} label="項目の一覧" items={items3d} links={links3d} axes={{ x: '種別' }} />
       ) : (
         <Table aria-label="項目の一覧" size="small">
           <TableHeader>

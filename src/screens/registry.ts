@@ -36,7 +36,8 @@ const V2: ViewDecl = { has2D: true, has3D: false, world: false };
 /**
  * 画面の一覧（ナビゲーションの並び順）。
  * view は、2D・3D の表現の有無と世界区分の扱いの宣言（FR-217 AC-498・FR-218 AC-502）。
- *  - 3D の表現を持つ: ナレッジグラフ・アーキテクチャ図・ガントチャート（2.5D。canvas 2D で描くので WebGL2 がなくても選べる）・地図（既定は 3D）・データカタログ（データビュアー）
+ *  - 3D の表現を持つ: ナレッジグラフ・アーキテクチャ図・ガントチャート（2.5D。canvas 2D で描くので WebGL2 がなくても選べる）・地図（既定は 3D）・データカタログ（データビュアー）、
+ *    一覧表・2×2 マトリクス・ランキング表・課題-解決策分析・議論ツリー・KPI/OKR（項目を位置・大きさ・つながりで表す共通の 3D の面 Items3DSurface。FR-217 AC-501）
  *  - 3D だけ: 3D ビュー。2D だけ: 2D 図面。この 2 つは表現を固定したコンポーネント（FR-020 の同時表示。画面の見出しの切替の対象外）
  *  - 世界区分（§3.7 の分類表。1 つの世界の画面は tableWorldDecl で src/schema/world.ts の TABLE_WORLDS から引く。A-57）:
  *    項目ごと（items。グラフの節の world＝entities[].world、課題などは §3.7 の分類表の世界区分）＝ナレッジグラフ・一覧表・3D ビュー・2D 図面・地図
@@ -46,20 +47,20 @@ const V2: ViewDecl = { has2D: true, has3D: false, world: false };
  */
 export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'canvas', label: 'キャンバス', icon: Window24Regular, component: CanvasScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['議題']), kinds: ['chapter', 'topic'] } },
-  { key: 'issue-solution', label: '課題-解決策分析', icon: TaskListSquareLtr24Regular, component: IssueSolutionScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['課題', '原因', '解決策', '効果']), kinds: ['issue', 'solution'] } },
+  { key: 'issue-solution', label: '課題-解決策分析', icon: TaskListSquareLtr24Regular, component: IssueSolutionScreen, view: { has2D: true, has3D: true, ...tableWorldDecl(['課題', '原因', '解決策', '効果']), kinds: ['issue', 'solution'] } },
   { key: 'priority', label: '優先順位分析', icon: Trophy24Regular, component: PriorityScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['課題', '解決策']), kinds: ['issue', 'solution'] } },
   { key: 'summary', label: 'サマリー', icon: DocumentBulletList24Regular, component: SummaryScreen, view: V2 },
-  { key: 'matrix', label: '2×2 マトリクス', icon: DataScatter24Regular, component: MatrixScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['課題', '解決策']), kinds: ['issue', 'solution'] } },
-  { key: 'ranking', label: 'ランキング表', icon: TextNumberListLtr24Regular, component: RankingScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['課題', '解決策']), kinds: ['issue', 'solution'] } },
+  { key: 'matrix', label: '2×2 マトリクス', icon: DataScatter24Regular, component: MatrixScreen, view: { has2D: true, has3D: true, ...tableWorldDecl(['課題', '解決策']), kinds: ['issue', 'solution'] } },
+  { key: 'ranking', label: 'ランキング表', icon: TextNumberListLtr24Regular, component: RankingScreen, view: { has2D: true, has3D: true, ...tableWorldDecl(['課題', '解決策']), kinds: ['issue', 'solution'] } },
   { key: 'knowledge-graph', label: 'ナレッジグラフ', icon: Organization24Regular, component: KnowledgeGraphScreen, view: { has2D: true, has3D: true, world: 'items' } },
   { key: 'architecture', label: 'アーキテクチャ図', icon: Layer24Regular, component: ArchitectureScreen, view: { has2D: true, has3D: true, ...tableWorldDecl(['アーキテクチャ']), kinds: ['architecture'] } },
-  { key: 'discussion-tree', label: '議論ツリー', icon: TextBulletListTree24Regular, component: DiscussionTreeScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['議論ツリー']), kinds: [] } },
-  { key: 'table', label: '一覧表', icon: Table24Regular, component: TableScreen, view: { has2D: true, has3D: false, world: 'items' } },
+  { key: 'discussion-tree', label: '議論ツリー', icon: TextBulletListTree24Regular, component: DiscussionTreeScreen, view: { has2D: true, has3D: true, ...tableWorldDecl(['議論ツリー']), kinds: [] } },
+  { key: 'table', label: '一覧表', icon: Table24Regular, component: TableScreen, view: { has2D: true, has3D: true, world: 'items' } },
   { key: 'gantt', label: 'ガントチャート', icon: DataBarHorizontal24Regular, component: GanttScreen, view: { has2D: true, has3D: true, cpu3D: true, ...tableWorldDecl(['工程']), kinds: ['task'] } },
   { key: 'view3d', label: '3D ビュー', icon: Cube24Regular, component: View3DScreen, view: { has2D: false, has3D: true, world: 'items', fixed: true, kinds: ['entity'] } },
   { key: 'drawing2d', label: '2D 図面', icon: Ruler24Regular, component: Drawing2DScreen, view: { has2D: true, has3D: false, world: 'items', fixed: true, kinds: ['entity'] } },
   { key: 'map', label: '地図', icon: Map24Regular, component: MapScreen, view: { has2D: true, has3D: true, defaultMode: '3d', world: 'items', kinds: ['entity'] } },
-  { key: 'kpi-okr', label: 'KPI/OKR', icon: Target24Regular, component: KpiOkrScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['KPI', 'OKR']), kinds: [] } },
+  { key: 'kpi-okr', label: 'KPI/OKR', icon: Target24Regular, component: KpiOkrScreen, view: { has2D: true, has3D: true, ...tableWorldDecl(['KPI', 'OKR']), kinds: [] } },
   { key: 'sources', label: '出典', icon: DocumentBulletList24Regular, component: SourcesScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['出典']), kinds: ['source'] } },
   { key: 'mock-app', label: 'ミニ・モックアプリ', icon: PhoneDesktop24Regular, component: MockAppScreen, view: V2 },
   { key: 'usecase', label: 'ユースケース', icon: Lightbulb24Regular, component: UseCaseScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['ユースケース']), kinds: [] } },

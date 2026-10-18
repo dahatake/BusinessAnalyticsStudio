@@ -76,10 +76,23 @@ export function usePublishViewItems(key: string, itemIds: readonly string[], twi
   useLayoutEffect(() => () => { published.delete(key); }, [key]);
 }
 
+// 3D 空間（Items3DSurface。FR-217 AC-501）に描いている項目。3D の面が表示されている間だけ知らせる
+const published3d = new Map<string, readonly string[]>();
+
+/** 3D の面が、いま 3D 空間に描いている項目の ID を知らせる（面が消えると 2D と同じく空になる） */
+export function usePublishItems3D(key: string, ids: readonly string[]): void {
+  useLayoutEffect(() => {
+    published3d.set(key, ids);
+  }, [key, ids]);
+  useLayoutEffect(() => () => { published3d.delete(key); }, [key]);
+}
+
 export interface ViewTestState {
   mode: ViewMode;
   world: WorldView;
   itemIds: string[];
+  /** 3D 空間に描かれている項目の ID（3D の面があるときだけ。2D のときは空） */
+  items3d: string[];
   selectedIds: string[];
   twinLinks: Array<[string, string]>;
 }
@@ -95,6 +108,7 @@ export function viewTestState(key: string): ViewTestState {
     mode,
     world,
     itemIds: items,
+    items3d: [...(published3d.get(key) ?? [])],
     selectedIds: p ? sel.filter((id) => shown.has(id)) : [...sel],
     twinLinks: p ? p.twinLinks.map(([a, b]) => [a, b] as [string, string]) : [],
   };

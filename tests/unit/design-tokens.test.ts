@@ -31,6 +31,7 @@ const EXCEPTIONS: Record<string, { rules: Rule[] | 'all'; reason: string }> = {
   // 3D シーンの材質・光源（A-51）
   'src/three/ArchitectureStack.tsx': { rules: ['color'], reason: 'A-51: 3D シーンの材質の色' },
   'src/three/Graph3D.tsx': { rules: ['color'], reason: 'A-51: 3D シーンの材質の色' },
+  'src/three/Items3DScene.tsx': { rules: ['color'], reason: 'A-51: 3D シーンの材質の色（FR-217 AC-501 の共通の 3D の面）' },
   'src/three/DataViewer3D.tsx': { rules: ['color'], reason: 'A-51: 3D シーンの材質の色' },
   'src/three/TwinScene.tsx': { rules: ['color'], reason: 'A-51: 3D シーンの材質の色' },
   'src/three/presets.ts': { rules: ['color'], reason: 'A-51: 3D シーンの材質・光源（業種プリセット）' },

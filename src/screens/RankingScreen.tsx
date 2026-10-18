@@ -1,5 +1,6 @@
 // ランキング表（FR-039）。重み付きスコア Σ（重み × 評価値）の高い順。重みを変えると順位がすぐ変わる。
 // 評価値は AI の提案値か顧客の決定値のどちらかを採用し、決定値のセルには「顧客決定」と表示して区別する（色だけに頼らない）。
+import { useMemo, useState } from 'react';
 import { Badge, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { CRITERIA } from '../analysis/priority';
 import { usePriority } from '../analysis/usePriority';
@@ -9,7 +10,11 @@ import { isSelectedHighlight } from '../components/roving';
 import { NumericValue } from '../components/NumericValue';
 import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
+import { ViewAsTableButton } from '../components/ViewTable';
 import { onEntityKey, useEntityBinding } from '../selection/hooks';
+import { Items3DSurface } from '../three/Items3DSurface';
+import { norm, spread, type Item3D } from '../view/items3d';
+import { useComponentView, usePublishViewItems } from '../view/useView';
 
 const ORIGIN = 'ranking';
 
@@ -30,6 +35,16 @@ function RankingScreen() {
   const hl = useHighlightClass();
   const bind = useEntityBinding(ORIGIN);
   const { ready, rows } = usePriority();
+  const { mode } = useComponentView(ORIGIN);
+  // 「表で見る」で 3D の面と表（元のランキング表）を入れ替える（NFR-A11Y-003）。2D のときは常に表
+  const [asTable, setAsTable] = useState(false);
+  // 2D と 3D で同じ項目（FR-217 AC-501）。位置=順位（横）×スコア（高さ）、大きさ=スコア
+  const items3d = useMemo<Item3D[]>(() => {
+    const max = Math.max(0, ...rows.map((r) => r.score));
+    const min = Math.min(max, ...rows.map((r) => r.score));
+    return rows.map((r, i) => ({ id: r.id, label: `${r.rank}. ${r.title}`, x: spread(i, rows.length), y: norm(r.score, Math.min(0, min), max), z: 0.5, size: max > 0 ? r.score / max : 0 }));
+  }, [rows]);
+  usePublishViewItems(ORIGIN, useMemo(() => rows.map((r) => r.id), [rows]));
   if (!ready) return <LoadingView label="ランキングを読み込み中" />;
 
   const decidedNotes = rows.flatMap((r) => CRITERIA
@@ -38,8 +53,11 @@ function RankingScreen() {
 
   return (
     <Panel testId="component-ranking" title="ランキング表" description="重み付きスコア（Σ 重み × 評価値）の高い順です。評価値は 1〜5。重みは「優先順位分析」で変えます。" maxWidth="1200px">
+      {mode === '3d' && rows.length > 0 ? <div><ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} /></div> : null}
       {rows.length === 0 ? (
         <EmptyView message="ランキングする課題がありません。" />
+      ) : mode === '3d' && !asTable ? (
+        <Items3DSurface viewKey={ORIGIN} origin={ORIGIN} label="課題のランキング" items={items3d} axes={{ x: '順位', y: '重み付きスコア' }} />
       ) : (
         <div className={s.scroll}>
           <Table aria-label="優先順位のランキング" size="small" className={s.table}>
