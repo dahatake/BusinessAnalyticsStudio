@@ -1,15 +1,19 @@
 // 「KPI/OKR」コンポーネント（FR-153・FR-154）。Objective ごとに Key Result と KPI の現在値・目標値・達成度を、数値と文字で示す。
 // 状態は色だけで示さず、アイコンと文字（達成・進行中・未着手・算出できない）を併記する。未定義の Project は「未設定」と定義への案内を出す。
 // 定義は編集モード（FR-047）のときだけ「OKR を定義」から行う。
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  Badge, Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Input, MessageBar, MessageBarBody, Text, makeStyles, tokens,
+  Badge, Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Input, MessageBar, MessageBarBody, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, tokens,
 } from '@fluentui/react-components';
 import { Dialog, DialogSurface } from '../components/Dialog';
+import { ViewAsTableButton } from '../components/ViewTable';
+import { Items3DSurface } from '../three/Items3DSurface';
+import { spread, type Item3D, type Link3D } from '../view/items3d';
+import { useComponentView, usePublishViewItems } from '../view/useView';
 import { Add24Regular, CheckmarkCircle20Regular, CircleHalfFill20Regular, Circle20Regular, QuestionCircle20Regular } from '@fluentui/react-icons';
 import { Panel } from '../components/Panel';
 import { LoadingView } from '../components/StateViews';
-import { achievementState, achievementText, emptyKeyResult, toDraft, type AchievementState, type KeyResultDraft, type OkrDraft } from '../okr/model';
+import { achievement, achievementState, achievementText, emptyKeyResult, toDraft, type AchievementState, type KeyResultDraft, type OkrDraft } from '../okr/model';
 import { useEditStore } from '../store/edit';
 import { useCurrentOkr, useOkr, useOkrDialog } from '../store/okr';
 import { usePackStore } from '../store/pack';
@@ -122,6 +126,19 @@ function KpiOkrScreen() {
   const editMode = useEditStore((st) => st.editMode);
   const { target, okr } = useCurrentOkr();
   const open = useOkrDialog((d) => d.open);
+  // 3D（FR-217 AC-501）: Key Result を、Objective（横）×並び（奥行き）×達成度（高さ・大きさ）に置く。同じ項目（Key Result）の ID は 2D・3D で同じ
+  const { mode } = useComponentView('kpi-okr');
+  const [asTable, setAsTable] = useState(false);
+  const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
+  const krs = useMemo(() => (okr?.objectives ?? []).flatMap((o, oi) => o.keyResults.map((r, ri) => ({ id: `okr-${oi + 1}-${ri + 1}`, oi, ri, n: o.keyResults.length, objective: o.objective, r }))), [okr]);
+  usePublishViewItems('kpi-okr', useMemo(() => krs.map((k) => k.id), [krs]));
+  const objCount = okr?.objectives.length ?? 0;
+  const items3d = useMemo<Item3D[]>(() => krs.map((k) => {
+    const a = achievement(k.r.kpi);
+    const v = a === null ? 0 : Math.min(1, Math.max(0, a));
+    return { id: k.id, label: `${k.r.name}（${achievementText(k.r.kpi)}）`, group: k.objective, x: spread(k.oi, objCount), z: spread(k.ri, k.n), y: v, size: v };
+  }), [krs, objCount]);
+  const links3d = useMemo<Link3D[]>(() => krs.filter((k) => k.ri > 0).map((k) => ({ from: `okr-${k.oi + 1}-${k.ri}`, to: k.id })), [krs]);
   if (!ready) return <LoadingView label="KPI/OKR を読み込み中" />;
   return (
     <Panel testId="component-kpi-okr" title="KPI/OKR" description="議論の目的と成果を、Objective・Key Result・KPI の数値で共有します。">
@@ -135,6 +152,35 @@ function KpiOkrScreen() {
           <Text weight="semibold" block>未設定</Text>
           <Text block>この作業先には KPI と OKR がありません。編集モードを ON にして「OKR を定義」から、Objective・Key Result・KPI を設定してください。</Text>
         </div>
+      ) : mode === '3d' ? (
+        <>
+          <div><ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} /></div>
+          {asTable ? (
+            <Table aria-label="KPI/OKR の値" size="small">
+              <TableHeader>
+                <TableRow>
+                  <TableHeaderCell>Objective</TableHeaderCell><TableHeaderCell>Key Result</TableHeaderCell><TableHeaderCell>KPI</TableHeaderCell>
+                  <TableHeaderCell>現在値</TableHeaderCell><TableHeaderCell>目標値</TableHeaderCell><TableHeaderCell>達成度</TableHeaderCell>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {krs.map((k) => (
+                  <TableRow key={k.id} data-kr-id={k.id}>
+                    <TableCell>{k.objective}</TableCell><TableCell>{k.r.name}</TableCell><TableCell>{k.r.kpi.name}</TableCell>
+                    <TableCell>{num(k.r.kpi.current)} {k.r.kpi.unit}</TableCell><TableCell>{num(k.r.kpi.target)} {k.r.kpi.unit}</TableCell>
+                    <TableCell>{achievementText(k.r.kpi)}（{achievementState(k.r.kpi)}）</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <Items3DSurface
+              viewKey="kpi-okr" origin="kpi-okr" label="KPI/OKR の Key Result" items={items3d} links={links3d} axes={{ x: 'Objective', y: '達成度', z: 'Key Result' }}
+              selected={picked}
+              onSelect={(id, additive) => setPicked((p) => (additive ? new Set([...p, id]) : new Set([id])))}
+            />
+          )}
+        </>
       ) : (
         okr.objectives.map((o, oi) => (
           <section key={oi} className={s.objective} aria-label={`Objective ${o.objective}`}>

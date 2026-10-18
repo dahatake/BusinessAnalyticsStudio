@@ -24,6 +24,10 @@ import { EmptyView, LoadingView } from '../components/StateViews';
 import { onEntityKey, useEntityBinding, useSelection } from '../selection/hooks';
 import { usePackStore } from '../store/pack';
 import { useSelectionStore } from '../store/selection';
+import { ViewAsTableButton, ViewTable } from '../components/ViewTable';
+import { Items3DSurface } from '../three/Items3DSurface';
+import { spread, type Item3D, type Link3D } from '../view/items3d';
+import { useComponentView, usePublishViewItems } from '../view/useView';
 
 type ViewMode = 'tree' | 'mece' | 'sankey' | 'matrix';
 
@@ -101,6 +105,23 @@ function IssueSolutionScreen() {
   const products = data?.products.products;
   const flow = useMemo(() => buildFlow(visible, solutions, products ?? []), [visible, solutions, products]);
   const matrix = useMemo(() => buildMatrix(visible, solutions, products ?? []), [visible, solutions, products]);
+  // 3D（FR-217 AC-501）: 課題の層と解決策の層に項目を置き、解決策→課題をつなぐ。2D の表示中の項目（課題＋解決策）と同じ ID
+  const { mode: viewMode } = useComponentView(ORIGIN);
+  const [asTable, setAsTable] = useState(false);
+  const shownIds = useMemo(() => [...visible.map((i) => i.id), ...solutions.map((x) => x.id)], [visible, solutions]);
+  usePublishViewItems(ORIGIN, shownIds);
+  const items3d = useMemo<Item3D[]>(() => {
+    const layer = (list: ReadonlyArray<{ id: string; title: string }>, y: number, group: string): Item3D[] => {
+      const cols = Math.max(1, Math.ceil(Math.sqrt(list.length)));
+      const rowsN = Math.max(1, Math.ceil(list.length / cols));
+      return list.map((it, i) => ({ id: it.id, label: it.title, group, y, x: spread(i % cols, cols), z: spread(Math.floor(i / cols), rowsN), size: 0.4 }));
+    };
+    return [...layer(visible, 0.1, '課題'), ...layer(solutions, 0.9, '解決策')];
+  }, [visible, solutions]);
+  const links3d = useMemo<Link3D[]>(() => {
+    const ids = new Set(visible.map((i) => i.id));
+    return solutions.flatMap((x) => solutionIssueIds(x).filter((id) => ids.has(id)).map((id) => ({ from: x.id, to: id })));
+  }, [visible, solutions]);
 
   if (!data) return <LoadingView label="課題を読み込み中" />
 
@@ -205,6 +226,23 @@ function IssueSolutionScreen() {
         <div className={s.column}>
           {visible.length === 0 ? (
             <EmptyView message="該当する課題はありません。" />
+          ) : viewMode === '3d' ? (
+            <>
+              <div><ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} /></div>
+              {asTable ? (
+                <ViewTable
+                  label="課題と解決策"
+                  origin={ORIGIN}
+                  columns={['種類', '名称', 'つながり']}
+                  rows={[
+                    ...visible.map((i) => ({ id: i.id, cells: ['課題', i.title, solutions.filter((x) => solutionIssueIds(x).includes(i.id)).map((x) => x.title).join('、') || '—'] })),
+                    ...solutions.map((x) => ({ id: x.id, cells: ['解決策', x.title, solutionIssueIds(x).map((id) => issueById.get(id)?.title ?? id).join('、')] })),
+                  ]}
+                />
+              ) : (
+                <Items3DSurface viewKey={ORIGIN} origin={ORIGIN} label="課題と解決策" items={items3d} links={links3d} axes={{ y: '課題（下）→解決策（上）' }} />
+              )}
+            </>
           ) : mode === 'sankey' ? (
             <SankeyView flow={flow} {...flowProps} />
           ) : mode === 'matrix' ? (
@@ -279,7 +317,7 @@ function IssueSolutionScreen() {
             </div>
           )}
 
-          {stacked ? null : (
+          {stacked || viewMode === '3d' ? null : (
           <section aria-label="解決策" className={s.group}>
             <Text as="h3" size={500} weight="semibold">解決策</Text>
             {solutions.length === 0 ? <Text>該当する解決策はありません。</Text> : (

@@ -26,6 +26,10 @@ import { useLayout } from '../store/layout';
 import { usePackStore } from '../store/pack';
 import { useTreeStore } from '../store/tree';
 import { useSelectionStore } from '../store/selection';
+import { ViewAsTableButton, ViewTable } from '../components/ViewTable';
+import { Items3DSurface } from '../three/Items3DSurface';
+import { treeLayout3D } from '../view/items3d';
+import { useComponentView, usePublishViewItems } from '../view/useView';
 
 const ORIGIN = 'discussion-tree';
 
@@ -103,6 +107,13 @@ function DiscussionTreeScreen() {
   const shown: TreeDoc | undefined = doc ?? (data && baseline.length > 0 ? { themeId: 'pack', themeTitle: data.customer.projectName, nodes: baseline, mode: 'mock' } : undefined);
   const rows = useMemo(() => (shown ? flattenTree(shown.nodes, collapsed) : []), [shown, collapsed]);
   const node = shown?.nodes.find((n) => n.id === picked);
+  // 3D（FR-217 AC-501）: 表示中のノード（2D の木の行と同じ ID・件数）を、深さ=高さ・枝分かれ=横の位置に置き、親→子をつなぐ
+  const { mode: viewMode } = useComponentView(ORIGIN);
+  const [asTable, setAsTable] = useState(false);
+  const shownNodes = useMemo(() => rows.map((r) => r.node), [rows]);
+  usePublishViewItems(ORIGIN, useMemo(() => shownNodes.map((n) => n.id), [shownNodes]));
+  const layout3d = useMemo(() => treeLayout3D(shownNodes, (n) => n.id, (n) => n.title, (n) => n.parentId, (n) => n.kind), [shownNodes]);
+  const selectedNow = useSelectionStore((st) => st.selectedIds);
 
   useEffect(() => { if (picked && shown && !shown.nodes.some((n) => n.id === picked)) setPicked(undefined); }, [shown, picked]);
 
@@ -255,6 +266,25 @@ function DiscussionTreeScreen() {
             <Text size={200}>ノード {shown.nodes.length} 件</Text>
           </div>
 
+          {viewMode === '3d' ? (
+            <>
+              <div><ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} /></div>
+              {asTable ? (
+                <ViewTable
+                  label="議論ツリーのノード"
+                  origin={ORIGIN}
+                  columns={['階層', '種別', '名称', '親']}
+                  rows={rows.map((r) => ({ id: r.node.entityId ?? r.node.id, cells: [r.level + 1, r.node.kind, r.node.title, shown.nodes.find((x) => x.id === r.node.parentId)?.title ?? '（根）'] }))}
+                />
+              ) : (
+                <Items3DSurface
+                  viewKey={ORIGIN} origin={ORIGIN} label="議論ツリー" items={layout3d.items} links={layout3d.links} axes={{ y: '階層（上が根）' }}
+                  selected={new Set(shownNodes.filter((n) => picked === n.id || (n.entityId !== undefined && selectedNow.includes(n.entityId))).map((n) => n.id))}
+                  onSelect={(id, additive) => { const n = shownNodes.find((x) => x.id === id); if (n) pick(n, additive); }}
+                />
+              )}
+            </>
+          ) : (
           <div
             ref={viewportRef} className={s.viewport}
             onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={() => { drag.current = null; }}
@@ -296,6 +326,7 @@ function DiscussionTreeScreen() {
               })}
             </div>
           </div>
+          )}
         </>
       ) : job ? null : (
         <EmptyView message="議論ツリーはまだありません。議論テーマの画面で、記録から「ツリーを生成」してください。" />
