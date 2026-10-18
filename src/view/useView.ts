@@ -3,7 +3,7 @@
 //  - useScreenViewSwitch(): 画面の見出しの切替（全コンポーネントにまとめて効く）
 //  - usePublishViewItems(key, ...): コンポーネントが表示している項目とツイン関係を、テスト用フック t.view.state(key) に知らせる
 import { useCallback, useLayoutEffect } from 'react';
-import { useLayout, type ViewSetting } from '../store/layout';
+import { isPinned, useLayout, type ViewSetting } from '../store/layout';
 import { useSelectionStore } from '../store/selection';
 import { registerTestHook } from '../testing/hook';
 import { detect3D } from './render3d';
@@ -44,10 +44,12 @@ export function useComponentView(key: string): ComponentView {
   return { decl, mode: effectiveMode(decl, storedMode, can3D), world: effectiveWorld(decl, storedWorld), can3D, setMode, setWorld };
 }
 
-/** 画面の見出しの切替。表現を固定したコンポーネント・その表現を持たないコンポーネントは変えない（AC-507）。ピン止めしたものにも効く（Q-036 の回答まで。A-54） */
+/** 画面の見出しの切替。表現を固定したコンポーネント・その表現を持たないコンポーネントは変えない（AC-507）。ピン止めしたコンポーネントは対象外（FR-216・Q-036 B・A-54・AC-510）。ピン止めを外すと、次の画面の切替から対象に戻る（外した時点では表示は変えない） */
 export function applyScreenView(patch: ViewSetting, keys: readonly string[] = viewDeclKeys()): void {
   const patches: Record<string, ViewSetting> = {};
+  const st = useLayout.getState();
   for (const k of keys) {
+    if (isPinned(st, k)) continue;
     const decl = viewDeclOf(k);
     const p: ViewSetting = {};
     if (patch.mode) { const m = screenModeFor(decl, patch.mode); if (m) p.mode = m; }
