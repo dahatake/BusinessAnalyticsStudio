@@ -12,7 +12,7 @@ import {
   assertGitIgnored, checkResearchFreshness, loadResearchCache, reresearchSuggestion, sampleResearcher, saveResearchPart,
   type ResearchAttempt, type ResearchCache, type Researcher,
 } from './research';
-import { readConsent } from './consent';
+import { countPersonsInWorkDir, personConsentLine, readConsent } from './consent';
 import { validateWithRepair } from './repair';
 import { Recorder } from './timing';
 import { formatVerifyReport, verifyPack, type SmokeRunner } from './verify';
@@ -75,6 +75,13 @@ export async function runPipeline(command: Command, input: Inputs, deps: Pipelin
     log(`顧客の了承の記録がないため、実調査・外部への送信をしません（案件: ${input.customer} / ${input.projectName}）。サンプル・モックで進めます。`);
   }
   const work = workDirOf(paths, input.customer);
+  // FR-219: 種別「人」を含み、了承の記録がある案件は、外部へ送る前に件数と確認日を出力に示してから続行する（対話の確認は出さない）
+  const announcePersons = (): void => {
+    if (!consented) return;
+    const n = countPersonsInWorkDir(work);
+    if (n > 0) log(personConsentLine(n, readConsent(paths, input)));
+  };
+  if (ids.some((id) => id === 'research-customer' || id === 'research-brand')) announcePersons();
   // 調査キャッシュと顧客パックは、コミットされない場所にだけ作る（NFR-SEC-003）。何かを書く前に確かめる
   if (ids.includes('research-customer')) assertGitIgnored(paths.repoRoot, path.join(researchCacheDir(paths, input.customer), 'meta.json'), '調査キャッシュの保存先');
   if (ids.includes('generate')) assertGitIgnored(paths.repoRoot, path.join(work, 'data', 'customer.json'), '顧客パックの作成先');
@@ -127,6 +134,7 @@ export async function runPipeline(command: Command, input: Inputs, deps: Pipelin
       const files = await generatePack(generator, input, cache, paths.samplePack);
       const written = writePack(work, files, input);
       log(`④ 顧客パックを生成しました（${written.length} 件）`);
+      announcePersons();
       // 顧客パックとしてサポートしない要望は、生成では実装せず、雛形への改善要望として記録する（FR-131）
       const requests = extractImprovementRequests(readMaterials(input.materials), supportedScreens(paths.template));
       let recorded = 0;

@@ -5,6 +5,7 @@ import {
   Button, Checkbox, DialogActions, DialogBody, DialogContent, DialogTitle, Field, MessageBar, MessageBarBody, MessageBarTitle, Select, Spinner, Text, makeStyles, tokens,
 } from '@fluentui/react-components';
 import { Dialog, DialogSurface } from '../components/Dialog';
+import { confirmViaUi, consentOf, gatePersonConfirm } from '../ai/personConfirm';
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { ArrowDownload24Regular, ArrowExport24Regular, Dismiss24Regular } from '@fluentui/react-icons';
 import { packKeyOf } from '../discussion/model';
@@ -67,6 +68,12 @@ export async function quickSaveAll(): Promise<void> {
   if (!input) return;
   try {
     const anonymize = countInternal(input.data) > 0;
+    // FR-219: 種別「人」を含むときは、出力の前に確認を通す（了承の記録がなければ出力しない）
+    const gate = await gatePersonConfirm({ destination: 'export', scopeLabel: SCOPE_LABELS.all, data: input.data, consent: consentOf(input.data), confirm: confirmViaUi });
+    if (!gate.allowed) {
+      if (gate.reason) setNotice({ kind: 'error', title: 'エクスポートしませんでした', lines: [gate.reason] });
+      return;
+    }
     const r = buildExport(input, { scope: 'all', screenKey: '', themeId: '', anonymize, format: 'md', followUp: false });
     const res = await deliver(r.fileName, r.markdown, false);
     if (res.ok) setNotice({ kind: 'success', title: 'エクスポートしました', lines: [res.name, 'ブラウザーのダウンロードとして保存しました。'] });
@@ -119,6 +126,9 @@ export function ExportDialog({ screens }: { screens: readonly ExportScreenRef[] 
     setBusy(true);
     setError(null);
     try {
+      // FR-219: 種別「人」を含むときは、プレビューの後・出力の前に確認を通す。了承の記録がなければ出力しない
+      const gate = await gatePersonConfirm({ destination: 'export', scopeLabel: SCOPE_LABELS[scope], data: input.data, consent: consentOf(input.data), confirm: confirmViaUi });
+      if (!gate.allowed) { setBusy(false); return; }
       const r = buildExport(input, { ...options, format: asZip ? 'zip' : format });
       const bytes = asZip || format === 'zip' ? createZip(r.files, input.now) : r.markdown;
       const fileName = asZip ? r.fileName.replace(/\.md$/, '.zip') : r.fileName;
