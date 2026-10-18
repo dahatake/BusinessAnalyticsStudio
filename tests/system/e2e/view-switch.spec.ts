@@ -38,7 +38,10 @@ async function prepareSelection(page: Page): Promise<void> {
   const table = await openScreen(page, 'table');
   const row = table.locator('[role="row"][data-entity-id]').first();
   await row.click();
-  await table.getByRole('textbox', { name: /絞り込み/ }).fill((await row.innerText()).trim().slice(0, 1));
+  // 絞り込みの対象は名称・ID・種別。選択後の行の先頭は状態の「選択中」になるため、行の文字ではなく ID（選択状態に影響されない）で絞る。
+  const id = await row.getAttribute('data-entity-id');
+  expect(id, '選んだ行に data-entity-id がない').toBeTruthy();
+  await table.getByRole('textbox', { name: /絞り込み/ }).fill(id!);
   const slider = page.getByRole('slider', { name: '時間軸' }).first();
   await slider.focus();
   await page.keyboard.press('ArrowRight');
