@@ -28,8 +28,9 @@ export const KIND_LABELS: Record<NodeKind, string> = {
 };
 
 /**
- * 世界区分の項目を持たない節の種類が当たる、§3.7 の分類表の行（FR-218・A-57）。null は世界区分の項目を持つ節（entity）か、
- * 分類表の行が 1 つに決まらない節（task＝工程か ToDo か、mock＝AI 接続のモックか画面のモックか）で、推測で区分を当てない。
+ * 世界区分の項目を持たない節の種類が当たる、§3.7 の分類表の行（FR-218・A-57）。null は世界区分の項目を持つ節（entity）だけ。
+ * task は data.plan.tasks（工程）で、ガントチャートの画面の宣言（registry.ts の tableWorldDecl(['工程'])）と同じ行を当て、
+ * 画面間で世界区分を一致させる。mock は data.mocks.mocks で、§3.7 の「モック」の行を当てる。
  */
 export const NODE_KIND_TABLE_ROW: Record<NodeKind, string | null> = {
   entity: null,
@@ -37,9 +38,9 @@ export const NODE_KIND_TABLE_ROW: Record<NodeKind, string | null> = {
   solution: '解決策',
   product: 'Microsoft 製品',
   feature: 'Feature',
-  task: null,
+  task: '工程',
   architecture: 'アーキテクチャ',
-  mock: null,
+  mock: 'モック',
   chapter: 'チャプター',
   topic: '議題',
   source: '出典',
@@ -61,7 +62,7 @@ export interface GraphNode {
   /**
    * 世界区分（FR-213・FR-218）。エンティティは world の値（書かれていなければ undefined＝区分なし）。
    * 世界区分の項目を持たない節（課題・解決策など）は §3.7 の分類表の世界区分（defaultWorldOfNodeKind。A-57）。
-   * 分類表の行が 1 つに決まらない節（task・mock）は undefined。
+   * 工程（task）は現実世界、モック（mock）はデジタル世界。
    */
   world?: World;
   /** エンティティの種別（FR-213。§3.7 の分類の体系） */

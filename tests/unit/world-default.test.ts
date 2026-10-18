@@ -43,10 +43,10 @@ describe('FR-218 A-57 §3.7 の既定の世界区分（単体）', () => {
   });
 
   // FR-218 AC-504
-  it('FR-218 AC-504 節の種類の既定の世界区分: 課題・解決策・議題＝現実世界、製品・機能・アーキテクチャ・章・出典＝デジタル世界。エンティティと、行が 1 つに決まらない task・mock は当てない', () => {
+  it('FR-218 AC-504 節の種類の既定の世界区分: 課題・解決策・議題・工程（task）＝現実世界、製品・機能・アーキテクチャ・モック・章・出典＝デジタル世界。エンティティだけは当てない', () => {
     const want: Record<string, 'real' | 'digital' | undefined> = {
-      entity: undefined, issue: 'real', solution: 'real', product: 'digital', feature: 'digital', task: undefined,
-      architecture: 'digital', mock: undefined, chapter: 'digital', topic: 'real', source: 'digital',
+      entity: undefined, issue: 'real', solution: 'real', product: 'digital', feature: 'digital', task: 'real',
+      architecture: 'digital', mock: 'digital', chapter: 'digital', topic: 'real', source: 'digital',
     };
     for (const k of NODE_KINDS) expect(defaultWorldOfNodeKind(k), k).toBe(want[k]);
     // 表に載る行だけを使う（推測で行を作らない）
@@ -54,7 +54,7 @@ describe('FR-218 A-57 §3.7 の既定の世界区分（単体）', () => {
   });
 
   // FR-218 AC-504
-  it('FR-218 AC-504 グラフの節: 世界区分のないエンティティだけが区分なしで、world のない課題・解決策は現実世界になり、ツイン関係はエンティティどうしだけ', () => {
+  it('FR-218 AC-504 グラフの節: 世界区分のないエンティティだけが区分なしで、world のない課題・解決策・工程は現実世界、モックはデジタル世界になり、ツイン関係はエンティティどうしだけ', () => {
     const data = loadPack('mono');
     const plain = structuredClone(data) as PackData;
     for (const e of plain.entities.entities as Array<Record<string, unknown>>) delete e.world;
@@ -65,7 +65,8 @@ describe('FR-218 A-57 §3.7 の既定の世界区分（単体）', () => {
     const issues = g.nodes.filter((n) => n.kind === 'issue' || n.kind === 'solution');
     expect(issues.length).toBeGreaterThan(0);
     for (const n of issues) expect(n.world, n.id).toBe('real');
-    for (const n of g.nodes.filter((x) => x.kind === 'task' || x.kind === 'mock')) expect(n.world, n.id).toBeUndefined();
+    for (const n of g.nodes.filter((x) => x.kind === 'task')) expect(n.world, n.id).toBe('real');
+    for (const n of g.nodes.filter((x) => x.kind === 'mock')) expect(n.world, n.id).toBe('digital');
     expect(g.edges.filter((e) => e.kind === 'twin')).toEqual([]);
   });
 });
@@ -91,9 +92,38 @@ describe('FR-218 A-57 一覧表・ナレッジグラフの規則での件数（�
       expect(ids('both').length).toBe(g.nodes.length);
       for (const n of g.nodes.filter((x) => x.world === undefined)) {
         expect(isShownInWorld(n.world, 'real') || isShownInWorld(n.world, 'digital'), n.id).toBe(false);
-        expect(['entity', 'task', 'mock']).toContain(n.kind);
+        expect(n.kind).toBe('entity');
       }
     });
   }
 
+  // FR-218 AC-503 AC-504（A-57）: 工程（data.plan.tasks）の世界区分は、グラフの節（一覧表・ナレッジグラフ）とガントチャートの宣言で一致する
+  it('FR-218 AC-503 AC-504 工程の節は一覧表・ナレッジグラフで「現実世界」に入り、ガントチャートの宣言（工程）と一致する', () => {
+    // ガントチャートの登録（registry.ts）は、節の種類 task を表示し、世界区分を §3.7 の「工程」の行から宣言している
+    const reg = fs.readFileSync(path.join(REPO_ROOT, 'src', 'screens', 'registry.ts'), 'utf8');
+    const line = reg.split('\n').find((l) => l.includes("key: 'gantt'"));
+    expect(line).toBeDefined();
+    expect(line).toContain("tableWorldDecl(['工程'])");
+    expect(line).toContain("kinds: ['task']");
+    const decl = tableWorldDecl(['工程']);
+    expect(decl.world).toBe('real');
+    expect(defaultWorldOfNodeKind('task')).toBe(decl.world);
+    for (const k of ['mono', 'koto'] as const) {
+      const g = buildEntityGraph(loadPack(k));
+      const tasks = g.nodes.filter((n) => n.kind === 'task');
+      expect(tasks.length, k).toBeGreaterThan(0);
+      const real = new Set(filterByWorld(g.nodes, (n) => n.world, 'real').map((n) => n.id));
+      const digital = new Set(filterByWorld(g.nodes, (n) => n.world, 'digital').map((n) => n.id));
+      for (const n of tasks) {
+        expect(n.world, n.id).toBe(decl.world);
+        expect(real.has(n.id), `${n.id} が「現実世界」に出ない`).toBe(true);
+        expect(digital.has(n.id), `${n.id} が「デジタル世界」に出る`).toBe(false);
+        expect(isShownInWorld(n.world, 'real'), n.id).toBe(true);
+      }
+      for (const n of g.nodes.filter((x) => x.kind === 'mock')) {
+        expect(digital.has(n.id), `${n.id} が「デジタル世界」に出ない`).toBe(true);
+        expect(real.has(n.id), `${n.id} が「現実世界」に出る`).toBe(false);
+      }
+    }
+  });
 });

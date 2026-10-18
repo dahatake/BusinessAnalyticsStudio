@@ -385,7 +385,7 @@ describe('FR-218 AC-502 全画面の世界区分の宣言が §3.7 の分類表�
       // キャンバスは章（チャプター＝デジタル世界）と議題（現実世界）をともに含み、根拠は議題（既存の宣言のまま）
       if (sc.key === 'canvas' || kinds.length === 0) continue;
       const ws = kinds.map((kd) => defaultWorldOfNodeKind(kd));
-      if (ws.some((w) => w === undefined)) continue; // 工程（task）は行が 1 つに決まらないため節には当てない
+      if (ws.some((w) => w === undefined)) continue; // エンティティ（entity）は世界区分の項目を持つため既定の区分を当てない（工程＝task はガントの宣言と照合する）
       for (const w of ws) expect(w, `${sc.key} の宣言（${v.world}）と節の既定の世界区分が合わない`).toBe(v.world);
       checked++;
     }

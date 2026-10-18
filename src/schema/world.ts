@@ -65,6 +65,7 @@ export const TABLE_WORLDS: Readonly<Record<string, World>> = {
   Feature: 'digital',
   'Microsoft 製品': 'digital',
   チャプター: 'digital',
+  モック: 'digital',
 };
 
 /** §3.7 の分類表の行の世界区分。表にない名前は undefined（推測で当てない） */
