@@ -27,6 +27,9 @@ describe('FR-218 A-57 §3.7 の既定の世界区分（単体）', () => {
       expect(m?.[1], `§3.7 に ${name} の行がない`).toBeTruthy();
       expect(w, `${name} の世界区分が §3.7 と合わない`).toBe(m![1] === '現実世界' ? 'real' : 'digital');
     }
+    // FR-218 AC-504（Q-038 A）: 改善要望＝デジタル世界（データ）、中核オブジェクト＝現実世界（種別モノ／コトは顧客パックに従う）
+    expect(tableWorldOf('改善要望')).toBe('digital');
+    expect(tableWorldOf('中核オブジェクト')).toBe('real');
     expect(tableWorldOf('課題')).toBe('real');
     expect(tableWorldOf('存在しない行')).toBeUndefined();
     expect(tableWorldOf('toString')).toBeUndefined();
