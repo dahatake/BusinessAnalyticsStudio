@@ -101,9 +101,10 @@ describe('FR-148 作業先メニュー', () => {
     await waitFor(() => expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull());
     fireEvent.click(screen.getByTestId('work-target-menu'));
     fireEvent.click(await screen.findByRole('menuitemradio', { name: /合成株式会社B.*需要予測/ }));
-    const confirm = await screen.findByRole('alertdialog', { name: '未保存の入力があります' });
+    await screen.findByRole('alertdialog', { name: '未保存の入力があります' });
     expect(st().openId).toBe(a1);
-    await waitFor(() => fireEvent.click(within(confirm).getByRole('button', { name: 'キャンセル' })));
+    // 確認ダイアログは開いた直後に描き直されることがあるので、押す時点の要素を毎回取り直す
+    await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog', { name: '未保存の入力があります' })).getByRole('button', { name: 'キャンセル' })));
     expect(st().openId).toBe(a1);
     expect(useAnalyses.getState().drafts[a1 ?? '']?.param).toBe('9'); // 失われない
     fireEvent.click(screen.getByTestId('work-target-menu'));
