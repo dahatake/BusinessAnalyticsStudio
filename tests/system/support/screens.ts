@@ -85,6 +85,8 @@ export interface ViewState {
   itemIds: string[];
   selectedIds: string[];
   twinLinks: Array<[string, string]>;
+  /** 3D の表示中に、3D 空間（`data-zoom-surface="3d"`）に描かれている項目の ID（2D のときは空）。CONTRACT.md §21（AC-501） */
+  items3d?: string[];
 }
 
 /** 操作の対象（ボタン・リンク・切替・入力）の選択子（AC-485 など） */

@@ -243,7 +243,8 @@
     "AC-493": "sha256:715798a091545dad",
     "AC-495": "sha256:993c4a32aa8e6bff",
     "AC-499": "sha256:737e480ca6126b4b",
-    "AC-503": "sha256:5bad05d89a9be885"
+    "AC-503": "sha256:5bad05d89a9be885",
+    "AC-501": "sha256:d20565407fd62f48"
   },
   "cases": [
     {
@@ -7145,6 +7146,31 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "TODO-006・A-57 で期待値を変更したため未実行に戻す"
+        }
+      ]
+    },
+    {
+      "id": "E2E-315",
+      "requirement_ids": [
+        "FR-217"
+      ],
+      "ac_ids": [
+        "AC-501"
+      ],
+      "title": "3D を新しく作る 6 画面（一覧表・マトリクス・ランキング・課題-解決策・議論ツリー・KPI/OKR）で 3D 空間に項目を表示し、選択・絞り込み・期間・時刻・件数を保ち、再読込で復元、表の代替が残る（異常系: 2D に戻して再読込）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-501",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-18T20:15:21+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
         }
       ]
     }

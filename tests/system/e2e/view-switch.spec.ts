@@ -11,6 +11,9 @@ import { listScreenKeys, gotoScreen, openViewMenu, chooseView, viewButton, type 
 /** FR-217 の本文で 3D の表現を持つと書かれた画面（2D と 3D の両方を持つもの） */
 const REQUIRED_3D = ['map', 'knowledge-graph', 'architecture', 'data-catalog', 'gantt'];
 
+/** FR-217 AC-501（Q-035 C）で 3D の表現を新しく作る画面（画面の登録の key） */
+const NEW_3D = ['table', 'matrix', 'ranking', 'issue-solution', 'discussion-tree', 'kpi-okr'];
+
 const viewState = (page: Page, key: string) => hook<ViewState>(page, 't.view.state(a)', key);
 
 /** 選択・絞り込み・時刻・期間（NFR-UX-001 の保持の対象）を読む */
@@ -109,6 +112,66 @@ test.describe('FR-217 全画面での 2D/3D の切替', () => {
       expect(after.mode, `${key}: Esc で表示モードが変わった`).toBe(before.mode);
       expect(after.itemIds.length).toBe(before.itemIds.length);
       expect(await keptState(page)).toEqual(kept);
+    }
+  });
+
+  // FR-217 AC-501
+  test('FR-217 AC-501 3D の表現を新しく作る 6 画面（一覧表・2×2 マトリクス・ランキング表・課題-解決策分析・議論ツリー・KPI/OKR）で、3D に切り替えると項目が 3D 空間に表示され、選択・絞り込み・期間・時刻・件数が保たれ、再読込で復元され、表の代替が残る', async ({ page, start }) => {
+    test.setTimeout(300_000);
+    const app = await start();
+    await selectPersona(page, '事業部門');
+    await prepareSelection(page);
+    const kept = await keptState(page);
+    for (const key of NEW_3D) {
+      const c = await gotoScreen(page, key);
+      await chooseView(page, c, '2D');
+      const s2 = await viewState(page, key);
+      expect(s2.itemIds.length, `${key}: 2D で項目がない（検証条件が成り立たない）`).toBeGreaterThan(0);
+      await chooseView(page, c, '3D'); // 3D が選べない（disabled）と、ここで失敗する
+      const s3 = await viewState(page, key);
+      expect(s3.mode, `${key}: 3D にならない`).toBe('3d');
+      await expect(c.locator('[data-zoom-surface="3d"]').first(), `${key}: 3D の面が表示されない`).toBeVisible();
+      expect([...(s3.items3d ?? [])].sort(), `${key}: 3D 空間に描かれた項目が 2D の項目と一致しない`).toEqual([...s2.itemIds].sort());
+      expect(s3.itemIds.length, `${key}: 3D で項目の件数が変わる`).toBe(s2.itemIds.length);
+      expect([...s3.selectedIds].sort(), `${key}: 3D で選択中の項目が変わる`).toEqual([...s2.selectedIds].sort());
+      expect(await keptState(page), `${key}: 3D で選択・絞り込み・期間・時刻が変わる`).toEqual(kept);
+      await expect(c.getByRole('button', { name: '表で見る' }).first(), `${key}: 3D の表示中に表の代替がない`).toBeAttached();
+      await chooseView(page, c, '2D');
+      const back = await viewState(page, key);
+      expect(back.itemIds.length, `${key}: 2D に戻して項目の件数が変わる`).toBe(s2.itemIds.length);
+      expect(await keptState(page), `${key}: 2D に戻して状態が変わる`).toEqual(kept);
+      await chooseView(page, c, '3D');
+    }
+    await app.reload();
+    for (const key of NEW_3D) {
+      const c = await gotoScreen(page, key);
+      await c.focus();
+      await expect(viewButton(c), `${key}: 再読込後に 3D で復元されない`).toContainText('3D');
+      expect((await viewState(page, key)).mode).toBe('3d');
+    }
+  });
+
+  // FR-217 AC-501（異常系: 6 画面とも 2D に戻した状態で再読込すると 2D で復元され、3D の面が残らない）
+  test('FR-217 AC-501 異常系: 6 画面を 2D に戻して再読込すると 2D で復元され、3D の面が表示されず、項目の件数が変わらない', async ({ page, start }) => {
+    test.setTimeout(300_000);
+    const app = await start();
+    await selectPersona(page, '事業部門');
+    const counts: Record<string, number> = {};
+    for (const key of NEW_3D) {
+      const c = await gotoScreen(page, key);
+      await chooseView(page, c, '3D');
+      await chooseView(page, c, '2D');
+      counts[key] = (await viewState(page, key)).itemIds.length;
+    }
+    await app.reload();
+    for (const key of NEW_3D) {
+      const c = await gotoScreen(page, key);
+      await c.focus();
+      await expect(viewButton(c), `${key}: 再読込後に 2D で復元されない`).toContainText('2D');
+      const s = await viewState(page, key);
+      expect(s.mode).toBe('2d');
+      expect(s.itemIds.length, `${key}: 再読込で項目の件数が変わる`).toBe(counts[key]);
+      await expect(c.locator('[data-zoom-surface="3d"]'), `${key}: 2D なのに 3D の面が残る`).toHaveCount(0);
     }
   });
 });
