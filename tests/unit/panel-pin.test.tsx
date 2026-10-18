@@ -463,6 +463,27 @@ describe('FR-216 AC-496 AC-505 ポインターの操作と表示上の配置', (
   });
 });
 
+describe('FR-216 FR-217 FR-218 AC-510 ピン止めしたデジタル世界のコンポーネントは画面の見出しの切替で隠れない', () => {
+  // FR-216 FR-217 FR-218 AC-510
+  it('AC-510 ピン止めした KPI/OKR 相当は、画面の「現実世界」「3D」で中身が隠れず、同じコンポーネントの切替では隠れる。外すと画面の切替が効く', async () => {
+    const { registerViewDecls } = await import('../../src/view/viewModel');
+    const { applyScreenView } = await import('../../src/view/useView');
+    const dig = { has2D: true, has3D: true, world: 'digital' as const };
+    registerViewDecls(screens.map((s) => ({ ...s, view: dig })));
+    useLayout.setState({ views: {}, screenView: {} });
+    render(wrap(<A />));
+    const body = () => screen.getByTestId('view-world-body');
+    st().setPinned('a', { x: 0, y: 0, w: 0.3, h: 0.3 });
+    act(() => { applyScreenView({ world: 'real', mode: '3d' }); });
+    expect(body().style.display).toBe('contents');
+    expect(st().views[persona()]?.a).toBeUndefined();
+    act(() => { st().setView('a', { world: 'real' }); });
+    expect(body().style.display).toBe('none');
+    act(() => { st().setView('a', { world: 'both' }); st().setPinned('a', null); applyScreenView({ world: 'digital' }); applyScreenView({ world: 'real' }); });
+    expect(body().style.display).toBe('none');
+  });
+});
+
 describe('NFR-UX-018 AC-482 メニューの名前', () => {
   // NFR-UX-018 AC-482（メニューの名前も、見出しのボタンと同じ操作の定義）
   it('NFR-UX-018 AC-482 「その他の操作」メニューのピン止め・最小化・最大化・タブ化・非表示の名前は、操作の定義と同じ（状態に応じて替わる）', () => {

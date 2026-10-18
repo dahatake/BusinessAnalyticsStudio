@@ -265,11 +265,33 @@ describe('FR-217 AC-506 既定のレイアウトに戻す', () => {
   });
 });
 
-describe('FR-217 AC-507 表現を固定したコンポーネントと既存の切替', () => {
-  // FR-217 AC-507
-  it('FR-217 AC-507 画面の見出しの切替は全コンポーネントにまとめて効くが、表現を固定したもの（3D ビュー・2D 図面）は変わらない。ピン止めしたものにも効く（Q-036 の回答まで）', () => {
+describe('FR-216 FR-217 FR-218 AC-510 ピン止めしたコンポーネントは画面の見出しの切替の対象外', () => {
+  // FR-216 FR-217 FR-218 AC-510
+  it('AC-510 ピン止めしたものは画面の見出しの切替で変わらず、コンポーネントの見出しの切替では変わる。ピン止めしていないものには効く', () => {
+    useLayout.getState().setPinned('g', { x: 0, y: 0, w: 0.3, h: 0.3 });
+    applyScreenView({ mode: '3d', world: 'digital' });
+    expect(viewStateOf('g')).toEqual({ mode: '2d', world: 'both' });
+    expect(viewStateOf('v')).toEqual({ mode: '3d', world: 'digital' });
+    expect(st().screenView[persona()]).toEqual({ mode: '3d', world: 'digital' });
+    useLayout.getState().setView('g', { world: 'real' });
+    expect(viewStateOf('g').world).toBe('real');
+  });
+
+  it('AC-510 ピン止めを外した後の画面の見出しの切替は、そのコンポーネントにも効く（外した時点では表示は変わらない）', () => {
     useLayout.getState().setPinned('g', { x: 0, y: 0, w: 0.3, h: 0.3 });
     applyScreenView({ mode: '3d' });
+    useLayout.getState().setPinned('g', null);
+    expect(viewStateOf('g').mode).toBe('2d');
+    applyScreenView({ mode: '2d' });
+    applyScreenView({ mode: '3d' });
+    expect(viewStateOf('g').mode).toBe('3d');
+  });
+});
+
+describe('FR-217 AC-507 表現を固定したコンポーネントと既存の切替', () => {
+  // FR-217 AC-507
+  it('FR-217 AC-507 画面の見出しの切替は全コンポーネントにまとめて効くが、表現を固定したもの（3D ビュー・2D 図面）は変わらない  ', () => {
+      applyScreenView({ mode: '3d' });
     expect(viewStateOf('g').mode).toBe('3d');
     expect(viewStateOf('d').mode).toBe('2d');
     expect(viewStateOf('v').mode).toBe('3d');
