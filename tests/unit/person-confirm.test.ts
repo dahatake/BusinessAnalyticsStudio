@@ -117,6 +117,14 @@ describe('FR-219 AC-511 AC-512 アプリの AI 呼び出し（実接続）の確
     expect(c.seen).toHaveLength(0);
     expect(relayCalls).toBe(1);
   });
+
+  // FR-219 AC-511（A-59: 確認は利用者の送信の操作のたび）。要約の自動更新は確認の画面を出さず、未確認なら送らない
+  it('自動の呼び出し（exec-summary）は確認の画面を出さず、未確認の内容は送信 0 回で失敗する', async () => {
+    usePersonConfirmUi.setState({ request: null });
+    await expect(askAiWithPersonConfirm({ ...req, kind: 'exec-summary' }, env(), { data, consent: CONSENT, memory: new Set() })).rejects.toThrow();
+    expect(usePersonConfirmUi.getState().request).toBeNull();
+    expect(relayCalls).toBe(0);
+  });
 });
 
 describe('FR-219 AC-512 パイプラインの実調査（差し替え部品）: 対話の確認は出ず、件数と確認日を出力して続行', () => {

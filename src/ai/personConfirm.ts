@@ -121,6 +121,9 @@ export function consentOf(data: Pick<PersonPackLike, 'customer'>): ConsentRecord
 /** 画面の確認を使った確認（実アプリ用） */
 export const confirmViaUi = (req: PersonConfirmRequest): Promise<PersonDecision> => usePersonConfirmUi.getState().ask(req);
 
+/** 利用者の操作を待たずに自動で呼ばれる AI の種別 */
+const AUTOMATIC_KINDS: ReadonlySet<string> = new Set(['exec-summary']);
+
 export const AI_SCOPE_LABEL = '顧客パックの内容を含む AI への送信（質問と、根拠として添える顧客パックの内容）';
 
 /** AI の呼び出し。実接続（外部へ送る）のときだけ確認を通し、止められたら送信せずに失敗させる（モックは送信がないので確認しない） */
@@ -130,8 +133,12 @@ export async function askAiWithPersonConfirm(
   ctx: { data: PersonPackLike | undefined; consent: ConsentRecord | undefined; confirm?: PersonGateInput['confirm']; memory?: Set<string> },
 ): Promise<AiResult> {
   if (env.realEnabled && ctx.data) {
+    // 利用者の送信の操作ではない自動の呼び出し（要約の自動更新）は、確認の画面を出さない（A-59: 確認は送信の操作のたび）。
+    // 利用者が続行を選んだ内容と同じものだけを送り、未確認なら送らない（呼び出し側はテンプレートのまま）
+    const silent = AUTOMATIC_KINDS.has(req.kind);
     const r = await gatePersonConfirm({
-      destination: 'ai', scopeLabel: AI_SCOPE_LABEL, data: ctx.data, consent: ctx.consent, confirm: ctx.confirm ?? confirmViaUi, ...(ctx.memory ? { memory: ctx.memory } : {}),
+      destination: 'ai', scopeLabel: AI_SCOPE_LABEL, data: ctx.data, consent: ctx.consent,
+      confirm: ctx.confirm ?? (silent ? async () => 'cancel' : confirmViaUi), ...(ctx.memory ? { memory: ctx.memory } : {}),
     });
     if (!r.allowed) throw new Error(r.reason);
   }
