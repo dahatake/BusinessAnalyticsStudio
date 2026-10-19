@@ -127,10 +127,11 @@ function oneLayout(nodes: readonly LayoutNode[], edges: readonly LayoutEdge[], s
  * 力学モデルによる配置（FR-236 AC-550）。同じ塊は近くにまとまり、同じ入力は同じ座標を返し、ノードの外枠は重ならない。
  * 初期配置の違う候補を決まった数だけ作り、辺の交差が最も少ないものを選ぶ。座標は左上が (margin, margin) になるよう動かす。
  */
-export function layoutGraph(nodes: readonly LayoutNode[], edges: readonly LayoutEdge[], margin = 80): Map<string, Pt> {
+export function layoutGraph(nodes: readonly LayoutNode[], edges: readonly LayoutEdge[], margin = 80, maxTries = 6): Map<string, Pt> {
   const sorted = [...nodes].sort((a, b) => (a.id < b.id ? -1 : 1));
   if (sorted.length === 0) return new Map();
-  const tries = sorted.length > 120 ? 1 : 6;
+  // 候補の数 maxTries は、切替の速さが要るとき（FR-238 の Graph への切替。PARAM-080）に減らせる
+  const tries = sorted.length > 120 ? 1 : Math.max(1, maxTries);
   let best: Map<string, Pt> | undefined; let bestScore = Infinity;
   for (let s = 0; s < tries; s++) {
     const p = oneLayout(sorted, edges, s);

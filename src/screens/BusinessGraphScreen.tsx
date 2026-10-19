@@ -4,6 +4,10 @@
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { Badge, Button, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
+import { GraphAlt } from '../components/GraphAlt';
+import { clipOf } from '../components/graphShape';
+import { Items3DSurface } from '../three/Items3DSurface';
+import { spread, type Item3D, type Link3D } from '../view/items3d';
 import { EmptyView, LoadingView } from '../components/StateViews';
 import { HOP_DEFAULT, HOP_MAX, HOP_MIN, clampHop } from '../analysis/graphView';
 import {
@@ -46,19 +50,11 @@ const useStyles = makeStyles({
     border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusLarge, backgroundColor: tokens.colorNeutralBackground1, color: tokens.colorNeutralForeground1,
   },
   detail: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS, padding: tokens.spacingHorizontalM },
+  table: { borderCollapse: 'collapse', width: '100%', textAlign: 'left', fontSize: tokens.fontSizeBase300 },
+  trow: { cursor: 'pointer', borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`, ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}` } },
   edgeText: { fontSize: tokens.fontSizeBase200, fill: tokens.colorNeutralForeground1, paintOrder: 'stroke', stroke: tokens.colorNeutralBackground1, strokeWidth: '3px' },
 });
 
-/** 形の名前 → CSS の clip-path（色だけに頼らず、形でも種別を区別する） */
-const CLIP: Record<string, string> = {
-  circle: 'circle(50%)', square: 'inset(8%)', diamond: 'polygon(50% 0,100% 50%,50% 100%,0 50%)',
-  hexagon: 'polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0 50%)', triangle: 'polygon(50% 0,100% 100%,0 100%)',
-  pentagon: 'polygon(50% 0,100% 38%,82% 100%,18% 100%,0 38%)', octagon: 'polygon(30% 0,70% 0,100% 30%,100% 70%,70% 100%,30% 100%,0 70%,0 30%)',
-  stadium: 'inset(20% round 50%)', parallelogram: 'polygon(20% 0,100% 0,80% 100%,0 100%)',
-  cross: 'polygon(35% 0,65% 0,65% 35%,100% 35%,100% 65%,65% 65%,65% 100%,35% 100%,35% 65%,0 65%,0 35%,35% 35%)',
-  star: 'polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)',
-};
-const clipOf = (shape: string): string => CLIP[shape.replace(/-\d+$/, '')] ?? CLIP.circle!;
 
 const textW = (s: string): number => Math.min(280, s.length * 13 + 8);
 
@@ -78,7 +74,9 @@ function BusinessGraphScreen() {
   const { selectedIds, primaryId, select } = useSelection();
   const cv = useComponentView(ORIGIN);
   const worldView = cv.world;
+  const mode = cv.mode;
   const rootRef = useRef<HTMLDivElement>(null);
+  const lastNav = useRef(new Map<string, string>());
 
   const [hop, setHop] = useState(HOP_DEFAULT);
   const [hiddenTypes, setHiddenTypes] = useState<ReadonlySet<string>>(new Set());
@@ -193,6 +191,17 @@ function BusinessGraphScreen() {
 
   usePublishViewItems(ORIGIN, shownNodes.map((n) => n.id));
 
+  // 3D（FR-238。FR-037 と同じ立体のグラフ）: 平面の配置を横・奥行きに、種別を高さの層に置く。つながり＝エッジ（2D・Graph と同じ項目・同じ関係）
+  const items3d = useMemo<Item3D[]>(() => {
+    const kinds = [...new Set(shownNodes.map((n) => n.type))].sort();
+    return shownNodes.map((n) => {
+      const p = pos.get(n.id) ?? { x: 0, y: 0 };
+      return { id: n.id, label: n.name, group: n.type, x: p.x / size.w, y: spread(kinds.indexOf(n.type), kinds.length), z: p.y / size.h, size: 0.3 };
+    });
+  }, [shownNodes, pos, size]);
+  const links3d = useMemo<Link3D[]>(() => shownEdges.map((e) => ({ from: e.from, to: e.to })), [shownEdges]);
+  const nameOfId = (id: string): string => nodeById.get(id)?.name ?? id;
+
   // ズームの対象の面（component-business-graph）に、階層の属性を付ける（CONTRACT §23。Panel の共通の外枠は変えない）
   const za = zoomAttrs(depth, ELEMENT_DEPTH);
   useEffect(() => {
@@ -228,6 +237,18 @@ function BusinessGraphScreen() {
     if (e.target !== e.currentTarget) return;
     if (e.key === 'Enter') { e.preventDefault(); openNode(id); }
     else if (e.key === ' ') { e.preventDefault(); select(id, { origin: ORIGIN, additive: e.ctrlKey || e.metaKey || e.shiftKey }); }
+    else if (['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp'].includes(e.key)) {
+      // 隣接するノードへ移動する（NFR-A11Y-010 AC-581。ドラッグの代わり）。進む＝次の隣接ノード、戻る＝前の隣接ノード
+      const adj = [...new Set(shownEdges.flatMap((x) => (x.from === id ? [x.to] : x.to === id ? [x.from] : [])))].sort();
+      if (adj.length === 0) return;
+      e.preventDefault();
+      const fwd = e.key === 'ArrowRight' || e.key === 'ArrowDown';
+      const prev = lastNav.current.get(id);
+      const i = prev === undefined ? -1 : adj.indexOf(prev);
+      const next = adj[(fwd ? i + 1 : (i < 0 ? adj.length : i) - 1 + adj.length) % adj.length]!;
+      lastNav.current.set(id, next);
+      [...(rootRef.current?.querySelectorAll<HTMLElement>('[data-testid="graph-node"]') ?? [])].find((el) => el.getAttribute('data-entity-id') === next)?.focus();
+    }
   };
 
   const kind = kindOfDepth(depth, ELEMENT_DEPTH);
@@ -275,6 +296,11 @@ function BusinessGraphScreen() {
 
         {biz.nodes.length === 0 ? <EmptyView message="関係を持つ項目がありません" /> : null}
 
+        {mode === '3d' && biz.nodes.length > 0 ? (
+          <Items3DSurface viewKey={ORIGIN} origin={ORIGIN} label="ビジネス関係グラフ" items={items3d} links={links3d} axes={{ y: '種別' }} />
+        ) : null}
+
+        <div data-zoom-surface={mode === 'graph' ? 'graph' : undefined} style={{ display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM }}>
         {depth === 0 ? (
           <div className={s.clusters} role="group" aria-label="塊">
             {[...clusterCounts].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([name, n]) => (
@@ -291,7 +317,45 @@ function BusinessGraphScreen() {
           </div>
         ) : null}
 
-        {depth === 1 && biz.nodes.length > 0 ? (
+        {depth === 1 && mode === '2d' && biz.nodes.length > 0 ? (
+          <div data-testid="biz-2d" style={{ display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM }}>
+            <Text as="h3" weight="semibold">関係表（起点・意味ラベル・終点）</Text>
+            <table aria-label="関係表" data-testid="biz-relation-table" className={s.table}>
+              <thead><tr><th scope="col">起点</th><th scope="col">意味ラベル</th><th scope="col">終点</th><th scope="col">意味の種類</th></tr></thead>
+              <tbody>
+                {shownEdges.length === 0 ? <tr><td colSpan={4}>関係はありません</td></tr> : null}
+                {shownEdges.map((e) => (
+                  <tr key={e.id} data-relation-id={e.id} className={s.trow} onClick={() => select(e.from, { origin: ORIGIN })}>
+                    <td>{nameOfId(e.from)}</td><td>{e.label ?? '（ラベルなし）'}</td><td>{nameOfId(e.to)}</td><td>{meaningName(e.meaning)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <Text as="h3" weight="semibold">隣接表（種別ごと）</Text>
+            {types.filter((t) => shownNodes.some((n) => n.type === t)).map((t) => (
+              <table key={t} aria-label={`隣接表: ${t}`} data-testid="biz-adjacency-table" data-kind-table={t} className={s.table}>
+                <caption>{t}</caption>
+                <thead><tr><th scope="col">名称</th><th scope="col">つながり（→ 向かう先／← 向かってくる元）</th></tr></thead>
+                <tbody>
+                  {shownNodes.filter((n) => n.type === t).map((n) => (
+                    <tr
+                      key={n.id} {...bind(n.id)} tabIndex={0} className={s.trow} data-zoom-node="" data-kind={n.type} data-entity-name={n.name} aria-selected={selSet.has(n.id)}
+                      onDoubleClick={() => openNode(n.id)} onKeyDown={(e) => keyOnNode(e, n.id)}
+                    >
+                      <td>{n.name}</td>
+                      <td>{[
+                        ...shownEdges.filter((e) => e.from === n.id).map((e) => `→ ${nameOfId(e.to)}${e.label ? `（${e.label}）` : ''}`),
+                        ...shownEdges.filter((e) => e.to === n.id).map((e) => `← ${nameOfId(e.from)}${e.label ? `（${e.label}）` : ''}`),
+                      ].join('、') || '（つながりなし）'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ))}
+          </div>
+        ) : null}
+
+        {depth === 1 && mode === 'graph' && biz.nodes.length > 0 ? (
           <div className={s.scroll}>
             <div className={s.canvas} style={{ width: size.w, height: size.h }} data-testid="graph-canvas">
               <svg width={size.w} height={size.h} style={{ position: 'absolute', inset: 0 }} aria-hidden={false} role="img" aria-label="関係の線">
@@ -307,7 +371,7 @@ function BusinessGraphScreen() {
                     const p1 = edgePoint(a, b, 2); const p2 = edgePoint(b, a, 6);
                     const text = labelIds.has(`e:${e.id}`) ? e.label : undefined;
                     return (
-                      <g key={e.id} data-testid="graph-edge" data-from={e.from} data-to={e.to} data-meaning={e.meaning} data-direction="forward">
+                      <g key={e.id} data-testid="graph-edge" data-from={e.from} data-to={e.to} data-meaning={e.meaning} data-direction="forward" role="img" aria-label={`${nodeById.get(e.from)?.name ?? e.from} から ${nodeById.get(e.to)?.name ?? e.to} へ ${e.label ?? '（ラベルなし）'}`}>
                         {e.label ? <title>{`${e.label}（${readMeaning(e.meaning, nodeById.get(e.from)?.name ?? e.from, nodeById.get(e.to)?.name ?? e.to)}）`}</title> : null}
                         <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="currentColor" strokeWidth={1.5} strokeDasharray={MEANING_DASH[e.meaning]} markerEnd="url(#bg-arrow)" />
                         {text ? <text className={s.edgeText} x={(a.x + b.x) / 2} y={(a.y + b.y) / 2} textAnchor="middle">{text}</text> : null}
@@ -401,6 +465,16 @@ function BusinessGraphScreen() {
                 : <li>関係なし</li>}
             </ul>
           </section>
+        ) : null}
+        </div>
+
+        {mode !== '2d' && biz.nodes.length > 0 ? (
+          <GraphAlt
+            origin={ORIGIN} label="ビジネス関係グラフ"
+            nodes={shownNodes.map((n) => ({ id: n.id, name: n.name, kind: n.type }))}
+            relations={shownEdges.map((e) => ({ id: e.id, from: e.from, to: e.to, label: e.label, kind: meaningName(e.meaning) }))}
+            summary={`階層は ${ZOOM_KIND_LABELS[kind]}（全体・要素・詳細の 3 階層）`}
+          />
         ) : null}
       </div>
     </Panel>

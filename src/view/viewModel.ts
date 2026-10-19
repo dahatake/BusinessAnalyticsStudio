@@ -3,14 +3,14 @@
 // 切替の状態はレイアウトとして保存する（src/store/layout.ts の views。FR-014・FR-110）。
 import { WORLD_LABELS, tableWorldOfAll, type World } from '../schema/world';
 
-/** 表示モード（FR-217） */
-export type ViewMode = '2d' | '3d';
+/** 表示形式（FR-217 の表示モード 2D／3D に、FR-238 の Graph を足したもの。同じ画面に二つの状態を持たない） */
+export type ViewMode = '2d' | '3d' | 'graph';
 /** 世界の表示（FR-218） */
 export type WorldView = World | 'both';
 
-export const VIEW_MODES: readonly ViewMode[] = ['2d', '3d'];
+export const VIEW_MODES: readonly ViewMode[] = ['2d', '3d', 'graph'];
 export const WORLD_VIEWS: readonly WorldView[] = ['real', 'digital', 'both'];
-export const MODE_LABELS: Record<ViewMode, string> = { '2d': '2D', '3d': '3D' };
+export const MODE_LABELS: Record<ViewMode, string> = { '2d': '2D', '3d': '3D', graph: 'Graph' };
 export const WORLD_VIEW_LABELS: Record<WorldView, string> = { real: WORLD_LABELS.real, digital: WORLD_LABELS.digital, both: '両方' };
 /** 世界の表示の既定（FR-218: 既定は「両方」） */
 export const DEFAULT_WORLD_VIEW: WorldView = 'both';
@@ -18,6 +18,7 @@ export const DEFAULT_WORLD_VIEW: WorldView = 'both';
 /** 選べない理由（FR-217 AC-500・FR-218 AC-502） */
 export const NO_3D_REASON = 'この画面には 3D の表現がありません';
 export const NO_3D_ENV_REASON = 'この環境では 3D を描画できません';
+export const NO_GRAPH_REASON = 'この画面には Graph の表現がありません';
 export const NO_2D_REASON = 'この画面には 2D の表現がありません';
 export const NO_WORLD_REASON = 'この画面には世界区分を持つデータがありません';
 /** 選択中の項目が、いまの世界の表示で隠れているときの表示（FR-218。選択は保つ） */
@@ -29,6 +30,8 @@ export interface ViewDecl {
   has2D: boolean;
   /** 3D（またはその画面の 3D 相当の表現。ガントの 2.5D など）を持つか */
   has3D: boolean;
+  /** Graph（ノードと意味ラベル付きの向き付きのエッジで描く平面の図。FR-238）の表現を持つか。省略は持たない */
+  hasGraph?: boolean;
   /** 本要求より前の既定の表示（3D の表現だけを持つ画面は 3D、それ以外は 2D）。省略時はそれに従って決める */
   defaultMode?: ViewMode;
   /**
@@ -71,6 +74,7 @@ export function tableWorldDecl(rows: readonly string[], basis: string = rows.joi
 /** 保存した値（なければ既定）と、描画できるかから、いま表示する表示モードを決める。表現のないモードは選ばない */
 export function effectiveMode(decl: ViewDecl, stored: ViewMode | undefined, can3D: boolean): ViewMode {
   const want = stored ?? defaultModeOf(decl);
+  if (want === 'graph') return decl.hasGraph ? 'graph' : effectiveMode(decl, undefined, can3D);
   if (want === '3d' && (!decl.has3D || (!canRender3D(decl, can3D) && decl.has2D))) return '2d';
   if (want === '2d' && !decl.has2D) return '3d';
   return want;
@@ -98,7 +102,10 @@ export function modeOptions(decl: ViewDecl, can3D: boolean): ViewOption<ViewMode
     : !canRender3D(decl, can3D)
       ? { value: '3d', label: MODE_LABELS['3d'], enabled: false, reason: NO_3D_ENV_REASON }
       : { value: '3d', label: MODE_LABELS['3d'], enabled: true };
-  return [two, three];
+  const graph: ViewOption<ViewMode> = decl.hasGraph
+    ? { value: 'graph', label: MODE_LABELS.graph, enabled: true }
+    : { value: 'graph', label: MODE_LABELS.graph, enabled: false, reason: NO_GRAPH_REASON };
+  return [two, three, graph];
 }
 
 /** 世界の表示の選択肢（AC-502） */
@@ -183,7 +190,7 @@ export function singleWorldNote(decl: ViewDecl): string | null {
 /** 画面の見出しの切替（全コンポーネントにまとめて効く）で、このコンポーネントに入れる値。対象外・表現のないものは変えない（undefined） */
 export function screenModeFor(decl: ViewDecl, mode: ViewMode): ViewMode | undefined {
   if (decl.fixed) return undefined;
-  if (mode === '3d' ? !decl.has3D : !decl.has2D) return undefined;
+  if (mode === 'graph' ? !decl.hasGraph : mode === '3d' ? !decl.has3D : !decl.has2D) return undefined;
   return mode;
 }
 

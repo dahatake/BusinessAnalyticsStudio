@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { ZOOM_HOME, clampZoom, levelOfZoom, nextLevel, scaleZoom, stepZoom, type DetailLevel } from '../datacatalog/viewer';
 import { useLayout } from './layout';
+import type { ViewMode as ViewModeBase } from '../view/viewModel';
 
 /** 表示モードは、データカタログの見出しの「ビュー」と同じ状態（FR-217 AC-507）。正本はレイアウトの views（保存する）で、ここはその写し */
 export const DATA_VIEWER_VIEW_KEY = 'data-catalog';
@@ -11,7 +12,7 @@ const layoutMode = (): ViewMode => {
   return s.views[s.persona]?.[DATA_VIEWER_VIEW_KEY]?.mode ?? '2d';
 };
 
-export type ViewMode = '2d' | '3d';
+export type ViewMode = ViewModeBase;
 
 interface DataViewerState {
   mode: ViewMode;

@@ -2,13 +2,15 @@
 // 全体 → 拠点 → フロア → 部屋/設備 → 詳細 の 5 階層をたどる。2D は階層ごとの一覧（平面の項目）、3D は建物を階ごとに積んだ等角投影（アイソメ図）。
 // 3D は canvas ではなく SVG の等角投影で描くので、WebGL がなくても選べる（ガントチャートと同じ扱い）。選択はすべてのビューと共通（FR-024）。
 // Graph の表現は、表示形式の共通の機構（FR-238）が担当する。
-import { useEffect, useMemo, type KeyboardEvent, type SVGProps } from 'react';
+import { useEffect, useMemo, useRef, type KeyboardEvent, type SVGProps } from 'react';
 import { Button, Field, Select, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
 import { useHighlightClass } from '../components/highlight';
 import { useEntityBinding, useSelection } from '../selection/hooks';
-import { ZoomBreadcrumb, canZoomIn, canZoomOut, clampDepth, stepDepth, zoomAttrs } from '../semanticzoom';
+import { ZoomBreadcrumb, canZoomIn, canZoomOut, clampDepth, stepDepth, useZoomRootAttrs, zoomAttrs } from '../semanticzoom';
+import { GraphSurface, type GraphEdgeIn, type GraphNodeIn } from '../components/GraphSurface';
+import { GraphAlt } from '../components/GraphAlt';
 import {
   SPATIAL_ELEMENT_DEPTH, SPATIAL_KIND_LABELS, STAGE_GLYPHS, buildSpatialModel, buildingSite, detailTarget, isoProject, itemsAtDepth, kpiCell,
   type KpiCell, type RawEntity, type RawTwin, type SpatialModel, type SpatialNode,
@@ -16,6 +18,7 @@ import {
 import { useSpatialView } from '../spatial/store';
 import { KPI_STAGES, KPI_STAGE_LABELS, type KpiStage } from '../graphmodel';
 import { usePackStore } from '../store/pack';
+import { TWIN_RELATION_LABELS, type TwinRelation } from '../schema/world';
 import { useComponentView, usePublishViewItems } from '../view/useView';
 
 const ORIGIN = 'spatial-view';
@@ -85,6 +88,8 @@ export function SpatialScreen() {
   const hasSpace = !!model && model.nodes.size > 0;
   const kpi = model && model.kpiNames.includes(kpiChoice ?? '') ? kpiChoice : model?.kpiNames[0];
   const d = clampDepth(depth, D);
+  const rootRef = useRef<HTMLDivElement>(null);
+  useZoomRootAttrs(rootRef, 'component-spatial-view', d, D);
 
   const items = useMemo(() => (model ? itemsAtDepth(model, d, selectedIds) : []), [model, d, selectedIds]);
   const building = model ? buildingSite(model, selectedIds) : undefined;
@@ -92,16 +97,29 @@ export function SpatialScreen() {
   const roomsOf = (f: SpatialNode): SpatialNode[] => (model ? f.children.map((c) => model.nodes.get(c)!).filter((n) => n.kind === 'room' || n.kind === 'equipment') : []);
   const detail = model && d === D + 1 ? detailTarget(model, selectedIds) : undefined;
 
+  // ツイン関係（FR-214）で空間の項目に結ばれたデジタル世界の項目（表す・計測する・記録する・表示する）。選択を保ったまま、空間の項目との結びつきを読めるようにする
+  const twinItems = useMemo(() => {
+    if (packState.status !== 'ready' || !model) return [] as Array<{ id: string; name: string; relation: string; of: string }>;
+    const e = packState.pack.data.entities as unknown as { entities: RawEntity[]; twins?: RawTwin[] };
+    const byId = new Map(e.entities.map((x) => [x.id, x]));
+    const out = new Map<string, { id: string; name: string; relation: string; of: string }>();
+    for (const t of e.twins ?? []) {
+      const d = byId.get(t.digitalId);
+      if (!d || !model.nodes.has(t.realId) || model.nodes.has(t.digitalId) || out.has(d.id)) continue;
+      out.set(d.id, { id: d.id, name: d.name ?? d.id, relation: TWIN_RELATION_LABELS[t.relation as TwinRelation] ?? t.relation, of: model.nodes.get(t.realId)!.name });
+    }
+    return [...out.values()];
+  }, [packState, model]);
+
   const shownIds = useMemo(() => {
     if (!model) return [] as string[];
-    if (mode === '3d') {
-      const ids: string[] = building ? [building] : [];
-      for (const f of floors) { ids.push(f.id); if (d >= D) for (const r of roomsOf(f)) ids.push(r.id); }
-      return ids;
-    }
-    return d === 0 ? [] : d === D + 1 ? (detail ? [detail.id] : []) : items.map((n) => n.id);
+    // 表示している項目: 建物の拠点・フロア・部屋/設備（2D・3D・Graph の三つの表現と、ズームの階層で変わらない。FR-238 AC-562）
+    const ids: string[] = building ? [building] : [];
+    for (const f of floors) { ids.push(f.id); for (const r of roomsOf(f)) ids.push(r.id); }
+    for (const t of twinItems) ids.push(t.id);
+    return ids;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [model, mode, building, floors, d, items, detail]);
+  }, [model, building, floors, twinItems]);
   usePublishViewItems(ORIGIN, shownIds);
 
   if (!model) return <LoadingView label="空間ビューを読み込み中" />;
@@ -226,6 +244,22 @@ export function SpatialScreen() {
     </svg>
   );
 
+  // Graph（FR-238）: 建物の拠点・フロア・部屋/設備をノードに、「含む」の向き付きのエッジで結ぶ。階層（rank）が現在のズームより深いものは出さない
+  const graphRank = new Map<string, number>();
+  const graphNodes: Array<GraphNodeIn & { rank: number }> = [];
+  const graphEdges: GraphEdgeIn[] = [];
+  if (siteNode) {
+    const add = (n: SpatialNode, rank: number): void => {
+      graphRank.set(n.id, rank);
+      graphNodes.push({ id: n.id, name: n.name, kind: n.kind, kindLabel: SPATIAL_KIND_LABELS[n.kind], rank, note: kpi ? `${kpi} ${kpiCell(model, n.id, kpi).text}` : undefined });
+    };
+    add(siteNode, 1);
+    for (const f of floors) {
+      add(f, 2); graphEdges.push({ id: `${siteNode.id}>${f.id}`, from: siteNode.id, to: f.id, label: '含む', meaning: 'contains' });
+      for (const r of roomsOf(f)) { add(r, 3); graphEdges.push({ id: `${f.id}>${r.id}`, from: f.id, to: r.id, label: '含む', meaning: 'contains' }); }
+    }
+  }
+
   const detailView = detail ? (() => {
     const parent = detail.parentId ? model.nodes.get(detail.parentId) : undefined;
     return (
@@ -256,7 +290,7 @@ export function SpatialScreen() {
       {!hasSpace ? (
         <EmptyView message="空間の階層（種別が拠点・フロア・部屋のエンティティ）がありません。" />
       ) : (
-        <div className={s.root} data-testid="spatial-surface" {...zoomAttrs(d, D)}>
+        <div ref={rootRef} className={s.root} data-testid="spatial-surface" {...zoomAttrs(d, D)}>
           <div className={s.toolbar}>
             <Field label="KPI">
               <Select value={kpi ?? ''} disabled={model.kpiNames.length === 0} onChange={(_, v) => setKpi(v.value)} aria-label="KPI">
@@ -266,7 +300,7 @@ export function SpatialScreen() {
             <div className={s.zoomBar} role="group" aria-label="ズーム">
               <Button size="small" disabled={!canZoomIn(d, D)} onClick={() => zoomTo(stepDepth(d, 1, D))}>拡大</Button>
               <Button size="small" disabled={!canZoomOut(d)} onClick={() => zoomTo(stepDepth(d, -1, D))}>縮小</Button>
-              <Button size="small" disabled={d === 0} onClick={() => zoomTo(0)}>全体表示に戻す</Button>
+              <Button size="small" onClick={() => zoomTo(0)}>全体表示に戻す</Button>
               <Button size="small" disabled={!canZoomOut(d)} onClick={() => zoomTo(stepDepth(d, -1, D))}>一つ上の階層へ</Button>
             </div>
             <span data-testid="zoom-level" data-depth={d} data-depth-count={D + 2}>階層 {d}</span>
@@ -276,8 +310,12 @@ export function SpatialScreen() {
 
           {mode === '3d' ? stack : null}
 
+          {mode === 'graph' && d >= 1 && d <= D ? (
+            <GraphSurface origin={ORIGIN} label="空間ビュー" nodes={graphNodes.filter((n) => n.rank <= d)} edges={graphEdges.filter((e) => graphRank.get(e.from)! <= d && graphRank.get(e.to)! <= d)} onOpen={(id) => { const n = model.nodes.get(id); if (n) zoomInto(n); }} />
+          ) : null}
+
           {mode !== '3d' && d === 0 ? (
-            <div role="group" aria-label="全体" data-testid="spatial-overview">
+            <div role="group" aria-label="全体" data-testid="spatial-overview" data-zoom-surface={mode === 'graph' ? 'graph' : undefined}>
               {(['site', 'floor', 'room'] as const).map((k) => (
                 <span key={k} className={s.cluster} data-zoom-cluster={SPATIAL_KIND_LABELS[k]} role="button" tabIndex={0}
                   onClick={() => zoomTo(DEPTH_OF_KIND[k])} onKeyDown={(e) => { if (e.key === 'Enter') zoomTo(DEPTH_OF_KIND[k]); }}>
@@ -288,14 +326,45 @@ export function SpatialScreen() {
             </div>
           ) : null}
 
-          {mode !== '3d' && d >= 1 && d <= D ? (
+          {mode === '2d' && d >= 1 && d <= D ? (
             <ul className={s.list} aria-label={`${d === 1 ? '拠点' : d === 2 ? 'フロア' : '部屋・設備'}の一覧（2D）`} data-zoom-surface="2d">
               {items.map(card)}
             </ul>
           ) : null}
 
-          {detailView}
+          {detailView ? <div data-zoom-surface={mode === 'graph' ? 'graph' : undefined}>{detailView}</div> : null}
+          {mode !== '2d' ? (
+            <GraphAlt
+              origin={ORIGIN} label="空間ビュー" columns={kpi ? [kpi] : []}
+              nodes={graphNodes.map((n) => ({ id: n.id, name: n.name, kind: n.kindLabel ?? n.kind, values: kpi ? [kpiCell(model, n.id, kpi).text] : [] }))}
+              relations={graphEdges.map((e) => ({ id: e.id, from: e.from, to: e.to, label: e.label }))}
+              summary={`拠点 ${counts.site} 件・フロア ${counts.floor} 件・部屋/設備 ${counts.room} 件（階層: 全体・拠点・フロア・部屋/設備・詳細の 5 階層。現在 ${d}）`}
+            />
+          ) : null}
           {d === D + 1 && !detail ? <EmptyView message="詳細を見る部屋・設備がありません。" /> : null}
+
+          {twinItems.length > 0 ? (
+            <section aria-label="ツイン関係" data-testid="spatial-twins">
+              <Text weight="semibold" size={200} block>ツイン関係（空間の項目に結ばれたデジタル世界の項目）</Text>
+              <ul className={s.legend}>
+                {twinItems.map((t) => {
+                  const props = bind(t.id, { interactive: false });
+                  const on = selectedIds.includes(t.id);
+                  return (
+                    <li key={t.id}>
+                      <button
+                        type="button" {...props} aria-pressed={on} className={mergeClasses(s.card, on ? s.cardSelected : undefined, hl(props['data-highlight']))}
+                        onClick={(ev) => select(t.id, { origin: ORIGIN, additive: ev.ctrlKey || ev.metaKey || ev.shiftKey })}
+                      >
+                        <Text weight="semibold">{t.name}</Text>
+                        <Text size={200}>{`${t.of} を${t.relation}（デジタル世界）`}</Text>
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ) : null}
 
           <ul className={s.legend} aria-label="KPI の凡例" data-testid="kpi-legend">
             {KPI_STAGES.map((st) => (

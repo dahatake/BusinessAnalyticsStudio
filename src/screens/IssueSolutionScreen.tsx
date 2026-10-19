@@ -26,6 +26,8 @@ import { usePackStore } from '../store/pack';
 import { useSelectionStore } from '../store/selection';
 import { ViewAsTableButton, ViewTable } from '../components/ViewTable';
 import { Items3DSurface } from '../three/Items3DSurface';
+import { GraphSurface, type GraphEdgeIn, type GraphNodeIn } from '../components/GraphSurface';
+import { GraphAlt } from '../components/GraphAlt';
 import { spread, type Item3D, type Link3D } from '../view/items3d';
 import { useComponentView, usePublishViewItems } from '../view/useView';
 
@@ -122,6 +124,10 @@ function IssueSolutionScreen() {
     const ids = new Set(visible.map((i) => i.id));
     return solutions.flatMap((x) => solutionIssueIds(x).filter((id) => ids.has(id)).map((id) => ({ from: x.id, to: id })));
   }, [visible, solutions]);
+
+  // Graph（FR-238）: 課題と解決策をノードに、解決策→課題を「解決する」の向き付きのエッジにする（2D・3D と同じ項目・同じ件数）
+  const graphNodes: GraphNodeIn[] = [...visible.map((i) => ({ id: i.id, name: i.title, kind: '課題' })), ...solutions.map((x) => ({ id: x.id, name: x.title, kind: '解決策' }))];
+  const graphEdges: GraphEdgeIn[] = links3d.map((l) => ({ id: `${l.from}>${l.to}`, from: l.from, to: l.to, label: '解決する', meaning: 'solves' }));
 
   if (!data) return <LoadingView label="課題を読み込み中" />
 
@@ -242,6 +248,11 @@ function IssueSolutionScreen() {
               ) : (
                 <Items3DSurface viewKey={ORIGIN} origin={ORIGIN} label="課題と解決策" items={items3d} links={links3d} axes={{ y: '課題（下）→解決策（上）' }} />
               )}
+            </>
+          ) : viewMode === 'graph' ? (
+            <>
+              <GraphSurface origin={ORIGIN} label="課題と解決策" nodes={graphNodes} edges={graphEdges} />
+              <GraphAlt origin={ORIGIN} label="課題と解決策" nodes={graphNodes} relations={graphEdges.map((e) => ({ ...e }))} />
             </>
           ) : mode === 'sankey' ? (
             <SankeyView flow={flow} {...flowProps} />

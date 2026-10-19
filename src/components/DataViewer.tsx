@@ -10,6 +10,8 @@ import {
   type ViewerEntity,
 } from '../datacatalog/viewer';
 import { useDataViewer } from '../store/dataViewer';
+import { GraphSurface, type GraphEdgeIn, type GraphNodeIn } from './GraphSurface';
+import { GraphAlt } from './GraphAlt';
 import { ZoomBreadcrumb, canZoomIn, canZoomOut, scaleOfDepth, zoomAttrs } from '../semanticzoom';
 import { detect3D } from '../view/render3d';
 import {
@@ -70,7 +72,8 @@ export function DataViewer({ entities, selectedKey, onSelect, relations = NO_REL
   const depth = DETAIL_LEVELS.indexOf(level);
   const goDepth = (k: number) => { if (k <= 0) home(); else setZoom(scaleOfDepth(k, 1, [THRESHOLDS[0], THRESHOLDS[1]])); };
   const can3D = available3D ?? detect3D();
-  const effectiveMode = can3D ? mode : '2d';
+  // Graph は平面の描画なので、3D を描画できない環境でも使える（FR-238）
+  const effectiveMode = mode === 'graph' ? 'graph' : can3D ? mode : '2d';
   const root = useRef<HTMLDivElement>(null);
   const [live, setLive] = useState('');
 
@@ -159,6 +162,15 @@ export function DataViewer({ entities, selectedKey, onSelect, relations = NO_REL
 
   const minW = Math.round(Math.min(360, Math.max(96, 120 * Math.sqrt(zoom))));
   const gridStyle = { gridTemplateColumns: `repeat(auto-fill, minmax(${minW}px, 1fr))` };
+  // Graph（FR-238）: エンティティをノードに、関連（2 つのエンティティを結ぶもの）を意味ラベル付きの向き付きのエッジにする
+  const clusterNameOf = new Map(clusters.flatMap((c) => c.entities.map((e) => [e.key, c.name] as const)));
+  const graphNodes: GraphNodeIn[] = shown.filter((e) => inDetail(e.key)).map((e) => ({
+    id: e.key, name: e.name, kind: clusterNameOf.get(e.key) ?? 'データエンティティ', cluster: clusterNameOf.get(e.key), note: `列 ${e.columns.length} 件`,
+  }));
+  const graphIds = new Set(graphNodes.map((n) => n.id));
+  const graphEdges: GraphEdgeIn[] = relations
+    .filter((r) => r.entityKeys.length === 2 && r.entityKeys.every((k) => graphIds.has(k)))
+    .map((r) => ({ id: r.id, from: r.entityKeys[0]!, to: r.entityKeys[1]!, label: r.label, meaning: r.kind, dash: lineStyleOf(r).dash || undefined }));
   const entityCard = (e: ViewerEntity) => {
     const on = e.key === selectedKey;
     const h = hl(e.key);
@@ -180,15 +192,30 @@ export function DataViewer({ entities, selectedKey, onSelect, relations = NO_REL
     );
   };
 
+  const birdGrid = (
+            <div className={s.grid} style={gridStyle}>
+    {clusters.map((c) => (
+      <div
+        key={c.name} role="option" aria-selected={cluster === c.name} tabIndex={0} data-viewer-cluster={c.name} data-zoom-cluster={c.name} className={mergeClasses(s.card, cluster === c.name && s.on)}
+        onClick={() => setCluster(c.name)} onDoubleClick={() => { setCluster(c.name); goDepth(1); }}
+      >
+        <Text weight="semibold">{c.name}</Text>
+        <Text size={200}>{c.entities.length} 件のエンティティ</Text>
+      </div>
+    ))}
+  </div>
+  );
+
   return (
     <div
       ref={root} className={s.root} data-testid="data-viewer" data-view-mode={effectiveMode} data-detail-level={level} data-zoom={zoom.toFixed(3)} {...zoomAttrs(depth, 1)}
       role="group" aria-label="データビュアー" aria-roledescription="データビュアー。+ − で拡大縮小、0 で全体表示、矢印キーで移動、Enter で選択" tabIndex={0} onKeyDown={onKeyDown}
     >
       <div className={s.bar}>
-        <RadioGroup layout="horizontal" aria-label="表示モード" value={effectiveMode} onChange={(_, d) => { if (d.value === '3d' && !can3D) return; setMode(d.value as '2d' | '3d'); }}>
+        <RadioGroup layout="horizontal" aria-label="表示モード" value={effectiveMode} onChange={(_, d) => { if (d.value === '3d' && !can3D) return; setMode(d.value as '2d' | '3d' | 'graph'); }}>
           <Radio value="2d" label="2D" />
           <Radio value="3d" label="3D" disabled={!can3D} />
+          <Radio value="graph" label="Graph" />
         </RadioGroup>
         <Button size="small" aria-label="拡大" aria-disabled={!canZoomIn(depth, 1)} onClick={() => step(1)}>＋</Button>
         <Button size="small" aria-label="縮小" disabled={depth === 0 && zoom <= ZOOM_HOME} onClick={() => step(-1)}>－</Button>
@@ -250,6 +277,18 @@ export function DataViewer({ entities, selectedKey, onSelect, relations = NO_REL
 
       {shown.length === 0 ? (
         <Text role="status">{entities.length === 0 ? '表示するデータエンティティがありません。' : '絞り込みに合うデータエンティティがありません。'}</Text>
+      ) : effectiveMode === 'graph' ? (
+        <div data-zoom-surface="graph" className={s.group}>
+          {level === 'bird' ? birdGrid : (
+            <GraphSurface origin="data-viewer" label="データビュアー" nodes={graphNodes} edges={graphEdges} onOpen={(k) => { setUseCase(null); onSelect(k); goDepth(2); }} />
+          )}
+          <GraphAlt
+            origin="data-viewer" label="データビュアー" columns={['列']}
+            nodes={graphNodes.map((n) => ({ id: n.id, name: n.name, kind: n.kind, values: [n.note ?? '—'] }))}
+            relations={graphEdges.map((e) => ({ id: e.id, from: e.from, to: e.to, label: e.label }))}
+            summary={`塊 ${clusters.length} 件。詳細度は ${DETAIL_LABELS[level]}（鳥観図・エンティティ・列の 3 階層）`}
+          />
+        </div>
       ) : effectiveMode === '3d' ? (
         <Suspense fallback={<Text role="status">3D を読み込んでいます。</Text>}>
           <DataViewer3D
@@ -259,19 +298,7 @@ export function DataViewer({ entities, selectedKey, onSelect, relations = NO_REL
         </Suspense>
       ) : (
         <div className={s.stage} role="listbox" aria-label={`データエンティティ（${DETAIL_LABELS[level]}）`}>
-          {level === 'bird' ? (
-            <div className={s.grid} style={gridStyle}>
-              {clusters.map((c) => (
-                <div
-                  key={c.name} role="option" aria-selected={cluster === c.name} tabIndex={0} data-viewer-cluster={c.name} data-zoom-cluster={c.name} className={mergeClasses(s.card, cluster === c.name && s.on)}
-                  onClick={() => setCluster(c.name)} onDoubleClick={() => { setCluster(c.name); goDepth(1); }}
-                >
-                  <Text weight="semibold">{c.name}</Text>
-                  <Text size={200}>{c.entities.length} 件のエンティティ</Text>
-                </div>
-              ))}
-            </div>
-          ) : (
+          {level === 'bird' ? birdGrid : (
             clusters.map((c) => (
               <div key={c.name} className={s.group} role="group" aria-label={`塊: ${c.name}`} data-viewer-cluster-group={c.name}>
                 <Text weight="semibold" size={200}>{c.name}</Text>
