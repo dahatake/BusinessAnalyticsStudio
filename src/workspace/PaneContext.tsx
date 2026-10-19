@@ -48,6 +48,8 @@ export interface PaneInfo {
   untab: () => void;
   /** ピン止めしているか（FR-215） */
   pinned: boolean;
+  /** いまのステップから見た関連・工程の順・重要度（FR-228。data-step-* に出す） */
+  step?: { relevant: boolean; rank: number; importance: 'high' | 'normal' };
   /** ピン止めする／外す（FR-215） */
   togglePin: () => void;
   /** 見出しのポインター操作で移動を始める（FR-142）。キーボードの代わりはメニューと Alt+Shift+矢印キー（NFR-A11Y-004） */

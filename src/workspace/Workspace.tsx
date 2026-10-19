@@ -18,6 +18,9 @@ import { clampInto, placeNew, resizeRect, resolveAround, resolveOverlaps, type P
 import { NO_RESIZE_REASON, PIN_MOVE_REASON, PIN_NO_ROOM_REASON, PIN_RESIZE_REASON, PIN_TABS_REASON } from './paneActions';
 import { paneCommands } from './paneCommands';
 import { registerCommands } from '../commands/registry';
+import { useStepper } from '../store/stepper';
+import { useStepFlow } from '../store/stepFlow';
+import { planStepFlow, stepRelevance } from '../stepper/flow';
 
 const useStyles = makeStyles({
   // ドラッグ中に、置ける場所をドロップの前に示す（FR-142）。Fluent 2 のブランドの色トークンと 4px グリッド
@@ -300,6 +303,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   }, []);
   useEffect(() => () => { if (noticeTimer.current !== null) window.clearTimeout(noticeTimer.current); }, []);
   const actions = useLayout.getState;
+  const stepIdx = useStepper((st) => st.current);
+  const flowSeq = useStepFlow((st) => st.seq);
   const byKey = useCallback((k: string) => screens.find((sc) => sc.key === k), [screens]);
   /** 操作中（フォーカスのある）コンポーネント、最後に選んだタブ、ワークスペースの幅 */
   const [focusKey, setFocusKey] = useState<string | null>(null);
@@ -374,6 +379,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     return {
       key,
       pinned,
+      step: stepRelevance(stepIdx, key, screens.map((sc) => sc.key)),
       togglePin: () => {
         // ピン止めを外す: すぐに動かせる（FR-216。一時的な固定）
         if (isPinned(actions(), key)) { actions().setPinned(key, null); announce(`${label}のピン止めを外しました`); return; }
@@ -490,6 +496,31 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     actions().setFloats(toFractions(next, m.bounds));
     return true;
   };
+
+  // 業務分析のステップのクリック: 関連するコンポーネントを工程の順に左上から右下へ、重要度に応じた大きさで並べ、関連しないものはその後ろに最小の大きさで並べる（FR-228）。
+  // ピン止めしたものは動かさず、手で変えた大きさは上書きしない。直前の配置は「元に戻す」のために覚える。
+  const flowRun = useRef<() => void>(() => undefined);
+  flowRun.current = () => {
+    const m = measureAll();
+    if (!m) { announce('この画面の幅では、ステップに合わせた再配置はできません'); return; }
+    const L = actions();
+    const keys = Object.keys(m.rects).sort((p, q) => (m.rects[p]!.y - m.rects[q]!.y) || (m.rects[p]!.x - m.rects[q]!.x));
+    const pinned: Record<string, PxRect> = {};
+    for (const k of keys) if (pinSet.has(k)) pinned[k] = m.rects[k]!;
+    const manual: Record<string, { w: number; h: number }> = {};
+    for (const k of manualKeys ?? []) if (m.rects[k] && !pinSet.has(k)) manual[k] = { w: m.rects[k]!.w, h: m.rects[k]!.h };
+    const plan = planStepFlow({ step: useStepFlow.getState().step, keys, bounds: m.bounds, pinned, manual });
+    useStepFlow.getState().remember({ persona: L.persona, floats: L.floats[L.persona] ? { ...L.floats[L.persona] } : undefined, zOrder: [...L.zOrder] });
+    if (L.expanded) L.setExpanded(null);
+    L.setFloats(toFractions(plan, m.bounds));
+  };
+  const flowSeen = useRef(flowSeq);
+  useEffect(() => {
+    if (flowSeq === flowSeen.current) return;
+    flowSeen.current = flowSeq;
+    const id = window.requestAnimationFrame(() => flowRun.current());
+    return () => window.cancelAnimationFrame(id);
+  }, [flowSeq]);
 
   // 自由配置があるとき、あとから分割の木へ入ったコンポーネント（再表示など）は、空いた場所へ置く。木のものが自由配置と重ならないようにする（FR-184）
   // ピン止めしたもので、自由配置に位置がないもの（非表示から再表示したものなど）も、ピン止めした位置へ置き直す（FR-216 AC-505）
@@ -711,8 +742,15 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     if (!m || !r) { announce(NO_RESIZE_REASON); return; }
     const step = (axis === 'w' ? m.bounds.w : m.bounds.h) * 0.05 * dir;
     const target = resizeRect(r, axis === 'w' ? 'e' : 's', axis === 'w' ? step : 0, axis === 'h' ? step : 0, m.bounds);
+    markManual(key);
     commitFree(key, target, m);
   };
+
+  /** 手で大きさを変えたコンポーネントとして覚える（自動の調整・ステップでの再配置で上書きしない。FR-143・FR-228） */
+  const markManual = (key: string) => useLayout.setState((st) => {
+    const cur = st.manual[st.persona] ?? [];
+    return cur.includes(key) ? {} : { manual: { ...st.manual, [st.persona]: [...cur, key] } };
+  });
 
   /** 縁・角のドラッグで、縦横を独立に大きさを変える（FR-224 AC-521）。ぶつかるものは押し出す（FR-184） */
   const startResize = (key: string, edge: ResizeEdge, e: { button: number; clientX: number; clientY: number }) => {
@@ -734,7 +772,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     const onMove = (ev: globalThis.PointerEvent) => {
       const target = resizeRect(self, edge, ev.clientX - sx, ev.clientY - sy, start.bounds);
       const next = resolveAround({ ...start.rects, [key]: target }, key, start.bounds, pinSet);
-      if (next) actions().setFloats(toFractions(next, start.bounds));
+      if (next) { markManual(key); actions().setFloats(toFractions(next, start.bounds)); }
     };
     document.body.style.userSelect = 'none';
     onResizeActive(true);
