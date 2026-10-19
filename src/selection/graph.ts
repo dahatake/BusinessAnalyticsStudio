@@ -188,6 +188,8 @@ export function buildEntityGraph(data: PackData): EntityGraph {
   for (const [id, rec] of records) collect(id, rec, new Set(['topics']));
   for (const [parent, child] of containEdges) link(parent, child, 'contain');
   for (const rec of relationRecords) link(rec.from as string, rec.to as string, 'relation', isStr(rec.label) ? rec.label : undefined);
+  // FR-239 AC-568: 流れ（entities.json の flows[]。FR-021・FR-241）の両端も関連として辺にする（Twin ビューで選ぶと、流れで結ばれた項目が他の画面でも強調される）
+  for (const f of data.entities.flows ?? []) link(f.from, f.to, 'relation', isStr(f.label) ? f.label : undefined);
   for (const variant of [data.architecture.tobe, data.architecture.asis]) {
     for (const l of variant?.links ?? []) link(l.from, l.to, 'relation', isStr(l.label) ? l.label : undefined);
   }
