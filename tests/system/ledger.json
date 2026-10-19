@@ -246,7 +246,9 @@
     "AC-503": "sha256:5bad05d89a9be885",
     "AC-501": "sha256:d20565407fd62f48",
     "AC-514": "sha256:e4bcac6a9a96620a",
-    "AC-562": "sha256:969ce571fa534934"
+    "AC-562": "sha256:969ce571fa534934",
+    "AC-555": "sha256:fe47980480f5bdaf",
+    "AC-557": "sha256:a3c7bc01f22f9d62"
   },
   "cases": [
     {
@@ -7223,6 +7225,56 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "run 202610192300 part 3/3: FR-238 AC-562（未実装・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-328",
+      "requirement_ids": [
+        "FR-237"
+      ],
+      "ac_ids": [
+        "AC-555"
+      ],
+      "title": "意味的ズーム: ビジネス関係グラフで全体→要素→詳細にズームインでき、全体は塊の名前と件数、要素は名称と種別、詳細は属性・出典・関係、パンくずと一つ上・全体へ戻る（異常系: 全体で縮小・一つ上が無効、詳細で拡大が無効）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-555",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-19T23:55:04+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192300: FR-237 AC-555 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-329",
+      "requirement_ids": [
+        "FR-237"
+      ],
+      "ac_ids": [
+        "AC-557"
+      ],
+      "title": "意味的ズーム: ビジネス関係グラフ・Twin ビュー・空間ビュー・データビュアーの {全体,要素,詳細}×{2D,3D,Graph} 9 通りが描画され同じ選択項目が表示される（異常系: 3D を描画できない環境で 3D 無効＋理由、2D/Graph は描画）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-557",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-19T23:55:07+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192300: FR-237 AC-557 のケース（実装前・not_run）"
         }
       ]
     }

@@ -123,3 +123,11 @@
 - 操作: button「中止」（またはキャンセル）と button「続行」（出力する）。了承の記録がないときは「続行」がないか disabled。Tab だけで両方へ到達でき、Enter で押せる。確認を開いた直後のフォーカスは確認の中。
 - 了承の記録は設定画面（§ FR-181 AC-375 と同じ入力欄・button「了承を保存」）で入力する。中止したときと了承なしのときは、ダウンロード（download イベント）が 0 件。
 - 既存のエクスポート系ケース（FR-052・054・055・056・071・094、NFR-ENV-002・NFR-A11Y-002・NFR-UX-004 など）は、手順の冒頭で `recordExportConsent(page)`（support/fixtures.ts）で了承の記録を先に入力し、確認が出たら `captureDownload` / `continuePersonConfirm` が続行まで進める（出力範囲・内容の判定は変えない）。
+
+## 意味的ズーム（FR-237 AC-555・AC-557。semantic-zoom.spec.ts が前提にする画面の探し方）
+- 画面の key: `business-graph`（ビジネス関係グラフ）・`twin-view`（Twin ビュー）・`spatial-view`（空間ビュー）。データビュアーは既存の `data-catalog` の中の `data-testid="data-viewer"`（お手本パックのデモで表示される）。
+- ズームの対象の面（`component-<key>`、データビュアーは `data-viewer`）に `data-zoom-level="overview|element|detail"`（全体／要素／詳細。階層が D+2 のときの中間の階層は `element` とし、深さを `data-zoom-depth` に持つ）。データビュアーは従来の `data-detail-level="bird|entity|column"` も保つ。
+- 操作: button「拡大」「縮小」「全体表示に戻す」「一つ上の階層へ」（上限・下限・全体では該当の操作が disabled）。塊・ノードのダブルクリック、フォーカス中の Enter でも一つ下の階層へ。パンくずは navigation「パンくず」で、現在の階層の項目が `aria-current="location"`（文字は「全体」「要素」「詳細」で始まる）、上位の項目は link か button。
+- 全体: 塊 `[data-zoom-cluster="<塊の名前>"]`（文字に「<n> 件」）。要素: ノード `[data-zoom-node][data-entity-id]`（`data-entity-name`・`data-entity-kind`、見える文字に名称と種別）。詳細: `data-testid="zoom-detail"` の中に heading「属性」「出典」「関係」と、選んだ項目の `data-entity-id`。
+- 表示形式: 「ビュー」メニュー（§21）の menuitemradio「2D」「3D」「Graph」。面は `data-zoom-surface="3d"`（3D）・`data-zoom-surface="graph"`（Graph）。3D を描画できない環境では「3D」が disabled で、メニューに理由（「描画できません」「使えません」または WebGL・WebGPU の語）。
+- 選択はフック `t.view.state(key).selectedIds`（§21）で読む。一覧表（`table`）で選んだ項目が各画面で選択されている。
