@@ -11,7 +11,8 @@ const outDir = runId
 
 export default defineConfig({
   testDir: './e2e',
-  outputDir: outDir,
+  // run.mjs がプロセスごとの ST_OUT_SUBDIR を渡す（並列実行で outputDir・artifacts が重ならない）
+  outputDir: path.join(outDir, process.env.ST_OUT_SUBDIR ?? '_default'),
   timeout: 90_000,
   expect: { timeout: 10_000 },
   fullyParallel: true,

@@ -19,11 +19,18 @@ import { chooseView, type ViewState } from '../support/screens';
 
 const koto = examplePack('koto');
 
+/** 狭い幅ではメニューのボタンを開く。1600px 幅ではボタンが無いので待たない */
+async function openMenuIfNarrow(page: Page, item?: Locator): Promise<void> {
+  if (item && (await item.isVisible())) return;
+  const menu = page.getByRole('button', { name: 'メニュー', exact: true });
+  if (await menu.isVisible()) await menu.click();
+}
+
 /** 左メニューの文字から画面を開く（key は実装に依存しない） */
 async function openByName(page: Page, name: string): Promise<{ key: string; c: Locator }> {
   const nav = page.getByRole('navigation', { name: '画面', exact: true });
   const item = nav.locator('[data-testid^="nav-"]').filter({ hasText: name }).first();
-  if (!(await item.isVisible())) await page.getByRole('button', { name: 'メニュー', exact: true }).click();
+  await openMenuIfNarrow(page, item);
   await expect(item, `左メニューに「${name}」がない`).toBeVisible();
   const key = ((await item.getAttribute('data-testid')) ?? '').replace(/^nav-/, '');
   await item.click();
@@ -43,8 +50,8 @@ function twinPack(): Pack {
       const real = j.entities.find((e: any) => e.world === 'real' && j.twins.some((t: any) => t.realId === e.id));
       const dig = j.twins.find((t: any) => t.realId === real.id).digitalId;
       j.flows = j.flows ?? [];
-      j.flows.push({ id: 'flow-gt-data', createdBy: 'test', from: real.id, to: dig, label: '計測値', kind: 'data', sourceIds: real.sourceIds });
-      j.flows.push({ id: 'flow-gt-control', createdBy: 'test', from: dig, to: real.id, label: '稼働指示', kind: 'control', sourceIds: real.sourceIds });
+      j.flows.push({ id: 'flow-gt-data', createdBy: 'ai', from: real.id, to: dig, label: '計測値', kind: 'data', sourceIds: real.sourceIds });
+      j.flows.push({ id: 'flow-gt-control', createdBy: 'ai', from: dig, to: real.id, label: '稼働指示', kind: 'control', sourceIds: real.sourceIds });
     });
   });
 }
@@ -54,7 +61,7 @@ function spatialPack(): Pack {
   return makeVariant('mono', 'gt-space', (p) => {
     p.edit('entities', (j) => {
       const site = j.entities.find((e: any) => e.type === 'site');
-      const mk = (id: string, name: string, kind: string, parentId: string) => ({ id, createdBy: 'test', type: 'site', name, parentId, world: 'real', kind, sourceIds: site.sourceIds });
+      const mk = (id: string, name: string, kind: string, parentId: string) => ({ id, createdBy: 'ai', type: 'site', name, parentId, world: 'real', kind, sourceIds: site.sourceIds });
       j.entities.push(
         mk('ent-gt-f1', '1 階', 'floor', site.id), mk('ent-gt-f2', '2 階', 'floor', site.id),
         mk('ent-gt-r1', '会議室 A', 'room', 'ent-gt-f1'), mk('ent-gt-r2', '会議室 B', 'room', 'ent-gt-f1'), mk('ent-gt-r3', '執務室', 'room', 'ent-gt-f2'),
@@ -99,10 +106,8 @@ test.describe('FR-236 ビジネス関係グラフ', () => {
     const id = (await nodes.first().getAttribute('data-entity-id'))!;
     await nodes.first().click();
     // 他の画面（一覧表）でも同じ項目が選択されている
-    await page.getByRole('navigation', { name: '画面', exact: true }).locator('[data-testid="nav-table"]').click().catch(async () => {
-      await page.getByRole('button', { name: 'メニュー', exact: true }).click();
-      await page.getByTestId('nav-table').click();
-    });
+    await openMenuIfNarrow(page, page.getByTestId('nav-table'));
+    await page.getByTestId('nav-table').click();
     await expect(entity(component(page, 'table'), id).first()).toHaveAttribute('data-highlight', /selected/);
     await openByName(page, 'ビジネス関係グラフ');
     // 種別の絞り込み: 選択中でない種別を 1 つ外すと、その種別のノードとそのノードにつながるエッジが消える
@@ -180,7 +185,7 @@ test.describe('FR-239 Twin ビュー', () => {
       if (touches) await expect(f, '選択項目の流れが強調されない').toHaveAttribute('data-highlight', /related|selected/);
     }
     // 他の画面（一覧表）
-    await page.getByRole('button', { name: 'メニュー', exact: true }).click().catch(() => {});
+    await openMenuIfNarrow(page, page.getByTestId('nav-table'));
     await page.getByTestId('nav-table').click();
     const table = component(page, 'table');
     await expect(entity(table, realId).first()).toHaveAttribute('data-highlight', /selected/);
@@ -209,7 +214,7 @@ test.describe('FR-240 空間ビュー', () => {
     await zoomIn.click();
     await expect(level).toHaveAttribute('data-depth', '4');
     await expect(c.getByTestId('room-detail')).toBeVisible();
-    await zoomIn.click().catch(() => {});
+    await expect(zoomIn, '詳細より先へ進める（拡大が無効にならない）').toBeDisabled();
     await expect(level, '詳細より先へ進んだ').toHaveAttribute('data-depth', '4');
   });
 
