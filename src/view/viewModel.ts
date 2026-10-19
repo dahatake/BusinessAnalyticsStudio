@@ -8,9 +8,9 @@ export type ViewMode = '2d' | '3d';
 /** 世界の表示（FR-218） */
 export type WorldView = World | 'both';
 
-export const VIEW_MODES: readonly ViewMode[] = ['2d', '3d'];
+export const VIEW_MODES: readonly ViewMode[] = ['2d', '3d', 'graph'];
 export const WORLD_VIEWS: readonly WorldView[] = ['real', 'digital', 'both'];
-export const MODE_LABELS: Record<ViewMode, string> = { '2d': '2D', '3d': '3D' };
+export const MODE_LABELS: Record<ViewMode, string> = { '2d': '2D', '3d': '3D', graph: 'Graph' };
 export const WORLD_VIEW_LABELS: Record<WorldView, string> = { real: WORLD_LABELS.real, digital: WORLD_LABELS.digital, both: '両方' };
 /** 世界の表示の既定（FR-218: 既定は「両方」） */
 export const DEFAULT_WORLD_VIEW: WorldView = 'both';
@@ -18,6 +18,7 @@ export const DEFAULT_WORLD_VIEW: WorldView = 'both';
 /** 選べない理由（FR-217 AC-500・FR-218 AC-502） */
 export const NO_3D_REASON = 'この画面には 3D の表現がありません';
 export const NO_3D_ENV_REASON = 'この環境では 3D を描画できません';
+export const NO_GRAPH_REASON = 'この画面には Graph の表現がありません';
 export const NO_2D_REASON = 'この画面には 2D の表現がありません';
 export const NO_WORLD_REASON = 'この画面には世界区分を持つデータがありません';
 /** 選択中の項目が、いまの世界の表示で隠れているときの表示（FR-218。選択は保つ） */
@@ -71,6 +72,8 @@ export function tableWorldDecl(rows: readonly string[], basis: string = rows.joi
 /** 保存した値（なければ既定）と、描画できるかから、いま表示する表示モードを決める。表現のないモードは選ばない */
 export function effectiveMode(decl: ViewDecl, stored: ViewMode | undefined, can3D: boolean): ViewMode {
   const want = stored ?? defaultModeOf(decl);
+  if (want === 'graph' && !decl.hasGraph) return effectiveMode(decl, undefined, can3D);
+  if (want === 'graph') return 'graph';
   if (want === '3d' && (!decl.has3D || (!canRender3D(decl, can3D) && decl.has2D))) return '2d';
   if (want === '2d' && !decl.has2D) return '3d';
   return want;
@@ -183,7 +186,7 @@ export function singleWorldNote(decl: ViewDecl): string | null {
 /** 画面の見出しの切替（全コンポーネントにまとめて効く）で、このコンポーネントに入れる値。対象外・表現のないものは変えない（undefined） */
 export function screenModeFor(decl: ViewDecl, mode: ViewMode): ViewMode | undefined {
   if (decl.fixed) return undefined;
-  if (mode === '3d' ? !decl.has3D : !decl.has2D) return undefined;
+  if (mode === 'graph' ? !decl.hasGraph : mode === '3d' ? !decl.has3D : !decl.has2D) return undefined;
   return mode;
 }
 
