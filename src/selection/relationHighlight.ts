@@ -6,6 +6,9 @@ import { useSelectionStore } from '../store/selection';
 import { getEntityGraph } from './hooks';
 import { highlightTokens, relatedSet, type HighlightContext } from './model';
 
+/** この関数が data-highlight を付けた要素 */
+const owned = new WeakSet<Element>();
+
 /** 画面全体（root 内）の項目へ、現在の選択に応じた data-highlight を反映する。変更した要素の数を返す。 */
 export function applyRelationHighlight(root: ParentNode = document): number {
   const st = useSelectionStore.getState();
@@ -19,7 +22,11 @@ export function applyRelationHighlight(root: ParentNode = document): number {
     const want = highlightTokens(id, ctx, true);
     const cur = el.getAttribute('data-highlight') ?? undefined;
     if (want === cur) continue;
-    if (want === undefined) el.removeAttribute('data-highlight'); else el.setAttribute('data-highlight', want);
+    // 画面の部品が自分の状態で付けた data-highlight（例: ガントの Feature 選択による related）は、
+    // この関数が付けたものでなければ消さない（選択がないときに部品側の強調を壊さない。FR-007 AC-007）
+    if (want === undefined && !owned.has(el)) continue;
+    if (want === undefined) { el.removeAttribute('data-highlight'); owned.delete(el); }
+    else { el.setAttribute('data-highlight', want); owned.add(el); }
     changed++;
   }
   return changed;

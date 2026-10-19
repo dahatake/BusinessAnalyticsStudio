@@ -321,6 +321,7 @@ export async function recordExportConsent(page: Page, note = '顧客側の担当
   await box.fill(note);
   await settings.getByRole('button', { name: /了承.*保存|保存.*了承/ }).first().click();
   await expect(settings.getByText(note).first()).toBeVisible();
+  await closeSettings(page); // 設定はモーダル（FR-223）。背面の覆いが以降の操作を遮るので閉じる
 }
 
 /** 種別「人」の確認（FR-219 AC-514）。出ていれば続行（出力する）まで進める。出ていなければ何もしない。 */

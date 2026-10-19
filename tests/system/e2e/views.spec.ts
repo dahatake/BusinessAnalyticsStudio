@@ -240,14 +240,15 @@ test.describe('FR-037 ナレッジグラフ', () => {
     await edlg.getByRole('button', { name: /追加|OK|保存/ }).click();
     await expect(await openScreen(page, 'table')).toContainText('ST追加の課題-045');
     await expect(await openScreen(page, 'issue-solution')).toContainText('ST追加の課題-045');
-    // 関連を見る
-    await component(page, 'issue-solution').getByText('ST追加の課題-045').first().click();
+    // 関連を見る（選択中の項目の再クリックは選択解除になる（FR-227）ので、すでに選択済みなら押さない）
     const mini = component(page, 'issue-solution').getByTestId('related-mini');
+    if (!((await mini.textContent()) ?? '').includes(mono.solutions()[0].title)) await component(page, 'issue-solution').getByText('ST追加の課題-045').first().click();
     await expect(mini).toContainText(mono.solutions()[0].title);
     // 削除
     const g2 = await openScreen(page, 'knowledge-graph');
-    await g2.getByText('ST追加の課題-045').first().click();
-    await g2.getByRole('button', { name: /削除/ }).click();
+    const delBtn = g2.getByRole('button', { name: /削除/ });
+    if (!(await delBtn.isEnabled().catch(() => false))) await g2.getByText('ST追加の課題-045').first().click();
+    await delBtn.click();
     await page.getByRole('button', { name: /削除する|OK|はい/ }).click().catch(() => {});
     await expect(await openScreen(page, 'table')).not.toContainText('ST追加の課題-045');
     await expect(await openScreen(page, 'issue-solution')).not.toContainText('ST追加の課題-045');

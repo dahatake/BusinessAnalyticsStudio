@@ -20,6 +20,13 @@ describe('FR-227 relation highlight', () => {
     expect(document.querySelectorAll('[data-highlight]').length).toBe(0);
   });
 
+  // FR-007 AC-007 FR-227: 部品が自分で付けた data-highlight（ガントの Feature 選択）を、選択がないときに消さない
+  it('FR-007 AC-007 選択なしでは、部品側が付けた data-highlight を消さない', () => {
+    document.querySelector('[data-entity-id="x"]')!.setAttribute('data-highlight', 'related');
+    applyRelationHighlight();
+    expect(document.querySelector('[data-entity-id="x"]')!.getAttribute('data-highlight')).toBe('related');
+  });
+
   // FR-227 AC-527: 減光は不透明度ではなく文字色（4.5:1 以上の補助色）で示す
   it('FR-227 AC-527 減光のスタイルは不透明度を使わず、文字色と破線で示す', () => {
     installRelationHighlightStyle();

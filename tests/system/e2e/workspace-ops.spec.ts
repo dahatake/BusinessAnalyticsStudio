@@ -17,7 +17,7 @@ async function box(loc: Locator) {
 /** 直下のコンポーネント（component-menu と入れ子を除く）の key 一覧 */
 async function topKeys(page: Page): Promise<string[]> {
   return page.getByTestId('workspace').evaluate((ws) => {
-    const sel = '[data-testid^="component-"]:not([data-testid="component-menu"])';
+    const sel = '[data-testid^="component-"]:not([data-testid="component-menu"]):not([data-testid="component-actions"])';
     const out: string[] = [];
     ws.querySelectorAll(sel).forEach((el) => {
       const r = (el as HTMLElement).getBoundingClientRect();

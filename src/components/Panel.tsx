@@ -89,7 +89,7 @@ const useStyles = makeStyles({
   // 詰めた見出し: 見出しの文字の行を全幅にし、操作アイコンと「…」は次の行の右へまとめて置く
   titleRowCompact: { flexBasis: 'auto' },
   // 詰めた見出し: 操作アイコンと「…」を見出しの文字の上の行の右端へ置く（見出しの右上に常にある。FR-222）
-  headRowCompact: { flexDirection: 'column-reverse', alignItems: 'stretch', flexWrap: 'nowrap' },
+  headRowCompact: { flexDirection: 'column-reverse', alignItems: 'stretch', flexWrap: 'nowrap', rowGap: 0 },
   actionGroupCompact: { alignSelf: 'flex-end' },
   actionGroup: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS, marginInlineStart: 'auto' },
   // 見出しをつかんで動かす（FR-142）。つかめることをカーソルで示し、動かしている間に文字が選択されないようにする
