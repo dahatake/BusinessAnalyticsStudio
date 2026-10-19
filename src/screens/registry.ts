@@ -1,5 +1,5 @@
 import {
-  Chat24Regular, CommentMultiple24Regular, Cube24Regular, Database24Regular, DataBarHorizontal24Regular, DataScatter24Regular, DocumentBulletList24Regular, Layer24Regular, Map24Regular,
+  Chat24Regular, Building24Regular, CommentMultiple24Regular, Cube24Regular, Database24Regular, DataBarHorizontal24Regular, DataScatter24Regular, DocumentBulletList24Regular, Layer24Regular, Map24Regular,
   Organization24Regular, PhoneDesktop24Regular, Ruler24Regular, Settings24Regular, Table24Regular, TaskListSquareLtr24Regular, TextBulletListTree24Regular,
   Target24Regular, TextNumberListLtr24Regular, Lightbulb24Regular, Trophy24Regular, Whiteboard24Regular, Window24Regular,
 } from '@fluentui/react-icons';
@@ -30,6 +30,7 @@ import { SourcesScreen } from './SourcesScreen';
 import { Flow24Regular } from '@fluentui/react-icons';
 import { BusinessGraphScreen } from './BusinessGraphScreen';
 import { TwinViewScreen } from './TwinViewScreen';
+import { SpatialScreen } from './SpatialScreen';
 import { ChatScreen } from '../ai/ChatScreen';
 import '../analysis/commands';
 
@@ -70,6 +71,7 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'mock-app', label: 'ミニ・モックアプリ', icon: PhoneDesktop24Regular, component: MockAppScreen, view: V2 },
   { key: 'usecase', label: 'ユースケース', icon: Lightbulb24Regular, component: UseCaseScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['ユースケース']), kinds: [] } },
   { key: 'data-catalog', label: 'データカタログ', icon: Database24Regular, component: DataCatalogScreen, view: { has2D: true, has3D: true, ...tableWorldDecl(['データエンティティ', '企業データカタログ']), kinds: [] } },
+  { key: 'spatial-view', label: '空間ビュー', icon: Building24Regular, component: SpatialScreen, view: { has2D: true, has3D: true, cpu3D: true, world: false, kinds: [] } },
   { key: 'whiteboard', label: 'ホワイトボード', icon: Whiteboard24Regular, component: WhiteboardScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['付箋', 'ストローク'], 'ボードの付箋・ストローク'), kinds: [] } },
   { key: 'themes', label: '議論テーマ', icon: CommentMultiple24Regular, component: ThemesScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['議論テーマ']), kinds: [] } },
   { key: 'settings', label: '設定パネル', icon: Settings24Regular, component: SettingsScreen, view: V2 },
