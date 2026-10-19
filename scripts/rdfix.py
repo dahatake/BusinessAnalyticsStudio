@@ -63,7 +63,7 @@ def _strip_dot_slash(p: str) -> str:
         p = p[2:]
     return p
 
-TARGETS = ("registry", "catalog", "ledger", "gitignore", "history", "integration")
+TARGETS = ("registry", "catalog", "ledger", "gitignore", "history")
 CATALOG_TEMPLATE = (
     "# カタログ\n\n"
     "既存の機能・API・テーブル・共通部品の対応表です。1 行 1 項目の短い表にし、詳細はリンク先のファイルに任せます。\n"
@@ -422,23 +422,6 @@ class Fixer:
                 text += "\n"
             h.write_text_atomic(gi, text + ("\n" if text else "") + f"{GITIGNORE_HEADER}\n/{wd}/\n")
         self.writers.append(write)
-
-    # ------------------------------------------------------------------ integration catalog (FR-199 AC-427)
-    def fix_integration(self) -> None:
-        """外部連携カタログがなければ雛形（見出し・記入の規則）だけを作る。意味に関わる欄は値を入れず MANUAL として示す。"""
-        import integration_catalog as ic
-        rel = ic.path_of(self.cfg)
-        path = self.root / rel
-        t = "integration"
-        if not path.exists():
-            self.act("FIX", "CHK-28", rel, "外部連携カタログがありません。雛形（表の見出しと記入の規則。値なし）から作成します", "", t)
-            self.writers.append(lambda: h.write_text_atomic(path, ic.TEMPLATE))
-            return
-        if not self.doc.exists:
-            return
-        for level, loc, msg in ic.check(self.root, self.cfg, self.doc):
-            if level == "ERROR":
-                self.act("MANUAL", "CHK-28", loc, msg, "rd-author", t)
 
     # ------------------------------------------------------------------ run history
     def fix_history(self) -> None:
