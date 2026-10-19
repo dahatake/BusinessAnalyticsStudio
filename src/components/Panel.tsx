@@ -35,6 +35,7 @@ const useStyles = makeStyles({
     color: tokens.colorNeutralForeground1,
   },
   pane: {
+    position: 'relative',
     maxWidth: 'none',
     boxSizing: 'border-box',
     height: '100%',
@@ -47,6 +48,11 @@ const useStyles = makeStyles({
   },
   paneBody: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minHeight: 0, minWidth: 0, overflow: 'auto', boxSizing: 'border-box', rowGap: tokens.spacingVerticalM, padding: `0 ${tokens.spacingHorizontalL} ${tokens.spacingVerticalS}` },
   maximized: { position: 'absolute', inset: 0, zIndex: 10, height: 'auto' },
+  // 縁・角のつまみ（FR-224）。当たり判定は 8px 以上。ホバーで色の付いた線を見せる
+  resize: { position: 'absolute', zIndex: 3, touchAction: 'none', ':hover': { backgroundColor: tokens.colorNeutralStroke1 } },
+  resizeE: { top: '16px', right: 0, bottom: '12px', width: '8px', cursor: 'ew-resize' },
+  resizeS: { left: 0, right: '12px', bottom: 0, height: '8px', cursor: 'ns-resize' },
+  resizeSE: { right: 0, bottom: 0, width: '12px', height: '12px', cursor: 'nwse-resize' },
   // 最小化: 見出しだけを残す。中身は mount したまま隠し、入力中の内容・絞り込みを保つ（FR-151 AC-260）
   minimized: {
     overflow: 'hidden',
@@ -78,10 +84,13 @@ const useStyles = makeStyles({
     borderBottom: `${tokens.strokeWidthThick} solid currentColor`,
   },
   head: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS },
-  headRow: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: tokens.spacingHorizontalS, rowGap: tokens.spacingVerticalXS },
+  headRow: { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', justifyContent: 'space-between', columnGap: tokens.spacingHorizontalS, rowGap: tokens.spacingVerticalXS },
   titleRow: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalM, flex: '1 1 0', minWidth: 0 },
   // 詰めた見出し: 見出しの文字の行を全幅にし、操作アイコンと「…」は次の行の右へまとめて置く
-  titleRowCompact: { flexBasis: '100%' },
+  titleRowCompact: { flexBasis: 'auto' },
+  // 詰めた見出し: 操作アイコンと「…」を見出しの文字の上の行の右端へ置く（見出しの右上に常にある。FR-222）
+  headRowCompact: { flexDirection: 'column-reverse', alignItems: 'stretch', flexWrap: 'nowrap' },
+  actionGroupCompact: { alignSelf: 'flex-end' },
   actionGroup: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS, marginInlineStart: 'auto' },
   // 見出しをつかんで動かす（FR-142）。つかめることをカーソルで示し、動かしている間に文字が選択されないようにする
   grab: { flexGrow: 1, cursor: 'grab', userSelect: 'none', touchAction: 'none', ':active': { cursor: 'grabbing' } },
@@ -201,7 +210,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
       ) : null}
       <div data-testid="panel-body" ref={bodyRef} className={mergeClasses(s.body, pane ? s.paneBody : undefined, minimized ? s.minimized : undefined)}>
       <div className={s.head}>
-        <div className={s.headRow}>
+        <div className={mergeClasses(s.headRow, pane && compact ? s.headRowCompact : undefined)}>
           <div className={mergeClasses(s.titleRow, pane && compact ? s.titleRowCompact : undefined)}>
             <Text
               as="h2"
@@ -222,7 +231,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
               </span>
             ) : null}
           </div>
-          {pane ? <span className={s.actionGroup}><ComponentActions pane={pane} title={title} active={focused || minimized} narrow={narrow} /></span> : null}
+          {pane ? <span className={mergeClasses(s.actionGroup, compact ? s.actionGroupCompact : undefined)}><ComponentActions pane={pane} title={title} active={focused || minimized} narrow={narrow} /></span> : null}
         </div>
         {description && !minimized ? <Text size={300}>{description}</Text> : null}
         {world.note && !minimized ? <Text size={300} className={s.worldNote} data-testid="view-world-note">{world.note}</Text> : null}
@@ -231,6 +240,14 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
       {/* 1 つの世界の画面は、いつも同じ包みに入れて表示・非表示だけを変える（中身を作り直さない） */}
       {world.single ? <div data-testid="view-world-body" style={{ display: world.hideAll ? 'none' : 'contents' }}>{children}</div> : children}
       </div>
+      {pane && !pane.maximized && !pane.minimized ? (
+        // 縁・角のつまみ（FR-224）。縦と横を独立に変える。ホバー・フォーカスで見えるようにし、ドラッグを使わない手段は「…」メニューとコマンド
+        <>
+          <div data-testid="resize-e" className={mergeClasses(s.resize, s.resizeE)} aria-hidden onPointerDown={(e: PointerEvent<HTMLElement>) => { if (e.button === 0) { e.preventDefault(); e.stopPropagation(); pane.startResize('e', e); } }} />
+          <div data-testid="resize-s" className={mergeClasses(s.resize, s.resizeS)} aria-hidden onPointerDown={(e: PointerEvent<HTMLElement>) => { if (e.button === 0) { e.preventDefault(); e.stopPropagation(); pane.startResize('s', e); } }} />
+          <div data-testid="resize-se" className={mergeClasses(s.resize, s.resizeSE)} aria-hidden onPointerDown={(e: PointerEvent<HTMLElement>) => { if (e.button === 0) { e.preventDefault(); e.stopPropagation(); pane.startResize('se', e); } }} />
+        </>
+      ) : null}
     </section>
   );
 }
