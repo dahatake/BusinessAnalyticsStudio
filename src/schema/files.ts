@@ -5,6 +5,7 @@ import {
   ClassificationSchema, ConfidenceSchema, CreatedBySchema, IdSchema, entityShape,
 } from './common';
 import { EntityKindSchema, TwinSchema, WorldSchema, checkWorldStructure } from './world';
+import { KpiStagesSchema, RelationSchema, TwinLayerSchema, checkGraphStructure } from './graph';
 
 /** ユースケースの対象ペルソナ（FR-180）。ワークスペースのペルソナ（経営層・事業部門・IT・現場）と同じ。スキーマは画面の部品を参照しないので、ここに持つ */
 export const USECASE_PERSONAS = ['経営層', '事業部門', 'IT', '現場'] as const;
@@ -16,6 +17,8 @@ export const MetricSchema = z.looseObject({
   label: z.string().min(1),
   value: z.number(),
   unit: z.string().optional(),
+  /** KPI の段階の境界（FR-241。任意）。良・注意・要対応の別を値から求める */
+  stages: KpiStagesSchema.optional(),
   sourceIds: z.array(IdSchema).min(1),
 });
 
@@ -63,6 +66,8 @@ export const CustomerSchema = z.looseObject({
           target: z.number(),
           /** 期限（任意。YYYY-MM-DD） */
           due: z.string().optional(),
+          /** KPI の段階の境界（FR-241。任意） */
+          stages: KpiStagesSchema.optional(),
         }),
       })),
     })),
@@ -131,7 +136,11 @@ export const EntitiesSchema = z.looseObject({
     world: WorldSchema.optional(),
     /** 種別（FR-213。§3.7 の分類の体系）。世界区分と組み合わせの合うものだけ（現実世界: site〜event／デジタル世界: data〜metric） */
     kind: EntityKindSchema.optional(),
+    /** デジタル世界のエンティティの層（FR-241。任意）。operations・experience・insights */
+    layer: TwinLayerSchema.optional(),
   })),
+  /** 意味ラベル付きの関係（FR-235・FR-241。任意）。meaning は九つの意味の種類、label は顧客の言葉の関係ラベル */
+  relations: z.array(RelationSchema).optional(),
   /** ツイン関係（FR-214）。現実世界のエンティティ（realId）と、それを表す・計測する・記録する・表示するデジタル世界のエンティティ（digitalId）の対応。1 対多・多対 1 を許す */
   twins: z.array(TwinSchema).optional(),
   /** 物流・データの流れ（FR-021）。拠点から拠点への流れを、時間軸（0〜23 時）に応じた量の粒子で示す */
@@ -139,7 +148,7 @@ export const EntitiesSchema = z.looseObject({
     from: IdSchema,
     to: IdSchema,
     label: z.string().min(1),
-    /** 流れの種類（粒子の色分け）。物流・データ・お金など */
+    /** 流れの種類（粒子の色分け）。物流・データ・お金など。Twin の流れ（FR-241。現実世界とデジタル世界を結ぶもの）は data／control */
     kind: z.string().optional(),
     /** 1 時間あたりの量の最大（単位は unit）。粒子の数と線の太さに反映する */
     volume: z.number().nonnegative().optional(),
@@ -150,7 +159,9 @@ export const EntitiesSchema = z.looseObject({
 }).superRefine((v, ctx) => {
   // FR-213 AC-489・FR-214 AC-491: 種別と世界区分の組み合わせ・上位の循環と世界区分・ツイン関係の両端
   for (const issue of checkWorldStructure(v.entities, v.twins)) ctx.addIssue({ code: 'custom', path: issue.path, message: issue.message });
-});
+    // FR-241 AC-577: 層・意味ラベル付きの関係・Twin の流れ
+    for (const issue of checkGraphStructure(v.entities, v.flows, v.relations)) ctx.addIssue({ code: 'custom', path: issue.path, message: issue.message });
+  });
 
 /** 課題の区分（FR-002）。社内向け／社外向けのどちらか（機密区分 classification とは別） */
 export const AUDIENCES = ['internal', 'external'] as const;
