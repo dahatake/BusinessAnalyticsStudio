@@ -245,7 +245,8 @@
     "AC-499": "sha256:737e480ca6126b4b",
     "AC-503": "sha256:5bad05d89a9be885",
     "AC-501": "sha256:d20565407fd62f48",
-    "AC-514": "sha256:e4bcac6a9a96620a"
+    "AC-514": "sha256:e4bcac6a9a96620a",
+    "AC-562": "sha256:969ce571fa534934"
   },
   "cases": [
     {
@@ -7197,6 +7198,31 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "run 202610190439: FR-219 AC-514 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-327",
+      "requirement_ids": [
+        "FR-238"
+      ],
+      "ac_ids": [
+        "AC-562"
+      ],
+      "title": "Graph の表現を持つ 6 画面で 2D→3D→Graph→2D の往復が 2000ms 以内・選択/絞り込み/期間/時刻/件数が不変（正常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-562",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-19T23:53:36+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192300 part 3/3: FR-238 AC-562（未実装・not_run）"
         }
       ]
     }
