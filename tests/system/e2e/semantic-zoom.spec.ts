@@ -84,7 +84,7 @@ test.describe('FR-237 意味的ズーム（全体→要素→詳細）', () => {
     await expect(nodes.first(), '要素の階層にノードが表示されない').toBeVisible();
     const first = nodes.first();
     expect(((await first.getAttribute('data-entity-name')) ?? (await first.innerText())).trim(), 'ノードの名称がない').not.toBe('');
-    expect(((await first.getAttribute('data-entity-kind')) ?? '').trim(), 'ノードの種別がない').not.toBe('');
+    expect(((await first.getAttribute('data-kind')) ?? '').trim(), 'ノードの種別がない').not.toBe('');
     await expect(first, '種別が文字でも示される').toContainText(/\S/);
     const id = (await first.getAttribute('data-entity-id'))!;
 

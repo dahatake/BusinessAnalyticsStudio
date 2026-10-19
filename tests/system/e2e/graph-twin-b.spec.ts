@@ -2,14 +2,14 @@
 // 期待値は要求定義書の受入基準（docs/requirements/graph-twin.md の AC-549・AC-554・AC-566・AC-568・AC-571・AC-572）と、
 // お手本パック（koto／mono）とその変種の内容から決める。実装のコードは読んでいない。
 //
-// テスト側が前提にする画面の探し方（実装が満たすこと。AC に画面の key・属性の名前が無いための契約で、CONTRACT.md への追記は conductor が統合する）:
+// テスト側が前提にする画面の探し方（統合した契約は CONTRACT.md の「グラフ・Twin・空間・意味的ズーム」節。以下はこの spec が使う部分）:
 //  - 画面は左メニュー（navigation「画面」）の `nav-<key>` のうち、文字が「ビジネス関係グラフ」「Twin ビュー」「空間ビュー」のもの（key は問わない）。
 //  - グラフ: ノード `[data-testid="graph-node"][data-entity-id]` は属性 data-node-type（種別）・data-shape（形またはアイコンの名前）を持ち、種別名を文字でも含む。
 //    エッジ `[data-testid="graph-edge"]` は data-from・data-to・data-meaning（意味の種類）・data-direction="forward"（矢印）を持ち、意味ラベルの文字を含む。
 //    絞り込みは group「種別」「意味の種類」内の checkbox（属性 data-filter-value に値）。
 //  - Twin: 流れ `[data-testid="twin-flow"]` は data-flow-kind="data|control"・data-from・data-to・data-line-style を持ち、文字「Data」または「Control」と件数を含む。
 //    層 `[data-testid="twin-layer-<operations|experience|insights|none>"]`。注記 text「表示のみ（実機へは送信しません）」と「パックの値（リアルタイムではありません）」。
-//  - 空間: ズーム階層の表示 `[data-testid="zoom-level"]`（data-depth = 0..4）、button「ズームイン」。項目 `[data-entity-id]` は data-kind（site|floor|room）を持つ。
+//  - 空間: ズーム階層の表示 `[data-testid="zoom-level"]`（data-depth = 0..4）、button「拡大」。項目 `[data-entity-id]` は data-kind（site|floor|room）を持つ。
 //    3D のフロアは data-floor-state="selected|dimmed"、カメラは t.scene.camera() の projection==='orthographic'（等角投影）。
 //  - パックの任意項目は FR-241 の名前: entities[].layer、flows[]（from・to・kind=data|control・label）、空間は entities[].kind=floor|room の parentId 階層。
 import type { Page, Locator } from '@playwright/test';
@@ -194,7 +194,7 @@ test.describe('FR-240 空間ビュー', () => {
     await start({ pack: spatialPack() });
     const { c } = await openByName(page, '空間ビュー');
     const level = c.getByTestId('zoom-level');
-    const zoomIn = c.getByRole('button', { name: 'ズームイン' });
+    const zoomIn = c.getByRole('button', { name: '拡大' });
     const kindsAt = async () => new Set(await c.locator('[data-entity-id][data-kind]').evaluateAll((els) => els.map((e) => e.getAttribute('data-kind'))));
     await expect(level).toHaveAttribute('data-depth', '0');
     const expected: Array<[number, string[]]> = [[1, ['site']], [2, ['floor']], [3, ['room']]];

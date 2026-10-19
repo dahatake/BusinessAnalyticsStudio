@@ -80,7 +80,8 @@ export async function chooseView(page: Page, c: Locator, item: '2D' | '3D' | '�
 
 /** 表示の状態（CONTRACT.md §6・§21 のフック `t.view.state(key)`） */
 export interface ViewState {
-  mode: '2d' | '3d';
+  /** 表示形式（FR-238 で 'graph' を足した。Graph を持たない画面は '2d'|'3d' のみ） */
+  mode: '2d' | '3d' | 'graph';
   world: 'real' | 'digital' | 'both';
   itemIds: string[];
   selectedIds: string[];
