@@ -248,7 +248,13 @@
     "AC-514": "sha256:e4bcac6a9a96620a",
     "AC-562": "sha256:969ce571fa534934",
     "AC-555": "sha256:fe47980480f5bdaf",
-    "AC-557": "sha256:a3c7bc01f22f9d62"
+    "AC-557": "sha256:a3c7bc01f22f9d62",
+    "AC-549": "sha256:01b6831c02ec87a4",
+    "AC-554": "sha256:677cf952b7bd9f66",
+    "AC-566": "sha256:4e016ecf4369a594",
+    "AC-568": "sha256:b7a95992b45217ae",
+    "AC-571": "sha256:9874b9b2370c8c1d",
+    "AC-572": "sha256:a4807895f7152c20"
   },
   "cases": [
     {
@@ -7275,6 +7281,156 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "run 202610192300: FR-237 AC-557 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-330",
+      "requirement_ids": [
+        "FR-236"
+      ],
+      "ac_ids": [
+        "AC-549"
+      ],
+      "title": "ビジネス関係グラフ: エッジの矢印と意味ラベル・ノード種別の形/アイコン区別（色だけに頼らない）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-549",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-19T23:55:47+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-331",
+      "requirement_ids": [
+        "FR-236"
+      ],
+      "ac_ids": [
+        "AC-554"
+      ],
+      "title": "ビジネス関係グラフ: 選択の他画面連動・種別/意味の絞り込み・世界の表示での絞り込みと選択保持",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-554",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-19T23:55:51+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-332",
+      "requirement_ids": [
+        "FR-239"
+      ],
+      "ac_ids": [
+        "AC-566"
+      ],
+      "title": "Twin ビュー: 現実世界・三つの層・層なし枠・Data/Control の流れの向き/線種/文字の区別",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-566",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-19T23:55:55+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-333",
+      "requirement_ids": [
+        "FR-239"
+      ],
+      "ac_ids": [
+        "AC-568"
+      ],
+      "title": "Twin ビュー: 設備選択でツイン関係と流れで結ばれた項目・流れが強調され他画面と連動",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-568",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-19T23:55:59+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-334",
+      "requirement_ids": [
+        "FR-240"
+      ],
+      "ac_ids": [
+        "AC-571"
+      ],
+      "title": "空間ビュー: ズームインで全体→拠点→フロア→部屋/設備→詳細の5階層と種別の切替",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-571",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-19T23:56:02+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-335",
+      "requirement_ids": [
+        "FR-240"
+      ],
+      "ac_ids": [
+        "AC-572"
+      ],
+      "title": "空間ビュー: 3Dで等角投影・フロア選択で強調と他階の薄化・選択保持",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-572",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-19T23:56:06+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
         }
       ]
     }
