@@ -51,6 +51,7 @@ async function prepareSelection(page: Page): Promise<void> {
 async function switchableScreens(page: Page): Promise<string[]> {
   const out: string[] = [];
   for (const key of await listScreenKeys(page)) {
+    if (key === 'settings') continue; // 設定はモーダルの dialog で「ビュー」を持たない（FR-223）
     const c = await gotoScreen(page, key);
     const menu = await openViewMenu(page, c);
     const two = menu.getByRole('menuitemradio', { name: '2D', exact: true });

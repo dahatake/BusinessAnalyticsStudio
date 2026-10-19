@@ -84,12 +84,13 @@ test.describe('FR-088 インクの道具', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await start();
     const s = await surface(page);
+    // 位置は 2 列（ヘッダーの折り返しでボード面が下がっても、下端の show コントロールバーに重ならないよう、縦は 200px 以内）
     const tools = ['ペン', '蛍光ペン', '直線', '矢印', '矩形', '円', '吹き出し'];
-    let y = 30;
-    for (const t of tools) {
+    for (const [i, t] of tools.entries()) {
+      const x = i < 4 ? 40 : 220;
+      const y = 30 + (i % 4) * 50;
       await tool(page, t);
-      await drawLine(page, s, [40, y], [160, y + 30]);
-      y += 50;
+      await drawLine(page, s, [x, y], [x + 120, y + 30]);
     }
     const b1 = await active(page);
     expect(b1.strokes.length + b1.items.filter((i) => i.type === 'shape').length, '各道具の結果がボードにない').toBeGreaterThanOrEqual(tools.length);

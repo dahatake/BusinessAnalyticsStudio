@@ -19,7 +19,7 @@ async function box(loc: Locator) {
 const area = (b: { width: number; height: number }) => b.width * b.height;
 
 function visibleComponents(page: Page): Locator {
-  return page.getByTestId('workspace').locator('[data-testid^="component-"]:not([data-testid="component-menu"])');
+  return page.getByTestId('workspace').locator('[data-testid^="component-"]:not([data-testid="component-menu"]):not([data-testid="component-actions"])');
 }
 async function keys(page: Page): Promise<string[]> {
   const all = visibleComponents(page);
@@ -33,7 +33,7 @@ async function keys(page: Page): Promise<string[]> {
 /** 祖先に component-*（component-menu を除く）がある要素を除いた、直下のコンポーネントだけ。 */
 async function topKeys(page: Page): Promise<string[]> {
   return page.getByTestId('workspace').evaluate((ws) => {
-    const sel = '[data-testid^="component-"]:not([data-testid="component-menu"])';
+    const sel = '[data-testid^="component-"]:not([data-testid="component-menu"]):not([data-testid="component-actions"])';
     const out: string[] = [];
     ws.querySelectorAll(sel).forEach((el) => {
       const parent = el.parentElement?.closest(sel);
