@@ -27,6 +27,8 @@ import { KpiOkrScreen } from './KpiOkrScreen';
 import { UseCaseScreen } from './UseCaseScreen';
 import { DataCatalogScreen } from './DataCatalogScreen';
 import { SourcesScreen } from './SourcesScreen';
+import { Flow24Regular } from '@fluentui/react-icons';
+import { BusinessGraphScreen } from './BusinessGraphScreen';
 import { ChatScreen } from '../ai/ChatScreen';
 import '../analysis/commands';
 
@@ -53,6 +55,7 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'matrix', label: '2×2 マトリクス', icon: DataScatter24Regular, component: MatrixScreen, view: { has2D: true, has3D: true, ...tableWorldDecl(['課題', '解決策']), kinds: ['issue', 'solution'] } },
   { key: 'ranking', label: 'ランキング表', icon: TextNumberListLtr24Regular, component: RankingScreen, view: { has2D: true, has3D: true, ...tableWorldDecl(['課題', '解決策']), kinds: ['issue', 'solution'] } },
   { key: 'knowledge-graph', label: 'ナレッジグラフ', icon: Organization24Regular, component: KnowledgeGraphScreen, view: { has2D: true, has3D: true, world: 'items' } },
+  { key: 'business-graph', label: 'ビジネス関係グラフ', icon: Flow24Regular, component: BusinessGraphScreen, view: { has2D: true, has3D: false, world: 'items' } },
   { key: 'architecture', label: 'アーキテクチャ図', icon: Layer24Regular, component: ArchitectureScreen, view: { has2D: true, has3D: true, ...tableWorldDecl(['アーキテクチャ']), kinds: ['architecture'] } },
   { key: 'discussion-tree', label: '議論ツリー', icon: TextBulletListTree24Regular, component: DiscussionTreeScreen, view: { has2D: true, has3D: true, ...tableWorldDecl(['議論ツリー']), kinds: [] } },
   { key: 'table', label: '一覧表', icon: Table24Regular, component: TableScreen, view: { has2D: true, has3D: true, world: 'items' } },
