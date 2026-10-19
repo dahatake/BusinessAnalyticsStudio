@@ -46,7 +46,10 @@ export function installEscapeClear(): () => void {
       editable: isEditableTarget(e.target),
       hasSelection: useSelectionStore.getState().selectedIds.length > 0,
     });
-    if (clear) useSelectionStore.getState().clear({ origin: 'keyboard' });
+    if (clear) {
+      useSelectionStore.getState().clear({ origin: 'keyboard' });
+      useSelectionStore.getState().setHover(null); // FR-227: 解除で、強調（ホバー含む）を全部元に戻す
+    }
   };
   window.addEventListener('keydown', onCapture, true);
   window.addEventListener('keydown', onBubble);
