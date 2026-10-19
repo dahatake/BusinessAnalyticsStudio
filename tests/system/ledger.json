@@ -245,7 +245,13 @@
     "AC-499": "sha256:737e480ca6126b4b",
     "AC-503": "sha256:5bad05d89a9be885",
     "AC-501": "sha256:d20565407fd62f48",
-    "AC-514": "sha256:e4bcac6a9a96620a"
+    "AC-514": "sha256:e4bcac6a9a96620a",
+    "AC-584": "sha256:9f7e4137b3e04bef",
+    "AC-585": "sha256:3e38cb21f654c9a6",
+    "AC-586": "sha256:d69c569d032e0362",
+    "AC-587": "sha256:e77ad03e7a14c4c0",
+    "AC-588": "sha256:40c70b6cd321b206",
+    "AC-589": "sha256:960a0e0e16da93a0"
   },
   "cases": [
     {
@@ -7197,6 +7203,180 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "run 202610190439: FR-219 AC-514 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-336",
+      "requirement_ids": [
+        "FR-243"
+      ],
+      "ac_ids": [
+        "AC-584"
+      ],
+      "title": "保存済みレイアウトなしで 4 つ以上を置くと主役が最大・補助と詳細が右か下・重ならず最小幅以上・再現する（各ペルソナ）。異常系: 非表示後の再表示でも重ならない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-584",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-20T05:39:18+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610200517: FR-243 AC-584 のケース（未実装・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-337",
+      "requirement_ids": [
+        "FR-243"
+      ],
+      "ac_ids": [
+        "AC-585"
+      ],
+      "title": "手で動かした A とピン止めの B は自動配置で動かず、追加分は重ならない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-585",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-20T05:39:29+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610200517: FR-243 AC-585 のケース（未実装・not_run）"
+        },
+        {
+          "at": "2026-10-20T05:40:34+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC は検証レベル integration（System Test の対象外）。実装側の結合テストで検証する。画面の E2E は参考として autolayout.spec.ts に置く"
+        }
+      ]
+    },
+    {
+      "id": "E2E-338",
+      "requirement_ids": [
+        "FR-243"
+      ],
+      "ac_ids": [
+        "AC-586"
+      ],
+      "title": "自動配置の実行・停止・取消（メニュー／キーボード）、停止後は動かない、既定に戻す、選択保持、動きの軽減で途中を省く",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-586",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-20T05:39:37+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610200517: FR-243 AC-586 のケース（未実装・not_run）"
+        },
+        {
+          "at": "2026-10-20T05:40:35+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC は検証レベル integration（System Test の対象外）。実装側の結合テストで検証する。画面の E2E は参考として autolayout.spec.ts に置く"
+        }
+      ]
+    },
+    {
+      "id": "E2E-339",
+      "requirement_ids": [
+        "FR-244"
+      ],
+      "ac_ids": [
+        "AC-587"
+      ],
+      "title": "各ペルソナで主役・補助・詳細が示され理由をメニューで確認でき、検索件数が不変。異常系: 主役はちょうど 1 つ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-587",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-20T05:39:49+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610200517: FR-244 AC-587 のケース（未実装・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-340",
+      "requirement_ids": [
+        "FR-244"
+      ],
+      "ac_ids": [
+        "AC-588"
+      ],
+      "title": "同じ対象の同じ階層が隣り合い、階層の変更がキーボードででき再読込後も保たれる",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-588",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-20T05:39:59+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610200517: FR-244 AC-588 のケース（未実装・not_run）"
+        },
+        {
+          "at": "2026-10-20T05:40:37+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC は検証レベル integration（System Test の対象外）。実装側の結合テストで検証する。画面の E2E は参考として autolayout.spec.ts に置く"
+        }
+      ]
+    },
+    {
+      "id": "E2E-341",
+      "requirement_ids": [
+        "FR-244"
+      ],
+      "ac_ids": [
+        "AC-589"
+      ],
+      "title": "未分類は補助、階層をメニューで選べ、色だけでなく文字でも分かる",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-589",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-20T05:40:09+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610200517: FR-244 AC-589 のケース（未実装・not_run）"
+        },
+        {
+          "at": "2026-10-20T05:40:38+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC は検証レベル integration（System Test の対象外）。実装側の結合テストで検証する。画面の E2E は参考として autolayout.spec.ts に置く"
         }
       ]
     }

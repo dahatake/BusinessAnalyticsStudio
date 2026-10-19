@@ -123,3 +123,8 @@
 - 操作: button「中止」（またはキャンセル）と button「続行」（出力する）。了承の記録がないときは「続行」がないか disabled。Tab だけで両方へ到達でき、Enter で押せる。確認を開いた直後のフォーカスは確認の中。
 - 了承の記録は設定画面（§ FR-181 AC-375 と同じ入力欄・button「了承を保存」）で入力する。中止したときと了承なしのときは、ダウンロード（download イベント）が 0 件。
 - 既存のエクスポート系ケース（FR-052・054・055・056・071・094、NFR-ENV-002・NFR-A11Y-002・NFR-UX-004 など）は、手順の冒頭で `recordExportConsent(page)`（support/fixtures.ts）で了承の記録を先に入力し、確認が出たら `captureDownload` / `continuePersonConfirm` が続行まで進める（出力範囲・内容の判定は変えない）。
+
+## 23. 情報の階層に基づく自動配置・階層の分類（FR-243・FR-244 AC-584〜589。autolayout.spec.ts が前提にする画面の探し方）
+- 各コンポーネント（component-<key>）に data-tier="primary|supporting|detail"（主役・補助・詳細）。階層は文字か形でも示す（色だけにしない。data-testid="tier-label" に「主役」「補助」「詳細」）。
+- 見出しのメニュー（component-menu。右クリックかキーボード）の menuitem「情報の階層」→ data-testid="tier-reason"（階層名と理由の文）。同じメニューで階層を選べる（menuitemradio「主役」「補助」「詳細」）。
+- 役割を持たないコンポーネントは data-tier="supporting"。同じ対象を示すコンポーネントは data-group の値が同じ。自動配置は menuitem「自動配置を実行」「自動配置を停止」「自動配置を取り消す」（メニューかコマンドパレット）。
