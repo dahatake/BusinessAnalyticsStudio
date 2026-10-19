@@ -50,8 +50,12 @@ import { currentTopic } from '../store/presentation';
 import { ProjectsPanel } from '../projects/ProjectsPanel';
 import { MainScreen } from '../projects/MainScreen';
 import { useMainScreen } from '../store/mainScreen';
+import { useSettingsModal } from '../store/settingsModal';
+import { SettingsDialog } from '../screens/SettingsDialog';
 
-setAvailableComponents(SCREENS.map((s) => s.key));
+// モーダルの画面（設定。FR-223）は、ワークスペースのコンポーネントではない
+const COMPONENT_SCREENS = SCREENS.filter((s) => !s.modal);
+setAvailableComponents(COMPONENT_SCREENS.map((s) => s.key));
 // 各画面の 2D・3D の表現の有無と世界区分の扱い（FR-217・FR-218）
 registerViewDecls(SCREENS);
 
@@ -97,6 +101,7 @@ export function App() {
   const motionRef = useRef({ presenting, intensity });
   motionRef.current = { presenting, intensity };
   const onSelect = useCallback((key: string) => {
+    if (SCREENS.find((s) => s.key === key)?.modal) { useSettingsModal.getState().setOpen(true); return; } // FR-223
     useStepper.getState().followScreen(key); // FR-136 AC-203: 画面に対応するステップを現在にする
     selectComponent(key, motionRef.current);
   }, []);
@@ -170,7 +175,8 @@ export function App() {
       <SelectionAnnouncer />
       <EntityBoardActions />
       <InkToolbarHost />
-      <CommandController screens={SCREENS} />
+      <CommandController screens={COMPONENT_SCREENS} />
+      <SettingsDialog />
       <AudioDirector scene={scene} />
       <ShowControlBar><ShowControlActions /></ShowControlBar>
       <ShowShortcuts />
@@ -184,7 +190,7 @@ export function App() {
         stepper={<Stepper onNavigate={onSelect} />}
         headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><AiStatus /></>}
         actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><AutoSizeSwitch /><ScreenViewButton /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /></>}
-        dock={<Dock screens={SCREENS} />}
+        dock={<Dock screens={COMPONENT_SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
       >
         {state.pack.isExample ? (
@@ -221,7 +227,7 @@ export function App() {
         <StoryHost />
         <ProjectsPanel onNavigate={onSelect} />
         <ShowStage />
-        <Workspace screens={SCREENS} />
+        <Workspace screens={COMPONENT_SCREENS} />
       </AppShell>
     </>
   );

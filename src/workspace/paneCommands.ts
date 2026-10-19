@@ -3,7 +3,7 @@
 import type { Command } from '../commands/registry';
 import type { PaneInfo } from './PaneContext';
 import { SNAP_LABEL } from './snap';
-import { PIN_MOVE_REASON, PIN_TABS_REASON } from './paneActions';
+import { PIN_MOVE_REASON, PIN_RESIZE_REASON, PIN_TABS_REASON } from './paneActions';
 import { useLayout } from '../store/layout';
 import { detect3D } from '../view/render3d';
 import { MODE_LABELS, VIEW_MODES, WORLD_VIEWS, WORLD_VIEW_LABELS, modeOptions, viewDeclOf, worldOptions } from '../view/viewModel';
@@ -52,6 +52,13 @@ export function paneCommands(current: () => PaneInfo | null, notify: (text: stri
     },
     { id: 'pane.untab', label: `タブから出す${TARGET}`, keywords: [...kw, 'タブ', 'untab'], run: on((p) => { if (p.inTabs && !p.pinned) p.untab(); }) },
     { id: 'pane.hide', label: `非表示${TARGET}`, keywords: [...kw, '非表示', 'hide'], run: on((p) => p.hide()) },
+    // 縦・横を独立に大きさを変える（FR-224 AC-522。ドラッグを使わない手段）
+    ...([['w', 1, '幅を広げる'], ['w', -1, '幅を狭める'], ['h', 1, '高さを広げる'], ['h', -1, '高さを狭める']] as const).map<Command>(([axis, dir, text]) => ({
+      id: `pane.resize.${axis}.${dir > 0 ? 'grow' : 'shrink'}`,
+      label: `${text}${TARGET}`,
+      keywords: [...kw, '大きさ', 'サイズ', 'リサイズ', 'resize'],
+      run: on((p) => (p.pinned ? notify(PIN_RESIZE_REASON) : p.resizeBy(axis, dir))),
+    })),
     // ビューの切替（FR-217・FR-218）。選べないものは変えずに理由を示す（AC-500・AC-502）
     ...VIEW_MODES.map<Command>((m) => ({
       id: `pane.view.mode.${m}`,

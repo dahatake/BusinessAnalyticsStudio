@@ -207,14 +207,32 @@ export async function gotoAndEnter(page: Page, url: string, target?: RegExp | st
 
 /** 画面の切替（ナビゲーション）。CONTRACT.md §4 の `nav-<key>` */
 export async function openScreen(page: Page, key: string): Promise<Locator> {
+  // 設定はモーダル（FR-223）。ほかの画面へ移る前に、開いている設定のモーダルを閉じる（背面の覆いが操作を遮るため）
+  if (key !== 'settings') await closeSettings(page);
+  else if (await settingsDialog(page).isVisible()) return component(page, key); // すでに開いている
   await page.getByTestId(`nav-${key}`).click();
   const c = component(page, key);
   await expect(c).toBeVisible();
   return c;
 }
 
-/** コンポーネント（パネル）。CONTRACT.md §4 の `component-<key>` */
+/** 設定のモーダル（role=dialog「設定」。FR-223 AC-519。CONTRACT.md §23） */
+export function settingsDialog(page: Page): Locator {
+  return page.getByRole('dialog', { name: '設定', exact: true });
+}
+
+/** 設定のモーダルが開いていれば Esc で閉じる。 */
+export async function closeSettings(page: Page): Promise<void> {
+  const d = settingsDialog(page);
+  if (await d.isVisible()) {
+    await d.getByRole('button', { name: '閉じる' }).click();
+    await expect(d).toBeHidden();
+  }
+}
+
+/** コンポーネント（パネル）。CONTRACT.md §4 の `component-<key>`。設定だけはモーダル（role=dialog「設定」）の中の `component-settings` */
 export function component(page: Page, key: string): Locator {
+  if (key === 'settings') return settingsDialog(page).getByTestId('component-settings');
   return page.getByTestId(`component-${key}`);
 }
 
