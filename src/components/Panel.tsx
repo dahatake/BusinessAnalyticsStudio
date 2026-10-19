@@ -49,7 +49,7 @@ const useStyles = makeStyles({
   paneBody: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minHeight: 0, minWidth: 0, overflow: 'auto', boxSizing: 'border-box', rowGap: tokens.spacingVerticalM, padding: `0 ${tokens.spacingHorizontalL} ${tokens.spacingVerticalS}` },
   maximized: { position: 'absolute', inset: 0, zIndex: 10, height: 'auto' },
   // 縁・角のつまみ（FR-224）。当たり判定は 8px 以上。ホバーで色の付いた線を見せる
-  resize: { position: 'absolute', zIndex: 3, touchAction: 'none', ':hover': { backgroundColor: tokens.colorNeutralStroke1 } },
+  resize: { position: 'absolute', zIndex: 3, touchAction: 'none', ':hover': { backgroundColor: tokens.colorNeutralStrokeAccessible } },
   resizeE: { top: '16px', right: 0, bottom: '12px', width: '8px', cursor: 'ew-resize' },
   resizeS: { left: 0, right: '12px', bottom: 0, height: '8px', cursor: 'ns-resize' },
   resizeSE: { right: 0, bottom: 0, width: '12px', height: '12px', cursor: 'nwse-resize' },
