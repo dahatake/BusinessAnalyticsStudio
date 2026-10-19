@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import { useSelectionStore, installUrlSync } from '../store/selection';
 import { useEntityGraph } from './hooks';
-import { installEscapeClear } from './keys';
+import { installBackgroundClear, installEscapeClear } from './keys';
 import { installRelationHighlight } from './relationHighlight';
 import { installRelationHighlightStyle } from './relationHighlightStyle';
 
@@ -14,7 +14,8 @@ export function SelectionController() {
     const offEsc = installEscapeClear();
     const offHl = installRelationHighlight();
     const offStyle = installRelationHighlightStyle();
-    return () => { offUrl(); offEsc(); offHl(); offStyle(); };
+    const offBg = installBackgroundClear();
+    return () => { offUrl(); offEsc(); offBg(); offHl(); offStyle(); };
   }, []);
 
   useEffect(() => {
