@@ -123,3 +123,13 @@
 - 操作: button「中止」（またはキャンセル）と button「続行」（出力する）。了承の記録がないときは「続行」がないか disabled。Tab だけで両方へ到達でき、Enter で押せる。確認を開いた直後のフォーカスは確認の中。
 - 了承の記録は設定画面（§ FR-181 AC-375 と同じ入力欄・button「了承を保存」）で入力する。中止したときと了承なしのときは、ダウンロード（download イベント）が 0 件。
 - 既存のエクスポート系ケース（FR-052・054・055・056・071・094、NFR-ENV-002・NFR-A11Y-002・NFR-UX-004 など）は、手順の冒頭で `recordExportConsent(page)`（support/fixtures.ts）で了承の記録を先に入力し、確認が出たら `captureDownload` / `continuePersonConfirm` が続行まで進める（出力範囲・内容の判定は変えない）。
+
+## 23. 画面の操作性の刷新（FR-220〜228。ux-refresh.spec.ts が前提にする画面の探し方。run 202610192037）
+- 画面の見出し（FR-220 AC-515）: `data-testid="screen-heading"` の中の button「ビュー」（名前は「ビュー」で始まる。§21 のコンポーネントの「ビュー」と同じメニュー）。左メニュー navigation「画面」に 2D/3D の切替の項目（menuitemradio「2D」「3D」・switch・名前が「3D ビュー」だけの項目）を置かない（画面「3D ビューと 2D 図面」への入口は別の名前にする）。
+- 操作アイコン（FR-222 AC-518）: §10 の `component-actions` の button「最小化」「最大化」（最大化中は「通常表示」か「元に戻す」）が見出しの右上に並び、図（svg か img）を持つ。名前はホバー・フォーカスで role=tooltip に出る。最大化中は `data-maximized="true"`、最小化中は `data-minimized="true"`。常設ボタン（「その他の操作」を除く）は 6 個以下（PARAM-073）。
+- 設定のモーダル（FR-223 AC-519）: 左メニューの `nav-settings` で role=dialog「設定」（`aria-modal="true"`、button「閉じる」）が開く。背面の覆いは `data-testid="modal-backdrop"`（透明でない背景色）。設定は `component-settings` としてワークスペースに並ばない。
+- サイズ変更（FR-224 AC-521）: コンポーネントの縁・角のつまみ `data-testid="resize-e"`（右の縁）・`resize-s`（下の縁）・`resize-se`（右下の角）。ホバーで利用できる。ドラッグで縦だけ・横だけ・両方が変わる。
+- 作業先（FR-226 AC-525）: 「[顧客名] - [プロジェクト名]」の見える文字は `work-target-menu`（§10）だけ。`work-target` を残す場合は見える同じ文字を持たず、アクセシブルな名前に作業先を含む。
+- 強調（FR-227 AC-526）: 各コンポーネントの項目 `[data-entity-id]` の `data-highlight`（selected・related・dimmed。強調なしは属性なしか空）。選択中は、項目を持つすべてのコンポーネントで、各項目が selected/related か dimmed のどちらか一方になる。解除は Esc か同じ項目の再クリック。
+- ステップ（FR-228 AC-528・529）: `stepper` の各 listitem は番号（先頭の数字）か svg/img/`data-step-icon` を持ち、ステップ間に `data-testid="step-flow"`（4 個以上）、現在のステップは `data-step-state="current"` と `aria-current="step"`。ステップの button は高さ・幅とも 44 CSS px 以上。再配置の対象のコンポーネントは `data-step-relevant="true|false"`（そのステップへの関連）、`data-step-rank`（工程の順の整数。小さいほど先）、`data-step-importance="high|normal"`、非表示のものは `data-hidden="true"`（関連しないものは非表示にしない）を持つ。
+- 既存の spec への影響（実装工程の注意）: 設定がモーダルになるため、`openScreen(page, 'settings')` と `component(page, 'settings')` を使う既存の spec（brand-settings・consent-settings・workspace-layout など）は、設定画面の探し方を role=dialog「設定」に合わせて見直す必要がある（AC の期待値は変わらない。conductor が競合として扱う）。

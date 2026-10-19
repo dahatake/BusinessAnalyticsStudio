@@ -245,7 +245,17 @@
     "AC-499": "sha256:737e480ca6126b4b",
     "AC-503": "sha256:5bad05d89a9be885",
     "AC-501": "sha256:d20565407fd62f48",
-    "AC-514": "sha256:e4bcac6a9a96620a"
+    "AC-514": "sha256:e4bcac6a9a96620a",
+    "AC-515": "sha256:a9c5be66857cbac4",
+    "AC-517": "sha256:0977b5bcad6f9c4a",
+    "AC-518": "sha256:a2820afcf2027f8e",
+    "AC-519": "sha256:808c1eb3df6b87b7",
+    "AC-521": "sha256:0f3620c4a95cec35",
+    "AC-523": "sha256:fcb5bcca0e5a3af7",
+    "AC-525": "sha256:aae7ec59f6431f78",
+    "AC-526": "sha256:972af3511eec95dd",
+    "AC-528": "sha256:a3fad302aa45bbdc",
+    "AC-529": "sha256:862c46ce942f320c"
   },
   "cases": [
     {
@@ -7197,6 +7207,256 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "run 202610190439: FR-219 AC-514 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-317",
+      "requirement_ids": [
+        "FR-220"
+      ],
+      "ac_ids": [
+        "AC-515"
+      ],
+      "title": "2D/3D 切替の一本化: 左メニューに切替の項目がなく、画面の見出しの「ビュー」で 3D の表現を持つコンポーネントが 3D・2D に切り替わる／ピン止めは対象外（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-515",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-19T20:56:46+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192037: FR-220 AC-515 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-318",
+      "requirement_ids": [
+        "FR-221"
+      ],
+      "ac_ids": [
+        "AC-517"
+      ],
+      "title": "「メニューを最小化」の文字が Light・Dark・ハイコントラストと 200% で上下とも欠けない／最小化して戻した後も欠けない（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-517",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-19T20:56:48+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192037: FR-221 AC-517 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-319",
+      "requirement_ids": [
+        "FR-222"
+      ],
+      "ac_ids": [
+        "AC-518"
+      ],
+      "title": "全コンポーネントの見出し右上に最小化・最大化のアイコン（名前・キーボード・常設 6 個以下）／狭い幅で「…」メニューとコマンドパレットに畳む（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-518",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-19T20:56:51+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192037: FR-222 AC-518 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-320",
+      "requirement_ids": [
+        "FR-223"
+      ],
+      "ac_ids": [
+        "AC-519"
+      ],
+      "title": "設定のモーダル表示: 背面が暗く操作不可・固定の大きさ・コンポーネントとして並ばない／Tab の焦点が外に出ない（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-519",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-19T20:56:53+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192037: FR-223 AC-519 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-321",
+      "requirement_ids": [
+        "FR-224"
+      ],
+      "ac_ids": [
+        "AC-521"
+      ],
+      "title": "縦横の独立したサイズ変更: 右の縁・下の縁・角のドラッグ／最小の大きさで止まる（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-521",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-19T20:56:56+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192037: FR-224 AC-521 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-322",
+      "requirement_ids": [
+        "FR-225"
+      ],
+      "ac_ids": [
+        "AC-523"
+      ],
+      "title": "Fluent 2 のコントラスト: 全画面（減光状態・設定のモーダル含む）の文字 4.5:1・UI 部品 3:1 を Light・Dark・ハイコントラストで満たす",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-523",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-19T20:56:59+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192037: FR-225 AC-523 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-323",
+      "requirement_ids": [
+        "FR-226"
+      ],
+      "ac_ids": [
+        "AC-525"
+      ],
+      "title": "「[顧客名] - [プロジェクト名]」の表記が 1 か所／Project を切り替えても 1 か所で前の表記が残らない（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-525",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-19T20:57:01+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192037: FR-226 AC-525 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-324",
+      "requirement_ids": [
+        "FR-227"
+      ],
+      "ac_ids": [
+        "AC-526"
+      ],
+      "title": "選択した項目の全コンポーネントでのハイライトと減光（件数の一致）・解除／再クリックで解除（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-526",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-19T20:57:04+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192037: FR-227 AC-526 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-325",
+      "requirement_ids": [
+        "FR-228"
+      ],
+      "ac_ids": [
+        "AC-528"
+      ],
+      "title": "業務分析ステップの見た目: 番号・流れ・44px 以上・現在のステップ／順に押しても現在は 1 つ（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-528",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-19T20:57:07+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192037: FR-228 AC-528 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-326",
+      "requirement_ids": [
+        "FR-228"
+      ],
+      "ac_ids": [
+        "AC-529"
+      ],
+      "title": "ステップのクリックでの再配置: 工程の順・重要度の大きさ・関連しないものは後ろで最小／ピン止めと手で変えた大きさは不変・消えない（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-529",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-19T20:57:12+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192037: FR-228 AC-529 のケース（実装前・not_run）"
         }
       ]
     }
