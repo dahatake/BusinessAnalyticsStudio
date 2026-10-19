@@ -21,6 +21,18 @@ export function clampInto(r: PxRect, b: Bounds): PxRect {
   return { x: Math.min(Math.max(r.x, 0), b.w - w), y: Math.min(Math.max(r.y, 0), b.h - h), w, h };
 }
 
+export type ResizeEdge = 'e' | 's' | 'se';
+
+/**
+ * 縁・角のドラッグ量（dx, dy）で、左上を動かさずに大きさだけを変える（FR-224）。縦と横は独立（'e' は横だけ、's' は縦だけ、'se' は両方）。
+ * 最小の大きさ（MIN_W × MIN_H）を下回らず、作業領域からはみ出さない。
+ */
+export function resizeRect(r: PxRect, edge: ResizeEdge, dx: number, dy: number, b: Bounds): PxRect {
+  const w = edge === 's' ? r.w : Math.max(MIN_W, Math.min(r.w + dx, Math.max(MIN_W, b.w - r.x)));
+  const h = edge === 'e' ? r.h : Math.max(MIN_H, Math.min(r.h + dy, Math.max(MIN_H, b.h - r.y)));
+  return { ...r, w, h };
+}
+
 const NONE: ReadonlySet<string> = new Set();
 const overlapsAny = (r: PxRect, others: PxRect[]): boolean => others.some((o) => overlapArea(r, o) > EPS);
 

@@ -106,7 +106,7 @@ describe('NFR-UX-018 AC-482 操作の定義の一貫性', () => {
   it('NFR-UX-018 AC-482 見出しの操作のボタンと「表で見る」は、操作の定義の名前とアイコンの種類を使う', () => {
     render(wrap(<Workspace screens={screens} />));
     focus('a');
-    const btns = within(actionsOf('a')).getAllByRole('button');
+    const btns = within(actionsOf('a')).getAllByRole('button').filter((b) => b.getAttribute('data-testid') !== 'component-menu'); // 「その他の操作」は常設ボタンに数えない（FR-222）
     for (const b of btns) {
       const id = b.getAttribute('data-action') as PaneActionId;
       expect(id, '定義を参照していないボタン').toBeTruthy();
@@ -129,7 +129,7 @@ describe('NFR-UX-018 AC-481 見出しの操作の数とコマンドパレット'
     render(wrap(<Workspace screens={screens} />));
     for (const k of ['a', 'b', 'c']) {
       focus(k);
-      const btns = within(actionsOf(k)).getAllByRole('button');
+      const btns = within(actionsOf(k)).getAllByRole('button').filter((b) => b.getAttribute('data-testid') !== 'component-menu');
       expect(btns.length).toBeLessThanOrEqual(HEADER_ACTION_LIMIT);
     }
     expect(HEADER_ACTION_LIMIT).toBe(6);
@@ -143,6 +143,8 @@ describe('NFR-UX-018 AC-481 見出しの操作の数とコマンドパレット'
       自由に動かせる配置にする: /^自由に動かせる配置の切替/, タブにまとめる: /^タブにまとめる/, 非表示: /^非表示|を非表示にする$/,
       // FR-217・FR-218 のビューの切替
       ビュー: /^ビュー: /,
+      // FR-224 AC-522 の大きさの変更
+      幅を広げる: /^幅を広げる/, 幅を狭める: /^幅を狭める/, 高さを広げる: /^高さを広げる/, 高さを狭める: /^高さを狭める/,
     };
     for (const it of items) {
       const key = Object.keys(map).find((k) => it.startsWith(k));

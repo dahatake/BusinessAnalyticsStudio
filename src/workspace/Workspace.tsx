@@ -14,8 +14,8 @@ import { MIN_COMPONENT_WIDTH, applyAutoSize, fitMinWidth } from './autosize';
 import { PERSONA_PRIMARY } from './persona';
 import { PaneContext, type PaneInfo } from './PaneContext';
 import { COMPACT_CELL_HEIGHT, isCompactWidth, stackedLeaves } from './compact';
-import { clampInto, placeNew, resolveAround, resolveOverlaps, type PxMap, type PxRect } from './freeLayout';
-import { PIN_MOVE_REASON, PIN_NO_ROOM_REASON, PIN_TABS_REASON } from './paneActions';
+import { clampInto, placeNew, resizeRect, resolveAround, resolveOverlaps, type PxMap, type PxRect, type ResizeEdge } from './freeLayout';
+import { NO_RESIZE_REASON, PIN_MOVE_REASON, PIN_NO_ROOM_REASON, PIN_RESIZE_REASON, PIN_TABS_REASON } from './paneActions';
 import { paneCommands } from './paneCommands';
 import { registerCommands } from '../commands/registry';
 
@@ -429,6 +429,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       mergeInto: (t) => (pinned || pinSet.has(t) ? announce(PIN_TABS_REASON) : a.mergeTabs(key, t)),
       untab: () => (pinned ? announce(PIN_TABS_REASON) : a.untab(key)),
       startDrag: (e) => startDrag(key, e),
+      resizeBy: (axis, dir) => resizeByStep(key, axis, dir),
+      startResize: (edge, e) => startResize(key, edge, e),
     };
   };
 
@@ -699,6 +701,46 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     // タブ化の相手にピン止めしたものを選ばない（FR-216 AC-496・AC-505）
     if (opts.tabTarget === key || (opts.tabTarget && pinSet.has(opts.tabTarget))) opts.tabTarget = keysOf(layout).find((k) => k !== key && !pinSet.has(k));
     return { edges: useEdges, kind, opts, px: edges.length > 0 ? x : prev!.px, py: edges.length > 0 ? y : prev!.py };
+  };
+
+  /** キーボード・コマンドでの大きさの変更（FR-224 AC-522）。縦・横を独立に、作業領域の 5% ずつ変える */
+  const resizeByStep = (key: string, axis: 'w' | 'h', dir: 1 | -1) => {
+    if (pinSet.has(key)) { announce(PIN_RESIZE_REASON); return; }
+    const m = measureAll();
+    const r = m?.rects[key];
+    if (!m || !r) { announce(NO_RESIZE_REASON); return; }
+    const step = (axis === 'w' ? m.bounds.w : m.bounds.h) * 0.05 * dir;
+    const target = resizeRect(r, axis === 'w' ? 'e' : 's', axis === 'w' ? step : 0, axis === 'h' ? step : 0, m.bounds);
+    commitFree(key, target, m);
+  };
+
+  /** 縁・角のドラッグで、縦横を独立に大きさを変える（FR-224 AC-521）。ぶつかるものは押し出す（FR-184） */
+  const startResize = (key: string, edge: ResizeEdge, e: { button: number; clientX: number; clientY: number }) => {
+    if (e.button !== 0) return;
+    if (pinSet.has(key)) { announce(PIN_RESIZE_REASON); return; }
+    const start = measureAll();
+    const self = start?.rects[key];
+    if (!start || !self) { announce(NO_RESIZE_REASON); return; }
+    const sx = e.clientX;
+    const sy = e.clientY;
+    useLayout.getState().raise(key);
+    const stop = () => {
+      window.removeEventListener('pointermove', onMove, true);
+      window.removeEventListener('pointerup', stop, true);
+      window.removeEventListener('pointercancel', stop, true);
+      document.body.style.userSelect = '';
+      onResizeActive(false);
+    };
+    const onMove = (ev: globalThis.PointerEvent) => {
+      const target = resizeRect(self, edge, ev.clientX - sx, ev.clientY - sy, start.bounds);
+      const next = resolveAround({ ...start.rects, [key]: target }, key, start.bounds, pinSet);
+      if (next) actions().setFloats(toFractions(next, start.bounds));
+    };
+    document.body.style.userSelect = 'none';
+    onResizeActive(true);
+    window.addEventListener('pointermove', onMove, true);
+    window.addEventListener('pointerup', stop, true);
+    window.addEventListener('pointercancel', stop, true);
   };
 
   /** 見出しのドラッグでコンポーネントを動かす。置ける場所を移動中に示し、Esc で中止する（FR-142 AC-224）。 */
