@@ -195,6 +195,9 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
       data-maximized={pane?.maximized ? 'true' : undefined}
       data-expanded={pane?.expanded ? 'true' : undefined}
       data-minimized={minimized ? 'true' : undefined}
+      data-step-relevant={pane?.step ? String(pane.step.relevant) : undefined}
+      data-step-rank={pane?.step ? pane.step.rank : undefined}
+      data-step-importance={pane?.step?.importance}
     >
       {pane ? (
         // 掴み場所（ハンドル）: ドラッグで移動し、ダブルクリックで 75% 表示にする。本体では行わない（FR-183）
