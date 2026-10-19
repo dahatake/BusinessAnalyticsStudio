@@ -3,7 +3,7 @@
 import JSZip from 'jszip';
 import path from 'node:path';
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, entity, hook, captureDownload, recordExportConsent, setEditMode, measureFrameTimes, saveEvidence, gotoAndEnter } from '../support/fixtures';
+import { test, expect, openScreen, component, entity, hook, captureDownload, recordExportConsent, setEditMode, closeSettings, measureFrameTimes, saveEvidence, gotoAndEnter } from '../support/fixtures';
 import { examplePack } from '../support/packs';
 
 const mono = examplePack('mono');
@@ -181,6 +181,7 @@ test.describe('FR-091 ツールバーとプレゼン中の注釈', () => {
     await start();
     const settings = await openScreen(page, 'settings');
     await settings.getByRole('radio', { name: '左利き' }).check();
+    await closeSettings(page); // 設定はモーダル（FR-223）
     await surface(page);
     const tb = page.getByRole('toolbar', { name: 'インクの道具' });
     const tbb = (await tb.boundingBox())!;
