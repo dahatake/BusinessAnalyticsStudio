@@ -255,9 +255,14 @@ test.describe('FR-222 画面コンポーネント右上の操作アイコン', (
     for (const key of await listScreenKeys(page)) {
       if (key === 'settings') continue; // モーダルの設定は対象外（FR-223）
       await gotoScreen(page, key);
+      let shown = 0;
       for (const k of await topKeys(page)) {
         const c = component(page, k);
+        // FR-143 の自動サイズ調整が先の focus でタブをまとめ直すと、後の部品は非表示のタブ内になる。表示中のものだけを対象にする
+        if (!(await c.isVisible())) continue;
         await c.focus();
+        if (!(await c.isVisible())) continue; // focus 後にも再確認
+        shown++;
         const a = actions(c);
         await expect(a, `${key}/${k}: 見出しに操作アイコンがない`).toBeVisible();
         const ab = await box(a);
@@ -273,6 +278,7 @@ test.describe('FR-222 画面コンポーネント右上の操作アイコン', (
         const permanent = await a.getByRole('button').evaluateAll((els) => els.filter((e) => !/その他の操作/.test(e.getAttribute('aria-label') ?? e.textContent ?? '')).length);
         expect(permanent, `${key}/${k}: 常設ボタンが多い`).toBeLessThanOrEqual(MAX_PERMANENT_BUTTONS);
       }
+      expect(shown, `${key}: 表示中の画面コンポーネントが 1 つもない`).toBeGreaterThanOrEqual(1);
     }
     // 1 つのコンポーネントで、名前（ホバー・フォーカス）と結果（FR-151 最小化・FR-013 最大化）とキーボード操作を確かめる
     const c = await openScreen(page, 'canvas');
