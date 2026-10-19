@@ -24,7 +24,10 @@
     {"name": "画面画像manifestの必須主要要素", "required": false, "type": "text", "note": "現行の自由記述の補足欄"},
     {"name": "選択の方式", "required": false, "type": "text", "note": "現行の自由記述の補足欄"},
     {"name": "優先度と FR-1012 の関係", "required": false, "type": "text", "note": "現行の自由記述の補足欄"},
-    {"name": "配置先", "required": false, "type": "text", "note": "現行の自由記述の補足欄"}
+    {"name": "配置先", "required": false, "type": "text", "note": "現行の自由記述の補足欄"},
+    {"name": "欠番", "required": false, "type": "text", "note": "現行の自由記述の補足欄"},
+    {"name": "競合の解決", "required": false, "type": "text", "note": "現行の自由記述の補足欄"},
+    {"name": "前提・制約", "required": false, "type": "text", "note": "現行の自由記述の補足欄"}
   ],
   "ac_fields": [
     {"name": "検証レベル", "required": true, "type": "enum", "allowed": ["system", "integration", "unit", "manual"]},
