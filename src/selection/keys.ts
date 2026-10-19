@@ -29,6 +29,35 @@ export function isOverlayOpen(root: ParentNode = document): boolean {
   return root.querySelector(OVERLAY) !== null;
 }
 
+const INTERACTIVE = '[data-entity-id],button,input,textarea,select,a,summary,label,[contenteditable="true"],[role="button"],[role="menuitem"],[role="menuitemradio"],[role="option"],[role="tab"],[role="switch"],[role="checkbox"],[role="combobox"],[role="slider"],[role="row"],[role="link"],[draggable="true"],[data-testid^="resize-"],[data-testid="panel-handle"],canvas,svg';
+const BACKGROUND = '[data-testid="panel-body"],[data-testid="workspace"]';
+
+/** 背景（ペイン本文・ワークスペースの空白）のクリックか。項目・操作部品・つまみ・ドラッグ終了は対象外（FR-227） */
+export function isBackgroundClick(target: EventTarget | null, moved = false): boolean {
+  if (moved || !(target instanceof Element)) return false;
+  if (target.closest(INTERACTIVE)) return false;
+  return target.closest(BACKGROUND) !== null;
+}
+
+/** 空白のクリックで選択を解除する。ドラッグ（4px 超の移動）や文字の範囲選択の後は解除しない。戻り値で解除。 */
+export function installBackgroundClear(): () => void {
+  if (typeof document === 'undefined') return () => undefined;
+  let down: { x: number; y: number } | null = null;
+  const onDown = (e: PointerEvent) => { down = { x: e.clientX, y: e.clientY }; };
+  const onClick = (e: MouseEvent) => {
+    const moved = down !== null && Math.hypot(e.clientX - down.x, e.clientY - down.y) > 4;
+    down = null;
+    if (useSelectionStore.getState().selectedIds.length === 0) return;
+    if (window.getSelection?.()?.toString()) return;
+    if (!isBackgroundClick(e.target, moved)) return;
+    useSelectionStore.getState().clear({ origin: 'pointer' });
+    useSelectionStore.getState().setHover(null);
+  };
+  document.addEventListener('pointerdown', onDown, true);
+  document.addEventListener('click', onClick);
+  return () => { document.removeEventListener('pointerdown', onDown, true); document.removeEventListener('click', onClick); };
+}
+
 /**
  * window の Esc に、選択の解除を結び付ける。戻り値で解除（アプリで 1 回だけ呼ぶ）。
  * 捕捉の段階で「ダイアログ・メニューが開いていたか」を記録する（React が閉じた後の DOM では判定できないため）。
@@ -46,7 +75,10 @@ export function installEscapeClear(): () => void {
       editable: isEditableTarget(e.target),
       hasSelection: useSelectionStore.getState().selectedIds.length > 0,
     });
-    if (clear) useSelectionStore.getState().clear({ origin: 'keyboard' });
+    if (clear) {
+      useSelectionStore.getState().clear({ origin: 'keyboard' });
+      useSelectionStore.getState().setHover(null); // FR-227: 解除で、強調（ホバー含む）を全部元に戻す
+    }
   };
   window.addEventListener('keydown', onCapture, true);
   window.addEventListener('keydown', onBubble);

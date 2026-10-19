@@ -96,7 +96,13 @@ export function useEntityBinding(origin: string) {
   return useMemo(() => (id: string, opts: BindOptions = {}): EntityBindProps => {
     const props: EntityBindProps = { 'data-entity-id': id, 'data-highlight': highlightTokens(id, ctx, opts.filterable) };
     if (opts.interactive === false) return props;
-    props.onClick = (e) => { select(id, { origin, additive: e.ctrlKey || e.metaKey || e.shiftKey }); };
+    props.onClick = (e) => {
+      const additive = e.ctrlKey || e.metaKey || e.shiftKey;
+      const cur = useSelectionStore.getState().selectedIds;
+      // FR-227: 選択中の項目（だけ）をもう一度クリックすると解除する
+      if (!additive && cur.length === 1 && cur[0] === id) useSelectionStore.getState().clear({ origin });
+      else select(id, { origin, additive });
+    };
     props.onMouseEnter = () => setHover(id);
     props.onMouseLeave = () => setHover(null);
     return props;

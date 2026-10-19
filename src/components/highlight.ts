@@ -16,7 +16,8 @@ const useStyles = makeStyles({
     outline: `${tokens.strokeWidthThin} dashed ${tokens.colorBrandStroke1}`,
     outlineOffset: '-1px',
   },
-  dimmed: { opacity: 0.45 },
+  // FR-227: 不透明度で薄くすると文字が 4.5:1 を割るので、補助の文字色＋破線の枠で示す
+  dimmed: { color: tokens.colorNeutralForeground3, outline: `${tokens.strokeWidthThin} dashed ${tokens.colorNeutralStroke2}`, outlineOffset: '-1px' },
 });
 
 /**
