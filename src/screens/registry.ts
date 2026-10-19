@@ -67,6 +67,6 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'data-catalog', label: 'データカタログ', icon: Database24Regular, component: DataCatalogScreen, view: { has2D: true, has3D: true, ...tableWorldDecl(['データエンティティ', '企業データカタログ']), kinds: [] } },
   { key: 'whiteboard', label: 'ホワイトボード', icon: Whiteboard24Regular, component: WhiteboardScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['付箋', 'ストローク'], 'ボードの付箋・ストローク'), kinds: [] } },
   { key: 'themes', label: '議論テーマ', icon: CommentMultiple24Regular, component: ThemesScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['議論テーマ']), kinds: [] } },
-  { key: 'settings', label: '設定パネル', icon: Settings24Regular, component: SettingsScreen, view: V2 },
+  { key: 'settings', label: '設定パネル', icon: Settings24Regular, component: SettingsScreen, view: V2, modal: true },
   { key: 'chat', label: 'チャット', icon: Chat24Regular, component: ChatScreen, view: V2 },
 ];
