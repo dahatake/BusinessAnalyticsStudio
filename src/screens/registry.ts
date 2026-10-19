@@ -29,6 +29,7 @@ import { DataCatalogScreen } from './DataCatalogScreen';
 import { SourcesScreen } from './SourcesScreen';
 import { Flow24Regular } from '@fluentui/react-icons';
 import { BusinessGraphScreen } from './BusinessGraphScreen';
+import { TwinViewScreen } from './TwinViewScreen';
 import { ChatScreen } from '../ai/ChatScreen';
 import '../analysis/commands';
 
@@ -64,6 +65,7 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'drawing2d', label: '2D 図面', icon: Ruler24Regular, component: Drawing2DScreen, view: { has2D: true, has3D: false, world: 'items', fixed: true, kinds: ['entity'] } },
   { key: 'map', label: '地図', icon: Map24Regular, component: MapScreen, view: { has2D: true, has3D: true, defaultMode: '3d', world: 'items', kinds: ['entity'] } },
   { key: 'kpi-okr', label: 'KPI/OKR', icon: Target24Regular, component: KpiOkrScreen, view: { has2D: true, has3D: true, ...tableWorldDecl(['KPI', 'OKR']), kinds: [] } },
+  { key: 'twin-view', label: 'Twin ビュー', icon: Layer24Regular, component: TwinViewScreen, view: { has2D: true, has3D: true, world: 'items', kinds: ['entity'] } },
   { key: 'sources', label: '出典', icon: DocumentBulletList24Regular, component: SourcesScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['出典']), kinds: ['source'] } },
   { key: 'mock-app', label: 'ミニ・モックアプリ', icon: PhoneDesktop24Regular, component: MockAppScreen, view: V2 },
   { key: 'usecase', label: 'ユースケース', icon: Lightbulb24Regular, component: UseCaseScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['ユースケース']), kinds: [] } },
