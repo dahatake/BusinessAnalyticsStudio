@@ -30,6 +30,7 @@ export function SettingsDialog() {
       <DialogSurface aria-label="設定" className={s.surface} data-testid="settings-dialog" backdrop={{ 'data-testid': 'modal-backdrop' } as never}>
         <DialogBody className={s.body}>
           <DialogTitle
+            aria-level={1} // NFR-A11Y-009 AC-484: モーダルの最初の見出しは h1（以降の「設定パネル」h2・「ブランド」h3 と段が続く）
             action={<Button appearance="subtle" aria-label="閉じる" icon={<Dismiss24Regular aria-hidden />} onClick={() => setOpen(false)} />}
           >
             設定
