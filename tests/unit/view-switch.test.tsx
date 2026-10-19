@@ -312,9 +312,11 @@ describe('FR-217 AC-507 表現を固定したコンポーネントと既存の�
   it('FR-217 AC-507 画面の見出しの「ビュー」ボタンで 3D を選ぶと、3D の表現を持つものだけが 3D になり、ボタンの文字が変わる', async () => {
     const { ScreenViewButton } = await import('../../src/view/ViewMenu');
     render(wrap(<ScreenViewButton />));
-    fireEvent.click(screen.getByRole('button', { name: /^画面のビュー/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^ビュー/ }));
     fireEvent.click(within(await screen.findByRole('menu')).getByRole('menuitemradio', { name: '3D' }));
-    expect(screen.getByRole('button', { name: /^画面のビュー/ }).textContent).toContain('3D・両方');
+    expect(screen.getByRole('button', { name: /^ビュー/ }).textContent).toContain('3D・両方');
+    // FR-220 AC-515: 画面の見出し（screen-heading）の中にある「ビュー」ボタンで、左メニューの項目ではない
+    expect(screen.getByTestId('screen-heading').contains(screen.getByRole('button', { name: /^ビュー/ }))).toBe(true);
     expect(viewStateOf('g').mode).toBe('3d');
     expect(viewStateOf('s').mode).toBe('2d');
     expect(viewStateOf('d').mode).toBe('2d');

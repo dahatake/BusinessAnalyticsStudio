@@ -28,7 +28,7 @@ describe('FR-144 起動後のデモ／実プロジェクトの選択', () => {
     expect(labels).toContain('合成株式会社A / 業務改善 2026');
     expect(labels).toContain('合成株式会社A / 在庫最適化');
     // 作業先の表示
-    expect(workTargetLabel(p1, st().projects, st().companies)).toBe('合成株式会社A / 業務改善 2026');
+    expect(workTargetLabel(p1, st().projects, st().companies)).toBe('合成株式会社A - 業務改善 2026') // FR-226 AC-525;
     expect(workTargetLabel(null, st().projects, st().companies)).toBe('デモ');
   });
 
