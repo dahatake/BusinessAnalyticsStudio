@@ -2,6 +2,8 @@
 // 色・文字・余白・角丸・線の太さ・影・動きは、ここ（とテーマ）だけで定義し、画面と部品はトークンを参照する（AC-475・AC-479）。
 // 値の出典は Fluent 2（SRC-024 の Typography・Layout・Shapes・Elevation・Motion）と Fluent UI React v9 のトークン。
 import { tokens, typographyStyles, type Theme } from '@fluentui/react-components';
+import { contrastRatio, ensureContrast, isHexColor, MIN_CONTRAST_TEXT, MIN_CONTRAST_UI } from './brand';
+import { CONTRAST_PAIRS } from './stateTokens';
 
 export { tokens, typographyStyles };
 
@@ -131,6 +133,23 @@ export function forcedColorsTheme(theme: Theme): Theme {
     else if (/Disabled/.test(k)) out[k] = 'GrayText';
     else if (/Link/.test(k)) out[k] = 'LinkText';
     else if (/Foreground|Stroke|Border/.test(k)) out[k] = /Inverted/.test(k) ? 'Canvas' : 'CanvasText';
+  }
+  return out as unknown as Theme;
+}
+
+/**
+ * コントラストの補正（FR-225 AC-523）。stateTokens.ts の前景・背景の組が、文字 4.5:1・UI 部品 3:1 に届かないトークンがあれば、
+ * 前景のトークンを背景に対して基準を満たす最も近い明るさへ寄せる（ブランド色を変えた場合も同じ）。ハイコントラストは OS の色なので対象外。
+ */
+export function withContrastFixes(theme: Theme): Theme {
+  const out = { ...theme } as unknown as Record<string, string | undefined>;
+  for (const p of CONTRAST_PAIRS) {
+    const need = p.kind === 'text' ? MIN_CONTRAST_TEXT : MIN_CONTRAST_UI;
+    const fg = out[p.fg];
+    const bg = out[p.bg];
+    if (!fg || !bg || !isHexColor(fg) || !isHexColor(bg)) continue;
+    if (contrastRatio(fg, bg) >= need) continue;
+    out[p.fg] = ensureContrast(fg, bg, need).color;
   }
   return out as unknown as Theme;
 }
