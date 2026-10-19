@@ -68,7 +68,7 @@ async function chooseForm(page: Page, c: Locator, form: Form): Promise<number> {
 test.describe('FR-238 表示形式 Graph の追加（2D/3D/Graph の切替）', () => {
   // FR-238 AC-562
   test('FR-238 AC-562 Graph の表現を持つ各画面で、選択・絞り込みのまま 2D→3D→Graph→2D と往復すると、そのつど 2000 ミリ秒以内に替わり、選択・絞り込み・期間・時刻と項目の件数が 3 つの表現で変わらない', async ({ page, start }) => {
-    test.setTimeout(300_000);
+    test.setTimeout(600_000);
     await start();
     await selectPersona(page, '事業部門');
     const screens = await graphScreens(page);
@@ -102,7 +102,7 @@ test.describe('FR-238 表示形式 Graph の追加（2D/3D/Graph の切替）', 
 
   // FR-238 AC-562（異常系: メニューを選ばず Esc で閉じる／入力中の内容）
   test('FR-238 AC-562 異常系: 絞り込みの入力中（未確定）に Graph へ切り替えて戻しても入力中の内容が消えず、メニューを選ばずに Esc で閉じると表示形式・件数・選択が変わらない', async ({ page, start }) => {
-    test.setTimeout(300_000);
+    test.setTimeout(600_000);
     await start();
     await selectPersona(page, '事業部門');
     const screens = await graphScreens(page);

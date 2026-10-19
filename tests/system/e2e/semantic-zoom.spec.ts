@@ -1,8 +1,11 @@
 // System Test: 意味的ズーム（全体→要素→詳細。FR-237）。期待値は docs/requirements/graph-twin.md の受入基準（AC-555・AC-557）だけから決める。
 // 画面の探し方は CONTRACT.md の「意味的ズーム（FR-237）」節。まだ実装がない間は失敗するのが正常（not_run → 実装後に pass）。
 // 対象画面の key: business-graph（ビジネス関係グラフ）・twin-view（Twin ビュー）・spatial-view（空間ビュー）・data-catalog（データビュアーを含む）。
+import fs from 'node:fs';
+import path from 'node:path';
 import type { Page, Locator } from '@playwright/test';
 import { test, expect, selectPersona, openScreen, component, hook } from '../support/fixtures';
+import { TMP_DIR } from '../support/paths';
 import { gotoScreen, openViewMenu, viewButton } from '../support/screens';
 
 type Level = 'overview' | 'element' | 'detail';
@@ -13,6 +16,52 @@ const ZOOM_SCREENS = ['business-graph', 'twin-view', 'spatial-view', 'data-catal
 /** ズームの対象の面（データビュアーは data-catalog の中の data-viewer。ほかは画面そのもの） */
 function zoomRoot(page: Page, key: string): Locator {
   return key === 'data-catalog' ? page.getByTestId('data-viewer') : component(page, key);
+}
+
+const PV_COMPANY = '合成株式会社Z';
+const PV_PROJECT = 'ZM案件1';
+
+/**
+ * データビュアーを出す正規の手順（FR-104・FR-169。お手本パックの data-catalog は「Project を開くと…」の空表示で、
+ * Project を開き、ユースケースを登録して、列つきの企業データカタログを取り込むと data-viewer が出る。data-viewer.spec.ts と同じ流儀）。
+ * 戻り値は取り込んだ先頭エンティティの名称（data-catalog の項目 ID は名称キー）。
+ */
+async function prepareDataViewer(page: Page): Promise<string> {
+  await page.getByRole('button', { name: '企業を登録' }).click();
+  let dlg = page.getByRole('dialog');
+  await dlg.getByRole('textbox', { name: '企業名' }).fill(PV_COMPANY);
+  await dlg.getByRole('button', { name: '登録' }).click();
+  await expect(dlg).toBeHidden();
+  await page.getByRole('region', { name: `企業 ${PV_COMPANY}` }).getByRole('button', { name: 'Project を作成' }).click();
+  dlg = page.getByRole('dialog');
+  await dlg.getByRole('textbox', { name: 'Project 名' }).fill(PV_PROJECT);
+  await dlg.getByRole('button', { name: '作成' }).click();
+  await expect(dlg).toBeHidden();
+  await page.getByRole('region', { name: `企業 ${PV_COMPANY}` }).getByRole('link', { name: PV_PROJECT }).click();
+  await expect(page.getByTestId('stepper')).toBeVisible();
+  await page.getByTestId('stepper').getByRole('button', { name: 'ユースケース作成' }).click();
+  const cand = page.getByTestId('usecase-candidates').getByRole('listitem').first();
+  await expect(cand).toBeVisible();
+  await cand.getByRole('button', { name: '登録', exact: true }).click();
+  await expect(page.getByTestId('usecase-list').getByRole('listitem').first()).toBeVisible();
+  await openScreen(page, 'data-catalog');
+  const rows = page.getByTestId('entity-list').getByRole('listitem');
+  await expect(rows.first()).toBeVisible();
+  const n = await rows.count();
+  const items: { name: string; description: string; columns: { name: string; type: string }[] }[] = [];
+  for (let i = 0; i < n; i++) {
+    items.push({
+      name: ((await rows.nth(i).getAttribute('data-entity-name')) ?? '').trim(),
+      description: ((await rows.nth(i).getAttribute('data-entity-description')) ?? '').trim(),
+      columns: ['合成列A', '合成列B'].map((c) => ({ name: c, type: 'string' })),
+    });
+  }
+  fs.mkdirSync(TMP_DIR, { recursive: true });
+  const file = path.join(TMP_DIR, 'sz-columns.json');
+  fs.writeFileSync(file, JSON.stringify({ entities: items }), 'utf8');
+  await page.getByLabel('企業データカタログのファイル').setInputFiles(file);
+  await expect(page.getByTestId('data-viewer'), '取り込み後にデータビュアーが出ない').toBeVisible();
+  return items[0].name;
 }
 
 const levelOf = async (root: Locator) => (await root.getAttribute('data-zoom-level')) as Level | null;
@@ -129,7 +178,18 @@ test.describe('FR-237 意味的ズーム（全体→要素→詳細）', () => {
     expect(selectedId).toBeTruthy();
 
     for (const key of ZOOM_SCREENS) {
-      const c = await gotoScreen(page, key);
+      let wantId = selectedId;
+      let c: Locator;
+      if (key === 'data-catalog') {
+        // データビュアーは Project を開いて列つきカタログを取り込んで出す。項目 ID は名称キーなので、ビュアー側で同じ項目を選び直す
+        wantId = await prepareDataViewer(page);
+        c = await gotoScreen(page, key);
+        await expect(zoomRoot(page, key)).toBeVisible();
+        await zoomTo(zoomRoot(page, key), 'element');
+        await zoomRoot(page, key).locator(`[data-viewer-entity="${wantId}"]`).click();
+      } else {
+        c = await gotoScreen(page, key);
+      }
       const root = zoomRoot(page, key);
       await expect(root, `${key}: ズームの対象の面が表示されない`).toBeVisible();
       for (const f of ['2D', '3D', 'Graph'] as Format[]) {
@@ -144,7 +204,7 @@ test.describe('FR-237 意味的ズーム（全体→要素→詳細）', () => {
           if (f === 'Graph') await expect(root.locator('[data-zoom-surface="graph"]').first(), `${where}: Graph の面がない`).toBeVisible();
           expect(((await root.innerText()) ?? '').trim().length, `${where}: 画面の内容が空`).toBeGreaterThan(0);
           const st = await hook<{ selectedIds: string[] }>(page, 't.view.state(a)', key);
-          expect(st.selectedIds, `${where}: 同じ選択項目が表示されない`).toContain(selectedId);
+          expect(st.selectedIds, `${where}: 同じ選択項目が表示されない`).toContain(wantId);
         }
       }
     }
@@ -165,6 +225,7 @@ test.describe('FR-237 意味的ズーム（全体→要素→詳細）', () => {
     await start();
     await selectPersona(page, '事業部門');
     for (const key of ZOOM_SCREENS) {
+      if (key === 'data-catalog') await prepareDataViewer(page);
       const c = await gotoScreen(page, key);
       const root = zoomRoot(page, key);
       const menu = await openViewMenu(page, c);
