@@ -37,6 +37,7 @@ const useStyles = makeStyles({
     borderRadius: tokens.borderRadiusCircular,
     border: `${tokens.strokeWidthThick} solid currentColor`,
     fontSize: tokens.fontSizeBase200,
+    lineHeight: tokens.lineHeightBase200, // NFR-UX-015 AC-476: 12px は 16px の行の高さ（文字の段）
     flexShrink: 0,
   },
   flow: { display: 'inline-flex', alignItems: 'center', color: tokens.colorNeutralForeground3 },
