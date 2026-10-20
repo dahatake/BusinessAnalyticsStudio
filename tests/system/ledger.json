@@ -3974,9 +3974,9 @@
       "command": "node tests/system/run.mjs AC-246",
       "canary": false,
       "status": "fail",
-      "last_commit": "57a3ab6",
-      "last_run_at": "2026-10-20T07:38:42+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-226-202610200734.log",
+      "last_commit": "dcebc64",
+      "last_run_at": "2026-10-20T10:45:56+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-226-202610201044.log",
       "history": [
         {
           "at": "2026-10-14T02:48:49+09:00",
@@ -3998,10 +3998,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-247",
       "canary": false,
-      "status": "fail",
-      "last_commit": "57a3ab6",
-      "last_run_at": "2026-10-20T07:38:42+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-227-202610200734.log",
+      "status": "pass",
+      "last_commit": "dcebc64",
+      "last_run_at": "2026-10-20T10:45:56+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-227-202610201045.log",
       "history": [
         {
           "at": "2026-10-14T02:48:51+09:00",
@@ -6364,9 +6364,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[形式:\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "fail",
-      "last_commit": "57a3ab6",
-      "last_run_at": "2026-10-20T07:38:42+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-060-202610200735.log",
+      "last_commit": "dcebc64",
+      "last_run_at": "2026-10-20T10:45:56+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-060-202610201042.log",
       "history": [
         {
           "at": "2026-10-16T08:50:57+09:00",
@@ -6401,9 +6401,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[欄を問わない\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "fail",
-      "last_commit": "57a3ab6",
-      "last_run_at": "2026-10-20T07:38:42+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-061-202610200737.log",
+      "last_commit": "dcebc64",
+      "last_run_at": "2026-10-20T10:45:56+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-061-202610201044.log",
       "history": [
         {
           "at": "2026-10-16T08:51:00+09:00",
@@ -6475,9 +6475,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[「例」行\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "fail",
-      "last_commit": "57a3ab6",
-      "last_run_at": "2026-10-20T07:38:42+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-063-202610200737.log",
+      "last_commit": "dcebc64",
+      "last_run_at": "2026-10-20T10:45:56+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-063-202610201045.log",
       "history": [
         {
           "at": "2026-10-16T08:51:05+09:00",
@@ -6512,9 +6512,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[ダミー値\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "fail",
-      "last_commit": "57a3ab6",
-      "last_run_at": "2026-10-20T07:38:42+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-064-202610200736.log",
+      "last_commit": "dcebc64",
+      "last_run_at": "2026-10-20T10:45:56+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-064-202610201042.log",
       "history": [
         {
           "at": "2026-10-16T08:51:08+09:00",
@@ -6586,9 +6586,9 @@
       "command": "node --test tests/system/integration-catalog/secrets.test.mjs --test-name-pattern=\"\\[山括弧の抜け道\\]\"",
       "canary": false,
       "status": "fail",
-      "last_commit": "57a3ab6",
-      "last_run_at": "2026-10-20T07:38:42+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-066-202610200721.log",
+      "last_commit": "dcebc64",
+      "last_run_at": "2026-10-20T10:45:56+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-066-202610201035.log",
       "history": [
         {
           "at": "2026-10-16T10:39:35+09:00",
@@ -6611,9 +6611,9 @@
       "command": "node --test tests/system/integration-catalog/secrets.test.mjs --test-name-pattern=\"\\[引用符付き\\]\"",
       "canary": false,
       "status": "fail",
-      "last_commit": "57a3ab6",
-      "last_run_at": "2026-10-20T07:38:42+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-067-202610200709.log",
+      "last_commit": "dcebc64",
+      "last_run_at": "2026-10-20T10:45:56+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-067-202610201039.log",
       "history": [
         {
           "at": "2026-10-16T10:39:39+09:00",
@@ -6636,9 +6636,9 @@
       "command": "node --test tests/system/integration-catalog/secrets.test.mjs --test-name-pattern=\"\\[BEGIN 単独行\\]\"",
       "canary": false,
       "status": "fail",
-      "last_commit": "57a3ab6",
-      "last_run_at": "2026-10-20T07:38:42+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-068-202610200709.log",
+      "last_commit": "dcebc64",
+      "last_run_at": "2026-10-20T10:45:56+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-068-202610201040.log",
       "history": [
         {
           "at": "2026-10-16T10:39:42+09:00",
@@ -6661,9 +6661,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[最小長\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "fail",
-      "last_commit": "57a3ab6",
-      "last_run_at": "2026-10-20T07:38:42+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-069-202610200738.log",
+      "last_commit": "dcebc64",
+      "last_run_at": "2026-10-20T10:45:56+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-069-202610201044.log",
       "history": [
         {
           "at": "2026-10-16T14:51:44+09:00",
@@ -6686,9 +6686,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[ダミー x の下限\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "fail",
-      "last_commit": "57a3ab6",
-      "last_run_at": "2026-10-20T07:38:42+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-070-202610200737.log",
+      "last_commit": "dcebc64",
+      "last_run_at": "2026-10-20T10:45:56+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-070-202610201044.log",
       "history": [
         {
           "at": "2026-10-16T14:51:48+09:00",
@@ -6736,9 +6736,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[Bearer 一般語の抜け道なし\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "fail",
-      "last_commit": "57a3ab6",
-      "last_run_at": "2026-10-20T07:38:42+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-072-202610200736.log",
+      "last_commit": "dcebc64",
+      "last_run_at": "2026-10-20T10:45:56+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-072-202610201045.log",
       "history": [
         {
           "at": "2026-10-16T21:20:19+09:00",
@@ -6786,9 +6786,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[使う文字 3 種\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "fail",
-      "last_commit": "57a3ab6",
-      "last_run_at": "2026-10-20T07:38:42+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-074-202610200737.log",
+      "last_commit": "dcebc64",
+      "last_run_at": "2026-10-20T10:45:56+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-074-202610201045.log",
       "history": [
         {
           "at": "2026-10-16T21:20:25+09:00",
@@ -6836,9 +6836,9 @@
       "command": "node --test --test-name-pattern \"AC-430 \\[ハッシュ桁数の外\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
       "status": "fail",
-      "last_commit": "57a3ab6",
-      "last_run_at": "2026-10-20T07:38:42+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-076-202610200738.log",
+      "last_commit": "dcebc64",
+      "last_run_at": "2026-10-20T10:45:56+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-076-202610201045.log",
       "history": [
         {
           "at": "2026-10-16T21:20:31+09:00",
@@ -6891,10 +6891,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-476",
       "canary": false,
-      "status": "fail",
-      "last_commit": "57a3ab6",
-      "last_run_at": "2026-10-20T07:38:42+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-305-202610200722.log",
+      "status": "pass",
+      "last_commit": "dcebc64",
+      "last_run_at": "2026-10-20T10:45:56+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-305-202610201035.log",
       "history": [
         {
           "at": "2026-10-17T22:06:25+09:00",
@@ -6972,10 +6972,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-483",
       "canary": false,
-      "status": "fail",
-      "last_commit": "57a3ab6",
-      "last_run_at": "2026-10-20T07:38:42+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-308-202610200715.log",
+      "status": "pass",
+      "last_commit": "dcebc64",
+      "last_run_at": "2026-10-20T10:45:56+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-308-202610201035.log",
       "history": [
         {
           "at": "2026-10-17T22:06:43+09:00",
@@ -7034,10 +7034,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-485",
       "canary": false,
-      "status": "fail",
-      "last_commit": "57a3ab6",
-      "last_run_at": "2026-10-20T07:38:42+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-310-202610200730.log",
+      "status": "pass",
+      "last_commit": "dcebc64",
+      "last_run_at": "2026-10-20T10:45:56+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-310-202610201041.log",
       "history": [
         {
           "at": "2026-10-17T22:06:57+09:00",
