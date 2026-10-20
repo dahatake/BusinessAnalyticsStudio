@@ -125,7 +125,7 @@ function DetailBody({ selection, solutions = [], products, sources, sourceId, on
   const sourceById = new Map(sources.map((x) => [x.id, x]));
   const source = sourceId ? sourceById.get(sourceId) : undefined;
   return (
-    <aside className={s.root} data-testid="component-detail" aria-label="詳細">
+    <aside className={s.root} data-testid="component-detail" data-tier="supporting" aria-label="詳細">
       <EditToolbar />
       <DraftNote />
       {!selection ? (

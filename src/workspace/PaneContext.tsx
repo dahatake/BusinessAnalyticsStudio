@@ -1,8 +1,9 @@
 // コンポーネント（パネル）がワークスペースの中にいるときの文脈と、見出しのメニュー（FR-013/FR-109）。
 import { createContext, useContext } from 'react';
-import { Button, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, Tooltip, makeStyles, tokens } from '@fluentui/react-components';
+import { Button, Menu, MenuDivider, MenuItem, MenuItemRadio, MenuList, MenuPopover, MenuTrigger, Tooltip, makeStyles, tokens } from '@fluentui/react-components';
 import { MoreHorizontal20Regular } from '@fluentui/react-icons';
 import type { Move } from './layoutModel';
+import { TIERS, TIER_LABEL, type Role, type Tier } from './tiers';
 import { SNAP_LABEL, type SnapKind } from './snap';
 import { PIN_MOVE_REASON, PIN_TABS_REASON, paneAction, type PaneActionId } from './paneActions';
 import { ComponentViewButton, ComponentViewSubmenu } from '../view/ViewMenu';
@@ -47,6 +48,22 @@ export interface PaneInfo {
   untab: () => void;
   /** ピン止めしているか（FR-215） */
   pinned: boolean;
+  /** 情報の階層（主役→補助→詳細）と、その理由・役割・グループ（FR-244）。役割のないものは補助 */
+  tier: Tier;
+  tierReason: string;
+  /** 利用者が階層を変えたか */
+  tierOverridden: boolean;
+  role?: Role;
+  group?: string;
+  /** 階層を変える（null で既定に戻す）。レイアウトとして保存される */
+  setTier: (tier: Tier | null) => void;
+  /** 自動配置が働いているか（FR-243）。止めていると、追加しても既存の配置は動かない */
+  autoOn: boolean;
+  /** 取り消せる自動配置があるか */
+  canUndoAuto: boolean;
+  autoRun: () => void;
+  autoStop: () => void;
+  autoUndo: () => void;
   /** ピン止めする／外す（FR-215） */
   togglePin: () => void;
   /** 見出しのポインター操作で移動を始める（FR-142）。キーボードの代わりはメニューと Alt+Shift+矢印キー（NFR-A11Y-004） */
@@ -56,10 +73,16 @@ export interface PaneInfo {
 export const PaneContext = createContext<PaneInfo | null>(null);
 export const usePane = (): PaneInfo | null => useContext(PaneContext);
 
-export function ComponentMenu({ pane, title }: { pane: PaneInfo; title: string }) {
+export function ComponentMenu({ pane, title, open, onOpenChange, onShowTier }: {
+  pane: PaneInfo; title: string;
+  /** 見出しの右クリック・Shift+F10 で開くため、開閉を呼び出し側から制御できる（FR-244） */
+  open?: boolean; onOpenChange?: (open: boolean) => void;
+  /** 「情報の階層」を選んだとき（階層と理由を見出しの下に示す） */
+  onShowTier?: () => void;
+}) {
   const pinNote = pane.pinned ? PIN_MOVE_REASON : undefined;
   return (
-    <Menu>
+    <Menu {...(open !== undefined ? { open, onOpenChange: (_: unknown, d: { open: boolean }) => onOpenChange?.(d.open) } : {})}>
       <MenuTrigger disableButtonEnhancement>
         <Button
           data-testid="component-menu"
@@ -70,7 +93,7 @@ export function ComponentMenu({ pane, title }: { pane: PaneInfo; title: string }
         />
       </MenuTrigger>
       <MenuPopover>
-        <MenuList>
+        <MenuList checkedValues={{ tier: [pane.tier] }} onCheckedValueChange={(_, d) => { if (d.name === 'tier') { const t = d.checkedItems[0] as Tier | undefined; if (t && (TIERS as readonly string[]).includes(t)) pane.setTier(t); } }}>
           <MenuItem onClick={pane.togglePin}>{paneAction('pin', pane.pinned).label}</MenuItem>
           <MenuItem onClick={pane.toggleMinimize}>{paneAction('minimize', pane.minimized).label}</MenuItem>
           {/* ピン止め中は動かす操作を無効にし、理由を示す（FR-216 AC-496） */}
@@ -112,6 +135,19 @@ export function ComponentMenu({ pane, title }: { pane: PaneInfo; title: string }
           ) : null}
           {pane.inTabs && !pane.pinned ? <MenuItem onClick={pane.untab}>{paneAction('untab').label}</MenuItem> : null}
           <MenuItem onClick={pane.hide}>{paneAction('hide').label}</MenuItem>
+          {/* 情報の階層（主役→補助→詳細）の確認と変更（FR-244）。階層の違いは名前（文字）で示す */}
+          <MenuDivider />
+          <MenuItem onClick={onShowTier}>情報の階層</MenuItem>
+          {TIERS.map((t) => (
+            <MenuItemRadio key={t} name="tier" value={t}>{TIER_LABEL[t]}</MenuItemRadio>
+          ))}
+          {pane.tierOverridden ? <MenuItem onClick={() => pane.setTier(null)}>階層を既定に戻す</MenuItem> : null}
+          {/* 自動配置（FR-243）。ドラッグなしで、実行・停止・取消ができる（NFR-A11Y-004） */}
+          <MenuDivider />
+          <MenuItem onClick={pane.autoRun}>自動配置を実行</MenuItem>
+          <MenuItem disabled={!pane.autoOn} onClick={pane.autoStop}>自動配置を停止</MenuItem>
+          <MenuItem disabled={!pane.canUndoAuto} onClick={pane.autoUndo}>自動配置を取り消す</MenuItem>
+          <MenuDivider />
           {/* ビューの切替（FR-217・FR-218）。見出しのボタンが隠れるときも、ここから操作できる */}
           <ComponentViewSubmenu paneKey={pane.key} />
         </MenuList>
@@ -150,7 +186,7 @@ function ActionButton({ action, on = false, pressed, onClick, disabledReason }: 
  * 見出しの操作アイコン（FR-150）。フォーカス中（または最小化中）のコンポーネントだけ、主要な操作をメニューを開かずに押せる形で並べる。
  * 狭いとき（narrow）は、アイコンを出さず「…」メニューに任せる（操作は欠けない。FR-150 AC-259）。
  */
-export function ComponentActions({ pane, title, active, narrow }: { pane: PaneInfo; title: string; active: boolean; narrow: boolean }) {
+export function ComponentActions({ pane, title, active, narrow, menu }: { pane: PaneInfo; title: string; active: boolean; narrow: boolean; menu?: { open: boolean; onOpenChange: (open: boolean) => void; onShowTier: () => void } }) {
   const s = useActionStyles();
   // アイコンは常に描き、フォーカスのないときは隠す。隠している間は押せず、Tab でも止まらない。
   // 広いときは visibility: hidden で場所を残す（フォーカスが入った瞬間に見出しの折り返しが変わり、押そうとしたボタンが動いてクリックが外れるのを防ぐ）。狭いときは display: none。
@@ -163,7 +199,7 @@ export function ComponentActions({ pane, title, active, narrow }: { pane: PaneIn
     return (
       <>
         <div className={s.actions} data-testid="component-actions"><ComponentViewButton paneKey={pane.key} /></div>
-        <ComponentMenu pane={pane} title={title} />
+        <ComponentMenu pane={pane} title={title} open={menu?.open} onOpenChange={menu?.onOpenChange} onShowTier={menu?.onShowTier} />
       </>
     );
   }
@@ -207,7 +243,7 @@ export function ComponentActions({ pane, title, active, narrow }: { pane: PaneIn
         </>
       ) : null}
     </div>
-    <ComponentMenu pane={pane} title={title} />
+    <ComponentMenu pane={pane} title={title} open={menu?.open} onOpenChange={menu?.onOpenChange} onShowTier={menu?.onShowTier} />
     </>
   );
 }

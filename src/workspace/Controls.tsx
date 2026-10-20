@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { Button, Menu, MenuItem, MenuItemRadio, MenuList, MenuPopover, MenuTrigger, Switch, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { ArrowReset20Regular, EyeOff20Regular, Person20Regular } from '@fluentui/react-icons';
 import type { ScreenDefinition } from '../screens/types';
-import { effectiveLayout, useLayout } from '../store/layout';
+import { effectiveLayout, personaKeys, useLayout } from '../store/layout';
 import { PERSONAS, keysOf, type Persona } from './layoutModel';
 
 const useStyles = makeStyles({
@@ -58,13 +58,28 @@ export function Dock({ screens }: { screens: readonly ScreenDefinition[] }) {
   const s = useStyles();
   const persona = useLayout((st) => st.persona);
   const stored = useLayout((st) => st.layouts);
+  const tiers = useLayout((st) => st.tiers);
+  const autoOff = useLayout((st) => st.autoOff);
   const show = useLayout((st) => st.showComponent);
   const hidden = useMemo(() => {
-    const visible = new Set(keysOf(effectiveLayout({ persona, layouts: stored })));
-    return screens.filter((sc) => !visible.has(sc.key));
-  }, [screens, persona, stored]);
+    const visible = new Set(keysOf(effectiveLayout({ persona, layouts: stored, tiers, autoOff })));
+    // このペルソナの構成のコンポーネントを先に並べる（非表示にしたものを、すぐ再表示できる）
+    const own = personaKeys(persona);
+    const rank = (k: string) => { const i = own.indexOf(k); return i < 0 ? own.length : i; };
+    return screens.filter((sc) => !visible.has(sc.key)).map((sc, i) => ({ sc, i })).sort((a, b) => rank(a.sc.key) - rank(b.sc.key) || a.i - b.i).map((x) => x.sc);
+  }, [screens, persona, stored, tiers, autoOff]);
   return (
     <div className={s.dock} data-testid="dock" role="group" aria-label="ドック（非表示のコンポーネント）">
+      {/* 非表示のコンポーネントの再表示ボタンを先に並べる（先頭のボタンがそのまま再表示になる）。一覧のメニューはその後ろ */}
+      {hidden.length === 0 ? <Text size={200}>なし</Text> : null}
+      {hidden.map((sc) => {
+        const Icon = sc.icon;
+        return (
+          <Button key={sc.key} className={s.dockButton} appearance="subtle" icon={<Icon aria-hidden />} onClick={() => show(sc.key)}>
+            {sc.label}を再表示
+          </Button>
+        );
+      })}
       <Menu positioning={{ position: 'after', align: 'start', autoSize: 'height', overflowBoundary: undefined, fallbackPositions: ['after-top', 'below-start'] }}>
         <MenuTrigger disableButtonEnhancement>
           <Button className={s.dockButton} appearance="subtle" icon={<EyeOff20Regular aria-hidden />} aria-label={`非表示のコンポーネント（${hidden.length} 件）`}>
@@ -78,15 +93,6 @@ export function Dock({ screens }: { screens: readonly ScreenDefinition[] }) {
           </MenuList>
         </MenuPopover>
       </Menu>
-      {hidden.length === 0 ? <Text size={200}>なし</Text> : null}
-      {hidden.map((sc) => {
-        const Icon = sc.icon;
-        return (
-          <Button key={sc.key} className={s.dockButton} appearance="subtle" icon={<Icon aria-hidden />} onClick={() => show(sc.key)}>
-            {sc.label}を再表示
-          </Button>
-        );
-      })}
     </div>
   );
 }

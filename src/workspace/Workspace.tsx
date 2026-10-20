@@ -7,16 +7,19 @@ import { useSnapMotion, motionAllowed } from '../motion/useFoldMotion';
 import { prefersReducedMotion, useAnimation } from '../store/animation';
 import { SNAP_LABEL, defaultSnapKind, nearestCorner, snapKindsFor, snapRect, type Edge, type SnapKind, type SnapOpts } from './snap';
 import type { ScreenDefinition } from '../screens/types';
-import { effectiveLayout, useLayout, clampFloat, isPinned, type FloatRect } from '../store/layout';
+import { effectiveLayout, personaKeys, useLayout, clampFloat, isPinned, type FloatRect } from '../store/layout';
 import { EXPAND_RATIO, useSettings, type ExpandPosition } from '../store/settings';
 import { keysOf, prune, type DropZone, type LayoutNode, type Path, type SplitNode } from './layoutModel';
 import { MIN_COMPONENT_WIDTH, applyAutoSize, fitMinWidth } from './autosize';
 import { PERSONA_PRIMARY } from './persona';
 import { PaneContext, type PaneInfo } from './PaneContext';
 import { COMPACT_CELL_HEIGHT, isCompactWidth, stackedLeaves } from './compact';
-import { clampInto, placeNew, resolveAround, resolveOverlaps, type PxMap, type PxRect } from './freeLayout';
+import { clampInto, overlapArea, placeNew, resolveAround, resolveOverlaps, type PxMap, type PxRect } from './freeLayout';
 import { PIN_MOVE_REASON, PIN_NO_ROOM_REASON, PIN_TABS_REASON } from './paneActions';
 import { paneCommands } from './paneCommands';
+import { autoCommands, AUTO_DONE, AUTO_STOPPED, AUTO_UNDONE, AUTO_NO_UNDO, AUTO_NO_ROOM } from './autoCommands';
+import { autoTree, treeRects } from './autoLayout';
+import { classify } from './tiers';
 import { registerCommands } from '../commands/registry';
 
 const useStyles = makeStyles({
@@ -276,7 +279,11 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   const s = useStyles();
   const persona = useLayout((st) => st.persona);
   const stored = useLayout((st) => st.layouts);
-  const base = useMemo(() => effectiveLayout({ persona, layouts: stored }), [persona, stored]);
+  const tierOverrides = useLayout((st) => st.tiers[st.persona]);
+  const autoOffMap = useLayout((st) => st.autoOff);
+  const autoUndoState = useLayout((st) => st.autoUndo);
+  const allTiers = useLayout((st) => st.tiers);
+  const base = useMemo(() => effectiveLayout({ persona, layouts: stored, tiers: allTiers, autoOff: autoOffMap }), [persona, stored, allTiers, autoOffMap]);
   const floatMap = useLayout((st) => st.floats[st.persona]);
   const zOrder = useLayout((st) => st.zOrder);
   const expandedKey = useLayout((st) => st.expanded);
@@ -321,6 +328,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   // 木の外に出して描くコンポーネント: 拡大表示中はそれ 1 つだけ（ほかは残りの領域に収める）、それ以外は自由配置したもの（FR-173・FR-174）。
   // 狭い画面（縦積み）では自由配置を使わない。
   const baseKeys = useMemo(() => new Set(keysOf(base)), [base]);
+  // コンポーネントの役割による分類と階層（主役→補助→詳細。FR-244）。ペルソナの構成と、いま表示中のものを対象にする
+  const tierInfo = useMemo(() => classify(persona, [...new Set([...personaKeys(persona), ...baseKeys])], tierOverrides), [persona, baseKeys, tierOverrides]);
   // 縮退: 幅が狭いとき、または、ピン止めの比率から求めた幅が最小の幅（PARAM-034）を下回るときは、縦積みにする（FR-216 AC-497）
   const pinTooNarrow = width > 0 && Object.entries(pinnedMap ?? {}).some(([k, r]) => baseKeys.has(k) && r.w * width < MIN_COMPONENT_WIDTH);
   const compact = narrowWs || pinTooNarrow;
@@ -371,9 +380,21 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     const zRank = zOrder.indexOf(key);
     const pinned = pinSet.has(key);
     const label = byKey(key)?.label ?? key;
+    const ti = tierInfo[key] ?? { tier: 'supporting' as const, reason: '補助: 役割が決まっていない（未分類の）ため、補助として扱い、主役の近く（右）に置きます。', overridden: false };
     return {
       key,
       pinned,
+      tier: ti.tier,
+      tierReason: ti.reason,
+      tierOverridden: ti.overridden,
+      ...(ti.role ? { role: ti.role } : {}),
+      ...(ti.group ? { group: ti.group } : {}),
+      setTier: (t) => { actions().setTier(key, t); announce(t ? `${label}の階層を変更しました` : `${label}の階層を既定に戻しました`); },
+      autoOn: !autoOffMap[persona],
+      canUndoAuto: autoUndoState?.persona === persona,
+      autoRun: () => autoRef.current.run(),
+      autoStop: () => autoRef.current.stop(),
+      autoUndo: () => autoRef.current.undo(),
       togglePin: () => {
         // ピン止めを外す: すぐに動かせる（FR-216。一時的な固定）
         if (isPinned(actions(), key)) { actions().setPinned(key, null); announce(`${label}のピン止めを外しました`); return; }
@@ -486,8 +507,53 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     const next = resolveAround({ ...m.rects, [key]: target }, key, m.bounds, pinSet);
     if (!next) { announce(PIN_NO_ROOM_REASON); return false; }
     actions().setFloats(toFractions(next, m.bounds));
+    actions().markMoved(key);
     return true;
   };
+
+  /** 自動配置の実行（FR-243）。優先は ①ピン止め ②手で動かした・大きさを変えた配置 ③自動配置。自動配置はそれ以外だけを対象にする */
+  const runAuto = () => {
+    const st = actions();
+    if (focusKey !== null && !compact) flushSync(() => setFocusKey(null));
+    st.saveAutoUndo();
+    const m = measureAll();
+    const fixedKeys = new Set([...pinSet, ...(st.moved[st.persona] ?? []), ...(st.manual[st.persona] ?? [])].filter((k) => baseKeys.has(k)));
+    if (fixedKeys.size === 0 || !m) {
+      // 固定するものがない（またはコンパクト表示）: 配置全体を階層に合わせて組み直す
+      st.runAutoTree();
+      announce(AUTO_DONE);
+      return;
+    }
+    // 固定するものがある: それらはいまの位置と大きさのまま、ほかを階層に合わせて並べ、固定したものに重なるときは押し出す
+    const free = Object.keys(m.rects).filter((k) => !fixedKeys.has(k));
+    const info = classify(st.persona, [...new Set([...personaKeys(st.persona), ...Object.keys(m.rects)])], st.tiers[st.persona]);
+    const auto = treeRects(autoTree(free, info), m.bounds);
+    let rects: PxMap = { ...auto };
+    for (const k of fixedKeys) if (m.rects[k]) rects[k] = m.rects[k]!;
+    for (const k of fixedKeys) {
+      const next = resolveAround(rects, k, m.bounds, fixedKeys);
+      if (!next) { st.undoAuto(); announce(AUTO_NO_ROOM); return; }
+      rects = next;
+    }
+    st.setAutoOff(false);
+    st.setFloats(toFractions(rects, m.bounds));
+    // 動いた分だけ、動きをつなぐ（FR-185。動きの軽減が有効なときは途中を省く）
+    setSettling(null);
+    announce(AUTO_DONE);
+  };
+  /** 自動配置の停止: いまの配置をそのまま保ち（自由配置として固定）、以後の追加で既存の配置を動かさない */
+  const stopAuto = () => {
+    const st = actions();
+    if (focusKey !== null && !compact) flushSync(() => setFocusKey(null));
+    const m = measureAll();
+    if (m && Object.keys(floatMap ?? {}).length === 0) st.setFloats(toFractions(m.rects, m.bounds));
+    st.setAutoOff(true);
+    announce(AUTO_STOPPED);
+  };
+  const undoAuto = () => announce(actions().undoAuto() ? AUTO_UNDONE : AUTO_NO_UNDO);
+  const autoRef = useRef({ run: runAuto, stop: stopAuto, undo: undoAuto });
+  autoRef.current = { run: runAuto, stop: stopAuto, undo: undoAuto };
+  useEffect(() => registerCommands(() => autoCommands({ run: () => autoRef.current.run(), stop: () => autoRef.current.stop(), undo: () => autoRef.current.undo() })), []);
 
   // 自由配置があるとき、あとから分割の木へ入ったコンポーネント（再表示など）は、空いた場所へ置く。木のものが自由配置と重ならないようにする（FR-184）
   // ピン止めしたもので、自由配置に位置がないもの（非表示から再表示したものなど）も、ピン止めした位置へ置き直す（FR-216 AC-505）
@@ -510,6 +576,10 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
         rects = resolveAround({ ...rects, [k]: at }, k, b, others) ?? resolveOverlaps({ ...rects, [k]: at }, k, b);
       } else {
         const fixed = new Set([...pinSet].filter((p) => p in rects));
+        // 非表示にする前の場所が空いていれば、そこへ戻す（ほかを動かさない。FR-243）。空いていなければ空きを探す
+        const prev = useLayout.getState().hiddenRects[useLayout.getState().persona]?.[k];
+        const back = prev ? clampInto({ x: prev.x * b.w, y: prev.y * b.h, w: prev.w * b.w, h: prev.h * b.h }, b) : null;
+        if (back && Object.values(rects).every((o) => overlapArea(back, o) <= 4)) { rects = { ...rects, [k]: back }; continue; }
         const placed = placeNew(rects, k, { w: b.w * 0.3, h: b.h * 0.4 }, b);
         // 新しく置いたものがピン止めしたものを動かしたときは、ピン止めしたものを動かさずに置き直す
         const moved = [...fixed].some((p) => placed[p]!.x !== rects[p]!.x || placed[p]!.y !== rects[p]!.y || placed[p]!.w !== rects[p]!.w || placed[p]!.h !== rects[p]!.h);
@@ -774,6 +844,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
         }
         else if (active && lastLive) {
           useLayout.getState().setFloats(lastLive);
+          useLayout.getState().markMoved(key);
           // 押し出されたものが動き終わるまで、動きをつなぐ（FR-185）
           setSettling(key);
         }

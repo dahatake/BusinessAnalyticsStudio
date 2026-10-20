@@ -4,6 +4,7 @@ import type { Command } from '../commands/registry';
 import type { PaneInfo } from './PaneContext';
 import { SNAP_LABEL } from './snap';
 import { PIN_MOVE_REASON, PIN_TABS_REASON } from './paneActions';
+import { TIERS, TIER_LABEL } from './tiers';
 import { useLayout } from '../store/layout';
 import { detect3D } from '../view/render3d';
 import { MODE_LABELS, VIEW_MODES, WORLD_VIEWS, WORLD_VIEW_LABELS, modeOptions, viewDeclOf, worldOptions } from '../view/viewModel';
@@ -52,6 +53,15 @@ export function paneCommands(current: () => PaneInfo | null, notify: (text: stri
     },
     { id: 'pane.untab', label: `タブから出す${TARGET}`, keywords: [...kw, 'タブ', 'untab'], run: on((p) => { if (p.inTabs && !p.pinned) p.untab(); }) },
     { id: 'pane.hide', label: `非表示${TARGET}`, keywords: [...kw, '非表示', 'hide'], run: on((p) => p.hide()) },
+    // 情報の階層（主役→補助→詳細。FR-244）。理由の確認と変更もコマンドパレットから（メニューと同じ操作。NFR-UX-018）
+    { id: 'pane.tier.show', label: `情報の階層を確かめる${TARGET}`, keywords: [...kw, '階層', '主役', '補助', '詳細', '理由', 'tier'], run: on((p) => notify(p.tierReason)) },
+    ...TIERS.map<Command>((t) => ({
+      id: `pane.tier.set.${t}`,
+      label: `階層を${TIER_LABEL[t]}にする${TARGET}`,
+      keywords: [...kw, '階層', '主役', '補助', '詳細', 'tier'],
+      run: on((p) => p.setTier(t)),
+    })),
+    { id: 'pane.tier.reset', label: `階層を既定に戻す${TARGET}`, keywords: [...kw, '階層', '既定', 'tier'], run: on((p) => p.setTier(null)) },
     // ビューの切替（FR-217・FR-218）。選べないものは変えずに理由を示す（AC-500・AC-502）
     ...VIEW_MODES.map<Command>((m) => ({
       id: `pane.view.mode.${m}`,
