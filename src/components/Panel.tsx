@@ -13,6 +13,7 @@ import { useSelectionStore } from '../store/selection';
 import { useComponentView } from '../view/useView';
 import { HIDDEN_SELECTION_TEXT, selectionHiddenIn, singleWorldNote } from '../view/viewModel';
 import { isEditableTarget, panelKeyAction, runPanelKeyAction, titleDoubleClick, type KeyLike } from './panelKeys';
+import { TIER_APPEARANCE, TIER_LABEL } from '../workspace/tiers';
 
 /** これより狭いコンポーネントは、見出しの操作アイコンを出さず「…」メニューに任せる（FR-150 AC-259）。
  *  アイコン 4 個（各 24px 以上）と「…」が見出しの横に収まる幅。既定の配置の列（約 300px）でもアイコンが出る（NFR-UX-015 AC-476 のツールチップ） */
@@ -132,6 +133,9 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
   const ref = useRef<HTMLElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   // フォーカス中のコンポーネントだけ、見出しに操作アイコンを出す（FR-150）
+  // 見出しの右クリック・Shift+F10 で開く「その他の操作」メニューと、階層の理由の表示（FR-244）
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [showTier, setShowTier] = useState(false);
   const [focused, setFocused] = useState(false);
   const [narrow, setNarrow] = useState(false);
   const [compact, setCompact] = useState(false);
@@ -161,6 +165,9 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
   const onBlur = (e: FocusEvent<HTMLElement>) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false); };
 
   const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {
+    // 見出しのメニューをキーボードで開く（Shift+F10・メニューキー。NFR-A11Y-004）
+    if (pane && ((e.key === 'F10' && e.shiftKey) || e.key === 'ContextMenu') && !isEditableTarget(e.target)) { e.preventDefault(); setMenuOpen(true); return; }
+    if (e.key === 'Escape' && showTier) setShowTier(false);
     const action = panelKeyAction(toKeyLike(e), pane);
     if (action && pane && runPanelKeyAction(action, pane)) { e.preventDefault(); return; }
     // ドラッグの代わりのキー操作: Alt+Shift+矢印キーで、いまのコンポーネントを動かす（FR-142、NFR-A11Y-004）
@@ -186,6 +193,9 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
       data-maximized={pane?.maximized ? 'true' : undefined}
       data-expanded={pane?.expanded ? 'true' : undefined}
       data-minimized={minimized ? 'true' : undefined}
+      data-tier={pane?.tier ?? 'supporting'}
+      data-role={pane?.role}
+      data-group={pane?.group}
     >
       {pane ? (
         // 掴み場所（ハンドル）: ドラッグで移動し、ダブルクリックで 75% 表示にする。本体では行わない（FR-183）
@@ -209,12 +219,18 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
               weight="semibold"
               block
               className={pane && !pane.maximized && !pane.expanded ? s.grab : undefined}
+              tabIndex={pane ? 0 : undefined}
+              onContextMenu={pane ? (e: MouseEvent<HTMLElement>) => { e.preventDefault(); setMenuOpen(true); } : undefined}
               onDoubleClick={titleDoubleClick(pane)}
               onMouseDown={pane && !pane.maximized && !pane.expanded ? (e: MouseEvent<HTMLElement>) => { if (e.button === 0 && e.detail < 2) e.preventDefault(); } : undefined}
               onPointerDown={pane && !pane.maximized && !pane.expanded ? (e: PointerEvent<HTMLElement>) => { if (e.button === 0) { e.preventDefault(); pane.startDrag(e); } } : undefined}
             >
               {title}
             </Text>
+            {pane ? (
+              // 階層は、色だけでなく文字と形（塗り・薄い塗り・枠線）でも示す（FR-244 AC-589）
+              <Badge data-testid="tier-label" appearance={TIER_APPEARANCE[pane.tier]} color={pane.tier === 'primary' ? 'brand' : 'informative'} shape={pane.tier === 'primary' ? 'rounded' : pane.tier === 'supporting' ? 'circular' : 'square'} size="medium">{TIER_LABEL[pane.tier]}</Badge>
+            ) : null}
             {sample ? (
               <span className={s.sample} data-testid="sample-badge">
                 <Badge appearance="filled" color="warning" size="large">サンプル</Badge>
@@ -222,8 +238,9 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
               </span>
             ) : null}
           </div>
-          {pane ? <span className={s.actionGroup}><ComponentActions pane={pane} title={title} active={focused || minimized} narrow={narrow} /></span> : null}
+          {pane ? <span className={s.actionGroup}><          ComponentActions pane={pane} title={title} active={focused || minimized} narrow={narrow} menu={{ open: menuOpen, onOpenChange: setMenuOpen, onShowTier: () => setShowTier(true) }} /></span> : null}
         </div>
+                  {pane && showTier && !minimized ? <Text size={300} role="status" data-testid="tier-reason" className={s.worldNote}>{pane.tierReason}</Text> : null}
         {description && !minimized ? <Text size={300}>{description}</Text> : null}
         {world.note && !minimized ? <Text size={300} className={s.worldNote} data-testid="view-world-note">{world.note}</Text> : null}
         {world.hiddenNote && !minimized ? <Text size={300} role="status" className={s.worldNote} data-testid="view-hidden-selection">{HIDDEN_SELECTION_TEXT}</Text> : null}

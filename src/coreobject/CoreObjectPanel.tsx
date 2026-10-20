@@ -21,7 +21,7 @@ export function CoreObjectPanel() {
   const s = useStyles();
   const { info, selectedId, selected, choose } = useCoreObject();
   return (
-    <section className={s.root} data-testid="component-core-object" aria-label="中核オブジェクトの選定理由">
+    <section className={s.root} data-testid="component-core-object" data-tier="supporting" aria-label="中核オブジェクトの選定理由">
       <Text as="h3" weight="semibold">中核オブジェクトの選定理由</Text>
       {info.candidates.length === 0 ? (
         <Text>中核オブジェクトの候補が顧客パックの customer.json にありません。</Text>

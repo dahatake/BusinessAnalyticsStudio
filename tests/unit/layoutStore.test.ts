@@ -2,6 +2,7 @@
 // FR-012 FR-013 FR-014 FR-109 FR-110
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { arrangeAll, defaultLayout, keysOf, type Layout } from '../../src/workspace/layoutModel';
+import { largestComponent } from '../../src/workspace/persona';
 import { panelKeyAction, runPanelKeyAction, titleDoubleClick, type KeyLike } from '../../src/components/panelKeys';
 
 class MemoryStorage {
@@ -150,12 +151,11 @@ describe('FR-012 FR-014 AC-017 既定が空になるときの退避（暫定）'
     expect(keysOf(l).sort()).toEqual(['matrix', 'summary']);
   });
 
-  // FR-012 FR-112 経営層の既定にはキャンバスが背景の全体図として残る（§7 の表）
+  // FR-012 FR-112 経営層の既定にはキャンバスが背景の全体図として残る（§7 の表）。既定は情報の階層の配置（FR-243・FR-244）: 主役が左上で最大、補助が右、詳細（キャンバス）が下
   it('FR-112 §7 経営層の既定のレイアウトにはキャンバスが含まれ、2×2 マトリクスが最大の領域になる', () => {
     const l = defaultLayout('経営層');
-    expect(keysOf(l)).toEqual(['summary', 'kpi-okr', 'matrix', 'ranking', 'canvas']);
-    const row = (l as { children: Array<{ sizes: number[] }> }).children[1]!; // 下段（上段はサマリーと KPI/OKR）
-    expect(row.sizes[0]).toBeGreaterThan(Math.max(...row.sizes.slice(1)));
+    expect(keysOf(l)).toEqual(['matrix', 'canvas', 'summary', 'kpi-okr', 'ranking']);
+    expect(largestComponent(l)).toBe('matrix');
   });
 
   // FR-014 AC-017
