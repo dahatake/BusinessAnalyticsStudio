@@ -87,6 +87,10 @@ const useStyles = makeStyles({
   // 見出しをつかんで動かす（FR-142）。つかめることをカーソルで示し、動かしている間に文字が選択されないようにする
   grab: { flexGrow: 1, cursor: 'grab', userSelect: 'none', touchAction: 'none', ':active': { cursor: 'grabbing' } },
   sample: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS },
+  // 詰めた見出し（狭いコンポーネント）: 見出しの上下に標準の余白（h2 の既定）を足さず、上部に結論・数値を置く画面（エグゼクティブサマリーなど）が下に押し下げられないようにする
+  titleCompact: { marginBlock: 0 },
+  // 狭い列でも「サンプル」の札が折り返して高くならない（見出しの高さを抑える）
+  sampleBadge: { flexShrink: 0, whiteSpace: 'nowrap' },
   // 世界の表示の注記（FR-218）
   worldNote: { color: tokens.colorNeutralForeground2 },
 });
@@ -166,7 +170,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
 
   const onKeyDown = (e: KeyboardEvent<HTMLElement>) => {
     // 見出しのメニューをキーボードで開く（Shift+F10・メニューキー。NFR-A11Y-004）
-    if (pane && ((e.key === 'F10' && e.shiftKey) || e.key === 'ContextMenu') && !isEditableTarget(e.target)) { e.preventDefault(); setMenuOpen(true); return; }
+    if (pane && ((e.key === 'F10' && e.shiftKey) || e.key === 'ContextMenu') && !isEditableTarget(e.target) && !(e.target instanceof Element && e.target.closest('[data-entity-id]'))) { e.preventDefault(); setMenuOpen(true); return; }
     if (e.key === 'Escape' && showTier) setShowTier(false);
     const action = panelKeyAction(toKeyLike(e), pane);
     if (action && pane && runPanelKeyAction(action, pane)) { e.preventDefault(); return; }
@@ -218,7 +222,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
               size={pane && compact ? 500 : 600}
               weight="semibold"
               block
-              className={pane && !pane.maximized && !pane.expanded ? s.grab : undefined}
+              className={mergeClasses(pane && !pane.maximized && !pane.expanded ? s.grab : undefined, pane && compact ? s.titleCompact : undefined)}
               tabIndex={pane ? 0 : undefined}
               onContextMenu={pane ? (e: MouseEvent<HTMLElement>) => { e.preventDefault(); setMenuOpen(true); } : undefined}
               onDoubleClick={titleDoubleClick(pane)}
@@ -233,12 +237,12 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
             ) : null}
             {sample ? (
               <span className={s.sample} data-testid="sample-badge">
-                <Badge appearance="filled" color="warning" size="large">サンプル</Badge>
+                <Badge className={s.sampleBadge} appearance="filled" color="warning" size="large">サンプル</Badge>
                 <Text size={200}>架空のサンプルデータを表示しています</Text>
               </span>
             ) : null}
           </div>
-          {pane ? <span className={s.actionGroup}><          ComponentActions pane={pane} title={title} active={focused || minimized} narrow={narrow} menu={{ open: menuOpen, onOpenChange: setMenuOpen, onShowTier: () => setShowTier(true) }} /></span> : null}
+          {pane ? <span className={s.actionGroup}><ComponentActions pane={pane} title={title} active={focused || minimized} narrow={narrow} menu={{ open: menuOpen, onOpenChange: setMenuOpen, onShowTier: () => setShowTier(true) }} /></span> : null}
         </div>
                   {pane && showTier && !minimized ? <Text size={300} role="status" data-testid="tier-reason" className={s.worldNote}>{pane.tierReason}</Text> : null}
         {description && !minimized ? <Text size={300}>{description}</Text> : null}
