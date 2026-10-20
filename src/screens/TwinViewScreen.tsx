@@ -43,7 +43,7 @@ const useStyles = makeStyles({
   item: {
     minHeight: `${MIN_TARGET_PX}px`, minWidth: `${MIN_TARGET_PX}px`, padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalM}`, cursor: 'pointer', textAlign: 'left',
     color: tokens.colorNeutralForeground1, backgroundColor: tokens.colorNeutralBackground1,
-    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusMedium, fontSize: tokens.fontSizeBase300,
+    border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusMedium, fontSize: tokens.fontSizeBase300, lineHeight: tokens.lineHeightBase300,
     ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}` },
   },
   layer: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS, padding: tokens.spacingHorizontalS, borderRadius: tokens.borderRadiusMedium, border: `${tokens.strokeWidthThin} dotted ${tokens.colorNeutralStroke2}` },
@@ -219,7 +219,7 @@ export function TwinViewScreen() {
 
   const flowList = view.world === 'both' ? (
     <section aria-label="流れ" data-testid="twin-flows">
-      <Text weight="semibold">流れ（Data: 現実世界→デジタル世界、Control: デジタル世界→現実世界）</Text>
+      <Text block weight="semibold">流れ（Data: 現実世界→デジタル世界、Control: デジタル世界→現実世界）</Text>
       {model.flows.length === 0 ? <Text size={200} block>この顧客パックには、現実世界とデジタル世界を結ぶ流れがありません。</Text> : (
         <ul className={s.flows}>{model.flows.map((f) => <FlowRow key={`${f.kind}:${f.from}:${f.to}`} flow={f} nameOf={nameOf} ids={highlighted} />)}</ul>
       )}

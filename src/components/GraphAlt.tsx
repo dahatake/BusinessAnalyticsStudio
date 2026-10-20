@@ -7,7 +7,7 @@ import { useSelection } from '../selection/hooks';
 const useStyles = makeStyles({
   root: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS },
   scroll: { overflowX: 'auto' },
-  table: { borderCollapse: 'collapse', width: '100%', textAlign: 'left', fontSize: tokens.fontSizeBase200 },
+  table: { borderCollapse: 'collapse', width: '100%', textAlign: 'left', fontSize: tokens.fontSizeBase200, lineHeight: tokens.lineHeightBase200 },
   row: { cursor: 'pointer', borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`, ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}` } },
   on: { backgroundColor: tokens.colorBrandBackground2 },
 });

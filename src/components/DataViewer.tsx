@@ -290,12 +290,14 @@ export function DataViewer({ entities, selectedKey, onSelect, relations = NO_REL
           />
         </div>
       ) : effectiveMode === '3d' ? (
-        <Suspense fallback={<Text role="status">3D を読み込んでいます。</Text>}>
-          <DataViewer3D
-            clusters={clusters} layout={layout} level={level} zoom={zoom} selectedKey={selectedKey} activeCluster={cluster} onSelect={(k) => { setUseCase(null); onSelect(k); }} onCluster={setCluster}
-            relations={relations} related={rel} detailKeys={detailKeys}
-          />
-        </Suspense>
+        <div data-zoom-surface="3d">
+          <Suspense fallback={<Text role="status">3D を読み込んでいます。</Text>}>
+            <DataViewer3D
+              clusters={clusters} layout={layout} level={level} zoom={zoom} selectedKey={selectedKey} activeCluster={cluster} onSelect={(k) => { setUseCase(null); onSelect(k); }} onCluster={setCluster}
+              relations={relations} related={rel} detailKeys={detailKeys}
+            />
+          </Suspense>
+        </div>
       ) : (
         <div className={s.stage} role="listbox" aria-label={`データエンティティ（${DETAIL_LABELS[level]}）`}>
           {level === 'bird' ? birdGrid : (

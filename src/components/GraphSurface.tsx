@@ -41,12 +41,12 @@ const useStyles = makeStyles({
   node: {
     position: 'absolute', boxSizing: 'border-box', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', rowGap: tokens.spacingVerticalXXS, overflow: 'hidden',
     cursor: 'pointer', backgroundColor: tokens.colorNeutralBackground1, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusMedium,
-    color: tokens.colorNeutralForeground1, fontSize: tokens.fontSizeBase100, minHeight: `${MIN_TARGET_PX}px`, outlineOffset: '2px',
+    color: tokens.colorNeutralForeground1, fontSize: tokens.fontSizeBase100, lineHeight: tokens.lineHeightBase100, minHeight: `${MIN_TARGET_PX}px`, outlineOffset: '2px',
     ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}` },
   },
   nodeOn: { border: `${tokens.strokeWidthThick} solid ${tokens.colorBrandStroke1}` },
   marker: { width: '14px', height: '14px', backgroundColor: tokens.colorBrandForeground1, display: 'inline-block', flexShrink: 0 },
-  name: { maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: tokens.fontSizeBase200, fontWeight: tokens.fontWeightSemibold },
+  name: { maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: tokens.fontSizeBase200, lineHeight: tokens.lineHeightBase200, fontWeight: tokens.fontWeightSemibold },
   edgeText: { fontSize: tokens.fontSizeBase200, fill: tokens.colorNeutralForeground1, paintOrder: 'stroke', stroke: tokens.colorNeutralBackground1, strokeWidth: '3px' },
 });
 

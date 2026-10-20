@@ -304,6 +304,7 @@ export function WhiteboardScreen() {
         <Field label="背景" size="small">
           <Dropdown
             style={{ minWidth: '112px', width: '112px' }}
+            button={{ style: { minHeight: '24px' } }}
             value={bg.label}
             selectedOptions={[bg.value]}
             onOptionSelect={(_, d) => { if (active && d.optionValue) setBackground(active.id, d.optionValue as Background); }}
