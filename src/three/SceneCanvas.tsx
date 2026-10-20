@@ -139,13 +139,20 @@ function warmUpGraphics(): void {
   try {
     const c = document.createElement('canvas');
     c.width = c.height = 1;
-    const gl = c.getContext('webgl2', { antialias: true, powerPreference: 'high-performance' });
-    gl?.getExtension('WEBGL_lose_context')?.loseContext();
+    const r = new THREE.WebGLRenderer({ canvas: c, antialias: true, powerPreference: 'high-performance' });
+    // 3D ビューと同じ種類の材質・ライトを 1 度描き、シェーダーの変換結果を GPU プロセスに持たせる
+    const scene = new THREE.Scene();
+    scene.add(new THREE.AmbientLight(0xffffff, 0.6), new THREE.DirectionalLight(0xffffff, 1.6));
+    scene.add(new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshStandardMaterial()));
+    r.render(scene, new THREE.PerspectiveCamera());
+    r.dispose();
+    r.forceContextLoss();
   } catch { /* 温めるだけ。失敗しても描画には影響しない */ }
 }
 
 if (typeof window !== 'undefined' && typeof document !== 'undefined') {
-  setTimeout(() => { warmUpGraphics(); void probeWebGPU(); }, 300);
+  // 起動の直後（最初の描画の後）に始める。起動から 3D ビューを開くまでが短くても、温め終わっているようにする
+  setTimeout(() => { warmUpGraphics(); void probeWebGPU(); }, 0);
 }
 
 function Geometry({ shape }: { shape: ObjectSpec['shape'] }) {
