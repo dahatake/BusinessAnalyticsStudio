@@ -67,7 +67,7 @@ describe('FR-148 作業先メニュー', () => {
     expect(within(list).getByRole('menuitemradio', { name: /デモ/ }).getAttribute('aria-checked')).toBe('true');
     fireEvent.click(within(list).getByRole('menuitemradio', { name: /合成株式会社B.*品質改善/ }));
     await waitFor(() => expect(st().openId).toBe(b2));
-    expect(screen.getByTestId('work-target-menu').textContent).toBe('合成株式会社B / 品質改善');
+    expect(screen.getByTestId('work-target-menu').textContent).toBe('合成株式会社B - 品質改善'); // FR-226 AC-525
   });
 
   // FR-148 AC-253: キーボードだけで開き、選び、確定し、Esc で閉じる

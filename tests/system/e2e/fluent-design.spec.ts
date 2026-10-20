@@ -5,7 +5,7 @@
 // 表示設定は CONTRACT.md §9: Light/Dark は emulateMedia({colorScheme})、ハイコントラストは forcedColors: 'active'、動きの軽減は reducedMotion。
 import AxeBuilder from '@axe-core/playwright';
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, component, selectPersona } from '../support/fixtures';
+import { test, expect, component, selectPersona, settingsDialog } from '../support/fixtures';
 import { listScreenKeys, gotoScreen, topKeys, actions } from '../support/screens';
 
 const MOTION_MAX_MS = 500; // PARAM-074
@@ -204,6 +204,15 @@ test.describe('NFR-UX-015 デザイントークンによる見た目の一元化
           // Light・Dark は影の段、ハイコントラスト（forced-colors）は 4 辺の境界線か輪郭線（A-56・SRC-027）
           const r = await surfaceOk(cardLocs.nth(i), theme, ROLE_LEVEL.card);
           if (r) shadowBad.push(`${key} カード ${i}: ${r}`);
+        }
+        // 設定はモーダルの dialog（FR-223）。component-menu・component-actions を持たないので、dialog の中で文字の段・角丸を判定する
+        if (key === 'settings') {
+          const sd = settingsDialog(page);
+          const sv = await tokenViolations(sd);
+          bad.push(...sv.type.map((x) => `settings ダイアログの文字: ${x}`), ...sv.radius.map((x) => `settings ダイアログの角丸: ${x}`));
+          const sr = await surfaceOk(sd, theme, ROLE_LEVEL.dialog);
+          if (sr) shadowBad.push(`settings ダイアログ: ${sr}`);
+          continue;
         }
         // メニュー（その他の操作）
         await c.focus();
@@ -495,7 +504,8 @@ test.describe('NFR-UX-017 Fluent 2 のモーション', () => {
       const d0 = await maxDuration(c, false);
       if (d0 > 0) bad.push(`${key} 画面: ${d0}ms`);
       expect(await screenSnapshot(c), `${key}: 動きの軽減で表示される情報・操作が変わる`).toEqual(normal);
-      // メニュー
+      // メニュー（設定はモーダルの dialog で component-menu を持たない。FR-223）
+      if (key === 'settings') continue;
       await c.focus();
       await markAnimations(page);
       await c.getByTestId('component-menu').first().click();

@@ -17,11 +17,11 @@ export function shouldShowStartupPicker(_projects?: readonly Project[]): boolean
   return true;
 }
 
-/** 現在の作業先の表示: 「デモ」または「企業名 / Project 名」 */
+/** 現在の作業先の表示: 「デモ」または「[顧客名] - [プロジェクト名]」（FR-226 AC-525） */
 export function workTargetLabel(openId: string | null, projects: readonly Project[], companies: readonly Company[]): string {
   const project = openId ? projects.find((p) => p.id === openId) : undefined;
   const company = project ? companies.find((c) => c.id === project.companyId) : undefined;
-  return project && company ? `${company.name} / ${project.name}` : 'デモ';
+  return project && company ? `${company.name} - ${project.name}` : 'デモ';
 }
 
 /** 選択画面の候補: デモ、各 Project（企業名 / Project 名）、実際の Project を登録 */

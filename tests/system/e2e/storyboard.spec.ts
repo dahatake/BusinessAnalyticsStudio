@@ -4,7 +4,7 @@
 // PARAM-052 30 秒 ±PARAM-053 5 秒 / PARAM-054 強調テロップ 20 文字。
 // AC-327・329〜331 は検証レベルが integration（承認済み）のためここでは作らない。AC-320（system）は末尾の describe「FR-168 再生の既定の演出強度」。
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, hook, contrastRatio, reloadAndEnter } from '../support/fixtures';
+import { test, expect, hook, contrastRatio, reloadAndEnter, settingsDialog, closeSettings } from '../support/fixtures';
 
 const CREATE_MS = 2_000; // PARAM-048
 const TARGET_MS = 30_000; // PARAM-052
@@ -86,12 +86,15 @@ async function mockSpeech(page: Page, mode: 'ok' | 'fail' | 'timeout'): Promise<
   return sent;
 }
 async function openSpeechSettings(page: Page): Promise<Locator> {
-  await page.getByTestId('nav-settings').click();
-  const box = page.getByRole('region', { name: '音声設定' });
+  // 設定はモーダル（FR-223）。開いていなければ開く
+  if (!(await settingsDialog(page).isVisible())) await page.getByTestId('nav-settings').click();
+  await expect(settingsDialog(page)).toBeVisible();
+  const box = settingsDialog(page).getByRole('region', { name: '音声設定' });
   await expect(box).toBeVisible();
   return box;
 }
 async function goBackToUseCases(page: Page): Promise<void> {
+  await closeSettings(page);
   await page.getByTestId('stepper').getByRole('button', { name: 'ユースケース作成' }).click();
   await expect(page.getByTestId('usecase-editor')).toBeVisible();
 }
@@ -362,6 +365,7 @@ test.describe('FR-167 設定画面と字幕の読み上げ（音声はモック�
     const box = await openSpeechSettings(page);
     const sw = box.getByRole('switch', { name: '字幕の読み上げ' });
     if (!(await sw.isChecked())) await sw.click();
+    await closeSettings(page);
     await page.getByRole('button', { name: 'ミュート', pressed: true }).click().catch(() => undefined);
   }
   async function toUseCases(page: Page): Promise<void> {
@@ -449,7 +453,7 @@ test.describe('FR-167 設定画面と字幕の読み上げ（音声はモック�
     await openNewProject(page);
     await page.getByTestId('nav-settings').focus();
     await page.keyboard.press('Enter');
-    const box = page.getByRole('region', { name: '音声設定' });
+    const box = settingsDialog(page).getByRole('region', { name: '音声設定' });
     await expect(box).toBeVisible();
     await expect(box.getByTestId('speech-status')).toHaveText(/設定済み|未設定/);
     const sw = box.getByRole('switch', { name: '字幕の読み上げ' });

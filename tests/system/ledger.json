@@ -1,12 +1,6 @@
 {
   "version": 1,
   "ac_digests": {
-    "AC-195": "sha256:09294c7e744f31dc",
-    "AC-197": "sha256:80784a06ad648e82",
-    "AC-200": "sha256:28826404c97119db",
-    "AC-202": "sha256:c7c29afee95be7eb",
-    "AC-203": "sha256:aa557249c3c7131a",
-    "AC-205": "sha256:0b5a113957b58da1",
     "AC-001": "sha256:4f4699cb18c0479b",
     "AC-002": "sha256:aff9a1e246ed6ca9",
     "AC-003": "sha256:02a135dd41e3e8d0",
@@ -22,7 +16,6 @@
     "AC-017": "sha256:ffe4b87e559ed605",
     "AC-018": "sha256:dfdbe8e929a60eb3",
     "AC-019": "sha256:6784a504a48fe6e8",
-    "AC-192": "sha256:de8a0d1dc8ab70f9",
     "AC-020": "sha256:c3b0e7ee9a642810",
     "AC-021": "sha256:6fa41db02bd2717a",
     "AC-022": "sha256:07d54283290fcea9",
@@ -77,7 +70,6 @@
     "AC-087": "sha256:23004fc9a7b816cd",
     "AC-088": "sha256:c6358146976b4d9e",
     "AC-091": "sha256:c5f14e2e98161df4",
-    "AC-193": "sha256:4810254bd9a33324",
     "AC-093": "sha256:505c52848f57f1fc",
     "AC-094": "sha256:1254ba11f4363dd1",
     "AC-095": "sha256:09f2e7f58f8b1aa2",
@@ -128,6 +120,14 @@
     "AC-187": "sha256:a962f1f245029c87",
     "AC-188": "sha256:66a2b234889f892e",
     "AC-189": "sha256:c37510aa9027e09a",
+    "AC-192": "sha256:de8a0d1dc8ab70f9",
+    "AC-193": "sha256:4810254bd9a33324",
+    "AC-195": "sha256:09294c7e744f31dc",
+    "AC-197": "sha256:80784a06ad648e82",
+    "AC-200": "sha256:28826404c97119db",
+    "AC-202": "sha256:c7c29afee95be7eb",
+    "AC-203": "sha256:aa557249c3c7131a",
+    "AC-205": "sha256:0b5a113957b58da1",
     "AC-207": "sha256:0b69d19180e12356",
     "AC-209": "sha256:d9a66fdcd8b47302",
     "AC-214": "sha256:9df9834bddfc9b2a",
@@ -142,8 +142,8 @@
     "AC-230": "sha256:ca4aa5ac5751ef3a",
     "AC-234": "sha256:630f15947acc625b",
     "AC-235": "sha256:afc67c60e861de2c",
-    "AC-239": "sha256:a479cd99bd02a95e",
     "AC-237": "sha256:8143d725234c7d1f",
+    "AC-239": "sha256:a479cd99bd02a95e",
     "AC-240": "sha256:9a9a76c37b5a77fe",
     "AC-243": "sha256:64b81e427cf413b1",
     "AC-244": "sha256:0e34da53c823f470",
@@ -168,6 +168,17 @@
     "AC-282": "sha256:fd4b2277251bd889",
     "AC-285": "sha256:e8089e626bc854fd",
     "AC-289": "sha256:9f181836c85bd4d0",
+    "AC-294": "sha256:38023a682076f924",
+    "AC-297": "sha256:20045253f4fc78d5",
+    "AC-300": "sha256:f143b83de2fa5e5a",
+    "AC-305": "sha256:c7a63ddfc4f68753",
+    "AC-315": "sha256:f2c25bde2cd68456",
+    "AC-317": "sha256:93772ee94ec5cfc9",
+    "AC-318": "sha256:7ec18be173ca59ce",
+    "AC-320": "sha256:34da361197a9e4b0",
+    "AC-321": "sha256:07cfd09cab21d341",
+    "AC-323": "sha256:3a1ae62f5e7aa98b",
+    "AC-334": "sha256:28e9f4a26b6d23b5",
     "AC-348": "sha256:9111ef231aa302c6",
     "AC-350": "sha256:371e1ada1ddd799e",
     "AC-352": "sha256:97c669125802611b",
@@ -176,11 +187,11 @@
     "AC-357": "sha256:3d028f014b2ac4c2",
     "AC-359": "sha256:dae70daa572193fc",
     "AC-364": "sha256:60fb013bf6b901aa",
-    "AC-371": "sha256:cd7e6150e215a10a",
-    "AC-368": "sha256:d47663a7c39171fa",
     "AC-367": "sha256:2e62b908136cfc38",
-    "AC-370": "sha256:0925b2fa08c31ef4",
+    "AC-368": "sha256:d47663a7c39171fa",
     "AC-369": "sha256:c7fa23d71005adf8",
+    "AC-370": "sha256:0925b2fa08c31ef4",
+    "AC-371": "sha256:cd7e6150e215a10a",
     "AC-375": "sha256:d23286728dd4824d",
     "AC-379": "sha256:3746c38c17b1d8ba",
     "AC-387": "sha256:2a376715517e1a52",
@@ -192,17 +203,6 @@
     "AC-395": "sha256:cb67b1a2ef8558d2",
     "AC-396": "sha256:4513ca85bc231038",
     "AC-399": "sha256:c2b15973128f347e",
-    "AC-305": "sha256:c7a63ddfc4f68753",
-    "AC-321": "sha256:07cfd09cab21d341",
-    "AC-320": "sha256:34da361197a9e4b0",
-    "AC-317": "sha256:93772ee94ec5cfc9",
-    "AC-318": "sha256:7ec18be173ca59ce",
-    "AC-300": "sha256:f143b83de2fa5e5a",
-    "AC-315": "sha256:f2c25bde2cd68456",
-    "AC-297": "sha256:20045253f4fc78d5",
-    "AC-294": "sha256:38023a682076f924",
-    "AC-334": "sha256:28e9f4a26b6d23b5",
-    "AC-323": "sha256:3a1ae62f5e7aa98b",
     "AC-403": "sha256:b5b108547f94788e",
     "AC-404": "sha256:2436c1f2d414a827",
     "AC-405": "sha256:fe37e240c0c92402",
@@ -230,9 +230,9 @@
     "AC-427": "sha256:c2ce0bafca4083b1",
     "AC-428": "sha256:60faf510f74a5628",
     "AC-429": "sha256:22d5ad89479f7b3c",
+    "AC-430": "sha256:f0bd9661cd5ff3ff",
     "AC-431": "sha256:21bdc125bf205c61",
     "AC-432": "sha256:98e7f569aa8e5831",
-    "AC-430": "sha256:f0bd9661cd5ff3ff",
     "AC-440": "sha256:085d31c03614a265",
     "AC-476": "sha256:c892e980bd9a9fb2",
     "AC-477": "sha256:6264ce46061588fb",
@@ -243,14 +243,24 @@
     "AC-493": "sha256:715798a091545dad",
     "AC-495": "sha256:993c4a32aa8e6bff",
     "AC-499": "sha256:737e480ca6126b4b",
-    "AC-503": "sha256:5bad05d89a9be885",
     "AC-501": "sha256:d20565407fd62f48",
+    "AC-503": "sha256:5bad05d89a9be885",
     "AC-514": "sha256:e4bcac6a9a96620a",
-    "AC-562": "sha256:969ce571fa534934",
-    "AC-555": "sha256:fe47980480f5bdaf",
-    "AC-557": "sha256:a3c7bc01f22f9d62",
+    "AC-515": "sha256:a9c5be66857cbac4",
+    "AC-517": "sha256:0977b5bcad6f9c4a",
+    "AC-518": "sha256:a2820afcf2027f8e",
+    "AC-519": "sha256:808c1eb3df6b87b7",
+    "AC-521": "sha256:0f3620c4a95cec35",
+    "AC-523": "sha256:fcb5bcca0e5a3af7",
+    "AC-525": "sha256:aae7ec59f6431f78",
+    "AC-526": "sha256:972af3511eec95dd",
+    "AC-528": "sha256:a3fad302aa45bbdc",
+    "AC-529": "sha256:862c46ce942f320c",
     "AC-549": "sha256:01b6831c02ec87a4",
     "AC-554": "sha256:677cf952b7bd9f66",
+    "AC-555": "sha256:fe47980480f5bdaf",
+    "AC-557": "sha256:a3c7bc01f22f9d62",
+    "AC-562": "sha256:969ce571fa534934",
     "AC-566": "sha256:4e016ecf4369a594",
     "AC-568": "sha256:b7a95992b45217ae",
     "AC-571": "sha256:9874b9b2370c8c1d",
@@ -3026,431 +3036,6 @@
       ]
     },
     {
-      "id": "IT-014",
-      "requirement_ids": [
-        "NFR-PERF-003"
-      ],
-      "ac_ids": [
-        "AC-163"
-      ],
-      "title": "AC-163 標準の検証条件で、ページの読み込み開始からオープニングの最初の表示までの時間をブラウザーの性能計測で測ると、{PARAM",
-      "layer": "nonfunctional",
-      "command": "node tests/system/run.mjs AC-163",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-014-202610200626.log",
-      "history": [
-        {
-          "at": "2026-10-12T14:08:51+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
-        }
-      ]
-    },
-    {
-      "id": "IT-015",
-      "requirement_ids": [
-        "NFR-ENV-001"
-      ],
-      "ac_ids": [
-        "AC-165"
-      ],
-      "title": "AC-165 Chromium で、お手本パックの主要画面を巡るスモークテストがページエラー 0 件で合格する。",
-      "layer": "nonfunctional",
-      "command": "node tests/system/run.mjs AC-165",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-015-202610200627.log",
-      "history": [
-        {
-          "at": "2026-10-12T14:08:53+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
-        }
-      ]
-    },
-    {
-      "id": "IT-016",
-      "requirement_ids": [
-        "NFR-ENV-002"
-      ],
-      "ac_ids": [
-        "AC-167"
-      ],
-      "title": "AC-167 標準の検証条件で、localhost 以外へのすべての通信を遮断してお手本パックで起動し、主要画面・3D・音声の再生・エ",
-      "layer": "nonfunctional",
-      "command": "node tests/system/run.mjs AC-167",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-016-202610200627.log",
-      "history": [
-        {
-          "at": "2026-10-12T14:08:54+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
-        }
-      ]
-    },
-    {
-      "id": "IT-017",
-      "requirement_ids": [
-        "NFR-L10N-001"
-      ],
-      "ac_ids": [
-        "AC-168"
-      ],
-      "title": "AC-168 標準の検証条件で、文書の言語属性が `ja` であり、主要画面のボタン・メニュー・見出しの文言が日本語である（製品名・固",
-      "layer": "nonfunctional",
-      "command": "node tests/system/run.mjs AC-168",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-017-202610200627.log",
-      "history": [
-        {
-          "at": "2026-10-12T14:08:56+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
-        }
-      ]
-    },
-    {
-      "id": "IT-018",
-      "requirement_ids": [
-        "NFR-A11Y-001"
-      ],
-      "ac_ids": [
-        "AC-169"
-      ],
-      "title": "AC-169 標準の検証条件で、主要画面それぞれに自動のアクセシビリティ検査（WCAG 2.2 A/AA の規則）をかけると、違反が ",
-      "layer": "nonfunctional",
-      "command": "node tests/system/run.mjs AC-169",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-018-202610200627.log",
-      "history": [
-        {
-          "at": "2026-10-12T14:08:58+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
-        }
-      ]
-    },
-    {
-      "id": "IT-019",
-      "requirement_ids": [
-        "NFR-A11Y-001"
-      ],
-      "ac_ids": [
-        "AC-170"
-      ],
-      "title": "AC-170 標準の検証条件で、主要画面のすべての操作要素に Tab で到達でき、フォーカスの位置が見え、キーボードの罠がない。音声を",
-      "layer": "nonfunctional",
-      "command": "node tests/system/run.mjs AC-170",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-019-202610200627.log",
-      "history": [
-        {
-          "at": "2026-10-12T14:09:00+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
-        }
-      ]
-    },
-    {
-      "id": "IT-020",
-      "requirement_ids": [
-        "NFR-A11Y-002"
-      ],
-      "ac_ids": [
-        "AC-172"
-      ],
-      "title": "AC-172 標準の検証条件で、ミュートとアニメーション停止にしたまま、プレゼンテーションモードを最後まで進め、選択・編集・エクスポー",
-      "layer": "nonfunctional",
-      "command": "node tests/system/run.mjs AC-172",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-020-202610200627.log",
-      "history": [
-        {
-          "at": "2026-10-12T14:09:02+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
-        }
-      ]
-    },
-    {
-      "id": "IT-021",
-      "requirement_ids": [
-        "NFR-A11Y-003"
-      ],
-      "ac_ids": [
-        "AC-173"
-      ],
-      "title": "AC-173 標準の検証条件で、3D ビュー・地図・ナレッジグラフ・2×2 マトリクスのそれぞれで「表で見る」を選ぶと、表示中の項目と",
-      "layer": "nonfunctional",
-      "command": "node tests/system/run.mjs AC-173",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-021-202610200627.log",
-      "history": [
-        {
-          "at": "2026-10-12T14:09:04+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
-        }
-      ]
-    },
-    {
-      "id": "IT-022",
-      "requirement_ids": [
-        "NFR-A11Y-004"
-      ],
-      "ac_ids": [
-        "AC-174"
-      ],
-      "title": "AC-174 標準の検証条件で、ポインターのドラッグを使わずに、コンポーネントの移動と大きさの変更、課題カードのホワイトボードへの配置",
-      "layer": "nonfunctional",
-      "command": "node tests/system/run.mjs AC-174",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-022-202610200627.log",
-      "history": [
-        {
-          "at": "2026-10-12T14:09:06+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
-        }
-      ]
-    },
-    {
-      "id": "IT-023",
-      "requirement_ids": [
-        "NFR-SEC-002"
-      ],
-      "ac_ids": [
-        "AC-176"
-      ],
-      "title": "AC-176 中継プロセスを「接続済み」として振る舞う差し替え部品で起動し、チャットで質問すると、送信中の表示が出て、送信した内容を画",
-      "layer": "nonfunctional",
-      "command": "node tests/system/run.mjs AC-176",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-023-202610200627.log",
-      "history": [
-        {
-          "at": "2026-10-12T14:09:08+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
-        }
-      ]
-    },
-    {
-      "id": "IT-024",
-      "requirement_ids": [
-        "NFR-SEC-003"
-      ],
-      "ac_ids": [
-        "AC-178"
-      ],
-      "title": "AC-178 `internal` の項目を含むお手本パックでプレゼンテーションモードを開始すると、`internal` の項目の件数",
-      "layer": "nonfunctional",
-      "command": "node tests/system/run.mjs AC-178",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-024-202610200628.log",
-      "history": [
-        {
-          "at": "2026-10-12T14:09:09+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
-        }
-      ]
-    },
-    {
-      "id": "IT-025",
-      "requirement_ids": [
-        "NFR-LEGAL-002"
-      ],
-      "ac_ids": [
-        "AC-180"
-      ],
-      "title": "AC-180 標準の検証条件で、主要画面に「サンプル」、AI の回答・サマリー・ツリーに「AI 生成」、ミニ・モックアプリに「モック（",
-      "layer": "nonfunctional",
-      "command": "node tests/system/run.mjs AC-180",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-025-202610200628.log",
-      "history": [
-        {
-          "at": "2026-10-12T14:09:11+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
-        }
-      ]
-    },
-    {
-      "id": "IT-026",
-      "requirement_ids": [
-        "NFR-UX-001"
-      ],
-      "ac_ids": [
-        "AC-185"
-      ],
-      "title": "AC-185 標準の検証条件で、項目を選び、表を絞り込み、時間軸の時刻を指定し、詳細パネルに未保存の入力をした状態で、コンポーネントの",
-      "layer": "nonfunctional",
-      "command": "node tests/system/run.mjs AC-185",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-026-202610200628.log",
-      "history": [
-        {
-          "at": "2026-10-12T14:09:12+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
-        }
-      ]
-    },
-    {
-      "id": "IT-027",
-      "requirement_ids": [
-        "NFR-UX-002"
-      ],
-      "ac_ids": [
-        "AC-186"
-      ],
-      "title": "AC-186 標準の検証条件で、表示幅を {PARAM-029} にすると、コンポーネントがタブか縦積みになり、ページ全体に横スクロー",
-      "layer": "nonfunctional",
-      "command": "node tests/system/run.mjs AC-186",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-027-202610200628.log",
-      "history": [
-        {
-          "at": "2026-10-12T14:09:14+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
-        }
-      ]
-    },
-    {
-      "id": "IT-028",
-      "requirement_ids": [
-        "NFR-UX-003"
-      ],
-      "ac_ids": [
-        "AC-187"
-      ],
-      "title": "AC-187 標準の検証条件で、応答を遅らせたモックの AI でツリーを生成している間、進行中の表示があり（支援技術にも通知され）、キ",
-      "layer": "nonfunctional",
-      "command": "node tests/system/run.mjs AC-187",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-028-202610200628.log",
-      "history": [
-        {
-          "at": "2026-10-12T14:09:15+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
-        }
-      ]
-    },
-    {
-      "id": "IT-029",
-      "requirement_ids": [
-        "NFR-UX-004"
-      ],
-      "ac_ids": [
-        "AC-188"
-      ],
-      "title": "AC-188 標準の検証条件で、保存先への書き込みが失敗する状態でエクスポートすると、失敗の原因と「ZIP でダウンロード」などの次の",
-      "layer": "nonfunctional",
-      "command": "node tests/system/run.mjs AC-188",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-029-202610200628.log",
-      "history": [
-        {
-          "at": "2026-10-12T14:09:17+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
-        }
-      ]
-    },
-    {
-      "id": "IT-030",
-      "requirement_ids": [
-        "NFR-UX-005"
-      ],
-      "ac_ids": [
-        "AC-189"
-      ],
-      "title": "AC-189 prefers-color-scheme を dark にしたブラウザーで初めて起動するとダークテーマで表示される。ブラ",
-      "layer": "nonfunctional",
-      "command": "node tests/system/run.mjs AC-189",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/IT-030-202610200628.log",
-      "history": [
-        {
-          "at": "2026-10-12T14:09:18+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
-        }
-      ]
-    },
-    {
       "id": "E2E-208",
       "requirement_ids": [
         "FR-137"
@@ -5453,6 +5038,1267 @@
       ]
     },
     {
+      "id": "E2E-304",
+      "requirement_ids": [
+        "FR-201"
+      ],
+      "ac_ids": [
+        "AC-440"
+      ],
+      "title": "A=X・B=Y を保存し開き直すと各 Project の選択だけが表示される",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-440",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-304-202610200639.log",
+      "history": [
+        {
+          "at": "2026-10-16T23:26:55+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-17T01:04:35+09:00",
+          "by": "test-designer",
+          "change": "command: 'npx playwright test -c tests/system/playwright.config.ts -g \"FR-201 AC-440\"' -> 'node tests/system/run.mjs AC-440'",
+          "reason": "root npx playwright (別版) で fail。E2E-301 の run.mjs 書式に合わせる"
+        }
+      ]
+    },
+    {
+      "id": "E2E-305",
+      "requirement_ids": [
+        "NFR-UX-015"
+      ],
+      "ac_ids": [
+        "AC-476"
+      ],
+      "title": "全画面で文字の段・角丸・エレベーションが Fluent 2 のトークンに一致（Light・Dark は影の段、HC は 4 辺の境界線か輪郭線。異常系: 狭い幅・最大化）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-476",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "dcebc64",
+      "last_run_at": "2026-10-20T10:45:56+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-305-202610201035.log",
+      "history": [
+        {
+          "at": "2026-10-17T22:06:25+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610172040: 承認済みの system AC からケースを作成（実装前・not_run）"
+        },
+        {
+          "at": "2026-10-18T01:41:58+09:00",
+          "by": "test-designer",
+          "change": "title: '全画面で文字の段・角丸・役割ごとの影が Fluent 2 のトークンに一致（Light・Dark・HC、異常系: 狭い幅・最大化）' -> '全画面で文字の段・角丸・エレベーションが Fluent 2 のトークンに一致（Light・Dark は影の段、HC は 4 辺の境界線か輪郭線。異常系: 狭い幅・最大化）'",
+          "reason": "AC-476 の変更（commit 4a8134d・A-56）: ハイコントラストでは影の段の代わりに、ダイアログ・メニュー・ツールチップ・カードの 4 辺の境界線（1px 以上・none/hidden でない）か輪郭線で判定する"
+        }
+      ]
+    },
+    {
+      "id": "E2E-306",
+      "requirement_ids": [
+        "NFR-UX-016"
+      ],
+      "ac_ids": [
+        "AC-477"
+      ],
+      "title": "全画面の Light・Dark・HC で文字 4.5:1・非文字 3:1 未満が 0 件（異常系: メニュー・ダイアログを開いた状態）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-477",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "57a3ab6",
+      "last_run_at": "2026-10-20T07:38:42+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-306-202610200715.log",
+      "history": [
+        {
+          "at": "2026-10-17T22:06:31+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610172040: 承認済みの system AC からケースを作成（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-307",
+      "requirement_ids": [
+        "NFR-UX-017"
+      ],
+      "ac_ids": [
+        "AC-480"
+      ],
+      "title": "画面の切替はフェード、ダイアログ・メニューの出入りが 500ms 以内、reduce で全画面の所要時間 0（異常系: 途中で reduce）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-480",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "57a3ab6",
+      "last_run_at": "2026-10-20T07:38:42+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-307-202610200719.log",
+      "history": [
+        {
+          "at": "2026-10-17T22:06:37+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610172040: 承認済みの system AC からケースを作成（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-308",
+      "requirement_ids": [
+        "NFR-A11Y-009"
+      ],
+      "ac_ids": [
+        "AC-483"
+      ],
+      "title": "320px で全画面に横スクロールなし・全コンポーネントに到達、文字だけ 200% で切れ・重なり 0（拡大・縮小できる面の中は省略記号＋全文・面の中のスクロール、3D・地図は代替の表。異常系: 情報が欠けない）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-483",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "dcebc64",
+      "last_run_at": "2026-10-20T10:45:56+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-308-202610201035.log",
+      "history": [
+        {
+          "at": "2026-10-17T22:06:43+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610172040: 承認済みの system AC からケースを作成（実装前・not_run）"
+        },
+        {
+          "at": "2026-10-18T01:41:58+09:00",
+          "by": "test-designer",
+          "change": "title: '320px で全画面に横スクロールなし・全コンポーネントに到達、文字だけ 200% で切れ・重なり 0（異常系: 情報が欠けない）' -> '320px で全画面に横スクロールなし・全コンポーネントに到達、文字だけ 200% で切れ・重なり 0（拡大・縮小できる面の中は省略記号＋全文・面の中のスクロール、3D・地図は代替の表。異常系: 情報が欠けない）'",
+          "reason": "AC-483 の変更（commit da9dfa9・A-51）: 拡大・縮小できる面の中の文字を数え方から除き、省略記号＋全文のツールチップかアクセシブルな名前・面の中のスクロール・代替の表で判定する"
+        }
+      ]
+    },
+    {
+      "id": "E2E-309",
+      "requirement_ids": [
+        "NFR-A11Y-009"
+      ],
+      "ac_ids": [
+        "AC-484"
+      ],
+      "title": "全画面の一時的な表示（ダイアログ・メニュー・ドロップダウンの一覧など）を Esc で閉じるとフォーカスが戻る、見出しの段が飛ばない（異常系: 常設の listbox「議題」は対象外で残る、作業先）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-484",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "7ca44c2",
+      "last_run_at": "2026-10-20T07:20:17+09:00",
+      "evidence": "work/runs/202610192037/logs/system-test/E2E-309-202610200712.log",
+      "history": [
+        {
+          "at": "2026-10-17T22:06:49+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610172040: 承認済みの system AC からケースを作成（実装前・not_run）"
+        },
+        {
+          "at": "2026-10-18T01:41:59+09:00",
+          "by": "test-designer",
+          "change": "title: '全画面のダイアログ・メニューを Esc で閉じるとフォーカスが戻り、見出しの段が飛ばない（異常系: 作業先）' -> '全画面の一時的な表示（ダイアログ・メニュー・ドロップダウンの一覧など）を Esc で閉じるとフォーカスが戻る、見出しの段が飛ばない（異常系: 常設の listbox「議題」は対象外で残る、作業先）'",
+          "reason": "AC-484 の変更（commit da9dfa9・A-51）: 一時的な表示をダイアログ・メニュー・ポップオーバー・ツールチップ・ドロップダウンの一覧・コマンドパレットに限り、常設の listbox「議題」などを対象外にする"
+        }
+      ]
+    },
+    {
+      "id": "E2E-310",
+      "requirement_ids": [
+        "NFR-A11Y-009"
+      ],
+      "ac_ids": [
+        "AC-485"
+      ],
+      "title": "全画面の操作の対象が 24px 以上（2.5.8 の例外の一覧を除外。異常系: 操作アイコン・メニューの項目）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-485",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "dcebc64",
+      "last_run_at": "2026-10-20T10:45:56+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-310-202610201041.log",
+      "history": [
+        {
+          "at": "2026-10-17T22:06:57+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610172040: 承認済みの system AC からケースを作成（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-311",
+      "requirement_ids": [
+        "FR-215"
+      ],
+      "ac_ids": [
+        "AC-493"
+      ],
+      "title": "ピンのアイコンの切替（名前・押下・Filled/Regular・常に 1 つ）と再読込後の復元（異常系: ほかは固定されない）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-493",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-311-202610200652.log",
+      "history": [
+        {
+          "at": "2026-10-17T22:07:03+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610172040: 承認済みの system AC からケースを作成（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-312",
+      "requirement_ids": [
+        "FR-216"
+      ],
+      "ac_ids": [
+        "AC-495"
+      ],
+      "title": "KPI/OKR 左上・ガント右上をピン止めし 1920→1280→1600px で比率差 1pt 以内・並び・重なりなし・選択と絞り込みを保持",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-495",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-312-202610200654.log",
+      "history": [
+        {
+          "at": "2026-10-17T22:07:09+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610172040: 承認済みの system AC からケースを作成（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-313",
+      "requirement_ids": [
+        "FR-217"
+      ],
+      "ac_ids": [
+        "AC-499"
+      ],
+      "title": "3D の表現を持つ全画面で 2D↔3D の切替で選択・絞り込み・期間・時刻・件数を保ち、再読込で復元（異常系: Esc で不変）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-499",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-313-202610200655.log",
+      "history": [
+        {
+          "at": "2026-10-17T22:07:18+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610172040: 承認済みの system AC からケースを作成（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-314",
+      "requirement_ids": [
+        "FR-218"
+      ],
+      "ac_ids": [
+        "AC-503"
+      ],
+      "title": "一覧表・ナレッジグラフ・3D で世界の表示ごとの件数とツインの線、設備の選択でツインが他画面で強調（区分なしはエンティティの world 欠落だけ・課題などは §3.7 の世界区分。A-57。異常系: 区分なしのパック）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-503",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-314-202610200657.log",
+      "history": [
+        {
+          "at": "2026-10-17T22:07:24+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610172040: 承認済みの system AC からケースを作成（実装前・not_run）"
+        },
+        {
+          "at": "2026-10-18T12:08:44+09:00",
+          "by": "test-designer",
+          "change": "title: '一覧表・ナレッジグラフ・3D で世界の表示ごとの件数とツインの線、設備の選択でツインが他画面で強調（異常系: 区分なしのパック）' -> '一覧表・ナレッジグラフ・3D で世界の表示ごとの件数とツインの線、設備の選択でツインが他画面で強調（区分なしはエンティティの world 欠落だけ・課題などは §3.7 の世界区分。A-57。異常系: 区分なしのパック）'",
+          "reason": "TODO-006・A-57: スキーマに世界区分の項目を持たない課題などを区分なしでなく §3.7 の分類表の世界区分で数えるよう期待値を修正"
+        },
+        {
+          "at": "2026-10-18T12:08:45+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "TODO-006・A-57 で期待値を変更したため未実行に戻す"
+        }
+      ]
+    },
+    {
+      "id": "E2E-315",
+      "requirement_ids": [
+        "FR-217"
+      ],
+      "ac_ids": [
+        "AC-501"
+      ],
+      "title": "3D を新しく作る 6 画面（一覧表・マトリクス・ランキング・課題-解決策・議論ツリー・KPI/OKR）で 3D 空間に項目を表示し、選択・絞り込み・期間・時刻・件数を保ち、再読込で復元、表の代替が残る（異常系: 2D に戻して再読込）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-501",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-315-202610200658.log",
+      "history": [
+        {
+          "at": "2026-10-18T20:15:21+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-316",
+      "requirement_ids": [
+        "FR-219"
+      ],
+      "ac_ids": [
+        "AC-514"
+      ],
+      "title": "種別「人」を含むお手本パックのエクスポート前の確認: 了承なしは件数と「了承の記録なし」が文字で出て続行できずファイルなし（異常系）、了承ありは確認日が出てキーボードだけで中止（ファイルなし）・続行（ファイルあり）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-514",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-316-202610200658.log",
+      "history": [
+        {
+          "at": "2026-10-19T04:50:41+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610190439: FR-219 AC-514 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-317",
+      "requirement_ids": [
+        "FR-220"
+      ],
+      "ac_ids": [
+        "AC-515"
+      ],
+      "title": "2D/3D 切替の一本化: 左メニューに切替の項目がなく、画面の見出しの「ビュー」で 3D の表現を持つコンポーネントが 3D・2D に切り替わる／ピン止めは対象外（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-515",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "0115e84",
+      "last_run_at": "2026-10-20T02:20:15+09:00",
+      "evidence": "work/runs/202610192037/logs/system-test/E2E-317-202610200215.log",
+      "history": [
+        {
+          "at": "2026-10-19T20:56:46+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192037: FR-220 AC-515 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-318",
+      "requirement_ids": [
+        "FR-221"
+      ],
+      "ac_ids": [
+        "AC-517"
+      ],
+      "title": "「メニューを最小化」の文字が Light・Dark・ハイコントラストと 200% で上下とも欠けない／最小化して戻した後も欠けない（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-517",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "7ca44c2",
+      "last_run_at": "2026-10-20T07:20:17+09:00",
+      "evidence": "work/runs/202610192037/logs/system-test/E2E-318-202610200717.log",
+      "history": [
+        {
+          "at": "2026-10-19T20:56:48+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192037: FR-221 AC-517 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-319",
+      "requirement_ids": [
+        "FR-222"
+      ],
+      "ac_ids": [
+        "AC-518"
+      ],
+      "title": "全コンポーネントの見出し右上に最小化・最大化のアイコン（名前・キーボード・常設 6 個以下）／狭い幅で「…」メニューとコマンドパレットに畳む（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-518",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "7ed4356",
+      "last_run_at": "2026-10-20T05:35:49+09:00",
+      "evidence": "work/runs/202610192037/logs/system-test/E2E-319-202610200533.log",
+      "history": [
+        {
+          "at": "2026-10-19T20:56:51+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192037: FR-222 AC-518 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-320",
+      "requirement_ids": [
+        "FR-223"
+      ],
+      "ac_ids": [
+        "AC-519"
+      ],
+      "title": "設定のモーダル表示: 背面が暗く操作不可・固定の大きさ・コンポーネントとして並ばない／Tab の焦点が外に出ない（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-519",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "7ca44c2",
+      "last_run_at": "2026-10-20T07:20:17+09:00",
+      "evidence": "work/runs/202610192037/logs/system-test/E2E-320-202610200718.log",
+      "history": [
+        {
+          "at": "2026-10-19T20:56:53+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192037: FR-223 AC-519 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-321",
+      "requirement_ids": [
+        "FR-224"
+      ],
+      "ac_ids": [
+        "AC-521"
+      ],
+      "title": "縦横の独立したサイズ変更: 右の縁・下の縁・角のドラッグ／最小の大きさで止まる（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-521",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "7ed4356",
+      "last_run_at": "2026-10-20T05:35:49+09:00",
+      "evidence": "work/runs/202610192037/logs/system-test/E2E-321-202610200535.log",
+      "history": [
+        {
+          "at": "2026-10-19T20:56:56+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192037: FR-224 AC-521 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-322",
+      "requirement_ids": [
+        "FR-225"
+      ],
+      "ac_ids": [
+        "AC-523"
+      ],
+      "title": "Fluent 2 のコントラスト: 全画面（減光状態・設定のモーダル含む）の文字 4.5:1・UI 部品 3:1 を Light・Dark・ハイコントラストで満たす",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-523",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "0115e84",
+      "last_run_at": "2026-10-20T02:20:15+09:00",
+      "evidence": "work/runs/202610192037/logs/system-test/E2E-322-202610200218.log",
+      "history": [
+        {
+          "at": "2026-10-19T20:56:59+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192037: FR-225 AC-523 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-323",
+      "requirement_ids": [
+        "FR-226"
+      ],
+      "ac_ids": [
+        "AC-525"
+      ],
+      "title": "「[顧客名] - [プロジェクト名]」の表記が 1 か所／Project を切り替えても 1 か所で前の表記が残らない（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-525",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "0115e84",
+      "last_run_at": "2026-10-20T02:20:15+09:00",
+      "evidence": "work/runs/202610192037/logs/system-test/E2E-323-202610200219.log",
+      "history": [
+        {
+          "at": "2026-10-19T20:57:01+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192037: FR-226 AC-525 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-324",
+      "requirement_ids": [
+        "FR-227"
+      ],
+      "ac_ids": [
+        "AC-526"
+      ],
+      "title": "選択した項目の全コンポーネントでのハイライトと減光（件数の一致）・解除／再クリックで解除（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-526",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "7ed4356",
+      "last_run_at": "2026-10-20T05:35:49+09:00",
+      "evidence": "work/runs/202610192037/logs/system-test/E2E-324-202610200535.log",
+      "history": [
+        {
+          "at": "2026-10-19T20:57:04+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192037: FR-227 AC-526 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-325",
+      "requirement_ids": [
+        "FR-228"
+      ],
+      "ac_ids": [
+        "AC-528"
+      ],
+      "title": "業務分析ステップの見た目: 番号・流れ・44px 以上・現在のステップ／順に押しても現在は 1 つ（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-528",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "7ca44c2",
+      "last_run_at": "2026-10-20T07:20:17+09:00",
+      "evidence": "work/runs/202610192037/logs/system-test/E2E-325-202610200719.log",
+      "history": [
+        {
+          "at": "2026-10-19T20:57:07+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192037: FR-228 AC-528 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-326",
+      "requirement_ids": [
+        "FR-228"
+      ],
+      "ac_ids": [
+        "AC-529"
+      ],
+      "title": "ステップのクリックでの再配置: 工程の順・重要度の大きさ・関連しないものは後ろで最小／ピン止めと手で変えた大きさは不変・消えない（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-529",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "7ca44c2",
+      "last_run_at": "2026-10-20T07:20:17+09:00",
+      "evidence": "work/runs/202610192037/logs/system-test/E2E-326-202610200719.log",
+      "history": [
+        {
+          "at": "2026-10-19T20:57:12+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192037: FR-228 AC-529 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-327",
+      "requirement_ids": [
+        "FR-238"
+      ],
+      "ac_ids": [
+        "AC-562"
+      ],
+      "title": "Graph の表現を持つ 6 画面で 2D→3D→Graph→2D の往復が 2000ms 以内・選択/絞り込み/期間/時刻/件数が不変（正常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-562",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "785aff4",
+      "last_run_at": "2026-10-20T10:35:24+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-327-202610201033.log",
+      "history": [
+        {
+          "at": "2026-10-19T23:53:36+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192300 part 3/3: FR-238 AC-562（未実装・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-328",
+      "requirement_ids": [
+        "FR-237"
+      ],
+      "ac_ids": [
+        "AC-555"
+      ],
+      "title": "意味的ズーム: ビジネス関係グラフで全体→要素→詳細にズームインでき、全体は塊の名前と件数、要素は名称と種別、詳細は属性・出典・関係、パンくずと一つ上・全体へ戻る（異常系: 全体で縮小・一つ上が無効、詳細で拡大が無効）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-555",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "785aff4",
+      "last_run_at": "2026-10-20T10:35:24+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-328-202610201033.log",
+      "history": [
+        {
+          "at": "2026-10-19T23:55:04+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192300: FR-237 AC-555 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-329",
+      "requirement_ids": [
+        "FR-237"
+      ],
+      "ac_ids": [
+        "AC-557"
+      ],
+      "title": "意味的ズーム: ビジネス関係グラフ・Twin ビュー・空間ビュー・データビュアーの {全体,要素,詳細}×{2D,3D,Graph} 9 通りが描画され同じ選択項目が表示される（異常系: 3D を描画できない環境で 3D 無効＋理由、2D/Graph は描画）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-557",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "785aff4",
+      "last_run_at": "2026-10-20T10:35:24+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-329-202610201033.log",
+      "history": [
+        {
+          "at": "2026-10-19T23:55:07+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "run 202610192300: FR-237 AC-557 のケース（実装前・not_run）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-330",
+      "requirement_ids": [
+        "FR-236"
+      ],
+      "ac_ids": [
+        "AC-549"
+      ],
+      "title": "ビジネス関係グラフ: エッジの矢印と意味ラベル・ノード種別の形/アイコン区別（色だけに頼らない）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-549",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "785aff4",
+      "last_run_at": "2026-10-20T10:35:24+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-330-202610201033.log",
+      "history": [
+        {
+          "at": "2026-10-19T23:55:47+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-331",
+      "requirement_ids": [
+        "FR-236"
+      ],
+      "ac_ids": [
+        "AC-554"
+      ],
+      "title": "ビジネス関係グラフ: 選択の他画面連動・種別/意味の絞り込み・世界の表示での絞り込みと選択保持",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-554",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "785aff4",
+      "last_run_at": "2026-10-20T10:35:24+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-331-202610201033.log",
+      "history": [
+        {
+          "at": "2026-10-19T23:55:51+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-332",
+      "requirement_ids": [
+        "FR-239"
+      ],
+      "ac_ids": [
+        "AC-566"
+      ],
+      "title": "Twin ビュー: 現実世界・三つの層・層なし枠・Data/Control の流れの向き/線種/文字の区別",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-566",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "785aff4",
+      "last_run_at": "2026-10-20T10:35:24+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-332-202610201033.log",
+      "history": [
+        {
+          "at": "2026-10-19T23:55:55+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-333",
+      "requirement_ids": [
+        "FR-239"
+      ],
+      "ac_ids": [
+        "AC-568"
+      ],
+      "title": "Twin ビュー: 設備選択でツイン関係と流れで結ばれた項目・流れが強調され他画面と連動",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-568",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "785aff4",
+      "last_run_at": "2026-10-20T10:35:24+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-333-202610201033.log",
+      "history": [
+        {
+          "at": "2026-10-19T23:55:59+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-334",
+      "requirement_ids": [
+        "FR-240"
+      ],
+      "ac_ids": [
+        "AC-571"
+      ],
+      "title": "空間ビュー: ズームインで全体→拠点→フロア→部屋/設備→詳細の5階層と種別の切替",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-571",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-334-202610200617.log",
+      "history": [
+        {
+          "at": "2026-10-19T23:56:02+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-335",
+      "requirement_ids": [
+        "FR-240"
+      ],
+      "ac_ids": [
+        "AC-572"
+      ],
+      "title": "空間ビュー: 3Dで等角投影・フロア選択で強調と他階の薄化・選択保持",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-572",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/E2E-335-202610200617.log",
+      "history": [
+        {
+          "at": "2026-10-19T23:56:06+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "IT-014",
+      "requirement_ids": [
+        "NFR-PERF-003"
+      ],
+      "ac_ids": [
+        "AC-163"
+      ],
+      "title": "AC-163 標準の検証条件で、ページの読み込み開始からオープニングの最初の表示までの時間をブラウザーの性能計測で測ると、{PARAM",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-163",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-014-202610200626.log",
+      "history": [
+        {
+          "at": "2026-10-12T14:08:51+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-015",
+      "requirement_ids": [
+        "NFR-ENV-001"
+      ],
+      "ac_ids": [
+        "AC-165"
+      ],
+      "title": "AC-165 Chromium で、お手本パックの主要画面を巡るスモークテストがページエラー 0 件で合格する。",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-165",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-015-202610200627.log",
+      "history": [
+        {
+          "at": "2026-10-12T14:08:53+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-016",
+      "requirement_ids": [
+        "NFR-ENV-002"
+      ],
+      "ac_ids": [
+        "AC-167"
+      ],
+      "title": "AC-167 標準の検証条件で、localhost 以外へのすべての通信を遮断してお手本パックで起動し、主要画面・3D・音声の再生・エ",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-167",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-016-202610200627.log",
+      "history": [
+        {
+          "at": "2026-10-12T14:08:54+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-017",
+      "requirement_ids": [
+        "NFR-L10N-001"
+      ],
+      "ac_ids": [
+        "AC-168"
+      ],
+      "title": "AC-168 標準の検証条件で、文書の言語属性が `ja` であり、主要画面のボタン・メニュー・見出しの文言が日本語である（製品名・固",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-168",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-017-202610200627.log",
+      "history": [
+        {
+          "at": "2026-10-12T14:08:56+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-018",
+      "requirement_ids": [
+        "NFR-A11Y-001"
+      ],
+      "ac_ids": [
+        "AC-169"
+      ],
+      "title": "AC-169 標準の検証条件で、主要画面それぞれに自動のアクセシビリティ検査（WCAG 2.2 A/AA の規則）をかけると、違反が ",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-169",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-018-202610200627.log",
+      "history": [
+        {
+          "at": "2026-10-12T14:08:58+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-019",
+      "requirement_ids": [
+        "NFR-A11Y-001"
+      ],
+      "ac_ids": [
+        "AC-170"
+      ],
+      "title": "AC-170 標準の検証条件で、主要画面のすべての操作要素に Tab で到達でき、フォーカスの位置が見え、キーボードの罠がない。音声を",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-170",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-019-202610200627.log",
+      "history": [
+        {
+          "at": "2026-10-12T14:09:00+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-020",
+      "requirement_ids": [
+        "NFR-A11Y-002"
+      ],
+      "ac_ids": [
+        "AC-172"
+      ],
+      "title": "AC-172 標準の検証条件で、ミュートとアニメーション停止にしたまま、プレゼンテーションモードを最後まで進め、選択・編集・エクスポー",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-172",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-020-202610200627.log",
+      "history": [
+        {
+          "at": "2026-10-12T14:09:02+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-021",
+      "requirement_ids": [
+        "NFR-A11Y-003"
+      ],
+      "ac_ids": [
+        "AC-173"
+      ],
+      "title": "AC-173 標準の検証条件で、3D ビュー・地図・ナレッジグラフ・2×2 マトリクスのそれぞれで「表で見る」を選ぶと、表示中の項目と",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-173",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-021-202610200627.log",
+      "history": [
+        {
+          "at": "2026-10-12T14:09:04+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-022",
+      "requirement_ids": [
+        "NFR-A11Y-004"
+      ],
+      "ac_ids": [
+        "AC-174"
+      ],
+      "title": "AC-174 標準の検証条件で、ポインターのドラッグを使わずに、コンポーネントの移動と大きさの変更、課題カードのホワイトボードへの配置",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-174",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-022-202610200627.log",
+      "history": [
+        {
+          "at": "2026-10-12T14:09:06+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-023",
+      "requirement_ids": [
+        "NFR-SEC-002"
+      ],
+      "ac_ids": [
+        "AC-176"
+      ],
+      "title": "AC-176 中継プロセスを「接続済み」として振る舞う差し替え部品で起動し、チャットで質問すると、送信中の表示が出て、送信した内容を画",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-176",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-023-202610200627.log",
+      "history": [
+        {
+          "at": "2026-10-12T14:09:08+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-024",
+      "requirement_ids": [
+        "NFR-SEC-003"
+      ],
+      "ac_ids": [
+        "AC-178"
+      ],
+      "title": "AC-178 `internal` の項目を含むお手本パックでプレゼンテーションモードを開始すると、`internal` の項目の件数",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-178",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-024-202610200628.log",
+      "history": [
+        {
+          "at": "2026-10-12T14:09:09+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-025",
+      "requirement_ids": [
+        "NFR-LEGAL-002"
+      ],
+      "ac_ids": [
+        "AC-180"
+      ],
+      "title": "AC-180 標準の検証条件で、主要画面に「サンプル」、AI の回答・サマリー・ツリーに「AI 生成」、ミニ・モックアプリに「モック（",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-180",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-025-202610200628.log",
+      "history": [
+        {
+          "at": "2026-10-12T14:09:11+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-026",
+      "requirement_ids": [
+        "NFR-UX-001"
+      ],
+      "ac_ids": [
+        "AC-185"
+      ],
+      "title": "AC-185 標準の検証条件で、項目を選び、表を絞り込み、時間軸の時刻を指定し、詳細パネルに未保存の入力をした状態で、コンポーネントの",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-185",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-026-202610200628.log",
+      "history": [
+        {
+          "at": "2026-10-12T14:09:12+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-027",
+      "requirement_ids": [
+        "NFR-UX-002"
+      ],
+      "ac_ids": [
+        "AC-186"
+      ],
+      "title": "AC-186 標準の検証条件で、表示幅を {PARAM-029} にすると、コンポーネントがタブか縦積みになり、ページ全体に横スクロー",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-186",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-027-202610200628.log",
+      "history": [
+        {
+          "at": "2026-10-12T14:09:14+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-028",
+      "requirement_ids": [
+        "NFR-UX-003"
+      ],
+      "ac_ids": [
+        "AC-187"
+      ],
+      "title": "AC-187 標準の検証条件で、応答を遅らせたモックの AI でツリーを生成している間、進行中の表示があり（支援技術にも通知され）、キ",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-187",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-028-202610200628.log",
+      "history": [
+        {
+          "at": "2026-10-12T14:09:15+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-029",
+      "requirement_ids": [
+        "NFR-UX-004"
+      ],
+      "ac_ids": [
+        "AC-188"
+      ],
+      "title": "AC-188 標準の検証条件で、保存先への書き込みが失敗する状態でエクスポートすると、失敗の原因と「ZIP でダウンロード」などの次の",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-188",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-029-202610200628.log",
+      "history": [
+        {
+          "at": "2026-10-12T14:09:17+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
+      "id": "IT-030",
+      "requirement_ids": [
+        "NFR-UX-005"
+      ],
+      "ac_ids": [
+        "AC-189"
+      ],
+      "title": "AC-189 prefers-color-scheme を dark にしたブラウザーで初めて起動するとダークテーマで表示される。ブラ",
+      "layer": "nonfunctional",
+      "command": "node tests/system/run.mjs AC-189",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "3018070",
+      "last_run_at": "2026-10-20T07:02:11+09:00",
+      "evidence": "work/runs/202610192300/logs/system-test/IT-030-202610200628.log",
+      "history": [
+        {
+          "at": "2026-10-12T14:09:18+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        }
+      ]
+    },
+    {
       "id": "IT-031",
       "requirement_ids": [
         "FR-188"
@@ -6842,592 +7688,6 @@
       "history": [
         {
           "at": "2026-10-16T21:20:31+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        }
-      ]
-    },
-    {
-      "id": "E2E-304",
-      "requirement_ids": [
-        "FR-201"
-      ],
-      "ac_ids": [
-        "AC-440"
-      ],
-      "title": "A=X・B=Y を保存し開き直すと各 Project の選択だけが表示される",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-440",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-304-202610200639.log",
-      "history": [
-        {
-          "at": "2026-10-16T23:26:55+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        },
-        {
-          "at": "2026-10-17T01:04:35+09:00",
-          "by": "test-designer",
-          "change": "command: 'npx playwright test -c tests/system/playwright.config.ts -g \"FR-201 AC-440\"' -> 'node tests/system/run.mjs AC-440'",
-          "reason": "root npx playwright (別版) で fail。E2E-301 の run.mjs 書式に合わせる"
-        }
-      ]
-    },
-    {
-      "id": "E2E-305",
-      "requirement_ids": [
-        "NFR-UX-015"
-      ],
-      "ac_ids": [
-        "AC-476"
-      ],
-      "title": "全画面で文字の段・角丸・エレベーションが Fluent 2 のトークンに一致（Light・Dark は影の段、HC は 4 辺の境界線か輪郭線。異常系: 狭い幅・最大化）",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-476",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "dcebc64",
-      "last_run_at": "2026-10-20T10:45:56+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-305-202610201035.log",
-      "history": [
-        {
-          "at": "2026-10-17T22:06:25+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "run 202610172040: 承認済みの system AC からケースを作成（実装前・not_run）"
-        },
-        {
-          "at": "2026-10-18T01:41:58+09:00",
-          "by": "test-designer",
-          "change": "title: '全画面で文字の段・角丸・役割ごとの影が Fluent 2 のトークンに一致（Light・Dark・HC、異常系: 狭い幅・最大化）' -> '全画面で文字の段・角丸・エレベーションが Fluent 2 のトークンに一致（Light・Dark は影の段、HC は 4 辺の境界線か輪郭線。異常系: 狭い幅・最大化）'",
-          "reason": "AC-476 の変更（commit 4a8134d・A-56）: ハイコントラストでは影の段の代わりに、ダイアログ・メニュー・ツールチップ・カードの 4 辺の境界線（1px 以上・none/hidden でない）か輪郭線で判定する"
-        }
-      ]
-    },
-    {
-      "id": "E2E-306",
-      "requirement_ids": [
-        "NFR-UX-016"
-      ],
-      "ac_ids": [
-        "AC-477"
-      ],
-      "title": "全画面の Light・Dark・HC で文字 4.5:1・非文字 3:1 未満が 0 件（異常系: メニュー・ダイアログを開いた状態）",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-477",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "57a3ab6",
-      "last_run_at": "2026-10-20T07:38:42+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-306-202610200715.log",
-      "history": [
-        {
-          "at": "2026-10-17T22:06:31+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "run 202610172040: 承認済みの system AC からケースを作成（実装前・not_run）"
-        }
-      ]
-    },
-    {
-      "id": "E2E-307",
-      "requirement_ids": [
-        "NFR-UX-017"
-      ],
-      "ac_ids": [
-        "AC-480"
-      ],
-      "title": "画面の切替はフェード、ダイアログ・メニューの出入りが 500ms 以内、reduce で全画面の所要時間 0（異常系: 途中で reduce）",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-480",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "57a3ab6",
-      "last_run_at": "2026-10-20T07:38:42+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-307-202610200719.log",
-      "history": [
-        {
-          "at": "2026-10-17T22:06:37+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "run 202610172040: 承認済みの system AC からケースを作成（実装前・not_run）"
-        }
-      ]
-    },
-    {
-      "id": "E2E-308",
-      "requirement_ids": [
-        "NFR-A11Y-009"
-      ],
-      "ac_ids": [
-        "AC-483"
-      ],
-      "title": "320px で全画面に横スクロールなし・全コンポーネントに到達、文字だけ 200% で切れ・重なり 0（拡大・縮小できる面の中は省略記号＋全文・面の中のスクロール、3D・地図は代替の表。異常系: 情報が欠けない）",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-483",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "dcebc64",
-      "last_run_at": "2026-10-20T10:45:56+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-308-202610201035.log",
-      "history": [
-        {
-          "at": "2026-10-17T22:06:43+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "run 202610172040: 承認済みの system AC からケースを作成（実装前・not_run）"
-        },
-        {
-          "at": "2026-10-18T01:41:58+09:00",
-          "by": "test-designer",
-          "change": "title: '320px で全画面に横スクロールなし・全コンポーネントに到達、文字だけ 200% で切れ・重なり 0（異常系: 情報が欠けない）' -> '320px で全画面に横スクロールなし・全コンポーネントに到達、文字だけ 200% で切れ・重なり 0（拡大・縮小できる面の中は省略記号＋全文・面の中のスクロール、3D・地図は代替の表。異常系: 情報が欠けない）'",
-          "reason": "AC-483 の変更（commit da9dfa9・A-51）: 拡大・縮小できる面の中の文字を数え方から除き、省略記号＋全文のツールチップかアクセシブルな名前・面の中のスクロール・代替の表で判定する"
-        }
-      ]
-    },
-    {
-      "id": "E2E-309",
-      "requirement_ids": [
-        "NFR-A11Y-009"
-      ],
-      "ac_ids": [
-        "AC-484"
-      ],
-      "title": "全画面の一時的な表示（ダイアログ・メニュー・ドロップダウンの一覧など）を Esc で閉じるとフォーカスが戻る、見出しの段が飛ばない（異常系: 常設の listbox「議題」は対象外で残る、作業先）",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-484",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-309-202610200650.log",
-      "history": [
-        {
-          "at": "2026-10-17T22:06:49+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "run 202610172040: 承認済みの system AC からケースを作成（実装前・not_run）"
-        },
-        {
-          "at": "2026-10-18T01:41:59+09:00",
-          "by": "test-designer",
-          "change": "title: '全画面のダイアログ・メニューを Esc で閉じるとフォーカスが戻り、見出しの段が飛ばない（異常系: 作業先）' -> '全画面の一時的な表示（ダイアログ・メニュー・ドロップダウンの一覧など）を Esc で閉じるとフォーカスが戻る、見出しの段が飛ばない（異常系: 常設の listbox「議題」は対象外で残る、作業先）'",
-          "reason": "AC-484 の変更（commit da9dfa9・A-51）: 一時的な表示をダイアログ・メニュー・ポップオーバー・ツールチップ・ドロップダウンの一覧・コマンドパレットに限り、常設の listbox「議題」などを対象外にする"
-        }
-      ]
-    },
-    {
-      "id": "E2E-310",
-      "requirement_ids": [
-        "NFR-A11Y-009"
-      ],
-      "ac_ids": [
-        "AC-485"
-      ],
-      "title": "全画面の操作の対象が 24px 以上（2.5.8 の例外の一覧を除外。異常系: 操作アイコン・メニューの項目）",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-485",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "dcebc64",
-      "last_run_at": "2026-10-20T10:45:56+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-310-202610201041.log",
-      "history": [
-        {
-          "at": "2026-10-17T22:06:57+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "run 202610172040: 承認済みの system AC からケースを作成（実装前・not_run）"
-        }
-      ]
-    },
-    {
-      "id": "E2E-311",
-      "requirement_ids": [
-        "FR-215"
-      ],
-      "ac_ids": [
-        "AC-493"
-      ],
-      "title": "ピンのアイコンの切替（名前・押下・Filled/Regular・常に 1 つ）と再読込後の復元（異常系: ほかは固定されない）",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-493",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-311-202610200652.log",
-      "history": [
-        {
-          "at": "2026-10-17T22:07:03+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "run 202610172040: 承認済みの system AC からケースを作成（実装前・not_run）"
-        }
-      ]
-    },
-    {
-      "id": "E2E-312",
-      "requirement_ids": [
-        "FR-216"
-      ],
-      "ac_ids": [
-        "AC-495"
-      ],
-      "title": "KPI/OKR 左上・ガント右上をピン止めし 1920→1280→1600px で比率差 1pt 以内・並び・重なりなし・選択と絞り込みを保持",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-495",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-312-202610200654.log",
-      "history": [
-        {
-          "at": "2026-10-17T22:07:09+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "run 202610172040: 承認済みの system AC からケースを作成（実装前・not_run）"
-        }
-      ]
-    },
-    {
-      "id": "E2E-313",
-      "requirement_ids": [
-        "FR-217"
-      ],
-      "ac_ids": [
-        "AC-499"
-      ],
-      "title": "3D の表現を持つ全画面で 2D↔3D の切替で選択・絞り込み・期間・時刻・件数を保ち、再読込で復元（異常系: Esc で不変）",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-499",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-313-202610200655.log",
-      "history": [
-        {
-          "at": "2026-10-17T22:07:18+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "run 202610172040: 承認済みの system AC からケースを作成（実装前・not_run）"
-        }
-      ]
-    },
-    {
-      "id": "E2E-314",
-      "requirement_ids": [
-        "FR-218"
-      ],
-      "ac_ids": [
-        "AC-503"
-      ],
-      "title": "一覧表・ナレッジグラフ・3D で世界の表示ごとの件数とツインの線、設備の選択でツインが他画面で強調（区分なしはエンティティの world 欠落だけ・課題などは §3.7 の世界区分。A-57。異常系: 区分なしのパック）",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-503",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-314-202610200657.log",
-      "history": [
-        {
-          "at": "2026-10-17T22:07:24+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "run 202610172040: 承認済みの system AC からケースを作成（実装前・not_run）"
-        },
-        {
-          "at": "2026-10-18T12:08:44+09:00",
-          "by": "test-designer",
-          "change": "title: '一覧表・ナレッジグラフ・3D で世界の表示ごとの件数とツインの線、設備の選択でツインが他画面で強調（異常系: 区分なしのパック）' -> '一覧表・ナレッジグラフ・3D で世界の表示ごとの件数とツインの線、設備の選択でツインが他画面で強調（区分なしはエンティティの world 欠落だけ・課題などは §3.7 の世界区分。A-57。異常系: 区分なしのパック）'",
-          "reason": "TODO-006・A-57: スキーマに世界区分の項目を持たない課題などを区分なしでなく §3.7 の分類表の世界区分で数えるよう期待値を修正"
-        },
-        {
-          "at": "2026-10-18T12:08:45+09:00",
-          "by": "test-designer",
-          "change": "status -> not_run",
-          "reason": "TODO-006・A-57 で期待値を変更したため未実行に戻す"
-        }
-      ]
-    },
-    {
-      "id": "E2E-315",
-      "requirement_ids": [
-        "FR-217"
-      ],
-      "ac_ids": [
-        "AC-501"
-      ],
-      "title": "3D を新しく作る 6 画面（一覧表・マトリクス・ランキング・課題-解決策・議論ツリー・KPI/OKR）で 3D 空間に項目を表示し、選択・絞り込み・期間・時刻・件数を保ち、再読込で復元、表の代替が残る（異常系: 2D に戻して再読込）",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-501",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-315-202610200658.log",
-      "history": [
-        {
-          "at": "2026-10-18T20:15:21+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        }
-      ]
-    },
-    {
-      "id": "E2E-316",
-      "requirement_ids": [
-        "FR-219"
-      ],
-      "ac_ids": [
-        "AC-514"
-      ],
-      "title": "種別「人」を含むお手本パックのエクスポート前の確認: 了承なしは件数と「了承の記録なし」が文字で出て続行できずファイルなし（異常系）、了承ありは確認日が出てキーボードだけで中止（ファイルなし）・続行（ファイルあり）",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-514",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-316-202610200658.log",
-      "history": [
-        {
-          "at": "2026-10-19T04:50:41+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "run 202610190439: FR-219 AC-514 のケース（実装前・not_run）"
-        }
-      ]
-    },
-    {
-      "id": "E2E-327",
-      "requirement_ids": [
-        "FR-238"
-      ],
-      "ac_ids": [
-        "AC-562"
-      ],
-      "title": "Graph の表現を持つ 6 画面で 2D→3D→Graph→2D の往復が 2000ms 以内・選択/絞り込み/期間/時刻/件数が不変（正常系）",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-562",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "785aff4",
-      "last_run_at": "2026-10-20T10:35:24+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-327-202610201033.log",
-      "history": [
-        {
-          "at": "2026-10-19T23:53:36+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "run 202610192300 part 3/3: FR-238 AC-562（未実装・not_run）"
-        }
-      ]
-    },
-    {
-      "id": "E2E-328",
-      "requirement_ids": [
-        "FR-237"
-      ],
-      "ac_ids": [
-        "AC-555"
-      ],
-      "title": "意味的ズーム: ビジネス関係グラフで全体→要素→詳細にズームインでき、全体は塊の名前と件数、要素は名称と種別、詳細は属性・出典・関係、パンくずと一つ上・全体へ戻る（異常系: 全体で縮小・一つ上が無効、詳細で拡大が無効）",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-555",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "785aff4",
-      "last_run_at": "2026-10-20T10:35:24+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-328-202610201033.log",
-      "history": [
-        {
-          "at": "2026-10-19T23:55:04+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "run 202610192300: FR-237 AC-555 のケース（実装前・not_run）"
-        }
-      ]
-    },
-    {
-      "id": "E2E-329",
-      "requirement_ids": [
-        "FR-237"
-      ],
-      "ac_ids": [
-        "AC-557"
-      ],
-      "title": "意味的ズーム: ビジネス関係グラフ・Twin ビュー・空間ビュー・データビュアーの {全体,要素,詳細}×{2D,3D,Graph} 9 通りが描画され同じ選択項目が表示される（異常系: 3D を描画できない環境で 3D 無効＋理由、2D/Graph は描画）",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-557",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "785aff4",
-      "last_run_at": "2026-10-20T10:35:24+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-329-202610201033.log",
-      "history": [
-        {
-          "at": "2026-10-19T23:55:07+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "run 202610192300: FR-237 AC-557 のケース（実装前・not_run）"
-        }
-      ]
-    },
-    {
-      "id": "E2E-330",
-      "requirement_ids": [
-        "FR-236"
-      ],
-      "ac_ids": [
-        "AC-549"
-      ],
-      "title": "ビジネス関係グラフ: エッジの矢印と意味ラベル・ノード種別の形/アイコン区別（色だけに頼らない）",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-549",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "785aff4",
-      "last_run_at": "2026-10-20T10:35:24+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-330-202610201033.log",
-      "history": [
-        {
-          "at": "2026-10-19T23:55:47+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        }
-      ]
-    },
-    {
-      "id": "E2E-331",
-      "requirement_ids": [
-        "FR-236"
-      ],
-      "ac_ids": [
-        "AC-554"
-      ],
-      "title": "ビジネス関係グラフ: 選択の他画面連動・種別/意味の絞り込み・世界の表示での絞り込みと選択保持",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-554",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "785aff4",
-      "last_run_at": "2026-10-20T10:35:24+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-331-202610201033.log",
-      "history": [
-        {
-          "at": "2026-10-19T23:55:51+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        }
-      ]
-    },
-    {
-      "id": "E2E-332",
-      "requirement_ids": [
-        "FR-239"
-      ],
-      "ac_ids": [
-        "AC-566"
-      ],
-      "title": "Twin ビュー: 現実世界・三つの層・層なし枠・Data/Control の流れの向き/線種/文字の区別",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-566",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "785aff4",
-      "last_run_at": "2026-10-20T10:35:24+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-332-202610201033.log",
-      "history": [
-        {
-          "at": "2026-10-19T23:55:55+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        }
-      ]
-    },
-    {
-      "id": "E2E-333",
-      "requirement_ids": [
-        "FR-239"
-      ],
-      "ac_ids": [
-        "AC-568"
-      ],
-      "title": "Twin ビュー: 設備選択でツイン関係と流れで結ばれた項目・流れが強調され他画面と連動",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-568",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "785aff4",
-      "last_run_at": "2026-10-20T10:35:24+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-333-202610201033.log",
-      "history": [
-        {
-          "at": "2026-10-19T23:55:59+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        }
-      ]
-    },
-    {
-      "id": "E2E-334",
-      "requirement_ids": [
-        "FR-240"
-      ],
-      "ac_ids": [
-        "AC-571"
-      ],
-      "title": "空間ビュー: ズームインで全体→拠点→フロア→部屋/設備→詳細の5階層と種別の切替",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-571",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-334-202610200617.log",
-      "history": [
-        {
-          "at": "2026-10-19T23:56:02+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        }
-      ]
-    },
-    {
-      "id": "E2E-335",
-      "requirement_ids": [
-        "FR-240"
-      ],
-      "ac_ids": [
-        "AC-572"
-      ],
-      "title": "空間ビュー: 3Dで等角投影・フロア選択で強調と他階の薄化・選択保持",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-572",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "3018070",
-      "last_run_at": "2026-10-20T07:02:11+09:00",
-      "evidence": "work/runs/202610192300/logs/system-test/E2E-335-202610200617.log",
-      "history": [
-        {
-          "at": "2026-10-19T23:56:06+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"

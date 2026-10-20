@@ -4,11 +4,12 @@ import { Button, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, Tooltip, ma
 import { MoreHorizontal20Regular } from '@fluentui/react-icons';
 import type { Move } from './layoutModel';
 import { SNAP_LABEL, type SnapKind } from './snap';
-import { PIN_MOVE_REASON, PIN_TABS_REASON, paneAction, type PaneActionId } from './paneActions';
+import { PIN_MOVE_REASON, PIN_RESIZE_REASON, PIN_TABS_REASON, paneAction, type PaneActionId } from './paneActions';
 import { ComponentViewButton, ComponentViewSubmenu } from '../view/ViewMenu';
 
 const useActionStyles = makeStyles({
   actions: { display: 'flex', alignItems: 'center', columnGap: tokens.spacingHorizontalXXS, flexShrink: 0 },
+  group: { display: 'contents' },
   // 当たり判定は 24 CSS px 以上（WCAG 2.2 の 2.5.8。PARAM-040）
   icon: { minWidth: '24px', minHeight: '24px' },
 });
@@ -47,10 +48,16 @@ export interface PaneInfo {
   untab: () => void;
   /** ピン止めしているか（FR-215） */
   pinned: boolean;
+  /** いまのステップから見た関連・工程の順・重要度（FR-228。data-step-* に出す） */
+  step?: { relevant: boolean; rank: number; importance: 'high' | 'normal' };
   /** ピン止めする／外す（FR-215） */
   togglePin: () => void;
   /** 見出しのポインター操作で移動を始める（FR-142）。キーボードの代わりはメニューと Alt+Shift+矢印キー（NFR-A11Y-004） */
   startDrag: (e: { button: number; clientX: number; clientY: number; pointerId?: number }) => void;
+  /** 縦・横を独立に大きさを変える（キーボード・コマンド。FR-224 AC-522）。dir は +1 で大きく、-1 で小さく */
+  resizeBy: (axis: 'w' | 'h', dir: 1 | -1) => void;
+  /** 縁・角のドラッグで大きさを変え始める（FR-224 AC-521） */
+  startResize: (edge: 'e' | 's' | 'se', e: { button: number; clientX: number; clientY: number }) => void;
 }
 
 export const PaneContext = createContext<PaneInfo | null>(null);
@@ -93,6 +100,10 @@ export function ComponentMenu({ pane, title }: { pane: PaneInfo; title: string }
             </MenuPopover>
           </Menu>
           )}
+          <MenuItem disabled={pane.pinned} secondaryContent={pane.pinned ? PIN_RESIZE_REASON : undefined} onClick={() => pane.resizeBy('w', 1)}>幅を広げる</MenuItem>
+          <MenuItem disabled={pane.pinned} secondaryContent={pane.pinned ? PIN_RESIZE_REASON : undefined} onClick={() => pane.resizeBy('w', -1)}>幅を狭める</MenuItem>
+          <MenuItem disabled={pane.pinned} secondaryContent={pane.pinned ? PIN_RESIZE_REASON : undefined} onClick={() => pane.resizeBy('h', 1)}>高さを広げる</MenuItem>
+          <MenuItem disabled={pane.pinned} secondaryContent={pane.pinned ? PIN_RESIZE_REASON : undefined} onClick={() => pane.resizeBy('h', -1)}>高さを狭める</MenuItem>
           <MenuItem onClick={pane.toggleMaximize}>{paneAction('maximize', pane.maximized).label}</MenuItem>
           <MenuItem onClick={pane.toggleExpand}>{pane.expanded ? '拡大表示を戻す' : '拡大表示（75%）'}</MenuItem>
           <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={pane.toggleFloat}>{pane.floating ? '分割の配置に戻す' : '自由に動かせる配置にする'}</MenuItem>
@@ -156,22 +167,17 @@ export function ComponentActions({ pane, title, active, narrow }: { pane: PaneIn
   // 広いときは visibility: hidden で場所を残す（フォーカスが入った瞬間に見出しの折り返しが変わり、押そうとしたボタンが動いてクリックが外れるのを防ぐ）。狭いときは display: none。
   // フォーカスが入ると現れ、操作できる（FR-150）。最小化中は復元のアイコンだけを、フォーカスに関わらず出す
   const shown = (active && !narrow) || pane.minimized;
-  // 狭いときも、フォーカス中は「ビュー」ボタンだけを出す（現在の表示モードを文字で示す。FR-217・FR-218・D-01）。ほかの操作は「…」メニューから行う
-  const viewOnly = active && narrow && !pane.minimized;
+  // 狭いときも、最小化・最大化（元に戻す）は見出しに残す（FR-222）。ピン止め・タブ化・非表示・ビューは「…」メニューに畳む（NFR-UX-018）
+  const coreStyle = shown || narrow ? undefined : { visibility: 'hidden' as const };
+  const extraStyle = shown && !narrow ? undefined : narrow ? { display: 'none' } : { visibility: 'hidden' as const };
   const TabsIcon = paneAction('tabs').Icon;
-  if (viewOnly) {
-    return (
-      <>
-        <div className={s.actions} data-testid="component-actions"><ComponentViewButton paneKey={pane.key} /></div>
-        <ComponentMenu pane={pane} title={title} />
-      </>
-    );
-  }
   return (
-    <>
-    <div className={s.actions} data-testid="component-actions" data-minimized={pane.minimized ? 'true' : undefined} style={shown ? undefined : narrow ? { display: 'none' } : { visibility: 'hidden' }}>
+    <div className={s.actions} data-testid="component-actions" data-minimized={pane.minimized ? 'true' : undefined}>
+      <span className={s.group} style={extraStyle}>
       {/* ピン止めの切替（FR-215）: 現在の状態に応じたアイコンを 1 つだけ出す。固定なし＝「ピン止めする」Regular、固定中＝「ピン止めを外す」Filled */}
       <ActionButton action="pin" on={pane.pinned} pressed={pane.pinned} onClick={pane.togglePin} />
+      </span>
+      <span className={s.group} style={coreStyle}>
       {pane.minimized ? (
         // 最小化中は、フォーカスの有無に関わらず復元できる（見出しの操作で元の位置・大きさに戻る。FR-151）
         <ActionButton action="minimize" on onClick={pane.toggleMinimize} />
@@ -180,6 +186,12 @@ export function ComponentActions({ pane, title, active, narrow }: { pane: PaneIn
         <>
           <ActionButton action="maximize" on={pane.maximized} onClick={pane.toggleMaximize} />
           <ActionButton action="minimize" onClick={pane.toggleMinimize} />
+        </>
+      ) : null}
+      </span>
+      <span className={s.group} style={extraStyle}>
+      {!pane.minimized ? (
+        <>
           {pane.pinned ? (
             // ピン止め中はタブにまとめない（FR-216 AC-505）。理由をツールチップと名前で示す
             <ActionButton action="tabs" disabledReason={PIN_TABS_REASON} />
@@ -206,8 +218,8 @@ export function ComponentActions({ pane, title, active, narrow }: { pane: PaneIn
           <ComponentViewButton paneKey={pane.key} />
         </>
       ) : null}
+      </span>
+      <ComponentMenu pane={pane} title={title} />
     </div>
-    <ComponentMenu pane={pane} title={title} />
-    </>
   );
 }

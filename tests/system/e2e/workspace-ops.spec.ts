@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準（docs/requirements/app-experience.md の FR-148〜154・NFR-UX-008）だけから決める。
 // 画面の探し方は tests/system/CONTRACT.md §10。PARAM-040=24 CSS px、PARAM-041=200 ms、PARAM-042=32 CSS px。
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, selectPersona, setEditMode, reloadAndEnter } from '../support/fixtures';
+import { test, expect, openScreen, component, selectPersona, setEditMode, reloadAndEnter, closeSettings } from '../support/fixtures';
 
 const HIT = 24; // PARAM-040
 const MOTION_MS = 200; // PARAM-041
@@ -17,7 +17,7 @@ async function box(loc: Locator) {
 /** 直下のコンポーネント（component-menu と入れ子を除く）の key 一覧 */
 async function topKeys(page: Page): Promise<string[]> {
   return page.getByTestId('workspace').evaluate((ws) => {
-    const sel = '[data-testid^="component-"]:not([data-testid="component-menu"])';
+    const sel = '[data-testid^="component-"]:not([data-testid="component-menu"]):not([data-testid="component-actions"])';
     const out: string[] = [];
     ws.querySelectorAll(sel).forEach((el) => {
       const r = (el as HTMLElement).getBoundingClientRect();
@@ -219,6 +219,7 @@ test.describe('FR-151 最小化と左メニューのアイコン表示', () => {
     await expect(page.getByRole('tooltip')).toContainText(/設定/);
     await page.getByTestId('nav-settings').click();
     await expect(component(page, 'settings')).toBeVisible();
+    await closeSettings(page); // 設定はモーダル（FR-223）
     await page.getByRole('button', { name: /メニューを(元の幅に戻す|展開)/ }).focus();
     await page.keyboard.press('Enter');
     expect((await box(page.getByTestId('nav-canvas'))).width).toBeGreaterThanOrEqual(wide.width - 2);

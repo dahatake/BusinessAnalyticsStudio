@@ -3,7 +3,7 @@
 import JSZip from 'jszip';
 import path from 'node:path';
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, entity, hook, captureDownload, recordExportConsent, setEditMode, measureFrameTimes, saveEvidence, gotoAndEnter } from '../support/fixtures';
+import { test, expect, openScreen, component, entity, hook, captureDownload, recordExportConsent, setEditMode, closeSettings, measureFrameTimes, saveEvidence, gotoAndEnter } from '../support/fixtures';
 import { examplePack } from '../support/packs';
 
 const mono = examplePack('mono');
@@ -84,12 +84,13 @@ test.describe('FR-088 インクの道具', () => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await start();
     const s = await surface(page);
+    // 位置は 2 列（ヘッダーの折り返しでボード面が下がっても、下端の show コントロールバーに重ならないよう、縦は 200px 以内）
     const tools = ['ペン', '蛍光ペン', '直線', '矢印', '矩形', '円', '吹き出し'];
-    let y = 30;
-    for (const t of tools) {
+    for (const [i, t] of tools.entries()) {
+      const x = i < 4 ? 40 : 220;
+      const y = 30 + (i % 4) * 50;
       await tool(page, t);
-      await drawLine(page, s, [40, y], [160, y + 30]);
-      y += 50;
+      await drawLine(page, s, [x, y], [x + 120, y + 30]);
     }
     const b1 = await active(page);
     expect(b1.strokes.length + b1.items.filter((i) => i.type === 'shape').length, '各道具の結果がボードにない').toBeGreaterThanOrEqual(tools.length);
@@ -181,6 +182,7 @@ test.describe('FR-091 ツールバーとプレゼン中の注釈', () => {
     await start();
     const settings = await openScreen(page, 'settings');
     await settings.getByRole('radio', { name: '左利き' }).check();
+    await closeSettings(page); // 設定はモーダル（FR-223）
     await surface(page);
     const tb = page.getByRole('toolbar', { name: 'インクの道具' });
     const tbb = (await tb.boundingBox())!;

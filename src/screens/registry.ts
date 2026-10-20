@@ -62,7 +62,7 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'discussion-tree', label: '議論ツリー', icon: TextBulletListTree24Regular, component: DiscussionTreeScreen, view: { has2D: true, has3D: true, ...tableWorldDecl(['議論ツリー']), kinds: [] } },
   { key: 'table', label: '一覧表', icon: Table24Regular, component: TableScreen, view: { has2D: true, has3D: true, world: 'items' } },
   { key: 'gantt', label: 'ガントチャート', icon: DataBarHorizontal24Regular, component: GanttScreen, view: { has2D: true, has3D: true, cpu3D: true, ...tableWorldDecl(['工程']), kinds: ['task'] } },
-  { key: 'view3d', label: '3D ビュー', icon: Cube24Regular, component: View3DScreen, view: { has2D: false, has3D: true, world: 'items', fixed: true, kinds: ['entity'] } },
+  { key: 'view3d', label: '3D ビューと 2D 図面', icon: Cube24Regular, component: View3DScreen, view: { has2D: false, has3D: true, world: 'items', fixed: true, kinds: ['entity'] } },
   { key: 'drawing2d', label: '2D 図面', icon: Ruler24Regular, component: Drawing2DScreen, view: { has2D: true, has3D: false, world: 'items', fixed: true, kinds: ['entity'] } },
   { key: 'map', label: '地図', icon: Map24Regular, component: MapScreen, view: { has2D: true, has3D: true, defaultMode: '3d', world: 'items', kinds: ['entity'] } },
   { key: 'kpi-okr', label: 'KPI/OKR', icon: Target24Regular, component: KpiOkrScreen, view: { has2D: true, has3D: true, hasGraph: true, ...tableWorldDecl(['KPI', 'OKR']), kinds: [] } },
@@ -74,6 +74,6 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'spatial-view', label: '空間ビュー', icon: Building24Regular, component: SpatialScreen, view: { has2D: true, has3D: true, hasGraph: true, defaultMode: '3d', world: false, kinds: [] } },
   { key: 'whiteboard', label: 'ホワイトボード', icon: Whiteboard24Regular, component: WhiteboardScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['付箋', 'ストローク'], 'ボードの付箋・ストローク'), kinds: [] } },
   { key: 'themes', label: '議論テーマ', icon: CommentMultiple24Regular, component: ThemesScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['議論テーマ']), kinds: [] } },
-  { key: 'settings', label: '設定パネル', icon: Settings24Regular, component: SettingsScreen, view: V2 },
+  { key: 'settings', label: '設定パネル', icon: Settings24Regular, component: SettingsScreen, view: V2, modal: true },
   { key: 'chat', label: 'チャット', icon: Chat24Regular, component: ChatScreen, view: V2 },
 ];

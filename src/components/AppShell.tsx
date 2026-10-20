@@ -52,7 +52,9 @@ const useStyles = makeStyles({
   navButton: { justifyContent: 'flex-start', minHeight: '32px' },
   // アイコンだけの列（FR-151）。当たり判定は 24 CSS px 以上
   navButtonMin: { justifyContent: 'center', minWidth: '32px', paddingInline: 0 },
-  navToggle: { alignSelf: 'flex-start' },
+  // 「メニューを最小化」の文字を上下とも欠けさせない（FR-221 AC-517）。Fluent のボタンは overflow: hidden で行の高さが 20px のため、
+  // 和文フォント（游ゴシック UI・メイリオなど）の文字の箱（約 1.5em）が行より高いと上下が切り取られる。行の高さは文字の段（14px は 20px、NFR-UX-015 AC-476）のまま、はみ出しを切り取らず（overflow: visible）、高さは内容に合わせる
+  navToggle: { alignSelf: 'flex-start', overflow: 'visible', lineHeight: tokens.lineHeightBase300, minHeight: '32px', height: 'auto', paddingBlock: tokens.spacingVerticalXS },
   main: {
     position: 'relative',
     display: 'flex',

@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準（docs/requirements/app-experience.md の FR-142〜144・NFR-UX-007）だけから決める。
 // 画面の探し方は tests/system/CONTRACT.md §9。PARAM-033=1.5 倍、PARAM-034=240 CSS px、PARAM-035=12 CSS px。
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, selectPersona, pressOpeningEscape } from '../support/fixtures';
+import { test, expect, openScreen, component, selectPersona, pressOpeningEscape, closeSettings } from '../support/fixtures';
 import { examplePack } from '../support/packs';
 
 const mono = examplePack('mono');
@@ -19,7 +19,7 @@ async function box(loc: Locator) {
 const area = (b: { width: number; height: number }) => b.width * b.height;
 
 function visibleComponents(page: Page): Locator {
-  return page.getByTestId('workspace').locator('[data-testid^="component-"]:not([data-testid="component-menu"])');
+  return page.getByTestId('workspace').locator('[data-testid^="component-"]:not([data-testid="component-menu"]):not([data-testid="component-actions"])');
 }
 async function keys(page: Page): Promise<string[]> {
   const all = visibleComponents(page);
@@ -33,7 +33,7 @@ async function keys(page: Page): Promise<string[]> {
 /** 祖先に component-*（component-menu を除く）がある要素を除いた、直下のコンポーネントだけ。 */
 async function topKeys(page: Page): Promise<string[]> {
   return page.getByTestId('workspace').evaluate((ws) => {
-    const sel = '[data-testid^="component-"]:not([data-testid="component-menu"])';
+    const sel = '[data-testid^="component-"]:not([data-testid="component-menu"]):not([data-testid="component-actions"])';
     const out: string[] = [];
     ws.querySelectorAll(sel).forEach((el) => {
       const parent = el.parentElement?.closest(sel);
@@ -277,7 +277,8 @@ test.describe('FR-144 起動後のデモ／実プロジェクトの選択', () =
     await seedProjects(page, '合成株式会社A', ['業務改善 2026']);
     const settings = await openScreen(page, 'settings');
     await settings.getByRole('switch', { name: '選択画面にデモを表示' }).uncheck();
-    await page.getByRole('button', { name: '作業先' }).click();
+        await closeSettings(page); // 設定はモーダル（FR-223）
+        await page.getByRole('button', { name: '作業先' }).click();
     let picker = page.getByRole('dialog', { name: '作業先の選択' });
     await expect(picker.getByRole('option', { name: /合成株式会社A.*業務改善 2026/ })).toBeVisible();
     await expect(picker.getByRole('option', { name: /デモ/ })).toHaveCount(0);

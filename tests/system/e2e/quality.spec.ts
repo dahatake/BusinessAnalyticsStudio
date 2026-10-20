@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準（docs/requirements/quality.md）と PARAM（§3.3）から決める。
 import AxeBuilder from '@axe-core/playwright';
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, entity, hook, scene, MAIN_SCREENS, captureDownload, recordExportConsent, continuePersonConfirm, selectPersona, setEditMode } from '../support/fixtures';
+import { test, expect, openScreen, component, entity, hook, scene, MAIN_SCREENS, captureDownload, recordExportConsent, continuePersonConfirm, selectPersona, setEditMode, closeSettings } from '../support/fixtures';
 import { examplePack } from '../support/packs';
 import { startRelayStub } from '../support/relay-stub';
 
@@ -166,6 +166,7 @@ test.describe('NFR-A11Y-001 WCAG 2.2 AA・キーボード', () => {
       expect(noRing, `${name}: フォーカスの位置が見えない要素`).toEqual([]);
     }
     // 音声を伴う演出（ナビゲーター）の字幕
+    await closeSettings(page); // 設定はモーダル（FR-223）
     const idx = mono.topics().findIndex((t) => (t.topic.narration ?? '') !== '');
     await page.getByRole('button', { name: 'プレゼンテーションを開始' }).click();
     for (let i = 0; i < idx; i++) await page.keyboard.press('ArrowRight');
