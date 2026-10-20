@@ -114,7 +114,11 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
     <div className={s.head} data-testid="projects-head">
       <WorkTargetMenu projects={st.projects} companies={st.companies} openId={st.openId} demoOnly={demoOnly} onChoose={choose} onCreateProject={(company) => setModal({ kind: 'project', company })} />
       <Text weight="semibold">作業先:</Text>
-      <Text weight="semibold" data-testid="work-target" aria-live="polite">{workTargetLabel(st.openId, st.projects, st.companies)}</Text>
+      {/* FR-226 AC-525: 「[顧客名] - [プロジェクト名]」の見える表記は作業先メニューの最上段だけ。ここは文字を持たず、名前だけで現在の作業先を伝える */}
+      <span data-testid="work-target" role="status" aria-label={`現在の作業先: ${workTargetLabel(st.openId, st.projects, st.companies)}`} style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)' }}>
+        <span style={{ display: 'none' }}>{workTargetLabel(st.openId, st.projects, st.companies)}</span>
+      </span>
+
       {demoOnly ? <Text data-testid="demo-target-notice">お手本パックのデモで作業中（実際の Project は混ざりません）</Text> : null}
       <Button size="small" onClick={() => setPickerOpen(true)}>作業先</Button>
       <Button size="small" onClick={() => { setDemoOnly(false); setModal({ kind: 'company' }); }}>企業を登録</Button>

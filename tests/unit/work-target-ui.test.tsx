@@ -78,7 +78,7 @@ describe('FR-144 ProjectsPanel（描画）', () => {
     expect(opts.some((o) => /デモ/.test(o.textContent ?? ''))).toBe(true);
     fireEvent.click(opts[0]!);
     await waitFor(() => expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull());
-    expect(screen.getByTestId('work-target').textContent).toBe('合成株式会社A / 業務改善 2026');
+    expect(screen.getByTestId('work-target').textContent).toBe('合成株式会社A - 業務改善 2026') // FR-226 AC-525;
   });
 
   // FR-144 AC-237

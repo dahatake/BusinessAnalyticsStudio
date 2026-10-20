@@ -12,4 +12,6 @@ export interface ScreenDefinition {
   /** 2D・3D の表現の有無と、世界区分を持つデータを表示するか（FR-217 AC-498・FR-218 AC-502）。見出しの「ビュー」の選択肢を決める。
    *  registry.ts の画面はすべて宣言する（tests/unit/view-switch.test.ts が確かめる）。宣言のないもの（テスト用の仮の画面）は 2D だけ・世界区分なし */
   view?: ViewDecl;
+  /** モーダルで開く画面（FR-223）。ナビゲーションには出るが、ワークスペースのコンポーネントとして並ばず、レイアウトの対象にならない */
+  modal?: boolean;
 }

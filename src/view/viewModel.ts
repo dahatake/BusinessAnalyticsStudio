@@ -4,7 +4,7 @@
 import { WORLD_LABELS, tableWorldOfAll, type World } from '../schema/world';
 
 /** 表示モード（FR-217） */
-export type ViewMode = '2d' | '3d';
+export type ViewMode = '2d' | '3d' | 'graph';
 /** 世界の表示（FR-218） */
 export type WorldView = World | 'both';
 
@@ -30,6 +30,8 @@ export interface ViewDecl {
   has2D: boolean;
   /** 3D（またはその画面の 3D 相当の表現。ガントの 2.5D など）を持つか */
   has3D: boolean;
+  /** Graph（関連の網）の表現を持つか。省略時は持たない */
+  hasGraph?: boolean;
   /** 本要求より前の既定の表示（3D の表現だけを持つ画面は 3D、それ以外は 2D）。省略時はそれに従って決める */
   defaultMode?: ViewMode;
   /**

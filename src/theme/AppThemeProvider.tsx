@@ -4,7 +4,7 @@ import { useSettings } from '../store/settings';
 import { useResolvedTheme } from './resolve';
 import { useEffectiveBrand } from './useBrand';
 import { buildBrandTheme } from './brandTheme';
-import { forcedColorsTheme, withDesignFoundation, writeThemeVariables } from './tokens';
+import { forcedColorsTheme, withContrastFixes, withDesignFoundation, writeThemeVariables } from './tokens';
 
 /** アプリ全体のテーマ。`data-theme` に解決後のテーマ名を付ける（Light / Dark / ハイコントラスト）。
  *  顧客パックが読めていれば、ブランドランプを Light / Dark のテーマに適用する（FR-059）。ハイコントラストは OS の色（システム色のトークン）に任せる。 */
@@ -15,7 +15,7 @@ export function AppThemeProvider({ children }: { children: ReactNode }) {
   const primary = brand?.colors.primary;
   const font = brand?.fonts.primary;
   const theme = useMemo(
-    () => withDesignFoundation(name === 'high-contrast' ? forcedColorsTheme(baseTheme) : primary ? buildBrandTheme(name, primary, font).theme : baseTheme),
+    () => withDesignFoundation(name === 'high-contrast' ? forcedColorsTheme(baseTheme) : withContrastFixes(primary ? buildBrandTheme(name, primary, font).theme : baseTheme)),
     [primary, font, name, baseTheme],
   );
 

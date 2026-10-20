@@ -11,7 +11,8 @@ const layoutMode = (): ViewMode => {
   return s.views[s.persona]?.[DATA_VIEWER_VIEW_KEY]?.mode ?? '2d';
 };
 
-export type ViewMode = '2d' | '3d';
+import type { ViewMode } from '../view/viewModel';
+export type { ViewMode };
 
 interface DataViewerState {
   mode: ViewMode;
