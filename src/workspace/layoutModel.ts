@@ -288,17 +288,60 @@ export const PERSONAS = ['経営層', '事業部門', 'IT', '現場'] as const;
 export type Persona = (typeof PERSONAS)[number];
 export const DEFAULT_PERSONA: Persona = '経営層';
 
-/** ペルソナ別の既定のレイアウト（要求定義書 §7）。 */
+/** 1 つの行に並べる詳細の数の上限。超えた分は次の行に並べる（最小の幅 PARAM-034 を守るため。補助は 1 つの列に縦に並べる） */
+export const MAX_DETAIL = 3;
+/** 主役が占める幅の割合（主役の行の中）と、主役の行が占める高さの割合 */
+const PRIMARY_WIDTH = 0.62;
+const TOP_HEIGHT = 0.7;
+
+/** 描く面のように、広さがほしい画面（同じ列の中の高さ・同じ行の中の幅の比に使う重み。載せていない画面は 1。SHOW_SHARE と同じ考え方）。重みが 1 より大きい補助は、主役の右に専用の列を持つ */
+export const STACK_WEIGHT: Readonly<Record<string, number>> = { canvas: 3, whiteboard: 3 };
+
+function stack(keys: readonly string[], dir: Dir): LayoutNode {
+  if (keys.length === 1) return leaf(keys[0]!);
+  return split(dir, keys.map((k) => leaf(k)), keys.map((k) => STACK_WEIGHT[k] ?? 1));
+}
+
+/** 詳細: 1 行に MAX_DETAIL 個まで並べ、超えたら次の行へ（タブにまとめない。タブにすると、狭い幅で見出し・操作が欠けて見えるため） */
+function detailRows(keys: readonly string[]): LayoutNode {
+  const rows: LayoutNode[] = [];
+  for (let i = 0; i < keys.length; i += MAX_DETAIL) rows.push(stack(keys.slice(i, i + MAX_DETAIL), 'row'));
+  return rows.length === 1 ? rows[0]! : split('col', rows);
+}
+
+/**
+ * 階層（主役→補助→詳細）の配置の木（FR-243・FR-244）。読む順序（左上から右下、主役が先）で、主役を最大の領域の左上に、補助を主役の右の列に、詳細を下の行に置く。
+ * 広さがほしい補助（STACK_WEIGHT が 1 より大きいもの）は、主役のすぐ右に専用の列を持ち、残りの補助はその右の列に縦に並べる。
+ * ペルソナの既定のレイアウト（§7）と、自動配置（autoLayout.autoTree）が同じ形を使う。
+ */
+export function tierTree(primary: string, supporting: readonly string[], detail: readonly string[]): LayoutNode {
+  const wide = supporting.filter((k) => (STACK_WEIGHT[k] ?? 1) > 1);
+  const rest = supporting.filter((k) => !wide.includes(k));
+  let top: LayoutNode;
+  if (supporting.length === 0) top = leaf(primary);
+  else if (wide.length === 0) top = split('row', [leaf(primary), stack(rest, 'col')], [PRIMARY_WIDTH, 1 - PRIMARY_WIDTH]);
+  else {
+    const cols: LayoutNode[] = [leaf(primary), ...wide.map((k) => leaf(k))];
+    const wideShare = rest.length > 0 ? 0.3 : 0.45 / wide.length;
+    const sizes = [rest.length > 0 ? 0.45 : 0.55, ...wide.map(() => wideShare)];
+    if (rest.length > 0) { cols.push(stack(rest, 'col')); sizes.push(0.25); }
+    top = split('row', cols, sizes);
+  }
+  if (detail.length === 0) return top;
+  return split('col', [top, detailRows(detail)], [TOP_HEIGHT, 1 - TOP_HEIGHT]);
+}
+
+/** ペルソナ別の既定のレイアウト（要求定義書 §7）。情報の階層（FR-244）の配置と同じ形: 主役が左上で最大、補助が右、詳細が下。 */
 export function defaultLayout(persona: Persona): Layout {
   switch (persona) {
-    case '経営層': // 上段にサマリー、主領域に 2×2 マトリクス、横にランキング表。キャンバスは背景の全体図として小さく残す（§7 の表）
-      return split('col', [split('row', [leaf('summary'), leaf('kpi-okr')], [0.6, 0.4]), split('row', [leaf('matrix'), leaf('ranking'), leaf('canvas')], [0.45, 0.2, 0.35])], [0.25, 0.75]);
-    case '事業部門': // 主領域に課題-解決策分析、横に議論ツリー、下にガントと一覧表（FR-110 AC-135: リセット後も絞り込みの入力欄が残る）
-      return split('col', [split('row', [leaf('issue-solution'), leaf('discussion-tree')], [0.65, 0.35]), split('row', [leaf('gantt'), leaf('table'), leaf('kpi-okr')], [0.4, 0.3, 0.3])], [0.7, 0.3]);
-    case 'IT': // 主領域にアーキテクチャ図、横にナレッジグラフ、下に製品の一覧
-      return split('col', [split('row', [leaf('architecture'), leaf('knowledge-graph')], [0.65, 0.35]), split('row', [leaf('products'), leaf('kpi-okr')], [0.55, 0.45])], [0.7, 0.3]);
-    case '現場': // 主領域に 3D/地図、横にミニ・モックアプリ、下にガント
-      return split('col', [split('row', [leaf('view3d'), leaf('mock-app')], [0.65, 0.35]), split('row', [leaf('gantt'), leaf('kpi-okr')], [0.55, 0.45])], [0.7, 0.3]);
+    case '経営層': // 主領域に 2×2 マトリクス、右にキャンバス（背景の全体図。広さが要る）、その右にサマリー・KPI/OKR・ランキング表
+      return tierTree('matrix', ['canvas', 'summary', 'kpi-okr', 'ranking'], []);
+    case '事業部門': // 主領域に課題-解決策分析、右に議論ツリーと KPI/OKR、下にガントと一覧表（FR-110 AC-135: リセット後も絞り込みの入力欄が残る）
+      return tierTree('issue-solution', ['discussion-tree', 'kpi-okr'], ['gantt', 'table']);
+    case 'IT': // 主領域にアーキテクチャ図、右にナレッジグラフと KPI/OKR、下に製品の一覧
+      return tierTree('architecture', ['knowledge-graph', 'kpi-okr'], ['products']);
+    case '現場': // 主領域に 3D/地図、右にミニ・モックアプリと KPI/OKR、下にガント
+      return tierTree('view3d', ['mock-app', 'kpi-okr'], ['gantt']);
   }
 }
 
