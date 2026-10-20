@@ -61,6 +61,11 @@ export default defineConfig({
     },
   ],
   build: { outDir: 'dist', sourcemap: false },
+  // vitest 実行時だけ、既定の server.fs.deny の `**/.git/**` を外す。統合の verify は `.git/ebak-land-wt`（.git 配下の一時 worktree）で走るため、
+  // テストファイル自体が読み込み拒否されるのを防ぐ。開発サーバー・本番の挙動は変えない。
+  ...(process.env.VITEST
+    ? { server: { fs: { deny: ['.env', '.env.*', '*.{crt,pem}', '**/.DS_Store'] } } }
+    : {}),
   // 負荷時（並列実行・統合の verify）でも、ファイル走査や起動を含むテストが既定の 5 秒でタイムアウトしないようにする。並列のワーカー数も抑える
   test: { include: ['tests/unit/**/*.test.{ts,tsx}'], environment: 'node', testTimeout: 60_000, hookTimeout: 60_000, maxWorkers: 4, minWorkers: 1 },
 });
