@@ -54,7 +54,7 @@ function ViewMenuList({ modes, worlds }: { modes: ViewOption<ViewMode>[]; worlds
   return (
     <MenuList>
       <MenuGroup>
-        <MenuGroupHeader>表示モード</MenuGroupHeader>
+        <MenuGroupHeader>表示形式</MenuGroupHeader>
         <Options name="mode" options={modes} />
       </MenuGroup>
       <MenuDivider />

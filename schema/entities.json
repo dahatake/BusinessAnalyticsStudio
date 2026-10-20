@@ -137,6 +137,36 @@
                 "unit": {
                   "type": "string"
                 },
+                "stages": {
+                  "type": "object",
+                  "properties": {
+                    "boundaries": {
+                      "type": "array",
+                      "prefixItems": [
+                        {
+                          "type": "number"
+                        },
+                        {
+                          "type": "number"
+                        }
+                      ],
+                      "items": false,
+                      "minItems": 2,
+                      "maxItems": 2
+                    },
+                    "betterWhen": {
+                      "type": "string",
+                      "enum": [
+                        "high",
+                        "low"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "boundaries"
+                  ],
+                  "additionalProperties": {}
+                },
                 "sourceIds": {
                   "minItems": 1,
                   "type": "array",
@@ -171,11 +201,21 @@
               "operation",
               "thing",
               "event",
+              "floor",
+              "room",
               "data",
               "model",
               "system",
               "ui-component",
               "metric"
+            ]
+          },
+          "layer": {
+            "type": "string",
+            "enum": [
+              "operations",
+              "experience",
+              "insights"
             ]
           }
         },
@@ -184,6 +224,57 @@
           "createdBy",
           "type",
           "name"
+        ],
+        "additionalProperties": {}
+      }
+    },
+    "relations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "from": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "to": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]*$"
+          },
+          "meaning": {
+            "type": "string",
+            "enum": [
+              "influences",
+              "dependsOn",
+              "causes",
+              "owns",
+              "derivedFrom",
+              "memberOf",
+              "locatedIn",
+              "measures",
+              "controls"
+            ]
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1
+          },
+          "sourceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "^[a-z0-9][a-z0-9-]*$"
+            }
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "meaning"
         ],
         "additionalProperties": {}
       }

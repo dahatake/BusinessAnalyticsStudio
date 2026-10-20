@@ -182,6 +182,36 @@
                         },
                         "due": {
                           "type": "string"
+                        },
+                        "stages": {
+                          "type": "object",
+                          "properties": {
+                            "boundaries": {
+                              "type": "array",
+                              "prefixItems": [
+                                {
+                                  "type": "number"
+                                },
+                                {
+                                  "type": "number"
+                                }
+                              ],
+                              "items": false,
+                              "minItems": 2,
+                              "maxItems": 2
+                            },
+                            "betterWhen": {
+                              "type": "string",
+                              "enum": [
+                                "high",
+                                "low"
+                              ]
+                            }
+                          },
+                          "required": [
+                            "boundaries"
+                          ],
+                          "additionalProperties": {}
                         }
                       },
                       "required": [

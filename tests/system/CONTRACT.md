@@ -124,7 +124,20 @@
 - 了承の記録は設定画面（§ FR-181 AC-375 と同じ入力欄・button「了承を保存」）で入力する。中止したときと了承なしのときは、ダウンロード（download イベント）が 0 件。
 - 既存のエクスポート系ケース（FR-052・054・055・056・071・094、NFR-ENV-002・NFR-A11Y-002・NFR-UX-004 など）は、手順の冒頭で `recordExportConsent(page)`（support/fixtures.ts）で了承の記録を先に入力し、確認が出たら `captureDownload` / `continuePersonConfirm` が続行まで進める（出力範囲・内容の判定は変えない）。
 
-## 23. 画面の操作性の刷新（FR-220〜228。ux-refresh.spec.ts が前提にする画面の探し方。run 202610192037）
+
+## 23. グラフ・Twin・空間・意味的ズーム・Graph 切替（FR-235〜241。semantic-zoom.spec.ts・graph-twin-b.spec.ts・graph-view-switch.spec.ts が前提にする、3 spec 共通の契約）
+- 画面の key（`nav-<key>`・`component-<key>`）: `business-graph`（ビジネス関係グラフ）・`twin-view`（Twin ビュー）・`spatial-view`（空間ビュー）。データビュアーは既存の `data-catalog` の中の `data-testid="data-viewer"`（お手本パックの data-catalog は「Project を開くと…」の空表示で出ない。Project を開き、ユースケースを登録し、列つきの企業データカタログを取り込むと出る＝FR-104・data-viewer.spec.ts と同じ手順。項目 ID は名称キー）。上限では「拡大」は aria-disabled（FR-237）なので、再クリックせず toBeDisabled で確かめる。左メニューの文字は画面名と同じ。
+- 表示形式: §21 の「ビュー」メニューに menuitemradio「2D」「3D」「Graph」。フック `t.view.state(key)` の `mode` は `'2d'|'3d'|'graph'`（Graph を持たない画面は `'2d'|'3d'`）。面は `data-zoom-surface="3d"`（3D）・`data-zoom-surface="graph"`（Graph）。3D を描画できない環境では「3D」が disabled で、メニューに理由（「描画できません」「使えません」または WebGL・WebGPU の語）。
+- グラフ（FR-236）: ノード `[data-testid="graph-node"][data-entity-id]` は `data-kind`（= `data-node-type`。種別）・`data-shape`（形かアイコンの名前）を持ち、名称と種別名を文字で含む。エッジ `[data-testid="graph-edge"]` は `data-from`・`data-to`・`data-meaning`（意味の種類）・`data-direction="forward"`（矢印）を持ち、意味ラベルの文字を含む（意味ラベルのない関係は線だけ）。絞り込みは group「種別」「意味の種類」内の checkbox（`data-filter-value`）。
+- Twin（FR-239）: 流れ `[data-testid="twin-flow"]` は `data-flow-kind="data|control"`・`data-from`・`data-to`・`data-line-style` を持ち、文字「Data」または「Control」と件数を含む。層 `[data-testid="twin-layer-<operations|experience|insights|none>"]`。注記「表示のみ（実機へは送信しません）」「パックの値（リアルタイムではありません）」。
+- 空間（FR-240）: 項目 `[data-entity-id]` は `data-kind`（site|floor|room）を持つ。3D のフロアは `data-floor-state="selected|dimmed"`、カメラは `t.scene.camera()` の `projection==='orthographic'`。
+- パックの任意項目（FR-241）: `entities[].layer`（operations|experience|insights）、`flows[]`（`id`・`from`・`to`・`kind`=data|control・`label`・`sourceIds`）、空間は `entities[].kind`=floor|room と `parentId` の階層。
+- 意味的ズーム（FR-237）: ズームの対象の面（`component-<key>`、データビュアーは `data-viewer`）に `data-zoom-level="overview|element|detail"`。面の中の `[data-testid="zoom-level"]` は `data-depth`（0=全体、最後=詳細。階層の数 D+2 のとき 0..D+1。中間は element で、データビュアーは従来の `data-detail-level="bird|entity|column"` も保つ）。
+- 操作: button「拡大」「縮小」「全体表示に戻す」「一つ上の階層へ」（上限・下限・全体では該当の操作が disabled）。塊・ノードのダブルクリック、フォーカス中の Enter で一つ下の階層へ。パンくずは navigation「パンくず」で、現在の階層の項目が `aria-current="location"`（文字は「全体」「要素」「詳細」で始まる）、上位の項目は link か button。
+- 全体: 塊 `[data-zoom-cluster="<塊の名前>"]`（文字に「<n> 件」）。要素: ノード `[data-zoom-node][data-entity-id]`（`data-entity-name`・`data-kind`、見える文字に名称と種別。グラフではノードが `graph-node` を兼ねる）。詳細: `data-testid="zoom-detail"` の中に heading「属性」「出典」「関係」と、選んだ項目の `data-entity-id`。
+- 選択はフック `t.view.state(key).selectedIds` で読む。一覧表（`table`）で選んだ項目が各画面で選択されている。
+
+## 24. 画面の操作性の刷新（FR-220〜228。ux-refresh.spec.ts が前提にする画面の探し方。run 202610192037）
 - 画面の見出し（FR-220 AC-515）: `data-testid="screen-heading"` の中の button「ビュー」（名前は「ビュー」で始まる。§21 のコンポーネントの「ビュー」と同じメニュー）。左メニュー navigation「画面」に 2D/3D の切替の項目（menuitemradio「2D」「3D」・switch・名前が「3D ビュー」だけの項目）を置かない（画面「3D ビューと 2D 図面」への入口は別の名前にする）。
 - 操作アイコン（FR-222 AC-518）: §10 の `component-actions` の button「最小化」「最大化」（最大化中は「通常表示」か「元に戻す」）が見出しの右上に並び、図（svg か img）を持つ。名前はホバー・フォーカスで role=tooltip に出る。最大化中は `data-maximized="true"`、最小化中は `data-minimized="true"`。常設ボタン（「その他の操作」を除く）は 6 個以下（PARAM-073）。
 - 設定のモーダル（FR-223 AC-519）: 左メニューの `nav-settings` で role=dialog「設定」（`aria-modal="true"`、button「閉じる」）が開く。背面の覆いは `data-testid="modal-backdrop"`（透明でない背景色）。設定は `component-settings` としてワークスペースに並ばない。
@@ -135,3 +148,4 @@
 - 既存の spec への影響（実装工程の注意）: 設定がモーダルになるため、`openScreen(page, 'settings')` と `component(page, 'settings')` を使う既存の spec（brand-settings・consent-settings・workspace-layout など）は、設定画面の探し方を role=dialog「設定」に合わせて見直す必要がある（AC の期待値は変わらない。conductor が競合として扱う）。
 - 設定の探し方（FR-223。共通 helper `support/fixtures.ts`。AC の期待値は変えない）: `openScreen(page,'settings')` は `nav-settings` を押して role=dialog「設定」（`settingsDialog(page)`）を開き、その中の `component-settings` を返す（すでに開いていれば押さずに返す）。`component(page,'settings')` も同じ dialog 内の `component-settings`。設定以外の `openScreen` は、開いている設定を先に button「閉じる」で閉じる（背面の覆いが操作を遮るため）。画面を直接操作する前は `closeSettings(page)` で閉じる。音声設定などの region は `settingsDialog(page)` の中で探す。`workspace` の中には `component-settings` が無い。
 - 仕様変更後の探し方の追補（FR-222・223・227。AC の期待値は変えない）: (1) `recordExportConsent` は了承の保存後に `closeSettings` で設定のモーダルを閉じる（呼んだ後は背面の画面を直接操作できる）。(2) 設定のモーダルの中でしか見えないもの（背面の primary-action など、モーダルが開いている間の画面の状態）は、`openScreen` で別の画面へ移る前に探す。(3) ワークスペースのコンポーネントの一覧（`keys`・`visibleComponents`・`topKeys`）は `:not([data-testid="component-menu"]):not([data-testid="component-actions"])` で `component-actions` を除く。(4) 全画面の走査（`support/screens.ts` の `listScreenKeys`・`gotoScreen`）は設定のモーダルを先に閉じる。設定は `component-menu`・`component-actions`・「ビュー」を持たないので、メニュー・ツールチップ・ビューの走査では設定を対象から外し、設定は `settingsDialog(page)` の中（文字の段・角丸・影・フォーカスの戻り）で判定する。(5) 選択中の項目の再クリックは選択解除（FR-227）。同じ項目を 2 つの画面で続けて押すテストは、すでに選択済みなら押さない（関連の表示などの状態を見て判定する）。(6) インクのボードのように画面下端に show コントロールバーが重なる面では、固定座標を 200px 程度の範囲に収め 2 列に並べる（ヘッダーの折り返しでボード面が下がっても重ならない）。
+

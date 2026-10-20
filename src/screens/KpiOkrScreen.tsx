@@ -8,6 +8,8 @@ import {
 import { Dialog, DialogSurface } from '../components/Dialog';
 import { ViewAsTableButton } from '../components/ViewTable';
 import { Items3DSurface } from '../three/Items3DSurface';
+import { GraphSurface, type GraphEdgeIn, type GraphNodeIn } from '../components/GraphSurface';
+import { GraphAlt } from '../components/GraphAlt';
 import { spread, type Item3D, type Link3D } from '../view/items3d';
 import { useComponentView, usePublishViewItems } from '../view/useView';
 import { Add24Regular, CheckmarkCircle20Regular, CircleHalfFill20Regular, Circle20Regular, QuestionCircle20Regular } from '@fluentui/react-icons';
@@ -139,6 +141,12 @@ function KpiOkrScreen() {
     return { id: k.id, label: `${k.r.name}（${achievementText(k.r.kpi)}）`, group: k.objective, x: spread(k.oi, objCount), z: spread(k.ri, k.n), y: v, size: v };
   }), [krs, objCount]);
   const links3d = useMemo<Link3D[]>(() => krs.filter((k) => k.ri > 0).map((k) => ({ from: `okr-${k.oi + 1}-${k.ri}`, to: k.id })), [krs]);
+  // Graph（FR-238）: Objective と Key Result をノードに、Key Result → Objective を「達成する」の向き付きのエッジにする（Key Result は 2D・3D と同じ項目・同じ件数）
+  const graphNodes = useMemo<GraphNodeIn[]>(() => [
+    ...(okr?.objectives ?? []).map((o, oi) => ({ id: `okr-obj-${oi + 1}`, name: o.objective, kind: 'Objective' })),
+    ...krs.map((k) => ({ id: k.id, name: k.r.name, kind: 'Key Result', note: `${k.r.kpi.name} ${achievementText(k.r.kpi)}` })),
+  ], [okr, krs]);
+  const graphEdges = useMemo<GraphEdgeIn[]>(() => krs.map((k) => ({ id: `${k.id}>obj`, from: k.id, to: `okr-obj-${k.oi + 1}`, label: '達成する', meaning: 'achieves' })), [krs]);
   if (!ready) return <LoadingView label="KPI/OKR を読み込み中" />;
   return (
     <Panel testId="component-kpi-okr" title="KPI/OKR" description="議論の目的と成果を、Objective・Key Result・KPI の数値で共有します。">
@@ -152,6 +160,14 @@ function KpiOkrScreen() {
           <Text weight="semibold" block>未設定</Text>
           <Text block>この作業先には KPI と OKR がありません。編集モードを ON にして「OKR を定義」から、Objective・Key Result・KPI を設定してください。</Text>
         </div>
+      ) : mode === 'graph' ? (
+        <>
+          <GraphSurface origin="kpi-okr" label="KPI/OKR" nodes={graphNodes} edges={graphEdges} />
+          <GraphAlt
+            origin="kpi-okr" label="KPI/OKR" nodes={graphNodes.map((n) => ({ id: n.id, name: n.name, kind: n.kind, values: [n.note ?? '—'] }))} columns={['KPI と達成度']}
+            relations={graphEdges.map((e) => ({ ...e }))}
+          />
+        </>
       ) : mode === '3d' ? (
         <>
           <div><ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} /></div>

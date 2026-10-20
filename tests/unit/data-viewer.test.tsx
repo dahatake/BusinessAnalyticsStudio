@@ -47,11 +47,14 @@ describe('FR-169 AC-336 拡大・縮小の操作（結合）', () => {
     expect(zoomOf()).toBeCloseTo(1);
     click('拡大'); expect(zoomOf()).toBeCloseTo(ZOOM_STEP);
     click('縮小'); expect(zoomOf()).toBeCloseTo(1);
-    for (let i = 0; i < 40; i++) click('拡大');
-    expect(zoomOf()).toBeCloseTo(ZOOM_MAX); click('拡大'); expect(zoomOf()).toBeCloseTo(ZOOM_MAX);
+    // FR-237 AC-555: 詳細（最後の階層）では「拡大」が無効（段としての先がない）。倍率の上限までは + キーで続けられる
+    for (let i = 0; i < 40; i++) fireEvent.keyDown(viewer(), { key: '+' });
+    expect(zoomOf()).toBeCloseTo(ZOOM_MAX); fireEvent.keyDown(viewer(), { key: '+' }); expect(zoomOf()).toBeCloseTo(ZOOM_MAX);
+    expect(within(viewer()).getByRole('button', { name: '拡大' }).getAttribute('aria-disabled')).toBe('true');
     expect(level()).toBe('column');
-    for (let i = 0; i < 60; i++) click('縮小');
-    expect(zoomOf()).toBeCloseTo(ZOOM_MIN); click('縮小'); expect(zoomOf()).toBeCloseTo(ZOOM_MIN);
+    // 全体（最初の階層）では「縮小」が無効（FR-237）。倍率の下限までは − キーで続けられる
+    for (let i = 0; i < 60; i++) fireEvent.keyDown(viewer(), { key: '-' });
+    expect(zoomOf()).toBeCloseTo(ZOOM_MIN); fireEvent.keyDown(viewer(), { key: '-' }); expect(zoomOf()).toBeCloseTo(ZOOM_MIN);
     expect(level()).toBe('bird');
     click('拡大'); click('全体表示に戻す'); expect(zoomOf()).toBeCloseTo(1);
   });

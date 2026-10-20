@@ -373,6 +373,10 @@ describe('FR-218 AC-502 全画面の世界区分の宣言が §3.7 の分類表�
       'knowledge-graph': 'items', architecture: 'digital', 'discussion-tree': 'digital', table: 'items', gantt: 'real',
       view3d: 'items', drawing2d: 'items', map: 'items', 'kpi-okr': 'digital', sources: 'digital', 'mock-app': false,
       usecase: 'real', 'data-catalog': 'digital', whiteboard: 'digital', themes: 'digital', settings: false, chat: false,
+      'business-graph': 'items',
+      'twin-view': 'items',
+      // FR-240 空間ビュー（世界区分の切替は持たない）
+      'spatial-view': false,
     };
     expect(SCREENS.map((x) => x.key).sort()).toEqual(Object.keys(want).sort());
     for (const sc of SCREENS) {

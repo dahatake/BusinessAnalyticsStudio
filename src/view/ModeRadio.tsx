@@ -21,7 +21,8 @@ export interface ModeRadioProps {
 export function ModeRadio({ viewKey, labels }: ModeRadioProps) {
   const s = useStyles();
   const v = useComponentView(viewKey);
-  const opts = modeOptions(v.decl, v.can3D);
+  // Graph は、Graph の表現を持つ画面だけの選択肢（ほかの画面の「ビュー」のメニューでは理由つきで無効にして示す。FR-238）
+  const opts = modeOptions(v.decl, v.can3D).filter((o) => o.value !== 'graph' || v.decl.hasGraph);
   const reasons = opts.filter((o) => !o.enabled && o.reason).map((o) => o.reason!);
   return (
     <Field label="表示">

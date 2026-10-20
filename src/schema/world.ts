@@ -13,7 +13,7 @@ export const WORLD_LABELS: Record<World, string> = { real: '現実世界', digit
 export const UNCLASSIFIED_LABEL = '区分なし';
 
 /** 世界区分ごとの種別（§3.7 の分類の体系）。値は英小文字の識別子、表示名は ENTITY_KIND_LABELS */
-export const REAL_KINDS = ['site', 'equipment', 'person', 'organization', 'operation', 'thing', 'event'] as const;
+export const REAL_KINDS = ['site', 'equipment', 'person', 'organization', 'operation', 'thing', 'event', 'floor', 'room'] as const;
 export const DIGITAL_KINDS = ['data', 'model', 'system', 'ui-component', 'metric'] as const;
 export const ENTITY_KINDS = [...REAL_KINDS, ...DIGITAL_KINDS] as const;
 export type EntityKind = (typeof ENTITY_KINDS)[number];
@@ -29,6 +29,8 @@ export const ENTITY_KIND_LABELS: Record<EntityKind, string> = {
   operation: '業務',
   thing: 'モノ',
   event: 'コト',
+  floor: 'フロア',
+  room: '部屋',
   data: 'データ',
   model: 'モデル',
   system: 'システム',

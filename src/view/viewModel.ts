@@ -3,7 +3,7 @@
 // 切替の状態はレイアウトとして保存する（src/store/layout.ts の views。FR-014・FR-110）。
 import { WORLD_LABELS, tableWorldOfAll, type World } from '../schema/world';
 
-/** 表示モード（FR-217） */
+/** 表示形式（FR-217 の表示モード 2D／3D に、FR-238 の Graph を足したもの。同じ画面に二つの状態を持たない） */
 export type ViewMode = '2d' | '3d' | 'graph';
 /** 世界の表示（FR-218） */
 export type WorldView = World | 'both';
@@ -30,7 +30,7 @@ export interface ViewDecl {
   has2D: boolean;
   /** 3D（またはその画面の 3D 相当の表現。ガントの 2.5D など）を持つか */
   has3D: boolean;
-  /** Graph（関連の網）の表現を持つか。省略時は持たない */
+  /** Graph（ノードと意味ラベル付きの向き付きのエッジで描く平面の図。FR-238）の表現を持つか。省略は持たない */
   hasGraph?: boolean;
   /** 本要求より前の既定の表示（3D の表現だけを持つ画面は 3D、それ以外は 2D）。省略時はそれに従って決める */
   defaultMode?: ViewMode;
@@ -74,8 +74,7 @@ export function tableWorldDecl(rows: readonly string[], basis: string = rows.joi
 /** 保存した値（なければ既定）と、描画できるかから、いま表示する表示モードを決める。表現のないモードは選ばない */
 export function effectiveMode(decl: ViewDecl, stored: ViewMode | undefined, can3D: boolean): ViewMode {
   const want = stored ?? defaultModeOf(decl);
-  if (want === 'graph' && !decl.hasGraph) return effectiveMode(decl, undefined, can3D);
-  if (want === 'graph') return 'graph';
+  if (want === 'graph') return decl.hasGraph ? 'graph' : effectiveMode(decl, undefined, can3D);
   if (want === '3d' && (!decl.has3D || (!canRender3D(decl, can3D) && decl.has2D))) return '2d';
   if (want === '2d' && !decl.has2D) return '3d';
   return want;
@@ -103,7 +102,10 @@ export function modeOptions(decl: ViewDecl, can3D: boolean): ViewOption<ViewMode
     : !canRender3D(decl, can3D)
       ? { value: '3d', label: MODE_LABELS['3d'], enabled: false, reason: NO_3D_ENV_REASON }
       : { value: '3d', label: MODE_LABELS['3d'], enabled: true };
-  return [two, three];
+  const graph: ViewOption<ViewMode> = decl.hasGraph
+    ? { value: 'graph', label: MODE_LABELS.graph, enabled: true }
+    : { value: 'graph', label: MODE_LABELS.graph, enabled: false, reason: NO_GRAPH_REASON };
+  return [two, three, graph];
 }
 
 /** 世界の表示の選択肢（AC-502） */

@@ -65,14 +65,14 @@ export function useScreenView(): { mode: ViewMode; world: WorldView } {
 }
 
 // ---- 表示中の項目（テスト用フック t.view.state。CONTRACT.md §21） ----
-interface Published { itemIds: readonly string[]; twinLinks: ReadonlyArray<readonly [string, string]> }
+interface Published { itemIds: readonly string[]; twinLinks: ReadonlyArray<readonly [string, string]>; selected?: readonly string[] }
 const published = new Map<string, Published>();
 
 /** コンポーネントが表示している項目（非表示の世界の項目を含めない）と、線か印で表示しているツイン関係を知らせる */
-export function usePublishViewItems(key: string, itemIds: readonly string[], twinLinks: ReadonlyArray<readonly [string, string]> = []): void {
+export function usePublishViewItems(key: string, itemIds: readonly string[], twinLinks: ReadonlyArray<readonly [string, string]> = [], selected?: readonly string[]): void {
   useLayoutEffect(() => {
-    published.set(key, { itemIds, twinLinks });
-  }, [key, itemIds, twinLinks]);
+    published.set(key, { itemIds, twinLinks, selected });
+  }, [key, itemIds, twinLinks, selected]);
   useLayoutEffect(() => () => { published.delete(key); }, [key]);
 }
 
@@ -109,7 +109,7 @@ export function viewTestState(key: string): ViewTestState {
     world,
     itemIds: items,
     items3d: [...(published3d.get(key) ?? [])],
-    selectedIds: p ? sel.filter((id) => shown.has(id)) : [...sel],
+    selectedIds: p ? (p.selected ?? sel).filter((id) => shown.has(id)) : [...sel],
     twinLinks: p ? p.twinLinks.map(([a, b]) => [a, b] as [string, string]) : [],
   };
 }
