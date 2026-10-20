@@ -17,6 +17,6 @@ const cli = path.join(here, 'node_modules', '@playwright', 'test', 'cli.js');
 const r = spawnSync(process.execPath, [cli, 'test', '--config', path.join(here, 'playwright.config.ts'), '--grep', grep], {
   cwd: here,
   stdio: 'inherit',
-  env: process.env,
+  env: { ...process.env, ST_OUT_SUBDIR: `p${process.pid}-${ids.join('_')}` },
 });
 process.exit(r.status ?? 1);

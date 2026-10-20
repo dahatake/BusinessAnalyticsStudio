@@ -312,9 +312,11 @@ describe('FR-217 AC-507 表現を固定したコンポーネントと既存の�
   it('FR-217 AC-507 画面の見出しの「ビュー」ボタンで 3D を選ぶと、3D の表現を持つものだけが 3D になり、ボタンの文字が変わる', async () => {
     const { ScreenViewButton } = await import('../../src/view/ViewMenu');
     render(wrap(<ScreenViewButton />));
-    fireEvent.click(screen.getByRole('button', { name: /^画面のビュー/ }));
+    fireEvent.click(screen.getByRole('button', { name: /^ビュー/ }));
     fireEvent.click(within(await screen.findByRole('menu')).getByRole('menuitemradio', { name: '3D' }));
-    expect(screen.getByRole('button', { name: /^画面のビュー/ }).textContent).toContain('3D・両方');
+    expect(screen.getByRole('button', { name: /^ビュー/ }).textContent).toContain('3D・両方');
+    // FR-220 AC-515: 画面の見出し（screen-heading）の中にある「ビュー」ボタンで、左メニューの項目ではない
+    expect(screen.getByTestId('screen-heading').contains(screen.getByRole('button', { name: /^ビュー/ }))).toBe(true);
     expect(viewStateOf('g').mode).toBe('3d');
     expect(viewStateOf('s').mode).toBe('2d');
     expect(viewStateOf('d').mode).toBe('2d');
@@ -371,6 +373,10 @@ describe('FR-218 AC-502 全画面の世界区分の宣言が §3.7 の分類表�
       'knowledge-graph': 'items', architecture: 'digital', 'discussion-tree': 'digital', table: 'items', gantt: 'real',
       view3d: 'items', drawing2d: 'items', map: 'items', 'kpi-okr': 'digital', sources: 'digital', 'mock-app': false,
       usecase: 'real', 'data-catalog': 'digital', whiteboard: 'digital', themes: 'digital', settings: false, chat: false,
+      'business-graph': 'items',
+      'twin-view': 'items',
+      // FR-240 空間ビュー（世界区分の切替は持たない）
+      'spatial-view': false,
     };
     expect(SCREENS.map((x) => x.key).sort()).toEqual(Object.keys(want).sort());
     for (const sc of SCREENS) {

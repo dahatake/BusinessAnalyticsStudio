@@ -3,7 +3,7 @@
 // PARAM-029=320 CSS px（拡大率 400% 相当の表示幅）、PARAM-040=24 CSS px（操作の対象の最小の大きさ）。200% は WCAG 2.2 の 1.4.4 による固定値。
 // 「全画面」は画面の登録＝左メニューの画面の一覧を走査する（support/screens.ts・CONTRACT.md §21）。
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, selectPersona, openScreen, scene, hook } from '../support/fixtures';
+import { test, expect, selectPersona, openScreen, scene, hook, settingsDialog } from '../support/fixtures';
 import { listScreenKeys, gotoScreen, INTERACTIVE_SELECTOR } from '../support/screens';
 
 const REFLOW_WIDTH = 320; // PARAM-029
@@ -319,7 +319,9 @@ test.describe('NFR-A11Y-009 焦点の戻りと見出しの段', () => {
       checked++;
       await page.keyboard.press('Escape');
       await expect(dlg).toBeHidden();
-      if (!(await activeIs(page, c))) bad.push(`${key}: コマンドパレットを閉じた後にフォーカスが開く前の要素に戻らない`);
+      // 設定はモーダルの dialog（FR-223）。フォーカスの戻り先は dialog の中で判定する
+      const back = key === 'settings' ? settingsDialog(page) : c;
+      if (!(await activeIs(page, back))) bad.push(`${key}: コマンドパレットを閉じた後にフォーカスが開く前の要素に戻らない`);
     }
     expect(checked, '確かめたダイアログ・メニューが画面の数より少ない').toBeGreaterThanOrEqual(keys.length * 2);
     expect(bad).toEqual([]);
@@ -445,6 +447,7 @@ test.describe('NFR-A11Y-009 操作の対象の大きさ', () => {
     const bad: string[] = [];
     for (const key of keys) {
       const c = await gotoScreen(page, key);
+      if (key === 'settings') continue; // 設定はモーダルの dialog で component-actions・component-menu を持たない（FR-223）。ダイアログ内の操作の大きさは AC-485 の本ケースが全画面で判定する
       await c.focus();
       const icons = c.getByTestId('component-actions').first().getByRole('button');
       for (let i = 0; i < (await icons.count()); i++) {

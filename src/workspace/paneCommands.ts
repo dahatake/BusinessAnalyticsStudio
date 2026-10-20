@@ -3,7 +3,7 @@
 import type { Command } from '../commands/registry';
 import type { PaneInfo } from './PaneContext';
 import { SNAP_LABEL } from './snap';
-import { PIN_MOVE_REASON, PIN_TABS_REASON } from './paneActions';
+import { PIN_MOVE_REASON, PIN_RESIZE_REASON, PIN_TABS_REASON } from './paneActions';
 import { TIERS, TIER_LABEL } from './tiers';
 import { useLayout } from '../store/layout';
 import { detect3D } from '../view/render3d';
@@ -61,7 +61,13 @@ export function paneCommands(current: () => PaneInfo | null, notify: (text: stri
       keywords: [...kw, '階層', '主役', '補助', '詳細', 'tier'],
       run: on((p) => p.setTier(t)),
     })),
-    { id: 'pane.tier.reset', label: `階層を既定に戻す${TARGET}`, keywords: [...kw, '階層', '既定', 'tier'], run: on((p) => p.setTier(null)) },
+    { id: 'pane.tier.reset', label: `階層を既定に戻す${TARGET}`, keywords: [...kw, '階層', '既定', 'tier'], run: on((p) =>     p.setTier(null)) },    // 縦・横を独立に大きさを変える（FR-224 AC-522。ドラッグを使わない手段）
+    ...([['w', 1, '幅を広げる'], ['w', -1, '幅を狭める'], ['h', 1, '高さを広げる'], ['h', -1, '高さを狭める']] as const).map<Command>(([axis, dir, text]) => ({
+      id: `pane.resize.${axis}.${dir > 0 ? 'grow' : 'shrink'}`,
+      label: `${text}${TARGET}`,
+      keywords: [...kw, '大きさ', 'サイズ', 'リサイズ', 'resize'],
+      run: on((p) => (p.pinned ? notify(PIN_RESIZE_REASON) : p.resizeBy(axis, dir))),
+    })),
     // ビューの切替（FR-217・FR-218）。選べないものは変えずに理由を示す（AC-500・AC-502）
     ...VIEW_MODES.map<Command>((m) => ({
       id: `pane.view.mode.${m}`,

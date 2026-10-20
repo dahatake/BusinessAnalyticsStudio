@@ -2,7 +2,7 @@
 // 「全画面」は、利用者が見る画面の一覧＝左メニュー（navigation「画面」）の `nav-<key>` を走査して得る（CONTRACT.md §21）。
 // 期待値は要求定義書の受入基準から決め、実装の一覧（コード）からは決めない。主要画面（MAIN_SCREENS）が欠けていれば失敗にする。
 import type { Page, Locator } from '@playwright/test';
-import { expect, component, MAIN_SCREENS } from './fixtures';
+import { expect, component, MAIN_SCREENS, closeSettings } from './fixtures';
 
 export async function box(loc: Locator) {
   const b = await loc.boundingBox();
@@ -12,6 +12,7 @@ export async function box(loc: Locator) {
 
 /** 左メニューの画面の一覧（nav-toggle を除く）。並びは表示の順。 */
 export async function listScreenKeys(page: Page): Promise<string[]> {
+  await closeSettings(page);
   const nav = page.getByRole('navigation', { name: '画面', exact: true });
   await expect(nav).toBeAttached();
   const keys = await nav.locator('[data-testid^="nav-"]').evaluateAll((els) =>
@@ -24,6 +25,8 @@ export async function listScreenKeys(page: Page): Promise<string[]> {
 
 /** 画面を開く。左メニューが見えない幅では、ボタン「メニュー」から開く（AC-186 と同じ手段）。 */
 export async function gotoScreen(page: Page, key: string): Promise<Locator> {
+  // 設定はモーダル（FR-223）。ほかの画面へ移る前に、開いている設定を閉じる（背面の覆いが操作を遮る）
+  if (key !== 'settings') await closeSettings(page);
   const nav = page.getByTestId(`nav-${key}`);
   if (!(await nav.isVisible())) await page.getByRole('button', { name: 'メニュー', exact: true }).click();
   await nav.click();
@@ -80,7 +83,8 @@ export async function chooseView(page: Page, c: Locator, item: '2D' | '3D' | '�
 
 /** 表示の状態（CONTRACT.md §6・§21 のフック `t.view.state(key)`） */
 export interface ViewState {
-  mode: '2d' | '3d';
+  /** 表示形式（FR-238 で 'graph' を足した。Graph を持たない画面は '2d'|'3d' のみ） */
+  mode: '2d' | '3d' | 'graph';
   world: 'real' | 'digital' | 'both';
   itemIds: string[];
   selectedIds: string[];

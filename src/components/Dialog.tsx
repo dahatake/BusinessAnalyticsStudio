@@ -32,10 +32,12 @@ if (typeof document !== 'undefined') {
 /** 開いた瞬間のフォーカスの位置（なければ直前にフォーカスのあった要素）を覚え、閉じたとき・外されたときに戻す */
 function useFocusReturn(open: boolean | undefined): void {
   const opener = useRef<HTMLElement | null>(null);
+  const outer = useRef<HTMLElement | null>(null); // 別のダイアログの中から開いたとき（設定のモーダルの上のコマンドパレットなど）の、ダイアログの外の戻り先
   const wasOpen = useRef(false);
   if (open && !wasOpen.current && typeof document !== 'undefined') {
     const a = document.activeElement;
-    opener.current = a instanceof HTMLElement && a !== document.body && !a.closest('[role="dialog"], [role="alertdialog"]') ? a : lastFocusedOutside;
+    outer.current = lastFocusedOutside;
+    opener.current = a instanceof HTMLElement && a !== document.body ? a : lastFocusedOutside;
   }
   wasOpen.current = open === true;
   useEffect(() => {
@@ -51,7 +53,8 @@ function useFocusReturn(open: boolean | undefined): void {
       const lost = !active || active === document.body || !active.isConnected || !!active.closest('[inert]') || closing;
       if (!lost) return;
       if (closing && opener.current?.closest('[inert]')) { t = window.setTimeout(attempt, 25); return; }
-      if (returnFocus(opener.current, document, closing) || tries >= 40) return;
+      const target = opener.current && opener.current.isConnected && !opener.current.closest('[inert]') ? opener.current : (outer.current ?? opener.current);
+      if (returnFocus(target, document, closing) || tries >= 40) return;
       t = window.setTimeout(attempt, 25);
     };
     t = window.setTimeout(attempt, 0);

@@ -5,6 +5,7 @@ import { registerTestHook } from '../testing/hook';
 import { QUALITIES, QualityMonitor, QUALITY_PROFILES, type Quality } from '../three/quality';
 import { INDUSTRY_PRESETS, objectCount, resolvePreset, type IndustryPreset, type SceneKey } from '../three/presets';
 import { startCameraFollow, useCameraRig } from '../three/cameraRig';
+import { useSpatialView } from '../spatial/store';
 import { sceneObjects } from '../three/twinProbe';
 import { useAnimation } from './animation';
 import { generatedObjectCount, syncLod } from './lod';
@@ -132,7 +133,7 @@ registerTestHook('scene', {
   // カメラ（FR-023）。moving は遷移の途中
   camera: () => {
     const c = useCameraRig.getState();
-    return { position: [...c.position], target: [...c.target], moving: c.moving };
+    return { position: [...c.position], target: [...c.target], moving: c.moving, projection: useSpatialView.getState().projection };
   },
 });
 

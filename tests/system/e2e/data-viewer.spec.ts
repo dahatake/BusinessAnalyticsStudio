@@ -114,7 +114,7 @@ test.describe('FR-169 データビュアー', () => {
     const { entity } = await importCatalogWithColumns(page);
     const viewer = page.getByTestId('data-viewer');
     await zoomTo(viewer, 'column');
-    for (let i = 0; i < 5; i++) await viewer.getByRole('button', { name: '拡大' }).click();
+    await expect(viewer.getByRole('button', { name: '拡大' }), '上限では「拡大」が無効（FR-237）').toBeDisabled();
     await expect(viewer).toBeVisible();
     await expect(viewer).toHaveAttribute('data-detail-level', 'column');
     await expect(viewer.locator(`[data-viewer-entity="${entity}"] [data-viewer-column]`).first()).toBeVisible();

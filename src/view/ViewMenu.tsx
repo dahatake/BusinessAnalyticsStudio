@@ -18,6 +18,7 @@ import { detect3D } from './render3d';
 const useStyles = makeStyles({
   // 当たり判定は 24 CSS px 以上（PARAM-040）
   button: { minWidth: '24px', minHeight: '24px', whiteSpace: 'nowrap', paddingInline: tokens.spacingHorizontalXS },
+  heading: { display: 'inline-flex', alignItems: 'center' },
   reason: { color: tokens.colorNeutralForeground3 },
 });
 
@@ -53,7 +54,7 @@ function ViewMenuList({ modes, worlds }: { modes: ViewOption<ViewMode>[]; worlds
   return (
     <MenuList>
       <MenuGroup>
-        <MenuGroupHeader>表示モード</MenuGroupHeader>
+        <MenuGroupHeader>表示形式</MenuGroupHeader>
         <Options name="mode" options={modes} />
       </MenuGroup>
       <MenuDivider />
@@ -131,11 +132,14 @@ export function ScreenViewButton() {
       checkedValues={checked}
       onCheckedValueChange={onChecked((m) => applyScreenView({ mode: m }), (w) => applyScreenView({ world: w }))}
     >
-      <MenuTrigger disableButtonEnhancement>
-        <Button className={s.button} icon={<Icon aria-hidden />} aria-label={`画面のビュー: ${text}`} data-testid="screen-view">
-          画面のビュー: {text}
-        </Button>
-      </MenuTrigger>
+      {/* 画面の見出し（FR-220 AC-515）。名前は「ビュー」で始まり、コンポーネントの見出しの「ビュー」と同じメニュー。左メニューには切替を置かない */}
+      <span data-testid="screen-heading" className={s.heading}>
+        <MenuTrigger disableButtonEnhancement>
+          <Button className={s.button} icon={<Icon aria-hidden />} aria-label={`ビュー: ${text}`} data-testid="screen-view">
+            ビュー: {text}
+          </Button>
+        </MenuTrigger>
+      </span>
       <MenuPopover>
         <ViewMenuList modes={modes} worlds={worlds} />
       </MenuPopover>

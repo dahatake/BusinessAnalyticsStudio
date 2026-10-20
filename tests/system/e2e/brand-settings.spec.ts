@@ -122,7 +122,7 @@ test.describe('FR-059 ブランドランプの適用', () => {
     await expect(primaryStep).toHaveCount(1);
     const rampHex = (await primaryStep.getAttribute('data-color'))!;
     const rampRgb = hexToRgb(rampHex);
-    await openScreen(page, 'canvas');
+    // primary-action は設定モーダルが開いている間に探す（openScreen('canvas') は設定を閉じる。FR-223）
     const primaryBtn = page.locator('[data-appearance="primary"], [data-testid="primary-action"]').first();
     await expect(primaryBtn).toBeVisible();
     const s = await primaryBtn.evaluate((el) => ({ bg: getComputedStyle(el).backgroundColor, fg: getComputedStyle(el).color }));

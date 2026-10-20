@@ -1,6 +1,7 @@
 export * from './common';
 export * from './files';
 export * from './world';
+export * from './graph';
 export * from './validate';
 export * from './partial';
 export * from './edit';
