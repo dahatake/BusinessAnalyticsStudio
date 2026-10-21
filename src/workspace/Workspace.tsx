@@ -576,7 +576,6 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     const manual: Record<string, { w: number; h: number }> = {};
     for (const k of manualKeys ?? []) if (m.rects[k] && !pinSet.has(k)) manual[k] = { w: m.rects[k]!.w, h: m.rects[k]!.h };
     const plan = planStepFlow({ step: useStepFlow.getState().step, keys, bounds: m.bounds, pinned, manual });
-    useStepFlow.getState().remember({ persona: L.persona, floats: L.floats[L.persona] ? { ...L.floats[L.persona] } : undefined, zOrder: [...L.zOrder] });
     if (L.expanded) L.setExpanded(null);
     L.setFloats(toFractions(plan, m.bounds));
   };

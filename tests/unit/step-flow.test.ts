@@ -1,9 +1,14 @@
-// FR-228 の再配置の計画（AC-529）と「元に戻す」（AC-530）の単体・結合テスト
-import { beforeEach, describe, expect, it } from 'vitest';
+// @vitest-environment jsdom
+// FR-228 の再配置の計画（AC-529）と、配置を元に戻す操作を出さないこと（AC-530）の単体・結合テスト
+import { createElement } from 'react';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { FluentProvider, webLightTheme } from '@fluentui/react-components';
 import { planStepFlow, stepRelevance } from '../../src/stepper/flow';
 import { STEPS } from '../../src/stepper/model';
+import { Stepper } from '../../src/stepper/Stepper';
 import { useLayout } from '../../src/store/layout';
-import { undoStepFlow, useStepFlow } from '../../src/store/stepFlow';
+import { useStepFlow } from '../../src/store/stepFlow';
 
 const B = { w: 1200, h: 800 };
 const KPI = STEPS.findIndex((s) => s.key === 'kpi');
@@ -41,20 +46,27 @@ describe('FR-228 AC-529 stepRelevance / planStepFlow', () => {
   });
 });
 
-describe('FR-228 AC-530 元に戻す', () => {
-  beforeEach(() => { useLayout.setState({ floats: {}, pinned: {}, zOrder: [] }); useStepFlow.getState().clear(); });
-  it('FR-228 AC-530 再配置前の自由配置に戻り、ピン止めは変わらない', () => {
+describe('FR-228 AC-530 配置を元に戻す操作は出さない', () => {
+  beforeEach(() => { useLayout.setState({ floats: {}, pinned: {}, zOrder: [] }); });
+  afterEach(() => cleanup());
+  const view = () => render(createElement(FluentProvider, { theme: webLightTheme }, createElement(Stepper, { onNavigate: () => {} })));
+
+  it('FR-228 AC-530 Stepper を描画しても、再配置の後も step-flow-undo は出ない', () => {
+    view();
+    expect(screen.queryByTestId('step-flow-undo')).toBeNull();
+    act(() => { fireEvent.click(screen.getAllByRole('button')[KPI]!); });
+    expect(useStepFlow.getState().seq).toBeGreaterThan(0);
+    expect(screen.queryByTestId('step-flow-undo')).toBeNull();
+    expect(screen.queryByText('配置を元に戻す')).toBeNull();
+  });
+
+  it('FR-228 AC-530 再配置（setFloats）の前後でピン止めは変わらず、既定のレイアウトに戻すで既定に戻る', () => {
     const persona = useLayout.getState().persona;
     const pin = { x: 0, y: 0, w: 0.4, h: 0.4 };
-    const before = { a: { x: 0.5, y: 0.5, w: 0.3, h: 0.3 }, p: pin };
-    useLayout.setState({ floats: { [persona]: before }, pinned: { [persona]: { p: pin } }, zOrder: ['a'] });
-    useStepFlow.getState().remember({ persona, floats: { ...before }, zOrder: ['a'] });
-    useLayout.getState().setFloats({ a: { x: 0, y: 0.5, w: 0.2, h: 0.2 }, b: { x: 0.6, y: 0, w: 0.2, h: 0.2 } });
-    expect(undoStepFlow()).toBe(true);
-    const s = useLayout.getState();
-    expect(s.floats[persona]).toEqual(before);
-    expect(s.pinned[persona]).toEqual({ p: pin });
-    expect(useStepFlow.getState().undo).toBeNull();
-    expect(undoStepFlow()).toBe(false);
+    useLayout.setState({ floats: { [persona]: { p: pin } }, pinned: { [persona]: { p: pin } }, zOrder: ['p'] });
+    useLayout.getState().setFloats({ p: pin, b: { x: 0.6, y: 0, w: 0.2, h: 0.2 } });
+    expect(useLayout.getState().pinned[persona]).toEqual({ p: pin });
+    useLayout.getState().resetLayout();
+    expect(useLayout.getState().floats[persona]).toBeUndefined();
   });
 });
