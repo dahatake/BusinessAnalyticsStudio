@@ -7973,7 +7973,7 @@
       ],
       "title": "全25画面で見出し通常表示による自由配置矩形復元と同一ペルソナ再読込の保存非破壊",
       "layer": "e2e",
-      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button",
+      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button --workers=1",
       "canary": false,
       "status": "not_run",
       "last_commit": null,
@@ -7991,6 +7991,12 @@
           "by": "test-designer",
           "change": "serial: None -> True",
           "reason": "共有previewサーバーの競合を防ぐため単独実行"
+        },
+        {
+          "at": "2026-10-21T21:05:56+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button' -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button --workers=1'",
+          "reason": "共有preview環境でPlaywright内部並列によるタイムアウトを防ぐためworkers=1で実行"
         }
       ],
       "serial": true
@@ -8005,7 +8011,7 @@
       ],
       "title": "全25画面でEscによる自由配置矩形復元と同一ペルソナ再読込の保存非破壊",
       "layer": "e2e",
-      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape",
+      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape --workers=1",
       "canary": false,
       "status": "not_run",
       "last_commit": null,
@@ -8023,6 +8029,12 @@
           "by": "test-designer",
           "change": "serial: None -> True",
           "reason": "共有previewサーバーの競合を防ぐため単独実行"
+        },
+        {
+          "at": "2026-10-21T21:05:58+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape' -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape --workers=1'",
+          "reason": "共有preview環境でPlaywright内部並列によるタイムアウトを防ぐためworkers=1で実行"
         }
       ],
       "serial": true
@@ -8038,7 +8050,7 @@
       ],
       "title": "異常系・回帰: 課題-解決策分析のShift+F/Esc反復で最大化矩形が保存配置を汚さない",
       "layer": "e2e",
-      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat",
+      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat --workers=1",
       "canary": true,
       "status": "not_run",
       "last_commit": null,
@@ -8056,6 +8068,12 @@
           "by": "test-designer",
           "change": "serial: None -> True",
           "reason": "共有previewサーバーの競合を防ぐため単独実行"
+        },
+        {
+          "at": "2026-10-21T21:05:59+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat' -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat --workers=1'",
+          "reason": "共有preview環境でPlaywright内部並列によるタイムアウトを防ぐためworkers=1で実行"
         }
       ],
       "serial": true
