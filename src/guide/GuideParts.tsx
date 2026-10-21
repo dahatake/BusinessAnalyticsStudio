@@ -1,6 +1,6 @@
 // ガイドのカードの部品（メイン画面の「はじめての方へ」・ウェルカム・分析画面の「使い方」で共有。FR-266・FR-268・FR-272）。
 import { useRef, useState } from 'react';
-import { Button, Text, makeStyles, tokens } from '@fluentui/react-components';
+import { Button, makeStyles, tokens } from '@fluentui/react-components';
 import {
   FLOW_ALT, GUIDE_STEPS, GUIDE_TERMS, GUIDE_WHAT, GUIDE_WORKSPACE,
   PACK_COMMANDS, PACK_PROMPT_FILE, PACK_PROMPT_POINTS, PACK_SAMPLE, PACK_URL,
@@ -27,8 +27,12 @@ const useStyles = makeStyles({
   svg: { maxWidth: '100%', height: 'auto' },
 });
 
+/** 描画する要素を少なくするため（説明は常に画面にある）、文字は Fluent の Text ではなく素の要素で書く。見た目は親の block のクラスで決める */
+const Text = ({ children, className, ...rest }: { children?: React.ReactNode; className?: string; weight?: string }) => <span className={className} style={rest.weight === 'semibold' ? { fontWeight: tokens.fontWeightSemibold } : undefined}>{children}</span>;
+
 export function GuideH({ children, level = 3 }: { children: string; level?: 2 | 3 | 4 }) {
-  return <Text as={`h${level}` as 'h3'} weight="semibold" size={level === 2 ? 500 : 400} style={{ margin: 0 }}>{children}</Text>;
+  const H = `h${level}` as 'h3';
+  return <H style={{ margin: 0, fontSize: level === 2 ? tokens.fontSizeBase500 : tokens.fontSizeBase400, fontWeight: tokens.fontWeightSemibold }}>{children}</H>;
 }
 
 export function WhatSection() {
