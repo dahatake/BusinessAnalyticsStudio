@@ -280,6 +280,10 @@
 | FR-226 | 「[顧客名] - [プロジェクト名]」の表示を 1 か所にする | 承認済み | src/projects/ProjectsPanel.tsx, src/projects/workTarget.ts, src/projects/WorkTargetMenu.tsx | tests/unit/work-target.test.ts (AC-525), tests/unit/work-target-ui.test.tsx (AC-525), tests/system/e2e/ux-refresh.spec.ts (AC-525) | デザイン基盤 |
 | FR-227 | 選択した項目に関連する要素の全コンポーネントでのハイライトと、関連しないものの減光 | 承認済み | src/selection/relationHighlight.ts (全 data-entity-id へ data-highlight を反映), src/selection/relationHighlightStyle.ts (減光は文字色＋破線), src/selection/SelectionController.tsx, src/selection/hooks.ts (同じ項目の再クリックで解除), src/selection/keys.ts (installBackgroundClear: 空白のクリックで解除), src/components/highlight.ts | tests/unit/relation-highlight.test.ts (AC-526, AC-527), tests/system/e2e/ux-refresh.spec.ts (E2E-326) | 選択状態とエンティティ関係グラフ |
 | FR-228 | 業務分析のステップの見た目と、クリックでの関連コンポーネントの再配置 | 承認済み | src/stepper/flow.ts (stepRelevance・planStepFlow。A-65 の対応と大きさの比), src/stepper/Stepper.tsx (番号・流れ・44px 以上・元に戻す), src/store/stepFlow.ts (要求と元に戻す), src/workspace/Workspace.tsx (flowRun。測って並べる・手で変えた大きさの記録), src/workspace/PaneContext.tsx (step), src/components/Panel.tsx (data-step-*) | tests/unit/step-flow.test.ts (AC-529, AC-530), tests/system/e2e/ux-refresh.spec.ts (E2E-325, E2E-326) | ワークスペース |
+| FR-274 | 「現状の説明」ボタンとサイドパネル（AI による課題・解決策・KPI/OKR への寄与の説明） | 承認済み | 未実装 | 未実装 | - |
+| FR-275 | Microsoft Foundry の接続設定（エンドポイント・デプロイ名・API キー）と外部送信の条件 | 承認済み | 未実装 | 未実装 | - |
+| FR-276 | 「現状の説明」の課金の安全策（回数・大きさ・間隔・予算の警告と停止） | 承認済み | 未実装 | 未実装 | - |
+| FR-277 | AI が使えないときの「使えない」表示と決定的な代替説明 | 承認済み | 未実装 | 未実装 | - |
 ## API・イベント
 
 | 名前 | 定義ファイル | 関連する要求 ID |
