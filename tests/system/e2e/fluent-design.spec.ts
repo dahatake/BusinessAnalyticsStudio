@@ -495,8 +495,8 @@ test.describe('NFR-UX-017 Fluent 2 のモーション', () => {
       const other = keys.find((k) => k !== key)!;
       await gotoScreen(page, other);
       await markAnimations(page);
-      await page.getByTestId(`nav-${key}`).click();
-      const c = component(page, key);
+      // 左メニューの項目（左メニューにない画面はコマンド。FR-220 AC-590）で切り替える
+      const c = await gotoScreen(page, key);
       await expect(c).toBeVisible();
       await nextFrames(page);
       const sw = (await newAnimations(page)).filter((x) => x.endTime > 0);
