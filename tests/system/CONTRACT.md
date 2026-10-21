@@ -155,6 +155,10 @@
 - 仕様変更後の探し方の追補（FR-222・223・227。AC の期待値は変えない）: (1) `recordExportConsent` は了承の保存後に `closeSettings` で設定のモーダルを閉じる（呼んだ後は背面の画面を直接操作できる）。(2) 設定のモーダルの中でしか見えないもの（背面の primary-action など、モーダルが開いている間の画面の状態）は、`openScreen` で別の画面へ移る前に探す。(3) ワークスペースのコンポーネントの一覧（`keys`・`visibleComponents`・`topKeys`）は `:not([data-testid="component-menu"]):not([data-testid="component-actions"])` で `component-actions` を除く。(4) 全画面の走査（`support/screens.ts` の `listScreenKeys`・`gotoScreen`）は設定のモーダルを先に閉じる。設定は `component-menu`・`component-actions`・「ビュー」を持たないので、メニュー・ツールチップ・ビューの走査では設定を対象から外し、設定は `settingsDialog(page)` の中（文字の段・角丸・影・フォーカスの戻り）で判定する。(5) 選択中の項目の再クリックは選択解除（FR-227）。同じ項目を 2 つの画面で続けて押すテストは、すでに選択済みなら押さない（関連の表示などの状態を見て判定する）。(6) インクのボードのように画面下端に show コントロールバーが重なる面では、固定座標を 200px 程度の範囲に収め 2 列に並べる（ヘッダーの折り返しでボード面が下がっても重ならない）。
 
 
+## 25. 「現状の説明」・Foundry 接続設定・課金の安全策の表示（FR-274〜277 AC-699・702・703・712・713。explain-current.spec.ts が前提にする画面の探し方）
+- 画面上部: button「現状の説明」（読み取り専用）。押すとサイドパネル `data-testid="explain-panel"`（`data-screen` に表示中の画面の key）が開く。内部に `explain-body`（説明の本文）、`explain-reason`（使えない理由）、button「閉じる」、button「作り直す」（画面切替後に示す）。AI 生成のときだけ `ai-generated-label` を持つ。Esc か閉じるで閉じ、焦点はボタンへ戻る。
+- 設定のモーダル内: `foundry-settings`（ラベル「エンドポイント」「デプロイ名」「API キー」（type=password）、実接続の checkbox/switch（既定 off）、「設定済み」表示、button「保存」「削除」、費用・送信情報の注意文）。
+- 設定のモーダル内: `ai-usage`（当日の回数と上限・今月の概算費用と予算・警告／停止の状態・単価。「1 日の上限」の入力は上げる保存で確認ダイアログ）。
 ## 25. Graph の操作（FR-245〜248。graph-interaction.spec.ts が前提にする画面の探し方。run 202610211713）
 - 対象: Graph の面 `[data-zoom-surface="graph"]`（ビジネス関係グラフを除く五画面: twin-view・spatial-view・issue-solution・kpi-okr・data-viewer）。面は `data-pan-x`・`data-pan-y`（CSS px）・`data-scale`（全体表示を 1。範囲 0.25〜4）を持ち、キーボードでフォーカスできる（tabindex）。
 - 操作（コンポーネントの中。全画面中は画面全体から探す）: button「図を上へ移動」「図を下へ移動」「図を左へ移動」「図を右へ移動」、既存の「拡大」「縮小」「全体表示に戻す」（拡大縮小は 1 操作 1.25 倍）、「全画面」「全画面を終了」。Shift＋矢印 1 操作は 40px、`+`/`-` キーで拡大縮小、Ctrl＋ホイールはピンチの代用。矢印キー単独は隣接ノードへのフォーカス移動で図は動かない。ビジネス関係グラフにはこれらのボタン（移動・全画面）を置かない。
