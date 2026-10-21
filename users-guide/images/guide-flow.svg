@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 120" width="760" height="120" role="img" aria-labelledby="t d" font-family="'Segoe UI','Yu Gothic UI',sans-serif">
+  <title id="t">全体の流れの図</title>
+  <desc id="d">全体の流れの図です。1 企業を登録、2 Project を作成、3 Project を開く、4 分析を開始の順に、矢印でつながっています。</desc>
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto"><path d="M0 0L10 5L0 10z" fill="#475569"/></marker>
+  </defs>
+  <g fill="#eff6ff" stroke="#2563eb" stroke-width="1.5">
+    <rect x="8" y="30" width="150" height="60" rx="8"/>
+    <rect x="212" y="30" width="150" height="60" rx="8"/>
+    <rect x="416" y="30" width="150" height="60" rx="8"/>
+    <rect x="620" y="30" width="132" height="60" rx="8"/>
+  </g>
+  <g fill="#0f172a" font-size="15" text-anchor="middle">
+    <text x="83" y="66">1 企業を登録</text>
+    <text x="287" y="66">2 Project を作成</text>
+    <text x="491" y="66">3 Project を開く</text>
+    <text x="686" y="66">4 分析を開始</text>
+  </g>
+  <g stroke="#475569" stroke-width="2" marker-end="url(#a)">
+    <line x1="160" y1="60" x2="208" y2="60"/>
+    <line x1="364" y1="60" x2="412" y2="60"/>
+    <line x1="568" y1="60" x2="616" y2="60"/>
+  </g>
+</svg>
