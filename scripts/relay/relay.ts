@@ -124,7 +124,7 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           const b = JSON.parse((await readBody(req)) || '{}') as { solution?: unknown; endpoint?: unknown; deployment?: unknown };
           try {
             if (!opts.foundry) throw new GenAiFoundryError('key-missing');
-            if (typeof b.solution !== 'string' || typeof b.endpoint !== 'string' || typeof b.deployment !== 'string') throw new FoundryError('bad-request');
+            if (typeof b.solution !== 'string' || typeof b.endpoint !== 'string' || typeof b.deployment !== 'string') throw new GenAiFoundryError('bad-request');
             return json(200, await opts.foundry.analyze({ solution: b.solution, endpoint: b.endpoint, deployment: b.deployment }));
           } catch (e) {
             if (e instanceof GenAiFoundryError) return json(CAUSE_STATUS[e.kind], { error: { cause: e.kind, ...e.detail } });
