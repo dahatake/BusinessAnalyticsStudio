@@ -271,6 +271,8 @@
     "AC-587": "sha256:e77ad03e7a14c4c0",
     "AC-588": "sha256:40c70b6cd321b206",
     "AC-589": "sha256:960a0e0e16da93a0",
+    "AC-591": "sha256:81d6e4fd0b7ce96d",
+    "AC-592": "sha256:a4fe9cee1ccae9a5",
     "AC-593": "sha256:d5a5742963a21c77",
     "AC-594": "sha256:605fe1e6f60620b3",
     "AC-595": "sha256:78995a5cf115af3f",
@@ -3605,9 +3607,9 @@
       "command": "node tests/system/run.mjs AC-247",
       "canary": false,
       "status": "fail",
-      "last_commit": "b462d86",
-      "last_run_at": "2026-10-22T03:32:28+09:00",
-      "evidence": "work/runs/202610212147/logs/system-test/E2E-227-202610220224.log",
+      "last_commit": "48ee121",
+      "last_run_at": "2026-10-22T04:48:31+09:00",
+      "evidence": "work/runs/202610211706/logs/system-test/E2E-227-202610220423.log",
       "history": [
         {
           "at": "2026-10-14T02:48:51+09:00",
@@ -3680,9 +3682,9 @@
       "command": "node tests/system/run.mjs AC-250",
       "canary": false,
       "status": "fail",
-      "last_commit": "b462d86",
-      "last_run_at": "2026-10-22T03:32:28+09:00",
-      "evidence": "work/runs/202610212147/logs/system-test/E2E-230-202610220226.log",
+      "last_commit": "48ee121",
+      "last_run_at": "2026-10-22T04:48:31+09:00",
+      "evidence": "work/runs/202610211706/logs/system-test/E2E-230-202610220425.log",
       "history": [
         {
           "at": "2026-10-14T02:48:57+09:00",
@@ -5133,9 +5135,9 @@
       "command": "node tests/system/run.mjs AC-477",
       "canary": false,
       "status": "fail",
-      "last_commit": "b462d86",
-      "last_run_at": "2026-10-22T03:32:28+09:00",
-      "evidence": "work/runs/202610212147/logs/system-test/E2E-306-202610220256.log",
+      "last_commit": "48ee121",
+      "last_run_at": "2026-10-22T04:48:31+09:00",
+      "evidence": "work/runs/202610211706/logs/system-test/E2E-306-202610220427.log",
       "history": [
         {
           "at": "2026-10-17T22:06:31+09:00",
@@ -5157,10 +5159,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-480",
       "canary": false,
-      "status": "fail",
-      "last_commit": "b462d86",
-      "last_run_at": "2026-10-22T03:32:28+09:00",
-      "evidence": "work/runs/202610212147/logs/system-test/E2E-307-202610220257.log",
+      "status": "pass",
+      "last_commit": "48ee121",
+      "last_run_at": "2026-10-22T04:48:31+09:00",
+      "evidence": "work/runs/202610211706/logs/system-test/E2E-307-202610220439.log",
       "history": [
         {
           "at": "2026-10-17T22:06:37+09:00",
@@ -5245,9 +5247,9 @@
       "command": "node tests/system/run.mjs AC-485",
       "canary": false,
       "status": "fail",
-      "last_commit": "b462d86",
-      "last_run_at": "2026-10-22T03:32:28+09:00",
-      "evidence": "work/runs/202610212147/logs/system-test/E2E-310-202610220306.log",
+      "last_commit": "48ee121",
+      "last_run_at": "2026-10-22T04:48:31+09:00",
+      "evidence": "work/runs/202610211706/logs/system-test/E2E-310-202610220442.log",
       "history": [
         {
           "at": "2026-10-17T22:06:57+09:00",
@@ -6117,6 +6119,153 @@
       ]
     },
     {
+      "id": "E2E-342",
+      "requirement_ids": [
+        "FR-013"
+      ],
+      "ac_ids": [
+        "AC-591"
+      ],
+      "title": "自由配置の全25画面で最大化矩形を既定最大化と比較し全作業領域・最前面を確認",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-591",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "171d14f",
+      "last_run_at": "2026-10-21T23:56:31+09:00",
+      "evidence": "work/runs/202610211706/logs/system-test/E2E-342-202610212334.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:19:41+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T20:26:29+09:00",
+          "by": "test-designer",
+          "change": "serial: None -> True",
+          "reason": "共有previewサーバーの競合を防ぐため単独実行"
+        }
+      ],
+      "serial": true
+    },
+    {
+      "id": "E2E-343",
+      "requirement_ids": [
+        "FR-013"
+      ],
+      "ac_ids": [
+        "AC-592"
+      ],
+      "title": "全25画面で見出し通常表示による自由配置矩形復元と同一ペルソナ再読込の保存非破壊",
+      "layer": "e2e",
+      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button --workers=1",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "171d14f",
+      "last_run_at": "2026-10-21T23:56:31+09:00",
+      "evidence": "work/runs/202610211706/logs/system-test/E2E-343-202610212341.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:19:47+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T20:26:32+09:00",
+          "by": "test-designer",
+          "change": "serial: None -> True",
+          "reason": "共有previewサーバーの競合を防ぐため単独実行"
+        },
+        {
+          "at": "2026-10-21T21:05:56+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button' -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button --workers=1'",
+          "reason": "共有preview環境でPlaywright内部並列によるタイムアウトを防ぐためworkers=1で実行"
+        }
+      ],
+      "serial": true
+    },
+    {
+      "id": "E2E-344",
+      "requirement_ids": [
+        "FR-013"
+      ],
+      "ac_ids": [
+        "AC-592"
+      ],
+      "title": "全25画面でEscによる自由配置矩形復元と同一ペルソナ再読込の保存非破壊",
+      "layer": "e2e",
+      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape --workers=1",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "171d14f",
+      "last_run_at": "2026-10-21T23:56:31+09:00",
+      "evidence": "work/runs/202610211706/logs/system-test/E2E-344-202610212348.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:19:52+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T20:26:39+09:00",
+          "by": "test-designer",
+          "change": "serial: None -> True",
+          "reason": "共有previewサーバーの競合を防ぐため単独実行"
+        },
+        {
+          "at": "2026-10-21T21:05:58+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape' -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape --workers=1'",
+          "reason": "共有preview環境でPlaywright内部並列によるタイムアウトを防ぐためworkers=1で実行"
+        }
+      ],
+      "serial": true
+    },
+    {
+      "id": "E2E-345",
+      "requirement_ids": [
+        "FR-013"
+      ],
+      "ac_ids": [
+        "AC-016",
+        "AC-592"
+      ],
+      "title": "異常系・回帰: 課題-解決策分析のShift+F/Esc反復で最大化矩形が保存配置を汚さない",
+      "layer": "e2e",
+      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat --workers=1",
+      "canary": true,
+      "status": "pass",
+      "last_commit": "171d14f",
+      "last_run_at": "2026-10-21T23:56:31+09:00",
+      "evidence": "work/runs/202610211706/logs/system-test/E2E-345-202610212204.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:19:59+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T20:26:44+09:00",
+          "by": "test-designer",
+          "change": "serial: None -> True",
+          "reason": "共有previewサーバーの競合を防ぐため単独実行"
+        },
+        {
+          "at": "2026-10-21T21:05:59+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat' -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat --workers=1'",
+          "reason": "共有preview環境でPlaywright内部並列によるタイムアウトを防ぐためworkers=1で実行"
+        }
+      ],
+      "serial": true
+    },
+    {
       "id": "E2E-346",
       "requirement_ids": [
         "FR-245"
@@ -6662,9 +6811,9 @@
       "command": "node tests/system/run.mjs AC-163",
       "canary": false,
       "status": "pass",
-      "last_commit": "b462d86",
-      "last_run_at": "2026-10-22T03:32:28+09:00",
-      "evidence": "work/runs/202610212147/logs/system-test/IT-014-202610220322.log",
+      "last_commit": "48ee121",
+      "last_run_at": "2026-10-22T04:48:31+09:00",
+      "evidence": "work/runs/202610211706/logs/system-test/IT-014-202610220448.log",
       "history": [
         {
           "at": "2026-10-12T14:08:51+09:00",
