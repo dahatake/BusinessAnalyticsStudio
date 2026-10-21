@@ -73,7 +73,9 @@ describe('FR-186 メイン画面', () => {
     fireEvent.change(within(dlg).getByRole('textbox', { name: '企業名' }), { target: { value: '合成株式会社M' } });
     fireEvent.click(within(dlg).getByRole('button', { name: '登録' }));
     await waitFor(() => expect(st().companies.length).toBe(1));
-    expect(current()[0]).toContain('Project を作成');
+    // 登録後はダイアログ（モーダル）が閉じ終わるまで背後の要素が支援技術から隠れるため、閉じ終わりを待ってから同じ判定をする。
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: '企業を登録' })).toBeNull());
+    await waitFor(() => expect(current()[0]).toContain('Project を作成'));
   });
 
   // FR-186 AC-395
