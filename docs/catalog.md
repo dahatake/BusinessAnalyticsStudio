@@ -279,7 +279,6 @@
 | FR-225 | Fluent 2 のトークン・コントラスト・状態色の適用 | 承認済み | src/theme/stateTokens.ts (状態色・色以外の手がかり・コントラスト検証の組), src/theme/tokens.ts (withContrastFixes), src/theme/AppThemeProvider.tsx | tests/unit/fluent-contrast.test.ts (AC-523, AC-524), tests/system/e2e/ux-refresh.spec.ts (E2E-322) | デザイン基盤 |
 | FR-226 | 「[顧客名] - [プロジェクト名]」の表示を 1 か所にする | 承認済み | src/projects/ProjectsPanel.tsx, src/projects/workTarget.ts, src/projects/WorkTargetMenu.tsx | tests/unit/work-target.test.ts (AC-525), tests/unit/work-target-ui.test.tsx (AC-525), tests/system/e2e/ux-refresh.spec.ts (AC-525) | デザイン基盤 |
 | FR-227 | 選択した項目に関連する要素の全コンポーネントでのハイライトと、関連しないものの減光 | 承認済み | src/selection/relationHighlight.ts (全 data-entity-id へ data-highlight を反映), src/selection/relationHighlightStyle.ts (減光は文字色＋破線), src/selection/SelectionController.tsx, src/selection/hooks.ts (同じ項目の再クリックで解除), src/selection/keys.ts (installBackgroundClear: 空白のクリックで解除), src/components/highlight.ts | tests/unit/relation-highlight.test.ts (AC-526, AC-527), tests/system/e2e/ux-refresh.spec.ts (E2E-326) | 選択状態とエンティティ関係グラフ |
-| FR-228 | 業務分析のステップの見た目と、クリックでの関連コンポーネントの再配置 | 承認済み | src/stepper/flow.ts (stepRelevance・planStepFlow。A-65 の対応と大きさの比), src/stepper/Stepper.tsx (番号・流れ・44px 以上・元に戻す), src/store/stepFlow.ts (要求と元に戻す), src/workspace/Workspace.tsx (flowRun。測って並べる・手で変えた大きさの記録), src/workspace/PaneContext.tsx (step), src/components/Panel.tsx (data-step-*) | tests/unit/step-flow.test.ts (AC-529, AC-530), tests/system/e2e/ux-refresh.spec.ts (E2E-325, E2E-326) | ワークスペース |
 | FR-274 | 「現状の説明」ボタンとサイドパネル（AI による課題・解決策・KPI/OKR への寄与の説明） | 承認済み | 未実装 | 未実装 | - |
 | FR-275 | Microsoft Foundry の接続設定（エンドポイント・デプロイ名・API キー）と外部送信の条件 | 承認済み | scripts/relay/foundry-vault.ts, scripts/relay/foundry.ts, scripts/relay/relay.ts, src/ai/foundryClient.ts, src/ai/FoundrySettings.tsx, src/ai/AiSettings.tsx | tests/unit/foundry.test.ts (AC-704, AC-705, AC-706, AC-707), tests/system/e2e/explain-current.spec.ts (AC-703) | Foundry 接続部品 |
 | FR-276 | 「現状の説明」の課金の安全策（回数・大きさ・間隔・予算の警告と停止） | 承認済み | 未実装 | 未実装 | - |
@@ -288,6 +287,15 @@
 | FR-246 | 図だけの全画面表示 | 承認済み | src/components/GraphViewport.tsx (全画面・F キー・Esc の優先順・フォーカス), src/components/graphViewStore.ts | tests/unit/graph-interaction.test.tsx (AC-596, AC-597), tests/system/e2e/graph-interaction.spec.ts (E2E-349, E2E-350) | Graph の描画枠, Graph の描画面 |
 | FR-247 | ノード・エッジの詳細カード | 承認済み | src/components/GraphSurface.tsx (詳細カード・エッジのクリックと Enter・ダブルクリックはズームイン), src/store/selection.ts (registerLocalIds: 図だけの項目を選べるようにする) | tests/unit/graph-interaction.test.tsx (AC-598, AC-599), tests/unit/graph-view.test.tsx (AC-581), tests/system/e2e/graph-interaction.spec.ts (E2E-351, E2E-352) | Graph の描画面, 選択状態とエンティティ関係グラフ |
 | FR-248 | 表の行から図のノードへの移動とハイライト | 承認済み | src/components/GraphAlt.tsx (表で見る・行から移動の依頼), src/components/GraphViewport.tsx (移動・見える階層への切替), src/components/graphViewStore.ts (ハイライト 2 秒), src/components/GraphSurface.tsx (data-row-highlight・太い破線の枠) | tests/unit/graph-interaction.test.tsx (AC-600, AC-601), tests/system/e2e/graph-interaction.spec.ts (E2E-353, E2E-354) | Graph の代替表示, Graph の描画枠, Graph の描画面 |
+| FR-228 | 業務分析のステップの見た目と、クリックでの関連コンポーネントの再配置 | 承認済み | src/stepper/flow.ts (stepRelevance・planStepFlow。A-65 の対応と大きさの比), src/stepper/Stepper.tsx (番号・流れ・44px 以上。「配置を元に戻す」は置かない), src/store/stepFlow.ts (再配置の要求), src/workspace/Workspace.tsx (flowRun。測って並べる・手で変えた大きさの記録), src/workspace/PaneContext.tsx (step), src/components/Panel.tsx (data-step-*) | tests/unit/step-flow.test.ts (AC-529, AC-530), tests/system/e2e/ux-refresh.spec.ts (E2E-325, E2E-326) | ワークスペース |
+| FR-278 | 「Copilot で分析実行」ボタンと全コンポーネントのデータのレビュー | 承認済み | 未実装 | 未実装 | なし |
+| FR-279 | コンポーネントごとの「Copilot の案」の表示・編集・破棄 | 承認済み | 未実装 | 未実装 | なし |
+| FR-280 | 「反映」による画面コンポーネントと管理データの更新 | 承認済み | 未実装 | 未実装 | なし |
+| FR-281 | 反映の失敗時の扱いと反映の取り消し | 承認待ち | 未実装 | 未実装 | なし |
+| FR-282 | Microsoft Foundry の接続設定（設定画面） | 承認済み | 未実装 | 未実装 | なし |
+| FR-283 | 接続設定がないとき・接続に失敗したときの分析実行 | 承認済み | 未実装 | 未実装 | なし |
+| NFR-SEC-012 | Foundry の API キーをリポジトリ・ログ・テストデータに出さない | 承認済み | 未実装 | 未実装 | なし |
+| NFR-COST-001 | 分析実行の利用量と月の予算の上限 | 承認待ち | 未実装 | 未実装 | なし |
 ## API・イベント
 
 | 名前 | 定義ファイル | 関連する要求 ID |
