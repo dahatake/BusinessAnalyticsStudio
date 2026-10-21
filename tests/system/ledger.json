@@ -200,7 +200,7 @@
     "AC-390": "sha256:8b8790f5c3b06ebe",
     "AC-392": "sha256:6ff7679b71fb268f",
     "AC-393": "sha256:611765fba1082411",
-    "AC-395": "sha256:cb67b1a2ef8558d2",
+    "AC-395": "sha256:a96a37b2530be908",
     "AC-396": "sha256:4513ca85bc231038",
     "AC-399": "sha256:c2b15973128f347e",
     "AC-403": "sha256:b5b108547f94788e",
@@ -271,6 +271,8 @@
     "AC-587": "sha256:e77ad03e7a14c4c0",
     "AC-588": "sha256:40c70b6cd321b206",
     "AC-589": "sha256:960a0e0e16da93a0",
+    "AC-591": "sha256:81d6e4fd0b7ce96d",
+    "AC-592": "sha256:a4fe9cee1ccae9a5",
     "AC-593": "sha256:d5a5742963a21c77",
     "AC-594": "sha256:605fe1e6f60620b3",
     "AC-595": "sha256:78995a5cf115af3f",
@@ -280,8 +282,12 @@
     "AC-599": "sha256:5b8a7aaeef08816d",
     "AC-600": "sha256:ccc0ba0622a2a2a8",
     "AC-601": "sha256:6cd0c890d1d0fb1d",
-    "AC-591": "sha256:81d6e4fd0b7ce96d",
-    "AC-592": "sha256:a4fe9cee1ccae9a5",
+    "AC-675": "sha256:956f62d881b6cbac",
+    "AC-678": "sha256:faa3bcdeb2d5c19b",
+    "AC-682": "sha256:08ab3ca1b73c4615",
+    "AC-685": "sha256:c9df7610f9e4b193",
+    "AC-687": "sha256:ef4b678cca783521",
+    "AC-690": "sha256:ae060af5d4a4546c",
     "AC-733": "sha256:416fb88a5cfaff0a",
     "AC-739": "sha256:a7892bd655cdf85a"
   },
@@ -1911,9 +1917,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "b462d86",
-      "last_run_at": "2026-10-22T03:32:28+09:00",
-      "evidence": "work/runs/202610212147/logs/system-test/E2E-162-202610220201.log",
+      "last_commit": "fb7fef4",
+      "last_run_at": "2026-10-22T04:50:41+09:00",
+      "evidence": "work/runs/202610212145/logs/system-test/E2E-162-202610220449.log",
       "history": [
         {
           "at": "2026-10-12T14:07:28+09:00",
@@ -6115,6 +6121,686 @@
       ]
     },
     {
+      "id": "E2E-342",
+      "requirement_ids": [
+        "FR-013"
+      ],
+      "ac_ids": [
+        "AC-591"
+      ],
+      "title": "自由配置の全25画面で最大化矩形を既定最大化と比較し全作業領域・最前面を確認",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-591",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "171d14f",
+      "last_run_at": "2026-10-21T23:56:31+09:00",
+      "evidence": "work/runs/202610211706/logs/system-test/E2E-342-202610212334.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:19:41+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T20:26:29+09:00",
+          "by": "test-designer",
+          "change": "serial: None -> True",
+          "reason": "共有previewサーバーの競合を防ぐため単独実行"
+        }
+      ],
+      "serial": true
+    },
+    {
+      "id": "E2E-343",
+      "requirement_ids": [
+        "FR-013"
+      ],
+      "ac_ids": [
+        "AC-592"
+      ],
+      "title": "全25画面で見出し通常表示による自由配置矩形復元と同一ペルソナ再読込の保存非破壊",
+      "layer": "e2e",
+      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button --workers=1",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "171d14f",
+      "last_run_at": "2026-10-21T23:56:31+09:00",
+      "evidence": "work/runs/202610211706/logs/system-test/E2E-343-202610212341.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:19:47+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T20:26:32+09:00",
+          "by": "test-designer",
+          "change": "serial: None -> True",
+          "reason": "共有previewサーバーの競合を防ぐため単独実行"
+        },
+        {
+          "at": "2026-10-21T21:05:56+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button' -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button --workers=1'",
+          "reason": "共有preview環境でPlaywright内部並列によるタイムアウトを防ぐためworkers=1で実行"
+        }
+      ],
+      "serial": true
+    },
+    {
+      "id": "E2E-344",
+      "requirement_ids": [
+        "FR-013"
+      ],
+      "ac_ids": [
+        "AC-592"
+      ],
+      "title": "全25画面でEscによる自由配置矩形復元と同一ペルソナ再読込の保存非破壊",
+      "layer": "e2e",
+      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape --workers=1",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "171d14f",
+      "last_run_at": "2026-10-21T23:56:31+09:00",
+      "evidence": "work/runs/202610211706/logs/system-test/E2E-344-202610212348.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:19:52+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T20:26:39+09:00",
+          "by": "test-designer",
+          "change": "serial: None -> True",
+          "reason": "共有previewサーバーの競合を防ぐため単独実行"
+        },
+        {
+          "at": "2026-10-21T21:05:58+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape' -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape --workers=1'",
+          "reason": "共有preview環境でPlaywright内部並列によるタイムアウトを防ぐためworkers=1で実行"
+        }
+      ],
+      "serial": true
+    },
+    {
+      "id": "E2E-345",
+      "requirement_ids": [
+        "FR-013"
+      ],
+      "ac_ids": [
+        "AC-016",
+        "AC-592"
+      ],
+      "title": "異常系・回帰: 課題-解決策分析のShift+F/Esc反復で最大化矩形が保存配置を汚さない",
+      "layer": "e2e",
+      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat --workers=1",
+      "canary": true,
+      "status": "pass",
+      "last_commit": "171d14f",
+      "last_run_at": "2026-10-21T23:56:31+09:00",
+      "evidence": "work/runs/202610211706/logs/system-test/E2E-345-202610212204.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:19:59+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T20:26:44+09:00",
+          "by": "test-designer",
+          "change": "serial: None -> True",
+          "reason": "共有previewサーバーの競合を防ぐため単独実行"
+        },
+        {
+          "at": "2026-10-21T21:05:59+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat' -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat --workers=1'",
+          "reason": "共有preview環境でPlaywright内部並列によるタイムアウトを防ぐためworkers=1で実行"
+        }
+      ],
+      "serial": true
+    },
+    {
+      "id": "E2E-346",
+      "requirement_ids": [
+        "FR-245"
+      ],
+      "ac_ids": [
+        "AC-593"
+      ],
+      "title": "パン: ドラッグ・Shift+矢印(40px)・ボタン、矢印単独は図が動かない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-593",
+      "canary": true,
+      "status": "pass",
+      "last_commit": "711f3b1",
+      "last_run_at": "2026-10-22T01:04:57+09:00",
+      "evidence": "work/runs/202610211713/logs/system-test/E2E-346-202610212356.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:32:44+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T17:35:04+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
+        },
+        {
+          "at": "2026-10-21T17:43:43+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
+        }
+      ]
+    },
+    {
+      "id": "E2E-347",
+      "requirement_ids": [
+        "FR-245"
+      ],
+      "ac_ids": [
+        "AC-594"
+      ],
+      "title": "拡大縮小: ホイール・ピンチ・ボタン・キー、1.25倍、0.25〜4、全体に戻す、選択維持",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-594",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "711f3b1",
+      "last_run_at": "2026-10-22T01:51:17+09:00",
+      "evidence": "work/runs/202610211713/logs/system-test/E2E-347-202610220126.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:32:57+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T17:35:05+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
+        },
+        {
+          "at": "2026-10-21T17:43:44+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
+        }
+      ]
+    },
+    {
+      "id": "E2E-348",
+      "requirement_ids": [
+        "FR-245"
+      ],
+      "ac_ids": [
+        "AC-595"
+      ],
+      "title": "五画面でパン・拡大縮小、ビジネス関係グラフには追加しない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-595",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "711f3b1",
+      "last_run_at": "2026-10-22T01:04:57+09:00",
+      "evidence": "work/runs/202610211713/logs/system-test/E2E-348-202610220005.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:33:09+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T17:35:06+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
+        },
+        {
+          "at": "2026-10-21T17:43:45+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
+        }
+      ]
+    },
+    {
+      "id": "E2E-349",
+      "requirement_ids": [
+        "FR-246"
+      ],
+      "ac_ids": [
+        "AC-596"
+      ],
+      "title": "全画面: 図だけ、Esc・ボタンで戻り、パン・倍率・選択維持",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-596",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "711f3b1",
+      "last_run_at": "2026-10-22T01:04:57+09:00",
+      "evidence": "work/runs/202610211713/logs/system-test/E2E-349-202610220011.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:33:23+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T17:35:06+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
+        },
+        {
+          "at": "2026-10-21T17:43:46+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
+        }
+      ]
+    },
+    {
+      "id": "E2E-350",
+      "requirement_ids": [
+        "FR-246"
+      ],
+      "ac_ids": [
+        "AC-597"
+      ],
+      "title": "全画面中の操作・キーボードで全画面・フォーカス表示",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-597",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "711f3b1",
+      "last_run_at": "2026-10-22T01:04:57+09:00",
+      "evidence": "work/runs/202610211713/logs/system-test/E2E-350-202610220007.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:33:35+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T17:35:07+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
+        },
+        {
+          "at": "2026-10-21T17:43:46+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
+        }
+      ]
+    },
+    {
+      "id": "E2E-351",
+      "requirement_ids": [
+        "FR-247"
+      ],
+      "ac_ids": [
+        "AC-598"
+      ],
+      "title": "ノード詳細カード: 開く・再クリックで閉じる・別ノードで替わる",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-598",
+      "canary": true,
+      "status": "pass",
+      "last_commit": "711f3b1",
+      "last_run_at": "2026-10-22T01:04:57+09:00",
+      "evidence": "work/runs/202610211713/logs/system-test/E2E-351-202610212356.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:33:47+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T17:35:08+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
+        },
+        {
+          "at": "2026-10-21T17:43:47+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
+        }
+      ]
+    },
+    {
+      "id": "E2E-352",
+      "requirement_ids": [
+        "FR-247"
+      ],
+      "ac_ids": [
+        "AC-599"
+      ],
+      "title": "エッジ詳細カード・Esc・Enter",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-599",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "711f3b1",
+      "last_run_at": "2026-10-22T01:51:17+09:00",
+      "evidence": "work/runs/202610211713/logs/system-test/E2E-352-202610220147.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:33:56+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T17:35:10+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
+        },
+        {
+          "at": "2026-10-21T17:43:48+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
+        }
+      ]
+    },
+    {
+      "id": "E2E-353",
+      "requirement_ids": [
+        "FR-248"
+      ],
+      "ac_ids": [
+        "AC-600"
+      ],
+      "title": "表の行クリックで選択・パン・2秒ハイライト（枠線/線種）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-600",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "711f3b1",
+      "last_run_at": "2026-10-22T01:51:17+09:00",
+      "evidence": "work/runs/202610211713/logs/system-test/E2E-353-202610220145.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:34:04+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T17:35:11+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
+        },
+        {
+          "at": "2026-10-21T17:43:48+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
+        }
+      ]
+    },
+    {
+      "id": "E2E-354",
+      "requirement_ids": [
+        "FR-248"
+      ],
+      "ac_ids": [
+        "AC-601"
+      ],
+      "title": "Enter・動きの軽減で即時・ビジネス関係グラフに追加しない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-601",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "711f3b1",
+      "last_run_at": "2026-10-22T01:51:17+09:00",
+      "evidence": "work/runs/202610211713/logs/system-test/E2E-354-202610220142.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:34:10+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T17:35:12+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
+        },
+        {
+          "at": "2026-10-21T17:43:49+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
+        }
+      ]
+    },
+    {
+      "id": "E2E-359",
+      "requirement_ids": [
+        "FR-266"
+      ],
+      "ac_ids": [
+        "AC-675"
+      ],
+      "title": "メイン画面の「はじめての方へ」が常時表示され、できること・用語・4 手順・各文 60 字以内を満たす",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-675",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "fb7fef4",
+      "last_run_at": "2026-10-22T04:50:41+09:00",
+      "evidence": "work/runs/202610212145/logs/system-test/E2E-359-202610220450.log",
+      "history": [
+        {
+          "at": "2026-10-21T22:19:42+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-360",
+      "requirement_ids": [
+        "FR-266"
+      ],
+      "ac_ids": [
+        "AC-675"
+      ],
+      "title": "異常系: 企業を登録しても「はじめての方へ」が消えない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-675",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "fb7fef4",
+      "last_run_at": "2026-10-22T04:50:41+09:00",
+      "evidence": "work/runs/202610212145/logs/system-test/E2E-359-202610220450.log",
+      "history": [
+        {
+          "at": "2026-10-21T22:20:06+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-361",
+      "requirement_ids": [
+        "FR-267"
+      ],
+      "ac_ids": [
+        "AC-678"
+      ],
+      "title": "初回ウェルカムが 1 回出て、次へ・戻る・スキップで操作でき、次回から表示しないで再表示されない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-678",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "fb7fef4",
+      "last_run_at": "2026-10-22T04:50:41+09:00",
+      "evidence": "work/runs/202610212145/logs/system-test/E2E-361-202610220450.log",
+      "history": [
+        {
+          "at": "2026-10-21T22:20:43+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-362",
+      "requirement_ids": [
+        "FR-267"
+      ],
+      "ac_ids": [
+        "AC-678"
+      ],
+      "title": "異常系: 選ばずにスキップすると再読込で再表示され、welcome=1 なしでは自動表示されない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-678",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "fb7fef4",
+      "last_run_at": "2026-10-22T04:50:41+09:00",
+      "evidence": "work/runs/202610212145/logs/system-test/E2E-361-202610220450.log",
+      "history": [
+        {
+          "at": "2026-10-21T22:21:02+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-363",
+      "requirement_ids": [
+        "FR-268"
+      ],
+      "ac_ids": [
+        "AC-682"
+      ],
+      "title": "顧客パックの説明カードに意味・デモ・作り方 3 通り・確認コマンド・起動手順が表示される",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-682",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "fb7fef4",
+      "last_run_at": "2026-10-22T04:50:41+09:00",
+      "evidence": "work/runs/202610212145/logs/system-test/E2E-363-202610220450.log",
+      "history": [
+        {
+          "at": "2026-10-21T22:21:19+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-364",
+      "requirement_ids": [
+        "FR-269"
+      ],
+      "ac_ids": [
+        "AC-685"
+      ],
+      "title": "企業・Project の入力ダイアログに例（ミズホ精機株式会社・2026 年度 DX 構想）と入力後に起きることが出る",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-685",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "fb7fef4",
+      "last_run_at": "2026-10-22T04:50:41+09:00",
+      "evidence": "work/runs/202610212145/logs/system-test/E2E-364-202610220450.log",
+      "history": [
+        {
+          "at": "2026-10-21T22:21:33+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-365",
+      "requirement_ids": [
+        "FR-270"
+      ],
+      "ac_ids": [
+        "AC-687"
+      ],
+      "title": "作業先の選択の各候補に 60 字以内の一行説明が添えられる",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-687",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "fb7fef4",
+      "last_run_at": "2026-10-22T04:50:41+09:00",
+      "evidence": "work/runs/202610212145/logs/system-test/E2E-365-202610220450.log",
+      "history": [
+        {
+          "at": "2026-10-21T22:21:46+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-366",
+      "requirement_ids": [
+        "FR-272"
+      ],
+      "ac_ids": [
+        "AC-690"
+      ],
+      "title": "分析画面の「使い方」ボタンが 1 つあり、開閉しても画面の状態が保たれる",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-690",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "fb7fef4",
+      "last_run_at": "2026-10-22T04:50:41+09:00",
+      "evidence": "work/runs/202610212145/logs/system-test/E2E-366-202610220450.log",
+      "history": [
+        {
+          "at": "2026-10-21T22:21:57+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
       "id": "IT-014",
       "requirement_ids": [
         "NFR-PERF-003"
@@ -7934,486 +8620,6 @@
           "reason": "受入基準からケースを作成"
         }
       ]
-    },
-    {
-      "id": "E2E-346",
-      "requirement_ids": [
-        "FR-245"
-      ],
-      "ac_ids": [
-        "AC-593"
-      ],
-      "title": "パン: ドラッグ・Shift+矢印(40px)・ボタン、矢印単独は図が動かない",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-593",
-      "canary": true,
-      "status": "pass",
-      "last_commit": "711f3b1",
-      "last_run_at": "2026-10-22T01:04:57+09:00",
-      "evidence": "work/runs/202610211713/logs/system-test/E2E-346-202610212356.log",
-      "history": [
-        {
-          "at": "2026-10-21T17:32:44+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        },
-        {
-          "at": "2026-10-21T17:35:04+09:00",
-          "by": "test-designer",
-          "change": "blocked",
-          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
-        },
-        {
-          "at": "2026-10-21T17:43:43+09:00",
-          "by": "test-designer",
-          "change": "status -> not_run",
-          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
-        }
-      ]
-    },
-    {
-      "id": "E2E-347",
-      "requirement_ids": [
-        "FR-245"
-      ],
-      "ac_ids": [
-        "AC-594"
-      ],
-      "title": "拡大縮小: ホイール・ピンチ・ボタン・キー、1.25倍、0.25〜4、全体に戻す、選択維持",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-594",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "711f3b1",
-      "last_run_at": "2026-10-22T01:51:17+09:00",
-      "evidence": "work/runs/202610211713/logs/system-test/E2E-347-202610220126.log",
-      "history": [
-        {
-          "at": "2026-10-21T17:32:57+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        },
-        {
-          "at": "2026-10-21T17:35:05+09:00",
-          "by": "test-designer",
-          "change": "blocked",
-          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
-        },
-        {
-          "at": "2026-10-21T17:43:44+09:00",
-          "by": "test-designer",
-          "change": "status -> not_run",
-          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
-        }
-      ]
-    },
-    {
-      "id": "E2E-348",
-      "requirement_ids": [
-        "FR-245"
-      ],
-      "ac_ids": [
-        "AC-595"
-      ],
-      "title": "五画面でパン・拡大縮小、ビジネス関係グラフには追加しない",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-595",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "711f3b1",
-      "last_run_at": "2026-10-22T01:04:57+09:00",
-      "evidence": "work/runs/202610211713/logs/system-test/E2E-348-202610220005.log",
-      "history": [
-        {
-          "at": "2026-10-21T17:33:09+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        },
-        {
-          "at": "2026-10-21T17:35:06+09:00",
-          "by": "test-designer",
-          "change": "blocked",
-          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
-        },
-        {
-          "at": "2026-10-21T17:43:45+09:00",
-          "by": "test-designer",
-          "change": "status -> not_run",
-          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
-        }
-      ]
-    },
-    {
-      "id": "E2E-349",
-      "requirement_ids": [
-        "FR-246"
-      ],
-      "ac_ids": [
-        "AC-596"
-      ],
-      "title": "全画面: 図だけ、Esc・ボタンで戻り、パン・倍率・選択維持",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-596",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "711f3b1",
-      "last_run_at": "2026-10-22T01:04:57+09:00",
-      "evidence": "work/runs/202610211713/logs/system-test/E2E-349-202610220011.log",
-      "history": [
-        {
-          "at": "2026-10-21T17:33:23+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        },
-        {
-          "at": "2026-10-21T17:35:06+09:00",
-          "by": "test-designer",
-          "change": "blocked",
-          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
-        },
-        {
-          "at": "2026-10-21T17:43:46+09:00",
-          "by": "test-designer",
-          "change": "status -> not_run",
-          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
-        }
-      ]
-    },
-    {
-      "id": "E2E-350",
-      "requirement_ids": [
-        "FR-246"
-      ],
-      "ac_ids": [
-        "AC-597"
-      ],
-      "title": "全画面中の操作・キーボードで全画面・フォーカス表示",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-597",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "711f3b1",
-      "last_run_at": "2026-10-22T01:04:57+09:00",
-      "evidence": "work/runs/202610211713/logs/system-test/E2E-350-202610220007.log",
-      "history": [
-        {
-          "at": "2026-10-21T17:33:35+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        },
-        {
-          "at": "2026-10-21T17:35:07+09:00",
-          "by": "test-designer",
-          "change": "blocked",
-          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
-        },
-        {
-          "at": "2026-10-21T17:43:46+09:00",
-          "by": "test-designer",
-          "change": "status -> not_run",
-          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
-        }
-      ]
-    },
-    {
-      "id": "E2E-351",
-      "requirement_ids": [
-        "FR-247"
-      ],
-      "ac_ids": [
-        "AC-598"
-      ],
-      "title": "ノード詳細カード: 開く・再クリックで閉じる・別ノードで替わる",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-598",
-      "canary": true,
-      "status": "pass",
-      "last_commit": "711f3b1",
-      "last_run_at": "2026-10-22T01:04:57+09:00",
-      "evidence": "work/runs/202610211713/logs/system-test/E2E-351-202610212356.log",
-      "history": [
-        {
-          "at": "2026-10-21T17:33:47+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        },
-        {
-          "at": "2026-10-21T17:35:08+09:00",
-          "by": "test-designer",
-          "change": "blocked",
-          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
-        },
-        {
-          "at": "2026-10-21T17:43:47+09:00",
-          "by": "test-designer",
-          "change": "status -> not_run",
-          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
-        }
-      ]
-    },
-    {
-      "id": "E2E-352",
-      "requirement_ids": [
-        "FR-247"
-      ],
-      "ac_ids": [
-        "AC-599"
-      ],
-      "title": "エッジ詳細カード・Esc・Enter",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-599",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "711f3b1",
-      "last_run_at": "2026-10-22T01:51:17+09:00",
-      "evidence": "work/runs/202610211713/logs/system-test/E2E-352-202610220147.log",
-      "history": [
-        {
-          "at": "2026-10-21T17:33:56+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        },
-        {
-          "at": "2026-10-21T17:35:10+09:00",
-          "by": "test-designer",
-          "change": "blocked",
-          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
-        },
-        {
-          "at": "2026-10-21T17:43:48+09:00",
-          "by": "test-designer",
-          "change": "status -> not_run",
-          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
-        }
-      ]
-    },
-    {
-      "id": "E2E-353",
-      "requirement_ids": [
-        "FR-248"
-      ],
-      "ac_ids": [
-        "AC-600"
-      ],
-      "title": "表の行クリックで選択・パン・2秒ハイライト（枠線/線種）",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-600",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "711f3b1",
-      "last_run_at": "2026-10-22T01:51:17+09:00",
-      "evidence": "work/runs/202610211713/logs/system-test/E2E-353-202610220145.log",
-      "history": [
-        {
-          "at": "2026-10-21T17:34:04+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        },
-        {
-          "at": "2026-10-21T17:35:11+09:00",
-          "by": "test-designer",
-          "change": "blocked",
-          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
-        },
-        {
-          "at": "2026-10-21T17:43:48+09:00",
-          "by": "test-designer",
-          "change": "status -> not_run",
-          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
-        }
-      ]
-    },
-    {
-      "id": "E2E-354",
-      "requirement_ids": [
-        "FR-248"
-      ],
-      "ac_ids": [
-        "AC-601"
-      ],
-      "title": "Enter・動きの軽減で即時・ビジネス関係グラフに追加しない",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-601",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "711f3b1",
-      "last_run_at": "2026-10-22T01:51:17+09:00",
-      "evidence": "work/runs/202610211713/logs/system-test/E2E-354-202610220142.log",
-      "history": [
-        {
-          "at": "2026-10-21T17:34:10+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        },
-        {
-          "at": "2026-10-21T17:35:12+09:00",
-          "by": "test-designer",
-          "change": "blocked",
-          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
-        },
-        {
-          "at": "2026-10-21T17:43:49+09:00",
-          "by": "test-designer",
-          "change": "status -> not_run",
-          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
-        }
-      ]
-    },
-    {
-      "id": "E2E-342",
-      "requirement_ids": [
-        "FR-013"
-      ],
-      "ac_ids": [
-        "AC-591"
-      ],
-      "title": "自由配置の全25画面で最大化矩形を既定最大化と比較し全作業領域・最前面を確認",
-      "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-591",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "171d14f",
-      "last_run_at": "2026-10-21T23:56:31+09:00",
-      "evidence": "work/runs/202610211706/logs/system-test/E2E-342-202610212334.log",
-      "history": [
-        {
-          "at": "2026-10-21T17:19:41+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        },
-        {
-          "at": "2026-10-21T20:26:29+09:00",
-          "by": "test-designer",
-          "change": "serial: None -> True",
-          "reason": "共有previewサーバーの競合を防ぐため単独実行"
-        }
-      ],
-      "serial": true
-    },
-    {
-      "id": "E2E-343",
-      "requirement_ids": [
-        "FR-013"
-      ],
-      "ac_ids": [
-        "AC-592"
-      ],
-      "title": "全25画面で見出し通常表示による自由配置矩形復元と同一ペルソナ再読込の保存非破壊",
-      "layer": "e2e",
-      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button --workers=1",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "171d14f",
-      "last_run_at": "2026-10-21T23:56:31+09:00",
-      "evidence": "work/runs/202610211706/logs/system-test/E2E-343-202610212341.log",
-      "history": [
-        {
-          "at": "2026-10-21T17:19:47+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        },
-        {
-          "at": "2026-10-21T20:26:32+09:00",
-          "by": "test-designer",
-          "change": "serial: None -> True",
-          "reason": "共有previewサーバーの競合を防ぐため単独実行"
-        },
-        {
-          "at": "2026-10-21T21:05:56+09:00",
-          "by": "test-designer",
-          "change": "command: 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button' -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button --workers=1'",
-          "reason": "共有preview環境でPlaywright内部並列によるタイムアウトを防ぐためworkers=1で実行"
-        }
-      ],
-      "serial": true
-    },
-    {
-      "id": "E2E-344",
-      "requirement_ids": [
-        "FR-013"
-      ],
-      "ac_ids": [
-        "AC-592"
-      ],
-      "title": "全25画面でEscによる自由配置矩形復元と同一ペルソナ再読込の保存非破壊",
-      "layer": "e2e",
-      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape --workers=1",
-      "canary": false,
-      "status": "pass",
-      "last_commit": "171d14f",
-      "last_run_at": "2026-10-21T23:56:31+09:00",
-      "evidence": "work/runs/202610211706/logs/system-test/E2E-344-202610212348.log",
-      "history": [
-        {
-          "at": "2026-10-21T17:19:52+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        },
-        {
-          "at": "2026-10-21T20:26:39+09:00",
-          "by": "test-designer",
-          "change": "serial: None -> True",
-          "reason": "共有previewサーバーの競合を防ぐため単独実行"
-        },
-        {
-          "at": "2026-10-21T21:05:58+09:00",
-          "by": "test-designer",
-          "change": "command: 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape' -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape --workers=1'",
-          "reason": "共有preview環境でPlaywright内部並列によるタイムアウトを防ぐためworkers=1で実行"
-        }
-      ],
-      "serial": true
-    },
-    {
-      "id": "E2E-345",
-      "requirement_ids": [
-        "FR-013"
-      ],
-      "ac_ids": [
-        "AC-016",
-        "AC-592"
-      ],
-      "title": "異常系・回帰: 課題-解決策分析のShift+F/Esc反復で最大化矩形が保存配置を汚さない",
-      "layer": "e2e",
-      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat --workers=1",
-      "canary": true,
-      "status": "pass",
-      "last_commit": "171d14f",
-      "last_run_at": "2026-10-21T23:56:31+09:00",
-      "evidence": "work/runs/202610211706/logs/system-test/E2E-345-202610212204.log",
-      "history": [
-        {
-          "at": "2026-10-21T17:19:59+09:00",
-          "by": "test-designer",
-          "change": "追加",
-          "reason": "受入基準からケースを作成"
-        },
-        {
-          "at": "2026-10-21T20:26:44+09:00",
-          "by": "test-designer",
-          "change": "serial: None -> True",
-          "reason": "共有previewサーバーの競合を防ぐため単独実行"
-        },
-        {
-          "at": "2026-10-21T21:05:59+09:00",
-          "by": "test-designer",
-          "change": "command: 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat' -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat --workers=1'",
-          "reason": "共有preview環境でPlaywright内部並列によるタイムアウトを防ぐためworkers=1で実行"
-        }
-      ],
-      "serial": true
     },
     {
       "id": "E2E-372",
