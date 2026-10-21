@@ -10,6 +10,7 @@ import { useHighlightClass } from '../components/highlight';
 import { useEntityBinding, useSelection } from '../selection/hooks';
 import { ZoomBreadcrumb, canZoomIn, canZoomOut, clampDepth, stepDepth, useZoomRootAttrs, zoomAttrs } from '../semanticzoom';
 import { GraphSurface, type GraphEdgeIn, type GraphNodeIn } from '../components/GraphSurface';
+import { GraphScope } from '../components/GraphViewport';
 import { GraphAlt } from '../components/GraphAlt';
 import {
   SPATIAL_ELEMENT_DEPTH, SPATIAL_KIND_LABELS, STAGE_GLYPHS, buildSpatialModel, buildingSite, detailTarget, isoProject, itemsAtDepth, kpiCell,
@@ -311,11 +312,11 @@ export function SpatialScreen() {
           {mode === '3d' ? stack : null}
 
           {mode === 'graph' && d >= 1 && d <= D ? (
-            <GraphSurface origin={ORIGIN} label="空間ビュー" nodes={graphNodes.filter((n) => n.rank <= d)} edges={graphEdges.filter((e) => graphRank.get(e.from)! <= d && graphRank.get(e.to)! <= d)} onOpen={(id) => { const n = model.nodes.get(id); if (n) zoomInto(n); }} />
+            <GraphSurface origin={ORIGIN} label="空間ビュー" nodes={graphNodes.filter((n) => n.rank <= d)} edges={graphEdges.filter((e) => graphRank.get(e.from)! <= d && graphRank.get(e.to)! <= d)} onOpen={(id) => { const n = model.nodes.get(id); if (n) zoomInto(n); }} zoomControls="external" />
           ) : null}
 
           {mode !== '3d' && d === 0 ? (
-            <div role="group" aria-label="全体" data-testid="spatial-overview" data-zoom-surface={mode === 'graph' ? 'graph' : undefined}>
+            <GraphScope active={mode === 'graph'} origin={ORIGIN} label="空間ビュー"><div role="group" aria-label="全体" data-testid="spatial-overview">
               {(['site', 'floor', 'room'] as const).map((k) => (
                 <span key={k} className={s.cluster} data-zoom-cluster={SPATIAL_KIND_LABELS[k]} role="button" tabIndex={0}
                   onClick={() => zoomTo(DEPTH_OF_KIND[k])} onKeyDown={(e) => { if (e.key === 'Enter') zoomTo(DEPTH_OF_KIND[k]); }}>
@@ -323,7 +324,7 @@ export function SpatialScreen() {
                   <Text size={200}>{counts[k]} 件</Text>
                 </span>
               ))}
-            </div>
+            </div></GraphScope>
           ) : null}
 
           {mode === '2d' && d >= 1 && d <= D ? (
@@ -332,7 +333,7 @@ export function SpatialScreen() {
             </ul>
           ) : null}
 
-          {detailView ? <div data-zoom-surface={mode === 'graph' ? 'graph' : undefined}>{detailView}</div> : null}
+          {detailView ? <GraphScope active={mode === 'graph'} origin={ORIGIN} label="空間ビュー">{detailView}</GraphScope> : null}
           {mode !== '2d' ? (
             <GraphAlt
               origin={ORIGIN} label="空間ビュー" columns={kpi ? [kpi] : []}

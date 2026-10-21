@@ -270,7 +270,16 @@
     "AC-586": "sha256:d69c569d032e0362",
     "AC-587": "sha256:e77ad03e7a14c4c0",
     "AC-588": "sha256:40c70b6cd321b206",
-    "AC-589": "sha256:960a0e0e16da93a0"
+    "AC-589": "sha256:960a0e0e16da93a0",
+    "AC-593": "sha256:d5a5742963a21c77",
+    "AC-594": "sha256:605fe1e6f60620b3",
+    "AC-595": "sha256:78995a5cf115af3f",
+    "AC-596": "sha256:4461e3332b6f3c0c",
+    "AC-597": "sha256:2d7107c5b5a8c22f",
+    "AC-598": "sha256:f6474c420e603e29",
+    "AC-599": "sha256:5b8a7aaeef08816d",
+    "AC-600": "sha256:ccc0ba0622a2a2a8",
+    "AC-601": "sha256:6cd0c890d1d0fb1d"
   },
   "cases": [
     {
@@ -7919,6 +7928,339 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-346",
+      "requirement_ids": [
+        "FR-245"
+      ],
+      "ac_ids": [
+        "AC-593"
+      ],
+      "title": "パン: ドラッグ・Shift+矢印(40px)・ボタン、矢印単独は図が動かない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-593",
+      "canary": true,
+      "status": "pass",
+      "last_commit": "711f3b1",
+      "last_run_at": "2026-10-22T01:04:57+09:00",
+      "evidence": "work/runs/202610211713/logs/system-test/E2E-346-202610212356.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:32:44+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T17:35:04+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
+        },
+        {
+          "at": "2026-10-21T17:43:43+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
+        }
+      ]
+    },
+    {
+      "id": "E2E-347",
+      "requirement_ids": [
+        "FR-245"
+      ],
+      "ac_ids": [
+        "AC-594"
+      ],
+      "title": "拡大縮小: ホイール・ピンチ・ボタン・キー、1.25倍、0.25〜4、全体に戻す、選択維持",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-594",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "711f3b1",
+      "last_run_at": "2026-10-22T01:51:17+09:00",
+      "evidence": "work/runs/202610211713/logs/system-test/E2E-347-202610220126.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:32:57+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T17:35:05+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
+        },
+        {
+          "at": "2026-10-21T17:43:44+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
+        }
+      ]
+    },
+    {
+      "id": "E2E-348",
+      "requirement_ids": [
+        "FR-245"
+      ],
+      "ac_ids": [
+        "AC-595"
+      ],
+      "title": "五画面でパン・拡大縮小、ビジネス関係グラフには追加しない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-595",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "711f3b1",
+      "last_run_at": "2026-10-22T01:04:57+09:00",
+      "evidence": "work/runs/202610211713/logs/system-test/E2E-348-202610220005.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:33:09+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T17:35:06+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
+        },
+        {
+          "at": "2026-10-21T17:43:45+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
+        }
+      ]
+    },
+    {
+      "id": "E2E-349",
+      "requirement_ids": [
+        "FR-246"
+      ],
+      "ac_ids": [
+        "AC-596"
+      ],
+      "title": "全画面: 図だけ、Esc・ボタンで戻り、パン・倍率・選択維持",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-596",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "711f3b1",
+      "last_run_at": "2026-10-22T01:04:57+09:00",
+      "evidence": "work/runs/202610211713/logs/system-test/E2E-349-202610220011.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:33:23+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T17:35:06+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
+        },
+        {
+          "at": "2026-10-21T17:43:46+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
+        }
+      ]
+    },
+    {
+      "id": "E2E-350",
+      "requirement_ids": [
+        "FR-246"
+      ],
+      "ac_ids": [
+        "AC-597"
+      ],
+      "title": "全画面中の操作・キーボードで全画面・フォーカス表示",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-597",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "711f3b1",
+      "last_run_at": "2026-10-22T01:04:57+09:00",
+      "evidence": "work/runs/202610211713/logs/system-test/E2E-350-202610220007.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:33:35+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T17:35:07+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
+        },
+        {
+          "at": "2026-10-21T17:43:46+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
+        }
+      ]
+    },
+    {
+      "id": "E2E-351",
+      "requirement_ids": [
+        "FR-247"
+      ],
+      "ac_ids": [
+        "AC-598"
+      ],
+      "title": "ノード詳細カード: 開く・再クリックで閉じる・別ノードで替わる",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-598",
+      "canary": true,
+      "status": "pass",
+      "last_commit": "711f3b1",
+      "last_run_at": "2026-10-22T01:04:57+09:00",
+      "evidence": "work/runs/202610211713/logs/system-test/E2E-351-202610212356.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:33:47+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T17:35:08+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
+        },
+        {
+          "at": "2026-10-21T17:43:47+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
+        }
+      ]
+    },
+    {
+      "id": "E2E-352",
+      "requirement_ids": [
+        "FR-247"
+      ],
+      "ac_ids": [
+        "AC-599"
+      ],
+      "title": "エッジ詳細カード・Esc・Enter",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-599",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "711f3b1",
+      "last_run_at": "2026-10-22T01:51:17+09:00",
+      "evidence": "work/runs/202610211713/logs/system-test/E2E-352-202610220147.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:33:56+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T17:35:10+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
+        },
+        {
+          "at": "2026-10-21T17:43:48+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
+        }
+      ]
+    },
+    {
+      "id": "E2E-353",
+      "requirement_ids": [
+        "FR-248"
+      ],
+      "ac_ids": [
+        "AC-600"
+      ],
+      "title": "表の行クリックで選択・パン・2秒ハイライト（枠線/線種）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-600",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "711f3b1",
+      "last_run_at": "2026-10-22T01:51:17+09:00",
+      "evidence": "work/runs/202610211713/logs/system-test/E2E-353-202610220145.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:34:04+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T17:35:11+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
+        },
+        {
+          "at": "2026-10-21T17:43:48+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
+        }
+      ]
+    },
+    {
+      "id": "E2E-354",
+      "requirement_ids": [
+        "FR-248"
+      ],
+      "ac_ids": [
+        "AC-601"
+      ],
+      "title": "Enter・動きの軽減で即時・ビジネス関係グラフに追加しない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-601",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "711f3b1",
+      "last_run_at": "2026-10-22T01:51:17+09:00",
+      "evidence": "work/runs/202610211713/logs/system-test/E2E-354-202610220142.log",
+      "history": [
+        {
+          "at": "2026-10-21T17:34:10+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T17:35:12+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "競合: AC の検証レベルが integration（System Test 対象外）。E2E は依頼により作成済み。検証レベルを system へ改めるか、ケースを対象外とするかを要求定義書側で決める"
+        },
+        {
+          "at": "2026-10-21T17:43:49+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更（75285d8）したため blocked 解除。spec を最新仕様に合わせた"
         }
       ]
     }
