@@ -1898,9 +1898,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "850a5c7",
-      "last_run_at": "2026-10-20T12:27:21+09:00",
-      "evidence": "work/runs/adhoc-202610201111/logs/system-test/E2E-162-202610201208.log",
+      "last_commit": "118a4a7",
+      "last_run_at": "2026-10-21T19:00:02+09:00",
+      "evidence": "work/runs/202610211705/logs/system-test/E2E-162-202610211858.log",
       "history": [
         {
           "at": "2026-10-12T14:07:28+09:00",
@@ -5417,9 +5417,9 @@
       "command": "node tests/system/run.mjs AC-515",
       "canary": false,
       "status": "pass",
-      "last_commit": "850a5c7",
-      "last_run_at": "2026-10-20T12:27:21+09:00",
-      "evidence": "work/runs/adhoc-202610201111/logs/system-test/E2E-317-202610201213.log",
+      "last_commit": "118a4a7",
+      "last_run_at": "2026-10-21T19:00:02+09:00",
+      "evidence": "work/runs/202610211705/logs/system-test/E2E-317-202610211858.log",
       "history": [
         {
           "at": "2026-10-19T20:56:46+09:00",
