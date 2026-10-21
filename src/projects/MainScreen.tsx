@@ -11,6 +11,7 @@ import { useProjects, type Company } from '../store/projects';
 import { useAnalyses } from '../store/analyses';
 import { useMainScreen } from '../store/mainScreen';
 import { useSettings } from '../store/settings';
+import { GettingStarted } from '../guide/GettingStarted';
 
 const useStyles = makeStyles({
   root: {
@@ -101,6 +102,7 @@ export function MainScreen() {
           </li>
         ))}
       </ol>
+      <GettingStarted />
       {notice ? <MessageBar intent="warning" role="alert" layout="multiline"><MessageBarBody>{notice}</MessageBarBody></MessageBar> : null}
       {st.companies.map((c) => (
         <section key={c.id} role="region" aria-label={`企業 ${c.name}`} className={s.company}>

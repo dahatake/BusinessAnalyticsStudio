@@ -386,9 +386,7 @@ ToBe に向けた課題を「議論テーマ」にして、選択肢・提言・
 | 依頼内容 | 方法 |
 |---|---|
 | 初回の環境構築 | `scripts\setup.ps1`（Windows）／ `scripts/setup.sh`（macOS）。管理者権限は不要。詳細は [README の 1 章](../README.md#1-セットアップスクリプトの使い方) |
-| 起動 | 
-pm run build` → 
-pm start`（`http://127.0.0.1:4173`） |
+| 起動 | `npm run build` → `npm start`（`http://127.0.0.1:4173`） |
 | 顧客のデータ・ロゴ・色の反映 | 顧客パックを作成して `public/data/`・`public/brand/` に配置（[README の 5 章](../README.md#5-顧客パックの作成手順)） |
 | ブランドの差し替え | [README の 4 章](../README.md#4-ブランド色ロゴフォントbgmの差し替え手順)、[engineering/3. ブランドとテーマ](engineering/03-branding-and-theme.md) |
 | 実際の AI の利用 | 
