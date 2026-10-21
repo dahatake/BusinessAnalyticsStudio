@@ -8,6 +8,9 @@ import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { AZURE_FEATURES, MAX_IMAGE_BASE64_CHARS, MAX_SPEECH_TEXT_CHARS, isValidBase64, isValidStrokeCount, AzureServiceError, type AzureFeature, type AzureServices } from './azure-services';
 import { openSpeechVault, type SpeechVault } from './speech-vault';
+import { CAUSE_STATUS, FoundryError as GenAiFoundryError, type FoundryService } from './genai-foundry';
+import { openFoundryVault, type FoundryVault } from './foundry-vault';
+import { callFoundry, FoundryError } from './foundry';
 
 export const AI_KINDS = ['structure', 'summary', 'recommend', 'chat', 'exec-summary'] as const;
 export type AiKind = (typeof AI_KINDS)[number];
@@ -23,12 +26,19 @@ export interface RelayOptions {
   sdk: CopilotSdk | null;
   /** 音声合成・手書き認識の接続部品（FR-182）。なければ常にモック */
   azure?: AzureServices;
+  /** 生成AIの活用分析の Foundry 接続部品（FR-285）。なければ /foundry/analyze はキー未設定として答える */
+  foundry?: FoundryService;
   host?: string;
   port?: number;
   /** 音声合成のキーの保管庫（FR-168）。省略すると既定のデータフォルダー */
   speechVault?: SpeechVault;
   /** 音声合成の接続先への送信口。検査ではモックを渡す */
   speechFetch?: typeof fetch;
+  /** Foundry の接続情報の保管庫（FR-275）。省略すると既定のデータフォルダー */
+  foundryVault?: FoundryVault;
+  /** Foundry への送信口（差し替え部品）。検査ではスタブを渡す */
+  foundryFetch?: typeof fetch;
+  foundryTimeoutMs?: number;
 }
 
 export interface Relay {
@@ -83,6 +93,10 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
   const enabled = new Set<string>();
   let vault: SpeechVault | null = opts.speechVault ?? null;
   const getVault = (): SpeechVault => (vault ??= openSpeechVault());
+  let fvault: FoundryVault | null = opts.foundryVault ?? null;
+  const getFoundry = (): FoundryVault => (fvault ??= openFoundryVault());
+  /** Foundry の実接続を有効にした顧客パックの ID（再起動で消える） */
+  const foundryEnabled = new Set<string>();
   const speechFetch = opts.speechFetch ?? ((u, i) => fetch(u, i));
   const signedIn = async (): Promise<boolean> => (opts.sdk ? (await opts.sdk.status().catch(() => ({ signedIn: false }))).signedIn : false);
 
@@ -103,7 +117,19 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
     void (async () => {
       try {
         if (req.method === 'GET' && path === '/health') {
-          return json(200, { status: 'ready', copilot: (await signedIn()) ? 'signed-in' : 'signed-out' });
+          return json(200, { status: 'ready', copilot: (await signedIn()) ? 'signed-in' : 'signed-out', foundry: { keyConfigured: opts.foundry?.hasKey() ?? false } });
+        }
+        // ---- FR-285: 生成AIの活用分析の Foundry 接続。キーは中継側の環境変数だけ。応答にキーの値・上流の本文は含めない ----
+        if (req.method === 'POST' && path === '/foundry/analyze') {
+          const b = JSON.parse((await readBody(req)) || '{}') as { solution?: unknown; endpoint?: unknown; deployment?: unknown };
+          try {
+            if (!opts.foundry) throw new GenAiFoundryError('key-missing');
+            if (typeof b.solution !== 'string' || typeof b.endpoint !== 'string' || typeof b.deployment !== 'string') throw new GenAiFoundryError('bad-request');
+            return json(200, await opts.foundry.analyze({ solution: b.solution, endpoint: b.endpoint, deployment: b.deployment }));
+          } catch (e) {
+            if (e instanceof GenAiFoundryError) return json(CAUSE_STATUS[e.kind], { error: { cause: e.kind, ...e.detail } });
+            throw e;
+          }
         }
         if (path === '/speech/config') {
           if (req.method === 'GET') return json(200, getVault().view());
@@ -118,6 +144,55 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           if (req.method === 'DELETE') {
             getVault().remove();
             return json(200, getVault().view());
+          }
+        }
+        // ---- FR-275: Microsoft Foundry の接続設定（キーは暗号化して中継側だけに保管。応答には伏せ字しか出さない） ----
+        if (path === '/foundry/config') {
+          const packId = new URL(req.url ?? '/', 'http://127.0.0.1').searchParams.get('packId') ?? '';
+          const withMode = () => ({ ...getFoundry().view(), enabled: foundryEnabled.has(packId) });
+          if (req.method === 'GET') return json(200, withMode());
+          if (req.method === 'PUT') {
+            const b = JSON.parse((await readBody(req)) || '{}') as { endpoint?: string; deployment?: string; key?: string };
+            try {
+              getFoundry().save({ endpoint: String(b.endpoint ?? ''), deployment: String(b.deployment ?? ''), key: typeof b.key === 'string' ? b.key : undefined });
+              return json(200, withMode());
+            } catch (e) {
+              return json(400, { error: e instanceof Error ? e.message : '保存できませんでした' });
+            }
+          }
+          if (req.method === 'DELETE') {
+            getFoundry().remove();
+            foundryEnabled.clear();
+            return json(200, withMode());
+          }
+        }
+        if (req.method === 'POST' && path === '/foundry/connection') {
+          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; enable?: boolean; confirmed?: boolean; consent?: boolean };
+          if (typeof b.packId !== 'string' || !b.packId) return json(400, { error: 'packId が必要です' });
+          if (!b.enable) { foundryEnabled.delete(b.packId); return json(200, { mode: 'mock' }); }
+          if (b.consent !== true) return json(403, { error: '顧客の了承の記録がないため、実接続を有効にできません', mode: 'mock' });
+          if (b.confirmed !== true) return json(400, { error: '費用と送信内容の確認が必要です' });
+          if (!getFoundry().secret()) return json(409, { error: 'Foundry の接続情報が未設定です', mode: 'mock' });
+          foundryEnabled.add(b.packId);
+          return json(200, { mode: 'connected' });
+        }
+        // 「現状の説明」などの生成。条件が 1 つでも欠けると Foundry を呼ばない（呼び出し 0 回。FR-275 AC-706）
+        if (req.method === 'POST' && path === '/foundry/ask') {
+          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; prompt?: string; consent?: boolean; includesPerson?: boolean; personConfirmed?: boolean };
+          if (typeof b.packId !== 'string' || !b.packId || typeof b.prompt !== 'string') return json(400, { error: 'packId・prompt が必要です' });
+          const unavailable = (reason: string, message: string, status = 200) => json(status, { mode: 'unavailable', reason, message });
+          if (b.consent !== true) return unavailable('consent', '顧客の了承の記録がないため、AI は使えません');
+          if (!foundryEnabled.has(b.packId)) return unavailable('disabled', 'Foundry の実接続が有効ではありません');
+          const secret = getFoundry().secret();
+          if (!secret) return unavailable('not-configured', 'Foundry の接続情報が未設定です');
+          if (b.includesPerson === true && b.personConfirmed !== true) return unavailable('person-unconfirmed', '種別「人」を含む顧客パックは、送信前の確認が必要です');
+          try {
+            const answer = await callFoundry(secret, b.prompt, opts.foundryFetch, opts.foundryTimeoutMs);
+            return json(200, { answer, mode: 'connected' });
+          } catch (e) {
+            const kind = e instanceof FoundryError ? e.kind : 'network';
+            const msg = (e instanceof FoundryError ? e.message : 'Foundry に接続できませんでした').split(secret.key).join('•••');
+            return unavailable(kind === 'timeout' ? 'timeout' : 'error', msg, 200);
           }
         }
         if (req.method === 'POST' && path === '/speech/synthesize') {

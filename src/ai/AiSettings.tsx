@@ -8,6 +8,7 @@ import { useAi } from './useAi';
 import { useConsent } from './useConsent';
 import { ConsentSettings } from './ConsentSettings';
 import { AzureSettings } from './AzureSettings';
+import { FoundrySettings } from './FoundrySettings';
 import { tokens } from '../theme/tokens';
 
 export function AiSettings() {
@@ -52,6 +53,7 @@ export function AiSettings() {
       </Dialog>
     </Field>
     <AzureSettings />
+    <FoundrySettings />
     </section>
     </>
   );

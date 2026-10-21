@@ -2,10 +2,12 @@
 import { DialogBody, DialogContent, DialogTitle, Listbox, Option, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Dialog, DialogSurface } from '../components/Dialog';
 import type { Company, Project } from '../store/projects';
-import { parseChoice, targetOptions, type TargetChoice } from './workTarget';
+import { parseChoice, targetOptions, optionDescription, type TargetChoice } from './workTarget';
 
 const useStyles = makeStyles({
   hint: { color: tokens.colorNeutralForeground2, marginBottom: tokens.spacingVerticalS, display: 'block', fontSize: tokens.fontSizeBase200, lineHeight: tokens.lineHeightBase200 },
+  optBody: { display: 'flex', flexDirection: 'column' },
+  optDesc: { color: tokens.colorNeutralForeground2, fontSize: tokens.fontSizeBase200, lineHeight: tokens.lineHeightBase200 },
   list: { minWidth: '320px', maxHeight: '60vh' },
 });
 
@@ -44,7 +46,7 @@ export function WorkTargetPicker(props: {
                 if (c) props.onChoose(c);
               }}
             >
-              {options.map((o) => <Option key={o.value} value={o.value} text={o.label}>{o.label}</Option>)}
+              {options.map((o) => <Option key={o.value} value={o.value} text={o.label} aria-label={o.label} aria-describedby={`wt-desc-${o.kind}-${o.value}`}><span className={s.optBody}><span>{o.label}</span><span className={s.optDesc} id={`wt-desc-${o.kind}-${o.value}`}>{optionDescription(o.kind)}</span></span></Option>)}
             </Listbox>
           </DialogContent>
         </DialogBody>

@@ -49,6 +49,7 @@ import { ShortVideoButton, ShortVideoDialog } from '../show/ShortVideo';
 import { currentTopic } from '../store/presentation';
 import { ProjectsPanel } from '../projects/ProjectsPanel';
 import { MainScreen } from '../projects/MainScreen';
+import { GuideButton, GuideHost, WelcomeAuto } from '../guide';
 import { useMainScreen } from '../store/mainScreen';
 import { useSettingsModal } from '../store/settingsModal';
 import { SettingsDialog } from '../screens/SettingsDialog';
@@ -162,6 +163,8 @@ export function App() {
       <>
         {!opened ? <Opening customerName={name} projectName={projectName} onDone={finishOpening} /> : null}
         <AudioDirector scene={scene} />
+        <WelcomeAuto ready={opened} />
+        <GuideHost />
         <MainScreen />
       </>
     );
@@ -177,6 +180,7 @@ export function App() {
       <CommandController screens={COMPONENT_SCREENS} />
       <SettingsDialog />
       <AudioDirector scene={scene} />
+      <GuideHost />
       <ShowControlBar><ShowControlActions /></ShowControlBar>
       <ShowShortcuts />
       <PresenterView />
@@ -188,7 +192,7 @@ export function App() {
         onSelect={onSelect}
         stepper={<Stepper onNavigate={onSelect} />}
         headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><AiStatus /></>}
-        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><AutoSizeSwitch /><ScreenViewButton /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /></>}
+        actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><AutoSizeSwitch /><ScreenViewButton /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /><GuideButton /></>}
         dock={<Dock screens={COMPONENT_SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
       >

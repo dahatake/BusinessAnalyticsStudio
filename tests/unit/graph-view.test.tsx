@@ -140,6 +140,10 @@ describe('FR-238 AC-562（単体部分）・NFR-A11Y-010 AC-580〜582 Graph の�
     fireEvent.keyDown(document.activeElement as HTMLElement, { key: 'ArrowLeft' });
     expect(document.activeElement?.getAttribute('data-entity-id')).toBe('r-eq'); // たどってきた道を戻る
     fireEvent.keyDown(node('r-eq'), { key: 'Enter' });
+    // FR-247: Enter は詳細カードの開閉（ズームインしない）。ズームインはダブルクリック・ボタン・「+」キー
+    expect(screen.getByTestId('detail-card').getAttribute('data-entity-id')).toBe('r-eq');
+    expect(screen.getByTestId('zoom-level').getAttribute('data-depth')).toBe('1');
+    fireEvent.doubleClick(node('r-eq'));
     expect(screen.getByTestId('zoom-level').getAttribute('data-depth')).toBe('2');
     expect(screen.getByTestId('zoom-detail').querySelector('[data-entity-id="r-eq"]')).toBeTruthy();
     expect(screen.getByRole('button', { name: '拡大' })).toBeTruthy(); // ドラッグの代わりのボタン

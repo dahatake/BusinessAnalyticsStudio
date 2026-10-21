@@ -2,10 +2,13 @@
 import { loadCopilotSdk } from './copilot-adapter';
 import { startRelay } from './relay';
 import { azureConfigFromEnv, createAzureServices } from './azure-services';
+import { createFoundryService, foundryConfigFromEnv } from './genai-foundry';
 
 const port = Number(process.env.EDB_RELAY_PORT ?? 8787);
 const sdk = await loadCopilotSdk();
 // 音声合成・手書き認識のキーは、この中継プロセスの環境変数（.env）だけから読む（FR-182・NFR-SEC-001）
 const azure = createAzureServices(azureConfigFromEnv(process.env));
-const relay = await startRelay({ sdk, azure, port });
+// 生成AIの活用分析（Microsoft Foundry）のキー FOUNDRY_API_KEY も、この中継プロセスだけが読む（FR-285。ブラウザーへは渡さない）
+const foundry = createFoundryService(foundryConfigFromEnv(process.env));
+const relay = await startRelay({ sdk, azure, foundry, port });
 console.log(`中継プロセスを ${relay.url} で待ち受けています（Copilot SDK: ${sdk ? '利用可能' : '未導入または未サインイン。モックで動作'}）`);
