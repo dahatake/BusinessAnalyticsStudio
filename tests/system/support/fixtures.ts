@@ -205,12 +205,40 @@ export async function gotoAndEnter(page: Page, url: string, target?: RegExp | st
   await skipOpening(page, target);
 }
 
-/** 画面の切替（ナビゲーション）。CONTRACT.md §4 の `nav-<key>` */
+/**
+ * 左メニューに項目を持たない画面（FR-220 AC-590: 「3D ビューと 2D 図面」「2D 図面」。FR-020 の画面は廃止しない）。
+ * これらはコマンド（コマンドパレット「…を表示する」）など、左メニュー以外の入口から開く（CONTRACT.md §21）。
+ */
+export const OFF_MENU_SCREENS = ['view3d', 'drawing2d'] as const;
+
+/** 左メニューを使わずに開く画面か（OFF_MENU_SCREENS か、左メニューに `nav-<key>` がない画面） */
+export async function isOffMenuScreen(page: Page, key: string): Promise<boolean> {
+  if ((OFF_MENU_SCREENS as readonly string[]).includes(key)) return true;
+  return (await page.getByTestId(`nav-${key}`).count()) === 0;
+}
+
+/**
+ * コマンドパレット（Ctrl+K）の「<画面名>を表示する」で画面を開く（FR-111・FR-220 AC-590 のコマンドの入口）。
+ * 画面名に依らず選べるよう、検索語は「show <key>」、選ぶ option は id `command-view.show.<key>`。
+ */
+export async function openScreenByCommand(page: Page, key: string): Promise<void> {
+  await page.keyboard.press('Control+k');
+  const dialog = page.getByRole('dialog', { name: 'コマンドパレット' });
+  await expect(dialog, 'コマンドパレットが開かない').toBeVisible();
+  await dialog.getByRole('combobox').fill(`show ${key}`);
+  const opt = dialog.locator(`[role="option"][id="command-view.show.${key}"]`);
+  await expect(opt, `コマンドに画面 ${key} を表示する操作がない`).toBeVisible();
+  await opt.click();
+  await expect(dialog).toBeHidden();
+}
+
+/** 画面の切替（ナビゲーション）。CONTRACT.md §4 の `nav-<key>`。左メニューにない画面（OFF_MENU_SCREENS）はコマンドから開く */
 export async function openScreen(page: Page, key: string): Promise<Locator> {
   // 設定はモーダル（FR-223）。ほかの画面へ移る前に、開いている設定のモーダルを閉じる（背面の覆いが操作を遮るため）
   if (key !== 'settings') await closeSettings(page);
   else if (await settingsDialog(page).isVisible()) return component(page, key); // すでに開いている
-  await page.getByTestId(`nav-${key}`).click();
+  if (await isOffMenuScreen(page, key)) await openScreenByCommand(page, key);
+  else await page.getByTestId(`nav-${key}`).click();
   const c = component(page, key);
   await expect(c).toBeVisible();
   return c;

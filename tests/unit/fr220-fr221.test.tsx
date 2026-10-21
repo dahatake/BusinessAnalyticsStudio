@@ -42,18 +42,18 @@ describe('FR-220 左メニューから「3D ビュー」の切替の項目を削
     expect(nav.querySelector('[data-testid="nav-knowledge-graph"]')).not.toBeNull();
   });
 
-  // FR-220 AC-590（画面 FR-020 は廃止しない）
-  it('FR-220 AC-590 view3d・drawing2d は画面として残り、ペルソナ・レイアウト・ステッパー・ドック・コマンドから開ける', () => {
+  // FR-220 AC-590（画面 FR-020 は廃止しない）: 開ける経路はドック・コマンド。view3d はペルソナ（現場）・既定のレイアウトでも表示され、両画面はステッパーの「現状分析」の関連画面に含まれる（ステッパーは開く入口ではない）
+  it('FR-220 AC-590 view3d・drawing2d はドック・コマンドから開け、view3d はペルソナ（現場）・既定のレイアウトでも表示され、両画面はステップ「現状分析」の関連画面に含まれる', () => {
     for (const key of ['view3d', 'drawing2d']) {
       expect(SCREENS.some((s) => s.key === key)).toBe(true);
-      // ドック・ワークスペース・レイアウトの対象（Dock・Workspace・setAvailableComponents に渡す一覧）
+      // ドックの対象（Dock・Workspace・setAvailableComponents に渡す一覧）
       expect(COMPONENT_SCREENS.some((s) => s.key === key)).toBe(true);
-      // ステッパー（業務改善の「現状分析」）
+      // ステッパーの「現状分析」の関連画面に含まれる（開く入口ではない）
       expect(stepIndexForScreen(key)).toBe(STEPS.findIndex((s) => s.key === 'analysis'));
       // コマンド（「…を表示する」）
       expect(builtinCommands(COMPONENT_SCREENS).some((c) => c.id === `view.show.${key}`)).toBe(true);
     }
-    // ペルソナ（現場）の既定の表現と、既定のレイアウト
+    // view3d はペルソナ（現場）・既定のレイアウトでも表示される
     expect(PERSONA_PRIMARY['現場']).toBe('view3d');
     expect(keysOf(defaultLayout('現場'))).toContain('view3d');
   });

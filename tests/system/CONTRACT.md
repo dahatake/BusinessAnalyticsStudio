@@ -106,7 +106,8 @@
 - 入口: メイン画面の Project 名のリンク（role=link、名前は Project 名）をクリックすると、その Project 画面（stepper が見える）が開く。ブラウザーの戻る（history back）でメイン画面に戻る。
 
 ## 21. Fluent 2 の全画面適用・ピン止め・ビュー切替（NFR-UX-015〜017・NFR-A11Y-009・FR-215〜218。fluent-design.spec.ts・a11y-all-screens.spec.ts・pin.spec.ts・view-switch.spec.ts が前提にする画面の探し方）
-- 全画面（画面の登録）: 左メニュー navigation「画面」の `nav-<key>`（`nav-toggle` を除く）を表示の順に走査する（`support/screens.ts` の `listScreenKeys`）。§4 の主要画面がすべて含まれること。表示幅が狭く左メニューが隠れるときは button「メニュー」から開く。
+- 全画面（画面の登録）: 左メニュー navigation「画面」の `nav-<key>`（`nav-toggle` を除く）を表示の順に走査し、左メニューに項目を持たない画面（FR-220 AC-590: `view3d`「3D ビューと 2D 図面」・`drawing2d`「2D 図面」。`support/fixtures.ts` の `OFF_MENU_SCREENS`）を末尾に足す（`support/screens.ts` の `listScreenKeys`）。§4 の主要画面がすべて含まれること。表示幅が狭く左メニューが隠れるときは button「メニュー」から開く。
+- 左メニューにない画面の開き方（FR-220 AC-590。AC の期待値は変えない）: `openScreen`・`gotoScreen` は、`OFF_MENU_SCREENS` か `nav-<key>` が無い画面を、コマンドパレット（`Ctrl+K`。dialog「コマンドパレット」）に「show <key>」と入れ、option `id="command-view.show.<key>"`（「<画面名>を表示する」。FR-111）を押して開く（`openScreenByCommand`）。テストは `nav-view3d`・`nav-drawing2d` を使わない。
 - カード: Fluent のカードの面に `data-surface="card"`（影の段 4 の判定に使う。ハイコントラストでは 4 辺の境界線か輪郭線の判定に使う。AC-476）。メニューは role=menu、ツールチップは role=tooltip、ダイアログは role=dialog（コマンドパレット）。
 - 拡大・縮小できる面（AC-483。A-51）: ビュアー・グラフ・キャンバス・ホワイトボード・地図・3D の、拡大・縮小する描画領域の要素に `data-zoom-surface`（値は `viewer`／`graph`／`canvas`／`whiteboard`／`map`／`3d`）。見出し・ハンドル・ツールバーなど面の外の部品には付けない。この中の文字は文字 200% の切れ・重なりの数え方から除き、表示しきれない文字は省略記号（text-overflow: ellipsis か line-clamp）＋全文のアクセシブルな名前（aria-label・title・aria-labelledby）かツールチップ（role=tooltip）、または面の中のスクロール（overflow: auto/scroll）で読めることを判定する。3D と地図のラベルは NFR-A11Y-003 AC-173 と同じ button「表で見る」の表で読めることを判定する。
 - ピン止め（FR-215）: フォーカスしたコンポーネントの `component-actions` に button 1 つ。名前は「ピン止めする」（固定なし）／「ピン止めを外す」（固定中）。`aria-pressed`（false／true）と `data-icon-variant`（`regular`／`filled`）を持ち、ツールチップ（role=tooltip）の文言も名前と同じ。状態は端末内のレイアウトとして保存され、再読込で復元される。
@@ -142,7 +143,7 @@
 - 選択はフック `t.view.state(key).selectedIds` で読む。一覧表（`table`）で選んだ項目が各画面で選択されている。
 
 ## 24. 画面の操作性の刷新（FR-220〜228。ux-refresh.spec.ts が前提にする画面の探し方。run 202610192037）
-- 画面の見出し（FR-220 AC-515）: `data-testid="screen-heading"` の中の button「ビュー」（名前は「ビュー」で始まる。§21 のコンポーネントの「ビュー」と同じメニュー）。左メニュー navigation「画面」に 2D/3D の切替の項目（menuitemradio「2D」「3D」・switch・名前が「3D ビュー」だけの項目）を置かない（画面「3D ビューと 2D 図面」への入口は別の名前にする）。
+- 画面の見出し（FR-220 AC-515）: `data-testid="screen-heading"` の中の button「ビュー」（名前は「ビュー」で始まる。§21 のコンポーネントの「ビュー」と同じメニュー）。左メニュー navigation「画面」に 2D/3D の切替の項目（menuitemradio「2D」「3D」・switch・名前が「3D ビュー」だけの項目）を置かない（FR-220 の改訂で、画面「3D ビューと 2D 図面」「2D 図面」の項目は左メニューに置かない＝AC-590。§21 の開き方で開く）。
 - 操作アイコン（FR-222 AC-518）: §10 の `component-actions` の button「最小化」「最大化」（最大化中は「通常表示」か「元に戻す」）が見出しの右上に並び、図（svg か img）を持つ。名前はホバー・フォーカスで role=tooltip に出る。最大化中は `data-maximized="true"`、最小化中は `data-minimized="true"`。常設ボタン（「その他の操作」を除く）は 6 個以下（PARAM-073）。
 - 設定のモーダル（FR-223 AC-519）: 左メニューの `nav-settings` で role=dialog「設定」（`aria-modal="true"`、button「閉じる」）が開く。背面の覆いは `data-testid="modal-backdrop"`（透明でない背景色）。設定は `component-settings` としてワークスペースに並ばない。
 - サイズ変更（FR-224 AC-521）: コンポーネントの縁・角のつまみ `data-testid="resize-e"`（右の縁）・`resize-s`（下の縁）・`resize-se`（右下の角）。ホバーで利用できる。ドラッグで縦だけ・横だけ・両方が変わる。
