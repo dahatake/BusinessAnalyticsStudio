@@ -57,6 +57,12 @@ export function menuGroups(projects: readonly Project[], companies: readonly Com
   return companies.map((company) => ({ company, projects: active.filter((p) => p.companyId === company.id) }));
 }
 
+/** 作業先の候補に添える一行の説明（60 字以内。FR-270 AC-687） */
+export function optionDescription(kind: TargetOption['kind']): string {
+  if (kind === 'demo') return '架空企業のお手本データで、顧客パックがなくても画面を試せる';
+  if (kind === 'project') return '登録した企業・Project のデータで作業する';
+  return '新しく企業と Project を登録して作業を始める';
+}
 export const MENU_DEMO_LABEL = 'デモ（架空企業のお手本パック）';
 
 export type TargetChoice = { kind: 'demo' } | { kind: 'register' } | { kind: 'project'; id: string };

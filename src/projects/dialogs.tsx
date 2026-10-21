@@ -7,7 +7,7 @@ import { Dialog, DialogSurface } from '../components/Dialog';
 import type { Result } from '../store/projects';
 
 /** 1 項目の名前を入力する dialog（登録・作成・名称変更で共通）。不正な入力は原因を示し、入力済みの内容を残す（AC-397） */
-export function NameDialog(props: { title: string; label: string; submit: string; initial?: string; hint?: string; onSubmit: (name: string) => Result; onClose: () => void }) {
+export function NameDialog(props: { title: string; label: string; submit: string; initial?: string; hint?: string; placeholder?: string; help?: string; onSubmit: (name: string) => Result; onClose: () => void }) {
   const [name, setName] = useState(props.initial ?? '');
   const [error, setError] = useState<string | null>(null);
   const go = () => {
@@ -22,8 +22,8 @@ export function NameDialog(props: { title: string; label: string; submit: string
           <DialogTitle>{props.title}</DialogTitle>
           <DialogContent>
             {props.hint ? <p>{props.hint}</p> : null}
-            <Field label={props.label}>
-              <Input value={name} onChange={(_, d) => setName(d.value)} onKeyDown={(e) => { if (e.key === 'Enter') go(); }} autoFocus />
+            <Field label={props.label} hint={props.help}>
+              <Input placeholder={props.placeholder} value={name} onChange={(_, d) => setName(d.value)} onKeyDown={(e) => { if (e.key === 'Enter') go(); }} autoFocus />
             </Field>
             {error ? <MessageBar intent="error" role="alert"><MessageBarBody>{error}</MessageBarBody></MessageBar> : null}
           </DialogContent>
