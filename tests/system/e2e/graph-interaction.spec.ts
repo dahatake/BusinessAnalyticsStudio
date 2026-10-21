@@ -22,6 +22,13 @@ async function openGraph(page: Page, key: string, root?: Locator): Promise<{ c: 
   const c = root ?? (await openScreen(page, key));
   const surface = c.locator('[data-zoom-surface="graph"]').first();
   if (!(await surface.isVisible())) {
+    if (root) {
+      // データビュアー（CONTRACT §25・graph-twin.md 14.2）: 「ビュー」メニューではなく表示形式の radio「Graph」を使う
+      await c.getByRole('radio', { name: 'Graph', exact: true }).check();
+      await expect(c.getByRole('radio', { name: 'Graph', exact: true })).toBeChecked();
+      await expect(surface, `${key}: Graph の面が出ない`).toBeVisible();
+      return { c, surface };
+    }
     const menu = await openViewMenu(page, c);
     await menu.getByRole('menuitemradio', { name: 'Graph', exact: true }).click();
     await expect(viewButton(c)).toContainText('Graph');
