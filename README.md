@@ -18,7 +18,9 @@
 | 議論を残す | 議論テーマ／ホワイトボード／議論ツリー |
 | 資料にする | エクスポート／Engagement サマリーパック |
 
-画面つきの手順は [users-guide/01-quick-start.md](users-guide/01-quick-start.md) を見てください。
+画面つきの手順は [users-guide/01-quick-start.md](users-guide/01-quick-start.md) を見てください。アプリの中にも、メイン画面の「はじめての方へ」、初回起動のウェルカム、分析画面の「使い方」ボタン（顧客パックの説明つき）があります。
+
+![全体の流れ: 企業を登録、Project を作成、Project を開く、分析を開始](users-guide/images/guide-flow.svg)
 
 ### 全体の構成（コンポーネント図）
 
