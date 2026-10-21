@@ -10,6 +10,7 @@ import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
 import { ViewAsTableButton } from '../components/ViewTable';
 import { GraphSurface, type GraphEdgeIn, type GraphNodeIn } from '../components/GraphSurface';
+import { GraphScope } from '../components/GraphViewport';
 import { GraphAlt } from '../components/GraphAlt';
 import { ZoomBar, ZoomClusters, ZoomDetail, clampDepth, useZoomRootAttrs } from '../semanticzoom';
 import { onEntityKey, useEntityBinding, useSelection } from '../selection/hooks';
@@ -258,9 +259,9 @@ export function TwinViewScreen() {
             {surf3d ? (
               <Items3DSurface viewKey={ORIGIN} origin={ORIGIN} label="Twin ビュー（現実世界の面とデジタル世界の面）" items={items3d} links={links3d} axes={{ y: '下: 現実世界／上: デジタル世界', z: '層' }} />
             ) : null}
-            <div data-zoom-surface={isGraph ? 'graph' : undefined} style={{ display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM }}>
+            <GraphScope active={isGraph} origin={ORIGIN} label="Twin ビュー">
               {depth === 0 ? <ZoomClusters clusters={clusters} onOpen={openCluster} /> : null}
-              {depth === 1 && isGraph ? <GraphSurface origin={ORIGIN} label="Twin ビュー" nodes={graphNodes} edges={graphEdges} onOpen={openItem} /> : null}
+              {depth === 1 && isGraph ? <GraphSurface origin={ORIGIN} label="Twin ビュー" nodes={graphNodes} edges={graphEdges} onOpen={openItem} zoomControls="external" /> : null}
               {depth === 1 && !surf3d && !isGraph ? (
                 <div className={mergeClasses(s.board, !(showReal && showDigital) && s.boardOne)} data-testid="twin-board">
                   {realColumn}
@@ -268,7 +269,6 @@ export function TwinViewScreen() {
                   {digitalColumn}
                 </div>
               ) : null}
-              {depth === 1 && (surf3d || isGraph) ? flowList : null}
               {depth === 2 && detailItem ? (
                 <ZoomDetail
                   item={{
@@ -278,7 +278,8 @@ export function TwinViewScreen() {
                   }}
                 />
               ) : null}
-            </div>
+            </GraphScope>
+            {depth === 1 && (surf3d || isGraph) ? flowList : null}
             {surf3d || isGraph ? (
               <GraphAlt
                 origin={ORIGIN} label="Twin ビュー" columns={['世界']}

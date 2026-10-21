@@ -11,6 +11,7 @@ import {
 } from '../datacatalog/viewer';
 import { useDataViewer } from '../store/dataViewer';
 import { GraphSurface, type GraphEdgeIn, type GraphNodeIn } from './GraphSurface';
+import { GraphScope } from './GraphViewport';
 import { GraphAlt } from './GraphAlt';
 import { ZoomBreadcrumb, canZoomIn, canZoomOut, scaleOfDepth, zoomAttrs } from '../semanticzoom';
 import { detect3D } from '../view/render3d';
@@ -278,10 +279,12 @@ export function DataViewer({ entities, selectedKey, onSelect, relations = NO_REL
       {shown.length === 0 ? (
         <Text role="status">{entities.length === 0 ? '表示するデータエンティティがありません。' : '絞り込みに合うデータエンティティがありません。'}</Text>
       ) : effectiveMode === 'graph' ? (
-        <div data-zoom-surface="graph" className={s.group}>
-          {level === 'bird' ? birdGrid : (
-            <GraphSurface origin="data-viewer" label="データビュアー" nodes={graphNodes} edges={graphEdges} onOpen={(k) => { setUseCase(null); onSelect(k); goDepth(2); }} />
-          )}
+        <div className={s.group}>
+          <GraphScope active origin="data-viewer" label="データビュアー">
+            {level === 'bird' ? birdGrid : (
+              <GraphSurface origin="data-viewer" label="データビュアー" nodes={graphNodes} edges={graphEdges} onOpen={(k) => { setUseCase(null); onSelect(k); goDepth(2); }} zoomControls="external" />
+            )}
+          </GraphScope>
           <GraphAlt
             origin="data-viewer" label="データビュアー" columns={['列']}
             nodes={graphNodes.map((n) => ({ id: n.id, name: n.name, kind: n.kind, values: [n.note ?? '—'] }))}
