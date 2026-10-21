@@ -286,6 +286,10 @@
 | FR-270 | 作業先の選択の各候補の一行説明 | 承認済み | src/projects/WorkTargetPicker.tsx, src/projects/workTarget.ts (optionDescription) | tests/unit/hints.test.tsx (AC-688), tests/system/e2e/getting-started.spec.ts (AC-687) | デザイン基盤 |
 | FR-271 | アプリ内ガイドのドキュメントへの反映 | 承認済み | README.md, users-guide/01-quick-start.md, users-guide/images/guide-flow.svg | tests/unit/hints.test.tsx (AC-689) | - |
 | FR-272 | 分析画面からの「使い方」の入口 | 承認済み | src/guide/GuideButton.tsx, src/guide/WelcomeDialog.tsx (GuideHost), src/app/App.tsx | tests/unit/guide.test.tsx (AC-690, AC-697), tests/system/e2e/getting-started.spec.ts (E2E-366) | デザイン基盤, アプリ内ガイド |
+| FR-274 | 「現状の説明」ボタンとサイドパネル（AI による課題・解決策・KPI/OKR への寄与の説明） | 承認済み | 未実装 | 未実装 | - |
+| FR-275 | Microsoft Foundry の接続設定（エンドポイント・デプロイ名・API キー）と外部送信の条件 | 承認済み | scripts/relay/foundry-vault.ts, scripts/relay/foundry.ts, scripts/relay/relay.ts, src/ai/foundryClient.ts, src/ai/FoundrySettings.tsx, src/ai/AiSettings.tsx | tests/unit/foundry.test.ts (AC-704, AC-705, AC-706, AC-707), tests/system/e2e/explain-current.spec.ts (AC-703) | Foundry 接続部品 |
+| FR-276 | 「現状の説明」の課金の安全策（回数・大きさ・間隔・予算の警告と停止） | 承認済み | 未実装 | 未実装 | - |
+| FR-277 | AI が使えないときの「使えない」表示と決定的な代替説明 | 承認済み | 未実装 | 未実装 | - |
 | FR-245 | 図のパン（移動）と拡大縮小 | 承認済み | src/components/GraphViewport.tsx (面の枠・パン・拡大縮小・全画面・全画面中の他部品の無効化), src/components/graphViewStore.ts (面ごとの状態・PARAM-057・087・088・089・105 の値・表の行からの移動の依頼), src/components/GraphSurface.tsx (自分でズームを持つ面の階層・塊), src/screens/TwinViewScreen.tsx, src/screens/SpatialScreen.tsx, src/components/DataViewer.tsx (GraphScope で面に収める) | tests/unit/graph-interaction.test.tsx (AC-593, AC-594), tests/system/e2e/graph-interaction.spec.ts (E2E-346, E2E-347, E2E-348) | Graph の描画枠, Graph の描画面, 意味的ズーム |
 | FR-246 | 図だけの全画面表示 | 承認済み | src/components/GraphViewport.tsx (全画面・F キー・Esc の優先順・フォーカス), src/components/graphViewStore.ts | tests/unit/graph-interaction.test.tsx (AC-596, AC-597), tests/system/e2e/graph-interaction.spec.ts (E2E-349, E2E-350) | Graph の描画枠, Graph の描画面 |
 | FR-247 | ノード・エッジの詳細カード | 承認済み | src/components/GraphSurface.tsx (詳細カード・エッジのクリックと Enter・ダブルクリックはズームイン), src/store/selection.ts (registerLocalIds: 図だけの項目を選べるようにする) | tests/unit/graph-interaction.test.tsx (AC-598, AC-599), tests/unit/graph-view.test.tsx (AC-581), tests/system/e2e/graph-interaction.spec.ts (E2E-351, E2E-352) | Graph の描画面, 選択状態とエンティティ関係グラフ |
@@ -312,6 +316,7 @@
 | POST /foundry/analyze（中継プロセス。解決策の文章・エンドポイント・デプロイ名を受け、Foundry の Responses API を呼ぶ。失敗は原因つきの 5xx） | scripts/relay/relay.ts, scripts/relay/foundry.ts | FR-285 |
 | GET・PUT・DELETE /speech/config（中継プロセス。値は返さず設定済みと伏せ字だけ） | scripts/relay/relay.ts | FR-168, NFR-SEC-005 |
 | POST /speech/synthesize（中継プロセス。保存済みの接続先へだけ中継） | scripts/relay/relay.ts | FR-168, NFR-SEC-005 |
+| GET・PUT・DELETE /foundry/config・POST /foundry/connection・POST /foundry/ask（中継プロセス。値は返さず設定済みと伏せ字だけ。了承・有効・設定がそろわないと呼び出し 0 回） | scripts/relay/relay.ts | FR-275, NFR-SEC-005 |
 
 ## テーブル
 
@@ -375,6 +380,7 @@
 | 顧客の了承の記録 | src/ai/consent.ts, src/ai/useConsent.ts, src/ai/ConsentSettings.tsx, scripts/pipeline/consent.ts | 案件（企業・Project）ごとの了承の自己申告の記録（個人名・連絡先は保存しない）。実接続・パイプラインの実調査の条件。consent.json の書き出し（buildConsentExport）と置き場所の案内 | FR-132、FR-181、FR-182、FR-203、FR-219 |
 | 種別「人」の確認 | src/ai/personConfirm.ts, src/ai/PersonConfirmDialog.tsx | 種別「人」を含む顧客パックの外部送信・エクスポート前の確認（gatePersonConfirm: 件数・範囲・確認日の表示、了承なしは続行不可、同じ内容・了承の記録の間は続行を引き継ぐ）。確認の画面は共通の Dialog を使う | FR-219 |
 | 音声・手書き認識の実接続部品 | scripts/relay/azure-services.ts, src/ai/azureClient.ts, src/ai/useAzure.ts, src/ai/AzureSettings.tsx | Azure AI Speech・Azure AI Vision への接続（呼ぶ主体は中継プロセス。キーは中継側の .env のみ）。HTTP は `HttpPost` で差し替え可。キー未設定・無効・了承なしはモック | FR-182 |
+| Foundry 接続部品 | scripts/relay/foundry-vault.ts, scripts/relay/foundry.ts, src/ai/foundryClient.ts, src/ai/FoundrySettings.tsx | Microsoft Foundry（OpenAI 互換 Responses API）の接続情報を AES-256-GCM で暗号化して PC 内に保管し、中継プロセスだけが設定したエンドポイントへ送る（リダイレクトは追わない）。画面は伏せ字と「設定済み」だけ。了承・有効・設定がそろわないと 0 回。差し替え口は foundryFetch | FR-275 |
 | 音声キーの保管庫 | scripts/relay/speech-vault.ts, src/speech/relayKey.ts | 音声合成のキーを AES-256-GCM で暗号化して PC 内（リポジトリの外）に保管。マスター鍵は OS の鍵保護（DPAPI / Keychain / secret-tool。KeyProtector）でラップし、Windows は icacls で現在ユーザーのみに絞る。ブラウザーには平文を置かず、取得は設定済みと伏せ字だけ | FR-168, NFR-SEC-005 |
 | 顧客パックのスキーマと検証 | src/schema/common.ts, src/schema/files.ts, src/schema/world.ts, src/schema/graph.ts, src/schema/validate.ts, src/schema/anonymize.ts, scripts/lib/pack-fs.ts | zod のスキーマ、ID の一意・参照・出典の検証、internal の匿名化（anonymizeInternal、A-08）と件数（countInternal。機密確認の画面が使う）。画面の部品を参照しない。schema の JSON は npm run gen:schema で生成 | FR-002, FR-003, FR-005, FR-006, FR-007, FR-018, FR-019, FR-038, FR-054, FR-100, FR-102, FR-114, FR-115, FR-116, FR-117, FR-118, FR-119, FR-125, FR-126, FR-127, NFR-MAINT-001, NFR-SEC-003, FR-043, FR-039, FR-040, FR-030, FR-213, FR-214, FR-235, FR-241 |
 | 意味的ズーム | src/semanticzoom/model.ts, src/semanticzoom/ZoomBreadcrumb.tsx, src/semanticzoom/index.ts, src/semanticzoom/ZoomKit.tsx | 全体→要素（D 段）→詳細の D+2 階層のモデル（zoomDepthCount・kindOfDepth・stepDepth・depthOfScale。倍率の判定は three/lod.ts のヒステリシスを再利用）とパンくず（ZoomBreadcrumb）、data-zoom-level 等の属性（zoomAttrs）。画面の部品は参照しない。画面側の共通部品 ZoomKit（ZoomBar・ZoomClusters・ZoomDetail・useZoomRootAttrs）が、拡大・縮小・全体表示に戻す・一つ上の階層へのボタンと塊・詳細の枠を同じ属性で出す | FR-169, FR-236, FR-237, FR-238, FR-239, FR-240, FR-245, NFR-A11Y-010 |

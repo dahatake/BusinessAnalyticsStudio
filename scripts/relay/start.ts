@@ -2,7 +2,7 @@
 import { loadCopilotSdk } from './copilot-adapter';
 import { startRelay } from './relay';
 import { azureConfigFromEnv, createAzureServices } from './azure-services';
-import { createFoundryService, foundryConfigFromEnv } from './foundry';
+import { createFoundryService, foundryConfigFromEnv } from './genai-foundry';
 
 const port = Number(process.env.EDB_RELAY_PORT ?? 8787);
 const sdk = await loadCopilotSdk();

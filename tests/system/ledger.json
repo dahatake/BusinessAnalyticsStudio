@@ -288,6 +288,11 @@
     "AC-685": "sha256:c9df7610f9e4b193",
     "AC-687": "sha256:ef4b678cca783521",
     "AC-690": "sha256:ae060af5d4a4546c",
+    "AC-699": "sha256:519b0f76a5dc7268",
+    "AC-702": "sha256:d47e7a5b9726eed6",
+    "AC-703": "sha256:80508cb0b76e99da",
+    "AC-712": "sha256:0e69695d5457cad9",
+    "AC-713": "sha256:706deed685a6f99e",
     "AC-733": "sha256:416fb88a5cfaff0a",
     "AC-739": "sha256:a7892bd655cdf85a"
   },
@@ -8615,6 +8620,131 @@
       "history": [
         {
           "at": "2026-10-16T21:20:31+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-367",
+      "requirement_ids": [
+        "FR-274"
+      ],
+      "ac_ids": [
+        "AC-699"
+      ],
+      "title": "現状の説明ボタンとサイドパネルの開閉",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-699",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-21T22:26:34+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-368",
+      "requirement_ids": [
+        "FR-274"
+      ],
+      "ac_ids": [
+        "AC-702"
+      ],
+      "title": "画面切替で説明を作り直す操作を示す",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-702",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-21T22:26:53+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-369",
+      "requirement_ids": [
+        "FR-275"
+      ],
+      "ac_ids": [
+        "AC-703"
+      ],
+      "title": "Foundry 接続設定の欄とキーの保護表示",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-703",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-21T22:27:10+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-370",
+      "requirement_ids": [
+        "FR-276"
+      ],
+      "ac_ids": [
+        "AC-712"
+      ],
+      "title": "課金の安全策の表示と上げる変更の確認",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-712",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-21T22:27:25+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-371",
+      "requirement_ids": [
+        "FR-277"
+      ],
+      "ac_ids": [
+        "AC-713"
+      ],
+      "title": "AI が使えないときの代替説明",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-713",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-21T22:28:48+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"

@@ -6,7 +6,7 @@ import {
 import { DEFAULT_FOUNDRY_DEPLOYMENT, DEFAULT_FOUNDRY_ENDPOINT, analyzeViaRelay } from '../../src/genai/foundryClient';
 import { isGenAiReal } from '../../src/genai/useGenAi';
 import { startRelay, type Relay } from '../../scripts/relay/relay';
-import { createFoundryService, foundryConfigFromEnv, isValidFoundryEndpoint } from '../../scripts/relay/foundry';
+import { createFoundryService, foundryConfigFromEnv, isValidFoundryEndpoint } from '../../scripts/relay/genai-foundry';
 
 const DUMMY_KEY = 'dummy-foundry-key-0123456789';
 const open: Relay[] = [];
