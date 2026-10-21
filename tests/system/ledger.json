@@ -718,10 +718,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-016",
       "canary": false,
-      "status": "not_run",
-      "last_commit": "961d213",
-      "last_run_at": "2026-10-20T13:49:50+09:00",
-      "evidence": "work/runs/202610200517/logs/system-test/E2E-115-202610201155.log",
+      "status": "pass",
+      "last_commit": "07da2dc",
+      "last_run_at": "2026-10-21T22:01:49+09:00",
+      "evidence": "work/runs/202610211706/logs/system-test/E2E-115-202610212140.log",
       "history": [
         {
           "at": "2026-10-12T14:06:01+09:00",
@@ -1907,9 +1907,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "850a5c7",
-      "last_run_at": "2026-10-20T12:27:21+09:00",
-      "evidence": "work/runs/adhoc-202610201111/logs/system-test/E2E-162-202610201208.log",
+      "last_commit": "07da2dc",
+      "last_run_at": "2026-10-21T22:01:49+09:00",
+      "evidence": "work/runs/202610211706/logs/system-test/E2E-162-202610212139.log",
       "history": [
         {
           "at": "2026-10-12T14:07:28+09:00",
@@ -7943,10 +7943,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-591",
       "canary": false,
-      "status": "not_run",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "07da2dc",
+      "last_run_at": "2026-10-21T22:01:49+09:00",
+      "evidence": "work/runs/202610211706/logs/system-test/E2E-342-202610212140.log",
       "history": [
         {
           "at": "2026-10-21T17:19:41+09:00",
@@ -7975,10 +7975,10 @@
       "layer": "e2e",
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button --workers=1",
       "canary": false,
-      "status": "not_run",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "07da2dc",
+      "last_run_at": "2026-10-21T22:01:49+09:00",
+      "evidence": "work/runs/202610211706/logs/system-test/E2E-343-202610212146.log",
       "history": [
         {
           "at": "2026-10-21T17:19:47+09:00",
@@ -8013,10 +8013,10 @@
       "layer": "e2e",
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape --workers=1",
       "canary": false,
-      "status": "not_run",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "07da2dc",
+      "last_run_at": "2026-10-21T22:01:49+09:00",
+      "evidence": "work/runs/202610211706/logs/system-test/E2E-344-202610212154.log",
       "history": [
         {
           "at": "2026-10-21T17:19:52+09:00",
@@ -8052,10 +8052,10 @@
       "layer": "e2e",
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat --workers=1",
       "canary": true,
-      "status": "not_run",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "07da2dc",
+      "last_run_at": "2026-10-21T22:01:49+09:00",
+      "evidence": "work/runs/202610211706/logs/system-test/E2E-345-202610212140.log",
       "history": [
         {
           "at": "2026-10-21T17:19:59+09:00",
