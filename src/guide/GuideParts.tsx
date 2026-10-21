@@ -25,14 +25,17 @@ const useStyles = makeStyles({
   pre: { whiteSpace: 'pre-wrap', margin: 0 },
   note: { color: tokens.colorNeutralForeground2 },
   svg: { maxWidth: '100%', height: 'auto' },
+  h2: { margin: 0, fontSize: tokens.fontSizeBase500, fontWeight: tokens.fontWeightSemibold },
+  h3: { margin: 0, fontSize: tokens.fontSizeBase400, fontWeight: tokens.fontWeightSemibold },
 });
 
 /** 描画する要素を少なくするため（説明は常に画面にある）、文字は Fluent の Text ではなく素の要素で書く。見た目は親の block のクラスで決める */
 const Text = ({ children, className, ...rest }: { children?: React.ReactNode; className?: string; weight?: string }) => <span className={className} style={rest.weight === 'semibold' ? { fontWeight: tokens.fontWeightSemibold } : undefined}>{children}</span>;
 
 export function GuideH({ children, level = 3 }: { children: string; level?: 2 | 3 | 4 }) {
+  const s = useStyles();
   const H = `h${level}` as 'h3';
-  return <H style={{ margin: 0, fontSize: level === 2 ? tokens.fontSizeBase500 : tokens.fontSizeBase400, fontWeight: tokens.fontWeightSemibold }}>{children}</H>;
+  return <H className={level === 2 ? s.h2 : s.h3}>{children}</H>;
 }
 
 export function WhatSection() {
