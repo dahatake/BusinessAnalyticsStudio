@@ -8,6 +8,7 @@ import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { AZURE_FEATURES, MAX_IMAGE_BASE64_CHARS, MAX_SPEECH_TEXT_CHARS, isValidBase64, isValidStrokeCount, AzureServiceError, type AzureFeature, type AzureServices } from './azure-services';
 import { openSpeechVault, type SpeechVault } from './speech-vault';
+import { CAUSE_STATUS, FoundryError, type FoundryService } from './foundry';
 
 export const AI_KINDS = ['structure', 'summary', 'recommend', 'chat', 'exec-summary'] as const;
 export type AiKind = (typeof AI_KINDS)[number];
@@ -23,6 +24,8 @@ export interface RelayOptions {
   sdk: CopilotSdk | null;
   /** 音声合成・手書き認識の接続部品（FR-182）。なければ常にモック */
   azure?: AzureServices;
+  /** 生成AIの活用分析の Foundry 接続部品（FR-285）。なければ /foundry/analyze はキー未設定として答える */
+  foundry?: FoundryService;
   host?: string;
   port?: number;
   /** 音声合成のキーの保管庫（FR-168）。省略すると既定のデータフォルダー */
@@ -103,7 +106,19 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
     void (async () => {
       try {
         if (req.method === 'GET' && path === '/health') {
-          return json(200, { status: 'ready', copilot: (await signedIn()) ? 'signed-in' : 'signed-out' });
+          return json(200, { status: 'ready', copilot: (await signedIn()) ? 'signed-in' : 'signed-out', foundry: { keyConfigured: opts.foundry?.hasKey() ?? false } });
+        }
+        // ---- FR-285: 生成AIの活用分析の Foundry 接続。キーは中継側の環境変数だけ。応答にキーの値・上流の本文は含めない ----
+        if (req.method === 'POST' && path === '/foundry/analyze') {
+          const b = JSON.parse((await readBody(req)) || '{}') as { solution?: unknown; endpoint?: unknown; deployment?: unknown };
+          try {
+            if (!opts.foundry) throw new FoundryError('key-missing');
+            if (typeof b.solution !== 'string' || typeof b.endpoint !== 'string' || typeof b.deployment !== 'string') throw new FoundryError('bad-request');
+            return json(200, await opts.foundry.analyze({ solution: b.solution, endpoint: b.endpoint, deployment: b.deployment }));
+          } catch (e) {
+            if (e instanceof FoundryError) return json(CAUSE_STATUS[e.kind], { error: { cause: e.kind, ...e.detail } });
+            throw e;
+          }
         }
         if (path === '/speech/config') {
           if (req.method === 'GET') return json(200, getVault().view());
