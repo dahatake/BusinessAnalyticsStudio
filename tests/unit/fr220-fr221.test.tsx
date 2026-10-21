@@ -4,26 +4,58 @@ import { describe, expect, it, afterEach } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import { FluentProvider, webLightTheme } from '@fluentui/react-components';
 import { AppShell } from '../../src/components/AppShell';
-import { SCREENS } from '../../src/screens/registry';
+import { SCREENS, NAV_SCREENS, COMPONENT_SCREENS } from '../../src/screens/registry';
+import { PERSONA_PRIMARY } from '../../src/workspace/persona';
+import { defaultLayout, keysOf } from '../../src/workspace/layoutModel';
+import { STEPS, stepIndexForScreen } from '../../src/stepper/model';
+import { builtinCommands } from '../../src/commands/builtin';
 
 afterEach(() => cleanup());
 
+// 分析画面（App.tsx）と同じく、左メニューには NAV_SCREENS を渡す
 const shell = () => render(
   <FluentProvider theme={webLightTheme}>
-    <AppShell title="t" screens={SCREENS} onSelect={() => undefined}>x</AppShell>
+    <AppShell title="t" screens={NAV_SCREENS} onSelect={() => undefined}>x</AppShell>
   </FluentProvider>,
 );
 
 describe('FR-220 左メニューから「3D ビュー」の切替の項目を削除', () => {
   // FR-220 AC-515
-  it('FR-220 AC-515 左メニューに名前が「3D ビュー」だけの項目と 2D/3D の切替の項目がなく、画面「3D ビューと 2D 図面」への入口は残る', () => {
+  it('FR-220 AC-515 左メニューに名前が「3D ビュー」だけの項目と 2D/3D の切替の項目がない', () => {
     shell();
     const nav = screen.getByRole('navigation', { name: '画面' });
     const names = Array.from(nav.querySelectorAll('button')).map((b) => (b.textContent ?? '').trim());
     expect(names).not.toContain('3D ビュー');
     expect(nav.querySelector('[role="menuitemradio"], [role="switch"]')).toBeNull();
-    expect(nav.querySelector('[data-testid="nav-view3d"]')?.textContent).toContain('3D ビューと 2D 図面');
-    expect(SCREENS.some((s) => s.key === 'view3d')).toBe(true);
+  });
+
+  // FR-220 AC-590
+  it('FR-220 AC-590 左メニューに「3D ビューと 2D 図面」と「2D 図面」の項目がない', () => {
+    shell();
+    const nav = screen.getByRole('navigation', { name: '画面' });
+    const names = Array.from(nav.querySelectorAll('button')).map((b) => (b.textContent ?? '').trim());
+    expect(names.some((n) => n.includes('3D ビューと 2D 図面'))).toBe(false);
+    expect(names.some((n) => n === '2D 図面' || n.endsWith('2D 図面'))).toBe(false);
+    expect(nav.querySelector('[data-testid="nav-view3d"]')).toBeNull();
+    expect(nav.querySelector('[data-testid="nav-drawing2d"]')).toBeNull();
+    // ほかの画面は左メニューに残る
+    expect(nav.querySelector('[data-testid="nav-knowledge-graph"]')).not.toBeNull();
+  });
+
+  // FR-220 AC-590（画面 FR-020 は廃止しない）
+  it('FR-220 AC-590 view3d・drawing2d は画面として残り、ペルソナ・レイアウト・ステッパー・ドック・コマンドから開ける', () => {
+    for (const key of ['view3d', 'drawing2d']) {
+      expect(SCREENS.some((s) => s.key === key)).toBe(true);
+      // ドック・ワークスペース・レイアウトの対象（Dock・Workspace・setAvailableComponents に渡す一覧）
+      expect(COMPONENT_SCREENS.some((s) => s.key === key)).toBe(true);
+      // ステッパー（業務改善の「現状分析」）
+      expect(stepIndexForScreen(key)).toBe(STEPS.findIndex((s) => s.key === 'analysis'));
+      // コマンド（「…を表示する」）
+      expect(builtinCommands(COMPONENT_SCREENS).some((c) => c.id === `view.show.${key}`)).toBe(true);
+    }
+    // ペルソナ（現場）の既定の表現と、既定のレイアウト
+    expect(PERSONA_PRIMARY['現場']).toBe('view3d');
+    expect(keysOf(defaultLayout('現場'))).toContain('view3d');
   });
 });
 
