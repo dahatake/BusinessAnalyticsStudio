@@ -11,11 +11,12 @@ export interface RelayStub {
 
 export async function startRelayStub(opts: { answer?: string; sourceIds?: string[]; delayMs?: number } = {}): Promise<RelayStub> {
   const received: RelayStub['received'] = [];
+  let foundry: { endpoint: string; deployment: string; key: string } | null = null;
   const server = http.createServer((req, res) => {
     const cors = {
       'access-control-allow-origin': req.headers.origin ?? '*',
       'access-control-allow-headers': '*',
-      'access-control-allow-methods': 'GET,POST,OPTIONS',
+      'access-control-allow-methods': 'GET,POST,PUT,DELETE,OPTIONS',
     };
     if (req.method === 'OPTIONS') {
       res.writeHead(204, cors);
@@ -27,6 +28,21 @@ export async function startRelayStub(opts: { answer?: string; sourceIds?: string
     req.on('end', () => {
       const u = new URL(req.url ?? '/', 'http://127.0.0.1');
       received.push({ method: req.method ?? '', path: u.pathname, body });
+      // FR-275: 接続情報の保存先は中継側だけ。GET/PUT/DELETE /foundry/config は、キーを保持して伏せ字だけを返す
+      if (u.pathname === '/foundry/config') {
+        const json = (code: number, o: unknown) => { res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', ...cors }); res.end(JSON.stringify(o)); };
+        if (req.method === 'PUT') {
+          try {
+            const b = JSON.parse(body) as { endpoint?: string; deployment?: string; key?: string };
+            if (!b.endpoint || !b.deployment || !b.key) { json(400, { error: 'エンドポイント・デプロイ名・API キーを入力してください' }); return; }
+            foundry = { endpoint: b.endpoint, deployment: b.deployment, key: b.key };
+          } catch { json(400, { error: '不正な入力です' }); return; }
+        } else if (req.method === 'DELETE') foundry = null;
+        json(200, foundry
+          ? { configured: true, endpoint: foundry.endpoint, host: new URL(foundry.endpoint).host, deployment: foundry.deployment, keyMask: `••••${foundry.key.slice(-4)}`, enabled: false }
+          : { configured: false, endpoint: '', host: '', deployment: '', keyMask: '', enabled: false });
+        return;
+      }
       const reply = () => {
         res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', ...cors });
         if (u.pathname === '/health') {

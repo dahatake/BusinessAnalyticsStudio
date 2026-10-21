@@ -3,7 +3,7 @@
 // 画面の探し方は CONTRACT.md §25（button「現状の説明」、complementary「現状の説明」＝data-testid="explain-panel"、設定の Foundry 欄・利用量の欄）。
 import type { Page, Locator } from '@playwright/test';
 import { test, expect, selectPersona, openScreen, settingsDialog } from '../support/fixtures';
-
+import { startRelayStub } from '../support/relay-stub';
 const explainButton = (page: Page): Locator => page.getByRole('button', { name: '現状の説明', exact: true }).first();
 const explainPanel = (page: Page): Locator => page.getByTestId('explain-panel');
 
@@ -70,10 +70,13 @@ test.describe('FR-274 現状の説明（サイドパネル）', () => {
 test.describe('FR-275 Microsoft Foundry の接続設定', () => {
   // FR-275 AC-703
   test('FR-275 AC-703 設定画面に Foundry の欄（エンドポイント・デプロイ名・API キー）があり、キーは伏せ字・保存後は「設定済み」だけで再表示せず、変更と削除ができ、実接続の既定は無効で、費用と送信情報の種類が表示される', async ({ page, start }) => {
-    await start();
-    await selectPersona(page, '事業部門');
-    const settings = await openScreen(page, 'settings');
-    const foundry = settings.getByTestId('foundry-settings');
+      // FR-275: 接続情報の保存先は中継側だけ。stub の中継（GET/PUT/DELETE /foundry/config）に向けて保存→設定済みを確かめる
+      const relay = await startRelayStub();
+      try {
+      await start({ relayUrl: relay.url });
+      await selectPersona(page, '事業部門');
+      const settings = await openScreen(page, 'settings');
+      const foundry = settings.getByTestId('foundry-settings');
     await expect(foundry).toBeVisible();
     await expect(foundry.getByLabel(/エンドポイント/)).toBeVisible();
     await expect(foundry.getByLabel(/デプロイ名/)).toBeVisible();
@@ -99,11 +102,23 @@ test.describe('FR-275 Microsoft Foundry の接続設定', () => {
     await expect(foundry.getByText('設定済み').first()).toBeVisible();
     await expect(settingsDialog(page)).not.toContainText(dummy);
     expect(await foundry.getByLabel(/API キー/).inputValue()).not.toContain(dummy);
+    // キーはマスク表示（末尾以外は伏せ字）で、保存したキーは中継へだけ送られている
+    await expect(foundry.getByTestId('foundry-key-mask')).toBeVisible();
+    await expect(foundry.getByTestId('foundry-key-mask')).not.toContainText(dummy);
+    expect(relay.received.some((r) => r.method === 'PUT' && r.path === '/foundry/config' && r.body.includes(dummy))).toBe(true);
 
-    // 変更と削除をいつでもできる
-    await expect(foundry.getByRole('button', { name: /変更|更新/ }).or(foundry.getByLabel(/API キー/)).first()).toBeVisible();
+    // 変更（新しいキーで保存し直す）と削除をいつでもできる
+    const changed = 'dummy-key-for-system-test-1111';
+    await foundry.getByLabel(/API キー/).fill(changed);
+    await foundry.getByRole('button', { name: /保存/ }).first().click();
+    await expect(foundry.getByTestId('foundry-key-mask')).toContainText('1111');
+    await expect(settingsDialog(page)).not.toContainText(changed);
     await foundry.getByRole('button', { name: /削除/ }).first().click();
     await expect(foundry.getByText('設定済み')).toHaveCount(0);
+    await expect(foundry.getByTestId('foundry-status')).toContainText('未設定');
+    } finally {
+      await relay.close();
+    }
   });
 });
 
