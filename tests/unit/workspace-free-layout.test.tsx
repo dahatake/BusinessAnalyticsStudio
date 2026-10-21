@@ -142,3 +142,47 @@ describe('FR-175 AC-353 設定画面', () => {
     expect((screen.getByRole('button', { name: /既定（上）に戻す/ }) as HTMLButtonElement).disabled).toBe(true);
   });
 });
+
+// FR-013 AC-591 AC-592: the floating host, not only the inner Panel, must
+// fill the workspace temporarily. Browser System Tests verify actual geometry.
+describe('FR-013 AC-591 AC-592 free maximize host and persisted restore', () => {
+  for (const key of ['a', 'b']) {
+    for (const restore of ['button', 'escape']) {
+      it(`FR-013 AC-591 AC-592 ${key} maximizes its host and restores via ${restore}`, () => {
+        const original = { x: 0.2, y: 0.25, w: 0.35, h: 0.3 };
+        act(() => {
+          st().setFloat(key, original);
+          st().setFloat(key === 'a' ? 'b' : 'a', { x: 0.1, y: 0.1, w: 0.7, h: 0.7 });
+        });
+        render(wrap(<Workspace screens={screens} />));
+        const host = document.querySelector(`[data-float="${key}"]`) as HTMLElement;
+        const initialStyle = [host.style.left, host.style.top, host.style.width, host.style.height];
+        const saved = () => JSON.parse(localStorage.getItem('edb.layout')!).state.floats;
+        const stored = saved();
+        const input = screen.getByLabelText('入力A');
+        fireEvent.change(input, { target: { value: 'keep mounted' } });
+        fireEvent.focus(section(key));
+        fireEvent.click(within(section(key)).getByRole('button', { name: '最大化' }));
+        expect([host.style.left, host.style.top, host.style.width, host.style.height]).toEqual(['0%', '0%', '100%', '100%']);
+        const other = document.querySelector(`[data-float="${key === 'a' ? 'b' : 'a'}"]`) as HTMLElement;
+        expect(Number(host.style.zIndex)).toBeGreaterThan(Number(other.style.zIndex));
+        expect(st().floats[persona()]![key]).toEqual(original);
+        expect(saved()).toEqual(stored);
+        if (restore === 'button') fireEvent.click(within(section(key)).getByRole('button', { name: '通常表示' }));
+        else fireEvent.keyDown(section(key), { key: 'Escape' });
+        expect([host.style.left, host.style.top, host.style.width, host.style.height]).toEqual(initialStyle);
+        expect(saved()).toEqual(stored);
+        // FR-013 AC-016: repeated keyboard toggles retain the original placement.
+        for (let n = 0; n < 3; n++) {
+          fireEvent.keyDown(section(key), { key: 'F', shiftKey: true });
+          expect(host.style.width).toBe('100%');
+          fireEvent.keyDown(section(key), { key: 'Escape' });
+          expect([host.style.left, host.style.top, host.style.width, host.style.height]).toEqual(initialStyle);
+        }
+        expect(saved()).toEqual(stored);
+        expect(screen.getByLabelText('入力A')).toBe(input);
+        expect((input as HTMLInputElement).value).toBe('keep mounted');
+      });
+    }
+  }
+});
