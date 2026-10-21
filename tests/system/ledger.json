@@ -270,7 +270,9 @@
     "AC-586": "sha256:d69c569d032e0362",
     "AC-587": "sha256:e77ad03e7a14c4c0",
     "AC-588": "sha256:40c70b6cd321b206",
-    "AC-589": "sha256:960a0e0e16da93a0"
+    "AC-589": "sha256:960a0e0e16da93a0",
+    "AC-591": "sha256:81d6e4fd0b7ce96d",
+    "AC-592": "sha256:a4fe9cee1ccae9a5"
   },
   "cases": [
     {
@@ -7916,6 +7918,107 @@
       "history": [
         {
           "at": "2026-10-16T21:20:31+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-342",
+      "requirement_ids": [
+        "FR-013"
+      ],
+      "ac_ids": [
+        "AC-591"
+      ],
+      "title": "自由配置の全25画面で最大化矩形を既定最大化と比較し全作業領域・最前面を確認",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-591",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-21T17:19:41+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-343",
+      "requirement_ids": [
+        "FR-013"
+      ],
+      "ac_ids": [
+        "AC-592"
+      ],
+      "title": "全25画面で見出し通常表示による自由配置矩形復元と同一ペルソナ再読込の保存非破壊",
+      "layer": "e2e",
+      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-21T17:19:47+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-344",
+      "requirement_ids": [
+        "FR-013"
+      ],
+      "ac_ids": [
+        "AC-592"
+      ],
+      "title": "全25画面でEscによる自由配置矩形復元と同一ペルソナ再読込の保存非破壊",
+      "layer": "e2e",
+      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-21T17:19:52+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-345",
+      "requirement_ids": [
+        "FR-013"
+      ],
+      "ac_ids": [
+        "AC-016",
+        "AC-592"
+      ],
+      "title": "異常系・回帰: 課題-解決策分析のShift+F/Esc反復で最大化矩形が保存配置を汚さない",
+      "layer": "e2e",
+      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat",
+      "canary": true,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-21T17:19:59+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
