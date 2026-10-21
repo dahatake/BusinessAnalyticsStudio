@@ -250,12 +250,17 @@ test.describe('FR-246 図だけの全画面表示', () => {
     await selectPersona(page, '事業部門');
     const { c, surface } = await openGraph(page, REP);
     await toElementLevel(c);
-    // キーボードだけで全画面（フォーカス → Enter）
+    // キーボードだけで全画面: 図にフォーカスして F キー、ボタンは Enter（FR-246）
+    const exit = page.getByRole('button', { name: '全画面を終了' });
+    await surface.focus();
+    await page.keyboard.press('f');
+    await expect(exit, 'F キーで全画面にできない').toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(exit).toBeHidden();
     const fsBtn = c.getByRole('button', { name: '全画面', exact: true });
     await fsBtn.focus();
     await page.keyboard.press('Enter');
-    const exit = page.getByRole('button', { name: '全画面を終了' });
-    await expect(exit, 'キーボードだけで全画面にできない').toBeVisible();
+    await expect(exit, 'ボタンをキーボードで押しても全画面にならない').toBeVisible();
     // 操作中の対象がフォーカスで示される（フォーカスが body に落ちない・枠が見える）
     const focusInfo = await page.evaluate(() => {
       const a = document.activeElement as HTMLElement | null;
@@ -282,10 +287,12 @@ test.describe('FR-246 図だけの全画面表示', () => {
     // 詳細カード
     await nodes(page.locator('body')).first().click();
     await expect(card(c), '全画面中に詳細カードが出ない').toBeVisible();
-    await page.keyboard.press('Escape'); // カードを閉じる（全画面は残ってよい）
-    await exit.click({ trial: true }).catch(() => undefined);
-    if (await exit.isVisible()) await exit.click();
-    await expect(exit).toBeHidden();
+    // Esc はカード優先: 1 回目はカードだけ閉じ全画面は続く、2 回目で全画面が終わる
+    await page.keyboard.press('Escape');
+    await expect(card(c), '1 回目の Esc でカードが閉じない').toBeHidden();
+    await expect(exit, '1 回目の Esc で全画面まで終わった').toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(exit, '2 回目の Esc で全画面が終わらない').toBeHidden();
   });
 });
 
@@ -314,6 +321,11 @@ test.describe('FR-247 ノード・エッジの詳細カード', () => {
     await expect(cd.getByRole('heading', { name: '種別' })).toBeVisible();
     await expect(cd.getByRole('heading', { name: '属性' })).toBeVisible();
     await expect(cd.getByRole('heading', { name: /関係/ })).toBeVisible();
+    // カードは選択した項目に重ならない（FR-247）
+    const cb = (await cd.boundingBox())!;
+    const nb = (await a.boundingBox())!;
+    const overlap = cb.x < nb.x + nb.width && nb.x < cb.x + cb.width && cb.y < nb.y + nb.height && nb.y < cb.y + cb.height;
+    expect(overlap, 'カードが選択したノードに重なっている').toBe(false);
     // 別のノード: 内容が替わる
     await b.click();
     await expect(cd).toHaveAttribute('data-entity-id', bId);
@@ -351,17 +363,46 @@ test.describe('FR-247 ノード・エッジの詳細カード', () => {
     await expect(cd).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(cd, 'Esc でカードが閉じない').toBeHidden();
-    // Enter で開く（エッジ・ノード。マウスなし）
+    // Enter で開閉（エッジ・ノード。マウスなし。Enter ではズームインしない）
+    const level = await c.getAttribute('data-zoom-level');
     await edge.focus();
     await page.keyboard.press('Enter');
     await expect(cd, 'エッジを Enter で開けない').toBeVisible();
-    await page.keyboard.press('Escape');
-    await expect(cd).toBeHidden();
+    await page.keyboard.press('Enter');
+    await expect(cd, 'エッジを Enter で閉じられない').toBeHidden();
     const node = nodes(c).first();
     await node.focus();
     await page.keyboard.press('Enter');
     await expect(cd, 'ノードを Enter で開けない').toBeVisible();
     await expect(cd).toHaveAttribute('data-entity-id', (await node.getAttribute('data-entity-id'))!);
+    await page.keyboard.press('Enter');
+    await expect(cd, 'ノードを Enter で閉じられない').toBeHidden();
+    expect(await c.getAttribute('data-zoom-level'), 'Enter でズームインした').toBe(level);
+    // 異常系: ダブルクリックはカードを開閉せずズームインする（Enter・「+」と区別）
+    await c.getByRole('button', { name: '全体表示に戻す' }).click();
+    const cl = c.locator('[data-zoom-cluster]').first();
+    await expect(cl).toBeVisible();
+    await cl.dblclick();
+    await expect(c, 'ダブルクリックでズームインしない').not.toHaveAttribute('data-zoom-level', 'overview');
+    await expect(cd, 'ダブルクリックでカードが開いた').toBeHidden();
+    // 主要な関係は PARAM-105（5 件）まで。超える分は「ほか N 件」。要素の階層でもカードに属性が出る
+    await toElementLevel(c);
+    const all = nodes(c);
+    for (let i = 0; i < Math.min(await all.count(), 12); i++) {
+      await all.nth(i).click();
+      await expect(cd).toBeVisible();
+      await expect(cd.getByRole('heading', { name: '属性' }), '要素の階層でカードに属性がない').toBeVisible();
+      const items = cd.getByTestId('card-relation');
+      const shown = await items.count();
+      expect(shown, '主要な関係が 5 件を超えた').toBeLessThanOrEqual(5);
+      const m = ((await cd.textContent()) ?? '').match(/ほか\s*(\d+)\s*件/);
+      if (m) {
+        expect(shown, '「ほか N 件」があるのに主要な関係が 5 件でない').toBe(5);
+        expect(Number(m[1])).toBeGreaterThan(0);
+      }
+      await all.nth(i).click(); // 閉じる
+      await expect(cd).toBeHidden();
+    }
   });
 });
 
@@ -412,6 +453,25 @@ test.describe('FR-248 表の行から図のノードへの移動とハイライ�
     await expect(node).toHaveAttribute('data-highlight', /selected/);
   });
 
+  // FR-248 AC-600（塊に集約されて見えない対象）
+  test('FR-248 AC-600 対象が全体の階層で塊に集約されて見えないときは、見える階層へ切り替えてから移動・ハイライトする', async ({ page, start }) => {
+    test.setTimeout(120_000);
+    await start();
+    await selectPersona(page, '事業部門');
+    const { c, surface } = await openGraph(page, REP);
+    await c.getByRole('button', { name: '全体表示に戻す' }).click();
+    await expect(c).toHaveAttribute('data-zoom-level', 'overview');
+    const rows = await openTable(c);
+    const id = (await rows.first().getAttribute('data-entity-id'))!;
+    const node = c.locator(`[data-testid="graph-node"][data-entity-id="${id}"]`).first();
+    await expect(node, '前提: 全体の階層ではノードが見えない').toBeHidden();
+    await rows.first().click();
+    await expect(c, '階層が切り替わらない').not.toHaveAttribute('data-zoom-level', 'overview');
+    await expect(node, '対象のノードが見えない').toBeVisible();
+    await expect.poll(async () => inside(node, surface), { timeout: 3_000 }).toBe(true);
+    await expect(node).toHaveAttribute('data-highlight', /selected/);
+    await expect(node).toHaveAttribute('data-row-highlight', 'true');
+  });
   // FR-248 AC-601
   test('FR-248 AC-601 Enter で表の行を選んでも同じで、動きの軽減では即時に移動し、ビジネス関係グラフの表ではハイライトの挙動を足さない', async ({ page, start }) => {
     test.setTimeout(150_000);
