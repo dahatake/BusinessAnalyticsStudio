@@ -728,9 +728,9 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 | FR-181 | 顧客の了承の確認の入力・記録・表示 | 承認済み | MUST | AC-373〜AC-375 | [app-core.md](requirements/app-core.md) |
 | FR-182 | 音声合成・手書き認識の実接続の切替（Azure AI Speech・Azure AI Vision） | 承認済み | SHOULD | AC-376〜AC-380 | [app-core.md](requirements/app-core.md) |
 | FR-274 | 「現状の説明」ボタンとサイドパネル（AI による課題・解決策・KPI/OKR への寄与の説明） | 承認済み | SHOULD | AC-699〜AC-702 | [app-core.md](requirements/app-core.md) |
-| FR-275 | Microsoft Foundry の接続設定（エンドポイント・デプロイ名・API キー）と外部送信の条件 | 承認済み | MUST | AC-703〜AC-707 | [app-core.md](requirements/app-core.md) |
-| FR-276 | 「現状の説明」の課金の安全策（回数・大きさ・間隔・予算の警告と停止） | 承認済み | MUST | AC-708〜AC-712 | [app-core.md](requirements/app-core.md) |
-| FR-277 | AI が使えないときの「使えない」表示と決定的な代替説明 | 承認済み | MUST | AC-713〜AC-714 | [app-core.md](requirements/app-core.md) |
+| FR-275 | Microsoft Foundry の接続設定（エンドポイント・デプロイ名・API キー）と外部送信の条件 | 承認済み | SHOULD | AC-703〜AC-707 | [app-core.md](requirements/app-core.md) |
+| FR-276 | 「現状の説明」の課金の安全策（回数・大きさ・間隔・予算の警告と停止） | 承認済み | SHOULD | AC-708〜AC-712 | [app-core.md](requirements/app-core.md) |
+| FR-277 | AI が使えないときの「使えない」表示と決定的な代替説明 | 承認済み | SHOULD | AC-713〜AC-714 | [app-core.md](requirements/app-core.md) |
 | NFR-PERF-001 | 顧客パックの生成から起動までの時間 | 承認済み | MUST | AC-160〜AC-161 | [pipeline.md](requirements/pipeline.md) |
 | NFR-PERF-002 | 4K 表示での描画性能 | 承認済み | MUST | AC-162 | [quality.md](requirements/quality.md) |
 | NFR-PERF-003 | 初回表示の時間 | 承認済み | SHOULD | AC-163 | [quality.md](requirements/quality.md) |
