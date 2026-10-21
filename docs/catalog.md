@@ -281,7 +281,7 @@
 | FR-227 | 選択した項目に関連する要素の全コンポーネントでのハイライトと、関連しないものの減光 | 承認済み | src/selection/relationHighlight.ts (全 data-entity-id へ data-highlight を反映), src/selection/relationHighlightStyle.ts (減光は文字色＋破線), src/selection/SelectionController.tsx, src/selection/hooks.ts (同じ項目の再クリックで解除), src/selection/keys.ts (installBackgroundClear: 空白のクリックで解除), src/components/highlight.ts | tests/unit/relation-highlight.test.ts (AC-526, AC-527), tests/system/e2e/ux-refresh.spec.ts (E2E-326) | 選択状態とエンティティ関係グラフ |
 | FR-228 | 業務分析のステップの見た目と、クリックでの関連コンポーネントの再配置 | 承認済み | src/stepper/flow.ts (stepRelevance・planStepFlow。A-65 の対応と大きさの比), src/stepper/Stepper.tsx (番号・流れ・44px 以上・元に戻す), src/store/stepFlow.ts (要求と元に戻す), src/workspace/Workspace.tsx (flowRun。測って並べる・手で変えた大きさの記録), src/workspace/PaneContext.tsx (step), src/components/Panel.tsx (data-step-*) | tests/unit/step-flow.test.ts (AC-529, AC-530), tests/system/e2e/ux-refresh.spec.ts (E2E-325, E2E-326) | ワークスペース |
 | FR-274 | 「現状の説明」ボタンとサイドパネル（AI による課題・解決策・KPI/OKR への寄与の説明） | 承認済み | 未実装 | 未実装 | - |
-| FR-275 | Microsoft Foundry の接続設定（エンドポイント・デプロイ名・API キー）と外部送信の条件 | 承認済み | 未実装 | 未実装 | - |
+| FR-275 | Microsoft Foundry の接続設定（エンドポイント・デプロイ名・API キー）と外部送信の条件 | 承認済み | scripts/relay/foundry-vault.ts, scripts/relay/foundry.ts, scripts/relay/relay.ts, src/ai/foundryClient.ts, src/ai/FoundrySettings.tsx, src/ai/AiSettings.tsx | tests/unit/foundry.test.ts (AC-704, AC-705, AC-706, AC-707), tests/system/e2e/explain-current.spec.ts (AC-703) | Foundry 接続部品 |
 | FR-276 | 「現状の説明」の課金の安全策（回数・大きさ・間隔・予算の警告と停止） | 承認済み | 未実装 | 未実装 | - |
 | FR-277 | AI が使えないときの「使えない」表示と決定的な代替説明 | 承認済み | 未実装 | 未実装 | - |
 ## API・イベント
@@ -294,6 +294,7 @@
 | GET /health（中継プロセス） | scripts/relay/relay.ts | FR-011 |
 | GET・PUT・DELETE /speech/config（中継プロセス。値は返さず設定済みと伏せ字だけ） | scripts/relay/relay.ts | FR-168, NFR-SEC-005 |
 | POST /speech/synthesize（中継プロセス。保存済みの接続先へだけ中継） | scripts/relay/relay.ts | FR-168, NFR-SEC-005 |
+| GET・PUT・DELETE /foundry/config・POST /foundry/connection・POST /foundry/ask（中継プロセス。値は返さず設定済みと伏せ字だけ。了承・有効・設定がそろわないと呼び出し 0 回） | scripts/relay/relay.ts | FR-275, NFR-SEC-005 |
 
 ## テーブル
 
@@ -353,6 +354,7 @@
 | 顧客の了承の記録 | src/ai/consent.ts, src/ai/useConsent.ts, src/ai/ConsentSettings.tsx, scripts/pipeline/consent.ts | 案件（企業・Project）ごとの了承の自己申告の記録（個人名・連絡先は保存しない）。実接続・パイプラインの実調査の条件。consent.json の書き出し（buildConsentExport）と置き場所の案内 | FR-132、FR-181、FR-182、FR-203、FR-219 |
 | 種別「人」の確認 | src/ai/personConfirm.ts, src/ai/PersonConfirmDialog.tsx | 種別「人」を含む顧客パックの外部送信・エクスポート前の確認（gatePersonConfirm: 件数・範囲・確認日の表示、了承なしは続行不可、同じ内容・了承の記録の間は続行を引き継ぐ）。確認の画面は共通の Dialog を使う | FR-219 |
 | 音声・手書き認識の実接続部品 | scripts/relay/azure-services.ts, src/ai/azureClient.ts, src/ai/useAzure.ts, src/ai/AzureSettings.tsx | Azure AI Speech・Azure AI Vision への接続（呼ぶ主体は中継プロセス。キーは中継側の .env のみ）。HTTP は `HttpPost` で差し替え可。キー未設定・無効・了承なしはモック | FR-182 |
+| Foundry 接続部品 | scripts/relay/foundry-vault.ts, scripts/relay/foundry.ts, src/ai/foundryClient.ts, src/ai/FoundrySettings.tsx | Microsoft Foundry（OpenAI 互換 Responses API）の接続情報を AES-256-GCM で暗号化して PC 内に保管し、中継プロセスだけが設定したエンドポイントへ送る（リダイレクトは追わない）。画面は伏せ字と「設定済み」だけ。了承・有効・設定がそろわないと 0 回。差し替え口は foundryFetch | FR-275 |
 | 音声キーの保管庫 | scripts/relay/speech-vault.ts, src/speech/relayKey.ts | 音声合成のキーを AES-256-GCM で暗号化して PC 内（リポジトリの外）に保管。マスター鍵は OS の鍵保護（DPAPI / Keychain / secret-tool。KeyProtector）でラップし、Windows は icacls で現在ユーザーのみに絞る。ブラウザーには平文を置かず、取得は設定済みと伏せ字だけ | FR-168, NFR-SEC-005 |
 | 顧客パックのスキーマと検証 | src/schema/common.ts, src/schema/files.ts, src/schema/world.ts, src/schema/graph.ts, src/schema/validate.ts, src/schema/anonymize.ts, scripts/lib/pack-fs.ts | zod のスキーマ、ID の一意・参照・出典の検証、internal の匿名化（anonymizeInternal、A-08）と件数（countInternal。機密確認の画面が使う）。画面の部品を参照しない。schema の JSON は npm run gen:schema で生成 | FR-002, FR-003, FR-005, FR-006, FR-007, FR-018, FR-019, FR-038, FR-054, FR-100, FR-102, FR-114, FR-115, FR-116, FR-117, FR-118, FR-119, FR-125, FR-126, FR-127, NFR-MAINT-001, NFR-SEC-003, FR-043, FR-039, FR-040, FR-030, FR-213, FR-214, FR-235, FR-241 |
 | 意味的ズーム | src/semanticzoom/model.ts, src/semanticzoom/ZoomBreadcrumb.tsx, src/semanticzoom/index.ts, src/semanticzoom/ZoomKit.tsx | 全体→要素（D 段）→詳細の D+2 階層のモデル（zoomDepthCount・kindOfDepth・stepDepth・depthOfScale。倍率の判定は three/lod.ts のヒステリシスを再利用）とパンくず（ZoomBreadcrumb）、data-zoom-level 等の属性（zoomAttrs）。画面の部品は参照しない。画面側の共通部品 ZoomKit（ZoomBar・ZoomClusters・ZoomDetail・useZoomRootAttrs）が、拡大・縮小・全体表示に戻す・一つ上の階層へのボタンと塊・詳細の枠を同じ属性で出す | FR-169, FR-236, FR-237, FR-238, FR-239, FR-240, NFR-A11Y-010 |
