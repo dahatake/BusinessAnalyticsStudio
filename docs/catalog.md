@@ -288,7 +288,6 @@
 | FR-246 | 図だけの全画面表示 | 承認済み | src/components/GraphViewport.tsx (全画面・F キー・Esc の優先順・フォーカス), src/components/graphViewStore.ts | tests/unit/graph-interaction.test.tsx (AC-596, AC-597), tests/system/e2e/graph-interaction.spec.ts (E2E-349, E2E-350) | Graph の描画枠, Graph の描画面 |
 | FR-247 | ノード・エッジの詳細カード | 承認済み | src/components/GraphSurface.tsx (詳細カード・エッジのクリックと Enter・ダブルクリックはズームイン), src/store/selection.ts (registerLocalIds: 図だけの項目を選べるようにする) | tests/unit/graph-interaction.test.tsx (AC-598, AC-599), tests/unit/graph-view.test.tsx (AC-581), tests/system/e2e/graph-interaction.spec.ts (E2E-351, E2E-352) | Graph の描画面, 選択状態とエンティティ関係グラフ |
 | FR-248 | 表の行から図のノードへの移動とハイライト | 承認済み | src/components/GraphAlt.tsx (表で見る・行から移動の依頼), src/components/GraphViewport.tsx (移動・見える階層への切替), src/components/graphViewStore.ts (ハイライト 2 秒), src/components/GraphSurface.tsx (data-row-highlight・太い破線の枠) | tests/unit/graph-interaction.test.tsx (AC-600, AC-601), tests/system/e2e/graph-interaction.spec.ts (E2E-353, E2E-354) | Graph の代替表示, Graph の描画枠, Graph の描画面 |
-| FR-228 | 業務分析のステップの見た目と、クリックでの関連コンポーネントの再配置 | 承認済み | src/stepper/flow.ts (stepRelevance・planStepFlow。A-65 の対応と大きさの比), src/stepper/Stepper.tsx (番号・流れ・44px 以上。「配置を元に戻す」は置かない), src/store/stepFlow.ts (再配置の要求), src/workspace/Workspace.tsx (flowRun。測って並べる・手で変えた大きさの記録), src/workspace/PaneContext.tsx (step), src/components/Panel.tsx (data-step-*) | tests/unit/step-flow.test.ts (AC-529, AC-530), tests/system/e2e/ux-refresh.spec.ts (E2E-325, E2E-326) | ワークスペース |
 ## API・イベント
 
 | 名前 | 定義ファイル | 関連する要求 ID |
