@@ -292,7 +292,9 @@
     "AC-702": "sha256:d47e7a5b9726eed6",
     "AC-703": "sha256:80508cb0b76e99da",
     "AC-712": "sha256:0e69695d5457cad9",
-    "AC-713": "sha256:706deed685a6f99e"
+    "AC-713": "sha256:706deed685a6f99e",
+    "AC-733": "sha256:416fb88a5cfaff0a",
+    "AC-739": "sha256:a7892bd655cdf85a"
   },
   "cases": [
     {
@@ -8746,6 +8748,56 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-372",
+      "requirement_ids": [
+        "FR-284"
+      ],
+      "ac_ids": [
+        "AC-733"
+      ],
+      "title": "生成AI活用シナリオ分析の画面: メニュー表示・[分析実行] を押すまで実行されない（異常系含む）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-733",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "8978acd",
+      "last_run_at": "2026-10-22T06:07:59+09:00",
+      "evidence": "work/runs/202610212224/logs/system-test/E2E-372-202610220446.log",
+      "history": [
+        {
+          "at": "2026-10-21T23:46:59+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "FR-284 の System Test 作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-373",
+      "requirement_ids": [
+        "FR-285"
+      ],
+      "ac_ids": [
+        "AC-739"
+      ],
+      "title": "Foundry 実接続の設定表示と、キー未設定・接続不可・タイムアウト・非2xx 時の代替表示（差し替え部品）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-739",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "8978acd",
+      "last_run_at": "2026-10-22T06:07:59+09:00",
+      "evidence": "work/runs/202610212224/logs/system-test/E2E-373-202610220446.log",
+      "history": [
+        {
+          "at": "2026-10-21T23:47:07+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "FR-285 の System Test 作成"
         }
       ]
     }

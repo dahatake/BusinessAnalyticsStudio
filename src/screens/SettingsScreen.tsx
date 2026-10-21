@@ -4,6 +4,7 @@ import { Badge, Button, Dropdown, Field, Input, Option, Switch, Text, makeStyles
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { Panel } from '../components/Panel';
 import { AiSettings } from '../ai/AiSettings';
+import { GenAiSettings } from '../genai/GenAiSettings';
 import { SpeechSettings } from '../speech/SpeechSettings';
 import { WorkTargetSettings } from '../projects/WorkTargetSettings';
 import { DEFAULT_EXPAND_POSITION, EXPAND_LABEL, EXPAND_POSITIONS, THEME_MODES, useSettings, type ExpandPosition, type Handedness, type ThemeMode } from '../store/settings';
@@ -202,6 +203,7 @@ export function SettingsScreen() {
         </section>
       ) : null}
       <AiSettings />
+      <GenAiSettings />
     </Panel>
   );
 }

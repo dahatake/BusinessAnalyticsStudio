@@ -303,6 +303,8 @@
 | FR-283 | 接続設定がないとき・接続に失敗したときの分析実行 | 承認済み | 未実装 | 未実装 | なし |
 | NFR-SEC-012 | Foundry の API キーをリポジトリ・ログ・テストデータに出さない | 承認済み | 未実装 | 未実装 | なし |
 | NFR-COST-001 | 分析実行の利用量と月の予算の上限 | 承認待ち | 未実装 | 未実装 | なし |
+| FR-284 | 画面「生成AIの効果的な活用シナリオの分析」と [分析実行] | 承認済み | src/genai/scenario.ts, src/screens/GenAiScenarioScreen.tsx | tests/system/CONTRACT.md, tests/system/e2e/genai-scenario.spec.ts, tests/system/support/relay-stub.ts, tests/unit/genai-scenario.test.ts, tests/unit/genai-screen.test.tsx, tests/unit/view-switch.test.tsx | - |
+| FR-285 | 生成AIの活用分析の Foundry 実接続の切替 | 承認済み | .env.example, src/genai/GenAiSettings.tsx, src/genai/foundryClient.ts, src/genai/scenario.ts, src/genai/useGenAi.ts, src/screens/GenAiScenarioScreen.tsx | tests/system/CONTRACT.md, tests/system/e2e/genai-scenario.spec.ts, tests/system/support/relay-stub.ts, tests/unit/genai-scenario.test.ts, tests/unit/genai-screen.test.tsx | - |
 ## API・イベント
 
 | 名前 | 定義ファイル | 関連する要求 ID |
@@ -310,7 +312,8 @@
 | POST /ask（中継プロセス） | scripts/relay/relay.ts | FR-010, FR-011, FR-132 |
 | POST /connection（中継プロセス） | scripts/relay/relay.ts | FR-132, FR-181 |
 | POST /azure/connection・/azure/speech・/azure/vision（中継プロセス） | scripts/relay/relay.ts | FR-182 |
-| GET /health（中継プロセス） | scripts/relay/relay.ts | FR-011 |
+| GET /health（中継プロセス。foundry.keyConfigured は真偽だけでキーの値は返さない） | scripts/relay/relay.ts | FR-011, FR-285 |
+| POST /foundry/analyze（中継プロセス。解決策の文章・エンドポイント・デプロイ名を受け、Foundry の Responses API を呼ぶ。失敗は原因つきの 5xx） | scripts/relay/relay.ts, scripts/relay/foundry.ts | FR-285 |
 | GET・PUT・DELETE /speech/config（中継プロセス。値は返さず設定済みと伏せ字だけ） | scripts/relay/relay.ts | FR-168, NFR-SEC-005 |
 | POST /speech/synthesize（中継プロセス。保存済みの接続先へだけ中継） | scripts/relay/relay.ts | FR-168, NFR-SEC-005 |
 | GET・PUT・DELETE /foundry/config・POST /foundry/connection・POST /foundry/ask（中継プロセス。値は返さず設定済みと伏せ字だけ。了承・有効・設定がそろわないと呼び出し 0 回） | scripts/relay/relay.ts | FR-275, NFR-SEC-005 |
@@ -324,6 +327,7 @@
 
 | 企業・Project・ステッパーの位置・分析（localStorage `eabk.projects.v1`） | src/store/persist.ts, src/store/projects.ts, src/store/stepper.ts, src/store/analyses.ts, src/store/usecases.ts | ブラウザー（この端末だけ。サーバー・ほかの端末へは送らない。識別子は自システムの採番 company-N / project-N）。作業先ごとの KPI・OKR（okr）も同じキーに保存。Project ごとのユースケースとアニメーション（usecases）、データカタログの明示の紐づけ（dataLinks。FR-160）、取り込んだ企業データカタログと出典の URL（dataCatalogs。FR-161）、plan の tasks への追加分（dataTasks。FR-162）も同じキーに保存 | FR-137, FR-138, FR-139, NFR-SEC-004, FR-153, FR-158, FR-155, FR-160, FR-161, FR-162 |
 | お手本の KPI・OKR（customer.json の okr） | src/schema/files.ts, schema/customer.json, examples/mono/public/data/customer.json, examples/koto/public/data/customer.json | 顧客パック（デモのお手本。読み込み専用で、定義すると端末内の保存が優先される） | FR-153, FR-154 |
+| 生成AIの活用分析の接続設定（localStorage `edb.genai`。実接続を有効にした顧客パック・エンドポイント・デプロイ名。キーは保存しない） | src/genai/useGenAi.ts | ブラウザー（この端末だけ。キーは中継プロセスの環境変数 FOUNDRY_API_KEY だけ） | FR-285 |
 | 分析画面のレイアウト（localStorage `eabk.analysis-layout.v1`。画面キーごとの位置・幅の差分） | src/store/analysisLayout.ts | ブラウザー（この端末だけ。送信しない） | NFR-UX-006 |
 | 議論テーマ（localStorage `edb.discussion`） | src/store/discussion.ts, src/discussion/model.ts | ブラウザー（保存・復元は議論メモの Markdown が正本の写し） | FR-048, FR-049, FR-050, FR-051, FR-056 |
 | ホワイトボードのボード（IndexedDB `edb-ink` の `state` / `boards`） | src/ink/persist.ts, src/ink/model.ts | ブラウザー（ボード・ストローク・項目の自動保存） | FR-095, FR-097 |
@@ -354,7 +358,7 @@
 | 外部連携カタログの取り込み | src/integrations/catalog.ts | docs/integration-catalog.md の表（連携名・状態）をビルドで取り込み、Project の連携の選択肢にする（値を重複して持たない） | FR-201 |
 | 連携の外部送信の了承表示 | src/integrations/sendGate.ts | 連携を選択した Project で、了承の記録が無いときの了承を求める表示と、未確認の連携の識別（送信の可否は既存の了承ゲートが決める） | FR-203 |
 | 資格情報形式の検出 | src/integrations/credentialShape.ts | 資格情報の典型的な形式の検出（scripts/integration_catalog.py の secret_kinds と同じ規則。TypeScript 側） | FR-202, NFR-SEC-008 |
-| 画面の登録 | src/screens/registry.ts, src/screens/types.ts | 画面を足すときは registry に 1 行足す（nav-key / component-key）。登録した画面でも左メニューに項目を置かないもの（FR-220 の「3D ビューと 2D 図面」「2D 図面」）は、左メニューに出さない宣言をする（ドック・コマンドからは開ける） | FR-001, FR-007, FR-048, FR-058, FR-065, FR-066, FR-086, FR-043, FR-037, FR-039, FR-040, FR-041, FR-042, FR-020, FR-021, FR-136, FR-155, FR-158, FR-159, FR-217, FR-218, FR-220, FR-223, FR-236, FR-238, FR-239, NFR-A11Y-010 |
+| 画面の登録 | src/screens/registry.ts, src/screens/types.ts | 画面を足すときは registry に 1 行足す（nav-key / component-key）。登録した画面でも左メニューに項目を置かないもの（FR-220 の「3D ビューと 2D 図面」「2D 図面」）は、左メニューに出さない宣言をする（ドック・コマンドからは開ける） | FR-001、FR-007、FR-020、FR-021、FR-037、FR-039、FR-040、FR-041、FR-042、FR-043、FR-048、FR-058、FR-065、FR-066、FR-086、FR-136、FR-155、FR-158、FR-159、FR-217、FR-218、FR-220、FR-223、FR-236、FR-238、FR-239、NFR-A11Y-010 |
 | 項目の 3D の面 | src/three/Items3DSurface.tsx, src/three/Items3DScene.tsx, src/view/items3d.ts | 項目（ID・名称・位置 0〜1・大きさ・グループ）とつながりを受け取り、既存の 3D 基盤（DiagramCanvas）の上に 3D 空間として描く共通の面（遅延読み込み。`data-zoom-surface="3d"`、描いた項目の ID を t.view.state の items3d に知らせる）。一覧表・2×2 マトリクス・ランキング表・課題-解決策分析・議論ツリー・KPI/OKR が使い、「表で見る」の表は各画面が ViewAsTableButton で残す | FR-217, FR-239 |
 | ビューの切替 | src/view/viewModel.ts, src/view/useView.ts, src/view/ViewMenu.tsx, src/view/render3d.ts, src/view/ModeRadio.tsx | 全画面・全コンポーネント共通の 2D/3D/Graph（FR-238。Graph は registry の `hasGraph` を宣言した 6 画面だけ有効、ほかは理由つきで無効）と、現実世界／デジタル世界／両方の切替。画面は registry の `view`（has2D・has3D・hasGraph・defaultMode・world・fixed）で宣言し、画面の中では `useComponentView('<キー>')` で表示モード・世界の表示を読み（既存の切替もこの状態を変える）、表示中の項目は `usePublishViewItems` で知らせる（t.view.state）。見出しの「ビュー」ボタン（ComponentViewButton）・「…」メニューの入れ子・画面のビュー（applyScreenView。表現を固定したものは対象外）。状態は store/layout.ts の views に保存し、既定のレイアウトに戻すで既定に戻る | FR-217, FR-218, FR-220, FR-236, FR-238, FR-239, FR-240。競合: 表示形式の状態（ViewMode）は FR-220（run 202610192037。2D/3D の切替を画面見出しの「ビュー」に置く）と FR-238（run 202610192300。2D/3D/Graph への拡張）が同じ状態を扱う。どちらも残し、統合は決定記録で扱う |
 | Twin ビューのモデル | src/twin/model.ts, src/screens/TwinViewScreen.tsx | 現実世界（Devices・People・Spaces）とデジタル世界の三つの層（Operations・Experience・Insights。層なしの枠つき）と、Data／Control の流れ（同じ向き・両端をまとめて件数）を顧客パックから作る純粋なモデル（buildTwinModel）。世界の表示（FR-218）が「両方」のときだけ流れを持つ。Control は図に示すだけで送信しない（C-01）。ビュー・Graph の表現も同じ結果を使う | FR-239 |
@@ -372,6 +376,7 @@
 | アクセシビリティの共通部品 | src/components/ViewTable.tsx, src/components/ChoiceRadio.tsx, src/components/roving.ts, src/theme/a11y.css, src/theme/tabsterDummies.ts | `ViewAsTableButton`・`ViewTable`（「表で見る」。3D・地図・ナレッジグラフ・マトリクスなど位置や大きさで見せる表現に足す。行は `data-entity-id`・`aria-selected` で選択の共通の状態につながる）。`Radio`・`RadioGroup`（Fluent の同名の部品の代わりに使う。すべての選択肢に Tab で届き、矢印キーで選択を移す。直接 Fluent のものを使うと単体テストが落ちる）。`rovingTarget`（矢印キー・Home・End の移動先。ナビゲーションの roving tabindex と共通）・`isSelectedHighlight`。a11y.css は、枠のない操作要素に共通のフォーカスの枠を出す（部品が自前の `:focus-visible` を持てばそちらが優先）。tabsterDummies は Fluent の見えない Tab の受け口を Tab の停止位置から外す。AppShell のナビゲーションは Tab の停止位置が 1 つで、Tab でその項目のコンポーネントへ入る | NFR-A11Y-001, NFR-A11Y-003, NFR-UX-018 |
 | AI 呼び出し口 | src/ai/client.ts, src/ai/useAi.ts, src/ai/AiStatus.tsx, src/ai/AiSettings.tsx, src/ai/ChatScreen.tsx | askAi（5 種類の LLM 処理の唯一の入口。既定はモック、実接続は確認後のみ localhost の中継へ）、常時表示の AI 状態、設定の実接続切替、チャットの土台（FR-017 が拡張） | FR-010、FR-011、FR-017、FR-041、FR-042、FR-050、FR-099、FR-132、FR-181、FR-219、NFR-ENV-002、NFR-SEC-002 |
 | Copilot SDK 中継プロセス | scripts/relay/relay.ts, scripts/relay/copilot-adapter.ts, scripts/relay/start.ts | 127.0.0.1 だけで待ち受ける Node.js の中継。`npm run relay`。了承の記録のない案件の実接続の有効化は拒否する | FR-010、FR-011、FR-132、FR-168、FR-181、NFR-SEC-005 |
+| 生成AIの活用分析 | src/genai/scenario.ts, src/genai/foundryClient.ts, src/genai/useGenAi.ts, src/genai/GenAiSettings.tsx, scripts/relay/foundry.ts | 解決策への生成AIの適合性の判断（7 つの基準・結論 3 区分・代替案。ルールベース＝モックと失敗時の代替）、Foundry 実接続（中継プロセス経由。キーは中継の環境変数だけ）の呼び出しと原因つきの失敗、設定の切替 | なし |
 | 顧客の了承の記録 | src/ai/consent.ts, src/ai/useConsent.ts, src/ai/ConsentSettings.tsx, scripts/pipeline/consent.ts | 案件（企業・Project）ごとの了承の自己申告の記録（個人名・連絡先は保存しない）。実接続・パイプラインの実調査の条件。consent.json の書き出し（buildConsentExport）と置き場所の案内 | FR-132、FR-181、FR-182、FR-203、FR-219 |
 | 種別「人」の確認 | src/ai/personConfirm.ts, src/ai/PersonConfirmDialog.tsx | 種別「人」を含む顧客パックの外部送信・エクスポート前の確認（gatePersonConfirm: 件数・範囲・確認日の表示、了承なしは続行不可、同じ内容・了承の記録の間は続行を引き継ぐ）。確認の画面は共通の Dialog を使う | FR-219 |
 | 音声・手書き認識の実接続部品 | scripts/relay/azure-services.ts, src/ai/azureClient.ts, src/ai/useAzure.ts, src/ai/AzureSettings.tsx | Azure AI Speech・Azure AI Vision への接続（呼ぶ主体は中継プロセス。キーは中継側の .env のみ）。HTTP は `HttpPost` で差し替え可。キー未設定・無効・了承なしはモック | FR-182 |
