@@ -200,7 +200,7 @@
     "AC-390": "sha256:8b8790f5c3b06ebe",
     "AC-392": "sha256:6ff7679b71fb268f",
     "AC-393": "sha256:611765fba1082411",
-    "AC-395": "sha256:cb67b1a2ef8558d2",
+    "AC-395": "sha256:a96a37b2530be908",
     "AC-396": "sha256:4513ca85bc231038",
     "AC-399": "sha256:c2b15973128f347e",
     "AC-403": "sha256:b5b108547f94788e",
@@ -270,7 +270,13 @@
     "AC-586": "sha256:d69c569d032e0362",
     "AC-587": "sha256:e77ad03e7a14c4c0",
     "AC-588": "sha256:40c70b6cd321b206",
-    "AC-589": "sha256:960a0e0e16da93a0"
+    "AC-589": "sha256:960a0e0e16da93a0",
+    "AC-675": "sha256:956f62d881b6cbac",
+    "AC-678": "sha256:faa3bcdeb2d5c19b",
+    "AC-682": "sha256:08ab3ca1b73c4615",
+    "AC-685": "sha256:c9df7610f9e4b193",
+    "AC-687": "sha256:ef4b678cca783521",
+    "AC-690": "sha256:ae060af5d4a4546c"
   },
   "cases": [
     {
@@ -7916,6 +7922,206 @@
       "history": [
         {
           "at": "2026-10-16T21:20:31+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-359",
+      "requirement_ids": [
+        "FR-266"
+      ],
+      "ac_ids": [
+        "AC-675"
+      ],
+      "title": "メイン画面の「はじめての方へ」が常時表示され、できること・用語・4 手順・各文 60 字以内を満たす",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-675",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-21T22:19:42+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-360",
+      "requirement_ids": [
+        "FR-266"
+      ],
+      "ac_ids": [
+        "AC-675"
+      ],
+      "title": "異常系: 企業を登録しても「はじめての方へ」が消えない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-675",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-21T22:20:06+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-361",
+      "requirement_ids": [
+        "FR-267"
+      ],
+      "ac_ids": [
+        "AC-678"
+      ],
+      "title": "初回ウェルカムが 1 回出て、次へ・戻る・スキップで操作でき、次回から表示しないで再表示されない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-678",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-21T22:20:43+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-362",
+      "requirement_ids": [
+        "FR-267"
+      ],
+      "ac_ids": [
+        "AC-678"
+      ],
+      "title": "異常系: 選ばずにスキップすると再読込で再表示され、welcome=1 なしでは自動表示されない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-678",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-21T22:21:02+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-363",
+      "requirement_ids": [
+        "FR-268"
+      ],
+      "ac_ids": [
+        "AC-682"
+      ],
+      "title": "顧客パックの説明カードに意味・デモ・作り方 3 通り・確認コマンド・起動手順が表示される",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-682",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-21T22:21:19+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-364",
+      "requirement_ids": [
+        "FR-269"
+      ],
+      "ac_ids": [
+        "AC-685"
+      ],
+      "title": "企業・Project の入力ダイアログに例（ミズホ精機株式会社・2026 年度 DX 構想）と入力後に起きることが出る",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-685",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-21T22:21:33+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-365",
+      "requirement_ids": [
+        "FR-270"
+      ],
+      "ac_ids": [
+        "AC-687"
+      ],
+      "title": "作業先の選択の各候補に 60 字以内の一行説明が添えられる",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-687",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-21T22:21:46+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-366",
+      "requirement_ids": [
+        "FR-272"
+      ],
+      "ac_ids": [
+        "AC-690"
+      ],
+      "title": "分析画面の「使い方」ボタンが 1 つあり、開閉しても画面の状態が保たれる",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-690",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-21T22:21:57+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
