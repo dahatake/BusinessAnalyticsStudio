@@ -470,7 +470,7 @@ function BusinessGraphScreen() {
 
         {mode !== '2d' && biz.nodes.length > 0 ? (
           <GraphAlt
-            origin={ORIGIN} label="ビジネス関係グラフ"
+            origin={ORIGIN} label="ビジネス関係グラフ" showTableButton={false}
             nodes={shownNodes.map((n) => ({ id: n.id, name: n.name, kind: n.type }))}
             relations={shownEdges.map((e) => ({ id: e.id, from: e.from, to: e.to, label: e.label, kind: meaningName(e.meaning) }))}
             summary={`階層は ${ZOOM_KIND_LABELS[kind]}（全体・要素・詳細の 3 階層）`}

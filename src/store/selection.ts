@@ -74,9 +74,18 @@ interface SelectionState {
 
 const same = (a: readonly string[], b: readonly string[]): boolean => a.length === b.length && a.every((v, i) => v === b[i]);
 
+// 画面が自分の図だけで使う ID（エンティティ関係グラフにはない項目。例: KPI/OKR の Objective・Key Result）。図が出ている間だけ選べる
+const localIds = new Map<string, number>();
+/** 図の項目の ID を、選べる ID として登録する。戻り値で解除（図が消えたとき） */
+export function registerLocalIds(ids: readonly string[]): () => void {
+  for (const id of ids) localIds.set(id, (localIds.get(id) ?? 0) + 1);
+  return () => { for (const id of ids) { const n = (localIds.get(id) ?? 1) - 1; if (n <= 0) localIds.delete(id); else localIds.set(id, n); } };
+}
+const isKnown = (known: ReadonlySet<string> | null, id: string): boolean => !known || known.has(id) || localIds.has(id);
+
 function clean(ids: readonly string[], known: ReadonlySet<string> | null): string[] {
   const out: string[] = [];
-  for (const id of ids) if (!out.includes(id) && (!known || known.has(id))) out.push(id);
+  for (const id of ids) if (!out.includes(id) && isKnown(known, id)) out.push(id);
   return out;
 }
 
@@ -100,7 +109,7 @@ export const useSelectionStore = create<SelectionState>((set, get) => ({
 
   select: (id, opts = {}) => {
     const s = get();
-    if (s.knownIds && !s.knownIds.has(id)) return; // 存在しない ID は選べない（現在の選択を変えない）
+    if (!isKnown(s.knownIds, id)) return; // 存在しない ID は選べない（現在の選択を変えない）
     const cur = s.selectedIds;
     const next = opts.additive ? (cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]) : [id];
     get().setSelection(next, opts);

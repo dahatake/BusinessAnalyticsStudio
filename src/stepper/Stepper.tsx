@@ -1,9 +1,9 @@
 // 業務改善ステッパー（FR-136・FR-228）。画面の上部に全ステップと現在位置を常に出し、選ぶと作業画面へ移り、関連するコンポーネントを再配置する。
 import { Button, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
-import { ArrowUndo20Regular, Checkmark16Regular, ChevronRight20Regular } from '@fluentui/react-icons';
+import { Checkmark16Regular, ChevronRight20Regular } from '@fluentui/react-icons';
 import { STEPS, STEP_STATE_LABEL, stepState } from './model';
 import { useStepper } from '../store/stepper';
-import { undoStepFlow, useStepFlow } from '../store/stepFlow';
+import { useStepFlow } from '../store/stepFlow';
 
 /** 操作の大きさの下限（px。FR-228 AC-528・WCAG 2.2 の目標サイズ） */
 const TARGET = 44;
@@ -43,7 +43,6 @@ const useStyles = makeStyles({
   flow: { display: 'inline-flex', alignItems: 'center', color: tokens.colorNeutralForeground3 },
   done: { color: tokens.colorPaletteGreenForeground1 },
   pending: { color: tokens.colorNeutralForeground3 },
-  undo: { minHeight: `${TARGET}px`, minWidth: `${TARGET}px` },
 });
 
 export interface StepperProps {
@@ -56,7 +55,6 @@ export function Stepper({ onNavigate }: StepperProps) {
   const current = useStepper((st) => st.current);
   const setCurrent = useStepper((st) => st.setCurrent);
   const tracked = useStepper((st) => st.projectId !== null); // FR-136 AC-372: Project を開いていないデモは完了済みを持たない
-  const canUndo = useStepFlow((st) => st.undo !== null);
   return (
     <nav aria-label="業務改善ステップ" data-testid="stepper" className={s.root}>
       <ol className={s.list}>
@@ -88,11 +86,6 @@ export function Stepper({ onNavigate }: StepperProps) {
           );
         })}
       </ol>
-      {canUndo ? (
-        <Button data-testid="step-flow-undo" className={s.undo} icon={<ArrowUndo20Regular />} onClick={() => undoStepFlow()}>
-          配置を元に戻す
-        </Button>
-      ) : null}
     </nav>
   );
 }

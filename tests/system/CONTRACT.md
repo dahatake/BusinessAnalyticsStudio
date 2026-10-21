@@ -159,3 +159,11 @@
 - 画面上部: button「現状の説明」（読み取り専用）。押すとサイドパネル `data-testid="explain-panel"`（`data-screen` に表示中の画面の key）が開く。内部に `explain-body`（説明の本文）、`explain-reason`（使えない理由）、button「閉じる」、button「作り直す」（画面切替後に示す）。AI 生成のときだけ `ai-generated-label` を持つ。Esc か閉じるで閉じ、焦点はボタンへ戻る。
 - 設定のモーダル内: `foundry-settings`（ラベル「エンドポイント」「デプロイ名」「API キー」（type=password）、実接続の checkbox/switch（既定 off）、「設定済み」表示、button「保存」「削除」、費用・送信情報の注意文）。
 - 設定のモーダル内: `ai-usage`（当日の回数と上限・今月の概算費用と予算・警告／停止の状態・単価。「1 日の上限」の入力は上げる保存で確認ダイアログ）。
+## 25. Graph の操作（FR-245〜248。graph-interaction.spec.ts が前提にする画面の探し方。run 202610211713）
+- 対象: Graph の面 `[data-zoom-surface="graph"]`（ビジネス関係グラフを除く五画面: twin-view・spatial-view・issue-solution・kpi-okr・data-viewer）。面は `data-pan-x`・`data-pan-y`（CSS px）・`data-scale`（全体表示を 1。範囲 0.25〜4）を持ち、キーボードでフォーカスできる（tabindex）。
+- 操作（コンポーネントの中。全画面中は画面全体から探す）: button「図を上へ移動」「図を下へ移動」「図を左へ移動」「図を右へ移動」、既存の「拡大」「縮小」「全体表示に戻す」（拡大縮小は 1 操作 1.25 倍）、「全画面」「全画面を終了」。Shift＋矢印 1 操作は 40px、`+`/`-` キーで拡大縮小、Ctrl＋ホイールはピンチの代用。矢印キー単独は隣接ノードへのフォーカス移動で図は動かない。ビジネス関係グラフにはこれらのボタン（移動・全画面）を置かない。
+- 詳細カード: `data-testid="detail-card"`（ノードは `data-entity-id`、エッジは文「A から B へ 意味ラベル」）。見出し「種別」「属性」「関係」（エッジは「種別」「属性」）。再クリック・Esc で閉じる。Enter でノード・エッジとも開く。
+- 表（FR-248）: button「表で見る」で出る表の行 `[data-entity-id]` は図と同時に表示される。行のクリック・Enter で、対象ノードが選択（`data-highlight` が selected）され、倍率を保って面の範囲内へパンされ、PARAM-089（2 秒）の間 `data-row-highlight="true"` を持つ（枠線の太さまたは線種が通常と違う）。動きの軽減（reducedMotion）では即時。ビジネス関係グラフの表の行には `data-row-highlight` を付けない。
+
+- 追補（仕様変更 75285d8）: Enter は詳細カードの開閉でズームインしない（ズームインはダブルクリック・「拡大」ボタン・「+」。ダブルクリックはカードを開閉しない）。カードの主要な関係は `data-testid="card-relation"` で最大 5 件（PARAM-105）、超える分は文字「ほか N 件」。全画面は図にフォーカスして F キーでも入れる。Esc はカードが開いていればカードだけ閉じ、次の Esc で全画面終了。表の行で対象が塊に集約されて見えないときは、見える階層へ切り替えてからパンする。
+
