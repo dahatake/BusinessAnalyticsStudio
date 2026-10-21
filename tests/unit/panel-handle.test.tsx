@@ -33,7 +33,8 @@ beforeEach(() => {
     return rect(0, 0, 0, 0);
   });
 });
-afterEach(() => { cleanup(); spy.mockRestore(); });
+// ドロップ後に動きをつなぐ表示を解く Workspace のタイマー（420ms）が、テスト環境の破棄後に走らないよう、終わるまで待ってから片付ける（未処理エラーの防止）
+afterEach(async () => { await new Promise((r) => setTimeout(r, 500)); cleanup(); spy.mockRestore(); });
 
 const wrap = (ui: JSX.Element) => <FluentProvider theme={webLightTheme}>{ui}</FluentProvider>;
 const section = (k: string) => screen.getByTestId(`component-${k}`);
