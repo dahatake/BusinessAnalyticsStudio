@@ -51,13 +51,18 @@ describe('FR-186 メイン画面', () => {
     const dlg = await screen.findByRole('dialog', { name: '企業を登録' });
     fireEvent.change(within(dlg).getByRole('textbox', { name: '企業名' }), { target: { value: '合成株式会社M' } });
     fireEvent.click(within(dlg).getByRole('button', { name: '登録' }));
+    // 並列負荷時の揺れを避けるため、保存の完了とダイアログ（モーダル）の閉じ終わりを待ってから次の操作をする。
+    await waitFor(() => expect(st().companies.length).toBe(1));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: '企業を登録' })).toBeNull());
     const region = await screen.findByRole('region', { name: '企業 合成株式会社M' });
     fireEvent.click(within(region).getByRole('button', { name: 'Project を作成' }));
     const d2 = await screen.findByRole('dialog', { name: 'Project を作成' });
     fireEvent.change(within(d2).getByRole('textbox', { name: 'Project 名' }), { target: { value: '案件一号' } });
     fireEvent.click(within(d2).getByRole('button', { name: '作成' }));
-    await waitFor(() => expect(within(region).getByText('案件一号')).toBeTruthy());
-    expect(st().projects.map((p) => p.name)).toEqual(['案件一号']);
+    await waitFor(() => expect(st().projects.map((p) => p.name)).toEqual(['案件一号']));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Project を作成' })).toBeNull());
+    // 閉じ終わった後の企業の欄（再描画で置き換わっても追えるよう取り直す）に出ること。
+    await waitFor(() => expect(within(screen.getByRole('region', { name: '企業 合成株式会社M' })).getByText('案件一号')).toBeTruthy());
   });
 
   // FR-186 AC-397
