@@ -576,7 +576,6 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     const manual: Record<string, { w: number; h: number }> = {};
     for (const k of manualKeys ?? []) if (m.rects[k] && !pinSet.has(k)) manual[k] = { w: m.rects[k]!.w, h: m.rects[k]!.h };
     const plan = planStepFlow({ step: useStepFlow.getState().step, keys, bounds: m.bounds, pinned, manual });
-    useStepFlow.getState().remember({ persona: L.persona, floats: L.floats[L.persona] ? { ...L.floats[L.persona] } : undefined, zOrder: [...L.zOrder] });
     if (L.expanded) L.setExpanded(null);
     L.setFloats(toFractions(plan, m.bounds));
   };
@@ -1089,17 +1088,20 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
         )}
       </div>
       {outKeys.map((k) => {
-        const r = expandedOut === k ? expandRect(expandPos) : (pinnedMap?.[k] ?? live?.[k] ?? floatMap?.[k]);
+        // FR-013 AC-591/592: Panel fills its containing block, so maximize the
+        // floating host too. Derive only the display rectangle; never persist it.
+        const isMax = maximized === k;
+        const r = isMax ? { x: 0, y: 0, w: 1, h: 1 } : expandedOut === k ? expandRect(expandPos) : (pinnedMap?.[k] ?? live?.[k] ?? floatMap?.[k]);
         if (!r || !byKey(k)?.component) return null;
         const rank = zOrder.indexOf(k);
         const dragged = drag?.key === k && !!live;
         return (
           <div
             key={`float-${k}`}
-            className={mergeClasses(s.floatBox, animated && expandedOut !== k && settling !== k ? (dragged ? s.floatFollow : s.floatAnimated) : undefined)}
+            className={mergeClasses(s.floatBox, animated && !isMax && expandedOut !== k && settling !== k ? (dragged ? s.floatFollow : s.floatAnimated) : undefined)}
             data-float={k}
             data-pinned={pinSet.has(k) ? 'true' : undefined}
-            style={{ left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.w * 100}%`, height: `${r.h * 100}%`, zIndex: expandedOut === k ? 500 : dragged ? 600 : 2 + Math.max(rank, 0), ...(settling !== null ? { transition: 'none' } : {}) }}
+            style={{ left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.w * 100}%`, height: `${r.h * 100}%`, zIndex: isMax ? 1000 : expandedOut === k ? 500 : dragged ? 600 : 2 + Math.max(rank, 0), ...(settling !== null ? { transition: 'none' } : {}) }}
           >
             <Slot host={hostOf(k)} />
           </div>
