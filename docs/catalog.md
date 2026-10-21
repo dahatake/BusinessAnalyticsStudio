@@ -284,6 +284,14 @@
 | FR-247 | ノード・エッジの詳細カード | 承認済み | src/components/GraphSurface.tsx (詳細カード・エッジのクリックと Enter・ダブルクリックはズームイン), src/store/selection.ts (registerLocalIds: 図だけの項目を選べるようにする) | tests/unit/graph-interaction.test.tsx (AC-598, AC-599), tests/unit/graph-view.test.tsx (AC-581), tests/system/e2e/graph-interaction.spec.ts (E2E-351, E2E-352) | Graph の描画面, 選択状態とエンティティ関係グラフ |
 | FR-248 | 表の行から図のノードへの移動とハイライト | 承認済み | src/components/GraphAlt.tsx (表で見る・行から移動の依頼), src/components/GraphViewport.tsx (移動・見える階層への切替), src/components/graphViewStore.ts (ハイライト 2 秒), src/components/GraphSurface.tsx (data-row-highlight・太い破線の枠) | tests/unit/graph-interaction.test.tsx (AC-600, AC-601), tests/system/e2e/graph-interaction.spec.ts (E2E-353, E2E-354) | Graph の代替表示, Graph の描画枠, Graph の描画面 |
 | FR-228 | 業務分析のステップの見た目と、クリックでの関連コンポーネントの再配置 | 承認済み | src/stepper/flow.ts (stepRelevance・planStepFlow。A-65 の対応と大きさの比), src/stepper/Stepper.tsx (番号・流れ・44px 以上。「配置を元に戻す」は置かない), src/store/stepFlow.ts (再配置の要求), src/workspace/Workspace.tsx (flowRun。測って並べる・手で変えた大きさの記録), src/workspace/PaneContext.tsx (step), src/components/Panel.tsx (data-step-*) | tests/unit/step-flow.test.ts (AC-529, AC-530), tests/system/e2e/ux-refresh.spec.ts (E2E-325, E2E-326) | ワークスペース |
+| FR-278 | 「Copilot で分析実行」ボタンと全コンポーネントのデータのレビュー | 承認済み | 未実装 | 未実装 | なし |
+| FR-279 | コンポーネントごとの「Copilot の案」の表示・編集・破棄 | 承認済み | 未実装 | 未実装 | なし |
+| FR-280 | 「反映」による画面コンポーネントと管理データの更新 | 承認済み | 未実装 | 未実装 | なし |
+| FR-281 | 反映の失敗時の扱いと反映の取り消し | 承認待ち | 未実装 | 未実装 | なし |
+| FR-282 | Microsoft Foundry の接続設定（設定画面） | 承認済み | 未実装 | 未実装 | なし |
+| FR-283 | 接続設定がないとき・接続に失敗したときの分析実行 | 承認済み | 未実装 | 未実装 | なし |
+| NFR-SEC-012 | Foundry の API キーをリポジトリ・ログ・テストデータに出さない | 承認済み | 未実装 | 未実装 | なし |
+| NFR-COST-001 | 分析実行の利用量と月の予算の上限 | 承認待ち | 未実装 | 未実装 | なし |
 ## API・イベント
 
 | 名前 | 定義ファイル | 関連する要求 ID |
