@@ -718,7 +718,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-016",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "961d213",
       "last_run_at": "2026-10-20T13:49:50+09:00",
       "evidence": "work/runs/202610200517/logs/system-test/E2E-115-202610201155.log",
@@ -734,8 +734,15 @@
           "by": "test-designer",
           "change": "title: 'AC-016 標準の検証条件で、コンポーネントにフォーカスして `Shift+F` を押すと最大化し、`Esc` で通常表示に戻り、`' -> 'AC-016 Shift+F で最大化、Esc で通常、H で非表示、見出しのダブルクリックは最大化でなく拡大（FR-174）'",
           "reason": "AC-016 改訂（Q-023 2026-10-15）: ダブルクリックは data-expanded、最大化は Shift+F で検証"
+        },
+        {
+          "at": "2026-10-21T20:26:23+09:00",
+          "by": "test-designer",
+          "change": "serial: None -> True",
+          "reason": "共有previewサーバーの競合を防ぐため単独実行"
         }
-      ]
+      ],
+      "serial": true
     },
     {
       "id": "E2E-116",
@@ -7946,8 +7953,15 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T20:26:29+09:00",
+          "by": "test-designer",
+          "change": "serial: None -> True",
+          "reason": "共有previewサーバーの競合を防ぐため単独実行"
         }
-      ]
+      ],
+      "serial": true
     },
     {
       "id": "E2E-343",
@@ -7971,8 +7985,15 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T20:26:32+09:00",
+          "by": "test-designer",
+          "change": "serial: None -> True",
+          "reason": "共有previewサーバーの競合を防ぐため単独実行"
         }
-      ]
+      ],
+      "serial": true
     },
     {
       "id": "E2E-344",
@@ -7996,8 +8017,15 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T20:26:39+09:00",
+          "by": "test-designer",
+          "change": "serial: None -> True",
+          "reason": "共有previewサーバーの競合を防ぐため単独実行"
         }
-      ]
+      ],
+      "serial": true
     },
     {
       "id": "E2E-345",
@@ -8022,8 +8050,15 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-21T20:26:44+09:00",
+          "by": "test-designer",
+          "change": "serial: None -> True",
+          "reason": "共有previewサーバーの競合を防ぐため単独実行"
         }
-      ]
+      ],
+      "serial": true
     }
   ]
 }
