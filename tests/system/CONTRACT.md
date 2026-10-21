@@ -106,7 +106,8 @@
 - 入口: メイン画面の Project 名のリンク（role=link、名前は Project 名）をクリックすると、その Project 画面（stepper が見える）が開く。ブラウザーの戻る（history back）でメイン画面に戻る。
 
 ## 21. Fluent 2 の全画面適用・ピン止め・ビュー切替（NFR-UX-015〜017・NFR-A11Y-009・FR-215〜218。fluent-design.spec.ts・a11y-all-screens.spec.ts・pin.spec.ts・view-switch.spec.ts が前提にする画面の探し方）
-- 全画面（画面の登録）: 左メニュー navigation「画面」の `nav-<key>`（`nav-toggle` を除く）を表示の順に走査する（`support/screens.ts` の `listScreenKeys`）。§4 の主要画面がすべて含まれること。表示幅が狭く左メニューが隠れるときは button「メニュー」から開く。
+- 全画面（画面の登録）: 左メニュー navigation「画面」の `nav-<key>`（`nav-toggle` を除く）を表示の順に走査し、左メニューに項目を持たない画面（FR-220 AC-590: `view3d`「3D ビューと 2D 図面」・`drawing2d`「2D 図面」。`support/fixtures.ts` の `OFF_MENU_SCREENS`）を末尾に足す（`support/screens.ts` の `listScreenKeys`）。§4 の主要画面がすべて含まれること。表示幅が狭く左メニューが隠れるときは button「メニュー」から開く。
+- 左メニューにない画面の開き方（FR-220 AC-590。AC の期待値は変えない）: `openScreen`・`gotoScreen` は、`OFF_MENU_SCREENS` か `nav-<key>` が無い画面を、コマンドパレット（`Ctrl+K`。dialog「コマンドパレット」）に「show <key>」と入れ、option `id="command-view.show.<key>"`（「<画面名>を表示する」。FR-111）を押して開く（`openScreenByCommand`）。テストは `nav-view3d`・`nav-drawing2d` を使わない。
 - カード: Fluent のカードの面に `data-surface="card"`（影の段 4 の判定に使う。ハイコントラストでは 4 辺の境界線か輪郭線の判定に使う。AC-476）。メニューは role=menu、ツールチップは role=tooltip、ダイアログは role=dialog（コマンドパレット）。
 - 拡大・縮小できる面（AC-483。A-51）: ビュアー・グラフ・キャンバス・ホワイトボード・地図・3D の、拡大・縮小する描画領域の要素に `data-zoom-surface`（値は `viewer`／`graph`／`canvas`／`whiteboard`／`map`／`3d`）。見出し・ハンドル・ツールバーなど面の外の部品には付けない。この中の文字は文字 200% の切れ・重なりの数え方から除き、表示しきれない文字は省略記号（text-overflow: ellipsis か line-clamp）＋全文のアクセシブルな名前（aria-label・title・aria-labelledby）かツールチップ（role=tooltip）、または面の中のスクロール（overflow: auto/scroll）で読めることを判定する。3D と地図のラベルは NFR-A11Y-003 AC-173 と同じ button「表で見る」の表で読めることを判定する。
 - ピン止め（FR-215）: フォーカスしたコンポーネントの `component-actions` に button 1 つ。名前は「ピン止めする」（固定なし）／「ピン止めを外す」（固定中）。`aria-pressed`（false／true）と `data-icon-variant`（`regular`／`filled`）を持ち、ツールチップ（role=tooltip）の文言も名前と同じ。状態は端末内のレイアウトとして保存され、再読込で復元される。
@@ -142,7 +143,7 @@
 - 選択はフック `t.view.state(key).selectedIds` で読む。一覧表（`table`）で選んだ項目が各画面で選択されている。
 
 ## 24. 画面の操作性の刷新（FR-220〜228。ux-refresh.spec.ts が前提にする画面の探し方。run 202610192037）
-- 画面の見出し（FR-220 AC-515）: `data-testid="screen-heading"` の中の button「ビュー」（名前は「ビュー」で始まる。§21 のコンポーネントの「ビュー」と同じメニュー）。左メニュー navigation「画面」に 2D/3D の切替の項目（menuitemradio「2D」「3D」・switch・名前が「3D ビュー」だけの項目）を置かない（画面「3D ビューと 2D 図面」への入口は別の名前にする）。
+- 画面の見出し（FR-220 AC-515）: `data-testid="screen-heading"` の中の button「ビュー」（名前は「ビュー」で始まる。§21 のコンポーネントの「ビュー」と同じメニュー）。左メニュー navigation「画面」に 2D/3D の切替の項目（menuitemradio「2D」「3D」・switch・名前が「3D ビュー」だけの項目）を置かない（FR-220 の改訂で、画面「3D ビューと 2D 図面」「2D 図面」の項目は左メニューに置かない＝AC-590。§21 の開き方で開く）。
 - 操作アイコン（FR-222 AC-518）: §10 の `component-actions` の button「最小化」「最大化」（最大化中は「通常表示」か「元に戻す」）が見出しの右上に並び、図（svg か img）を持つ。名前はホバー・フォーカスで role=tooltip に出る。最大化中は `data-maximized="true"`、最小化中は `data-minimized="true"`。常設ボタン（「その他の操作」を除く）は 6 個以下（PARAM-073）。
 - 設定のモーダル（FR-223 AC-519）: 左メニューの `nav-settings` で role=dialog「設定」（`aria-modal="true"`、button「閉じる」）が開く。背面の覆いは `data-testid="modal-backdrop"`（透明でない背景色）。設定は `component-settings` としてワークスペースに並ばない。
 - サイズ変更（FR-224 AC-521）: コンポーネントの縁・角のつまみ `data-testid="resize-e"`（右の縁）・`resize-s`（下の縁）・`resize-se`（右下の角）。ホバーで利用できる。ドラッグで縦だけ・横だけ・両方が変わる。
@@ -152,4 +153,13 @@
 - 既存の spec への影響（実装工程の注意）: 設定がモーダルになるため、`openScreen(page, 'settings')` と `component(page, 'settings')` を使う既存の spec（brand-settings・consent-settings・workspace-layout など）は、設定画面の探し方を role=dialog「設定」に合わせて見直す必要がある（AC の期待値は変わらない。conductor が競合として扱う）。
 - 設定の探し方（FR-223。共通 helper `support/fixtures.ts`。AC の期待値は変えない）: `openScreen(page,'settings')` は `nav-settings` を押して role=dialog「設定」（`settingsDialog(page)`）を開き、その中の `component-settings` を返す（すでに開いていれば押さずに返す）。`component(page,'settings')` も同じ dialog 内の `component-settings`。設定以外の `openScreen` は、開いている設定を先に button「閉じる」で閉じる（背面の覆いが操作を遮るため）。画面を直接操作する前は `closeSettings(page)` で閉じる。音声設定などの region は `settingsDialog(page)` の中で探す。`workspace` の中には `component-settings` が無い。
 - 仕様変更後の探し方の追補（FR-222・223・227。AC の期待値は変えない）: (1) `recordExportConsent` は了承の保存後に `closeSettings` で設定のモーダルを閉じる（呼んだ後は背面の画面を直接操作できる）。(2) 設定のモーダルの中でしか見えないもの（背面の primary-action など、モーダルが開いている間の画面の状態）は、`openScreen` で別の画面へ移る前に探す。(3) ワークスペースのコンポーネントの一覧（`keys`・`visibleComponents`・`topKeys`）は `:not([data-testid="component-menu"]):not([data-testid="component-actions"])` で `component-actions` を除く。(4) 全画面の走査（`support/screens.ts` の `listScreenKeys`・`gotoScreen`）は設定のモーダルを先に閉じる。設定は `component-menu`・`component-actions`・「ビュー」を持たないので、メニュー・ツールチップ・ビューの走査では設定を対象から外し、設定は `settingsDialog(page)` の中（文字の段・角丸・影・フォーカスの戻り）で判定する。(5) 選択中の項目の再クリックは選択解除（FR-227）。同じ項目を 2 つの画面で続けて押すテストは、すでに選択済みなら押さない（関連の表示などの状態を見て判定する）。(6) インクのボードのように画面下端に show コントロールバーが重なる面では、固定座標を 200px 程度の範囲に収め 2 列に並べる（ヘッダーの折り返しでボード面が下がっても重ならない）。
+
+
+## 25. Graph の操作（FR-245〜248。graph-interaction.spec.ts が前提にする画面の探し方。run 202610211713）
+- 対象: Graph の面 `[data-zoom-surface="graph"]`（ビジネス関係グラフを除く五画面: twin-view・spatial-view・issue-solution・kpi-okr・data-viewer）。面は `data-pan-x`・`data-pan-y`（CSS px）・`data-scale`（全体表示を 1。範囲 0.25〜4）を持ち、キーボードでフォーカスできる（tabindex）。
+- 操作（コンポーネントの中。全画面中は画面全体から探す）: button「図を上へ移動」「図を下へ移動」「図を左へ移動」「図を右へ移動」、既存の「拡大」「縮小」「全体表示に戻す」（拡大縮小は 1 操作 1.25 倍）、「全画面」「全画面を終了」。Shift＋矢印 1 操作は 40px、`+`/`-` キーで拡大縮小、Ctrl＋ホイールはピンチの代用。矢印キー単独は隣接ノードへのフォーカス移動で図は動かない。ビジネス関係グラフにはこれらのボタン（移動・全画面）を置かない。
+- 詳細カード: `data-testid="detail-card"`（ノードは `data-entity-id`、エッジは文「A から B へ 意味ラベル」）。見出し「種別」「属性」「関係」（エッジは「種別」「属性」）。再クリック・Esc で閉じる。Enter でノード・エッジとも開く。
+- 表（FR-248）: button「表で見る」で出る表の行 `[data-entity-id]` は図と同時に表示される。行のクリック・Enter で、対象ノードが選択（`data-highlight` が selected）され、倍率を保って面の範囲内へパンされ、PARAM-089（2 秒）の間 `data-row-highlight="true"` を持つ（枠線の太さまたは線種が通常と違う）。動きの軽減（reducedMotion）では即時。ビジネス関係グラフの表の行には `data-row-highlight` を付けない。
+
+- 追補（仕様変更 75285d8）: Enter は詳細カードの開閉でズームインしない（ズームインはダブルクリック・「拡大」ボタン・「+」。ダブルクリックはカードを開閉しない）。カードの主要な関係は `data-testid="card-relation"` で最大 5 件（PARAM-105）、超える分は文字「ほか N 件」。全画面は図にフォーカスして F キーでも入れる。Esc はカードが開いていればカードだけ閉じ、次の Esc で全画面終了。表の行で対象が塊に集約されて見えないときは、見える階層へ切り替えてからパンする。
 

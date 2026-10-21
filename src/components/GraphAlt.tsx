@@ -1,8 +1,11 @@
 // 3D・Graph の表示でも同じ情報を表とテキストで読める代替表示（NFR-A11Y-010 AC-580・NFR-A11Y-003）。
 // 件数・階層のテキストの要約と、ノードの表（名称・種別・KPI などの値）と、関係の表（起点・意味ラベル・終点・向き）。
 // ノードの表の行を選ぶと、図の同じ項目が選択される（共通の選択状態）。多い件数でも速く出るよう、素の table で描く。関係の表の行を選ぶと、その起点が選択される。
+import { useRef } from 'react';
 import { Text, makeStyles, tokens } from '@fluentui/react-components';
 import { useSelection } from '../selection/hooks';
+import { requestGraphFocus } from './graphViewStore';
+import { ViewAsTableButton } from './ViewTable';
 
 const useStyles = makeStyles({
   root: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS },
@@ -24,11 +27,16 @@ export interface GraphAltProps {
   columns?: readonly string[];
   /** 件数・階層のテキストの要約に足す文 */
   summary?: string;
+  /** 「表で見る」ボタンを置く（既定 true。ビジネス関係グラフは置かない） */
+  showTableButton?: boolean;
 }
 
-export function GraphAlt({ origin, label, nodes, relations, columns = [], summary }: GraphAltProps) {
+export function GraphAlt({ origin, label, nodes, relations, columns = [], summary, showTableButton = true }: GraphAltProps) {
   const s = useStyles();
   const { select, selectedIds } = useSelection();
+  // 「表で見る」: 表は図と同時に表示されている（NFR-A11Y-010）。ボタンは表へ移る（フォーカスする）。表の行を選ぶと、図の同じ項目が選択され、図がその項目へ移動してハイライトされる（FR-248）
+  const tableRef = useRef<HTMLDivElement>(null);
+  const pick = (id: string, additive = false): void => { select(id, { origin, additive }); requestGraphFocus(origin, id); };
   const names = new Map(nodes.map((n) => [n.id, n.name]));
   const nameOf = (id: string): string => names.get(id) ?? id;
   return (
@@ -36,15 +44,16 @@ export function GraphAlt({ origin, label, nodes, relations, columns = [], summar
       <Text role="status" data-testid="graph-alt-summary">
         {`${label}: 項目 ${nodes.length} 件、関係 ${relations.length} 件${summary ? `。${summary}` : ''}`}
       </Text>
-      <div className={s.scroll} tabIndex={0} role="region" aria-label={`${label}の項目（表。横にスクロールできます）`}>
+      {showTableButton ? <div><ViewAsTableButton asTable={false} onToggle={() => { tableRef.current?.scrollIntoView?.({ block: 'nearest' }); tableRef.current?.focus(); }} /></div> : null}
+      <div ref={tableRef} className={s.scroll} tabIndex={0} role="region" aria-label={`${label}の項目（表。横にスクロールできます）`}>
         <table className={s.table} aria-label={`${label}の項目（表）`} data-testid="graph-alt-nodes">
           <thead><tr>{['名称', '種別', ...columns].map((c) => <th key={c} scope="col">{c}</th>)}</tr></thead>
           <tbody>
             {nodes.map((n) => (
               <tr
                 key={n.id} className={`${s.row} ${selectedIds.includes(n.id) ? s.on : ''}`} data-entity-id={n.id} aria-selected={selectedIds.includes(n.id)} tabIndex={0}
-                onClick={(e) => select(n.id, { origin, additive: e.ctrlKey || e.metaKey || e.shiftKey })}
-                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); select(n.id, { origin }); } }}
+                onClick={(e) => pick(n.id, e.ctrlKey || e.metaKey || e.shiftKey)}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(n.id); } }}
               >
                 <td>{n.name}</td><td>{n.kind}</td>{columns.map((c, i) => <td key={c}>{n.values?.[i] ?? '—'}</td>)}
               </tr>
