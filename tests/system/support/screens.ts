@@ -1,8 +1,9 @@
 // 画面の登録（全画面）の走査と、見出しの操作（ピン止め・ビュー）の共通の操作。
-// 「全画面」は、利用者が見る画面の一覧＝左メニュー（navigation「画面」）の `nav-<key>` を走査して得る（CONTRACT.md §21）。
+// 「全画面」は、利用者が見る画面の一覧＝左メニュー（navigation「画面」）の `nav-<key>` を走査し、左メニューに項目を持たない
+// 画面（FR-220 AC-590 の view3d・drawing2d。コマンドから開く）を足して得る（CONTRACT.md §21）。
 // 期待値は要求定義書の受入基準から決め、実装の一覧（コード）からは決めない。主要画面（MAIN_SCREENS）が欠けていれば失敗にする。
 import type { Page, Locator } from '@playwright/test';
-import { expect, component, MAIN_SCREENS, closeSettings } from './fixtures';
+import { expect, component, MAIN_SCREENS, closeSettings, OFF_MENU_SCREENS, isOffMenuScreen, openScreenByCommand } from './fixtures';
 
 export async function box(loc: Locator) {
   const b = await loc.boundingBox();
@@ -10,7 +11,10 @@ export async function box(loc: Locator) {
   return b!;
 }
 
-/** 左メニューの画面の一覧（nav-toggle を除く）。並びは表示の順。 */
+/**
+ * 全画面の一覧: 左メニューの画面（nav-toggle を除く。並びは表示の順）に、左メニューに項目を持たない画面
+ * （OFF_MENU_SCREENS: FR-220 AC-590 の view3d・drawing2d）を末尾に足したもの。
+ */
 export async function listScreenKeys(page: Page): Promise<string[]> {
   await closeSettings(page);
   const nav = page.getByRole('navigation', { name: '画面', exact: true });
@@ -18,7 +22,7 @@ export async function listScreenKeys(page: Page): Promise<string[]> {
   const keys = await nav.locator('[data-testid^="nav-"]').evaluateAll((els) =>
     els.map((e) => (e.getAttribute('data-testid') ?? '').replace(/^nav-/, '')).filter((k) => k && k !== 'toggle'),
   );
-  const uniq = [...new Set(keys)];
+  const uniq = [...new Set([...keys, ...OFF_MENU_SCREENS])];
   for (const [k, name] of MAIN_SCREENS) expect(uniq, `画面の一覧に主要画面「${name}」がない`).toContain(k);
   return uniq;
 }
@@ -27,9 +31,14 @@ export async function listScreenKeys(page: Page): Promise<string[]> {
 export async function gotoScreen(page: Page, key: string): Promise<Locator> {
   // 設定はモーダル（FR-223）。ほかの画面へ移る前に、開いている設定を閉じる（背面の覆いが操作を遮る）
   if (key !== 'settings') await closeSettings(page);
-  const nav = page.getByTestId(`nav-${key}`);
-  if (!(await nav.isVisible())) await page.getByRole('button', { name: 'メニュー', exact: true }).click();
-  await nav.click();
+  if (await isOffMenuScreen(page, key)) {
+    // 左メニューにない画面（FR-220 AC-590）は、コマンドから開く
+    await openScreenByCommand(page, key);
+  } else {
+    const nav = page.getByTestId(`nav-${key}`);
+    if (!(await nav.isVisible())) await page.getByRole('button', { name: 'メニュー', exact: true }).click();
+    await nav.click();
+  }
   const c = component(page, key);
   await expect(c, `画面 ${key} が開かない`).toBeVisible();
   return c;

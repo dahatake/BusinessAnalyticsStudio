@@ -62,8 +62,8 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'discussion-tree', label: '議論ツリー', icon: TextBulletListTree24Regular, component: DiscussionTreeScreen, view: { has2D: true, has3D: true, ...tableWorldDecl(['議論ツリー']), kinds: [] } },
   { key: 'table', label: '一覧表', icon: Table24Regular, component: TableScreen, view: { has2D: true, has3D: true, world: 'items' } },
   { key: 'gantt', label: 'ガントチャート', icon: DataBarHorizontal24Regular, component: GanttScreen, view: { has2D: true, has3D: true, cpu3D: true, ...tableWorldDecl(['工程']), kinds: ['task'] } },
-  { key: 'view3d', label: '3D ビューと 2D 図面', icon: Cube24Regular, component: View3DScreen, view: { has2D: false, has3D: true, world: 'items', fixed: true, kinds: ['entity'] } },
-  { key: 'drawing2d', label: '2D 図面', icon: Ruler24Regular, component: Drawing2DScreen, view: { has2D: true, has3D: false, world: 'items', fixed: true, kinds: ['entity'] } },
+  { key: 'view3d', label: '3D ビューと 2D 図面', icon: Cube24Regular, component: View3DScreen, view: { has2D: false, has3D: true, world: 'items', fixed: true, kinds: ['entity'] }, nav: false },
+  { key: 'drawing2d', label: '2D 図面', icon: Ruler24Regular, component: Drawing2DScreen, view: { has2D: true, has3D: false, world: 'items', fixed: true, kinds: ['entity'] }, nav: false },
   { key: 'map', label: '地図', icon: Map24Regular, component: MapScreen, view: { has2D: true, has3D: true, defaultMode: '3d', world: 'items', kinds: ['entity'] } },
   { key: 'kpi-okr', label: 'KPI/OKR', icon: Target24Regular, component: KpiOkrScreen, view: { has2D: true, has3D: true, hasGraph: true, ...tableWorldDecl(['KPI', 'OKR']), kinds: [] } },
   { key: 'twin-view', label: 'Twin ビュー', icon: Layer24Regular, component: TwinViewScreen, view: { has2D: true, has3D: true, hasGraph: true, world: 'items', kinds: ['entity'] } },
@@ -77,3 +77,8 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'settings', label: '設定パネル', icon: Settings24Regular, component: SettingsScreen, view: V2, modal: true },
   { key: 'chat', label: 'チャット', icon: Chat24Regular, component: ChatScreen, view: V2 },
 ];
+
+/** 左メニュー（AppShell）に出す画面。`nav: false` の画面は除く（FR-220 AC-590）。除いた画面も、ペルソナ・レイアウト・ステッパー・ドック・コマンドから開ける */
+export const NAV_SCREENS: readonly ScreenDefinition[] = SCREENS.filter((s) => s.nav !== false);
+/** ワークスペースのコンポーネントとして並ぶ画面（モーダルを除く。FR-223）。ドック・コマンド・レイアウトの対象 */
+export const COMPONENT_SCREENS: readonly ScreenDefinition[] = SCREENS.filter((s) => !s.modal);

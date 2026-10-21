@@ -18,7 +18,7 @@ import { useEffectiveBrand } from '../theme/useBrand';
 import { ErrorView, LoadingView } from '../components/StateViews';
 import { PresentationBar, PresentationButton } from '../presentation/PresentationMode';
 import { StoryHost } from '../story/StoryHost';
-import { SCREENS } from '../screens/registry';
+import { SCREENS, NAV_SCREENS, COMPONENT_SCREENS } from '../screens/registry';
 import { Stepper } from '../stepper/Stepper';
 import { useStepper } from '../store/stepper';
 import { SelectionController } from '../selection/SelectionController';
@@ -54,7 +54,6 @@ import { useSettingsModal } from '../store/settingsModal';
 import { SettingsDialog } from '../screens/SettingsDialog';
 
 // モーダルの画面（設定。FR-223）は、ワークスペースのコンポーネントではない
-const COMPONENT_SCREENS = SCREENS.filter((s) => !s.modal);
 setAvailableComponents(COMPONENT_SCREENS.map((s) => s.key));
 // 各画面の 2D・3D の表現の有無と世界区分の扱い（FR-217・FR-218）
 registerViewDecls(SCREENS);
@@ -185,7 +184,7 @@ export function App() {
       <ShortVideoDialog />
       <AppShell
         title={`${name} ${projectName}`}
-        screens={SCREENS}
+        screens={NAV_SCREENS /* FR-220 AC-590: 左メニューには nav: false の画面を出さない */}
         onSelect={onSelect}
         stepper={<Stepper onNavigate={onSelect} />}
         headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><AiStatus /></>}

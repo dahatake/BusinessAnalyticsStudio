@@ -14,4 +14,6 @@ export interface ScreenDefinition {
   view?: ViewDecl;
   /** モーダルで開く画面（FR-223）。ナビゲーションには出るが、ワークスペースのコンポーネントとして並ばず、レイアウトの対象にならない */
   modal?: boolean;
+  /** false なら左メニュー（AppShell）に出さない（FR-220 AC-590）。画面は廃止せず、ペルソナ・レイアウト・ステッパー・ドック・コマンドから開ける */
+  nav?: false;
 }
