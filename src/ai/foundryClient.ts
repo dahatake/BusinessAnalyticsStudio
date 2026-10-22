@@ -78,7 +78,7 @@ export async function setFoundryConnection(
 /** 生成の依頼。了承の記録（FR-181）の有無は毎回渡す（取り消すと次の呼び出しから 0 回になる） */
 export async function askFoundry(
   relayUrl: string | undefined,
-  req: { packId: string; prompt: string; consent: boolean; includesPerson?: boolean; personConfirmed?: boolean },
+  req: { packId: string; prompt: string; consent: boolean; includesPerson?: boolean; personConfirmed?: boolean; maxOutputTokens?: number },
   f: F = dflt,
 ): Promise<FoundryAskResult> {
   if (!relayUrl || !isLoopbackUrl(relayUrl)) return { mode: 'unavailable', reason: 'relay', message: NO_RELAY };

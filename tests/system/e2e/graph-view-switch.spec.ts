@@ -3,7 +3,7 @@
 // 画面の探し方は CONTRACT.md §21（見出しの「ビュー」ボタン、menuitemradio「2D」「3D」「Graph」、フック t.view.state(key)）。
 // Graph の表現を持つ画面は、画面の登録を走査して「Graph」の選択肢が有効なものとして求める（画面の key を決め打ちしない）。
 import type { Locator, Page } from '@playwright/test';
-import { test, expect, component, selectPersona, openScreen, hook } from '../support/fixtures';
+import { test, expect, component, selectPersona, openScreen, hook, closeSettings } from '../support/fixtures';
 import { listScreenKeys, gotoScreen, openViewMenu, viewButton, type ViewState } from '../support/screens';
 
 /** PARAM-080: 表示形式を切り替えてから表示が替わるまでの時間の上限（ミリ秒） */
@@ -46,8 +46,13 @@ async function graphScreens(page: Page): Promise<string[]> {
   const out: string[] = [];
   for (const key of await listScreenKeys(page)) {
     const c = await gotoScreen(page, key);
+    // AC-562 の対象は「Graph の表現を持つ画面」。見出しに「ビュー」を持たない画面（FR-223 のモーダルの設定など）は表現の切替がないので対象外
+    if ((await viewButton(c).count()) === 0) {
+      await closeSettings(page);
+      continue;
+    }
     const menu = await openViewMenu(page, c);
-    const g = menu.getByRole('menuitemradio', { name: 'Graph', exact: true });
+    const g =  menu.getByRole('menuitemradio', { name: 'Graph', exact: true });
     if ((await g.count()) && (await g.isEnabled())) out.push(key);
     await page.keyboard.press('Escape');
   }
