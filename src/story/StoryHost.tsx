@@ -43,7 +43,7 @@ const useStyles = makeStyles({
   },
   kicker: { color: tokens.colorBrandForeground1, letterSpacing: '0.08em', fontSize: 'clamp(12px, min(1.8vw, 3vh), 24px)', lineHeight: 1.3, overflowWrap: 'anywhere', fontWeight: tokens.fontWeightSemibold },
   heading: { margin: 0, fontWeight: tokens.fontWeightBold, fontSize: 'clamp(18px, min(5.5vw, 9vh), 72px)', lineHeight: 1.25, overflowWrap: 'anywhere', maxWidth: '24em' },
-  big: { fontWeight: tokens.fontWeightBold, fontSize: 'clamp(40px, min(13vw, 22vh), 190px)', lineHeight: 1.25, color: tokens.colorBrandForeground1, fontVariantNumeric: 'tabular-nums', overflowWrap: 'anywhere' },
+  big: { fontWeight: tokens.fontWeightBold, fontSize: 'clamp(40px, min(13vw, 22vh), 190px)', lineHeight: 1.4, paddingBlock: tokens.spacingVerticalXS, color: tokens.colorBrandForeground1, fontVariantNumeric: 'tabular-nums', overflowWrap: 'anywhere' },
   bigLabel: { fontSize: 'clamp(14px, min(2.2vw, 4vh), 30px)', lineHeight: 1.3, color: tokens.colorNeutralForeground2 },
   lines: { listStyleType: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS, fontSize: 'clamp(13px, min(2.6vw, 4.2vh), 34px)', lineHeight: 1.3, overflowWrap: 'anywhere', maxWidth: '32em' },
   steps: { listStyleType: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS, fontSize: 'clamp(12px, min(2.1vw, 3.6vh), 28px)', lineHeight: 1.3, overflowWrap: 'anywhere', color: tokens.colorNeutralForeground2, maxWidth: '36em', textAlign: 'start' },
