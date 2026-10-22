@@ -6,12 +6,16 @@ import { isLoopbackUrl } from './client';
 export const DEFAULT_FOUNDRY_ENDPOINT = 'https://GraphcRecordingPanel.services.ai.azure.com/openai/v1';
 export const DEFAULT_FOUNDRY_DEPLOYMENT = 'gpt-chat-latest';
 
+export type AuthMethod = 'api-key' | 'entra';
+
 export interface FoundryView {
   configured: boolean;
   endpoint: string;
   host: string;
   deployment: string;
   keyMask: string;
+  /** 認証方式（FR-282）。省略（旧中継）は api-key */
+  authMethod?: 'api-key' | 'entra';
   /** この案件で実接続を有効にしているか */
   enabled: boolean;
 }
@@ -36,7 +40,7 @@ export async function fetchFoundryView(relayUrl: string | undefined, packId: str
 }
 
 export async function putFoundryConfig(
-  relayUrl: string, packId: string, input: { endpoint: string; deployment: string; key: string }, f: F = dflt,
+  relayUrl: string, packId: string, input: { endpoint: string; deployment: string; key: string; authMethod?: AuthMethod }, f: F = dflt,
 ): Promise<{ ok: true; view: FoundryView } | { ok: false; message: string }> {
   if (!isLoopbackUrl(relayUrl)) return { ok: false, message: NO_RELAY };
   try {
