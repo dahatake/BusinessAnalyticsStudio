@@ -8951,7 +8951,8 @@
     {
       "id": "E2E-391",
       "requirement_ids": [
-        "FR-278"
+        "FR-278",
+        "FR-279"
       ],
       "ac_ids": [
         "AC-718"
@@ -8976,6 +8977,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "重複: E2E-412 以降の copilot-review.spec.ts の組（CONTRACT.md §27・review-stub.ts と整合）を採用。copilot-analysis.spec.ts は別の版が main にある"
+        },
+        {
+          "at": "2026-10-23T05:56:56+09:00",
+          "by": "rdfix",
+          "change": "requirement_ids: ['FR-278'] -> ['FR-278', 'FR-279']",
+          "reason": "rdfix: 受入基準の「対応する要求」と要求定義書に合わせる"
         }
       ]
     },
@@ -9230,7 +9237,8 @@
     {
       "id": "E2E-398",
       "requirement_ids": [
-        "FR-278"
+        "FR-278",
+        "FR-279"
       ],
       "ac_ids": [
         "AC-718"
@@ -9255,6 +9263,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "Copilot で分析実行（FR-278〜283）の画面・Foundry 接続の実装が未着手で、画面の場所・ラベルの実体が確定できないため spec 未作成。実装後に test-designer が spec を書いて unblock"
+        },
+        {
+          "at": "2026-10-23T05:56:56+09:00",
+          "by": "rdfix",
+          "change": "requirement_ids: ['FR-278'] -> ['FR-278', 'FR-279']",
+          "reason": "rdfix: 受入基準の「対応する要求」と要求定義書に合わせる"
         }
       ]
     },
