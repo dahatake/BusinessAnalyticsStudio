@@ -290,11 +290,13 @@
     "AC-690": "sha256:ae060af5d4a4546c",
     "AC-699": "sha256:519b0f76a5dc7268",
     "AC-702": "sha256:d47e7a5b9726eed6",
-    "AC-703": "sha256:80508cb0b76e99da",
+    "AC-703": "sha256:83d7f0c8aee6f763",
     "AC-712": "sha256:0e69695d5457cad9",
     "AC-713": "sha256:706deed685a6f99e",
     "AC-733": "sha256:416fb88a5cfaff0a",
-    "AC-739": "sha256:a7892bd655cdf85a"
+    "AC-739": "sha256:a8441c9dc7b54ba7",
+    "AC-737": "sha256:42d750bc2e4bf3fd",
+    "AC-738": "sha256:24a432ee2b6b2941"
   },
   "cases": [
     {
@@ -8688,7 +8690,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-703",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-369-202610221708.log",
@@ -8698,6 +8700,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:12:03+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "Foundry 共通接続への仕様更新で期待値を変更"
         }
       ]
     },
@@ -8788,7 +8796,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-739",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-373-202610221710.log",
@@ -8798,6 +8806,74 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "FR-285 の System Test 作成"
+        },
+        {
+          "at": "2026-10-22T22:12:03+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "Foundry 共通接続への仕様更新で期待値を変更"
+        }
+      ]
+    },
+    {
+      "id": "E2E-375",
+      "requirement_ids": [
+        "FR-285"
+      ],
+      "ac_ids": [
+        "AC-737"
+      ],
+      "title": "共通接続が未設定・無効のとき分析はモックで、外部への分析要求は 0 回（有効化を切ると戻る）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-737",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:11:45+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:12:38+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-737・AC-738 の検証レベルは integration（実装役の tests/unit が担当）。system 面の画面・中継の検査は genai-scenario.spec.ts の AC-739 のケース（E2E-373）に含める"
+        }
+      ]
+    },
+    {
+      "id": "E2E-376",
+      "requirement_ids": [
+        "FR-285"
+      ],
+      "ac_ids": [
+        "AC-738"
+      ],
+      "title": "共通接続を有効にすると中継要求の body は packId と solution だけ（endpoint・deployment・キーを含まない）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-738",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:11:50+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:12:39+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-737・AC-738 の検証レベルは integration（実装役の tests/unit が担当）。system 面の画面・中継の検査は genai-scenario.spec.ts の AC-739 のケース（E2E-373）に含める"
         }
       ]
     }
