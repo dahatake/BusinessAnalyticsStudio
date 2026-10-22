@@ -172,3 +172,9 @@
 
 - 追補（仕様変更 75285d8）: Enter は詳細カードの開閉でズームインしない（ズームインはダブルクリック・「拡大」ボタン・「+」。ダブルクリックはカードを開閉しない）。カードの主要な関係は `data-testid="card-relation"` で最大 5 件（PARAM-105）、超える分は文字「ほか N 件」。全画面は図にフォーカスして F キーでも入れる。Esc はカードが開いていればカードだけ閉じ、次の Esc で全画面終了。表の行で対象が塊に集約されて見えないときは、見える階層へ切り替えてからパンする。
 
+
+## 26. 「Copilot で分析実行」・Copilot の案・Foundry 接続設定（FR-278〜283 AC-715・717〜719・721・725・727。copilot-analysis-run.spec.ts が前提にする画面の探し方。run 202610230545）
+- 画面上部: button「Copilot で分析実行」。実行中は role=status に「実行中」を示し、ほかの操作を妨げない。未設定なら role=alert/status に「未設定」と設定画面への案内（button「設定を開く」）を出し、中継へ `/foundry/review` を送らない。
+- 各コンポーネント（`component(page,key)`）: 現在のデータの欄 `data-testid="component-current-data"`、案の欄 `copilot-proposal`（文字「Copilot の案（AI 生成）」、textbox「案の編集」、button「反映」「破棄」。現在のデータの欄の外）。案が返らない・データなしは `copilot-proposal-none`（文字「案なし」）。
+- 設定の `foundry-settings`: ラベル「エンドポイント」「デプロイ名」「認証方式」「API キー」、`foundry-status`（「設定済み」「未設定」）、button「保存」「削除」。
+- 中継（差し替え部品 support/review-stub.ts）: `POST /foundry/review` body `{components:[{key,data}]}` → `{proposals:[{key,text}]}`。`GET /health` は `foundry.keyConfigured`。
