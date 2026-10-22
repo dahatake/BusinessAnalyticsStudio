@@ -2,6 +2,10 @@
 // キー・エンドポイントの値は、入力した瞬間に中継へ送るだけで、ブラウザーには保存しない。取得できるのは「設定済みか」と伏せ字だけ。
 import { isLoopbackUrl } from './client';
 
+/** 設定画面の入力欄の既定（FR-275） */
+export const DEFAULT_FOUNDRY_ENDPOINT = 'https://GraphcRecordingPanel.services.ai.azure.com/openai/v1';
+export const DEFAULT_FOUNDRY_DEPLOYMENT = 'gpt-chat-latest';
+
 export interface FoundryView {
   configured: boolean;
   endpoint: string;
@@ -49,7 +53,6 @@ export async function putFoundryConfig(
     });
     const j = (await r.json()) as FoundryView & { error?: string };
     if (r.ok) notifyFoundryChanged();
-    if (r.ok) notifyFoundryChanged();
     return r.ok ? { ok: true, view: j } : { ok: false, message: j.error ?? '保存できませんでした' };
   } catch {
     return { ok: false, message: NO_RELAY };
@@ -60,8 +63,8 @@ export async function deleteFoundryConfig(relayUrl: string, packId: string, f: F
   if (!isLoopbackUrl(relayUrl)) return null;
   try {
     const r = await f(`${relayUrl}/foundry/config?packId=${encodeURIComponent(packId)}`, { method: 'DELETE' });
-        if (r.ok) notifyFoundryChanged();
-        return r.ok ? ((await r.json()) as FoundryView) : null;
+    if (r.ok) notifyFoundryChanged();
+    return r.ok ? ((await r.json()) as FoundryView) : null;
   } catch {
     return null;
   }
@@ -76,8 +79,8 @@ export async function setFoundryConnection(
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ packId, enable, ...opt }),
     });
     const j = (await r.json()) as { mode?: 'connected' | 'mock'; error?: string };
-        if (r.ok) notifyFoundryChanged();
-        return { ok: r.ok, mode: j.mode ?? 'mock', message: j.error };
+    if (r.ok) notifyFoundryChanged();
+    return { ok: r.ok, mode: j.mode ?? 'mock', message: j.error };
   } catch {
     return { ok: false, mode: 'mock', message: NO_RELAY };
   }

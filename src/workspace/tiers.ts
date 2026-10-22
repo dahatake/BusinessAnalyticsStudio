@@ -19,10 +19,9 @@ export const ROLE_LABEL: Readonly<Record<Role, string>> = {
 /** コンポーネントのキー → 役割。載っていないものは「未分類」（補助として扱う。FR-244 AC-589） */
 export const ROLE_OF: Readonly<Record<string, Role>> = {
   summary: 'summary',
-  matrix: 'core', 'issue-solution': 'core', architecture: 'core', view3d: 'core',
+  matrix: 'core', 'issue-solution': 'core', architecture: 'core', map: 'core',
   'kpi-okr': 'aid', ranking: 'aid', 'discussion-tree': 'aid', 'knowledge-graph': 'aid', 'mock-app': 'aid',
   gantt: 'evidence', table: 'evidence', products: 'evidence',
-  canvas: 'aid',
 };
 
 /** コンポーネントのキー → 同じ対象を示すグループ。同じ階層で同じグループのものは隣り合わせに置く（FR-244） */
@@ -32,7 +31,7 @@ export const GROUP_OF: Readonly<Record<string, string>> = {
   'issue-solution': 'issue', 'discussion-tree': 'issue',
   gantt: 'process', table: 'process',
   architecture: 'system', 'knowledge-graph': 'system', products: 'system',
-  view3d: 'field', 'mock-app': 'field',
+  map: 'field', 'mock-app': 'field',
 };
 
 export const roleOf = (key: string): Role | undefined => ROLE_OF[key];

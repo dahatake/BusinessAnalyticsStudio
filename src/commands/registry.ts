@@ -69,8 +69,8 @@ export function filterCommands(commands: readonly Command[], query: string): Com
 export const STATIC_SHORTCUTS: ReadonlyArray<{ label: string; shortcut: string }> = [
   { label: 'コマンドパレットを開く', shortcut: 'Ctrl+K' },
   { label: 'ショートカット一覧を開く', shortcut: '?' },
-  { label: '前の議題へ（プレゼンテーション中）', shortcut: '←' },
-  { label: '次の議題へ（プレゼンテーション中）', shortcut: '→' },
+  { label: '前の論点へ（プレゼンテーション中）', shortcut: '←' },
+  { label: '次の論点へ（プレゼンテーション中）', shortcut: '→' },
   { label: '項目を選ぶ（フォーカスした項目）', shortcut: 'Enter / Space' },
   { label: '複数の項目を選ぶ・解除する', shortcut: 'Ctrl / Shift + クリック（または Enter）' },
   { label: 'ダイアログを閉じる・最大化を戻す・選択を解除する', shortcut: 'Esc' },

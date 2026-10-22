@@ -253,7 +253,7 @@ test.describe('FR-011 AI モック', () => {
   test('FR-011 AC-013 「AI: モック」が常に見え、チャットの回答に「AI 生成（モック）」が付く', async ({ page, start }) => {
     await start();
     const status = page.getByTestId('ai-status');
-    for (const key of ['canvas', 'issue-solution', 'settings']) {
+    for (const key of ['priority', 'issue-solution', 'settings']) {
       await openScreen(page, key);
       await expect(status).toBeVisible();
       await expect(status).toContainText('AI: モック');

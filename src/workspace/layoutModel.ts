@@ -295,7 +295,7 @@ const PRIMARY_WIDTH = 0.62;
 const TOP_HEIGHT = 0.7;
 
 /** 描く面のように、広さがほしい画面（同じ列の中の高さ・同じ行の中の幅の比に使う重み。載せていない画面は 1。SHOW_SHARE と同じ考え方）。重みが 1 より大きい補助は、主役の右に専用の列を持つ */
-export const STACK_WEIGHT: Readonly<Record<string, number>> = { canvas: 3, whiteboard: 3 };
+export const STACK_WEIGHT: Readonly<Record<string, number>> = { whiteboard: 3 };
 
 function stack(keys: readonly string[], dir: Dir): LayoutNode {
   if (keys.length === 1) return leaf(keys[0]!);
@@ -334,14 +334,14 @@ export function tierTree(primary: string, supporting: readonly string[], detail:
 /** ペルソナ別の既定のレイアウト（要求定義書 §7）。情報の階層（FR-244）の配置と同じ形: 主役が左上で最大、補助が右、詳細が下。 */
 export function defaultLayout(persona: Persona): Layout {
   switch (persona) {
-    case '経営層': // 主領域に 2×2 マトリクス、右にキャンバス（背景の全体図。広さが要る）、その右にサマリー・KPI/OKR・ランキング表
-      return tierTree('matrix', ['canvas', 'summary', 'kpi-okr', 'ranking'], []);
+    case '経営層': // 主領域に 2×2 マトリクス、右にサマリー・KPI/OKR・ランキング表
+      return tierTree('matrix', ['summary', 'kpi-okr', 'ranking'], []);
     case '事業部門': // 主領域に課題-解決策分析、右に議論ツリーと KPI/OKR、下にガントと一覧表（FR-110 AC-135: リセット後も絞り込みの入力欄が残る）
       return tierTree('issue-solution', ['discussion-tree', 'kpi-okr'], ['gantt', 'table']);
     case 'IT': // 主領域にアーキテクチャ図、右にナレッジグラフと KPI/OKR、下に製品の一覧
       return tierTree('architecture', ['knowledge-graph', 'kpi-okr'], ['products']);
     case '現場': // 主領域に 3D/地図、右にミニ・モックアプリと KPI/OKR、下にガント
-      return tierTree('view3d', ['mock-app', 'kpi-okr'], ['gantt']);
+      return tierTree('map', ['mock-app', 'kpi-okr'], ['gantt']);
   }
 }
 

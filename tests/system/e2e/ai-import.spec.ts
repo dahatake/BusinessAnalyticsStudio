@@ -26,15 +26,11 @@ async function openNewProject(page: Page): Promise<void> {
   await expect(dlg).toBeHidden();
   await page.getByRole('region', { name: `企業 ${COMPANY}` }).getByRole('link', { name: PROJECT }).click();
   await expect(page.getByTestId('stepper')).toBeVisible();
-  await page.getByTestId('stepper').getByRole('button', { name: 'ユースケース作成' }).click();
-  const cand = page.getByTestId('usecase-candidates').getByRole('listitem').first();
-  await expect(cand).toBeVisible();
-  await cand.getByRole('button', { name: '登録', exact: true }).click();
-  await expect(page.getByTestId('usecase-list').getByRole('listitem').first()).toBeVisible();
 }
 
 /** 取り込みの画面（データカタログの画面）を開き、AI 取り込みの部品を返す */
 async function openImportScreen(page: Page): Promise<{ screen: Locator; ai: Locator }> {
+  await page.setViewportSize({ width: 1600, height: 1800 }); // 案件を開いた状態では、背の低い画面だとパネルの高さが 0 になるため
   const screen = await openScreen(page, 'data-catalog');
   return { screen, ai: screen.getByTestId('ai-import') };
 }
@@ -66,7 +62,7 @@ async function saveFoundryInSettings(page: Page, key: string, authMode: 'api-key
 /** 設定画面で実接続を有効にする（FR-275。確認の画面で「有効にする」） */
 async function enableFoundry(page: Page): Promise<void> {
   const settings = await openScreen(page, 'settings');
-  await settings.getByTestId('foundry-settings').getByLabel(/Foundry への送信を有効にする/).click();
+  await settings.getByTestId('foundry-settings').getByRole('switch', { name: '実接続を有効にする', exact: true }).click();
   await page.getByRole('alertdialog').or(page.getByRole('dialog')).getByRole('button', { name: '有効にする' }).click();
   await expect(settings.getByTestId('foundry-mode')).toContainText('接続済み');
   await closeSettings(page);
@@ -75,7 +71,7 @@ async function enableFoundry(page: Page): Promise<void> {
 /** 設定画面で実接続を無効にする */
 async function disableFoundry(page: Page): Promise<void> {
   const settings = await openScreen(page, 'settings');
-  await settings.getByTestId('foundry-settings').getByLabel(/Foundry への送信を有効にする/).click();
+  await settings.getByTestId('foundry-settings').getByRole('switch', { name: '実接続を有効にする', exact: true }).click();
   await expect(settings.getByTestId('foundry-mode')).toContainText('モック');
   await closeSettings(page);
 }
