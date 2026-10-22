@@ -156,9 +156,9 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           const withMode = () => ({ ...getFoundry().view(), enabled: foundryEnabled.has(packId) });
           if (req.method === 'GET') return json(200, withMode());
           if (req.method === 'PUT') {
-            const b = JSON.parse((await readBody(req)) || '{}') as { endpoint?: string; deployment?: string; key?: string };
+            const b = JSON.parse((await readBody(req)) || '{}') as { endpoint?: string; deployment?: string; key?: string; authMethod?: string };
             try {
-              getFoundry().save({ endpoint: String(b.endpoint ?? ''), deployment: String(b.deployment ?? ''), key: typeof b.key === 'string' ? b.key : undefined });
+              getFoundry().save({ endpoint: String(b.endpoint ?? ''), deployment: String(b.deployment ?? ''), key: typeof b.key === 'string' ? b.key : undefined, authMethod: b.authMethod === 'entra' ? 'entra' : 'api-key' });
               return json(200, withMode());
             } catch (e) {
               return json(400, { error: e instanceof Error ? e.message : '保存できませんでした' });
@@ -176,7 +176,7 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           if (!b.enable) { foundryEnabled.delete(b.packId); return json(200, { mode: 'mock' }); }
           if (b.consent !== true) return json(403, { error: '顧客の了承の記録がないため、実接続を有効にできません', mode: 'mock' });
           if (b.confirmed !== true) return json(400, { error: '費用と送信内容の確認が必要です' });
-          if (!getFoundry().secret()) return json(409, { error: 'Foundry の接続情報が未設定です', mode: 'mock' });
+          if (!getFoundry().secret() && !getFoundry().entraReady()) return json(409, { error: 'Foundry の接続情報が未設定です', mode: 'mock' });
           foundryEnabled.add(b.packId);
           return json(200, { mode: 'connected' });
         }

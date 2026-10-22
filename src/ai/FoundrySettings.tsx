@@ -3,13 +3,16 @@
 // 実接続の既定は無効。有効にする前に、有料で費用が発生する旨と送信される情報の種類を示して確認を求める。
 import { useEffect, useState } from 'react';
 import {
-  Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Input, MessageBar, MessageBarBody, Switch, Text,
+  Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Input, MessageBar, MessageBarBody, Select, Switch, Text,
 } from '@fluentui/react-components';
 import { Dialog, DialogSurface } from '../components/Dialog';
 import { usePackStore } from '../store/pack';
 import { useConsent } from './useConsent';
-import { DEFAULT_FOUNDRY_DEPLOYMENT, DEFAULT_FOUNDRY_ENDPOINT, deleteFoundryConfig, fetchFoundryView, putFoundryConfig, setFoundryConnection, type FoundryView } from './foundryClient';
+import { DEFAULT_FOUNDRY_DEPLOYMENT, DEFAULT_FOUNDRY_ENDPOINT, deleteFoundryConfig, fetchFoundryView, putFoundryConfig, setFoundryConnection, type AuthMethod, type FoundryView } from './foundryClient';
 import { tokens } from '../theme/tokens';
+
+/** 値に由来しない固定の伏せ字（末尾の文字も出さない。FR-282 AC-726） */
+const FIXED_MASK = '••••••••';
 
 export function FoundrySettings() {
   const relayUrl = usePackStore((s) => s.runtime.relayUrl);
@@ -20,6 +23,7 @@ export function FoundrySettings() {
   const [endpoint, setEndpoint] = useState(DEFAULT_FOUNDRY_ENDPOINT);
   const [deployment, setDeployment] = useState(DEFAULT_FOUNDRY_DEPLOYMENT);
   const [key, setKey] = useState('');
+  const [authMethod, setAuthMethod] = useState<AuthMethod>('api-key');
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
   const [confirming, setConfirming] = useState(false);
 
@@ -28,7 +32,7 @@ export function FoundrySettings() {
     void fetchFoundryView(relayUrl, packId).then((v) => {
       if (!alive) return;
       setView(v);
-      if (v) { setEndpoint(v.endpoint || DEFAULT_FOUNDRY_ENDPOINT); setDeployment(v.deployment || DEFAULT_FOUNDRY_DEPLOYMENT); }
+      if (v) { setEndpoint(v.endpoint || DEFAULT_FOUNDRY_ENDPOINT); setDeployment(v.deployment || DEFAULT_FOUNDRY_DEPLOYMENT); setAuthMethod(v.authMethod ?? 'api-key'); }
     });
     return () => { alive = false; };
   }, [relayUrl, packId]);
@@ -41,7 +45,7 @@ export function FoundrySettings() {
   }, [granted, view?.enabled, relayUrl, packId]);
 
   const save = async () => {
-    const r = await putFoundryConfig(relayUrl as string, packId, { endpoint, deployment, key });
+    const r = await putFoundryConfig(relayUrl as string, packId, { endpoint, deployment, key: authMethod === 'entra' ? '' : key, authMethod });
     setKey('');
     if (r.ok) { setView(r.view); setResult({ ok: true, text: '接続情報を保存しました（API キーは画面に再表示しません）。' }); }
     else setResult({ ok: false, text: `保存できませんでした。${r.message}` });
@@ -49,7 +53,7 @@ export function FoundrySettings() {
   const remove = async () => {
     const v = await deleteFoundryConfig(relayUrl as string, packId);
     setKey('');
-    if (v) { setView(v); setEndpoint(DEFAULT_FOUNDRY_ENDPOINT); setDeployment(DEFAULT_FOUNDRY_DEPLOYMENT); setResult({ ok: true, text: '接続情報を削除しました。Foundry は使えません。' }); }
+    if (v) { setView(v); setEndpoint(DEFAULT_FOUNDRY_ENDPOINT); setDeployment(DEFAULT_FOUNDRY_DEPLOYMENT); setAuthMethod('api-key'); setResult({ ok: true, text: '接続情報を削除しました。Foundry は使えません。' }); }
     else setResult({ ok: false, text: '削除できませんでした。中継プロセスが起動しているか確認してください。' });
   };
   const enable = async () => {
@@ -76,7 +80,7 @@ export function FoundrySettings() {
       <Text size={200}>接続情報の状態: <b data-testid="foundry-status">{configured ? '設定済み' : '未設定'}</b>
         {configured ? `（送信先: ${view?.host}）` : null}
       </Text>
-      {configured ? <Text size={200} data-testid="foundry-key-mask">API キー: 設定済み（{view?.keyMask}）</Text> : null}
+      {configured && (view?.authMethod ?? 'api-key') === 'api-key' ? <Text size={200} data-testid="foundry-key-mask">API キー: 設定済み（{FIXED_MASK}）</Text> : null}
       <form data-testid="foundry-form" onSubmit={(e) => { e.preventDefault(); void save(); }} style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS }}>
         <Field label="エンドポイント">
           <Input value={endpoint} aria-label="エンドポイント" onChange={(_, d) => setEndpoint(d.value)} />
@@ -84,9 +88,17 @@ export function FoundrySettings() {
         <Field label="デプロイ名">
           <Input value={deployment} aria-label="デプロイ名" onChange={(_, d) => setDeployment(d.value)} />
         </Field>
+        <Field label="認証方式" hint="Microsoft Entra ID を選ぶと API キーは不要です。">
+          <Select value={authMethod} aria-label="認証方式" onChange={(_, d) => setAuthMethod(d.value === 'entra' ? 'entra' : 'api-key')}>
+            <option value="api-key">API キー</option>
+            <option value="entra">Microsoft Entra ID</option>
+          </Select>
+        </Field>
+        {authMethod === 'api-key' ? (
         <Field label="API キー" hint="入力したキーは手元の中継プロセスが暗号化して保管します。保存後は再表示しません。変更するときは新しいキーを入れて保存してください。">
           <Input type="password" value={key} aria-label="API キー" autoComplete="off" onChange={(_, d) => setKey(d.value)} />
         </Field>
+                  ) : null}
         <div style={{ display: 'flex', gap: tokens.spacingHorizontalS }}>
           <Button type="submit" appearance="primary" aria-label="Foundry の接続情報を保存">保存</Button>
           <Button type="button" aria-label="Foundry の接続情報を削除" disabled={!configured} onClick={() => void remove()}>削除</Button>
