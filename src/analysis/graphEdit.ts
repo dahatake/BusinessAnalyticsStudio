@@ -136,7 +136,7 @@ export function removeEdge(data: PackData, edge: Pick<GraphEdge, 'from' | 'to' |
   const next = clone(data);
   const nameOf = (id: string): string => String(findRecord(next, id)?.title ?? findRecord(next, id)?.name ?? findRecord(next, id)?.label ?? id);
   const changes: DataChange[] = [{ op: 'delete', entityId: edge.from, entityLabel: nameOf(edge.from), fieldLabel: 'エッジ（関連）', before: `→ ${nameOf(edge.to)}`, after: '' }];
-  if (edge.kind === 'contain') return { ok: false, reason: '章と議題の包含は、エッジとしては削除できません。議題のノードを削除してください。' };
+  if (edge.kind === 'contain') return { ok: false, reason: '章と論点の包含は、エッジとしては削除できません。論点のノードを削除してください。' };
   if (edge.kind === 'relation') {
     const keep = <T extends { from: string; to: string }>(l: T[] | undefined): T[] | undefined =>
       l?.filter((e) => !(e.from === edge.from && e.to === edge.to));

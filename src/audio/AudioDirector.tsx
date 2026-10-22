@@ -71,7 +71,7 @@ export function AudioDirector({ scene }: { scene: string }) {
     run: toggleMute,
   }]), []);
 
-  // 効果音: プレゼンテーションの議題の移動、項目の選択
+  // 効果音: プレゼンテーションの論点の移動、項目の選択
   useEffect(() => usePresentationStore.subscribe((s, prev) => {
     if (s.active !== prev.active || (s.active && s.index !== prev.index)) audio.playSe('transition');
   }), []);

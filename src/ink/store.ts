@@ -38,9 +38,9 @@ interface InkState {
   setTool: (t: ToolId) => void;
   setColor: (c: string) => void;
   setSize: (n: number) => void;
-  /** 議題 topicId のボードを追加して選択する。 */
+  /** 論点 topicId のボードを追加して選択する。 */
   addBoard: (topicId: string | null) => string;
-  /** 議題にボードがなければ 1 枚作る。選択中のボードがその議題のものでなければ切り替える。 */
+  /** 論点にボードがなければ 1 枚作る。選択中のボードがその論点のものでなければ切り替える。 */
   ensureTopicBoard: (topicId: string | null) => void;
   /** 他のビューの上に重ねる注釈のボード（なければ作る）。ID を返す。 */
   ensureAnnotationBoard: (viewKey: string) => string;

@@ -1,5 +1,5 @@
 // プレゼンテーションモードの純粋なモデル（FR-016）。React に依存しない。
-// 議題の順序は show.json の chapters[].topics[] の順（番組構成 FR-077 のチャプターと連動する）。
+// 論点の順序は show.json の chapters[].topics[] の順（番組構成 FR-077 のチャプターと連動する）。
 
 export interface ShowChapterLike {
   id: string;
@@ -16,13 +16,13 @@ export interface PresentationTopic {
   chapterIndex: number;
 }
 
-/** show.json の章と議題を、プレゼンテーションで巡る順（章の順、章の中は議題の順）に平らにする。 */
+/** show.json の章と論点を、プレゼンテーションで巡る順（章の順、章の中は論点の順）に平らにする。 */
 export function flattenTopics(chapters: readonly ShowChapterLike[]): PresentationTopic[] {
   return chapters.flatMap((c, chapterIndex) =>
     (c.topics ?? []).map((t) => ({ id: t.id, title: t.title, chapterId: c.id, chapterTitle: c.title, chapterIndex })));
 }
 
-/** 議題の番号を delta だけ動かす。先頭・末尾を超えては進まない（範囲に収める）。 */
+/** 論点の番号を delta だけ動かす。先頭・末尾を超えては進まない（範囲に収める）。 */
 export function stepIndex(index: number, delta: number, length: number): number {
   if (length <= 0) return 0;
   return Math.min(length - 1, Math.max(0, index + delta));
@@ -58,7 +58,7 @@ export function targetUsesArrowKeys(t: KeyTargetInfo | null | undefined): boolea
 
 /**
  * プレゼンテーション中のキー → 操作（FR-016 AC-192）。
- * `←`/`→`（修飾キーなし）だけが前/次の議題への移動。`↑`/`↓` と、`Shift` を押しながらの矢印はキャンバスのパンに残す。
+ * `←`/`→`（修飾キーなし）だけが前/次の論点への移動。`↑`/`↓` と、`Shift` を押しながらの矢印はキャンバスのパンに残す。
  */
 export function presentationKeyAction(e: KeyInfo, target?: KeyTargetInfo | null): 'next' | 'prev' | null {
   if (e.shiftKey || e.ctrlKey || e.altKey || e.metaKey) return null;

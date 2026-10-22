@@ -330,7 +330,7 @@ export const ShowSchema = z.looseObject({
     topics: z.array(entity({
       title: z.string().min(1),
       entityIds: z.array(IdSchema).optional(),
-      /** 議題の種類。なければ通常の議題 */
+      /** 論点の種類。なければ通常の論点 */
       type: z.string().min(1).optional(),
       /** テロップ/ローワーサード（FR-078）。出典 ID を併記する */
       telop: z.looseObject({ text: z.string().min(1), sourceIds: z.array(IdSchema).optional() }).optional(),
