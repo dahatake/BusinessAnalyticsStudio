@@ -2,6 +2,10 @@
 // キー・エンドポイントの値は、入力した瞬間に中継へ送るだけで、ブラウザーには保存しない。取得できるのは「設定済みか」と伏せ字だけ。
 import { isLoopbackUrl } from './client';
 
+/** 設定画面の入力欄の既定（FR-275） */
+export const DEFAULT_FOUNDRY_ENDPOINT = 'https://GraphcRecordingPanel.services.ai.azure.com/openai/v1';
+export const DEFAULT_FOUNDRY_DEPLOYMENT = 'gpt-chat-latest';
+
 export interface FoundryView {
   configured: boolean;
   endpoint: string;

@@ -287,7 +287,7 @@
 | FR-271 | アプリ内ガイドのドキュメントへの反映 | 承認済み | README.md, users-guide/01-quick-start.md, users-guide/images/guide-flow.svg | tests/unit/hints.test.tsx (AC-689) | - |
 | FR-272 | 分析画面からの「使い方」の入口 | 承認済み | src/guide/GuideButton.tsx, src/guide/WelcomeDialog.tsx (GuideHost), src/app/App.tsx | tests/unit/guide.test.tsx (AC-690, AC-697), tests/system/e2e/getting-started.spec.ts (E2E-366) | デザイン基盤, アプリ内ガイド |
 | FR-274 | 「現状の説明」ボタンとサイドパネル（AI による課題・解決策・KPI/OKR への寄与の説明） | 承認済み | 未実装 | 未実装 | - |
-| FR-275 | Microsoft Foundry の接続設定（エンドポイント・デプロイ名・API キー）と外部送信の条件 | 承認済み | scripts/relay/foundry-vault.ts, scripts/relay/foundry.ts, scripts/relay/relay.ts, src/ai/foundryClient.ts, src/ai/FoundrySettings.tsx, src/ai/AiSettings.tsx | tests/unit/foundry.test.ts (AC-704, AC-705, AC-706, AC-707), tests/system/e2e/explain-current.spec.ts (AC-703) | Foundry 接続部品 |
+| FR-275 | Microsoft Foundry の共通接続設定（エンドポイント・デプロイ名・API キー）と外部送信の条件 | 承認済み | scripts/relay/foundry-vault.ts, scripts/relay/foundry.ts, scripts/relay/relay.ts, src/ai/foundryClient.ts, src/ai/FoundrySettings.tsx, src/ai/AiSettings.tsx | tests/unit/foundry.test.ts (AC-704, AC-705, AC-706, AC-707), tests/system/e2e/explain-current.spec.ts (AC-703) | Foundry 接続部品 |
 | FR-276 | 「現状の説明」の課金の安全策（回数・大きさ・間隔・予算の警告と停止） | 承認済み | 未実装 | 未実装 | - |
 | FR-277 | AI が使えないときの「使えない」表示と決定的な代替説明 | 承認済み | 未実装 | 未実装 | - |
 | FR-245 | 図のパン（移動）と拡大縮小 | 承認済み | src/components/GraphViewport.tsx (面の枠・パン・拡大縮小・全画面・全画面中の他部品の無効化), src/components/graphViewStore.ts (面ごとの状態・PARAM-057・087・088・089・105 の値・表の行からの移動の依頼), src/components/GraphSurface.tsx (自分でズームを持つ面の階層・塊), src/screens/TwinViewScreen.tsx, src/screens/SpatialScreen.tsx, src/components/DataViewer.tsx (GraphScope で面に収める) | tests/unit/graph-interaction.test.tsx (AC-593, AC-594), tests/system/e2e/graph-interaction.spec.ts (E2E-346, E2E-347, E2E-348) | Graph の描画枠, Graph の描画面, 意味的ズーム |
@@ -304,7 +304,7 @@
 | NFR-SEC-012 | Foundry の API キーをリポジトリ・ログ・テストデータに出さない | 承認済み | 未実装 | 未実装 | なし |
 | NFR-COST-001 | 分析実行の利用量と月の予算の上限 | 承認待ち | 未実装 | 未実装 | なし |
 | FR-284 | 画面「生成AIの効果的な活用シナリオの分析」と [分析実行] | 承認済み | src/genai/scenario.ts, src/screens/GenAiScenarioScreen.tsx | tests/system/CONTRACT.md, tests/system/e2e/genai-scenario.spec.ts, tests/system/support/relay-stub.ts, tests/unit/genai-scenario.test.ts, tests/unit/genai-screen.test.tsx, tests/unit/view-switch.test.tsx | - |
-| FR-285 | 生成AIの活用分析の Foundry 実接続の切替 | 承認済み | .env.example, src/genai/GenAiSettings.tsx, src/genai/foundryClient.ts, src/genai/scenario.ts, src/genai/useGenAi.ts, src/screens/GenAiScenarioScreen.tsx | tests/system/CONTRACT.md, tests/system/e2e/genai-scenario.spec.ts, tests/system/support/relay-stub.ts, tests/unit/genai-scenario.test.ts, tests/unit/genai-screen.test.tsx | - |
+| FR-285 | 生成AIの活用分析の Foundry 実接続の切替（共通接続 FR-275 を使う） | 承認済み | .env.example, scripts/relay/genai-foundry.ts, scripts/relay/relay.ts, src/genai/foundryClient.ts, src/genai/scenario.ts, src/genai/useGenAi.ts, src/screens/GenAiScenarioScreen.tsx | tests/system/CONTRACT.md, tests/system/e2e/genai-scenario.spec.ts, tests/system/support/relay-stub.ts, tests/unit/genai-scenario.test.ts, tests/unit/genai-screen.test.tsx | - |
 ## API・イベント
 
 | 名前 | 定義ファイル | 関連する要求 ID |
@@ -312,8 +312,8 @@
 | POST /ask（中継プロセス） | scripts/relay/relay.ts | FR-010, FR-011, FR-132 |
 | POST /connection（中継プロセス） | scripts/relay/relay.ts | FR-132, FR-181 |
 | POST /azure/connection・/azure/speech・/azure/vision（中継プロセス） | scripts/relay/relay.ts | FR-182 |
-| GET /health（中継プロセス。foundry.keyConfigured は真偽だけでキーの値は返さない） | scripts/relay/relay.ts | FR-011, FR-285 |
-| POST /foundry/analyze（中継プロセス。解決策の文章・エンドポイント・デプロイ名を受け、Foundry の Responses API を呼ぶ。失敗は原因つきの 5xx） | scripts/relay/relay.ts, scripts/relay/foundry.ts | FR-285 |
+| GET /health（中継プロセス。foundry.keyConfigured は共通の保管庫にキーがあるかの真偽だけでキーの値は返さない） | scripts/relay/relay.ts | FR-011, FR-285 |
+| POST /foundry/analyze（中継プロセス。body は packId・解決策の文章だけ。エンドポイント・デプロイ名・キーは共通の保管庫（FR-275）から取り、共通接続が未設定・無効なら外部を呼ばない。通信先は https かつ Azure 標準ドメイン・リダイレクトを追わない。Foundry の Responses API を呼ぶ。失敗は原因つきの 5xx） | scripts/relay/relay.ts, scripts/relay/foundry.ts | FR-285, FR-275 |
 | GET・PUT・DELETE /speech/config（中継プロセス。値は返さず設定済みと伏せ字だけ） | scripts/relay/relay.ts | FR-168, NFR-SEC-005 |
 | POST /speech/synthesize（中継プロセス。保存済みの接続先へだけ中継） | scripts/relay/relay.ts | FR-168, NFR-SEC-005 |
 | GET・PUT・DELETE /foundry/config・POST /foundry/connection・POST /foundry/ask（中継プロセス。値は返さず設定済みと伏せ字だけ。了承・有効・設定がそろわないと呼び出し 0 回） | scripts/relay/relay.ts | FR-275, NFR-SEC-005 |
@@ -327,7 +327,6 @@
 
 | 企業・Project・ステッパーの位置・分析（localStorage `eabk.projects.v1`） | src/store/persist.ts, src/store/projects.ts, src/store/stepper.ts, src/store/analyses.ts, src/store/usecases.ts | ブラウザー（この端末だけ。サーバー・ほかの端末へは送らない。識別子は自システムの採番 company-N / project-N）。作業先ごとの KPI・OKR（okr）も同じキーに保存。Project ごとのユースケースとアニメーション（usecases）、データカタログの明示の紐づけ（dataLinks。FR-160）、取り込んだ企業データカタログと出典の URL（dataCatalogs。FR-161）、plan の tasks への追加分（dataTasks。FR-162）も同じキーに保存 | FR-137, FR-138, FR-139, NFR-SEC-004, FR-153, FR-158, FR-155, FR-160, FR-161, FR-162 |
 | お手本の KPI・OKR（customer.json の okr） | src/schema/files.ts, schema/customer.json, examples/mono/public/data/customer.json, examples/koto/public/data/customer.json | 顧客パック（デモのお手本。読み込み専用で、定義すると端末内の保存が優先される） | FR-153, FR-154 |
-| 生成AIの活用分析の接続設定（localStorage `edb.genai`。実接続を有効にした顧客パック・エンドポイント・デプロイ名。キーは保存しない） | src/genai/useGenAi.ts | ブラウザー（この端末だけ。キーは中継プロセスの環境変数 FOUNDRY_API_KEY だけ） | FR-285 |
 | 分析画面のレイアウト（localStorage `eabk.analysis-layout.v1`。画面キーごとの位置・幅の差分） | src/store/analysisLayout.ts | ブラウザー（この端末だけ。送信しない） | NFR-UX-006 |
 | 議論テーマ（localStorage `edb.discussion`） | src/store/discussion.ts, src/discussion/model.ts | ブラウザー（保存・復元は議論メモの Markdown が正本の写し） | FR-048, FR-049, FR-050, FR-051, FR-056 |
 | ホワイトボードのボード（IndexedDB `edb-ink` の `state` / `boards`） | src/ink/persist.ts, src/ink/model.ts | ブラウザー（ボード・ストローク・項目の自動保存） | FR-095, FR-097 |
@@ -376,7 +375,7 @@
 | アクセシビリティの共通部品 | src/components/ViewTable.tsx, src/components/ChoiceRadio.tsx, src/components/roving.ts, src/theme/a11y.css, src/theme/tabsterDummies.ts | `ViewAsTableButton`・`ViewTable`（「表で見る」。3D・地図・ナレッジグラフ・マトリクスなど位置や大きさで見せる表現に足す。行は `data-entity-id`・`aria-selected` で選択の共通の状態につながる）。`Radio`・`RadioGroup`（Fluent の同名の部品の代わりに使う。すべての選択肢に Tab で届き、矢印キーで選択を移す。直接 Fluent のものを使うと単体テストが落ちる）。`rovingTarget`（矢印キー・Home・End の移動先。ナビゲーションの roving tabindex と共通）・`isSelectedHighlight`。a11y.css は、枠のない操作要素に共通のフォーカスの枠を出す（部品が自前の `:focus-visible` を持てばそちらが優先）。tabsterDummies は Fluent の見えない Tab の受け口を Tab の停止位置から外す。AppShell のナビゲーションは Tab の停止位置が 1 つで、Tab でその項目のコンポーネントへ入る | NFR-A11Y-001, NFR-A11Y-003, NFR-UX-018 |
 | AI 呼び出し口 | src/ai/client.ts, src/ai/useAi.ts, src/ai/AiStatus.tsx, src/ai/AiSettings.tsx, src/ai/ChatScreen.tsx | askAi（5 種類の LLM 処理の唯一の入口。既定はモック、実接続は確認後のみ localhost の中継へ）、常時表示の AI 状態、設定の実接続切替、チャットの土台（FR-017 が拡張） | FR-010、FR-011、FR-017、FR-041、FR-042、FR-050、FR-099、FR-132、FR-181、FR-219、NFR-ENV-002、NFR-SEC-002 |
 | Copilot SDK 中継プロセス | scripts/relay/relay.ts, scripts/relay/copilot-adapter.ts, scripts/relay/start.ts | 127.0.0.1 だけで待ち受ける Node.js の中継。`npm run relay`。了承の記録のない案件の実接続の有効化は拒否する | FR-010、FR-011、FR-132、FR-168、FR-181、NFR-SEC-005 |
-| 生成AIの活用分析 | src/genai/scenario.ts, src/genai/foundryClient.ts, src/genai/useGenAi.ts, src/genai/GenAiSettings.tsx, scripts/relay/foundry.ts | 解決策への生成AIの適合性の判断（7 つの基準・結論 3 区分・代替案。ルールベース＝モックと失敗時の代替）、Foundry 実接続（中継プロセス経由。キーは中継の環境変数だけ）の呼び出しと原因つきの失敗、設定の切替 | なし |
+| 生成AIの活用分析 | src/genai/scenario.ts, src/genai/foundryClient.ts, src/genai/useGenAi.ts, scripts/relay/genai-foundry.ts, scripts/relay/foundry.ts | 解決策への生成AIの適合性の判断（7 つの基準・結論 3 区分・代替案。ルールベース＝モックと失敗時の代替）、Foundry 実接続（共通接続 FR-275 を中継プロセス経由で使う。独自のキー・環境変数なし）の呼び出しと原因つきの失敗、共通接続の有効化に従う切替 | なし |
 | 顧客の了承の記録 | src/ai/consent.ts, src/ai/useConsent.ts, src/ai/ConsentSettings.tsx, scripts/pipeline/consent.ts | 案件（企業・Project）ごとの了承の自己申告の記録（個人名・連絡先は保存しない）。実接続・パイプラインの実調査の条件。consent.json の書き出し（buildConsentExport）と置き場所の案内 | FR-132、FR-181、FR-182、FR-203、FR-219 |
 | 種別「人」の確認 | src/ai/personConfirm.ts, src/ai/PersonConfirmDialog.tsx | 種別「人」を含む顧客パックの外部送信・エクスポート前の確認（gatePersonConfirm: 件数・範囲・確認日の表示、了承なしは続行不可、同じ内容・了承の記録の間は続行を引き継ぐ）。確認の画面は共通の Dialog を使う | FR-219 |
 | 音声・手書き認識の実接続部品 | scripts/relay/azure-services.ts, src/ai/azureClient.ts, src/ai/useAzure.ts, src/ai/AzureSettings.tsx | Azure AI Speech・Azure AI Vision への接続（呼ぶ主体は中継プロセス。キーは中継側の .env のみ）。HTTP は `HttpPost` で差し替え可。キー未設定・無効・了承なしはモック | FR-182 |
