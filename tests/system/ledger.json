@@ -294,7 +294,8 @@
     "AC-712": "sha256:0e69695d5457cad9",
     "AC-713": "sha256:706deed685a6f99e",
     "AC-733": "sha256:416fb88a5cfaff0a",
-    "AC-739": "sha256:a7892bd655cdf85a"
+    "AC-739": "sha256:a7892bd655cdf85a",
+    "AC-740": "sha256:2450e8e383f93767"
   },
   "cases": [
     {
@@ -8798,6 +8799,31 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "FR-285 の System Test 作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-374",
+      "requirement_ids": [
+        "FR-178"
+      ],
+      "ac_ids": [
+        "AC-740"
+      ],
+      "title": "ストーリー: 全シーンの要素が交差せず画面外にはみ出さない（1280x720・1920x1080・320 幅、長い見出し・本文の異常系を含む）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-740",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:07:25+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
         }
       ]
     }
