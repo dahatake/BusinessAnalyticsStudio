@@ -258,6 +258,11 @@ test.describe('NFR-A11Y-004 ドラッグ以外の操作', () => {
   });
 });
 
+/** NFR-SEC-002 AC-176 の対象の区画（設定の region「AI・音声・手書きの接続」。CONTRACT.md の設定の区画の取り決め） */
+function aiConnectionRegion(settings: Locator): Locator {
+  return settings.getByRole('region', { name: 'AI・音声・手書きの接続', exact: true });
+}
+
 test.describe('NFR-SEC-002 外部への通信の限定と明示', () => {
   // NFR-SEC-002 AC-176
   test('NFR-SEC-002 AC-176 接続済みの差し替え部品で質問すると送信中の表示が出て、送信内容を画面で確認でき、通信先は localhost だけ', async ({ page, start }) => {
@@ -273,7 +278,8 @@ test.describe('NFR-SEC-002 外部への通信の限定と明示', () => {
       await settings.getByRole('textbox', { name: /了承を確認した相手の役割と方法のメモ/ }).fill('顧客側の担当役員（口頭）');
       await settings.getByRole('button', { name: '了承の記録を保存' }).click();
       await expect(settings.getByTestId('consent-state')).toContainText('了承あり');
-      await settings.getByRole('switch', { name: /実接続/ }).click();
+      // AC-176 の対象は AI 接続（GitHub Copilot）の実接続。FR-285 の region「生成AIの活用分析の接続」のスイッチと区別するため区画に絞る
+      await aiConnectionRegion(settings).getByRole('switch', { name: /実接続/ }).click();
       const confirm = page.getByRole('alertdialog');
       await expect(confirm).toContainText(/顧客名|議論|顧客パック/);
       await confirm.getByRole('button', { name: /有効にする|確認/ }).click();
@@ -309,7 +315,9 @@ test.describe('NFR-SEC-002 実接続の有効化は了承の記録が条件（�
       const settings = await openScreen(page, 'settings');
       await expect(settings.getByTestId('consent-state')).toContainText('記録なし');
       await expect(settings.getByTestId('consent-required')).toContainText('実接続を有効にできません');
-      const sw = settings.getByRole('switch', { name: /実接続/ });
+      // AC-176 の対象（AI 接続の区画）のスイッチだけを見る。FR-285 の区画のスイッチは別の要求の対象
+      const sw = aiConnectionRegion(settings).getByRole('switch', { name: /実接続/ });
+      await expect(sw).toHaveCount(1);
       if (await sw.isEnabled()) await sw.click();
       else await expect(sw).toBeDisabled();
       await expect(page.getByRole('alertdialog')).toHaveCount(0);

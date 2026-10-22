@@ -146,6 +146,7 @@
 - 画面の見出し（FR-220 AC-515）: `data-testid="screen-heading"` の中の button「ビュー」（名前は「ビュー」で始まる。§21 のコンポーネントの「ビュー」と同じメニュー）。左メニュー navigation「画面」に 2D/3D の切替の項目（menuitemradio「2D」「3D」・switch・名前が「3D ビュー」だけの項目）を置かない（FR-220 の改訂で、画面「3D ビューと 2D 図面」「2D 図面」の項目は左メニューに置かない＝AC-590。§21 の開き方で開く）。
 - 操作アイコン（FR-222 AC-518）: §10 の `component-actions` の button「最小化」「最大化」（最大化中は「通常表示」か「元に戻す」）が見出しの右上に並び、図（svg か img）を持つ。名前はホバー・フォーカスで role=tooltip に出る。最大化中は `data-maximized="true"`、最小化中は `data-minimized="true"`。常設ボタン（「その他の操作」を除く）は 6 個以下（PARAM-073）。
 - 設定のモーダル（FR-223 AC-519）: 左メニューの `nav-settings` で role=dialog「設定」（`aria-modal="true"`、button「閉じる」）が開く。背面の覆いは `data-testid="modal-backdrop"`（透明でない背景色）。設定は `component-settings` としてワークスペースに並ばない。
+- 設定の区画（NFR-SEC-002 AC-176・FR-285 AC-739。run 202610212134）: AI 接続（GitHub Copilot）の実接続は region「AI・音声・手書きの接続」の中の switch（名前に「実接続」を含む。例「AI の実接続を有効にする（GitHub Copilot）」）。生成AIの活用分析（Foundry）の実接続は region「生成AIの活用分析の接続」の中の switch「実接続を有効にする」。名前「実接続」は設定の中で一意ではないため、テストは switch を必ず区画（region）に絞って探す。
 - サイズ変更（FR-224 AC-521）: コンポーネントの縁・角のつまみ `data-testid="resize-e"`（右の縁）・`resize-s`（下の縁）・`resize-se`（右下の角）。ホバーで利用できる。ドラッグで縦だけ・横だけ・両方が変わる。
 - 作業先（FR-226 AC-525）: 「[顧客名] - [プロジェクト名]」の見える文字は `work-target-menu`（§10）だけ。`work-target` を残す場合は見える同じ文字を持たず、アクセシブルな名前に作業先を含む。
 - 強調（FR-227 AC-526）: 各コンポーネントの項目 `[data-entity-id]` の `data-highlight`（selected・related・dimmed。強調なしは属性なしか空）。選択中は、項目を持つすべてのコンポーネントで、各項目が selected/related か dimmed のどちらか一方になる。解除は Esc か同じ項目の再クリック。
