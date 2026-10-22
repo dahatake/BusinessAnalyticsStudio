@@ -38,9 +38,10 @@ function handleVault(ref: FoundryVaultRef, method: string, pathname: string, bod
   if (pathname === '/foundry/connection') {
     if (method === 'PUT' || method === 'POST') {
       try {
-        const b = JSON.parse(body) as { enabled?: boolean };
-        if (b.enabled && !ref.v) { json(409, { error: '接続情報が未設定です' }); return true; }
-        if (ref.v) ref.v.enabled = !!b.enabled;
+        const b = JSON.parse(body) as         { enabled?: boolean; enable?: boolean; packId?: string; consent?: unknown; confirmed?: unknown };
+                const want = b.enable ?? b.enabled;
+                if (want && !ref.v) { json(409, { error: '接続情報が未設定です' }); return true; }
+                if (ref.v) ref.v.enabled = !!want;
       } catch { json(400, { error: '不正な入力です' }); return true; }
     }
     json(200, vaultView(ref.v));
