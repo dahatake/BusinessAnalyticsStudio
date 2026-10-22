@@ -94,7 +94,7 @@ export function FoundrySettings() {
       <Switch
         checked={!!view?.enabled}
         disabled={!relayUrl || !packId || !granted || !configured}
-        label="Foundry の実接続を有効にする"
+        label="Microsoft Foundry への送信を有効にする（現状の説明）"
         onChange={(_, d) => { if (d.checked) setConfirming(true); else void disable(); }}
       />
       <Text size={200} data-testid="foundry-mode">現在の状態: {view?.enabled ? '接続済み' : 'モック（外部へは送信しません）'}</Text>
