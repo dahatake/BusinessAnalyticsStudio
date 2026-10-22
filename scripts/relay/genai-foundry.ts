@@ -1,25 +1,18 @@
 // 生成AIの活用分析（FR-284）の Microsoft Foundry 接続部品（FR-285）。呼ぶ主体は中継プロセス。
-// - API キーは中継側の環境変数 FOUNDRY_API_KEY だけ。ブラウザー・応答・ログ・エラーには出さない（NFR-SEC-001）。
+// - 接続情報（エンドポイント・デプロイ名・API キー）は共通接続（FR-275）の保管庫のものを、中継（relay.ts）が渡す。独自の環境変数・設定は持たない。キーはブラウザー・応答・ログ・エラーには出さない（NFR-SEC-001）。
 // - OpenAI 互換の Responses API（POST {endpoint}/responses、api-key ヘッダー）を呼ぶ。接続先は https かつ Azure の標準ドメインだけ（キーを任意のホストへ送らせない。NFR-SEC-002）。
-// - 失敗は原因つき（key-missing / unreachable / timeout / upstream-status / bad-response / bad-request）で投げる。自動の再試行はしない。
+// - 失敗は原因つき（key-missing / disabled / unreachable / timeout / upstream-status / bad-response / bad-request）で投げる。自動の再試行はしない。
 // - HTTP 呼び出しは fetchFn として差し替えられる（検査はスタブ。本物の Foundry は検査で呼ばない）。
 
 export const FOUNDRY_TIMEOUT_MS = 60_000; // PARAM-121（60 秒）
 export const FOUNDRY_MAX_INPUT_CHARS = 8000; // PARAM-122
 
-export type FoundryCause = 'key-missing' | 'unreachable' | 'timeout' | 'upstream-status' | 'bad-response' | 'bad-request';
+export type FoundryCause = 'key-missing' | 'disabled' | 'unreachable' | 'timeout' | 'upstream-status' | 'bad-response' | 'bad-request';
 
 export class FoundryError extends Error {
   constructor(readonly kind: FoundryCause, readonly detail: { upstreamStatus?: number; timeoutSeconds?: number } = {}) {
     super(kind);
   }
-}
-
-export interface FoundryConfig { apiKey?: string }
-
-export function foundryConfigFromEnv(env: Record<string, string | undefined>): FoundryConfig {
-  const k = env.FOUNDRY_API_KEY?.trim();
-  return { apiKey: k ? k : undefined };
 }
 
 /** https かつ Azure の標準ドメイン（*.services.ai.azure.com / *.openai.azure.com / *.cognitiveservices.azure.com）だけ */
@@ -35,9 +28,7 @@ export function isValidFoundryEndpoint(e: unknown): e is string {
 export const isValidDeployment = (d: unknown): d is string => typeof d === 'string' && /^[A-Za-z0-9._-]{1,64}$/.test(d);
 
 export interface FoundryService {
-  /** キーが設定されているか（値は返さない） */
-  hasKey(): boolean;
-  analyze(req: { solution: string; endpoint: string; deployment: string }): Promise<unknown>;
+  analyze(req: { solution: string; endpoint: string; deployment: string; key: string }): Promise<unknown>;
 }
 
 const CRITERIA_IDS = ['unstructured-input', 'open-output', 'hard-to-ruleify', 'error-tolerance', 'accountability', 'confidentiality', 'cost-benefit'];
@@ -70,15 +61,13 @@ export function parseJsonText(text: string): unknown {
 }
 
 export function createFoundryService(
-  config: FoundryConfig,
   opts: { fetchFn?: typeof fetch; timeoutMs?: number } = {},
 ): FoundryService {
   const fetchFn = opts.fetchFn ?? ((u, i) => fetch(u, i));
   const timeoutMs = opts.timeoutMs ?? FOUNDRY_TIMEOUT_MS;
   return {
-    hasKey: () => !!config.apiKey,
-    async analyze({ solution, endpoint, deployment }) {
-      if (!config.apiKey) throw new FoundryError('key-missing');
+    async analyze({ solution, endpoint, deployment, key }) {
+      if (!key) throw new FoundryError('key-missing');
       if (!isValidFoundryEndpoint(endpoint) || !isValidDeployment(deployment) || solution.length === 0 || solution.length > FOUNDRY_MAX_INPUT_CHARS) throw new FoundryError('bad-request');
       const ctl = new AbortController();
       const timer = setTimeout(() => ctl.abort(), timeoutMs);
@@ -86,9 +75,10 @@ export function createFoundryService(
       try {
         res = await fetchFn(`${endpoint.replace(/\/+$/, '')}/responses`, {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'api-key': config.apiKey },
+          headers: { 'content-type': 'application/json', 'api-key': key },
           body: JSON.stringify({ model: deployment, input: buildPrompt(solution) }),
           signal: ctl.signal,
+          redirect: 'manual',
         });
         if (!res.ok) throw new FoundryError('upstream-status', { upstreamStatus: res.status });
         const text = extractOutputText(await res.json().catch(() => undefined));
@@ -111,5 +101,5 @@ export function createFoundryService(
 
 /** 原因ごとの HTTP の状態（ブラウザー向けの応答。キーの値・上流の本文は含めない） */
 export const CAUSE_STATUS: Record<FoundryCause, number> = {
-  'key-missing': 503, unreachable: 502, timeout: 504, 'upstream-status': 502, 'bad-response': 502, 'bad-request': 400,
+  'key-missing': 503, disabled: 503, unreachable: 502, timeout: 504, 'upstream-status': 502, 'bad-response': 502, 'bad-request': 400,
 };
