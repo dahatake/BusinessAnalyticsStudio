@@ -1,5 +1,5 @@
 // ホワイトボード画面（無限キャンバスと複数ボード）。FR-086 / FR-088 / FR-097 / FR-098 / FR-099
-// 議題（議論テーマ）ごとに複数のボードを持つ。背景（無地/方眼/ドット/罫線）・全体表示・拡大縮小・ミニマップ・インクの道具を備える。
+// 論点（議論テーマ）ごとに複数のボードを持つ。背景（無地/方眼/ドット/罫線）・全体表示・拡大縮小・ミニマップ・インクの道具を備える。
 // 付箋・コネクター・フレーム・グループ・整列（FR-097）、アプリのデータのカード（FR-098）、
 // 付箋のクラスタリング・ドット投票・タイマー（FR-099）をこの画面が受け持つ。
 import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
@@ -156,7 +156,7 @@ export function WhiteboardScreen() {
   const timerPaused = useTimer((st) => st.pausedMs);
   const timerDuration = useTimer((st) => st.durationSec);
 
-  // 議題が変わったら、その議題のボードに切り替える（なければ 1 枚作る）。描画の前に済ませる
+  // 論点が変わったら、その論点のボードに切り替える（なければ 1 枚作る）。描画の前に済ませる
   useLayoutEffect(() => { ensureTopicBoard(topicId); }, [topicId, ensureTopicBoard]);
 
   const mine = boards.filter((b) => b.kind === 'board' && b.topicId === topicId);
@@ -188,7 +188,7 @@ export function WhiteboardScreen() {
       const r = await recognizeHandwriting(selStrokes);
       if (!r) { setStatus('認識できる手書きがありません。'); return; }
       useRecognized.getState().add({ kind, text: r.text, boardId: active.id, strokeIds: selStrokes.map((k) => k.id), mock: r.mock });
-      // 議論の記録（議題）があれば、そこにもラベルつきで書き足す
+      // 議論の記録（論点）があれば、そこにもラベルつきで書き足す
       if (target && topicId) {
         const store = useDiscussionStore.getState();
         const theme = store.byPack[target.key]?.themes.find((t) => t.id === topicId);
@@ -296,7 +296,7 @@ export function WhiteboardScreen() {
     <Panel
       testId="component-whiteboard"
       title="ホワイトボード"
-      description={pane ? undefined : '議題ごとに複数のボードを持てる無限キャンバスです。ペンで描き、2 本指またはホイールでパン、Ctrl+ホイールで拡大縮小します。'}
+      description={pane ? undefined : '論点ごとに複数のボードを持てる無限キャンバスです。ペンで描き、2 本指またはホイールでパン、Ctrl+ホイールで拡大縮小します。'}
       maxWidth="1280px"
     >
       <div className={s.controls}>

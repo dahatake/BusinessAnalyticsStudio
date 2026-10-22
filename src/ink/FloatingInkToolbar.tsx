@@ -105,13 +105,12 @@ export function FloatingInkToolbar({ boardId, label = 'インクの道具', whit
  */
 export function InkToolbarHost() {
   const wbVisible = useLayout((st) => isVisible(effectiveLayout(st), 'whiteboard'));
-  const canvasVisible = useLayout((st) => isVisible(effectiveLayout(st), 'canvas'));
   const presenting = usePresentationStore((st) => currentTopic(st) !== null);
   const mode = usePresentationInk((st) => st.mode);
   const activeId = useInk((st) => st.activeBoardId);
   const activeIsBoard = useInk((st) => selectBoard(st.activeBoardId)(st)?.kind === 'board');
 
-  const annotating = presenting && canvasVisible && mode !== 'off';
+  const annotating = presenting && mode !== 'off';
   if (!annotating && !(wbVisible && activeIsBoard)) return null;
   return <FloatingInkToolbar boardId={annotating ? PRESENTATION_BOARD_ID : activeId} whiteboard={!annotating} />;
 }

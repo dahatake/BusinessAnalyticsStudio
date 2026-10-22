@@ -51,7 +51,7 @@ export const KIND_FILTER_LABEL: Record<NodeKind, string> = {
   architecture: 'アーキテクチャ (architecture)',
   mock: 'モック (mock)',
   chapter: '章 (chapter)',
-  topic: '議題 (topic)',
+  topic: '論点 (topic)',
   source: '出典 (source)',
 };
 

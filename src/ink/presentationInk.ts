@@ -2,7 +2,6 @@
 // 書き込みの扱いは利用者が選ぶ（既定は「書かない」＝キャンバスの操作を妨げない）。プレゼンを終えると「書かない」に戻る。
 import { create } from 'zustand';
 import { usePresentationStore, currentTopic } from '../store/presentation';
-import { useLayout } from '../store/layout';
 import { annotationBoardId, useInk } from './store';
 
 export type AnnotationMode = 'off' | 'temporary' | 'saved';
@@ -49,22 +48,6 @@ export function startPresentationInkWatch(): void {
     }
     if (!s.active && usePresentationInk.getState().mode !== 'off') usePresentationInk.getState().setMode('off');
   });
-
-  // 書き込む間は、キャンバスを広げて書く場所を確保する（狭い枠では書けない）。書き終えたら元に戻す
-  let widened = false;
-  usePresentationInk.subscribe((s, prev) => {
-    if (s.mode === prev.mode) return;
-    const layout = useLayout.getState();
-    if (s.mode !== 'off' && !widened && layout.maximized === null) {
-      layout.setMaximized('canvas');
-      widened = true;
-    } else if (s.mode === 'off' && widened) {
-      if (layout.maximized === 'canvas') layout.setMaximized(null);
-      widened = false;
-    }
-  });
-  // 注釈中に Esc などで最大化が外れたら、「広げた」状態も解く（次に書き始めたとき、また広げられるように）
-  useLayout.subscribe((l) => { if (widened && l.maximized !== 'canvas') widened = false; });
 }
 
 startPresentationInkWatch();

@@ -103,7 +103,7 @@ export const DEFAULT_JUDGMENTS: readonly DefaultJudgment[] = [
   { key: 'influence', description: 'KPI→OKR（影響）', meaning: 'influences', question: 'path', suitable: true },
   { key: 'measurement-control', description: '設備→センサー/指標（計測・制御）', meaning: 'measures', question: 'hub', suitable: true },
   { key: 'placement', description: '拠点→設備（配置）', meaning: 'locatedIn', question: 'reachability', suitable: true },
-  { key: 'time-order', description: '議題→次のアクション（時間の前後だけ）', nature: 'timeOrder', suitable: false },
+  { key: 'time-order', description: '論点→次のアクション（時間の前後だけ）', nature: 'timeOrder', suitable: false },
 ];
 
 export interface PackRelationLike { id?: string; from: string; to: string; meaning?: string | null; label?: string; directed?: boolean; nature?: NonGraphNature }

@@ -13,7 +13,7 @@ import { useDiscussionStore } from '../store/discussion';
 import { usePackStore } from '../store/pack';
 import { CARD_H, placeCard } from './ops';
 
-/** いま開いている議題の ID（なければ null）。ホワイトボードは議題ごとにボードを持つ。 */
+/** いま開いている論点の ID（なければ null）。ホワイトボードは論点ごとにボードを持つ。 */
 export function currentTopicId(): string | null {
   const st = usePackStore.getState().state;
   if (st.status !== 'ready') return null;
@@ -24,7 +24,7 @@ export function currentTopicId(): string | null {
 export interface PlaceResult { ok: boolean; message: string }
 
 /**
- * 元データ entityId のカードを、いまの議題のボードに置く。at はカードの中心（ワールド座標）。なければ表示範囲の中央。
+ * 元データ entityId のカードを、いまの論点のボードに置く。at はカードの中心（ワールド座標）。なければ表示範囲の中央。
  * すでに同じ元データのカードがあれば、増やさずにそのことを返す。
  */
 export function placeEntityOnBoard(entityId: string, at?: { x: number; y: number }): PlaceResult {

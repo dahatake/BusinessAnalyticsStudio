@@ -15,7 +15,7 @@ class MemoryStorage {
   removeItem(k: string) { this.m.delete(k); }
   clear() { this.m.clear(); }
 }
-const ALL = ['canvas', 'summary', 'matrix', 'ranking', 'issue-solution', 'discussion-tree', 'gantt', 'architecture', 'knowledge-graph', 'products', 'view3d', 'mock-app', 'table', 'kpi-okr'];
+const ALL = ['summary', 'matrix', 'ranking', 'issue-solution', 'discussion-tree', 'gantt', 'architecture', 'knowledge-graph', 'products', 'map', 'mock-app', 'table', 'kpi-okr'];
 
 async function freshStore(saved?: unknown) {
   vi.resetModules();

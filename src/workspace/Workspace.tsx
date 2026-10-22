@@ -12,6 +12,9 @@ import { EXPAND_RATIO, useSettings, type ExpandPosition } from '../store/setting
 import { keysOf, prune, type DropZone, type LayoutNode, type Path, type SplitNode } from './layoutModel';
 import { MIN_COMPONENT_WIDTH, applyAutoSize, fitMinWidth } from './autosize';
 import { PERSONA_PRIMARY } from './persona';
+import { areaPanDelta } from './areaPan';
+import { PresentationInkLayer } from './PresentationInkLayer';
+import { WorkspaceOverview } from './WorkspaceOverview';
 import { PaneContext, type PaneInfo } from './PaneContext';
 import { COMPACT_CELL_HEIGHT, isCompactWidth, stackedLeaves } from './compact';
 import { clampInto, overlapArea, placeNew, resizeRect, resolveAround, resolveOverlaps, type PxMap, type PxRect, type ResizeEdge } from './freeLayout';
@@ -1033,14 +1036,27 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     }
   };
 
+  // FR-016 AC-192: 作業領域にフォーカスがあるとき、矢印キーでパンする（入力欄・コンポーネント内の操作は妨げない）
+  const onAreaKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
+    if (e.defaultPrevented || e.target !== e.currentTarget) return;
+    const d = areaPanDelta(e);
+    if (!d) return;
+    e.preventDefault();
+    e.currentTarget.scrollBy({ left: d.dx, top: d.dy });
+  };
+
   return (
     <div
       ref={rootRef}
       onFocusCapture={onFocusCapture}
       onPointerDownCapture={onPointerDownRaise}
+      onKeyDown={onAreaKeyDown}
       className={mergeClasses(s.root, compact ? s.rootCompact : undefined, resizing && motionOn ? s.resizing : undefined)}
       data-layout={compact ? 'stacked' : 'split'}
+      tabIndex={0}
     >
+      <WorkspaceOverview />
+      <PresentationInkLayer />
       {drag?.target ? (
         <div
           data-testid="drop-indicator"
@@ -1117,3 +1133,4 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     </div>
   );
 }
+

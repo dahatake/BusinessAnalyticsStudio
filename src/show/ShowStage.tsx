@@ -1,7 +1,7 @@
 // プレゼンテーション中の「番組」の表示（FR-077〜FR-079）。
 // - 次のチャプターの予告カード（FR-077。進行バーは PresentationBar が持つ）
-// - テロップ/ローワーサード: 該当する議題のときだけ、出典リンクを併記して出す。リンクで出典の詳細（出典カード）が開く（FR-078）
-// - 議題の種類ごとの演出: Before/After スライダー・TOP5 ランキング・ROI 発表（紙吹雪は演出強度が Entertainment のときだけ。FR-079）
+// - テロップ/ローワーサード: 該当する論点のときだけ、出典リンクを併記して出す。リンクで出典の詳細（出典カード）が開く（FR-078）
+// - 論点の種類ごとの演出: Before/After スライダー・TOP5 ランキング・ROI 発表（紙吹雪は演出強度が Entertainment のときだけ。FR-079）
 // 演出は、演出強度（FR-083）に応じて強さを変える。Executive は動きを足さない。停止中・動きを減らす設定では動かさない。
 import { useEffect, useMemo, useState } from 'react';
 import { Card, Link, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
@@ -145,7 +145,7 @@ const CONFETTI_COLORS = [
   tokens.colorBrandBackground, tokens.colorPalettePurpleBackground2, tokens.colorPaletteBerryBackground2,
 ] as const;
 
-/** 紙吹雪。ROI 発表の議題で、演出強度が Entertainment のときだけ置かれる。一定時間で消える */
+/** 紙吹雪。ROI 発表の論点で、演出強度が Entertainment のときだけ置かれる。一定時間で消える */
 function Confetti() {
   const s = useStyles();
   const playing = usePlaying();
@@ -262,7 +262,7 @@ function TelopView({ text, sourceIds, topicId }: { text: string; sourceIds: read
   const sources = state.status === 'ready' ? state.pack.data.sources.sources : [];
   const found = sourceIds.map((id) => sources.find((x) => x.id === id)).filter((x): x is (typeof sources)[number] => x !== undefined);
   const open = found.find((x) => x.id === openId);
-  // 別の議題へ移ったら出典カードを閉じる
+  // 別の論点へ移ったら出典カードを閉じる
   useEffect(() => { setOpenId(null); }, [topicId]);
   useEffect(() => {
     if (!openId) return undefined;
@@ -288,7 +288,7 @@ function TelopView({ text, sourceIds, topicId }: { text: string; sourceIds: read
   );
 }
 
-/** プレゼンテーション中だけ表示する。現在の議題に合わせて、予告カード・テロップ・演出を出す */
+/** プレゼンテーション中だけ表示する。現在の論点に合わせて、予告カード・テロップ・演出を出す */
 export function ShowStage() {
   const s = useStyles();
   const st = usePresentationStore();

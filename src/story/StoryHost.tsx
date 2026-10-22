@@ -318,7 +318,7 @@ export function StoryHost() {
           <DialogBody>
             <DialogTitle>ペルソナの選択</DialogTitle>
             <DialogContent>
-              <Text as="p" block>誰に向けて話すかを選ぶと、そのペルソナ向けに分析の結果をストーリーで示します。選ばずに閉じると、議題を巡るプレゼンテーションのまま続けます。</Text>
+              <Text as="p" block>誰に向けて話すかを選ぶと、そのペルソナ向けに分析の結果をストーリーで示します。選ばずに閉じると、論点を巡るプレゼンテーションのまま続けます。</Text>
               <div className={s.personaList}>
                 {STORY_PERSONAS.map((p) => (
                   <Button key={p} appearance="primary" size="large" onClick={() => play(p)} title={PERSONA_ANGLE[p]}>{p}</Button>

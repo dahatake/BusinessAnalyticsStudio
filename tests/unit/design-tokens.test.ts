@@ -43,7 +43,6 @@ const EXCEPTIONS: Record<string, { rules: Rule[] | 'all'; reason: string }> = {
   'src/show/ControlBarActions.tsx': { rules: ['color', 'shadow', 'radius', 'spacing'], reason: 'A-51: プレゼンテーションの演出（FR-016）のレーザーポインターの光と位置合わせ（画面の部品の色・余白ではない）' },
   'src/app/Opening.tsx': { rules: ['motion', 'type'], reason: 'A-51: オープニングの演出（FR-016）の時間と演出の文字' },
   // 拡大・縮小できる面の中の文字（等倍以外。A-51・AC-476）
-  'src/screens/Drawing2DScreen.tsx': { rules: ['type', 'stroke'], reason: 'A-51: 拡大・縮小できる面（2D 図面。SVG の図の座標で指定する文字と線）' },
   'src/ink/BoardSurface.tsx': { rules: ['type', 'spacing'], reason: 'A-51: 拡大・縮小できる面（ホワイトボード。倍率に比例する付箋の文字と余白）' },
   'src/three/entityLayout.ts': { rules: 'all', reason: 'A-51: 3D シーンの配置の寸法（シーンの座標。画面の部品の余白ではない）' },
   'src/show/ShowStage.tsx': { rules: ['type', 'motion'], reason: 'A-51: プレゼンテーションの演出（FR-016）の大きな数値の文字と演出の時間' },

@@ -74,11 +74,11 @@ describe('FR-238 AC-564 / AC-565 保存・復元と既存の挙動', () => {
     expect(effectiveMode(decl('twin-view'), after.views[after.persona]?.['twin-view']?.mode, true)).toBe('2d');
   });
   it('AC-565 画面の見出しの切替: 表現を固定したコンポーネントは変わらず、Graph の表現のない画面は Graph で変わらない。2D・3D の挙動は従来どおり', () => {
-    expect(screenModeFor(decl('view3d'), '2d')).toBeUndefined();
+    expect(screenModeFor({ has2D: false, has3D: true, world: 'items', fixed: true, kinds: ['entity'] }, '2d')).toBeUndefined();
     expect(screenModeFor(decl('table'), 'graph')).toBeUndefined();
     expect(screenModeFor(decl('table'), '3d')).toBe('3d');
     expect(screenModeFor(decl('twin-view'), 'graph')).toBe('graph');
-    expect(screenModeFor(decl('drawing2d'), '3d')).toBeUndefined();
+    expect(screenModeFor({ has2D: true, has3D: false, world: 'items', fixed: true, kinds: ['entity'] }, '3d')).toBeUndefined();
   });
 });
 

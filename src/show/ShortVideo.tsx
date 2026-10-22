@@ -12,7 +12,7 @@ import { readTelop } from './model';
 import { SHORT_VIDEO_SECONDS, SHORT_VIDEO_WATERMARK, readNarration, shortVideoFileName, type ShortSlide } from './extras';
 import { pickWebmMimeType, recordShortVideo, type ShortVideoSource } from './shortVideoRecorder';
 
-/** 顧客パックの show.json から、動画に出すスライド（章・議題・台本またはテロップ）を作る。最初に顧客名とプロジェクト名のスライドを置く */
+/** 顧客パックの show.json から、動画に出すスライド（章・論点・台本またはテロップ）を作る。最初に顧客名とプロジェクト名のスライドを置く */
 function useShortSource(): ShortVideoSource | null {
   const state = usePackStore((s) => s.state);
   return useMemo(() => {

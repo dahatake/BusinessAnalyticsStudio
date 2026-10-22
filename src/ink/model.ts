@@ -69,7 +69,7 @@ export interface ViewState { x: number; y: number; zoom: number }
 export interface Board {
   id: string;
   name: string;
-  /** 議題（議論テーマ）の ID。なければ null */
+  /** 論点（議論テーマ）の ID。なければ null */
   topicId: string | null;
   /** 'annotation' は他のビューの上に重ねる注釈（ボードの一覧には出さない） */
   kind: 'board' | 'annotation';
