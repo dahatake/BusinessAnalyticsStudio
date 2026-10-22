@@ -1,6 +1,7 @@
 // FR-184 AC-390（押し出し・再配置の純粋なモデル）、FR-173 AC-348（作業領域の外へ出ない）。
 import { describe, expect, it } from 'vitest';
-import { clampInto, hasOverlap, packGrid, placeNew, resolveOverlaps, type PxMap } from '../../src/workspace/freeLayout';
+import { clampInto, hasOverlap, packGrid, placeNew, resolveAround, resolveOverlaps, type PxMap } from '../../src/workspace/freeLayout';
+import { MIN_COMPONENT_WIDTH } from '../../src/workspace/autosize';
 
 const B = { w: 1000, h: 800 };
 /** 2 x 2 の格子（作業領域を隙間なく埋める既定の配置） */
@@ -76,5 +77,51 @@ describe('FR-173 AC-348 作業領域の内側', () => {
   it('FR-173 AC-348 領域の外へ置こうとしても、内側に収まる', () => {
     expect(clampInto({ x: 900, y: 700, w: 300, h: 300 }, B)).toEqual({ x: 700, y: 500, w: 300, h: 300 });
     expect(clampInto({ x: -50, y: -50, w: 100, h: 100 }, B)).toEqual({ x: 0, y: 0, w: 100, h: 100 });
+  });
+});
+
+describe('FR-237 AC-557 格子への並べ直しでも見出しの操作が隠れない幅', () => {
+  // FR-237 AC-557（FR-150 AC-259）: 低く横長の作業領域に多くのコンポーネントを並べ直しても、列の幅は最小の幅（PARAM-034）を下回らない
+  it('FR-237 AC-557 低い作業領域で 12 個を格子に並べ直しても、どの幅も最小の幅以上で重ならない', () => {
+    const b = { w: 1380, h: 300 };
+    const rects: PxMap = {};
+    for (let i = 0; i < 12; i++) rects[`k${i}`] = { x: (i % 6) * 200, y: Math.floor(i / 6) * 100, w: 300, h: 200 };
+    const r = packGrid(rects, b);
+    expect(Object.keys(r)).toHaveLength(12);
+    expect(hasOverlap(r)).toBe(false);
+    for (const [k, v] of Object.entries(r)) {
+      expect(v.w, `${k} の幅`).toBeGreaterThanOrEqual(MIN_COMPONENT_WIDTH);
+      expect(v.x + v.w).toBeLessThanOrEqual(b.w + 0.5);
+      expect(v.y + v.h).toBeLessThanOrEqual(b.h + 0.5);
+    }
+  });
+});
+
+describe('FR-228 AC-529 手で変えた大きさは押し出しで上書きしない', () => {
+  // FR-228 AC-529（FR-224）: ほかのコンポーネントを動かして押し出しても、手で大きさを変えたもの（keep）は大きさを保ったまま動く
+  it('FR-228 AC-529 ピン止めを避けてほかを動かしても、手で大きさを変えたものの幅と高さは変わらない', () => {
+    const b = { w: 1380, h: 300 };
+    const start: PxMap = {
+      priority: { x: 0, y: 0, w: 690, h: 146.34 },
+      ranking: { x: 698, y: 0, w: 414, h: 146.34 },
+      matrix: { x: 0, y: 153.6, w: 384, h: 120 },
+      canvas: { x: 422, y: 153.6, w: 240, h: 109.75 },
+      summary: { x: 670, y: 153.6, w: 240, h: 109.75 },
+      kpi: { x: 918, y: 153.6, w: 240, h: 109.75 },
+    };
+    const r = resolveAround({ ...start, ranking: { x: 778, y: 60, w: 414, h: 146.34 } }, 'ranking', b, new Set(['priority']), new Set(['matrix']));
+    expect(r).not.toBeNull();
+    expect(hasOverlap(r!)).toBe(false);
+    expect(r!.priority).toEqual(start.priority);
+    expect(r!.matrix!.w).toBe(384);
+    expect(r!.matrix!.h).toBe(120);
+  });
+
+  // FR-228 AC-529: 大きさを保てる場所がまったくないときだけ、従来どおり縮めて重なりを残さない
+  it('FR-228 AC-529 大きさを保てる空きがなければ、縮めてでも重なりを残さない', () => {
+    const b = { w: 600, h: 300 };
+    const r = resolveOverlaps({ a: { x: 0, y: 0, w: 600, h: 200 }, m: { x: 0, y: 100, w: 600, h: 200 } }, 'a', b, new Set(['m']));
+    expect(hasOverlap(r)).toBe(false);
+    expect(Object.keys(r).sort()).toEqual(['a', 'm']);
   });
 });

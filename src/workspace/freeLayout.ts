@@ -1,6 +1,8 @@
 // 自由配置の押し出し・再配置の純粋なモデル（FR-173・FR-184）。React に依存しない。
 // 動かしているコンポーネント（pinned）に重なったものを、重ならない位置へ移す（動かせなければ縮める）。
 // どうしても解けないときは、全体を格子に並べ直して、重なりが残らないことを保証する。
+import { MIN_COMPONENT_WIDTH } from './autosize';
+
 export interface PxRect { x: number; y: number; w: number; h: number }
 export type PxMap = Record<string, PxRect>;
 export interface Bounds { w: number; h: number }
@@ -36,8 +38,9 @@ export function resizeRect(r: PxRect, edge: ResizeEdge, dx: number, dy: number, 
 const NONE: ReadonlySet<string> = new Set();
 const overlapsAny = (r: PxRect, others: PxRect[]): boolean => others.some((o) => overlapArea(r, o) > EPS);
 
-/** `o` を、`p` と重ならない位置へ移す。まず平行移動（最小の距離）、できなければ縮める。移せなければ null。 */
-function pushAway(o: PxRect, p: PxRect, pinned: PxRect | PxRect[], b: Bounds): PxRect | null {
+/** `o` を、`p` と重ならない位置へ移す。まず平行移動（最小の距離）、できなければ縮める。移せなければ null。
+ *  `keepSize` のもの（手で大きさを変えたもの。FR-224・FR-228 AC-529）は縮めず、平行移動だけを試す。 */
+function pushAway(o: PxRect, p: PxRect, pinned: PxRect | PxRect[], b: Bounds, keepSize = false): PxRect | null {
   const blockers = Array.isArray(pinned) ? pinned : [pinned];
   const cands: Array<{ r: PxRect; cost: number }> = [];
   const moves: PxRect[] = [
@@ -52,6 +55,7 @@ function pushAway(o: PxRect, p: PxRect, pinned: PxRect | PxRect[], b: Bounds): P
     cands.push({ r: m, cost: Math.abs(m.x - o.x) + Math.abs(m.y - o.y) });
   }
   if (cands.length > 0) return cands.reduce((a, c) => (c.cost < a.cost ? c : a)).r;
+  if (keepSize) return null;
   // 縮める: p と重ならない側だけを残す（残る面積が最大のもの）
   const cuts: PxRect[] = [
     { x: o.x, y: o.y, w: p.x - o.x, h: o.h },
@@ -68,7 +72,9 @@ export function packGrid(rects: PxMap, b: Bounds): PxMap {
   const keys = Object.keys(rects);
   const n = keys.length;
   if (n === 0) return {};
-  const cols = Math.max(1, Math.round(Math.sqrt((n * b.w) / Math.max(b.h, 1))));
+  // 列の幅は最小の幅（PARAM-034）を下回らない。下回ると見出しの操作（「ビュー」など）が隠れる「狭い」コンポーネントになる（FR-150 AC-259・FR-237 AC-557）
+  const maxCols = Math.max(1, Math.floor(b.w / MIN_COMPONENT_WIDTH));
+  const cols = Math.min(maxCols, Math.max(1, Math.round(Math.sqrt((n * b.w) / Math.max(b.h, 1)))));
   const rows = Math.ceil(n / cols);
   const cy = (k: string) => rects[k]!.y + rects[k]!.h / 2;
   const cx = (k: string) => rects[k]!.x + rects[k]!.w / 2;
@@ -93,7 +99,7 @@ export function hasOverlap(rects: PxMap): boolean {
  * `pinned`（動かしている・置いたコンポーネント）に重なるものを押し出して、すべてが重ならない配置にする（FR-184）。
  * 押し出されたものがさらにほかと重なるときは、それも押し出す。入力は変えない。
  */
-export function resolveOverlaps(input: PxMap, pinned: string, b: Bounds): PxMap {
+export function resolveOverlaps(input: PxMap, pinned: string, b: Bounds, keep: ReadonlySet<string> = NONE): PxMap {
   const r: PxMap = {};
   for (const [k, v] of Object.entries(input)) r[k] = clampInto(v, b);
   if (!r[pinned]) return r;
@@ -107,7 +113,7 @@ export function resolveOverlaps(input: PxMap, pinned: string, b: Bounds): PxMap 
       .sort((a, c) => overlapArea(r[p]!, r[c]!) - overlapArea(r[p]!, r[a]!));
     for (const o of hits) {
       if (overlapArea(r[p]!, r[o]!) <= EPS) continue;
-      const moved = pushAway(r[o]!, r[p]!, r[pinned]!, b);
+      const moved = pushAway(r[o]!, r[p]!, r[pinned]!, b, keep.has(o));
       if (!moved) continue;
       r[o] = moved;
       queue.push(o);
@@ -115,15 +121,18 @@ export function resolveOverlaps(input: PxMap, pinned: string, b: Bounds): PxMap 
   }
   if (!hasOverlap(r)) return r;
   // 局所の押し出しで解けない: 置いたものを動かさずに、残りを空いた所へ（必要なら縮めて）並べ直す。それでも解けなければ、全体を格子に並べ直す（重ならないことを保証）
-  return repack(input, pinned, b) ?? packGrid(r, b);
+  // 手で大きさを変えたもの（keep）は、まず大きさを保ったまま並べ直す。保てないときだけ縮める
+  return repack(input, pinned, b, NONE, keep) ?? (keep.size > 0 ? repack(input, pinned, b) : null) ?? packGrid(r, b);
 }
 
 /** 縮める倍率（大きい順）と、置く位置を探す格子の間隔（px） */
 const SHRINK = [1, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4];
 const STEP = 16;
+/** 大きさを保つもの（縮めない） */
+const KEEP = [1];
 
-/** `pinned` を動かさず、ほかを元の位置にできるだけ近い空きへ置く。入らなければ縮める。置けないものがあれば null。 */
-export function repack(input: PxMap, pinned: string, b: Bounds, fixed: ReadonlySet<string> = NONE): PxMap | null {
+/** `pinned` を動かさず、ほかを元の位置にできるだけ近い空きへ置く。入らなければ縮める（`keep` のものは縮めない）。置けないものがあれば null。 */
+export function repack(input: PxMap, pinned: string, b: Bounds, fixed: ReadonlySet<string> = NONE, keep: ReadonlySet<string> = NONE): PxMap | null {
   const out: PxMap = { [pinned]: clampInto(input[pinned]!, b) };
   for (const k of fixed) if (input[k] && k !== pinned) out[k] = clampInto(input[k]!, b);
   const placed: PxRect[] = Object.values(out);
@@ -131,7 +140,7 @@ export function repack(input: PxMap, pinned: string, b: Bounds, fixed: ReadonlyS
   for (const k of order) {
     const o = clampInto(input[k]!, b);
     let found: PxRect | null = null;
-    for (const f of SHRINK) {
+    for (const f of keep.has(k) ? KEEP : SHRINK) {
       const w = Math.min(b.w, Math.max(Math.min(MIN_W, o.w), o.w * f));
       const h = Math.min(b.h, Math.max(Math.min(MIN_H, o.h), o.h * f));
       let best: { r: PxRect; d: number } | null = null;
@@ -173,10 +182,10 @@ export function placeNew(rects: PxMap, key: string, size: { w: number; h: number
  * `o` と同じ大きさで、`blockers` のどれとも重ならない、いちばん近い位置（FR-216）。同じ大きさで置けなければ縮める（最小 MIN_W×MIN_H）。
  * 置ける場所が作業領域に残っていなければ null。
  */
-export function nearestFree(o: PxRect, blockers: readonly PxRect[], b: Bounds): PxRect | null {
+export function nearestFree(o: PxRect, blockers: readonly PxRect[], b: Bounds, keepSize = false): PxRect | null {
   const src = clampInto(o, b);
   if (!overlapsAny(src, blockers as PxRect[])) return src;
-  for (const f of SHRINK) {
+  for (const f of keepSize ? KEEP : SHRINK) {
     const w = Math.min(b.w, Math.max(Math.min(MIN_W, src.w), src.w * f));
     const h = Math.min(b.h, Math.max(Math.min(MIN_H, src.h), src.h * f));
     let best: { r: PxRect; d: number } | null = null;
@@ -206,9 +215,9 @@ export function nearestFree(o: PxRect, blockers: readonly PxRect[], b: Bounds): 
  * `key` が固定のものと重なるときは、`key` を重ならない最寄りの位置へ移す。置き場所が作業領域に残っていなければ null（呼び出し側は元に戻す）。
  * `fixed` が空なら resolveOverlaps と同じ。
  */
-export function resolveAround(input: PxMap, key: string, b: Bounds, fixed: ReadonlySet<string> = NONE): PxMap | null {
+export function resolveAround(input: PxMap, key: string, b: Bounds, fixed: ReadonlySet<string> = NONE, keep: ReadonlySet<string> = NONE): PxMap | null {
   const fx = [...fixed].filter((k) => k !== key && input[k]);
-  if (fx.length === 0) return resolveOverlaps(input, key, b);
+  if (fx.length === 0) return resolveOverlaps(input, key, b, keep);
   const r: PxMap = {};
   for (const [k, v] of Object.entries(input)) r[k] = clampInto(v, b);
   if (!r[key]) return r;
@@ -224,7 +233,7 @@ export function resolveAround(input: PxMap, key: string, b: Bounds, fixed: Reado
     const hits = movable.filter((o) => o !== p && overlapArea(r[p]!, r[o]!) > EPS);
     for (const o of hits) {
       if (overlapArea(r[p]!, r[o]!) <= EPS) continue;
-      const moved = pushAway(r[o]!, r[p]!, [r[key]!, ...fixedRects], b);
+      const moved = pushAway(r[o]!, r[p]!, [r[key]!, ...fixedRects], b, keep.has(o));
       if (!moved) continue;
       r[o] = moved;
       queue.push(o);
@@ -233,9 +242,9 @@ export function resolveAround(input: PxMap, key: string, b: Bounds, fixed: Reado
   // 固定のものと重なるものが残っていれば、それも重ならない最寄りの位置へ
   for (const o of movable) {
     if (!overlapsAny(r[o]!, fixedRects)) continue;
-    const m = nearestFree(r[o]!, [r[key]!, ...fixedRects], b);
+    const m = nearestFree(r[o]!, [r[key]!, ...fixedRects], b, keep.has(o));
     if (m) r[o] = m;
   }
   if (!hasOverlap(r)) return r;
-  return repack(r, key, b, new Set(fx));
+  return repack(r, key, b, new Set(fx), keep) ?? (keep.size > 0 ? repack(r, key, b, new Set(fx)) : null);
 }
