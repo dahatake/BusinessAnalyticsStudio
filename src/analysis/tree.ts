@@ -127,6 +127,21 @@ export function buildMockTree(theme: ThemeLike, data: PackData): TreeNode[] {
   return out;
 }
 
+/**
+ * デモ（お手本パック）の議論ツリー（FR-287 AC-750）。パックの discussionTheme（議論の記録）から、モックの AI と同じ規則で作る。
+ * パックが持たない実際の Project では undefined（デモの値は混ざらない。FR-138）。ノードの ID は呼び出しごとに新しい。
+ */
+export function demoTreeDoc(data: PackData): TreeDoc | undefined {
+  const t = data.customer.discussionTheme;
+  if (!t) return undefined;
+  const theme: ThemeLike = {
+    id: t.id, title: t.title, ...(t.issueId ? { issueId: t.issueId } : {}),
+    options: t.options, recommendation: t.recommendation, decisions: t.decisions, rationale: '', openIssues: '',
+    actions: t.actions.map((text, i) => ({ id: `${t.id}-act-${i + 1}`, text, owner: '', due: '' })),
+  };
+  return { themeId: theme.id, themeTitle: theme.title, nodes: buildMockTree(theme, data), mode: 'mock' };
+}
+
 /** AI の回答（JSON のツリー）を読む。形が違えば null。実接続の回答用で、読めなければ呼び出し側がモックに戻す。 */
 export function parseAiTree(answer: string, theme: ThemeLike): TreeNode[] | null {
   const m = /\{[\s\S]*\}|\[[\s\S]*\]/.exec(answer);

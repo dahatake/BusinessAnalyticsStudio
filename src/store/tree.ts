@@ -1,9 +1,10 @@
 // 議論ツリーのストア（FR-042）。顧客パック（顧客名 / Project 名）ごとに localStorage へ保存し、再読込で復元する。
 // 生成は非同期のジョブで、進行中も他の画面を操作でき、「取り消し」で止められる（NFR-UX-003）。元に戻す・やり直しは編集に効く。
+import { useEffect, useMemo } from 'react';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import {
-  addChild, buildMockTree, moveNode, parseAiTree, redecompose, removeTreeNode, renameNode,
+  addChild, buildMockTree, demoTreeDoc, moveNode, parseAiTree, redecompose, removeTreeNode, renameNode,
   type ThemeLike, type TreeDoc, type TreeEdit, type TreeKind, type TreeNode,
 } from '../analysis/tree';
 import type { PackData } from '../schema';
@@ -123,3 +124,16 @@ export const useTreeStore = create<TreeState>()(
     },
   ),
 );
+
+/**
+ * 議論ツリーの文書。保存したものがなければ、デモの議論ツリー（パックの discussionTheme。FR-287）を返し、保存して編集できるようにする。
+ * デモ以外（discussionTheme を持たない実際の Project）では何も補わない。
+ */
+export function useTreeDoc(key: string, data: PackData | undefined): TreeDoc | undefined {
+  const stored = useTreeStore((st) => st.docs[key]);
+  const demo = useMemo(() => (stored || !data ? undefined : demoTreeDoc(data)), [stored, data]);
+  useEffect(() => {
+    if (demo && key) useTreeStore.setState((s) => (s.docs[key] ? s : { docs: { ...s.docs, [key]: demo } }));
+  }, [demo, key]);
+  return stored ?? demo;
+}
