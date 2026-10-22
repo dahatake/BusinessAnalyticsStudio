@@ -7,7 +7,7 @@ import { Dialog, DialogSurface } from '../components/Dialog';
 import { usePackStore } from '../store/pack';
 import { useDataCatalog } from '../store/datacatalog';
 import { useConsent } from './useConsent';
-import { fetchFoundryView, type FoundryView } from './foundryClient';
+import { FOUNDRY_CHANGED_EVENT, fetchFoundryView, type FoundryView } from './foundryClient';
 import { AI_SCOPE_LABEL, confirmViaUi, consentOf, countPersons, gatePersonConfirm } from './personConfirm';
 import {
   AI_IMPORT_MAX_MB, aiImportAvailability, browserUsageStore, budgetState, checkSize, currentUsage, estimateCostYen, recordCall, requestAiImport,
@@ -33,8 +33,19 @@ export function AiImport({ projectId, store = browserUsageStore, onApplied }: { 
 
   useEffect(() => {
     let alive = true;
-    void fetchFoundryView(relayUrl, packId).then((v) => { if (alive) setView(v); });
-    return () => { alive = false; };
+    // 表示するたび・設定の変更時・画面に戻ったときに取得し直す（古い状態のまま選べない／選べないままにしない）
+    const load = (): void => { void fetchFoundryView(relayUrl, packId).then((v) => { if (alive) setView(v); }); };
+    load();
+    const onVisible = (): void => { if (document.visibilityState !== 'hidden') load(); };
+    window.addEventListener(FOUNDRY_CHANGED_EVENT, load);
+    window.addEventListener('focus', load);
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      alive = false;
+      window.removeEventListener(FOUNDRY_CHANGED_EVENT, load);
+      window.removeEventListener('focus', load);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [relayUrl, packId]);
 
   const avail = aiImportAvailability(view, granted);

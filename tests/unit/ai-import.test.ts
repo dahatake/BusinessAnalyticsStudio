@@ -7,7 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { startRelay, type Relay } from '../../scripts/relay/relay';
 import { openFoundryVault } from '../../scripts/relay/foundry-vault';
 import { fileProtector } from '../../scripts/relay/speech-vault';
-import { fetchFoundryView, putFoundryConfig, setFoundryConnection, type FoundryView } from '../../src/ai/foundryClient';
+import { FOUNDRY_CHANGED_EVENT, deleteFoundryConfig, fetchFoundryView, putFoundryConfig, setFoundryConnection, type FoundryView } from '../../src/ai/foundryClient';
 import {
   AI_IMPORT_MAX_BYTES, aiImportAvailability, budgetState, checkSize, currentUsage, estimateCostYen, recordCall, requestAiImport,
   type Usage, type UsageStore,
@@ -45,6 +45,21 @@ const req = (file: File, o: Partial<Parameters<typeof requestAiImport>[1]> = {})
 const view = (o: Partial<FoundryView> = {}): FoundryView => ({ configured: true, endpoint: EP, host: 'h', deployment: 'd', keyMask: '', enabled: true, ...o });
 
 describe('FR-289 AC-757 AC-758 選べる条件', () => {
+  it('設定画面での有効化・無効化・削除は変更通知を出し、取り込み画面が取得し直せる（古い状態のままにしない）', async () => {
+    const target = new EventTarget();
+    const g = globalThis as unknown as { window?: unknown };
+    const prev = g.window;
+    g.window = target;
+    try {
+      let n = 0;
+      target.addEventListener(FOUNDRY_CHANGED_EVENT, () => { n++; });
+      const ok = (body: unknown) => (async () => new Response(JSON.stringify(body), { status: 200 })) as unknown as typeof fetch;
+      await setFoundryConnection('http://127.0.0.1:1', 'P', true, { consent: true, confirmed: true }, ok({ mode: 'connected' }));
+      await setFoundryConnection('http://127.0.0.1:1', 'P', false, { consent: true, confirmed: false }, ok({ mode: 'mock' }));
+      await deleteFoundryConfig('http://127.0.0.1:1', 'P', ok(view({ configured: false, enabled: false })));
+      expect(n).toBe(3);
+    } finally { g.window = prev; }
+  });
   it('設定・有効化・了承のどれかが欠けると選べず、欠けた条件と設定画面への案内が示される', () => {
     const a = aiImportAvailability(view({ configured: false, enabled: false }), false);
     expect(a.available).toBe(false);
