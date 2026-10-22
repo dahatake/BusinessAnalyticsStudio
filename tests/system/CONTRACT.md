@@ -172,3 +172,9 @@
 
 - 追補（仕様変更 75285d8）: Enter は詳細カードの開閉でズームインしない（ズームインはダブルクリック・「拡大」ボタン・「+」。ダブルクリックはカードを開閉しない）。カードの主要な関係は `data-testid="card-relation"` で最大 5 件（PARAM-105）、超える分は文字「ほか N 件」。全画面は図にフォーカスして F キーでも入れる。Esc はカードが開いていればカードだけ閉じ、次の Esc で全画面終了。表の行で対象が塊に集約されて見えないときは、見える階層へ切り替えてからパンする。
 
+
+## 26. 外部ファイルの対応形式のガイド・AI 取り込み（FR-288・FR-289 AC-754〜760。import-export-guide.spec.ts・ai-import.spec.ts が前提にする契約。run 202610222215）
+- ガイド（FR-288）: `users-guide/` 配下の新しい Markdown 文書。ファイル名は決めない。`users-guide/README.md` の利用者向けの表に、「取り込み」「書き出し」の両方の語を含む 1 行（`[題](相対パス.md)` のリンクと内容の一行）を置く。文書には見出しに「取り込み」「書き出し」を含む節があり、それぞれに表（列: 画面・操作／形式（拡張子）／条件／コードの位置）を置く。取り込みは 5 行以上、書き出しは 8 行以上。「未対応」の語で PDF・画像ファイル・Office 文書・非定型テキストを明記し、「AI 取り込み」を案内する。コードの位置は `src/...` の実在するパスで 5 件以上。
+- 取り込みの画面: データカタログの画面（`component-data-catalog`）の中に `data-testid="ai-import"`。button「AI 取り込み」（Foundry の接続情報が未設定のとき disabled。設定済みで enabled）。未設定のときだけ `ai-import-guide`（文字に「Foundry」「接続情報」「設定」を含む）を出す。押すと、ラベル「AI 取り込みのファイル」の file input（PDF・画像・Office 文書・テキストを受ける）が出る。
+- プレビュー: region「取り込みのプレビュー」（取り込んだエンティティの名称を文字で含む）、button「反映」「破棄」。反映するまで `entity-list` は変わらない。エラーは `ai-import` 内の role=alert（上限超過は「10 MB」と「大きい／超」を含む。Foundry 失敗は原因（失敗・500 など）と次の行動（もう一度・設定を確認 など）を含む）。ファイルの上限は PARAM-125（10 MB。ちょうど 10 MB は可、1 バイト超で不可）。
+- 接続（差し替え部品 support/ai-import-stub.ts）: 接続情報は GET/PUT/DELETE `/foundry/config`（FR-275 と同じ）。取り込みは、ブラウザー → 中継（runtime-config の relayUrl）の `POST /foundry/import`（本文にキーを含めない）。応答は 200 `{preview:{entities:[{name,description}]}}`、失敗は 5xx `{error:{cause, status?}}`。`/health` は `foundry.keyConfigured`。ブラウザーの通信先は localhost（127.0.0.1）だけ。

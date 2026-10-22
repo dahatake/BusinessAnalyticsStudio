@@ -294,7 +294,14 @@
     "AC-712": "sha256:0e69695d5457cad9",
     "AC-713": "sha256:706deed685a6f99e",
     "AC-733": "sha256:416fb88a5cfaff0a",
-    "AC-739": "sha256:a7892bd655cdf85a"
+    "AC-739": "sha256:a7892bd655cdf85a",
+    "AC-754": "sha256:1319d272e6722bfc",
+    "AC-755": "sha256:689ba7bcf2746159",
+    "AC-756": "sha256:a7eec8533851fffa",
+    "AC-757": "sha256:5a775b8e5ced4d26",
+    "AC-758": "sha256:aa0fca83505039e2",
+    "AC-759": "sha256:1a43c8dc10670f0c",
+    "AC-760": "sha256:3c13c06d3965be06"
   },
   "cases": [
     {
@@ -8798,6 +8805,211 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "FR-285 の System Test 作成"
+        }
+      ]
+    },
+    {
+      "id": "IT-077",
+      "requirement_ids": [
+        "FR-288"
+      ],
+      "ac_ids": [
+        "AC-754"
+      ],
+      "title": "対応形式の文書に、取り込み・書き出しそれぞれ 画面・操作／形式／条件 の表がある",
+      "layer": "data",
+      "command": "node tests/system/run.mjs AC-754",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:32:07+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:33:12+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=manualのため System Test の対象外（CHK-10）。spec は実装役の統合テスト・検収の参考として残す"
+        }
+      ]
+    },
+    {
+      "id": "IT-078",
+      "requirement_ids": [
+        "FR-288"
+      ],
+      "ac_ids": [
+        "AC-755"
+      ],
+      "title": "対応形式の文書: 取り込み 5 種・書き出し 8 種以上・未対応の明記と AI 取り込みの案内・コードの位置の実在（異常系含む）",
+      "layer": "data",
+      "command": "node tests/system/run.mjs AC-755",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:32:11+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:33:13+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=manualのため System Test の対象外（CHK-10）。spec は実装役の統合テスト・検収の参考として残す"
+        }
+      ]
+    },
+    {
+      "id": "IT-079",
+      "requirement_ids": [
+        "FR-288"
+      ],
+      "ac_ids": [
+        "AC-756"
+      ],
+      "title": "users-guide/README.md の表に対応形式の文書へのリンクと一行があり、リンク先が存在する（既存リンクが切れない異常系含む）",
+      "layer": "data",
+      "command": "node tests/system/run.mjs AC-756",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:32:14+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:33:14+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integrationのため System Test の対象外（CHK-10）。spec は実装役の統合テスト・検収の参考として残す"
+        }
+      ]
+    },
+    {
+      "id": "E2E-384",
+      "requirement_ids": [
+        "FR-289"
+      ],
+      "ac_ids": [
+        "AC-757"
+      ],
+      "title": "Foundry 未設定のとき AI 取り込みは無効で案内が出て、送信は 0 回（無効のボタンの強制操作の異常系含む）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-757",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:32:17+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-385",
+      "requirement_ids": [
+        "FR-289"
+      ],
+      "ac_ids": [
+        "AC-758"
+      ],
+      "title": "接続情報の保存で AI 取り込みを選べ、削除で再び選べず案内が出る",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-758",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:32:20+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-386",
+      "requirement_ids": [
+        "FR-289"
+      ],
+      "ac_ids": [
+        "AC-759"
+      ],
+      "title": "AI 取り込みのプレビュー・確認前に既存データ不変・10 MB 上限（超過・ちょうど）・Foundry 失敗時の原因と次の行動",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-759",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:32:24+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:33:15+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integrationのため System Test の対象外（CHK-10）。spec は実装役の統合テスト・検収の参考として残す"
+        }
+      ]
+    },
+    {
+      "id": "E2E-387",
+      "requirement_ids": [
+        "FR-289"
+      ],
+      "ac_ids": [
+        "AC-760"
+      ],
+      "title": "AI 取り込みでキー（末尾含む）が画面・応答・コンソールに出ず、通信先は localhost だけ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-760",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:32:28+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:33:16+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integrationのため System Test の対象外（CHK-10）。spec は実装役の統合テスト・検収の参考として残す"
         }
       ]
     }
