@@ -17,6 +17,7 @@
 | [01. クイックスタート](01-quick-start.md) | 起動、画面の見方、ペルソナ、20 画面の説明（スクリーンショットつき）、議論中の機能、編集、エクスポート、AI、設定、困ったとき |
 | [02. 顧客との議論の進め方](02-meeting-playbook.md) | 準備のチェックリスト、相手別の見せ方、30 分・60 分・ワークショップのシナリオ、議論のあとの作業 |
 | [03. 用語集と情報の取り扱い](03-glossary-and-data-handling.md) | 用語集、情報の保存先、AI を使うときの約束、顧客に渡す資料のチェック |
+| [04. 取り込み・書き出しの対応形式](04-import-export-formats.md) | 外部ファイルの取り込み・書き出しの形式（拡張子）・画面・条件の一覧と、未対応の形式 |
 
 画像は [images/](images) にあります（お手本パックで撮影）。
 
@@ -47,7 +48,7 @@
 | [7. トラブルシューティング](build-kit/07-troubleshooting.md) | 拒否・差し戻し、run が止まる、verify の失敗、Windows 固有、ログの場所 |
 | [8. ロードマップと KPI](build-kit/08-roadmap.md) | キットの位置づけ、KPI、改善の進め方 |
 
-管理データ（要求・カタログ・試験の状態）の確認には、[EABK Studio](../EABK-Studio/users-guide/README.md)（データ層のビューアー。役割別のガイドつき）を使えます。
+管理データ（要求・カタログ・試験の状態）の確認には、[EABK Studio](../EABK-Studio/README.md)（データ層のビューアー）を使えます。
 
 ## 4. そのほかの文書
 
@@ -69,6 +70,7 @@ users-guide/
   01-quick-start.md                 利用者: クイックスタート
   02-meeting-playbook.md            利用者: 議論の進め方
   03-glossary-and-data-handling.md  利用者: 用語集・情報の取り扱い
+  04-import-export-formats.md       利用者: 取り込み・書き出しの対応形式
   images/                           利用者向けのスクリーンショット
   engineering/                      Software Engineer 向け（01〜07）
   build-kit/                        開発キット向け（01〜08）

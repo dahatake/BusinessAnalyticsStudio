@@ -295,6 +295,13 @@
     "AC-713": "sha256:706deed685a6f99e",
     "AC-733": "sha256:416fb88a5cfaff0a",
     "AC-739": "sha256:a7892bd655cdf85a",
+    "AC-754": "sha256:1319d272e6722bfc",
+    "AC-755": "sha256:689ba7bcf2746159",
+    "AC-756": "sha256:a7eec8533851fffa",
+    "AC-757": "sha256:ccbcd971f201fa8c",
+    "AC-758": "sha256:52554d84c2b9a99d",
+    "AC-759": "sha256:a43fbd98f53acd9c",
+    "AC-760": "sha256:3c13c06d3965be06",
     "AC-741": "sha256:2010ae0c69c02c30",
     "AC-742": "sha256:802001b934592362",
     "AC-743": "sha256:5fd42bc7f6828d5d",
@@ -1981,9 +1988,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "53b05f0",
-      "last_run_at": "2026-10-23T01:45:51+09:00",
-      "evidence": "work/runs/202610222251/logs/system-test/E2E-162-202610230142.log",
+      "last_commit": "484f3ef",
+      "last_run_at": "2026-10-23T04:22:42+09:00",
+      "evidence": "work/runs/202610230336/logs/system-test/E2E-162-202610230418.log",
       "history": [
         {
           "at": "2026-10-12T14:07:28+09:00",
@@ -6426,9 +6433,9 @@
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat --workers=1",
       "canary": true,
       "status": "pass",
-      "last_commit": "53b05f0",
-      "last_run_at": "2026-10-23T01:45:51+09:00",
-      "evidence": "work/runs/202610222251/logs/system-test/E2E-345-202610230142.log",
+      "last_commit": "484f3ef",
+      "last_run_at": "2026-10-23T04:22:42+09:00",
+      "evidence": "work/runs/202610230336/logs/system-test/E2E-345-202610230419.log",
       "history": [
         {
           "at": "2026-10-21T17:19:59+09:00",
@@ -6464,9 +6471,9 @@
       "command": "node tests/system/run.mjs AC-593",
       "canary": true,
       "status": "pass",
-      "last_commit": "53b05f0",
-      "last_run_at": "2026-10-23T01:45:51+09:00",
-      "evidence": "work/runs/202610222251/logs/system-test/E2E-346-202610230142.log",
+      "last_commit": "484f3ef",
+      "last_run_at": "2026-10-23T04:22:42+09:00",
+      "evidence": "work/runs/202610230336/logs/system-test/E2E-346-202610230418.log",
       "history": [
         {
           "at": "2026-10-21T17:32:44+09:00",
@@ -6649,9 +6656,9 @@
       "command": "node tests/system/run.mjs AC-598",
       "canary": true,
       "status": "pass",
-      "last_commit": "53b05f0",
-      "last_run_at": "2026-10-23T01:45:51+09:00",
-      "evidence": "work/runs/202610222251/logs/system-test/E2E-351-202610230142.log",
+      "last_commit": "484f3ef",
+      "last_run_at": "2026-10-23T04:22:42+09:00",
+      "evidence": "work/runs/202610230336/logs/system-test/E2E-351-202610230418.log",
       "history": [
         {
           "at": "2026-10-21T17:33:47+09:00",
@@ -10049,6 +10056,440 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "IT-077",
+      "requirement_ids": [
+        "FR-288"
+      ],
+      "ac_ids": [
+        "AC-754"
+      ],
+      "title": "対応形式の文書に、取り込み・書き出しそれぞれ 画面・操作／形式／条件 の表がある",
+      "layer": "data",
+      "command": "node tests/system/run.mjs AC-754",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:32:07+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:33:12+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=manualのため System Test の対象外（CHK-10）。spec は実装役の統合テスト・検収の参考として残す"
+        }
+      ]
+    },
+    {
+      "id": "IT-078",
+      "requirement_ids": [
+        "FR-288"
+      ],
+      "ac_ids": [
+        "AC-755"
+      ],
+      "title": "対応形式の文書: 取り込み 5 種・書き出し 8 種以上・未対応の明記と AI 取り込みの案内・コードの位置の実在（異常系含む）",
+      "layer": "data",
+      "command": "node tests/system/run.mjs AC-755",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:32:11+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:33:13+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=manualのため System Test の対象外（CHK-10）。spec は実装役の統合テスト・検収の参考として残す"
+        }
+      ]
+    },
+    {
+      "id": "IT-079",
+      "requirement_ids": [
+        "FR-288"
+      ],
+      "ac_ids": [
+        "AC-756"
+      ],
+      "title": "users-guide/README.md の表に対応形式の文書へのリンクと一行があり、リンク先が存在する（既存リンクが切れない異常系含む）",
+      "layer": "data",
+      "command": "node tests/system/run.mjs AC-756",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:32:14+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:33:14+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integrationのため System Test の対象外（CHK-10）。spec は実装役の統合テスト・検収の参考として残す"
+        }
+      ]
+    },
+    {
+      "id": "E2E-384",
+      "requirement_ids": [
+        "FR-289"
+      ],
+      "ac_ids": [
+        "AC-757"
+      ],
+      "title": "Foundry 未設定のとき AI 取り込みは無効で案内が出て、送信は 0 回（無効のボタンの強制操作の異常系含む）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-757",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "484f3ef",
+      "last_run_at": "2026-10-23T04:22:42+09:00",
+      "evidence": "work/runs/202610230336/logs/system-test/E2E-384-202610230421.log",
+      "history": [
+        {
+          "at": "2026-10-22T22:32:17+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:07:08+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-757/758/759 の本文が変更済み（Entra ID 両方式・実接続の有効化・了承・送信前確認・停止水準）。spec は旧本文のままで、G-5 により書き込めず未見直し。見直すまで実行対象にしない"
+        }
+      ]
+    },
+    {
+      "id": "E2E-385",
+      "requirement_ids": [
+        "FR-289"
+      ],
+      "ac_ids": [
+        "AC-758"
+      ],
+      "title": "接続情報の保存で AI 取り込みを選べ、削除で再び選べず案内が出る",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-758",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "484f3ef",
+      "last_run_at": "2026-10-23T04:22:42+09:00",
+      "evidence": "work/runs/202610230336/logs/system-test/E2E-385-202610230421.log",
+      "history": [
+        {
+          "at": "2026-10-22T22:32:20+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:07:09+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-757/758/759 の本文が変更済み（Entra ID 両方式・実接続の有効化・了承・送信前確認・停止水準）。spec は旧本文のままで、G-5 により書き込めず未見直し。見直すまで実行対象にしない"
+        }
+      ]
+    },
+    {
+      "id": "E2E-386",
+      "requirement_ids": [
+        "FR-289"
+      ],
+      "ac_ids": [
+        "AC-759"
+      ],
+      "title": "AI 取り込みのプレビュー・確認前に既存データ不変・10 MB 上限（超過・ちょうど）・Foundry 失敗時の原因と次の行動",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-759",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:32:24+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:33:15+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integrationのため System Test の対象外（CHK-10）。spec は実装役の統合テスト・検収の参考として残す"
+        }
+      ]
+    },
+    {
+      "id": "E2E-387",
+      "requirement_ids": [
+        "FR-289"
+      ],
+      "ac_ids": [
+        "AC-760"
+      ],
+      "title": "AI 取り込みでキー（末尾含む）が画面・応答・コンソールに出ず、通信先は localhost だけ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-760",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:32:28+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:33:16+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integrationのため System Test の対象外（CHK-10）。spec は実装役の統合テスト・検収の参考として残す"
+        }
+      ]
+    },
+    {
+      "id": "E2E-402",
+      "requirement_ids": [
+        "FR-278"
+      ],
+      "ac_ids": [
+        "AC-715"
+      ],
+      "title": "AC-715 の System Test（画面の契約が未定義のため未作成・blocked）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-715",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T23:06:17+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:06:18+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "実行できるテストが未作成: 画面の探し方（CONTRACT）が未定義で、test-designer の書き込み権限（G-5）も得られていない。再設計で解消する"
+        }
+      ]
+    },
+    {
+      "id": "E2E-403",
+      "requirement_ids": [
+        "FR-278"
+      ],
+      "ac_ids": [
+        "AC-717"
+      ],
+      "title": "AC-717 の System Test（画面の契約が未定義のため未作成・blocked）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-717",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T23:06:25+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:06:26+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "実行できるテストが未作成: 画面の探し方（CONTRACT）が未定義で、test-designer の書き込み権限（G-5）も得られていない。再設計で解消する"
+        }
+      ]
+    },
+    {
+      "id": "E2E-404",
+      "requirement_ids": [
+        "FR-279"
+      ],
+      "ac_ids": [
+        "AC-718"
+      ],
+      "title": "AC-718 の System Test（画面の契約が未定義のため未作成・blocked）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-718",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T23:06:31+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:06:31+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "実行できるテストが未作成: 画面の探し方（CONTRACT）が未定義で、test-designer の書き込み権限（G-5）も得られていない。再設計で解消する"
+        }
+      ]
+    },
+    {
+      "id": "E2E-405",
+      "requirement_ids": [
+        "FR-279"
+      ],
+      "ac_ids": [
+        "AC-719"
+      ],
+      "title": "AC-719 の System Test（画面の契約が未定義のため未作成・blocked）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-719",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T23:06:36+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:06:37+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "実行できるテストが未作成: 画面の探し方（CONTRACT）が未定義で、test-designer の書き込み権限（G-5）も得られていない。再設計で解消する"
+        }
+      ]
+    },
+    {
+      "id": "E2E-406",
+      "requirement_ids": [
+        "FR-280"
+      ],
+      "ac_ids": [
+        "AC-721"
+      ],
+      "title": "AC-721 の System Test（画面の契約が未定義のため未作成・blocked）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-721",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T23:06:43+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:06:44+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "実行できるテストが未作成: 画面の探し方（CONTRACT）が未定義で、test-designer の書き込み権限（G-5）も得られていない。再設計で解消する"
+        }
+      ]
+    },
+    {
+      "id": "E2E-407",
+      "requirement_ids": [
+        "FR-282"
+      ],
+      "ac_ids": [
+        "AC-725"
+      ],
+      "title": "AC-725 の System Test（画面の契約が未定義のため未作成・blocked）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-725",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T23:06:48+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:06:49+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "実行できるテストが未作成: 画面の探し方（CONTRACT）が未定義で、test-designer の書き込み権限（G-5）も得られていない。再設計で解消する"
+        }
+      ]
+    },
+    {
+      "id": "E2E-408",
+      "requirement_ids": [
+        "FR-283"
+      ],
+      "ac_ids": [
+        "AC-727"
+      ],
+      "title": "AC-727 の System Test（画面の契約が未定義のため未作成・blocked）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-727",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T23:06:53+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:06:54+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "実行できるテストが未作成: 画面の探し方（CONTRACT）が未定義で、test-designer の書き込み権限（G-5）も得られていない。再設計で解消する"
         }
       ]
     }
