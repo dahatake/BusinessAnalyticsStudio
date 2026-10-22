@@ -80,7 +80,7 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'chat', label: 'チャット', icon: Chat24Regular, component: ChatScreen, view: V2 },
 ];
 
-/** 左メニュー（AppShell）に出す画面。`nav: false` の画面は除く（FR-220 AC-590）。除いた画面も、ペルソナ・レイアウト・ステッパー・ドック・コマンドから開ける */
+/** 左メニュー（AppShell）に出す画面。`nav: false` の画面は除く（FR-220 AC-590）。除いた画面も、ドック・コマンドから開ける（view3d はペルソナ〈現場〉・既定のレイアウトでも表示される。ステッパー〈FR-228〉は開く入口ではなく、両画面はステップ「現状分析」の関連画面 STEPS.screens に含まれるだけ） */
 export const NAV_SCREENS: readonly ScreenDefinition[] = SCREENS.filter((s) => s.nav !== false);
 /** ワークスペースのコンポーネントとして並ぶ画面（モーダルを除く。FR-223）。ドック・コマンド・レイアウトの対象 */
 export const COMPONENT_SCREENS: readonly ScreenDefinition[] = SCREENS.filter((s) => !s.modal);
