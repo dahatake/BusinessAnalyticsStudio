@@ -4,7 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, closeSettings } from '../support/fixtures';
+import { test, expect, openScreen, closeSettings, recordExportConsent } from '../support/fixtures';
 import { startAiImportRelayStub } from '../support/ai-import-stub';
 import type { AiImportRelayStub } from '../support/ai-import-stub';
 import { TMP_DIR } from '../support/paths';
@@ -51,36 +51,93 @@ function writeFile(name: string, data: Buffer | string): string {
   return f;
 }
 
-async function saveFoundryInSettings(page: Page, key: string): Promise<void> {
+async function saveFoundryInSettings(page: Page, key: string, authMode: 'api-key' | 'entra' = 'api-key'): Promise<void> {
   const settings = await openScreen(page, 'settings');
   const foundry = settings.getByTestId('foundry-settings');
   await foundry.getByLabel(/エンドポイント/).fill('https://example.invalid/openai/v1');
   await foundry.getByLabel(/デプロイ名/).fill('dummy-deploy');
-  await foundry.getByLabel(/API キー/).fill(key);
+  if (authMode === 'entra') await foundry.getByLabel('認証方式').selectOption('entra');
+  else await foundry.getByLabel(/API キー/).fill(key);
   await foundry.getByRole('button', { name: /保存/ }).first().click();
-  await expect(foundry.getByText('設定済み').first()).toBeVisible();
+  await expect(foundry.getByTestId('foundry-status')).toHaveText('設定済み');
   await closeSettings(page);
+}
+
+/** 設定画面で実接続を有効にする（FR-275。確認の画面で「有効にする」） */
+async function enableFoundry(page: Page): Promise<void> {
+  const settings = await openScreen(page, 'settings');
+  await settings.getByTestId('foundry-settings').getByLabel(/Foundry への送信を有効にする/).click();
+  await page.getByRole('alertdialog').or(page.getByRole('dialog')).getByRole('button', { name: '有効にする' }).click();
+  await expect(settings.getByTestId('foundry-mode')).toContainText('接続済み');
+  await closeSettings(page);
+}
+
+/** 設定画面で実接続を無効にする */
+async function disableFoundry(page: Page): Promise<void> {
+  const settings = await openScreen(page, 'settings');
+  await settings.getByTestId('foundry-settings').getByLabel(/Foundry への送信を有効にする/).click();
+  await expect(settings.getByTestId('foundry-mode')).toContainText('モック');
+  await closeSettings(page);
+}
+
+async function deleteFoundry(page: Page): Promise<void> {
+  const settings = await openScreen(page, 'settings');
+  await settings.getByTestId('foundry-settings').getByRole('button', { name: /削除/ }).first().click();
+  await expect(settings.getByTestId('foundry-status')).toHaveText('未設定');
+  await closeSettings(page);
+}
+
+async function expectAiImportBlocked(page: Page, relay: AiImportRelayStub, missing: '設定' | '有効化' | '了承'): Promise<void> {
+  const { ai } = await openImportScreen(page);
+  await expect(ai).toBeVisible();
+  await expect(ai.getByRole('button', { name: 'AI 取り込み' })).toBeDisabled();
+  const guide = ai.getByTestId('ai-import-guide');
+  await expect(guide).toBeVisible();
+  await expect(guide).toContainText(new RegExp(`欠けている条件[:：][^）]*${missing}`));
+  for (const other of (['設定', '有効化', '了承'] as const).filter((m) => m !== missing)) {
+    await expect(guide).not.toContainText(new RegExp(`欠けている条件[:：][^）]*${other}`));
+  }
+  await expect(guide).toContainText(/設定画面/);
+  await page.waitForTimeout(500);
+  expect(relay.importCalls(), `${missing}が欠けているのに Foundry への取り込み要求が送られた`).toBe(0);
+}
+
+async function expectAiImportSelectable(page: Page): Promise<void> {
+  const { ai } = await openImportScreen(page);
+  await expect(ai.getByRole('button', { name: 'AI 取り込み' })).toBeVisible();
+  await expect(ai.getByTestId('ai-import-guide')).toHaveCount(0);
+  await expect(ai.getByRole('button', { name: 'AI 取り込み' })).toBeEnabled();
 }
 
 test.describe('FR-289 AI 取り込み（選べる条件）', () => {
   let relay: AiImportRelayStub;
   test.afterEach(async () => { await relay?.close(); });
 
-  // FR-289 AC-757
-  test('FR-289 AC-757 Foundry の接続情報が未設定のとき、「AI 取り込み」は選べず（無効）、設定画面で設定する旨の案内が文字で示され、Foundry への送信は 0 回', async ({ page, start }) => {
-    relay = await startAiImportRelayStub({ configured: false });
+  // FR-289 AC-757（3 条件のうち「設定」だけが欠ける。有効化・了承はある）
+  test('FR-289 AC-757 接続設定が未設定（実接続は有効・了承あり）のとき、「AI 取り込み」は無効で、欠けている条件「設定」と設定画面への案内が示され、呼び出しは 0 回', async ({ page, start }) => {
+    relay = await startAiImportRelayStub({ configured: false, enabled: false });
     await start({ relayUrl: relay.url });
     await openNewProject(page);
-    const { ai } = await openImportScreen(page);
-    await expect(ai).toBeVisible();
-    await expect(ai.getByRole('button', { name: 'AI 取り込み' })).toBeDisabled();
-    const guide = ai.getByTestId('ai-import-guide');
-    await expect(guide).toBeVisible();
-    await expect(guide).toContainText(/設定/);
-    await expect(guide).toContainText(/Foundry/);
-    await expect(guide).toContainText(/接続情報/);
-    await page.waitForTimeout(500);
-    expect(relay.importCalls(), '未設定なのに Foundry への取り込み要求が送られた').toBe(0);
+    await recordExportConsent(page);
+    relay.forceEnabled(true); // 設定画面の操作では「未設定で有効」にならないため、了承の入力後に中継の状態だけを有効にする
+    await expectAiImportBlocked(page, relay, '設定');
+  });
+
+  // FR-289 AC-757（「有効化」だけが欠ける。設定済み・了承あり）
+  test('FR-289 AC-757 実接続が無効（設定済み・了承あり）のとき、「AI 取り込み」は無効で、欠けている条件「有効化」と設定画面への案内が示され、呼び出しは 0 回', async ({ page, start }) => {
+    relay = await startAiImportRelayStub({ configured: true, enabled: false });
+    await start({ relayUrl: relay.url });
+    await openNewProject(page);
+    await recordExportConsent(page);
+    await expectAiImportBlocked(page, relay, '有効化');
+  });
+
+  // FR-289 AC-757（「了承」だけが欠ける。設定済み・有効）
+  test('FR-289 AC-757 案件に了承の記録がない（設定済み・実接続は有効）とき、「AI 取り込み」は無効で、欠けている条件「了承」と設定画面への案内が示され、呼び出しは 0 回', async ({ page, start }) => {
+    relay = await startAiImportRelayStub({ configured: true, enabled: true });
+    await start({ relayUrl: relay.url });
+    await openNewProject(page);
+    await expectAiImportBlocked(page, relay, '了承');
   });
 
   // FR-289 AC-757（異常系: 無効のボタンを押す操作をしても、ファイルを選ぶ欄は出ず、送信されない）
@@ -95,26 +152,32 @@ test.describe('FR-289 AI 取り込み（選べる条件）', () => {
     expect(relay.importCalls()).toBe(0);
   });
 
-  // FR-289 AC-758
-  test('FR-289 AC-758 設定画面で接続情報を保存すると「AI 取り込み」を選べ、削除すると再び選べず案内が示される', async ({ page, start }) => {
-    relay = await startAiImportRelayStub({ configured: false });
-    await start({ relayUrl: relay.url });
-    await openNewProject(page);
-    await saveFoundryInSettings(page, 'dummy-key-for-system-test-0001');
-    let { ai } = await openImportScreen(page);
-    await expect(ai.getByRole('button', { name: 'AI 取り込み' })).toBeEnabled();
-    await expect(ai.getByTestId('ai-import-guide')).toHaveCount(0);
-
-    // 削除 → 再び選べない
-    const settings = await openScreen(page, 'settings');
-    await settings.getByTestId('foundry-settings').getByRole('button', { name: /削除/ }).first().click();
-    await expect(settings.getByTestId('foundry-settings').getByText('設定済み')).toHaveCount(0);
-    await closeSettings(page);
-    ({ ai } = await openImportScreen(page));
-    await expect(ai.getByRole('button', { name: 'AI 取り込み' })).toBeDisabled();
-    await expect(ai.getByTestId('ai-import-guide')).toBeVisible();
-    expect(relay.importCalls()).toBe(0);
-  });
+  // FR-289 AC-758（認証方式 API キー / Microsoft Entra ID の両方）
+  for (const authMode of ['api-key', 'entra'] as const) {
+    test(`FR-289 AC-758 認証方式 ${authMode}: 設定を保存し、実接続を有効にし、了承があると「AI 取り込み」を選べ、無効化・削除で再び選べず案内が示される`, async ({ page, start }) => {
+      relay = await startAiImportRelayStub({ configured: false });
+      await start({ relayUrl: relay.url });
+      await openNewProject(page);
+      await recordExportConsent(page);
+      // 保存だけ（有効化前）はまだ選べない
+      await saveFoundryInSettings(page, 'dummy-key-for-system-test-0001', authMode);
+      await expectAiImportBlocked(page, relay, '有効化');
+      // 3 条件がそろうと選べる
+      await enableFoundry(page);
+      await expectAiImportSelectable(page);
+      // 実接続を無効にすると再び選べない
+      await disableFoundry(page);
+      await expectAiImportBlocked(page, relay, '有効化');
+      // 再び有効にして選べることを確かめ、接続情報を削除すると再び選べない
+      await enableFoundry(page);
+      await expectAiImportSelectable(page);
+      await deleteFoundry(page);
+      const { ai } = await openImportScreen(page);
+      await expect(ai.getByRole('button', { name: 'AI 取り込み' })).toBeDisabled();
+      await expect(ai.getByTestId('ai-import-guide')).toContainText(/設定/);
+      expect(relay.importCalls()).toBe(0);
+    });
+  }
 });
 
 test.describe('FR-289 AI 取り込み（プレビュー・上限・失敗・キーの秘匿）', () => {

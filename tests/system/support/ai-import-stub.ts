@@ -11,14 +11,17 @@ export interface AiImportRelayStub extends RelayStub {
   savedKey(): string | null;
   /** /foundry/import の呼び出し回数 */
   importCalls(): number;
+  forceEnabled(v: boolean): void;
 }
 
-export async function startAiImportRelayStub(opts: { configured?: boolean; mode?: AiImportMode; initialKey?: string } = {}): Promise<AiImportRelayStub> {
+export async function startAiImportRelayStub(opts: { configured?: boolean; mode?: AiImportMode; initialKey?: string; enabled?: boolean; authMode?: 'api-key' | 'entra' } = {}): Promise<AiImportRelayStub> {
   const received: RelayStub['received'] = [];
-  let foundry: { endpoint: string; deployment: string; key: string } | null = opts.configured
-    ? { endpoint: 'https://example.invalid/openai/v1', deployment: 'dummy-deploy', key: opts.initialKey ?? 'dummy-key-for-system-test-9999' }
+  let foundry: { endpoint: string; deployment: string; key: string; authMode: 'api-key' | 'entra' } | null = opts.configured
+    ? { endpoint: 'https://example.invalid/openai/v1', deployment: 'dummy-deploy', key: opts.initialKey ??     'dummy-key-for-system-test-9999', authMode: opts.authMode ?? 'api-key' }
     : null;
-  const mode = opts.mode ?? 'ok';
+      // 実接続の有効化（FR-275）。configured 指定の既存ケースは有効で始まる（enabled で上書きできる）
+      let enabled = opts.enabled ?? !!opts.configured;
+      const mode = opts.mode ?? 'ok';
   const server = http.createServer((req, res) => {
     const cors = {
       'access-control-allow-origin': req.headers.origin ?? '*',
@@ -42,23 +45,32 @@ export async function startAiImportRelayStub(opts: { configured?: boolean; mode?
       };
       const view = () =>
         foundry
-          ? { configured: true, endpoint: foundry.endpoint, host: new URL(foundry.endpoint).host, deployment: foundry.deployment, keyMask: `••••${foundry.key.slice(-4)}`, enabled: false }
-          : { configured: false, endpoint: '', host: '', deployment: '', keyMask: '', enabled: false };
+          ? { configured: true, endpoint: foundry.endpoint, host: new URL(foundry.endpoint).host, deployment: foundry.deployment, keyMask: foundry.authMode === 'entra' ? '' : `••••${foundry.key.slice(-4)}`, authMode: foundry.authMode, enabled }
+          : { configured: false, endpoint: '', host: '', deployment: '', keyMask: '', authMode: 'api-key', enabled };
       if (u.pathname === '/foundry/config') {
         if (req.method === 'PUT') {
           try {
-            const b = JSON.parse(body) as { endpoint?: string; deployment?: string; key?: string };
-            if (!b.endpoint || !b.deployment || !b.key) return json(400, { error: 'エンドポイント・デプロイ名・API キーを入力してください' });
-            foundry = { endpoint: b.endpoint, deployment: b.deployment, key: b.key };
+            const b = JSON.parse(body) as { endpoint?: string; deployment?: string;             key?: string; authMode?: 'api-key' | 'entra' };
+                        const authMode = b.authMode === 'entra' ? 'entra' : 'api-key';
+                        if (!b.endpoint || !b.deployment || (authMode === 'api-key' && !b.key)) return json(400, { error: authMode === 'entra' ? 'エンドポイント・デプロイ名を入力してください' : 'エンドポイント・デプロイ名・API キーを入力してください' });
+                        foundry = { endpoint: b.endpoint, deployment: b.deployment, key: authMode === 'entra' ? '' : (b.key as string), authMode };
           } catch {
             return json(400, { error: '不正な入力です' });
           }
-        } else if (req.method === 'DELETE') foundry = null;
+        } else if (req.method === 'DELETE') { foundry = null; enabled = false; }
         return json(200, view());
+      }
+      if (u.pathname === '/foundry/connection' && req.method === 'POST') {
+        let b: { enable?: boolean } = {};
+        try { b = JSON.parse(body); } catch { /* 空 */ }
+        if (b.enable && !foundry) return json(400, { error: 'Foundry の接続情報が未設定です' });
+        enabled = !!b.enable;
+        return json(200, { mode: enabled ? 'connected' : 'mock' });
       }
       if (u.pathname === '/health') return json(200, { status: 'ready', copilot: 'signed-in', foundry: { keyConfigured: foundry !== null } });
       if (u.pathname === '/foundry/import') {
         if (!foundry) return json(503, { error: { cause: 'key-missing' } });
+        if (!enabled) return json(503, { error: { cause: 'disabled' } });
         if (mode === 'upstream-error') return json(502, { error: { cause: 'upstream-status', status: 500 } });
         return json(200, { preview: { entities: [{ name: '合成AI取り込みエンティティ', description: '差し替え部品が返した内容です。' }] } });
       }
@@ -70,8 +82,10 @@ export async function startAiImportRelayStub(opts: { configured?: boolean; mode?
   return {
     url: `http://127.0.0.1:${port}`,
     received,
-    savedKey: () => foundry?.key ?? null,
+    savedKey: () => (foundry && foundry.authMode === 'api-key' ? foundry.key : null),
     importCalls: () => received.filter((r) => r.path === '/foundry/import').length,
+    /** 設定画面を開かずに、中継の「有効」の状態だけを切り替える（了承の入力後に「設定だけが欠ける」状態を作るため） */
+    forceEnabled: (v: boolean) => { enabled = v; },
     close: () => new Promise<void>((r) => server.close(() => r())),
   };
 }
