@@ -8,6 +8,8 @@ export interface FoundryView {
   host: string;
   deployment: string;
   keyMask: string;
+  /** 認証方式（FR-282）。省略は API キー */
+  authMode?: 'api-key' | 'entra';
   /** この案件で実接続を有効にしているか */
   enabled: boolean;
 }
@@ -32,7 +34,7 @@ export async function fetchFoundryView(relayUrl: string | undefined, packId: str
 }
 
 export async function putFoundryConfig(
-  relayUrl: string, packId: string, input: { endpoint: string; deployment: string; key: string }, f: F = dflt,
+  relayUrl: string, packId: string, input: { endpoint: string; deployment: string; key: string; authMode?: 'api-key' | 'entra' }, f: F = dflt,
 ): Promise<{ ok: true; view: FoundryView } | { ok: false; message: string }> {
   if (!isLoopbackUrl(relayUrl)) return { ok: false, message: NO_RELAY };
   try {
