@@ -23,6 +23,8 @@ import { TWIN_RELATION_LABELS, type TwinRelation } from '../schema/world';
 import { useComponentView, usePublishViewItems } from '../view/useView';
 
 const ORIGIN = 'spatial-view';
+/** 件数の表示。0 は「なし」と書く（0 件の表示にしない。FR-287 AC-750） */
+const n0 = (n: number): string => (n === 0 ? 'なし' : `${n} 件`);
 const D = SPATIAL_ELEMENT_DEPTH;
 const DEPTH_OF_KIND = { site: 1, floor: 2, room: 3, equipment: 3 } as const;
 
@@ -321,7 +323,7 @@ export function SpatialScreen() {
                 <span key={k} className={s.cluster} data-zoom-cluster={SPATIAL_KIND_LABELS[k]} role="button" tabIndex={0}
                   onClick={() => zoomTo(DEPTH_OF_KIND[k])} onKeyDown={(e) => { if (e.key === 'Enter') zoomTo(DEPTH_OF_KIND[k]); }}>
                   <Text weight="semibold">{k === 'room' ? '部屋・設備' : SPATIAL_KIND_LABELS[k]}</Text>
-                  <Text size={200}>{counts[k]} 件</Text>
+                  <Text size={200}>{n0(counts[k])}</Text>
                 </span>
               ))}
             </div></GraphScope>
@@ -339,7 +341,7 @@ export function SpatialScreen() {
               origin={ORIGIN} label="空間ビュー" columns={kpi ? [kpi] : []}
               nodes={graphNodes.map((n) => ({ id: n.id, name: n.name, kind: n.kindLabel ?? n.kind, values: kpi ? [kpiCell(model, n.id, kpi).text] : [] }))}
               relations={graphEdges.map((e) => ({ id: e.id, from: e.from, to: e.to, label: e.label }))}
-              summary={`拠点 ${counts.site} 件・フロア ${counts.floor} 件・部屋/設備 ${counts.room} 件（階層: 全体・拠点・フロア・部屋/設備・詳細の 5 階層。現在 ${d}）`}
+              summary={`拠点 ${n0(counts.site)}・フロア ${n0(counts.floor)}・部屋/設備 ${n0(counts.room)}（階層: 全体・拠点・フロア・部屋/設備・詳細の 5 階層。現在 ${d}）`}
             />
           ) : null}
           {d === D + 1 && !detail ? <EmptyView message="詳細を見る部屋・設備がありません。" /> : null}
@@ -371,7 +373,7 @@ export function SpatialScreen() {
             {KPI_STAGES.map((st) => (
               <li key={st}><span className={s.kpi} style={{ backgroundColor: STAGE_FILL[st] }}>{STAGE_GLYPHS[st]} {KPI_STAGE_LABELS[st]}</span></li>
             ))}
-            <li><span className={s.kpi}>○ データなし</span></li>
+            <li><span className={s.kpi}>○ 値なし（パックに値がない項目）</span></li>
           </ul>
         </div>
       )}

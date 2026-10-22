@@ -42,7 +42,7 @@ export function GraphAlt({ origin, label, nodes, relations, columns = [], summar
   return (
     <section className={s.root} aria-label={`${label}の表と要約`} data-testid="graph-alt">
       <Text role="status" data-testid="graph-alt-summary">
-        {`${label}: 項目 ${nodes.length} 件、関係 ${relations.length} 件${summary ? `。${summary}` : ''}`}
+        {`${label}: ${nodes.length === 0 ? '項目なし' : `項目 ${nodes.length} 件`}、${relations.length === 0 ? '関係なし' : `関係 ${relations.length} 件`}${summary ? `。${summary}` : ''}`}
       </Text>
       {showTableButton ? <div><ViewAsTableButton asTable={false} onToggle={() => { tableRef.current?.scrollIntoView?.({ block: 'nearest' }); tableRef.current?.focus(); }} /></div> : null}
       <div ref={tableRef} className={s.scroll} tabIndex={0} role="region" aria-label={`${label}の項目（表。横にスクロールできます）`}>
