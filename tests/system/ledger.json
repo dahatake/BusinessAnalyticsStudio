@@ -9542,6 +9542,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T04:30:57+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "tests/system/e2e/copilot-analysis.spec.ts 削除（重複解消）"
         }
       ]
     },
