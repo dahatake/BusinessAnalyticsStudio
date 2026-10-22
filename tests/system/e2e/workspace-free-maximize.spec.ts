@@ -6,9 +6,9 @@ import { test, expect, component, openScreen, selectPersona } from '../support/f
 type Box = { x: number; y: number; width: number; height: number };
 // Public workspace navigation keys. Settings is a modal, not a freely placed pane.
 const PANES = [
-  'issue-solution', 'canvas', 'priority', 'summary', 'matrix', 'ranking',
+  'issue-solution', 'priority', 'summary', 'matrix', 'ranking',
   'knowledge-graph', 'business-graph', 'architecture', 'discussion-tree', 'table',
-  'gantt', 'view3d', 'drawing2d', 'map', 'kpi-okr', 'twin-view', 'sources',
+  'gantt', 'map', 'kpi-okr', 'twin-view', 'sources',
   'mock-app', 'usecase', 'data-catalog', 'spatial-view', 'whiteboard', 'themes', 'chat',
 ] as const;
 const TOL = 2; // CSS-pixel rounding only; not an area-only/fullscreen-state oracle.

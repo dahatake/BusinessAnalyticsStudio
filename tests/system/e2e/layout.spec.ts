@@ -11,7 +11,7 @@ const DEFAULT_PRIMARY: Record<string, string> = {
   経営層: 'matrix',
   事業部門: 'issue-solution',
   IT: 'architecture',
-  現場: 'view3d',
+  現場: 'twin-view', // 中核オブジェクトの 3D デジタルツイン（画面 view3d は 2026-10-22 に廃止。Twin ビューが担う。Q-062 A）
 };
 
 async function box(loc: Locator) {
@@ -69,46 +69,8 @@ async function componentMenu(c: Locator, item: string): Promise<void> {
   await c.page().getByRole('menuitem', { name: item }).click();
 }
 
-test.describe('FR-012 キャンバス', () => {
-  // FR-012 AC-015
-  test('FR-012 AC-015 キャンバスをドラッグ・ホイール・キーボードでパン/ズームでき、議題を選ぶとその位置へ移動する', async ({ page, start }) => {
-    await start();
-    const canvas = await openScreen(page, 'canvas');
-    const vp = () => hook<{ x: number; y: number; zoom: number }>(page, 't.canvas.viewport()');
-    const b = await box(canvas.getByTestId('canvas-surface'));
-    const cx = b.x + b.width / 2;
-    const cy = b.y + b.height / 2;
-    // ドラッグでパン
-    let v0 = await vp();
-    await page.mouse.move(cx, cy);
-    await page.mouse.down();
-    await page.mouse.move(cx + 120, cy + 60, { steps: 8 });
-    await page.mouse.up();
-    let v1 = await vp();
-    expect(v1.x !== v0.x || v1.y !== v0.y, 'ドラッグでパンしない').toBe(true);
-    // ホイールでズーム
-    v0 = v1;
-    await page.mouse.move(cx, cy);
-    await page.mouse.wheel(0, -400);
-    await expect.poll(async () => (await vp()).zoom).not.toBe(v0.zoom);
-    // キーボード（矢印キーと +/-）
-    await canvas.getByTestId('canvas-surface').focus();
-    v0 = await vp();
-    await page.keyboard.press('ArrowRight');
-    await expect.poll(async () => { const v = await vp(); return v.x !== v0.x || v.y !== v0.y; }).toBe(true);
-    v0 = await vp();
-    await page.keyboard.press('+');
-    await expect.poll(async () => (await vp()).zoom).toBeGreaterThan(v0.zoom);
-    v0 = await vp();
-    await page.keyboard.press('-');
-    await expect.poll(async () => (await vp()).zoom).toBeLessThan(v0.zoom);
-    // 議題の一覧から選ぶと、その議題の位置へ移動する
-    const topic = mono.topics()[mono.topics().length - 1].topic;
-    await page.getByRole('listbox', { name: '議題' }).getByRole('option', { name: topic.title }).click();
-    await expect.poll(() => hook<boolean>(page, 't.canvas.isCentered(a)', topic.id), { timeout: 10_000 }).toBe(true);
-  });
-});
-
+// FR-012 AC-015 は 2026-10-22 の依頼で廃止予定（画面「キャンバス」の廃止）。ケース E2E-114 は台帳で blocked。テストは削除した。
+// 作業領域のパン/ズーム（canvas-surface）と論点の移動は FR-016 AC-192・FR-086・FR-173 などのケースが、作業領域（data-testid="workspace"）に対して確かめる。
 test.describe('FR-013 最大化・通常・非表示', () => {
   // FR-013 AC-016
   test('FR-013 AC-016 Shift+F で最大化、Esc で通常、H で非表示、見出しのダブルクリックは FR-174 の拡大（最大化にならない）', async ({ page, start }) => {

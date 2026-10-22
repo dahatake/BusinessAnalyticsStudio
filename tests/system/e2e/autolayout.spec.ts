@@ -13,7 +13,7 @@ const DEFAULT_PRIMARY: Record<string, string> = {
   経営層: 'matrix',
   事業部門: 'issue-solution',
   IT: 'architecture',
-  現場: 'view3d',
+  現場: 'twin-view', // 画面 view3d は廃止。中核オブジェクトの 3D は Twin ビュー（Q-062 A）
 };
 
 type Box = { x: number; y: number; width: number; height: number };

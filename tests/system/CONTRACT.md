@@ -48,8 +48,9 @@
 - 自動サイズ調整: フォーカスしたコンポーネントの面積が基準の PARAM-033（1.5）倍になる。switch「サイズの自動調整」で切り替える。
 - 作業先: 常に表示する `data-testid="work-target"`（「デモ」または「企業名 / Project 名」）。ボタン「作業先」で dialog「作業先の選択」を開く。候補は option（「デモ」「<企業名> … <Project 名>」「実際の Project を登録」）。起動直後はメイン画面（§15）で、選択画面は「Project を開く」で必ず出る（FR-144 AC-237・AC-239、Q-026 で改訂）。support/fixtures.ts の `skipOpening` は、メイン画面と選択画面を進めてデモ（なければ最初の Project）を選ぶ。選択画面そのものを確かめるテストは `skipOpening: false` で起動し `pressOpeningEscape`（オープニングだけ飛ばす）を使う。
 - デモの非表示（FR-144 AC-240・AC-241）: 設定画面（`nav-settings`）の switch「選択画面にデモを表示」（既定: オン）。オフにすると dialog「作業先の選択」にデモの option が出ない。端末内（localStorage 等）に保存され、再読込後も維持され、別の browser context には引き継がれない。
-- 最初のフレーム（FR-147 AC-246〜250）: 新しいフックは使わない。「最初のフレーム」は `scene.info().frame > 0` かつ `scene.objects()` に `visible` な拠点がある状態。開いた時刻は `openScreen(view3d)` の直前。
-- 3D の描画面（FR-146 AC-243・AC-244）: `data-testid="component-view3d"` の中の `canvas` と、その親要素（表示領域）の大きさを比べる。クリックは `scene.objects` の画面座標へ `page.mouse.click`。
+- （廃止）最初のフレーム（FR-147 AC-246〜250）: FR-147 は廃止予定（2026-10-22）。ケースは台帳で blocked。`scene.info()`・`scene.objects()` のフックは AC-081・AC-087・AC-030 などが引き続き使う。
+- （廃止）3D の描画面（FR-146 AC-243・AC-244）: FR-146 は廃止予定（2026-10-22）。ケースは台帳で blocked。
+- 廃止した画面と読み替え（2026-10-22。Q-062 A）: 画面 `view3d`・`drawing2d`・`canvas` はない。`support/fixtures.ts` の `openScreen`・`component` は、旧 key `canvas` を配置を受ける作業領域（`data-testid="workspace"`。パン/ズームの面 `canvas-surface`・listbox「論点」・`t.canvas.*` のフックはその中・それに対して）に、旧 key `view3d` を Twin ビュー（`twin-view`）を見出しの「ビュー」で 3D にしたもの（`open3dView`。4 つの 3D シーン・拠点の描画・クロスハイライト・注釈・`t.scene.*` のフックはここ）に読み替える。注釈のフックの key は `t.annotations.count("twin-view")`。「議題」の表示名は「論点」（listbox の名前も「論点」）。
 - 表示設定: Light/Dark は `emulateMedia({colorScheme})`、ハイコントラストは `forcedColors: 'active'`、動きの軽減は `reducedMotion: 'reduce'`。
 
 ## 10. 作業先メニュー・操作アイコン・最小化・スナップ・KPI/OKR（FR-148〜154・NFR-UX-008。workspace-ops.spec.ts が前提にする画面の探し方）
@@ -106,8 +107,8 @@
 - 入口: メイン画面の Project 名のリンク（role=link、名前は Project 名）をクリックすると、その Project 画面（stepper が見える）が開く。ブラウザーの戻る（history back）でメイン画面に戻る。
 
 ## 21. Fluent 2 の全画面適用・ピン止め・ビュー切替（NFR-UX-015〜017・NFR-A11Y-009・FR-215〜218。fluent-design.spec.ts・a11y-all-screens.spec.ts・pin.spec.ts・view-switch.spec.ts が前提にする画面の探し方）
-- 全画面（画面の登録）: 左メニュー navigation「画面」の `nav-<key>`（`nav-toggle` を除く）を表示の順に走査し、左メニューに項目を持たない画面（FR-220 AC-590: `view3d`「3D ビューと 2D 図面」・`drawing2d`「2D 図面」。`support/fixtures.ts` の `OFF_MENU_SCREENS`）を末尾に足す（`support/screens.ts` の `listScreenKeys`）。§4 の主要画面がすべて含まれること。表示幅が狭く左メニューが隠れるときは button「メニュー」から開く。
-- 左メニューにない画面の開き方（FR-220 AC-590。AC の期待値は変えない）: `openScreen`・`gotoScreen` は、`OFF_MENU_SCREENS` か `nav-<key>` が無い画面を、コマンドパレット（`Ctrl+K`。dialog「コマンドパレット」）に「show <key>」と入れ、option `id="command-view.show.<key>"`（「<画面名>を表示する」。FR-111）を押して開く（`openScreenByCommand`）。テストは `nav-view3d`・`nav-drawing2d` を使わない。
+- 全画面（画面の登録）: 左メニュー navigation「画面」の `nav-<key>`（`nav-toggle` を除く）を表示の順に走査する（`support/screens.ts` の `listScreenKeys`）。§4 の主要画面がすべて含まれ、廃止した画面 `view3d`・`drawing2d`・`canvas`（FR-220 AC-590）が含まれないこと。表示幅が狭く左メニューが隠れるときは button「メニュー」から開く。
+- 左メニューにない画面（`OFF_MENU_SCREENS`）は今はない（空）。`openScreenByCommand`（コマンドパレット「show <key>」・option `id="command-view.show.<key>"`）は、将来の左メニューにない画面のために残す。
 - カード: Fluent のカードの面に `data-surface="card"`（影の段 4 の判定に使う。ハイコントラストでは 4 辺の境界線か輪郭線の判定に使う。AC-476）。メニューは role=menu、ツールチップは role=tooltip、ダイアログは role=dialog（コマンドパレット）。
 - 拡大・縮小できる面（AC-483。A-51）: ビュアー・グラフ・キャンバス・ホワイトボード・地図・3D の、拡大・縮小する描画領域の要素に `data-zoom-surface`（値は `viewer`／`graph`／`canvas`／`whiteboard`／`map`／`3d`）。見出し・ハンドル・ツールバーなど面の外の部品には付けない。この中の文字は文字 200% の切れ・重なりの数え方から除き、表示しきれない文字は省略記号（text-overflow: ellipsis か line-clamp）＋全文のアクセシブルな名前（aria-label・title・aria-labelledby）かツールチップ（role=tooltip）、または面の中のスクロール（overflow: auto/scroll）で読めることを判定する。3D と地図のラベルは NFR-A11Y-003 AC-173 と同じ button「表で見る」の表で読めることを判定する。
 - ピン止め（FR-215）: フォーカスしたコンポーネントの `component-actions` に button 1 つ。名前は「ピン止めする」（固定なし）／「ピン止めを外す」（固定中）。`aria-pressed`（false／true）と `data-icon-variant`（`regular`／`filled`）を持ち、ツールチップ（role=tooltip）の文言も名前と同じ。状態は端末内のレイアウトとして保存され、再読込で復元される。

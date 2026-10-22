@@ -12,7 +12,6 @@ export { expect };
 
 /** 主要画面（要求定義書 §3.5、[ASSUMPTION] A-13）と data-testid のキー */
 export const MAIN_SCREENS = [
-  ['canvas', 'キャンバス'],
   ['issue-solution', '課題-解決策分析'],
   ['priority', '優先順位分析'],
   ['knowledge-graph', 'ナレッジグラフ'],
@@ -206,10 +205,18 @@ export async function gotoAndEnter(page: Page, url: string, target?: RegExp | st
 }
 
 /**
- * 左メニューに項目を持たない画面（FR-220 AC-590: 「3D ビューと 2D 図面」「2D 図面」。FR-020 の画面は廃止しない）。
- * これらはコマンド（コマンドパレット「…を表示する」）など、左メニュー以外の入口から開く（CONTRACT.md §21）。
+ * 左メニューに項目を持たない画面。画面「3D ビューと 2D 図面」（view3d）・「2D 図面」（drawing2d）・「キャンバス」（canvas）は
+ * 2026-10-22 の依頼（FR-012・FR-020・FR-220 AC-590）で廃止したので、なくなった（CONTRACT.md §21）。
  */
-export const OFF_MENU_SCREENS = ['view3d', 'drawing2d'] as const;
+export const OFF_MENU_SCREENS = [] as const;
+
+/**
+ * 廃止した画面の旧 key（テストの読み替え。Q-062 A）。
+ * - 'canvas': 画面ではなく、配置を受ける作業領域（data-testid="workspace"）。パン/ズームの面 `canvas-surface` と論点の listbox「論点」はその中。
+ * - 'view3d': 3D の表現（4 つの 3D シーン・拠点の描画・クロスハイライト）は既存の 3D 表示 = Twin ビュー（twin-view）を 3D の表現にしたものが持つ。
+ */
+const LEGACY_WORK_AREA = 'canvas';
+const LEGACY_3D = 'view3d';
 
 /** 左メニューを使わずに開く画面か（OFF_MENU_SCREENS か、左メニューに `nav-<key>` がない画面） */
 export async function isOffMenuScreen(page: Page, key: string): Promise<boolean> {
@@ -236,6 +243,8 @@ export async function openScreenByCommand(page: Page, key: string): Promise<void
 export async function openScreen(page: Page, key: string): Promise<Locator> {
   // 設定はモーダル（FR-223）。ほかの画面へ移る前に、開いている設定のモーダルを閉じる（背面の覆いが操作を遮るため）
   if (key !== 'settings') await closeSettings(page);
+  if (key === LEGACY_WORK_AREA) return component(page, key); // 作業領域は常に表示されている（画面ではない）
+  if (key === LEGACY_3D) return open3dView(page);
   else if (await settingsDialog(page).isVisible()) return component(page, key); // すでに開いている
   if (await isOffMenuScreen(page, key)) await openScreenByCommand(page, key);
   else await page.getByTestId(`nav-${key}`).click();
@@ -259,8 +268,29 @@ export async function closeSettings(page: Page): Promise<void> {
 }
 
 /** コンポーネント（パネル）。CONTRACT.md §4 の `component-<key>`。設定だけはモーダル（role=dialog「設定」）の中の `component-settings` */
+/**
+ * 3D の表現で見る（Q-062 A: 4 つの 3D シーン・拠点の描画は既存の 3D 表示に帰属）。Twin ビュー（twin-view）を開き、
+ * 見出しの「ビュー」（FR-217）で 3D にして、そのコンポーネントを返す。
+ */
+export async function open3dView(page: Page): Promise<Locator> {
+  await closeSettings(page);
+  const c = page.getByTestId('component-twin-view');
+  if (!(await c.isVisible())) await page.getByTestId('nav-twin-view').click();
+  await expect(c, 'Twin ビューが開かない').toBeVisible();
+  const view = c.getByTestId('component-actions').first().getByRole('button', { name: /^ビュー/ });
+  await c.focus();
+  if (!(await view.innerText()).includes('3D')) {
+    await view.click();
+    await page.getByRole('menu').filter({ has: page.getByRole('menuitemradio', { name: '両方' }) }).last().getByRole('menuitemradio', { name: '3D', exact: true }).click();
+  }
+  await expect(view, 'Twin ビューが 3D の表現にならない').toContainText('3D');
+  return c;
+}
+
 export function component(page: Page, key: string): Locator {
   if (key === 'settings') return settingsDialog(page).getByTestId('component-settings');
+  if (key === LEGACY_WORK_AREA) return page.getByTestId('workspace');
+  if (key === LEGACY_3D) return page.getByTestId('component-twin-view');
   return page.getByTestId(`component-${key}`);
 }
 
