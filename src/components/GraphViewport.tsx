@@ -63,6 +63,33 @@ function hiddenIn(el: HTMLElement, stage: HTMLElement): boolean {
   return false;
 }
 const r2 = (n: number): number => Math.round(n * 100) / 100;
+
+/**
+ * 要素の位置が落ち着いてから（動きのトランジションが終わり、2 フレーム続けて位置が変わらなくなってから）cb を呼ぶ（FR-248）。
+ * 落ち着かないときも maxFrames（既定 60 フレーム ≒ 1 秒）で打ち切って呼ぶ。
+ */
+export function whenSettled(el: HTMLElement, cb: () => void, maxFrames = 60): void {
+  const raf = typeof requestAnimationFrame === 'function' ? requestAnimationFrame : (f: FrameRequestCallback) => setTimeout(() => f(Date.now()), 16);
+  let last: DOMRect | null = null;
+  let stable = 0;
+  const moving = (): boolean => {
+    for (let n: HTMLElement | null = el; n; n = n.parentElement) {
+      const a = typeof n.getAnimations === 'function' ? n.getAnimations() : [];
+      if (a.some((x) => x.playState === 'running' || x.pending)) return true;
+      if (n.hasAttribute('data-zoom-surface')) break;
+    }
+    return false;
+  };
+  const tick = (frame: number): void => {
+    const r = el.getBoundingClientRect();
+    const same = last !== null && Math.abs(r.left - last.left) < 0.5 && Math.abs(r.top - last.top) < 0.5 && Math.abs(r.width - last.width) < 0.5;
+    stable = same && !moving() ? stable + 1 : 0;
+    last = r;
+    if (stable >= 2 || frame >= maxFrames) { cb(); return; }
+    raf(() => tick(frame + 1));
+  };
+  raf(() => tick(0));
+}
 const mounted = new Map<string, number>();
 
 export interface GraphScopeProps { active: boolean; origin: string; label: string; children: ReactNode }
@@ -115,6 +142,8 @@ export function GraphViewport({ origin, label, standalone = false, className, at
     patch(origin, { s: ns, x: c.x - (c.x - v.x) * ratio, y: c.y - (c.y - v.y) * ratio, ...(standalone && depthStep !== 0 ? { depth: stepDepth(v.depth, depthStep as 1 | -1, 1) } : {}) });
   };
   const home = (): void => patch(origin, { x: 0, y: 0, s: 1, ...(standalone ? { depth: 0 } : {}) });
+  // 「全体に戻す」は即時に全体表示の位置と倍率にする（FR-245 AC-594: 操作の直後に全ノードが面に収まる。動きの途中の位置を残さない）
+  const homeNow = (): void => { clearTimeout(animTimer.current); setAnim(false); home(); };
   const panBy = (dx: number, dy: number): void => patch(origin, (v) => ({ x: v.x + dx, y: v.y + dy }));
   // 全画面に入る・出るときは、詳細カードを閉じる（カードの位置が変わるため。パン・倍率・選択は保つ）
   const toggleFull = (): void => { closerRef.current?.(); patch(origin, (v) => ({ full: !v.full })); };
@@ -166,7 +195,7 @@ export function GraphViewport({ origin, label, standalone = false, className, at
       const host = root.closest(HOST_SEL);
       if (!host || !host.contains(btn)) return;
       const name = btn.getAttribute('aria-label') || (btn.textContent ?? '').trim();
-      if (name === '拡大') { animate(); zoomBy(GRAPH_SCALE_STEP); } else if (name === '縮小') { animate(); zoomBy(1 / GRAPH_SCALE_STEP); } else if (name === '全体表示に戻す') { animate(); home(); }
+      if (name === '拡大') { animate(); zoomBy(GRAPH_SCALE_STEP); } else if (name === '縮小') { animate(); zoomBy(1 / GRAPH_SCALE_STEP); } else if (name === '全体表示に戻す') { homeNow(); }
     };
     document.addEventListener('click', h, true);
     return () => document.removeEventListener('click', h, true);
@@ -191,12 +220,18 @@ export function GraphViewport({ origin, label, standalone = false, className, at
         return;
       }
       highlightRowItem(origin, id);
-      const sr = stage.getBoundingClientRect();
-      const er = el.getBoundingClientRect();
-      const m = 12;
-      if (er.left >= sr.left + m && er.right <= sr.right - m && er.top >= sr.top + m && er.bottom <= sr.bottom - m) return;
-      animate();
-      panBy(sr.left + sr.width / 2 - (er.left + er.width / 2), sr.top + sr.height / 2 - (er.top + er.height / 2));
+      // 階層の切替・拡大縮小の動き（transform のトランジション）や図の大きさの変化による配置の更新の途中で測ると、
+      // 動いている途中の位置からパンの量を決めてしまい、対象が範囲に入らない。位置が落ち着いてから測る
+      whenSettled(el, () => {
+        const st = stageRef.current;
+        if (!st || !el.isConnected) return;
+        const sr = st.getBoundingClientRect();
+        const er = el.getBoundingClientRect();
+        const m = 12;
+        if (er.left >= sr.left + m && er.right <= sr.right - m && er.top >= sr.top + m && er.bottom <= sr.bottom - m) return;
+        animate();
+        panBy(sr.left + sr.width / 2 - (er.left + er.width / 2), sr.top + sr.height / 2 - (er.top + er.height / 2));
+      });
     };
     // 表の行のクリックで起きた選択が画面に反映されてから動く（画面側の階層の切替が、古い選択を見ないように）
     return onGraphFocus(origin, (id) => { setTimeout(() => run(id, 0), 0); });
@@ -295,7 +330,7 @@ export function GraphViewport({ origin, label, standalone = false, className, at
     }
     if (e.key === 'f' || e.key === 'F') { done(); toggleFull(); return; }
     if (!standalone) return; // 画面側にキーの操作がある面は、画面に任せる
-    if (e.key === '+' || e.key === '=') { done(); zoomBy(GRAPH_SCALE_STEP, undefined, 1); } else if (e.key === '-' || e.key === '_') { done(); zoomBy(1 / GRAPH_SCALE_STEP, undefined, -1); } else if (e.key === '0') { done(); home(); }
+    if (e.key === '+' || e.key === '=') { done(); zoomBy(GRAPH_SCALE_STEP, undefined, 1); } else if (e.key === '-' || e.key === '_') { done(); zoomBy(1 / GRAPH_SCALE_STEP, undefined, -1); } else if (e.key === '0') { done(); homeNow(); }
   };
 
   const setDepth = useCallback((d: number) => patch(origin, { depth: d }), [origin, patch]);
@@ -322,7 +357,7 @@ export function GraphViewport({ origin, label, standalone = false, className, at
             <>
               <Button size="small" className={s.btn} onClick={() => { animate(); zoomBy(GRAPH_SCALE_STEP, undefined, 1); }}>拡大</Button>
               <Button size="small" className={s.btn} onClick={() => { animate(); zoomBy(1 / GRAPH_SCALE_STEP, undefined, -1); }}>縮小</Button>
-              <Button size="small" className={s.btn} onClick={() => { animate(); home(); }}>全体表示に戻す</Button>
+              <Button size="small" className={s.btn} onClick={() => { homeNow(); }}>全体表示に戻す</Button>
               <span data-testid="zoom-level" data-depth={view.depth} data-depth-count={3}><Badge appearance="tint">{ZOOM_KIND_LABELS[kind]}</Badge></span>
             </>
           ) : null}

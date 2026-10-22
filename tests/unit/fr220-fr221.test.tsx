@@ -60,8 +60,9 @@ describe('FR-220 左メニューから「3D ビュー」の切替の項目を削
 });
 
 describe('FR-221 「メニューを最小化」の文字が切れない', () => {
-  // FR-221 AC-517（切れる原因: Fluent のボタンは overflow: hidden・行の高さ 20px。和文フォントの文字の箱が行より高いと上下が切り取られる）
-  it('FR-221 AC-517 切替ボタンは、はみ出しを切り取らず（overflow: visible）、行の高さを 22px 以上にする', () => {
+  // FR-221 AC-517（文字を囲む要素の高さが文字の高さ以上で、はみ出して切り取られない）・FR-221 AC-476（文字の大きさと行の高さの組が Fluent 2 の文字の段に一致）
+  // 切れる原因: Fluent のボタンは overflow: hidden。和文フォントの文字の箱が行より高いと上下が切り取られる
+  it('FR-221 AC-517 AC-476 切替ボタンは、はみ出しを切り取らず（overflow: visible）、高さが文字に合わせて伸び（height: auto）、文字の大きさと行の高さが Fluent 2 の同じ段の組である', () => {
     shell();
     const btn = screen.getByTestId('nav-toggle');
     expect(btn.textContent).toBe('メニューを最小化');
@@ -69,8 +70,13 @@ describe('FR-221 「メニューを最小化」の文字が切れない', () => 
     const rules = Array.from(document.styleSheets).flatMap((sh) => Array.from(sh.cssRules).map((r) => r.cssText));
     const own = btn.className.split(/\s+/).flatMap((c) => rules.filter((r) => r.startsWith(`.${c} `) || r.startsWith(`.${c}{`)));
     expect(own.some((r) => /\{overflow: visible;\}$/.test(r) || /\{\s*overflow: visible;\s*\}$/.test(r)), '文字が上下で切り取られる（overflow: visible の規則がない）').toBe(true);
-    // 行の高さは Fluent の既定（lineHeightBase300 = 20px）より高い 22px 以上（lineHeightBase400 以上）
-    const lh = own.map((r) => /\{\s*line-height: var\(--lineHeightBase(\d+)\);\s*\}$/.exec(r)?.[1]).find((v) => v !== undefined);
-    expect(Number(lh), '行の高さが 22px（lineHeightBase400）以上でない').toBeGreaterThanOrEqual(400);
+    // AC-517: 要素の高さは固定せず（height: auto）、文字の高さに合わせて伸びる
+    expect(own.some((r) => /\{\s*height: auto;\s*\}$/.test(r)), '要素の高さが固定され、文字に合わせて伸びない（height: auto の規則がない）').toBe(true);
+    // AC-476: 文字の大きさと行の高さのトークンが Fluent 2 の同じ段（例: fontSizeBase300 と lineHeightBase300）の組である（Fluent の reset の規則は複数の宣言をまとめるので宣言単位で探し、後の規則〈上書き〉を採る）
+    const fs = own.map((r) => /[{;]\s*font-size: var\(--fontSizeBase(\d+)\);/.exec(r)?.[1]).filter((v) => v !== undefined);
+    const lh = own.map((r) => /[{;]\s*line-height: var\(--lineHeightBase(\d+)\);/.exec(r)?.[1]).filter((v) => v !== undefined);
+    expect(fs.length, '文字の大きさのトークンの規則がない').toBeGreaterThan(0);
+    expect(lh.length, '行の高さのトークンの規則がない').toBeGreaterThan(0);
+    expect(lh[lh.length - 1], '文字の大きさと行の高さが Fluent 2 の同じ段の組でない').toBe(fs[fs.length - 1]);
   });
 });

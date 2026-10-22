@@ -512,7 +512,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   /** `key` を `target` に置き、ぶつかるものを押し出して、すべてを自由配置として保存する（FR-173・FR-184） */
   const commitFree = (key: string, target: PxRect, m: NonNullable<ReturnType<typeof measureAll>>): boolean => {
     // ピン止めしたものは動かさない。置き場所が残っていなければ、元の位置のまま理由を示す（FR-216 AC-496・AC-505）
-    const next = resolveAround({ ...m.rects, [key]: target }, key, m.bounds, pinSet);
+    const next = resolveAround({ ...m.rects, [key]: target }, key, m.bounds, pinSet, manualSet());
     if (!next) { announce(PIN_NO_ROOM_REASON); return false; }
     actions().setFloats(toFractions(next, m.bounds));
     actions().markMoved(key);
@@ -815,6 +815,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     commitFree(key, target, m);
   };
 
+  /** 手で大きさを変えたコンポーネント。押し出し・並べ直しでも、できる限り大きさを保つ（FR-224・FR-228 AC-529） */
+  const manualSet = (): ReadonlySet<string> => { const st = useLayout.getState(); return new Set(st.manual[st.persona] ?? []); };
   /** 手で大きさを変えたコンポーネントとして覚える（自動の調整・ステップでの再配置で上書きしない。FR-143・FR-228） */
   const markManual = (key: string) => useLayout.setState((st) => {
     const cur = st.manual[st.persona] ?? [];
@@ -840,7 +842,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     };
     const onMove = (ev: globalThis.PointerEvent) => {
       const target = resizeRect(self, edge, ev.clientX - sx, ev.clientY - sy, start.bounds);
-      const next = resolveAround({ ...start.rects, [key]: target }, key, start.bounds, pinSet);
+      const next = resolveAround({ ...start.rects, [key]: target }, key, start.bounds, pinSet, manualSet());
       if (next) { markManual(key); actions().setFloats(toFractions(next, start.bounds)); }
     };
     document.body.style.userSelect = 'none';
@@ -881,7 +883,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       if (compact || !start || !area || !self) return null;
       const target: PxRect = { x: px - offX - area.left, y: py - offY - area.top, w: self.w, h: self.h };
       // ピン止めしたものは動かさず、置いたものを重ならない最寄りの位置へ。置き場所がなければ動かし始めの配置のまま（FR-216）
-      const next = resolveAround({ ...start.rects, [key]: target }, key, start.bounds, pinSet);
+      const next = resolveAround({ ...start.rects, [key]: target }, key, start.bounds, pinSet, manualSet());
       noRoom = next === null;
       return toFractions(next ?? start.rects, start.bounds);
     };

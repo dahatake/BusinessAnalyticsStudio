@@ -53,8 +53,9 @@ export function AiSettings() {
       </Dialog>
     </Field>
     <AzureSettings />
-    <FoundrySettings />
     </section>
+    {/* FR-275: Foundry の欄は独立した区画にする（AI・音声・手書きの区画の説明・スイッチと重ならないように。FR-182 AC-379・NFR-SEC-002 AC-176） */}
+    <FoundrySettings />
     </>
   );
 }
