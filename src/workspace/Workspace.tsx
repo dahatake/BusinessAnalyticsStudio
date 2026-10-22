@@ -13,6 +13,7 @@ import { keysOf, prune, type DropZone, type LayoutNode, type Path, type SplitNod
 import { MIN_COMPONENT_WIDTH, applyAutoSize, fitMinWidth } from './autosize';
 import { PERSONA_PRIMARY } from './persona';
 import { areaPanDelta } from './areaPan';
+import { useAreaViewport } from './useAreaViewport';
 import { PresentationInkLayer } from './PresentationInkLayer';
 import { WorkspaceOverview } from './WorkspaceOverview';
 import { PaneContext, type PaneInfo } from './PaneContext';
@@ -332,6 +333,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   dragRef.current = drag;
   // 幅が狭い（または拡大率が高い）ときは、分割を縦に積む。レイアウトの木は変えず、描き方だけを替える。
   const rootRef = useRef<HTMLDivElement>(null);
+  const { view: areaView, panByKey } = useAreaViewport(rootRef);
   const [narrowWs, setCompact] = useState(false);
   // 木の外に出して描くコンポーネント: 拡大表示中はそれ 1 つだけ（ほかは残りの領域に収める）、それ以外は自由配置したもの（FR-173・FR-174）。
   // 狭い画面（縦積み）では自由配置を使わない。
@@ -1042,6 +1044,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     const d = areaPanDelta(e);
     if (!d) return;
     e.preventDefault();
+    panByKey(e);
     e.currentTarget.scrollBy({ left: d.dx, top: d.dy });
   };
 
@@ -1051,6 +1054,9 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       onFocusCapture={onFocusCapture}
       onPointerDownCapture={onPointerDownRaise}
       onKeyDown={onAreaKeyDown}
+      data-testid="canvas-surface"
+      data-view-x={areaView.x}
+      data-view-y={areaView.y}
       className={mergeClasses(s.root, compact ? s.rootCompact : undefined, resizing && motionOn ? s.resizing : undefined)}
       data-layout={compact ? 'stacked' : 'split'}
       tabIndex={0}
