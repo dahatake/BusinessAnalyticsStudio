@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準と、お手本パック（モノ／コト）の内容から決める。
 // 3D・地図の内部の状態は、CONTRACT.md §6 のテスト用フック（window.__edbTest）で読む。
 import type { Page } from '@playwright/test';
-import { test, expect, openScreen, component, entity, hook, scene, expectCanvasDrawn, waitFirstFrame, captureDownload, recordExportConsent, setEditMode } from '../support/fixtures';
+import { test, expect, openScreen, component, entity, hook, scene, expectCanvasDrawn, waitFirstFrame, captureDownload, recordExportConsent, setEditMode, closeSettings } from '../support/fixtures';
 import { examplePack, makeVariant } from '../support/packs';
 
 const mono = examplePack('mono');
@@ -497,20 +497,37 @@ test.describe('FR-147 3D ビューの最初のフレームの速さと描画中�
   function matches(s: { cw: number; ch: number; pw: number; ph: number }): boolean {
     return Math.abs(s.cw - s.pw) <= TOL && Math.abs(s.ch - s.ph) <= TOL && !(Math.round(s.cw) === 300 && Math.round(s.ch) === 150 && (s.pw > 301 || s.ph > 151));
   }
-  /** 3D ビューを開いてから、拠点が 1 つ以上描かれた最初のフレーム（frame > 0 かつ visible な拠点あり）までの ms。 */
+  /**
+   * 3D ビューを開いてから、拠点が 1 つ以上描かれた最初のフレーム（frame > 0 かつ visible な拠点あり）までの ms。
+   * 起点は「開く操作（コマンドの選択）」の瞬間。コマンドパレットを開く・語を入れる・候補の表示を待つ操作は、
+   * 「3D ビューを開く」の前の準備なので計測に含めない（AC-246）。終点の判定はページの中で requestAnimationFrame ごとに行い、
+   * テスト側の往復（フック呼び出しごとの待ち）を計測に混ぜない。
+   */
   async function openToFirstFrameMs(page: Page, siteId: string): Promise<number> {
+    await closeSettings(page);
+    await page.keyboard.press('Control+k');
+    const dialog = page.getByRole('dialog', { name: 'コマンドパレット' });
+    await expect(dialog, 'コマンドパレットが開かない').toBeVisible();
+    await dialog.getByRole('combobox').fill('show view3d');
+    const opt = dialog.locator('[role="option"][id="command-view.show.view3d"]');
+    await expect(opt, 'コマンドに 3D ビューを表示する操作がない').toBeVisible();
     const t0 = Date.now();
-    await openScreen(page, 'view3d');
-    await expect
-      .poll(async () => {
-        try {
-          const f = (await scene.info(page)).frame;
-          return f > 0 && (await scene.objects(page)).some((o) => o.entityId === siteId && o.visible);
-        } catch { return false; }
-      }, { timeout: 15_000, intervals: [20], message: '最初のフレーム（拠点が描かれ選べる状態）が出ない' })
-      .toBe(true);
+    await opt.click();
+    await page
+      .waitForFunction(
+        (id) => {
+          try {
+            const t = (window as any).__edbTest;
+            return t.scene.info().frame > 0 && t.scene.objects().some((o: any) => o.entityId === id && o.visible);
+          } catch { return false; }
+        },
+        siteId,
+        { timeout: 15_000, polling: 'raf' },
+      )
+      .catch(() => { throw new Error('最初のフレーム（拠点が描かれ選べる状態）が出ない'); });
     return Date.now() - t0;
   }
+
 
   // FR-147 AC-246
   test('FR-147 AC-246 3D ビューを開いてから、拠点が描かれクリックで選べる最初のフレームが 1 秒以内に出る', async ({ page, start }) => {
