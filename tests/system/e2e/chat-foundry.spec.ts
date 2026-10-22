@@ -19,7 +19,7 @@ async function chatScreen(page: Page): Promise<Locator> {
 /** 質問を送る。種別「人」の確認が出たら続行する（FR-219。了承の記録は済み） */
 async function ask(page: Page, chat: Locator, text: string, wait = true): Promise<void> {
   await chat.getByRole('textbox', { name: /質問/ }).fill(text);
-  await chat.getByRole('button', { name: '送信' }).click();
+  await chat.getByRole('button', { name: '送信', exact: true }).click();
   if (wait) await continuePersonConfirm(page, () => false, 1000);
 }
 
@@ -196,7 +196,7 @@ test.describe('FR-286 チャットの Foundry 送信', () => {
     await expect(preview).toContainText(mono.issues()[0].title);
     await page.keyboard.press('Escape');
     // 送信中の表示
-    await chat.getByRole('button', { name: '送信' }).click();
+    await chat.getByRole('button', { name: '送信', exact: true }).click();
     await expect(chat.getByTestId('chat-sending')).toBeVisible();
     const answer = chat.getByTestId('chat-answer').last();
     await expect(answer).toContainText('AI 生成（モック）');
@@ -216,9 +216,10 @@ test.describe('FR-286 チャットの Foundry 送信', () => {
       await recordExportConsent(page);
       const chat = await chatScreen(page);
       await ask(page, chat, `${marker(1)} ${mono.issues()[0].title} について`, false);
-      await expect(chat.getByTestId('chat-sending')).toBeVisible();
-      await expect(chat.getByRole('button', { name: '送信' })).toBeDisabled();
+      // 種別「人」の確認ダイアログ（FR-219）が先に出るので、続行してから送信中の表示と二重送信不可を確かめる
       await continuePersonConfirm(page, () => false, 1000);
+      await expect(chat.getByTestId('chat-sending')).toBeVisible();
+      await expect(chat.getByRole('button', { name: '送信', exact: true })).toBeDisabled();
       await expect(chat.getByTestId('chat-answer').last()).toContainText(amarker(1));
       expect(relay.foundryAskBodies().length, '二重に送信された').toBe(1);
 
@@ -274,7 +275,7 @@ test.describe('FR-286 チャットの Foundry 送信', () => {
         await expect(page.locator('body')).not.toContainText(/dummy-key|sk-[A-Za-z0-9]{16,}/);
         // 再送信は利用者の操作で行える
         relay.setAskMode('ok');
-        await chat.getByRole('button', { name: /再送信|もう一度|再試行/ }).or(chat.getByRole('button', { name: '送信' })).first().click();
+        await chat.getByRole('button', { name: /再送信|もう一度|再試行/ }).or(chat.getByRole('button', { name: '送信', exact: true })).first().click();
         await continuePersonConfirm(page, () => false, 1000);
         await expect(chat.getByTestId('chat-answer').last()).toContainText(/AMARKER\d+X/);
         expect(relay.foundryAskBodies().length).toBe(2);
