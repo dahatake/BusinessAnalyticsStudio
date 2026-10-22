@@ -19,6 +19,7 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 
 | 日付 | 依頼の要約 | 行き先（要求 ID・Q・不採用の理由） | 反映した回答 | 監査で直した不整合 |
 |---|---|---|---|---|
+| 2026-10-22 | 依頼（run 202610222215）: 外部ファイルの取り込み・書き出しの対応仕様を users-guide に新規 md でまとめ README から索引する。生成 AI（Foundry）で取り込むほうがよい形式は、設定画面で Foundry キー設定済みのときだけ AI 取り込みを選べるようにする | FR-288（AC-754〜AC-756）・FR-289（AC-757〜AC-760）を追加。依頼原文として承認済み（FR-289 の大きさ上限 PARAM-125 は包括承認）。Q-061（反映先・対象形式・上限。BLOCKED なし）。SRC-047。FR-275・FR-282・FR-283・NFR-SEC-012 の文面は変更せず再利用し、競合なし（本件は新しい機能で、C-03 の例外の範囲は FR-289 の AC-760 で明示し、拡張は利用者の依頼による）。影響確認: `trace FR-282`・`trace Foundry 接続設定` | なし | なし |
 | 2026-10-22 | 差分監査の指摘の反映（run 202610221530。work/runs/202610221530/audit/20261022-1534-diff-run1.md） | FR-182: 「同じキー」を同じ機能のキーの欄と定義し、機能が異なれば同じ値を設定画面と `.env` に置けることを [ASSUMPTION] で明記（実装は不変）。準拠先を保管先ごとに書き分け（`.env` のキー → NFR-SEC-001、設定画面のキー → NFR-SEC-005・NFR-SEC-012）。NFR-SEC-012: 第 1 文を適用範囲（FR-275・FR-282 の設定画面のキー）から始める形に改めた（意味は不変）。AC の文面・判定の強さは不変。影響確認: `trace FR-182`・`trace NFR-SEC-012` | なし（Q-057 A の意図は不変） | C1（MEDIUM）・Q1・Q2（LOW）を解消 |
 | 2026-10-22 | 利用者の回答の反映（run 202610221530）: Q-056・Q-057 | Q-057=A → NFR-SEC-012 に適用範囲を追記、FR-182 の保管先の優先順に FR-285 のキーを追加、AC-729 の BLOCKED を解除（AC の文面は不変）、AUD-101 を解消。Q-056=設けない（A） → AUD-91 を解消、A-60 に 1 文追記（FR-020・FR-220 は不変）。影響確認: `trace NFR-SEC-012`・`trace FR-182`。実装の変更は不要（FR-285 は環境変数のまま） | Q-056（A）・Q-057（A）（2026-10-22） | なし |
 | 2026-10-21 | 依頼（run 202610212145）: 初めて使う人のためのアプリ内ガイド（メイン画面の「はじめての方へ」、初回のウェルカムのダイアログ、顧客パックの説明カード、NameDialog・作業先の選択のヒント、分析画面の「使い方」、ドキュメントへの反映） | FR-266〜FR-272（AC-675〜AC-690・AC-697）を追加。依頼原文として承認済み（包括承認は使わず）。FR-144・FR-186・FR-187 の文面と testid は変更せず、競合なし（メイン画面の説明は FR-186 の「手順に含まれない機能」に当たらないと FR-266 に明記） | なし | なし |
@@ -143,6 +144,7 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 | C-02 | 顧客情報の保護: 調査キャッシュと顧客パックをコミットしない。外部への送信は Copilot SDK と設定した AI API に限る。WorkIQ 由来の情報は機密区分を持つ | SRC-001 §2.2・§12 NFR-SC-01〜03 |
 | C-03 | LLM の利用は GitHub Copilot SDK に限り（例外: FR-275 の Microsoft Foundry は「現状の説明」（FR-274）の生成だけに、FR-275・FR-276 の条件のもとで使える。A-70）、呼び出しは中継プロセスの 1 か所に集約する | SRC-001 §4 FR-AN-10/11・§14、SRC-009 |
 | C-03 | LLM の利用は GitHub Copilot SDK に限り、呼び出しは中継プロセスの 1 か所に集約する。例外（2026-10-21 依頼・run 202610212148）: 「Copilot で分析実行」（FR-278〜FR-281・FR-283）に限り、Microsoft Foundry（OpenAI 互換 v1 の Responses API）を使ってよい。この呼び出しも中継プロセスに集約する。ほかの機能（チャット FR-010 など）は引き続き Copilot SDK に限る | SRC-001 §4 FR-AN-10/11・§14、SRC-009、依頼 2026-10-21（run 202610212148） |
+| C-03 | 追加の例外（2026-10-22 依頼・run 202610222215）: 「AI 取り込み」（FR-289）に限り、Foundry 接続設定が設定済みのときだけ Microsoft Foundry を使ってよい。呼び出しは中継プロセスに集約し、FR-275 の外部送信の条件に従う。上記の例外と同じく、ほかの機能は引き続き Copilot SDK に限る | 依頼 2026-10-22（run 202610222215）、FR-289 |
 | C-04 | デザインシステムは Fluent 2 / Fluent UI React v9（利用者の指定） | SRC-001 §7.1 FR-BR-01、SRC-008 |
 | C-05 | 推奨の技術構成: Vite + React + TypeScript、Fluent UI React v9、React Three Fiber/drei/postprocessing、GSAP または Motion、Tone.js/Howler.js、Zustand、zod。要求の本文には目的だけを書き、技術名は「依頼原文の技術指定」として添える。後続の工程で変える場合は決定記録に残す | SRC-001 §14 |
 | C-06 | ライブラリ（インク・PDF など）はライセンスを確認してから採用し、`CREDITS.md` に記録する。tldraw は商用利用にライセンスが必要な場合があるため、採用前に確認する（Q-003） | SRC-001 §14 |
@@ -250,6 +252,7 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 | PARAM-088 | 図のパンのキー（Shift＋矢印）1 操作の移動量 | 40 | CSS px | 一般的な目安。変更で戻せる。AI提案。FR-245 | 承認済み（包括承認 2026-10-21・approval_policy） |
 | PARAM-089 | 表の行クリック後の図のノードのハイライトの時間 | 2 | 秒 | 見失わない長さの目安。変更で戻せる。AI提案。FR-248 | 承認済み（包括承認 2026-10-21・approval_policy） |
 | PARAM-105 | 詳細カードに示す主要な関係の件数の上限 | 5 | 件 | カードが図を覆わない目安。超える分は「ほか N 件」とし全件は代替表示の表で読める。変更で戻せる。AI提案。FR-247 | 承認済み（包括承認 2026-10-21・approval_policy） |
+| PARAM-125 | AI 取り込み（FR-289）で送れるファイル 1 件の大きさの上限 | 10 | MB | AI提案。送信量と費用を抑える目安の仮の値。変更で戻せる。Q-061。FR-289 | 承認済み（包括承認 2026-10-22・approval_policy） |
 | PARAM-120 | 「Copilot で分析実行」の月の予算の上限 | 100000 | 円／月（税・為替の扱いは Azure の請求に従う） | 依頼（run 202610212148）「100,000円/月までの予算」。NFR-COST-001 | 承認済み（依頼 2026-10-21） |
 ### 3.4 用語
 
@@ -894,6 +897,8 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 | FR-281 | 反映の失敗時の扱いと反映の取り消し | 承認待ち | SHOULD | AC-723〜AC-724（BLOCKED: Q-052） | [app-core.md](requirements/app-core.md) |
 | FR-282 | Microsoft Foundry の接続設定（設定画面） | 承認済み | MUST | AC-725〜AC-726 | [app-core.md](requirements/app-core.md) |
 | FR-283 | 接続設定がないとき・接続に失敗したときの分析実行 | 承認済み | MUST | AC-727〜AC-728 | [app-core.md](requirements/app-core.md) |
+| FR-288 | 外部ファイルの取り込み・書き出しの対応形式のガイド（users-guide の新規文書と README の索引） | 承認済み | SHOULD | AC-754〜AC-756 | [app-core.md](requirements/app-core.md) |
+| FR-289 | 生成 AI（Microsoft Foundry）による AI 取り込み（Foundry 設定済みのときだけ選べる） | 承認済み | SHOULD | AC-757〜AC-760 | [app-core.md](requirements/app-core.md) |
 | NFR-SEC-012 | Foundry の API キーをリポジトリ・ログ・テストデータに出さない | 承認済み | MUST | AC-729〜AC-730 | [app-core.md](requirements/app-core.md) |
 | NFR-COST-001 | 分析実行の利用量と月の予算の上限 | 承認待ち | SHOULD | AC-731〜AC-732（BLOCKED: Q-053） | [app-core.md](requirements/app-core.md) |
 
@@ -1068,6 +1073,7 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 
 | ID | 重要度 | 質問 | 選択肢 | 推奨 | 状態 | 回答 |
 |---|---|---|---|---|---|---|
+| Q-061 | 中 | AI 取り込み（FR-289）で取り込んだ内容の反映先と、AI 取り込みの対象にする形式・大きさの範囲。提案: 取り込み結果は必ずプレビューして利用者が確認してから既存データに反映する。対象は PDF・画像（PNG・JPEG）・Office 文書（docx・xlsx・pptx）・非定型テキスト。ファイルの大きさは {PARAM-125} 以内 | A: 提案どおり／B: 対象形式を増減する（形式を回答に書く）／C: 大きさの上限を変える（値を回答に書く） | A | 未回答 | 提案値で運用（BLOCKED なし。形式・上限は PARAM-125 と AC-759 の変更で戻せる） |
 | Q-050 | 高 | 「現状の説明」（FR-274）の生成の回数・大きさ・間隔の上限（課金に関わる。FR-276）。提案値: 1 日 {PARAM-113}＝30 回、入力 {PARAM-114}＝8000 トークン、出力 {PARAM-115}＝1500 トークン、間隔 {PARAM-116}＝5 秒。要求は提案値で承認済み（依頼）で、回答で PARAM を変更する | A: 提案値のまま／B: 回数・大きさを増やす（値を回答に書く）／C: さらに絞る（値を回答に書く） | A | 未回答 | 提案値で運用（BLOCKED なし） |
 | Q-051 | 高 | 「現状の説明」の月の予算と警告・停止の割合（FR-276）。提案値: 予算 {PARAM-117}＝10 万円、警告 {PARAM-118}＝80%、停止 {PARAM-119}＝100%。単価の初期値（A-70）の妥当性も併せて確認したい | A: 提案値のまま／B: 予算を下げる・警告を早める（値を回答に書く）／C: 停止を 100% 未満にする（値を回答に書く） | A | 未回答 | 提案値で運用（BLOCKED なし） |
 | Q-043 | 中 | Twin ビュー（FR-239）の Data／Control の流れと空間ビュー（FR-240）の KPI を、顧客パックの静的な値だけで表すか、IoT・BMS など実システムのデータの連携（取り込み・実機への指示）を将来の対象にするか（外部連携・セキュリティに関わる。C-01・§2 は顧客の本番システムとの連携を対象外としている） | A: 顧客パックの静的な値だけ。Control は表示のみ（外部への書き込みなし）／B: 実データの取り込みを対象にする（外部連携カタログの 16 観点の走査・認証認可・個人情報の分類が必要。Control の実機への送信は別の承認） | A | 回答済み | A（2026-10-20・run 202610201444）。決定記録 §9 に移した。FR-239・FR-240 の AC は A の前提のまま、BLOCKED なし |
@@ -1584,4 +1590,5 @@ run 202610152209 の監査 run1（HEAD e3f5197。work/runs/202610152209/audit/20
 | SRC-035 | H. Purchase「Which Aesthetic Has the Greatest Effect on Human Understanding?」 | 1997 | 辺の交差が少ないほど読み取りやすいという要旨（検索結果の要約。URL・本文は未取得） | 2026-10-19 | 要旨のみ（本文未確認）。力学モデルによる配置・知識グラフ/プロパティグラフの一般論は外部確認未実施 |
 | SRC-043 | 利用者の添付 `C:\Work\FoundryOpenAI.txt`（Microsoft Foundry の接続情報: エンドポイント・デプロイ名・API キー） | 2026-10-21 受領 | 接続情報の存在と項目の種類だけ。値（特にキー）は本書・カタログ・git に転記しない。内容は読み取っていない | 2026-10-21 | 項目の種類のみ（値は未記録）。外部の料金・SLA・規約は未確認 |
 | SRC-044 | 利用者提示の Foundry 呼び出し例（ローカル資料、秘密値を除く） | 2026-10-21 | OpenAI 互換 v1 エンドポイント（`https://<resource>.services.ai.azure.com/openai/v1`）、デプロイ名を model に指定、Responses API（stream）、認証は Microsoft Entra ID（DefaultAzureCredential、scope `https://ai.azure.com/.default`）または API キー | 2026-10-21 | 要旨のみ（秘密値は転記しない） |
+| SRC-047 | リポジトリのソース `src/`（取り込み・書き出しの実装の事実確認。`src/data/loader.ts`、`src/discussion/FileActions.tsx`、`src/edit/EditControls.tsx`、`src/screens/DataCatalogScreen.tsx`、`src/ink/InkToolbar.tsx`、`src/export/*`、`src/analysis/exportFile.ts`、`src/show/ShortVideo.tsx`、`src/ai/FoundrySettings.tsx`・`foundryClient.ts`） | 2026-10-22、調査時の作業ツリー | 取り込み: 顧客パック JSON・議論メモ `.md`・データ `.json`/`.csv`・データカタログ `.json`/`.csv`（5 MB 超は読まない）・ボードの画像貼り付け。書き出し: データ JSON/CSV・議論メモ `.md`・エクスポート `.md`/`.zip`（assets・フォローアップ）・サマリー ZIP（PDF）・ボード Markdown ZIP・ボード PDF・SVG/PNG/テキスト・WebM。PDF・画像ファイル・Office 文書の取り込みの欄はない。Foundry の設定状態は `view.configured` で判る | 2026-10-22 | コード確認済み（grep と抜粋の読み取り。実行はしていない） |
 | SRC-045 | Microsoft Learn「Azure OpenAI responses（v1）」 https://learn.microsoft.com/rest/api/microsoft-foundry/azureopenai/responses 、「Generate responses」 https://learn.microsoft.com/azure/foundry/foundry-models/how-to/generate-responses 、「Configure Entra ID」 https://learn.microsoft.com/azure/foundry/foundry-models/how-to/configure-entra-id | 2026-10-21 時点 | v1 の Responses API のサーバー `{endpoint}/openai/v1`、API キー認証の存在（Microsoft Learn MCP の検索結果の要約） | 2026-10-21 | 要旨のみ（本文未確認） |
