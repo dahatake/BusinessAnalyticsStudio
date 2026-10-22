@@ -1,7 +1,7 @@
 // ペルソナ別ストーリー（FR-177〜FR-179）。ペルソナを選ぶと、顧客パックと Project のデータだけから、フルスクリーンの 1 画面 1 メッセージのシーンを作って順に見せる。
 // 操作: `→`/`←` 次/前、`Home` 先頭、`Space` 自動再生の一時停止・再開、`F` フルスクリーンの開始・終了、`Esc` でフルスクリーンを抜け、もう一度で終了。画面のボタンでも同じことができる。
 // 動き: OS の「視差効果を減らす」・アプリのアニメーション停止（FR-071・FR-072）のときは、動きなしで即座に切り替わる。端末内だけで動き、外部には接続しない。
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Button, DialogBody, DialogContent, DialogTitle, FluentProvider, Text, makeStyles, mergeClasses, tokens, webDarkTheme,
@@ -35,21 +35,25 @@ const useStyles = makeStyles({
   },
   stage: {
     flexGrow: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
-    rowGap: tokens.spacingVerticalXL, padding: `${tokens.spacingVerticalXXL} ${tokens.spacingHorizontalXXXL}`, textAlign: 'center', overflowY: 'auto',
+    padding: `${tokens.spacingVerticalM} ${tokens.spacingHorizontalL}`, textAlign: 'center', overflow: 'hidden', boxSizing: 'border-box', minWidth: 0,
   },
-  kicker: { color: tokens.colorBrandForeground1, letterSpacing: '0.08em', fontSize: 'clamp(14px, 1.8vw, 24px)', fontWeight: tokens.fontWeightSemibold },
-  heading: { margin: 0, fontWeight: tokens.fontWeightBold, fontSize: 'clamp(28px, 5.5vw, 72px)', lineHeight: 1.2, overflowWrap: 'anywhere', maxWidth: '24em' },
-  big: { fontWeight: tokens.fontWeightBold, fontSize: 'clamp(56px, 13vw, 190px)', lineHeight: 1, color: tokens.colorBrandForeground1, fontVariantNumeric: 'tabular-nums', overflowWrap: 'anywhere' },
-  bigLabel: { fontSize: 'clamp(16px, 2.2vw, 30px)', color: tokens.colorNeutralForeground2 },
-  lines: { listStyleType: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS, fontSize: 'clamp(18px, 2.6vw, 34px)', maxWidth: '32em' },
-  steps: { listStyleType: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS, fontSize: 'clamp(16px, 2.1vw, 28px)', color: tokens.colorNeutralForeground2, maxWidth: '36em', textAlign: 'start' },
+  inner: {
+    flexShrink: 0, width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', rowGap: tokens.spacingVerticalS, boxSizing: 'border-box', transformOrigin: 'center center',
+    '& > *': { flexShrink: 0, maxWidth: '100%', boxSizing: 'border-box' },
+  },
+  kicker: { color: tokens.colorBrandForeground1, letterSpacing: '0.08em', fontSize: 'clamp(12px, min(1.8vw, 3vh), 24px)', lineHeight: 1.3, overflowWrap: 'anywhere', fontWeight: tokens.fontWeightSemibold },
+  heading: { margin: 0, fontWeight: tokens.fontWeightBold, fontSize: 'clamp(18px, min(5.5vw, 9vh), 72px)', lineHeight: 1.25, overflowWrap: 'anywhere', maxWidth: '24em' },
+  big: { fontWeight: tokens.fontWeightBold, fontSize: 'clamp(40px, min(13vw, 22vh), 190px)', lineHeight: 1.4, paddingBlock: tokens.spacingVerticalXS, color: tokens.colorBrandForeground1, fontVariantNumeric: 'tabular-nums', overflowWrap: 'anywhere' },
+  bigLabel: { fontSize: 'clamp(14px, min(2.2vw, 4vh), 30px)', lineHeight: 1.3, color: tokens.colorNeutralForeground2 },
+  lines: { listStyleType: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS, fontSize: 'clamp(13px, min(2.6vw, 4.2vh), 34px)', lineHeight: 1.3, overflowWrap: 'anywhere', maxWidth: '32em' },
+  steps: { listStyleType: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS, fontSize: 'clamp(12px, min(2.1vw, 3.6vh), 28px)', lineHeight: 1.3, overflowWrap: 'anywhere', color: tokens.colorNeutralForeground2, maxWidth: '36em', textAlign: 'start' },
   noData: {
-    display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS, padding: tokens.spacingHorizontalXL,
-    border: `${tokens.strokeWidthThick} dashed ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusXLarge, fontSize: 'clamp(16px, 2.2vw, 28px)', maxWidth: '32em',
+    display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS, padding: tokens.spacingHorizontalM,
+    border: `${tokens.strokeWidthThick} dashed ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusXLarge, fontSize: 'clamp(13px, min(2.2vw, 3.8vh), 28px)', lineHeight: 1.3, overflowWrap: 'anywhere', maxWidth: '32em',
   },
-  cta: { fontSize: 'clamp(18px, 2.8vw, 36px)', fontWeight: tokens.fontWeightSemibold, color: tokens.colorBrandForeground1, borderTop: `${tokens.strokeWidthThick} solid ${tokens.colorBrandStroke1}`, paddingTop: tokens.spacingVerticalM },
+  cta: { fontSize: 'clamp(14px, min(2.8vw, 4.5vh), 36px)', lineHeight: 1.3, overflowWrap: 'anywhere', fontWeight: tokens.fontWeightSemibold, color: tokens.colorBrandForeground1, borderTop: `${tokens.strokeWidthThick} solid ${tokens.colorBrandStroke1}`, paddingTop: tokens.spacingVerticalM },
   anim1: { animationName: fadeUp, animationDuration: '600ms', animationFillMode: 'both', animationTimingFunction: 'ease-out', '@media (prefers-reduced-motion: reduce)': { animationName: 'none' } },
-  animBig: { animationName: zoomIn, animationDuration: '700ms', animationFillMode: 'both', animationTimingFunction: 'cubic-bezier(0.2, 0.9, 0.3, 1.2)', '@media (prefers-reduced-motion: reduce)': { animationName: 'none' } },
+  animBig: { animationName: zoomIn, animationDuration: '700ms', animationFillMode: 'both', animationTimingFunction: 'ease-out', '@media (prefers-reduced-motion: reduce)': { animationName: 'none' } },
   footer: {
     display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalS,
     padding: tokens.spacingVerticalM, backgroundColor: tokens.colorNeutralBackground3, borderTop: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
@@ -124,9 +128,28 @@ function exitFs(): void {
 
 function SceneView({ scene, motion }: { scene: StoryScene; motion: boolean }) {
   const s = useStyles();
+  const stageRef = useRef<HTMLElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  // 内容が画面より高いときは全体を縮小して収める（要素どうしの重なり・画面外へのはみ出しを避ける。FR-178 AC-740）
+  useLayoutEffect(() => {
+    const stage = stageRef.current, inner = innerRef.current;
+    if (!stage || !inner) return undefined;
+    const fit = () => {
+      const cs = getComputedStyle(stage);
+      const availH = stage.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      const ratio = inner.offsetHeight > 0 && availH > 0 ? Math.min(1, availH / inner.offsetHeight) : 1;
+      inner.style.transform = ratio < 1 ? `scale(${ratio})` : '';
+    };
+    fit();
+    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(fit) : undefined;
+    ro?.observe(stage); ro?.observe(inner);
+    window.addEventListener('resize', fit);
+    return () => { ro?.disconnect(); window.removeEventListener('resize', fit); };
+  }, [scene]);
   const a = (delay: number, big = false) => (motion ? { className: big ? s.animBig : s.anim1, style: { animationDelay: `${delay}ms` } } : {});
   return (
     <section
+      ref={stageRef}
       className={s.stage}
       data-testid="story-scene"
       data-story-part={scene.part}
@@ -134,33 +157,35 @@ function SceneView({ scene, motion }: { scene: StoryScene; motion: boolean }) {
       data-no-data={scene.noData ? 'true' : undefined}
       aria-label={`${scene.kicker}`}
     >
-      <Text as="p" className={mergeClasses(s.kicker, motion && s.anim1)} {...(motion ? { style: { animationDelay: '0ms' } } : {})}>{scene.kicker}</Text>
+      <div ref={innerRef} className={s.inner}>
+      <Text as="p" data-story-el="kicker" className={mergeClasses(s.kicker, motion && s.anim1)} {...(motion ? { style: { animationDelay: '0ms' } } : {})}>{scene.kicker}</Text>
       {scene.big ? (
         <div {...a(150, true)}>
-          <div className={s.big}>{scene.big.value}</div>
-          <div className={s.bigLabel}>{scene.big.label}</div>
+          <div className={s.big} data-story-el="big">{scene.big.value}</div>
+          <div className={s.bigLabel} data-story-el="big-label">{scene.big.label}</div>
         </div>
       ) : null}
-      <h2 className={mergeClasses(s.heading, motion && s.anim1)} style={motion ? { animationDelay: scene.big ? '450ms' : '150ms' } : undefined}>{scene.heading}</h2>
+      <h2 data-story-el="heading" className={mergeClasses(s.heading, motion && s.anim1)} style={motion ? { animationDelay: scene.big ? '450ms' : '150ms' } : undefined}>{scene.heading}</h2>
       {scene.noData ? (
         <div className={mergeClasses(s.noData, motion && s.anim1)} role="note" style={motion ? { animationDelay: '300ms' } : undefined}>
-          <Text weight="semibold" size={500}>データなし</Text>
-          <span>理由：{scene.noData.reason}</span>
-          <span>補うには：{scene.noData.entry}</span>
+          <Text weight="semibold" size={500} data-story-el="body-line">データなし</Text>
+          <span data-story-el="body-line">理由：{scene.noData.reason}</span>
+          <span data-story-el="body-line">補うには：{scene.noData.entry}</span>
         </div>
       ) : null}
       {scene.lines.length > 0 ? (
         <ul className={s.lines}>
-          {scene.lines.map((l, i) => <li key={i} className={motion ? s.anim1 : undefined} style={motion ? { animationDelay: `${600 + i * 200}ms` } : undefined}>{l}</li>)}
+          {scene.lines.map((l, i) => <li key={i} data-story-el="body-line" className={motion ? s.anim1 : undefined} style={motion ? { animationDelay: `${600 + i * 200}ms` } : undefined}>{l}</li>)}
         </ul>
       ) : null}
       {scene.steps && scene.steps.length > 0 ? (
         <ol className={s.steps} aria-label="手順">
-          {scene.steps.map((l, i) => <li key={i} className={motion ? s.anim1 : undefined} style={motion ? { animationDelay: `${900 + i * 200}ms` } : undefined}>{l}</li>)}
+          {scene.steps.map((l, i) => <li key={i} data-story-el="body-line" className={motion ? s.anim1 : undefined} style={motion ? { animationDelay: `${900 + i * 200}ms` } : undefined}>{l}</li>)}
         </ol>
       ) : null}
-      {scene.cta ? <p className={mergeClasses(s.cta, motion && s.anim1)} style={motion ? { animationDelay: '1500ms' } : undefined}>{scene.cta}</p> : null}
-    </section>
+      {scene.cta ? <p data-story-el="cta" className={mergeClasses(s.cta, motion && s.anim1)} style={motion ? { animationDelay: '1500ms' } : undefined}>{scene.cta}</p> : null}
+            </div>
+          </section>
   );
 }
 

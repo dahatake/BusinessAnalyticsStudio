@@ -1,52 +1,24 @@
-// 生成AIの活用分析の実接続の状態（FR-285）。AI の実接続（useAi）と同じく、確認を経て、起動中の顧客パックにだけ働く。
-// 実接続にするには、設定で有効にし、かつ了承の記録（FR-181）があること。キーの有無は中継プロセスが決める（失敗は原因つきで表示し、モックの結果を代替にする）。
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+// 生成AIの活用分析の実接続の状態（FR-285）。独自の設定は持たず、共通接続（FR-275。設定画面の「Microsoft Foundry（生成AI機能の共通接続）」）に従う。
+// 実接続にするには、共通接続が設定済みで、当該 Project で有効（中継プロセスの foundryEnabled）で、かつ了承の記録（FR-181）があること。
+// 失敗は原因つきで表示し、モックの結果を代替にする。
 import { usePackStore } from '../store/pack';
 import { useConsent } from '../ai/useConsent';
-import { DEFAULT_FOUNDRY_DEPLOYMENT, DEFAULT_FOUNDRY_ENDPOINT } from './foundryClient';
 
-interface GenAiState {
-  /** 実接続を確認つきで有効にした顧客パック。null は未有効（既定のモック） */
-  enabledPack: string | null;
-  endpoint: string;
-  deployment: string;
-  setEnabledPack: (id: string | null) => void;
-  setEndpoint: (v: string) => void;
-  setDeployment: (v: string) => void;
-}
+// 旧「生成AIの活用分析」独自の設定（localStorage `edb.genai`）は廃止した（FR-285）。残っている旧データは破棄する
+try { globalThis.localStorage?.removeItem('edb.genai'); } catch { /* 保管が使えない環境では何もしない */ }
 
-export const useGenAiStore = create<GenAiState>()(
-  persist(
-    (set) => ({
-      enabledPack: null,
-      endpoint: DEFAULT_FOUNDRY_ENDPOINT,
-      deployment: DEFAULT_FOUNDRY_DEPLOYMENT,
-      setEnabledPack: (enabledPack) => set({ enabledPack }),
-      setEndpoint: (endpoint) => set({ endpoint }),
-      setDeployment: (deployment) => set({ deployment }),
-    }),
-    { name: 'edb.genai', version: 1, partialize: (s) => ({ enabledPack: s.enabledPack, endpoint: s.endpoint, deployment: s.deployment }) },
-  ),
-);
-
-/** 実接続の条件（設定で有効＋了承の記録）を満たすか。別の顧客パック・了承なしは既定のモック */
-export function isGenAiReal(packId: string, enabledPack: string | null, granted: boolean): boolean {
-  return packId !== '' && enabledPack === packId && granted;
+/** 実接続の条件（共通接続が有効＋了承の記録）を満たすか。無効・了承なしは既定のモック */
+export function isGenAiReal(packId: string, connectionEnabled: boolean, granted: boolean): boolean {
+  return packId !== '' && connectionEnabled && granted;
 }
 
 export function useGenAi() {
   const pack = usePackStore((s) => s.state);
   const runtime = usePackStore((s) => s.runtime);
-  const enabledPack = useGenAiStore((s) => s.enabledPack);
-  const endpoint = useGenAiStore((s) => s.endpoint);
-  const deployment = useGenAiStore((s) => s.deployment);
   const { granted, record } = useConsent();
   const packId = pack.status === 'ready' ? pack.pack.data.customer.name : '';
   return {
-    packId, relayUrl: runtime.relayUrl, endpoint, deployment, granted, consent: record,
-    switchOn: packId !== '' && enabledPack === packId,
-    realEnabled: isGenAiReal(packId, enabledPack, granted),
+    packId, relayUrl: runtime.relayUrl, granted, consent: record,
     data: pack.status === 'ready' ? pack.pack.data : undefined,
   };
 }

@@ -1,13 +1,14 @@
 // 画面「生成AIの効果的な活用シナリオの分析」（FR-284・FR-285）。解決策に生成AIを使う理由、または使わない理由を、適合性の判断基準で示す。
 // 分析は [分析実行] を押したときだけ実行する（開いただけ・入力しただけでは実行しない）。既定はモック（ルールベース。外部送信なし）。
-// 実接続（Foundry）は、設定で有効にし、了承の記録があり、種別「人」を含むときは個人情報の確認が済んだときだけ。失敗時は原因を表示し、ルールベースの結果を代替にする。
+// 実接続（Foundry）は、共通接続（FR-275）が有効で、了承の記録があり、種別「人」を含むときは個人情報の確認が済んだときだけ。失敗時は原因を表示し、ルールベースの結果を代替にする。
 import { useMemo, useState } from 'react';
 import { Badge, Button, Field, MessageBar, MessageBarBody, Select, Text, Textarea, makeStyles, tokens } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
 import { usePackStore } from '../store/pack';
 import { confirmViaUi, gatePersonConfirm } from '../ai/personConfirm';
-import { useGenAi } from '../genai/useGenAi';
+import { useGenAi, isGenAiReal } from '../genai/useGenAi';
+import { fetchFoundryView } from '../ai/foundryClient';
 import { analyzeViaRelay } from '../genai/foundryClient';
 import {
   CONCLUSION_LABELS, GENAI_MAX_INPUT_CHARS, VERDICT_LABELS, analyzeRuleBased, validateInput, type ScenarioResult,
@@ -49,13 +50,16 @@ export function GenAiScenarioScreen() {
     if (!v.ok) { setProblem({ reason: v.reason, action: v.action }); setShown(undefined); return; }
     setProblem(undefined);
     const rule = analyzeRuleBased(v.text);
-    if (!g.realEnabled) { setShown({ result: rule, source: 'mock' }); return; }
+    if (!g.granted || !g.relayUrl) { setShown({ result: rule, source: 'mock' }); return; }
     setRunning(true);
     try {
+      // 共通接続（FR-275）が有効かどうかは中継の状態に従う（独自の切替は持たない）
+      const view = await fetchFoundryView(g.relayUrl, g.packId);
+      if (!isGenAiReal(g.packId, !!view?.enabled && view.configured, g.granted)) { setShown({ result: rule, source: 'mock' }); return; }
       // FR-219: 種別「人」を含む案件の外部送信は、確認（了承の記録がなければ止める）を通す
       const gate = await gatePersonConfirm({ destination: 'ai', scopeLabel: GENAI_SCOPE_LABEL, data: g.data!, consent: g.consent, confirm: confirmViaUi });
       if (!gate.allowed) { setNotice(`${gate.reason ?? '送信しませんでした。'}ルールベースの結果を表示します。`); setShown({ result: rule, source: 'fallback' }); return; }
-      const out = await analyzeViaRelay({ relayUrl: g.relayUrl, endpoint: g.endpoint, deployment: g.deployment }, v.text);
+      const out = await analyzeViaRelay({ relayUrl: g.relayUrl, packId: g.packId }, v.text);
       if (out.ok) setShown({ result: out.result, source: 'foundry' });
       else { setNotice(`${out.message}ルールベースの結果を代替として表示します。`); setShown({ result: rule, source: 'fallback' }); }
     } finally {
