@@ -305,7 +305,7 @@
 | NFR-COST-001 | 分析実行の利用量と月の予算の上限 | 承認待ち | 未実装 | 未実装 | なし |
 | FR-284 | 画面「生成AIの効果的な活用シナリオの分析」と [分析実行] | 承認済み | src/genai/scenario.ts, src/screens/GenAiScenarioScreen.tsx | tests/system/CONTRACT.md, tests/system/e2e/genai-scenario.spec.ts, tests/system/support/relay-stub.ts, tests/unit/genai-scenario.test.ts, tests/unit/genai-screen.test.tsx, tests/unit/view-switch.test.tsx | - |
 | FR-285 | 生成AIの活用分析の Foundry 実接続の切替 | 承認済み | .env.example, src/genai/GenAiSettings.tsx, src/genai/foundryClient.ts, src/genai/scenario.ts, src/genai/useGenAi.ts, src/screens/GenAiScenarioScreen.tsx | tests/system/CONTRACT.md, tests/system/e2e/genai-scenario.spec.ts, tests/system/support/relay-stub.ts, tests/unit/genai-scenario.test.ts, tests/unit/genai-screen.test.tsx | - |
-| FR-288 | 外部ファイルの取り込み・書き出しの対応形式のガイド | 承認済み | 未実装 | 未実装 | - |
+| FR-288 | 外部ファイルの取り込み・書き出しの対応形式のガイド | 承認済み | users-guide/04-import-export-formats.md (対応形式の一覧), users-guide/README.md (索引の行) | tests/system/e2e/import-export-guide.spec.ts (IT-077, IT-078, IT-079) | なし |
 | FR-289 | 生成 AI（Microsoft Foundry）による AI 取り込み | 承認済み | 未実装 | 未実装 | - |
 ## API・イベント
 
