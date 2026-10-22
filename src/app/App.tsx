@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { MessageBar, MessageBarBody, MessageBarTitle } from '@fluentui/react-components';
 import { AiStatus } from '../ai/AiStatus';
+import { CopilotReviewButton } from '../review/CopilotReviewButton';
 import { ExplainButton, ExplainHost } from '../explain/ExplainPanel';
 import { useCurrentScreen } from '../explain/store';
 import { DiscussionFileActions } from '../discussion/FileActions';
@@ -194,7 +195,7 @@ export function App() {
         screens={NAV_SCREENS /* FR-220 AC-590: 左メニューには nav: false の画面を出さない */}
         onSelect={onSelect}
         stepper={<Stepper onNavigate={onSelect} />}
-        headerExtra={<><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><ExplainButton /><AiStatus /></>}
+        headerExtra={<><CopilotReviewButton /><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><ExplainButton /><AiStatus /></>}
         actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><AutoSizeSwitch /><ScreenViewButton /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /><GuideButton /></>}
         dock={<Dock screens={COMPONENT_SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}

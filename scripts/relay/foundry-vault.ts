@@ -5,7 +5,7 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { defaultDataDir, defaultKeyProtector, isAllowedEndpoint, maskKey, restrictToCurrentUser, type VaultOptions } from './speech-vault';
+import { defaultDataDir, defaultKeyProtector, isAllowedEndpoint, restrictToCurrentUser, type VaultOptions } from './speech-vault';
 
 export interface FoundrySettingsView {
   configured: boolean;
@@ -27,7 +27,7 @@ interface Stored { endpoint: string; deployment: string; key: string; authMethod
 export interface FoundryVault {
   view(): FoundrySettingsView;
   /** key を省略すると、保存済みのキーを変えずにエンドポイント・デプロイ名だけ更新する */
-  save(input: { endpoint: string; deployment: string; key?: string }): FoundrySettingsView;
+  save(input: { endpoint: string; deployment: string; key?: string; authMethod?: AuthMethod }): FoundrySettingsView;
   remove(): void;
   /** 接続先へ送るための値。中継の内部だけで使う */
   secret(): { endpoint: string; deployment: string; key: string } | null;
@@ -81,10 +81,11 @@ export function openFoundryVault(dataDir: string = defaultDataDir(), opts: Vault
     harden(dataFile, false);
   };
   const toView = (s: Stored | null): FoundrySettingsView => {
-    if (!s || !s.key) return { configured: false, endpoint: s?.endpoint ?? '', host: '', deployment: s?.deployment ?? '', keyMask: '' };
+    const authMethod: AuthMethod = s?.authMethod === 'entra' ? 'entra' : 'api-key';
+    if (!s || (authMethod === 'api-key' && !s.key)) return { configured: false, endpoint: s?.endpoint ?? '', host: '', deployment: s?.deployment ?? '', keyMask: '', authMethod };
     let host = '';
     try { host = new URL(s.endpoint).host; } catch { /* 空のまま */ }
-    return { configured: !!host && !!s.deployment, endpoint: s.endpoint, host, deployment: s.deployment, keyMask: maskKey(s.key) };
+    return { configured: !!host && !!s.deployment, endpoint: s.endpoint, host, deployment: s.deployment, keyMask: authMethod === 'api-key' ? FIXED_KEY_MASK : '', authMethod };
   };
 
   return {
@@ -108,7 +109,7 @@ export function openFoundryVault(dataDir: string = defaultDataDir(), opts: Vault
     },
     secret() {
       const s = load();
-      return s && s.key && s.deployment && isAllowedEndpoint(s.endpoint) ? { endpoint: s.endpoint, deployment: s.deployment, key: s.key } : null;
+      return s && s.authMethod !== 'entra' && s.key && s.deployment && isAllowedEndpoint(s.endpoint) ? { endpoint: s.endpoint, deployment: s.deployment, key: s.key } : null;
     },
   };
 }
