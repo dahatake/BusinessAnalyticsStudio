@@ -294,7 +294,14 @@
     "AC-712": "sha256:0e69695d5457cad9",
     "AC-713": "sha256:706deed685a6f99e",
     "AC-733": "sha256:416fb88a5cfaff0a",
-    "AC-739": "sha256:a7892bd655cdf85a"
+    "AC-739": "sha256:a7892bd655cdf85a",
+    "AC-741": "sha256:2010ae0c69c02c30",
+    "AC-742": "sha256:802001b934592362",
+    "AC-743": "sha256:5fd42bc7f6828d5d",
+    "AC-744": "sha256:2fa248bce3f0b89b",
+    "AC-745": "sha256:792304841369fa02",
+    "AC-746": "sha256:9274749e736b2673",
+    "AC-747": "sha256:e644eaf2b9a013e9"
   },
   "cases": [
     {
@@ -8798,6 +8805,217 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "FR-285 の System Test 作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-377",
+      "requirement_ids": [
+        "FR-286"
+      ],
+      "ac_ids": [
+        "AC-741"
+      ],
+      "title": "AC-741 設定・有効・了承がそろうと /foundry/ask 1 回・Copilot 0 回で回答が出る。未設定・無効・了承なしは Foundry 0 回（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-741",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:20:04+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:21:10+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integration のため System Test の対象外（AC-741〜743・745〜747）。実装役の結合テストで検証する。差し替え部品の見本は chat-foundry.spec.ts（FR286_IT=1）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-378",
+      "requirement_ids": [
+        "FR-286"
+      ],
+      "ac_ids": [
+        "AC-742"
+      ],
+      "title": "AC-742 直近 5 組の履歴が時系列で渡り古い組は渡らない。上限超過は古い履歴から落とし旨を表示",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-742",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:20:07+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:21:10+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integration のため System Test の対象外（AC-741〜743・745〜747）。実装役の結合テストで検証する。差し替え部品の見本は chat-foundry.spec.ts（FR286_IT=1）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-379",
+      "requirement_ids": [
+        "FR-286"
+      ],
+      "ac_ids": [
+        "AC-743"
+      ],
+      "title": "AC-743 根拠と出典カード・AI 生成ラベル。根拠にない出典のカードは付かない（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-743",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:20:11+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:21:11+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integration のため System Test の対象外（AC-741〜743・745〜747）。実装役の結合テストで検証する。差し替え部品の見本は chat-foundry.spec.ts（FR286_IT=1）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-380",
+      "requirement_ids": [
+        "FR-286"
+      ],
+      "ac_ids": [
+        "AC-744"
+      ],
+      "title": "AC-744 標準条件（モック）で送信中・送信内容を確認・新しい会話が従来どおり動く（回帰）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-744",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:20:14+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-381",
+      "requirement_ids": [
+        "FR-286"
+      ],
+      "ac_ids": [
+        "AC-745"
+      ],
+      "title": "AC-745 送信中の二重送信不可・送信内容の確認・新しい会話で前の会話が渡らない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-745",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:20:17+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:21:13+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integration のため System Test の対象外（AC-741〜743・745〜747）。実装役の結合テストで検証する。差し替え部品の見本は chat-foundry.spec.ts（FR286_IT=1）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-382",
+      "requirement_ids": [
+        "FR-286"
+      ],
+      "ac_ids": [
+        "AC-746"
+      ],
+      "title": "AC-746 timeout・error・未確認・了承なし・中継停止の理由表示。別の送信先へ切り替えず再送信できる（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-746",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:20:20+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:21:14+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integration のため System Test の対象外（AC-741〜743・745〜747）。実装役の結合テストで検証する。差し替え部品の見本は chat-foundry.spec.ts（FR286_IT=1）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-383",
+      "requirement_ids": [
+        "FR-286"
+      ],
+      "ac_ids": [
+        "AC-747"
+      ],
+      "title": "AC-747 上限到達後は Foundry 0 回で理由表示。失敗も回数に数え、記録に文章を含まない（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-747",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:20:23+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:21:14+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integration のため System Test の対象外（AC-741〜743・745〜747）。実装役の結合テストで検証する。差し替え部品の見本は chat-foundry.spec.ts（FR286_IT=1）"
         }
       ]
     }
