@@ -290,11 +290,11 @@
     "AC-690": "sha256:ae060af5d4a4546c",
     "AC-699": "sha256:519b0f76a5dc7268",
     "AC-702": "sha256:d47e7a5b9726eed6",
-    "AC-703": "sha256:fb7e60e610671dca",
+    "AC-703": "sha256:d68b05fdf0e3bde1",
     "AC-712": "sha256:0e69695d5457cad9",
     "AC-713": "sha256:706deed685a6f99e",
     "AC-733": "sha256:416fb88a5cfaff0a",
-    "AC-739": "sha256:a7892bd655cdf85a",
+    "AC-739": "sha256:a8441c9dc7b54ba7",
     "AC-741": "sha256:2010ae0c69c02c30",
     "AC-742": "sha256:802001b934592362",
     "AC-743": "sha256:5fd42bc7f6828d5d",
@@ -5857,7 +5857,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-562",
       "canary": false,
-      "status": "fail",
+      "status": "not_run",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-327-202610221628.log",
@@ -5867,6 +5867,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "run 202610192300 part 3/3: FR-238 AC-562（未実装・not_run）"
+        },
+        {
+          "at": "2026-10-23T06:40:01+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "走査の修正後の再実行待ち"
         }
       ]
     },
@@ -9714,7 +9720,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-715",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -9724,6 +9730,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T06:39:48+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "copilot-review.spec.ts（契約 CONTRACT §27・review-stub）の E2E-388〜394 に一本化。同じ AC を同じコマンドで検証する重複のため。spec と stub は削除済み"
         }
       ]
     },
@@ -9739,7 +9751,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-717",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -9749,6 +9761,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T06:39:49+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "copilot-review.spec.ts（契約 CONTRACT §27・review-stub）の E2E-388〜394 に一本化。同じ AC を同じコマンドで検証する重複のため。spec と stub は削除済み"
         }
       ]
     },
@@ -9764,7 +9782,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-718",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -9774,6 +9792,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T06:39:49+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "copilot-review.spec.ts（契約 CONTRACT §27・review-stub）の E2E-388〜394 に一本化。同じ AC を同じコマンドで検証する重複のため。spec と stub は削除済み"
         }
       ]
     },
@@ -9789,7 +9813,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-719",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -9799,6 +9823,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T06:39:50+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "copilot-review.spec.ts（契約 CONTRACT §27・review-stub）の E2E-388〜394 に一本化。同じ AC を同じコマンドで検証する重複のため。spec と stub は削除済み"
         }
       ]
     },
@@ -9814,7 +9844,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-721",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -9824,6 +9854,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T06:39:51+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "copilot-review.spec.ts（契約 CONTRACT §27・review-stub）の E2E-388〜394 に一本化。同じ AC を同じコマンドで検証する重複のため。spec と stub は削除済み"
         }
       ]
     },
@@ -9839,7 +9875,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-725",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -9849,6 +9885,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T06:39:52+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "copilot-review.spec.ts（契約 CONTRACT §27・review-stub）の E2E-388〜394 に一本化。同じ AC を同じコマンドで検証する重複のため。spec と stub は削除済み"
         }
       ]
     },
@@ -9864,7 +9906,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-727",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -9874,6 +9916,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T06:39:52+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "copilot-review.spec.ts（契約 CONTRACT §27・review-stub）の E2E-388〜394 に一本化。同じ AC を同じコマンドで検証する重複のため。spec と stub は削除済み"
         }
       ]
     },
@@ -9889,7 +9937,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-718",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -9899,6 +9947,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T06:39:53+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "copilot-review.spec.ts（契約 CONTRACT §27・review-stub）の E2E-388〜394 に一本化。同じ AC を同じコマンドで検証する重複のため。spec と stub は削除済み"
         }
       ]
     },
@@ -9914,7 +9968,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-715",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -9924,6 +9978,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T06:39:54+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "copilot-review.spec.ts（契約 CONTRACT §27・review-stub）の E2E-388〜394 に一本化。同じ AC を同じコマンドで検証する重複のため。spec と stub は削除済み"
         }
       ]
     },
@@ -9939,7 +9999,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-721",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -9949,6 +10009,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T06:39:57+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "copilot-review.spec.ts（契約 CONTRACT §27・review-stub）の E2E-388〜394 に一本化。同じ AC を同じコマンドで検証する重複のため。spec と stub は削除済み"
         }
       ]
     },
@@ -9964,7 +10030,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-719",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -9974,6 +10040,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T06:39:58+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "copilot-review.spec.ts（契約 CONTRACT §27・review-stub）の E2E-388〜394 に一本化。同じ AC を同じコマンドで検証する重複のため。spec と stub は削除済み"
         }
       ]
     },
@@ -9989,7 +10061,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-725",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -9999,6 +10071,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T06:39:59+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "copilot-review.spec.ts（契約 CONTRACT §27・review-stub）の E2E-388〜394 に一本化。同じ AC を同じコマンドで検証する重複のため。spec と stub は削除済み"
         }
       ]
     },
@@ -10014,7 +10092,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-727",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -10024,6 +10102,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T06:39:59+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "copilot-review.spec.ts（契約 CONTRACT §27・review-stub）の E2E-388〜394 に一本化。同じ AC を同じコマンドで検証する重複のため。spec と stub は削除済み"
         }
       ]
     },
@@ -10039,7 +10123,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-717",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -10049,6 +10133,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T06:40:00+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "copilot-review.spec.ts（契約 CONTRACT §27・review-stub）の E2E-388〜394 に一本化。同じ AC を同じコマンドで検証する重複のため。spec と stub は削除済み"
         }
       ]
     }
