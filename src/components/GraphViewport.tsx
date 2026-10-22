@@ -54,7 +54,7 @@ export interface GraphViewportCtx {
 const Ctx = createContext<GraphViewportCtx | null>(null);
 export const useGraphViewport = (): GraphViewportCtx | null => useContext(Ctx);
 
-const HOST_SEL = '[data-testid^="component-"], [data-testid="data-viewer"]';
+const HOST_SEL = '[data-testid^="component-"]:not([data-testid="component-data"]), [data-testid="data-viewer"]';
 const IGNORE_DRAG = 'button, a, input, select, textarea, table, [data-zoom-node], [data-zoom-cluster], [data-testid="graph-edge"], [data-testid="detail-card"], [role="table"], [role="listbox"]';
 const prefersReduced = (): boolean => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 /** 面の中で display:none の祖先の下にあるか（全体の階層で隠したノード） */
