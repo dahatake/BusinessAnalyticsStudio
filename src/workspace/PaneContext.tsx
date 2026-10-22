@@ -90,7 +90,7 @@ export function ComponentMenu({ pane, title, open, onOpenChange, onShowTier }: {
 }) {
   const pinNote = pane.pinned ? PIN_MOVE_REASON : undefined;
   return (
-    <Menu {...(open !== undefined ? { open, onOpenChange: (_: unknown, d: { open: boolean }) => onOpenChange?.(d.open) } : {})}>
+    <Menu positioning={{ autoSize: 'height', overflowBoundary: 'window', flipBoundary: 'window' } as never} {...(open !== undefined ? { open, onOpenChange: (_: unknown, d: { open: boolean }) => onOpenChange?.(d.open) } : {})}>
       <MenuTrigger disableButtonEnhancement>
         <Button
           data-testid="component-menu"

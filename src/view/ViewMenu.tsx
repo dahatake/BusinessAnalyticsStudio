@@ -83,7 +83,7 @@ export function ComponentViewButton({ paneKey }: { paneKey: string }) {
   const checked: Checked = { mode: [v.mode], world: [v.world] };
   const text = viewText(v.mode, v.world);
   return (
-    <Menu checkedValues={checked} onCheckedValueChange={onChecked(v.setMode, v.setWorld)}>
+    <Menu positioning={{ autoSize: 'height', overflowBoundary: 'window', flipBoundary: 'window' } as never} checkedValues={checked} onCheckedValueChange={onChecked(v.setMode, v.setWorld)}>
       <Tooltip content="ビュー（このコンポーネントの表示モードと世界の表示）" relationship="description" withArrow>
         <MenuTrigger disableButtonEnhancement>
           {/* 見出しの幅を取りすぎないよう、アイコンは付けず文字（現在の表示モード・世界の表示）だけで示す */}
