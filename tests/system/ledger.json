@@ -296,7 +296,14 @@
     "AC-733": "sha256:416fb88a5cfaff0a",
     "AC-739": "sha256:a8441c9dc7b54ba7",
     "AC-737": "sha256:42d750bc2e4bf3fd",
-    "AC-738": "sha256:24a432ee2b6b2941"
+    "AC-738": "sha256:24a432ee2b6b2941",
+    "AC-725": "sha256:16746748b9a89485",
+    "AC-721": "sha256:f203398c6eb58abd",
+    "AC-719": "sha256:a64a1960271f4733",
+    "AC-718": "sha256:c402ee881c662b1c",
+    "AC-717": "sha256:99f0da860e85dff7",
+    "AC-727": "sha256:87421ea12b582983",
+    "AC-715": "sha256:b1961835ab870c28"
   },
   "cases": [
     {
@@ -8874,6 +8881,223 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC-737・AC-738 の検証レベルは integration（実装役の tests/unit が担当）。system 面の画面・中継の検査は genai-scenario.spec.ts の AC-739 のケース（E2E-373）に含める"
+        }
+      ]
+    },
+    {
+      "id": "E2E-395",
+      "requirement_ids": [
+        "FR-282"
+      ],
+      "ac_ids": [
+        "AC-725"
+      ],
+      "title": "Copilot分析 AC-725（実装待ち・spec 未作成）",
+      "layer": "e2e",
+      "command": "npx playwright test tests/system/e2e/copilot-analysis.spec.ts -g AC-725",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:59:26+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:00:16+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "Copilot で分析実行（FR-278〜283）の画面・Foundry 接続の実装が未着手で、画面の場所・ラベルの実体が確定できないため spec 未作成。実装後に test-designer が spec を書いて unblock"
+        }
+      ]
+    },
+    {
+      "id": "E2E-396",
+      "requirement_ids": [
+        "FR-280"
+      ],
+      "ac_ids": [
+        "AC-721"
+      ],
+      "title": "Copilot分析 AC-721（実装待ち・spec 未作成）",
+      "layer": "e2e",
+      "command": "npx playwright test tests/system/e2e/copilot-analysis.spec.ts -g AC-721",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:59:32+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:00:17+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "Copilot で分析実行（FR-278〜283）の画面・Foundry 接続の実装が未着手で、画面の場所・ラベルの実体が確定できないため spec 未作成。実装後に test-designer が spec を書いて unblock"
+        }
+      ]
+    },
+    {
+      "id": "E2E-397",
+      "requirement_ids": [
+        "FR-279"
+      ],
+      "ac_ids": [
+        "AC-719"
+      ],
+      "title": "Copilot分析 AC-719（実装待ち・spec 未作成）",
+      "layer": "e2e",
+      "command": "npx playwright test tests/system/e2e/copilot-analysis.spec.ts -g AC-719",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:59:37+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:00:18+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "Copilot で分析実行（FR-278〜283）の画面・Foundry 接続の実装が未着手で、画面の場所・ラベルの実体が確定できないため spec 未作成。実装後に test-designer が spec を書いて unblock"
+        }
+      ]
+    },
+    {
+      "id": "E2E-398",
+      "requirement_ids": [
+        "FR-278"
+      ],
+      "ac_ids": [
+        "AC-718"
+      ],
+      "title": "Copilot分析 AC-718（実装待ち・spec 未作成）",
+      "layer": "e2e",
+      "command": "npx playwright test tests/system/e2e/copilot-analysis.spec.ts -g AC-718",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:59:43+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:00:20+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "Copilot で分析実行（FR-278〜283）の画面・Foundry 接続の実装が未着手で、画面の場所・ラベルの実体が確定できないため spec 未作成。実装後に test-designer が spec を書いて unblock"
+        }
+      ]
+    },
+    {
+      "id": "E2E-399",
+      "requirement_ids": [
+        "FR-278"
+      ],
+      "ac_ids": [
+        "AC-717"
+      ],
+      "title": "Copilot分析 AC-717（実装待ち・spec 未作成）",
+      "layer": "e2e",
+      "command": "npx playwright test tests/system/e2e/copilot-analysis.spec.ts -g AC-717",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:59:48+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:00:22+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "Copilot で分析実行（FR-278〜283）の画面・Foundry 接続の実装が未着手で、画面の場所・ラベルの実体が確定できないため spec 未作成。実装後に test-designer が spec を書いて unblock"
+        }
+      ]
+    },
+    {
+      "id": "E2E-400",
+      "requirement_ids": [
+        "FR-283"
+      ],
+      "ac_ids": [
+        "AC-727"
+      ],
+      "title": "Copilot分析 AC-727（実装待ち・spec 未作成）",
+      "layer": "e2e",
+      "command": "npx playwright test tests/system/e2e/copilot-analysis.spec.ts -g AC-727",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:59:56+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:00:24+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "Copilot で分析実行（FR-278〜283）の画面・Foundry 接続の実装が未着手で、画面の場所・ラベルの実体が確定できないため spec 未作成。実装後に test-designer が spec を書いて unblock"
+        }
+      ]
+    },
+    {
+      "id": "E2E-401",
+      "requirement_ids": [
+        "FR-278"
+      ],
+      "ac_ids": [
+        "AC-715"
+      ],
+      "title": "Copilot分析 AC-715（実装待ち・spec 未作成）",
+      "layer": "e2e",
+      "command": "npx playwright test tests/system/e2e/copilot-analysis.spec.ts -g AC-715",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T23:00:03+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:00:26+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "Copilot で分析実行（FR-278〜283）の画面・Foundry 接続の実装が未着手で、画面の場所・ラベルの実体が確定できないため spec 未作成。実装後に test-designer が spec を書いて unblock"
         }
       ]
     }
