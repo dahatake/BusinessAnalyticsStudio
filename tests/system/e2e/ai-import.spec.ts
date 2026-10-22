@@ -47,12 +47,12 @@ function writeFile(name: string, data: Buffer | string): string {
   return f;
 }
 
-async function saveFoundryInSettings(page: Page, key: string, authMode: 'api-key' | 'entra' = 'api-key'): Promise<void> {
+async function saveFoundryInSettings(page: Page, key: string, authMethod: 'api-key' | 'entra' = 'api-key'): Promise<void> {
   const settings = await openScreen(page, 'settings');
   const foundry = settings.getByTestId('foundry-settings');
   await foundry.getByLabel(/エンドポイント/).fill('https://example.invalid/openai/v1');
   await foundry.getByLabel(/デプロイ名/).fill('dummy-deploy');
-  if (authMode === 'entra') await foundry.getByLabel('認証方式').selectOption('entra');
+  if (authMethod === 'entra') await foundry.getByLabel('認証方式').selectOption('entra');
   else await foundry.getByLabel(/API キー/).fill(key);
   await foundry.getByRole('button', { name: /保存/ }).first().click();
   await expect(foundry.getByTestId('foundry-status')).toHaveText('設定済み');
@@ -149,14 +149,14 @@ test.describe('FR-289 AI 取り込み（選べる条件）', () => {
   });
 
   // FR-289 AC-758（認証方式 API キー / Microsoft Entra ID の両方）
-  for (const authMode of ['api-key', 'entra'] as const) {
-    test(`FR-289 AC-758 認証方式 ${authMode}: 設定を保存し、実接続を有効にし、了承があると「AI 取り込み」を選べ、無効化・削除で再び選べず案内が示される`, async ({ page, start }) => {
+  for (const authMethod of ['api-key', 'entra'] as const) {
+    test(`FR-289 AC-758 認証方式 ${authMethod}: 設定を保存し、実接続を有効にし、了承があると「AI 取り込み」を選べ、無効化・削除で再び選べず案内が示される`, async ({ page, start }) => {
       relay = await startAiImportRelayStub({ configured: false });
       await start({ relayUrl: relay.url });
       await openNewProject(page);
       await recordExportConsent(page);
       // 保存だけ（有効化前）はまだ選べない
-      await saveFoundryInSettings(page, 'dummy-key-for-system-test-0001', authMode);
+      await saveFoundryInSettings(page, 'dummy-key-for-system-test-0001', authMethod);
       await expectAiImportBlocked(page, relay, '有効化');
       // 3 条件がそろうと選べる
       await enableFoundry(page);

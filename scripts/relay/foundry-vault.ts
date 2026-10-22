@@ -5,29 +5,36 @@
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { defaultDataDir, defaultKeyProtector, isAllowedEndpoint, maskKey, restrictToCurrentUser, type VaultOptions } from './speech-vault';
+import { defaultDataDir, defaultKeyProtector, isAllowedEndpoint, restrictToCurrentUser, type VaultOptions } from './speech-vault';
 
 export interface FoundrySettingsView {
   configured: boolean;
   endpoint: string;
   host: string;
   deployment: string;
-  /** 認証方式（FR-282）。API キー方式は 'api-key'、Microsoft Entra ID 方式は 'entra' */
-  authMode: AuthMode;
   /** 伏せ字。値そのものは返さない */
   keyMask: string;
+  /** 認証方式（FR-282）。entra のときは API キーを持たない */
+  authMethod: AuthMethod;
 }
 
-export type AuthMode = 'api-key' | 'entra';
-interface Stored { endpoint: string; deployment: string; key: string; authMode?: AuthMode }
+export type AuthMethod = 'api-key' | 'entra';
+/** 値に由来しない固定の伏せ字（末尾の文字も出さない。FR-282 AC-726） */
+export const FIXED_KEY_MASK = '••••••••';
+
+interface Stored { endpoint: string; deployment: string; key: string; authMethod?: AuthMethod }
 
 export interface FoundryVault {
   view(): FoundrySettingsView;
   /** key を省略すると、保存済みのキーを変えずにエンドポイント・デプロイ名だけ更新する */
-  save(input: { endpoint: string; deployment: string; key?: string; authMode?: AuthMode }): FoundrySettingsView;
+  save(input: { endpoint: string; deployment: string; key?: string; authMethod?: AuthMethod }): FoundrySettingsView;
   remove(): void;
   /** 接続先へ送るための値。中継の内部だけで使う */
-  secret(): { endpoint: string; deployment: string; key: string; authMode: AuthMode } | null;
+  secret(): { endpoint: string; deployment: string; key: string } | null;
+  /** FR-289・/foundry/ask 用。Entra ID 方式ではキーなしでも返す（認証方式つき） */
+  importSecret(): { endpoint: string; deployment: string; key: string; authMethod: AuthMethod } | null;
+  /** 認証方式が Entra ID で、エンドポイント・デプロイ名が揃っているか（トークン取得は別部品） */
+  entraReady(): boolean;
 }
 
 export function openFoundryVault(dataDir: string = defaultDataDir(), opts: VaultOptions = {}): FoundryVault {
@@ -76,11 +83,11 @@ export function openFoundryVault(dataDir: string = defaultDataDir(), opts: Vault
     harden(dataFile, false);
   };
   const toView = (s: Stored | null): FoundrySettingsView => {
-    const authMode: AuthMode = s?.authMode === 'entra' ? 'entra' : 'api-key';
-    if (!s || (authMode === 'api-key' && !s.key)) return { configured: false, endpoint: s?.endpoint ?? '', host: '', deployment: s?.deployment ?? '', authMode, keyMask: '' };
+    const authMethod: AuthMethod = s?.authMethod === 'entra' ? 'entra' : 'api-key';
+    if (!s || (authMethod === 'api-key' && !s.key)) return { configured: false, endpoint: s?.endpoint ?? '', host: '', deployment: s?.deployment ?? '', keyMask: '', authMethod };
     let host = '';
     try { host = new URL(s.endpoint).host; } catch { /* 空のまま */ }
-    return { configured: !!host && !!s.deployment, endpoint: s.endpoint, host, deployment: s.deployment, authMode, keyMask: authMode === 'entra' || !s.key ? '' : maskKey(s.key) };
+    return { configured: !!host && !!s.deployment, endpoint: s.endpoint, host, deployment: s.deployment, keyMask: authMethod === 'entra' ? '' : FIXED_KEY_MASK, authMethod };
   };
 
   return {
@@ -90,18 +97,28 @@ export function openFoundryVault(dataDir: string = defaultDataDir(), opts: Vault
       const deployment = input.deployment.trim();
       if (!deployment) throw new Error('デプロイ名を入力してください');
       const cur = load();
-      const authMode: AuthMode = input.authMode === 'entra' ? 'entra' : 'api-key';
-      const key = authMode === 'entra' ? '' : input.key !== undefined && input.key.trim() !== '' ? input.key.trim() : cur?.key;
-      if (authMode === 'api-key' && !key) throw new Error('API キーを入力してください');
-      const next: Stored = { endpoint: input.endpoint.trim(), deployment, key: key ?? '', authMode };
+      const authMethod: AuthMethod = input.authMethod === 'entra' ? 'entra' : 'api-key';
+      const key = authMethod === 'entra' ? '' : input.key !== undefined && input.key.trim() !== '' ? input.key.trim() : cur?.key;
+      if (authMethod === 'api-key' && !key) throw new Error('API キーを入力してください');
+      const next: Stored = { endpoint: input.endpoint.trim(), deployment, key: key ?? '', authMethod };
       store(next);
       return toView(next);
     },
     remove() { fs.rmSync(dataFile, { force: true }); },
+    entraReady() {
+      const s = load();
+      return !!s && s.authMethod === 'entra' && !!s.deployment && isAllowedEndpoint(s.endpoint);
+    },
+    importSecret() {
+      const s = load();
+      if (!s || !s.deployment || !isAllowedEndpoint(s.endpoint)) return null;
+      const authMethod: AuthMethod = s.authMethod === 'entra' ? 'entra' : 'api-key';
+      if (authMethod === 'api-key' && !s.key) return null;
+      return { endpoint: s.endpoint, deployment: s.deployment, key: s.key, authMethod };
+    },
     secret() {
       const s = load();
-      const authMode: AuthMode = s?.authMode === 'entra' ? 'entra' : 'api-key';
-      return s && (authMode === 'entra' || s.key) && s.deployment && isAllowedEndpoint(s.endpoint) ? { endpoint: s.endpoint, deployment: s.deployment, key: s.key, authMode } : null;
+      return s && s.key && s.deployment && isAllowedEndpoint(s.endpoint) ? { endpoint: s.endpoint, deployment: s.deployment, key: s.key } : null;
     },
   };
 }

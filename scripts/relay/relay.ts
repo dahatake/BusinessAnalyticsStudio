@@ -161,9 +161,9 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           const withMode = () => ({ ...getFoundry().view(), enabled: foundryEnabled.has(packId) });
           if (req.method === 'GET') return json(200, withMode());
           if (req.method === 'PUT') {
-            const b = JSON.parse((await readBody(req)) || '{}') as             { endpoint?: string; deployment?: string; key?: string; authMode?: string };
+            const b = JSON.parse((await readBody(req)) || '{}') as             { endpoint?: string; deployment?: string; key?: string; authMethod?: string };
             try {
-                          getFoundry().save({ endpoint: String(b.endpoint ?? ''), deployment: String(b.deployment ?? ''), key: typeof b.key === 'string' ? b.key : undefined, authMode: b.authMode === 'entra' ? 'entra' : 'api-key' });
+                          getFoundry().save({ endpoint: String(b.endpoint ?? ''), deployment: String(b.deployment ?? ''), key: typeof b.key === 'string' ? b.key : undefined, authMethod: b.authMethod === 'entra' ? 'entra' : 'api-key' });
               return json(200, withMode());
             } catch (e) {
               return json(400, { error: e instanceof Error ? e.message : '保存できませんでした' });
@@ -181,7 +181,7 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           if (!b.enable) { foundryEnabled.delete(b.packId); return json(200, { mode: 'mock' }); }
           if (b.consent !== true) return json(403, { error: '顧客の了承の記録がないため、実接続を有効にできません', mode: 'mock' });
           if (b.confirmed !== true) return json(400, { error: '費用と送信内容の確認が必要です' });
-          if (!getFoundry().secret()) return json(409, { error: 'Foundry の接続情報が未設定です', mode: 'mock' });
+          if (!getFoundry().importSecret()) return json(409, { error: 'Foundry の接続情報が未設定です', mode: 'mock' });
           foundryEnabled.add(b.packId);
           return json(200, { mode: 'connected' });
         }
@@ -192,11 +192,11 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           const unavailable = (reason: string, message: string, status = 200) => json(status, { mode: 'unavailable', reason, message });
           if (b.consent !== true) return unavailable('consent', '顧客の了承の記録がないため、AI は使えません');
           if (!foundryEnabled.has(b.packId)) return unavailable('disabled', 'Foundry の実接続が有効ではありません');
-          const secret = getFoundry().secret();
+          const secret = getFoundry().importSecret();
           if (!secret) return unavailable('not-configured', 'Foundry の接続情報が未設定です');
           if (b.includesPerson === true && b.personConfirmed !== true) return unavailable('person-unconfirmed', '種別「人」を含む顧客パックは、送信前の確認が必要です');
           try {
-            const answer = secret.authMode === 'entra'
+            const answer = secret.authMethod === 'entra'
               ? await callFoundryWithInput(secret, b.prompt, opts.foundryFetch, opts.foundryTimeoutMs, opts.foundryToken)
               : await callFoundry(secret, b.prompt, opts.foundryFetch, opts.foundryTimeoutMs);
             return json(200, { answer, mode: 'connected' });
@@ -216,7 +216,7 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           if (typeof b.packId !== 'string' || !b.packId || typeof b.dataBase64 !== 'string' || typeof b.fileName !== 'string') return fail(400, 'bad-request');
           if (b.consent !== true) return fail(403, 'consent');
           if (!foundryEnabled.has(b.packId)) return fail(403, 'disabled');
-          const secret = getFoundry().secret();
+          const secret = getFoundry().importSecret();
           if (!secret) return fail(503, 'key-missing');
           if (b.includesPerson === true && b.personConfirmed !== true) return fail(403, 'person-unconfirmed');
           if (b.confirmed !== true) return fail(400, 'unconfirmed');

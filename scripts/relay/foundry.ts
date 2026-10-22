@@ -66,11 +66,11 @@ function importInput(file: ImportFile): unknown {
 
 /** 認証情報を付けて Responses API を呼ぶ。エラー・応答の文字列に認証情報は含めない */
 export async function callFoundryWithInput(
-  s: FoundrySecret & { authMode?: 'api-key' | 'entra' }, input: unknown,
+  s: FoundrySecret & { authMethod?: 'api-key' | 'entra' }, input: unknown,
   f: typeof fetch = (u, i) => fetch(u, i), timeoutMs = FOUNDRY_TIMEOUT_MS, getToken?: TokenProvider,
 ): Promise<string> {
   let credential = s.key;
-  if (s.authMode === 'entra') {
+  if (s.authMethod === 'entra') {
     try { credential = getToken ? await getToken() : ''; } catch { credential = ''; }
     if (!credential) throw new FoundryError('Microsoft Entra ID のトークンを取得できませんでした', 'http');
   }
@@ -78,7 +78,7 @@ export async function callFoundryWithInput(
   const timer = setTimeout(() => ctl.abort(), timeoutMs);
   try {
     const headers: Record<string, string> = { 'content-type': 'application/json', authorization: ['Bearer', credential].join(' ') };
-    if (s.authMode !== 'entra') headers['api-key'] = credential;
+    if (s.authMethod !== 'entra') headers['api-key'] = credential;
     const res = await f(responsesUrl(s.endpoint), {
       method: 'POST', redirect: 'error', signal: ctl.signal, headers, body: JSON.stringify({ model: s.deployment, input }),
     });
@@ -97,7 +97,7 @@ export async function callFoundryWithInput(
 
 /** ファイルを送り、取り込んだエンティティを返す。形式が想定と異なるときは FoundryError('format') */
 export async function importWithFoundry(
-  s: FoundrySecret & { authMode?: 'api-key' | 'entra' }, file: ImportFile,
+  s: FoundrySecret & { authMethod?: 'api-key' | 'entra' }, file: ImportFile,
   f?: typeof fetch, timeoutMs?: number, getToken?: TokenProvider,
 ): Promise<Array<{ name: string; description: string }>> {
   const text = await callFoundryWithInput(s, importInput(file), f, timeoutMs, getToken);

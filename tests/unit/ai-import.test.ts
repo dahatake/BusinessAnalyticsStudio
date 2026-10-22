@@ -75,8 +75,8 @@ describe('FR-289 AC-757 AC-758 選べる条件', () => {
     const { url } = await setup();
     expect((await putFoundryConfig(url, 'P', { endpoint: EP, deployment: 'd', key: DUMMY_KEY })).ok).toBe(true);
     expect((await fetchFoundryView(url, 'P'))?.configured).toBe(true);
-    const e = await putFoundryConfig(url, 'P', { endpoint: EP, deployment: 'd', key: '', authMode: 'entra' });
-    expect(e.ok && e.view.configured && e.view.authMode === 'entra').toBe(true);
+    const e = await putFoundryConfig(url, 'P', { endpoint: EP, deployment: 'd', key: '', authMethod: 'entra' });
+    expect(e.ok && e.view.configured && e.view.authMethod === 'entra').toBe(true);
     // 実接続を有効にすると選べる。無効に戻すと再び選べない
     expect((await setFoundryConnection(url, 'P', true, { consent: true, confirmed: true })).mode).toBe('connected');
     expect(aiImportAvailability(await fetchFoundryView(url, 'P'), true).available).toBe(true);
@@ -174,7 +174,7 @@ describe('FR-289 AC-760 キーの秘匿と送信先', () => {
     expect(calls[0]!.auth).toBe(`Bearer ${DUMMY_KEY}`); // Foundry へ送るのは中継プロセスだけ
 
     // Entra ID 方式
-    await putFoundryConfig(url, 'P', { endpoint: EP, deployment: 'd', key: '', authMode: 'entra' });
+    await putFoundryConfig(url, 'P', { endpoint: EP, deployment: 'd', key: '', authMethod: 'entra' });
     await requestAiImport(url, req(mkFile('b.pdf', '%PDF')));
     expect(calls[1]!.auth).toBe('Bearer dummy-entra-token-ABCDE');
   });

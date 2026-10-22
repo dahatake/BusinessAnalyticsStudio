@@ -14,10 +14,10 @@ export interface AiImportRelayStub extends RelayStub {
   forceEnabled(v: boolean): void;
 }
 
-export async function startAiImportRelayStub(opts: { configured?: boolean; mode?: AiImportMode; initialKey?: string; enabled?: boolean; authMode?: 'api-key' | 'entra' } = {}): Promise<AiImportRelayStub> {
+export async function startAiImportRelayStub(opts: { configured?: boolean; mode?: AiImportMode; initialKey?: string; enabled?: boolean; authMethod?: 'api-key' | 'entra' } = {}): Promise<AiImportRelayStub> {
   const received: RelayStub['received'] = [];
-  let foundry: { endpoint: string; deployment: string; key: string; authMode: 'api-key' | 'entra' } | null = opts.configured
-    ? { endpoint: 'https://example.invalid/openai/v1', deployment: 'dummy-deploy', key: opts.initialKey ??     'dummy-key-for-system-test-9999', authMode: opts.authMode ?? 'api-key' }
+  let foundry: { endpoint: string; deployment: string; key: string; authMethod: 'api-key' | 'entra' } | null = opts.configured
+    ? { endpoint: 'https://example.invalid/openai/v1', deployment: 'dummy-deploy', key: opts.initialKey ??     'dummy-key-for-system-test-9999', authMethod: opts.authMethod ?? 'api-key' }
     : null;
       // 実接続の有効化（FR-275）。configured 指定の既存ケースは有効で始まる（enabled で上書きできる）
       let enabled = opts.enabled ?? !!opts.configured;
@@ -45,15 +45,15 @@ export async function startAiImportRelayStub(opts: { configured?: boolean; mode?
       };
       const view = () =>
         foundry
-          ? { configured: true, endpoint: foundry.endpoint, host: new URL(foundry.endpoint).host, deployment: foundry.deployment, keyMask: foundry.authMode === 'entra' ? '' : `••••${foundry.key.slice(-4)}`, authMode: foundry.authMode, enabled }
-          : { configured: false, endpoint: '', host: '', deployment: '', keyMask: '', authMode: 'api-key', enabled };
+          ? { configured: true, endpoint: foundry.endpoint, host: new URL(foundry.endpoint).host, deployment: foundry.deployment, keyMask: foundry.authMethod === 'entra' ? '' : `••••${foundry.key.slice(-4)}`, authMethod: foundry.authMethod, enabled }
+          : { configured: false, endpoint: '', host: '', deployment: '', keyMask: '', authMethod: 'api-key', enabled };
       if (u.pathname === '/foundry/config') {
         if (req.method === 'PUT') {
           try {
-            const b = JSON.parse(body) as { endpoint?: string; deployment?: string;             key?: string; authMode?: 'api-key' | 'entra' };
-                        const authMode = b.authMode === 'entra' ? 'entra' : 'api-key';
-                        if (!b.endpoint || !b.deployment || (authMode === 'api-key' && !b.key)) return json(400, { error: authMode === 'entra' ? 'エンドポイント・デプロイ名を入力してください' : 'エンドポイント・デプロイ名・API キーを入力してください' });
-                        foundry = { endpoint: b.endpoint, deployment: b.deployment, key: authMode === 'entra' ? '' : (b.key as string), authMode };
+            const b = JSON.parse(body) as { endpoint?: string; deployment?: string;             key?: string; authMethod?: 'api-key' | 'entra' };
+                        const authMethod = b.authMethod === 'entra' ? 'entra' : 'api-key';
+                        if (!b.endpoint || !b.deployment || (authMethod === 'api-key' && !b.key)) return json(400, { error: authMethod === 'entra' ? 'エンドポイント・デプロイ名を入力してください' : 'エンドポイント・デプロイ名・API キーを入力してください' });
+                        foundry = { endpoint: b.endpoint, deployment: b.deployment, key: authMethod === 'entra' ? '' : (b.key as string), authMethod };
           } catch {
             return json(400, { error: '不正な入力です' });
           }
@@ -82,7 +82,7 @@ export async function startAiImportRelayStub(opts: { configured?: boolean; mode?
   return {
     url: `http://127.0.0.1:${port}`,
     received,
-    savedKey: () => (foundry && foundry.authMode === 'api-key' ? foundry.key : null),
+    savedKey: () => (foundry && foundry.authMethod === 'api-key' ? foundry.key : null),
     importCalls: () => received.filter((r) => r.path === '/foundry/import').length,
     /** 設定画面を開かずに、中継の「有効」の状態だけを切り替える（了承の入力後に「設定だけが欠ける」状態を作るため） */
     forceEnabled: (v: boolean) => { enabled = v; },
