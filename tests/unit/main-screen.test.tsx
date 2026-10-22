@@ -14,6 +14,21 @@ import { useWorkTargetUi } from '../../src/projects/workTargetUi';
 const st = () => useProjects.getState();
 const wrap = (ui: ReactNode) => <FluentProvider theme={webLightTheme}>{ui}</FluentProvider>;
 const NAMES = ['企業を登録', 'Project を作成', 'Project を開く', '分析を開始'];
+// モーダルの閉じ終わりを待つ。ダイアログが消えた後も、背後の要素に付いた aria-hidden（支援技術から隠す指定）は
+// 非同期に外れるため（body 直下のフォーカス制御用の <i aria-hidden> は対象外）、並列負荷時は既定の 1 秒では足りない。外れ終わるまで待ってから、役割（role）での判定をする。
+const MODAL_WAIT = { timeout: 15_000 };
+async function waitModalClosed(role: 'dialog' | 'alertdialog', name?: string) {
+  await waitFor(() => expect(screen.queryByRole(role, name ? { name } : {})).toBeNull(), MODAL_WAIT);
+  await waitFor(() => expect(document.querySelector('body > div[aria-hidden="true"]')).toBeNull(), MODAL_WAIT);
+}
+
+// モーダルが開き終わる（フォーカスがダイアログの中へ移る）まで待ってから操作する。利用者は、フォーカスが移った後に入力する。
+// 移る前に閉じると、後から届いたフォーカスの処理で背後の要素に aria-hidden が付いたまま残ることがある（並列負荷時の揺れの原因）。
+async function findModal(role: 'dialog' | 'alertdialog', name: string) {
+  const el = await screen.findByRole(role, { name }, MODAL_WAIT);
+  await waitFor(() => expect(el.contains(document.activeElement)).toBe(true), MODAL_WAIT);
+  return el;
+}
 
 beforeEach(() => {
   resetProjects(); resetAnalyses();
@@ -48,16 +63,21 @@ describe('FR-186 メイン画面', () => {
   it('FR-186 AC-396 企業を登録し Project を作成すると、企業の欄に出て、共通の保存先に入る', async () => {
     render(wrap(<MainScreen />));
     fireEvent.click(screen.getByRole('button', { name: '企業を登録' }));
-    const dlg = await screen.findByRole('dialog', { name: '企業を登録' });
+    const dlg = await findModal('dialog', '企業を登録');
     fireEvent.change(within(dlg).getByRole('textbox', { name: '企業名' }), { target: { value: '合成株式会社M' } });
     fireEvent.click(within(dlg).getByRole('button', { name: '登録' }));
+    // 並列負荷時の揺れを避けるため、保存の完了とダイアログ（モーダル）の閉じ終わりを待ってから次の操作をする。
+    await waitFor(() => expect(st().companies.length).toBe(1));
+    await waitModalClosed('dialog', '企業を登録');
     const region = await screen.findByRole('region', { name: '企業 合成株式会社M' });
     fireEvent.click(within(region).getByRole('button', { name: 'Project を作成' }));
-    const d2 = await screen.findByRole('dialog', { name: 'Project を作成' });
+    const d2 = await findModal('dialog', 'Project を作成');
     fireEvent.change(within(d2).getByRole('textbox', { name: 'Project 名' }), { target: { value: '案件一号' } });
     fireEvent.click(within(d2).getByRole('button', { name: '作成' }));
-    await waitFor(() => expect(within(region).getByText('案件一号')).toBeTruthy());
-    expect(st().projects.map((p) => p.name)).toEqual(['案件一号']);
+    await waitFor(() => expect(st().projects.map((p) => p.name)).toEqual(['案件一号']));
+    await waitModalClosed('dialog', 'Project を作成');
+    // 閉じ終わった後の企業の欄（再描画で置き換わっても追えるよう取り直す）に出ること。
+    await waitFor(() => expect(within(screen.getByRole('region', { name: '企業 合成株式会社M' })).getByText('案件一号')).toBeTruthy());
   });
 
   // FR-186 AC-397
@@ -66,14 +86,16 @@ describe('FR-186 メイン画面', () => {
     const current = () => within(screen.getByTestId('main-guide')).getAllByRole('listitem').filter((li) => li.getAttribute('aria-current') === 'step').map((li) => li.textContent);
     expect(current()[0]).toContain('企業を登録');
     fireEvent.click(screen.getByRole('button', { name: '企業を登録' }));
-    const dlg = await screen.findByRole('dialog', { name: '企業を登録' });
+    const dlg = await findModal('dialog', '企業を登録');
     fireEvent.click(within(dlg).getByRole('button', { name: '登録' }));
     expect(await within(dlg).findByRole('alert')).toBeTruthy();
     expect(st().companies.length).toBe(0);
     fireEvent.change(within(dlg).getByRole('textbox', { name: '企業名' }), { target: { value: '合成株式会社M' } });
     fireEvent.click(within(dlg).getByRole('button', { name: '登録' }));
     await waitFor(() => expect(st().companies.length).toBe(1));
-    expect(current()[0]).toContain('Project を作成');
+    // 登録後はダイアログ（モーダル）が閉じ終わるまで背後の要素が支援技術から隠れるため、閉じ終わりを待ってから同じ判定をする。
+    await waitModalClosed('dialog', '企業を登録');
+    await waitFor(() => expect(current()[0]).toContain('Project を作成'));
   });
 
   // FR-186 AC-395
@@ -88,10 +110,10 @@ describe('FR-186 メイン画面', () => {
   it('FR-186 AC-398 Project を開くと 0 件でも選択画面が出て、閉じるとメイン画面に戻り、選ぶとメイン画面が閉じる', async () => {
     render(wrap(<MainScreen />));
     fireEvent.click(screen.getByRole('button', { name: 'Project を開く' }));
-    const picker = await screen.findByRole('dialog', { name: '作業先の選択' });
+    const picker = await findModal('dialog', '作業先の選択');
     expect(within(picker).getByRole('option', { name: /デモ/ })).toBeTruthy();
     fireEvent.keyDown(picker, { key: 'Escape' });
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull());
+    await waitModalClosed('dialog', '作業先の選択');
     expect(useMainScreen.getState().shown).toBe(true);
 
     const id = seed();
@@ -125,10 +147,10 @@ describe('FR-187 メイン画面へ戻るボタン', () => {
     useMainScreen.setState({ shown: false });
     render(wrap(<ProjectsPanel />));
     fireEvent.click(screen.getByRole('button', { name: 'メイン画面へ戻る' }));
-    await screen.findByRole('alertdialog', { name: '未保存の入力があります' });
+    await findModal('alertdialog', '未保存の入力があります');
     expect(useMainScreen.getState().shown).toBe(false);
     await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog', { name: '未保存の入力があります' })).getByRole('button', { name: 'キャンセル' })));
-    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+    await waitModalClosed('alertdialog');
     expect(useMainScreen.getState().shown).toBe(false);
     expect(useAnalyses.getState().drafts[id]?.param).toBe('7');
     fireEvent.click(screen.getByRole('button', { name: 'メイン画面へ戻る' }));

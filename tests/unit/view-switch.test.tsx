@@ -129,7 +129,7 @@ describe('FR-217 AC-498・FR-218 AC-502 全画面の宣言と「ビュー」ボ�
     expect(byKey.get('settings')!.world).toBe(false);
     expect(byKey.get('chat')!.world).toBe(false);
     expect(byKey.get('kpi-okr')!.world).toBe('digital');
-  });
+  }, 180_000); // 画面の登録は全画面のモジュールを読み込むため、並列負荷時は 60 秒を超えることがある
 
   // FR-217 AC-498 / FR-218 AC-502
   it('FR-217 AC-498 FR-218 AC-502 各コンポーネントの見出しに「ビュー」ボタンが 1 つあり、名前は「ビュー」で始まり、見える文字で現在の表示モードと世界の表示を示す', () => {
