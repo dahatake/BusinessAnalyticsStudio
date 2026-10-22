@@ -18,6 +18,14 @@ import { TIER_APPEARANCE, TIER_LABEL } from '../workspace/tiers';
 /** これより狭いコンポーネントは、見出しの操作アイコンを出さず「…」メニューに任せる（FR-150 AC-259）。
  *  アイコン 4 個（各 24px 以上）と「…」が見出しの横に収まる幅。既定の配置の列（約 300px）でもアイコンが出る（NFR-UX-015 AC-476 のツールチップ） */
 const NARROW_PANE_PX = 240;
+/** 配置の計算が最小の幅（PARAM-034 = 240px）ちょうどに置いた列は、描画の小数の丸めで 240 をわずかに下回って測れる（例: 239.99px）。
+ *  この誤差で「狭い」と判定して見出しの操作（「ビュー」など）を隠さないよう、丸めの分（1px）だけ許す（FR-150 AC-259・FR-217 AC-499） */
+const LAYOUT_ROUNDING_PX = 1;
+
+/** 測った幅が、見出しの操作アイコンを出さない「狭い」コンポーネントか（FR-150 AC-259）。最小の幅ちょうどの列は狭くない */
+export function isNarrowPane(width: number): boolean {
+  return width < NARROW_PANE_PX - LAYOUT_ROUNDING_PX;
+}
 /** これより狭いコンポーネントは、見出しを詰める（見出しの文字を 1 段小さい Fluent 2 の段にし、操作アイコンと「…」をまとめて見出しの下の行の右へ置く）。
  *  細い列で見出しが何行にも折れて、画面の上部の情報（FR-041 のサマリーなど）が下へ押し出されるのを防ぐ。
  *  見出しの操作に「ビュー」ボタン（文字で現在の表示を示す。FR-217・FR-218）が加わった分（約 60px）だけ、360px から広げた */
@@ -168,7 +176,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
     if (!el || typeof ResizeObserver === 'undefined') return;
     const ro = new ResizeObserver(() => {
       const w = el.getBoundingClientRect().width;
-      setNarrow(w < NARROW_PANE_PX);
+      setNarrow(isNarrowPane(w));
       setCompact(w < COMPACT_PANE_PX);
     });
     ro.observe(el);
