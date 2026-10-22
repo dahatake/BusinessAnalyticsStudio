@@ -299,7 +299,14 @@
     "AC-750": "sha256:cbf425859d61989e",
     "AC-752": "sha256:8be350ff566287fb",
     "AC-748": "sha256:921c6b2c0279ea4b",
-    "AC-751": "sha256:5298ffecc4f6209d"
+    "AC-751": "sha256:5298ffecc4f6209d",
+    "AC-715": "sha256:b1961835ab870c28",
+    "AC-717": "sha256:99f0da860e85dff7",
+    "AC-718": "sha256:c402ee881c662b1c",
+    "AC-719": "sha256:a64a1960271f4733",
+    "AC-721": "sha256:f203398c6eb58abd",
+    "AC-725": "sha256:16746748b9a89485",
+    "AC-727": "sha256:87421ea12b582983"
   },
   "cases": [
     {
@@ -8946,6 +8953,181 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "検証レベル=integration は System Test の対象外。テストは先行作成済み。実装役が統合テストとして実行する"
+        }
+      ]
+    },
+    {
+      "id": "E2E-433",
+      "requirement_ids": [
+        "FR-278"
+      ],
+      "ac_ids": [
+        "AC-715"
+      ],
+      "title": "Copilot で分析実行の進行表示と案の表示",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-715",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-23T06:39:49+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-434",
+      "requirement_ids": [
+        "FR-279"
+      ],
+      "ac_ids": [
+        "AC-717"
+      ],
+      "title": "案は対象コンポーネントだけ・案なしの表示",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-717",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-23T06:39:52+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-435",
+      "requirement_ids": [
+        "FR-279"
+      ],
+      "ac_ids": [
+        "AC-718"
+      ],
+      "title": "案の AI 生成ラベルと現在のデータとの分離",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-718",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-23T06:39:59+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-436",
+      "requirement_ids": [
+        "FR-279"
+      ],
+      "ac_ids": [
+        "AC-719"
+      ],
+      "title": "案の編集の保持と破棄",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-719",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-23T06:40:02+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-437",
+      "requirement_ids": [
+        "FR-280"
+      ],
+      "ac_ids": [
+        "AC-721"
+      ],
+      "title": "案の反映と再読み込みでの復元",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-721",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-23T06:40:06+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-438",
+      "requirement_ids": [
+        "FR-282"
+      ],
+      "ac_ids": [
+        "AC-725"
+      ],
+      "title": "Foundry 接続設定の保存・変更・削除とキーボード操作",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-725",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-23T06:40:09+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-439",
+      "requirement_ids": [
+        "FR-283"
+      ],
+      "ac_ids": [
+        "AC-727"
+      ],
+      "title": "未設定での実行は呼び出し 0 回と設定への案内",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-727",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-23T06:40:13+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
         }
       ]
     }
