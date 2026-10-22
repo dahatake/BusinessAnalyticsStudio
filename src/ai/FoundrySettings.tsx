@@ -70,7 +70,7 @@ export function FoundrySettings() {
       <Text size={200}>
         この接続は、生成AI機能全般（「現状の説明」の生成と「生成AIの効果的な活用シナリオ」の分析）に共通で使います。
         Microsoft Foundry は有料サービスで、実接続を有効にすると利用に応じて費用が発生します。
-        有効にすると、ローカルの中継プロセスを通じて、現在画面に表示している課題・解決策・KPI/OKR の文章、および活用シナリオの分析で入力した解決策の文章が Foundry に送信されます。
+        有効にすると、ローカルの中継プロセスを通じて、現在画面に表示している課題・解決策・KPI/OKR の文章、活用シナリオの分析で入力した解決策の文章、およびチャットの質問・直近の履歴・顧客パックの根拠が Foundry に送信されます。
         接続情報は手元の中継プロセスが暗号化して保管し、設定したエンドポイント以外へは送りません。既定は無効です。
       </Text>
       <Text size={200}>接続情報の状態: <b data-testid="foundry-status">{configured ? '設定済み' : '未設定'}</b>
@@ -106,7 +106,7 @@ export function FoundrySettings() {
           <DialogBody>
             <DialogTitle>Foundry の実接続を有効にしますか</DialogTitle>
             <DialogContent>
-              Microsoft Foundry は有料サービスで、費用が発生します。有効にすると、現在画面に表示している課題・解決策・KPI/OKR の文章、および活用シナリオの分析で入力した解決策の文章が、ローカルの中継プロセスを通じて設定したエンドポイントに送信されます。
+              Microsoft Foundry は有料サービスで、費用が発生します。有効にすると、現在画面に表示している課題・解決策・KPI/OKR の文章、活用シナリオの分析で入力した解決策の文章、およびチャットの質問・直近の履歴・顧客パックの根拠が、ローカルの中継プロセスを通じて設定したエンドポイントに送信されます。
             </DialogContent>
             <DialogActions>
               <Button appearance="secondary" onClick={() => setConfirming(false)}>キャンセル</Button>

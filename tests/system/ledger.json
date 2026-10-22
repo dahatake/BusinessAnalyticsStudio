@@ -290,19 +290,26 @@
     "AC-690": "sha256:ae060af5d4a4546c",
     "AC-699": "sha256:519b0f76a5dc7268",
     "AC-702": "sha256:d47e7a5b9726eed6",
-    "AC-703": "sha256:83d7f0c8aee6f763",
+    "AC-703": "sha256:fb7e60e610671dca",
     "AC-712": "sha256:0e69695d5457cad9",
     "AC-713": "sha256:706deed685a6f99e",
     "AC-733": "sha256:416fb88a5cfaff0a",
-    "AC-739": "sha256:a8441c9dc7b54ba7",
-    "AC-740": "sha256:2450e8e383f93767",
-    "AC-725": "sha256:16746748b9a89485",
-    "AC-721": "sha256:f203398c6eb58abd",
-    "AC-719": "sha256:a64a1960271f4733",
-    "AC-718": "sha256:c402ee881c662b1c",
-    "AC-717": "sha256:99f0da860e85dff7",
-    "AC-727": "sha256:87421ea12b582983",
+    "AC-739": "sha256:a7892bd655cdf85a",
+    "AC-741": "sha256:2010ae0c69c02c30",
+    "AC-742": "sha256:802001b934592362",
+    "AC-743": "sha256:5fd42bc7f6828d5d",
+    "AC-744": "sha256:2fa248bce3f0b89b",
+    "AC-745": "sha256:792304841369fa02",
+    "AC-746": "sha256:9274749e736b2673",
+    "AC-747": "sha256:e644eaf2b9a013e9",
     "AC-715": "sha256:b1961835ab870c28",
+    "AC-717": "sha256:99f0da860e85dff7",
+    "AC-718": "sha256:c402ee881c662b1c",
+    "AC-719": "sha256:a64a1960271f4733",
+    "AC-721": "sha256:f203398c6eb58abd",
+    "AC-725": "sha256:16746748b9a89485",
+    "AC-727": "sha256:87421ea12b582983",
+    "AC-740": "sha256:2450e8e383f93767",
     "AC-737": "sha256:42d750bc2e4bf3fd",
     "AC-738": "sha256:24a432ee2b6b2941"
   },
@@ -1932,9 +1939,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "07cf8dd",
-      "last_run_at": "2026-10-23T00:22:39+09:00",
-      "evidence": "work/runs/202610222201/logs/system-test/E2E-162-202610230020.log",
+      "last_commit": "ab5972f",
+      "last_run_at": "2026-10-23T00:29:56+09:00",
+      "evidence": "work/runs/202610222205/logs/system-test/E2E-162-202610230029.log",
       "history": [
         {
           "at": "2026-10-12T14:07:28+09:00",
@@ -6257,9 +6264,9 @@
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat --workers=1",
       "canary": true,
       "status": "pass",
-      "last_commit": "07cf8dd",
-      "last_run_at": "2026-10-23T00:22:39+09:00",
-      "evidence": "work/runs/202610222201/logs/system-test/E2E-345-202610230022.log",
+      "last_commit": "ab5972f",
+      "last_run_at": "2026-10-23T00:29:56+09:00",
+      "evidence": "work/runs/202610222205/logs/system-test/E2E-345-202610230029.log",
       "history": [
         {
           "at": "2026-10-21T17:19:59+09:00",
@@ -6295,9 +6302,9 @@
       "command": "node tests/system/run.mjs AC-593",
       "canary": true,
       "status": "pass",
-      "last_commit": "8257dac",
-      "last_run_at": "2026-10-22T23:25:56+09:00",
-      "evidence": "work/runs/202610222200/logs/system-test/E2E-346-202610222322.log",
+      "last_commit": "ab5972f",
+      "last_run_at": "2026-10-23T00:29:56+09:00",
+      "evidence": "work/runs/202610222205/logs/system-test/E2E-346-202610230029.log",
       "history": [
         {
           "at": "2026-10-21T17:32:44+09:00",
@@ -6480,9 +6487,9 @@
       "command": "node tests/system/run.mjs AC-598",
       "canary": true,
       "status": "pass",
-      "last_commit": "8257dac",
-      "last_run_at": "2026-10-22T23:25:56+09:00",
-      "evidence": "work/runs/202610222200/logs/system-test/E2E-351-202610222322.log",
+      "last_commit": "ab5972f",
+      "last_run_at": "2026-10-23T00:29:56+09:00",
+      "evidence": "work/runs/202610222205/logs/system-test/E2E-351-202610230029.log",
       "history": [
         {
           "at": "2026-10-21T17:33:47+09:00",
@@ -8699,9 +8706,9 @@
       "command": "node tests/system/run.mjs AC-703",
       "canary": false,
       "status": "pass",
-      "last_commit": "8257dac",
-      "last_run_at": "2026-10-22T23:25:56+09:00",
-      "evidence": "work/runs/202610222200/logs/system-test/E2E-369-202610222324.log",
+      "last_commit": "ab5972f",
+      "last_run_at": "2026-10-23T00:29:56+09:00",
+      "evidence": "work/runs/202610222205/logs/system-test/E2E-369-202610230029.log",
       "history": [
         {
           "at": "2026-10-21T22:27:10+09:00",
@@ -9299,6 +9306,392 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "Copilot で分析実行（FR-278〜283）の画面・Foundry 接続の実装が未着手で、画面の場所・ラベルの実体が確定できないため spec 未作成。実装後に test-designer が spec を書いて unblock"
+        }
+      ]
+    },
+    {
+      "id": "E2E-377",
+      "requirement_ids": [
+        "FR-286"
+      ],
+      "ac_ids": [
+        "AC-741"
+      ],
+      "title": "AC-741 設定・有効・了承がそろうと /foundry/ask 1 回・Copilot 0 回で回答が出る。未設定・無効・了承なしは Foundry 0 回（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-741",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:20:04+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:21:10+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integration のため System Test の対象外（AC-741〜743・745〜747）。実装役の結合テストで検証する。差し替え部品の見本は chat-foundry.spec.ts（FR286_IT=1）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-378",
+      "requirement_ids": [
+        "FR-286"
+      ],
+      "ac_ids": [
+        "AC-742"
+      ],
+      "title": "AC-742 直近 5 組の履歴が時系列で渡り古い組は渡らない。上限超過は古い履歴から落とし旨を表示",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-742",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:20:07+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:21:10+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integration のため System Test の対象外（AC-741〜743・745〜747）。実装役の結合テストで検証する。差し替え部品の見本は chat-foundry.spec.ts（FR286_IT=1）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-379",
+      "requirement_ids": [
+        "FR-286"
+      ],
+      "ac_ids": [
+        "AC-743"
+      ],
+      "title": "AC-743 根拠と出典カード・AI 生成ラベル。根拠にない出典のカードは付かない（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-743",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:20:11+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:21:11+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integration のため System Test の対象外（AC-741〜743・745〜747）。実装役の結合テストで検証する。差し替え部品の見本は chat-foundry.spec.ts（FR286_IT=1）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-380",
+      "requirement_ids": [
+        "FR-286"
+      ],
+      "ac_ids": [
+        "AC-744"
+      ],
+      "title": "AC-744 標準条件（モック）で送信中・送信内容を確認・新しい会話が従来どおり動く（回帰）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-744",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "6c0503d",
+      "last_run_at": "2026-10-23T00:10:19+09:00",
+      "evidence": "work/runs/202610222205/logs/system-test/E2E-380-202610230008.log",
+      "history": [
+        {
+          "at": "2026-10-22T22:20:14+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-381",
+      "requirement_ids": [
+        "FR-286"
+      ],
+      "ac_ids": [
+        "AC-745"
+      ],
+      "title": "AC-745 送信中の二重送信不可・送信内容の確認・新しい会話で前の会話が渡らない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-745",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:20:17+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:21:13+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integration のため System Test の対象外（AC-741〜743・745〜747）。実装役の結合テストで検証する。差し替え部品の見本は chat-foundry.spec.ts（FR286_IT=1）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-382",
+      "requirement_ids": [
+        "FR-286"
+      ],
+      "ac_ids": [
+        "AC-746"
+      ],
+      "title": "AC-746 timeout・error・未確認・了承なし・中継停止の理由表示。別の送信先へ切り替えず再送信できる（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-746",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:20:20+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:21:14+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integration のため System Test の対象外（AC-741〜743・745〜747）。実装役の結合テストで検証する。差し替え部品の見本は chat-foundry.spec.ts（FR286_IT=1）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-383",
+      "requirement_ids": [
+        "FR-286"
+      ],
+      "ac_ids": [
+        "AC-747"
+      ],
+      "title": "AC-747 上限到達後は Foundry 0 回で理由表示。失敗も回数に数え、記録に文章を含まない（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-747",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T22:20:23+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T22:21:14+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integration のため System Test の対象外（AC-741〜743・745〜747）。実装役の結合テストで検証する。差し替え部品の見本は chat-foundry.spec.ts（FR286_IT=1）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-409",
+      "requirement_ids": [
+        "FR-278"
+      ],
+      "ac_ids": [
+        "AC-715"
+      ],
+      "title": "AC-715 Copilot で分析実行の進行表示と案の表示・通信先は localhost のみ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-715",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T23:08:40+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-410",
+      "requirement_ids": [
+        "FR-278"
+      ],
+      "ac_ids": [
+        "AC-717"
+      ],
+      "title": "AC-717 案はコンポーネントごと・案なしの表示",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-717",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T23:08:44+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-411",
+      "requirement_ids": [
+        "FR-279"
+      ],
+      "ac_ids": [
+        "AC-718"
+      ],
+      "title": "AC-718 案のラベルと現在データとの分離",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-718",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T23:08:48+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-412",
+      "requirement_ids": [
+        "FR-279"
+      ],
+      "ac_ids": [
+        "AC-719"
+      ],
+      "title": "AC-719 案の編集・レイアウト変更での保持・破棄",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-719",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T23:08:54+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-413",
+      "requirement_ids": [
+        "FR-280"
+      ],
+      "ac_ids": [
+        "AC-721"
+      ],
+      "title": "AC-721 反映と再読み込み後の復元",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-721",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T23:08:58+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-414",
+      "requirement_ids": [
+        "FR-282"
+      ],
+      "ac_ids": [
+        "AC-725"
+      ],
+      "title": "AC-725 Foundry 接続設定の保存・変更・削除とキーボード操作",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-725",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T23:09:02+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-415",
+      "requirement_ids": [
+        "FR-283"
+      ],
+      "ac_ids": [
+        "AC-727"
+      ],
+      "title": "AC-727 未設定での分析実行は呼び出し 0 回（異常系）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-727",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-22T23:09:07+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
         }
       ]
     }

@@ -127,6 +127,67 @@ export async function startFoundryRelayStub(mode: FoundryStubMode = 'ok'): Promi
   };
 }
 
+/**
+ * チャットの Foundry 送信（FR-286）の差し替え部品（中継プロセスの役）。本物の Foundry・Copilot は呼ばない。HTTP の形は CONTRACT.md §26。
+ * foundry: 'ready'（設定済みで有効）| 'not-configured'（未設定）| 'disabled'（設定済みだが無効）
+ * askMode: 'ok'（200 で {mode:'connected',answer}）| 'timeout' | 'error' | 'person-unconfirmed' | 'consent'（200 で {mode:'unavailable',reason,message}）
+ * Copilot の中継（POST /ask）は、呼ばれた回数を数え、固定の回答を返す（Foundry 送信のとき 0 回であることを確かめるため）。
+ */
+export type ChatFoundryAskMode = 'ok' | 'timeout' | 'error' | 'person-unconfirmed' | 'consent';
+export async function startChatFoundryStub(
+  opts: { foundry?: 'ready' | 'not-configured' | 'disabled'; askMode?: ChatFoundryAskMode; delayMs?: number } = {},
+): Promise<RelayStub & { foundryAskBodies(): string[]; copilotAskCount(): number; setAskMode(m: ChatFoundryAskMode): void }> {
+  const received: RelayStub['received'] = [];
+  const foundry = opts.foundry ?? 'ready';
+  let askMode: ChatFoundryAskMode = opts.askMode ?? 'ok';
+  let n = 0;
+  const server = http.createServer((req, res) => {
+    const cors = {
+      'access-control-allow-origin': req.headers.origin ?? '*',
+      'access-control-allow-headers': '*',
+      'access-control-allow-methods': 'GET,POST,PUT,DELETE,OPTIONS',
+    };
+    if (req.method === 'OPTIONS') { res.writeHead(204, cors); res.end(); return; }
+    let body = '';
+    req.on('data', (c) => (body += c));
+    req.on('end', () => {
+      const u = new URL(req.url ?? '/', 'http://127.0.0.1');
+      received.push({ method: req.method ?? '', path: u.pathname, body });
+      const json = (code: number, o: unknown) => { res.writeHead(code, { 'content-type': 'application/json; charset=utf-8', ...cors }); res.end(JSON.stringify(o)); };
+      if (u.pathname === '/health') return json(200, { status: 'ready', copilot: 'signed-in', foundry: { keyConfigured: foundry !== 'not-configured' } });
+      if (u.pathname === '/foundry/config') {
+        return json(200, foundry === 'not-configured'
+          ? { configured: false, endpoint: '', host: '', deployment: '', keyMask: '', enabled: false }
+          : { configured: true, endpoint: 'https://example.invalid/', host: 'example.invalid', deployment: 'dummy-deploy', keyMask: '••••0000', enabled: foundry === 'ready' });
+      }
+      if (u.pathname === '/foundry/connection') return json(200, { mode: 'connected' });
+      if (u.pathname === '/foundry/ask') {
+        const i = ++n;
+        const reply = () => {
+          if (askMode === 'ok') return json(200, { mode: 'connected', answer: `AMARKER${String(i).padStart(2, '0')}X Foundry 差し替え部品の回答です。` });
+          const messages: Record<string, string> = { timeout: 'Foundry がタイムアウトしました', error: 'Foundry がエラーを返しました', 'person-unconfirmed': '種別「人」の確認が済んでいません', consent: '顧客の了承の記録がありません' };
+          const reason = askMode === 'person-unconfirmed' ? 'person-unconfirmed' : askMode;
+          return json(200, { mode: 'unavailable', reason, message: messages[askMode] });
+        };
+        if (opts.delayMs) setTimeout(reply, opts.delayMs); else reply();
+        return;
+      }
+      if (u.pathname === '/ask') return json(200, { answer: 'Copilot 差し替え部品の回答です。', sourceIds: [] });
+      return json(404, { error: 'not found' });
+    });
+  });
+  await new Promise<void>((r) => server.listen(0, '127.0.0.1', r));
+  const port = (server.address() as AddressInfo).port;
+  return {
+    url: `http://127.0.0.1:${port}`,
+    received,
+    foundryAskBodies: () => received.filter((r) => r.path === '/foundry/ask').map((r) => r.body),
+    copilotAskCount: () => received.filter((r) => r.path === '/ask').length,
+    setAskMode: (m) => { askMode = m; },
+    close: () => new Promise<void>((r) => server.close(() => r())),
+  };
+}
+
 export async function startRelayStub(opts: { answer?: string; sourceIds?: string[]; delayMs?: number } = {}): Promise<RelayStub> {
   const received: RelayStub['received'] = [];
   const vault: FoundryVaultRef = { v: null };
