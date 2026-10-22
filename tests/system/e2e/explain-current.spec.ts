@@ -92,6 +92,11 @@ test.describe('FR-275 Microsoft Foundry の接続設定', () => {
     await expect(foundry).toContainText(/費用/);
     await expect(foundry).toContainText(/課題/);
     await expect(foundry).toContainText(/KPI/);
+    await expect(foundry).toContainText(/OKR/);
+    // AC-703（改訂）: チャットの質問・直近の履歴・顧客パックの根拠も送信される情報として示される
+    await expect(foundry).toContainText(/質問/);
+    await expect(foundry).toContainText(/履歴/);
+    await expect(foundry).toContainText(/根拠/);
 
     // ダミーのキーを保存すると「設定済み」だけが表示され、値は再表示されない
     const dummy = 'dummy-key-for-system-test-0000';

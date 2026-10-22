@@ -173,6 +173,11 @@
 - 追補（仕様変更 75285d8）: Enter は詳細カードの開閉でズームインしない（ズームインはダブルクリック・「拡大」ボタン・「+」。ダブルクリックはカードを開閉しない）。カードの主要な関係は `data-testid="card-relation"` で最大 5 件（PARAM-105）、超える分は文字「ほか N 件」。全画面は図にフォーカスして F キーでも入れる。Esc はカードが開いていればカードだけ閉じ、次の Esc で全画面終了。表の行で対象が塊に集約されて見えないときは、見える階層へ切り替えてからパンする。
 
 
+## 27. Copilot で分析実行・Copilot の案・Foundry 接続設定（FR-278〜283 AC-715・717・718・719・721・725・727。copilot-review.spec.ts が前提にする画面の探し方。run 202610222205）
+- 画面上部: button「Copilot で分析実行」。送信前の確認は role=alertdialog（button「送信する」）。進行中は `copilot-running`、未設定などの案内は `copilot-notice`。
+- 各コンポーネント `component-<key>`（table・issue-solution・memo など）の中: 現在のデータ `component-data`、案 `copilot-proposal`（文字「Copilot の案（AI 生成）」、編集欄 textbox、button「反映」「破棄」はコンポーネント内）。案が返らない・データがないコンポーネントは文字「案なし」。
+- 接続（差し替え部品 support/review-stub.ts）: ブラウザー → 中継の `POST /foundry/review`（body `{components:[{id,data}]}` → `{reviews:[{id,proposal}]}`）。設定は §25 の `foundry-settings`（認証方式の欄を含む）。未設定なら /foundry/review を呼ばない。
+
 ## 26. チャットの Foundry 送信（FR-286 AC-741〜747。chat-foundry.spec.ts が前提にする画面の探し方）
 - 差し替え部品: support/relay-stub.ts の startChatFoundryStub。GET /health（foundry.keyConfigured）・GET /foundry/config（configured・enabled）・POST /foundry/ask（body は askFoundry の req。応答は {mode:'connected',answer} か {mode:'unavailable',reason,message}）・POST /ask（Copilot の中継。呼ばれた回数を数える）。
 - チャット画面: 送信中は `chat-sending`、失敗の理由は `chat-error`（キーの値を含まない。上限・停止の理由も同じ）、古い履歴を落としたときは `chat-trim-notice`、button「送信内容を確認」で `chat-preview`（送る質問・履歴・根拠。Esc で閉じる）、button「新しい会話」で履歴を消す。回答は `chat-answer`（Foundry の回答には「AI 生成」と「Foundry」の表示）と `source-card`。送信中は button「送信」が disabled。失敗後の再送信は button「送信」（または「再送信」）。
