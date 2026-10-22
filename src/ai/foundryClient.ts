@@ -19,6 +19,12 @@ export type FoundryAskResult =
   | { mode: 'connected'; answer: string }
   | { mode: 'unavailable'; reason: FoundryUnavailableReason; message: string };
 
+/** 設定画面での有効化・無効化・保存・削除を、取り込み画面などへ知らせる（FR-289 AC-757/758: 古い状態のままにしない） */
+export const FOUNDRY_CHANGED_EVENT = 'foundry-config-changed';
+export function notifyFoundryChanged(): void {
+  if (typeof window !== 'undefined' && typeof window.dispatchEvent === 'function') window.dispatchEvent(new Event(FOUNDRY_CHANGED_EVENT));
+}
+
 type F = typeof fetch;
 const dflt: F = (u, i) => fetch(u, i);
 const NO_RELAY = '中継プロセスに届きませんでした。`npm run relay` で起動しているか確認してください';
@@ -42,6 +48,8 @@ export async function putFoundryConfig(
       method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(input),
     });
     const j = (await r.json()) as FoundryView & { error?: string };
+    if (r.ok) notifyFoundryChanged();
+    if (r.ok) notifyFoundryChanged();
     return r.ok ? { ok: true, view: j } : { ok: false, message: j.error ?? '保存できませんでした' };
   } catch {
     return { ok: false, message: NO_RELAY };
@@ -52,7 +60,8 @@ export async function deleteFoundryConfig(relayUrl: string, packId: string, f: F
   if (!isLoopbackUrl(relayUrl)) return null;
   try {
     const r = await f(`${relayUrl}/foundry/config?packId=${encodeURIComponent(packId)}`, { method: 'DELETE' });
-    return r.ok ? ((await r.json()) as FoundryView) : null;
+        if (r.ok) notifyFoundryChanged();
+        return r.ok ? ((await r.json()) as FoundryView) : null;
   } catch {
     return null;
   }
@@ -67,7 +76,8 @@ export async function setFoundryConnection(
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ packId, enable, ...opt }),
     });
     const j = (await r.json()) as { mode?: 'connected' | 'mock'; error?: string };
-    return { ok: r.ok, mode: j.mode ?? 'mock', message: j.error };
+        if (r.ok) notifyFoundryChanged();
+        return { ok: r.ok, mode: j.mode ?? 'mock', message: j.error };
   } catch {
     return { ok: false, mode: 'mock', message: NO_RELAY };
   }
