@@ -306,7 +306,7 @@
 | FR-284 | 画面「生成AIの効果的な活用シナリオの分析」と [分析実行] | 承認済み | src/genai/scenario.ts, src/screens/GenAiScenarioScreen.tsx | tests/system/CONTRACT.md, tests/system/e2e/genai-scenario.spec.ts, tests/system/support/relay-stub.ts, tests/unit/genai-scenario.test.ts, tests/unit/genai-screen.test.tsx, tests/unit/view-switch.test.tsx | - |
 | FR-285 | 生成AIの活用分析の Foundry 実接続の切替 | 承認済み | .env.example, src/genai/GenAiSettings.tsx, src/genai/foundryClient.ts, src/genai/scenario.ts, src/genai/useGenAi.ts, src/screens/GenAiScenarioScreen.tsx | tests/system/CONTRACT.md, tests/system/e2e/genai-scenario.spec.ts, tests/system/support/relay-stub.ts, tests/unit/genai-scenario.test.ts, tests/unit/genai-screen.test.tsx | - |
 | FR-288 | 外部ファイルの取り込み・書き出しの対応形式のガイド | 承認済み | users-guide/04-import-export-formats.md (対応形式の一覧), users-guide/README.md (索引の行) | tests/system/e2e/import-export-guide.spec.ts (IT-077, IT-078, IT-079) | なし |
-| FR-289 | 生成 AI（Microsoft Foundry）による AI 取り込み | 承認済み | 未実装 | 未実装 | - |
+| FR-289 | 生成 AI（Microsoft Foundry）による AI 取り込み | 承認済み | src/ai/AiImport.tsx, src/ai/aiImportLogic.ts, src/screens/DataCatalogScreen.tsx, scripts/relay/relay.ts, scripts/relay/foundry.ts, scripts/relay/foundry-vault.ts, src/ai/FoundrySettings.tsx, users-guide/04-import-export-formats.md | tests/unit/ai-import.test.ts (AC-757, AC-758, AC-759, AC-760) | Foundry 接続部品 |
 ## API・イベント
 
 | 名前 | 定義ファイル | 関連する要求 ID |
@@ -319,6 +319,7 @@
 | GET・PUT・DELETE /speech/config（中継プロセス。値は返さず設定済みと伏せ字だけ） | scripts/relay/relay.ts | FR-168, NFR-SEC-005 |
 | POST /speech/synthesize（中継プロセス。保存済みの接続先へだけ中継） | scripts/relay/relay.ts | FR-168, NFR-SEC-005 |
 | GET・PUT・DELETE /foundry/config・POST /foundry/connection・POST /foundry/ask（中継プロセス。値は返さず設定済みと伏せ字だけ。了承・有効・設定がそろわないと呼び出し 0 回） | scripts/relay/relay.ts | FR-275, NFR-SEC-005 |
+| POST /foundry/import（中継プロセス。AI 取り込み。了承・有効・設定・送信前の確認・大きさ上限（PARAM-125）がそろわないと呼び出し 0 回。応答にキーは含めない） | scripts/relay/relay.ts | FR-289, NFR-SEC-012 |
 
 ## テーブル
 
@@ -382,7 +383,7 @@
 | 顧客の了承の記録 | src/ai/consent.ts, src/ai/useConsent.ts, src/ai/ConsentSettings.tsx, scripts/pipeline/consent.ts | 案件（企業・Project）ごとの了承の自己申告の記録（個人名・連絡先は保存しない）。実接続・パイプラインの実調査の条件。consent.json の書き出し（buildConsentExport）と置き場所の案内 | FR-132、FR-181、FR-182、FR-203、FR-219 |
 | 種別「人」の確認 | src/ai/personConfirm.ts, src/ai/PersonConfirmDialog.tsx | 種別「人」を含む顧客パックの外部送信・エクスポート前の確認（gatePersonConfirm: 件数・範囲・確認日の表示、了承なしは続行不可、同じ内容・了承の記録の間は続行を引き継ぐ）。確認の画面は共通の Dialog を使う | FR-219 |
 | 音声・手書き認識の実接続部品 | scripts/relay/azure-services.ts, src/ai/azureClient.ts, src/ai/useAzure.ts, src/ai/AzureSettings.tsx | Azure AI Speech・Azure AI Vision への接続（呼ぶ主体は中継プロセス。キーは中継側の .env のみ）。HTTP は `HttpPost` で差し替え可。キー未設定・無効・了承なしはモック | FR-182 |
-| Foundry 接続部品 | scripts/relay/foundry-vault.ts, scripts/relay/foundry.ts, src/ai/foundryClient.ts, src/ai/FoundrySettings.tsx | Microsoft Foundry（OpenAI 互換 Responses API）の接続情報を AES-256-GCM で暗号化して PC 内に保管し、中継プロセスだけが設定したエンドポイントへ送る（リダイレクトは追わない）。画面は伏せ字と「設定済み」だけ。了承・有効・設定がそろわないと 0 回。差し替え口は foundryFetch | FR-275 |
+| Foundry 接続部品 | scripts/relay/foundry-vault.ts, scripts/relay/foundry.ts, src/ai/foundryClient.ts, src/ai/FoundrySettings.tsx, src/ai/aiImportLogic.ts | Microsoft Foundry（OpenAI 互換 Responses API）の接続情報を AES-256-GCM で暗号化して PC 内に保管し、中継プロセスだけが設定したエンドポイントへ送る（リダイレクトは追わない）。画面は伏せ字と「設定済み」だけ。了承・有効・設定がそろわないと 0 回。差し替え口は foundryFetch・foundryToken（Entra ID 方式）。ファイルの送信（AI 取り込み）も同じ口を使う | FR-275, FR-289 |
 | 音声キーの保管庫 | scripts/relay/speech-vault.ts, src/speech/relayKey.ts | 音声合成のキーを AES-256-GCM で暗号化して PC 内（リポジトリの外）に保管。マスター鍵は OS の鍵保護（DPAPI / Keychain / secret-tool。KeyProtector）でラップし、Windows は icacls で現在ユーザーのみに絞る。ブラウザーには平文を置かず、取得は設定済みと伏せ字だけ | FR-168, NFR-SEC-005 |
 | 顧客パックのスキーマと検証 | src/schema/common.ts, src/schema/files.ts, src/schema/world.ts, src/schema/graph.ts, src/schema/validate.ts, src/schema/anonymize.ts, scripts/lib/pack-fs.ts | zod のスキーマ、ID の一意・参照・出典の検証、internal の匿名化（anonymizeInternal、A-08）と件数（countInternal。機密確認の画面が使う）。画面の部品を参照しない。schema の JSON は npm run gen:schema で生成 | FR-002, FR-003, FR-005, FR-006, FR-007, FR-018, FR-019, FR-038, FR-054, FR-100, FR-102, FR-114, FR-115, FR-116, FR-117, FR-118, FR-119, FR-125, FR-126, FR-127, NFR-MAINT-001, NFR-SEC-003, FR-043, FR-039, FR-040, FR-030, FR-213, FR-214, FR-235, FR-241 |
 | 意味的ズーム | src/semanticzoom/model.ts, src/semanticzoom/ZoomBreadcrumb.tsx, src/semanticzoom/index.ts, src/semanticzoom/ZoomKit.tsx | 全体→要素（D 段）→詳細の D+2 階層のモデル（zoomDepthCount・kindOfDepth・stepDepth・depthOfScale。倍率の判定は three/lod.ts のヒステリシスを再利用）とパンくず（ZoomBreadcrumb）、data-zoom-level 等の属性（zoomAttrs）。画面の部品は参照しない。画面側の共通部品 ZoomKit（ZoomBar・ZoomClusters・ZoomDetail・useZoomRootAttrs）が、拡大・縮小・全体表示に戻す・一つ上の階層へのボタンと塊・詳細の枠を同じ属性で出す | FR-169, FR-236, FR-237, FR-238, FR-239, FR-240, FR-245, NFR-A11Y-010 |

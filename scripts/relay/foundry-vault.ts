@@ -12,19 +12,22 @@ export interface FoundrySettingsView {
   endpoint: string;
   host: string;
   deployment: string;
+  /** 認証方式（FR-282）。API キー方式は 'api-key'、Microsoft Entra ID 方式は 'entra' */
+  authMode: AuthMode;
   /** 伏せ字。値そのものは返さない */
   keyMask: string;
 }
 
-interface Stored { endpoint: string; deployment: string; key: string }
+export type AuthMode = 'api-key' | 'entra';
+interface Stored { endpoint: string; deployment: string; key: string; authMode?: AuthMode }
 
 export interface FoundryVault {
   view(): FoundrySettingsView;
   /** key を省略すると、保存済みのキーを変えずにエンドポイント・デプロイ名だけ更新する */
-  save(input: { endpoint: string; deployment: string; key?: string }): FoundrySettingsView;
+  save(input: { endpoint: string; deployment: string; key?: string; authMode?: AuthMode }): FoundrySettingsView;
   remove(): void;
   /** 接続先へ送るための値。中継の内部だけで使う */
-  secret(): { endpoint: string; deployment: string; key: string } | null;
+  secret(): { endpoint: string; deployment: string; key: string; authMode: AuthMode } | null;
 }
 
 export function openFoundryVault(dataDir: string = defaultDataDir(), opts: VaultOptions = {}): FoundryVault {
@@ -73,10 +76,11 @@ export function openFoundryVault(dataDir: string = defaultDataDir(), opts: Vault
     harden(dataFile, false);
   };
   const toView = (s: Stored | null): FoundrySettingsView => {
-    if (!s || !s.key) return { configured: false, endpoint: s?.endpoint ?? '', host: '', deployment: s?.deployment ?? '', keyMask: '' };
+    const authMode: AuthMode = s?.authMode === 'entra' ? 'entra' : 'api-key';
+    if (!s || (authMode === 'api-key' && !s.key)) return { configured: false, endpoint: s?.endpoint ?? '', host: '', deployment: s?.deployment ?? '', authMode, keyMask: '' };
     let host = '';
     try { host = new URL(s.endpoint).host; } catch { /* 空のまま */ }
-    return { configured: !!host && !!s.deployment, endpoint: s.endpoint, host, deployment: s.deployment, keyMask: maskKey(s.key) };
+    return { configured: !!host && !!s.deployment, endpoint: s.endpoint, host, deployment: s.deployment, authMode, keyMask: authMode === 'entra' || !s.key ? '' : maskKey(s.key) };
   };
 
   return {
@@ -86,16 +90,18 @@ export function openFoundryVault(dataDir: string = defaultDataDir(), opts: Vault
       const deployment = input.deployment.trim();
       if (!deployment) throw new Error('デプロイ名を入力してください');
       const cur = load();
-      const key = input.key !== undefined && input.key.trim() !== '' ? input.key.trim() : cur?.key;
-      if (!key) throw new Error('API キーを入力してください');
-      const next: Stored = { endpoint: input.endpoint.trim(), deployment, key };
+      const authMode: AuthMode = input.authMode === 'entra' ? 'entra' : 'api-key';
+      const key = authMode === 'entra' ? '' : input.key !== undefined && input.key.trim() !== '' ? input.key.trim() : cur?.key;
+      if (authMode === 'api-key' && !key) throw new Error('API キーを入力してください');
+      const next: Stored = { endpoint: input.endpoint.trim(), deployment, key: key ?? '', authMode };
       store(next);
       return toView(next);
     },
     remove() { fs.rmSync(dataFile, { force: true }); },
     secret() {
       const s = load();
-      return s && s.key && s.deployment && isAllowedEndpoint(s.endpoint) ? { endpoint: s.endpoint, deployment: s.deployment, key: s.key } : null;
+      const authMode: AuthMode = s?.authMode === 'entra' ? 'entra' : 'api-key';
+      return s && (authMode === 'entra' || s.key) && s.deployment && isAllowedEndpoint(s.endpoint) ? { endpoint: s.endpoint, deployment: s.deployment, key: s.key, authMode } : null;
     },
   };
 }

@@ -20,6 +20,7 @@ export function FoundrySettings() {
   const [endpoint, setEndpoint] = useState('');
   const [deployment, setDeployment] = useState('');
   const [key, setKey] = useState('');
+  const [authMode, setAuthMode] = useState<'api-key' | 'entra'>('api-key');
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
   const [confirming, setConfirming] = useState(false);
 
@@ -28,7 +29,7 @@ export function FoundrySettings() {
     void fetchFoundryView(relayUrl, packId).then((v) => {
       if (!alive) return;
       setView(v);
-      if (v) { setEndpoint(v.endpoint); setDeployment(v.deployment); }
+      if (v) { setEndpoint(v.endpoint); setDeployment(v.deployment); setAuthMode(v.authMode === 'entra' ? 'entra' : 'api-key'); }
     });
     return () => { alive = false; };
   }, [relayUrl, packId]);
@@ -41,7 +42,7 @@ export function FoundrySettings() {
   }, [granted, view?.enabled, relayUrl, packId]);
 
   const save = async () => {
-    const r = await putFoundryConfig(relayUrl as string, packId, { endpoint, deployment, key });
+    const r = await putFoundryConfig(relayUrl as string, packId, { endpoint, deployment, key, authMode });
     setKey('');
     if (r.ok) { setView(r.view); setResult({ ok: true, text: '接続情報を保存しました（API キーは画面に再表示しません）。' }); }
     else setResult({ ok: false, text: `保存できませんでした。${r.message}` });
@@ -75,7 +76,7 @@ export function FoundrySettings() {
       <Text size={200}>接続情報の状態: <b data-testid="foundry-status">{configured ? '設定済み' : '未設定'}</b>
         {configured ? `（送信先: ${view?.host}）` : null}
       </Text>
-      {configured ? <Text size={200} data-testid="foundry-key-mask">API キー: 設定済み（{view?.keyMask}）</Text> : null}
+      {configured && view?.authMode !== 'entra' ? <Text size={200} data-testid="foundry-key-mask">API キー: 設定済み（{view?.keyMask}）</Text> : null}
       <form data-testid="foundry-form" onSubmit={(e) => { e.preventDefault(); void save(); }} style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS }}>
         <Field label="エンドポイント">
           <Input value={endpoint} aria-label="エンドポイント" onChange={(_, d) => setEndpoint(d.value)} />
@@ -83,8 +84,14 @@ export function FoundrySettings() {
         <Field label="デプロイ名">
           <Input value={deployment} aria-label="デプロイ名" onChange={(_, d) => setDeployment(d.value)} />
         </Field>
+        <Field label="認証方式" hint="Microsoft Entra ID を選ぶと API キーは不要です（サインイン中の資格情報で中継プロセスが接続します）。">
+          <select aria-label="認証方式" value={authMode} onChange={(e) => setAuthMode(e.target.value === 'entra' ? 'entra' : 'api-key')}>
+            <option value="api-key">API キー</option>
+            <option value="entra">Microsoft Entra ID</option>
+          </select>
+        </Field>
         <Field label="API キー" hint="入力したキーは手元の中継プロセスが暗号化して保管します。保存後は再表示しません。変更するときは新しいキーを入れて保存してください。">
-          <Input type="password" value={key} aria-label="API キー" autoComplete="off" onChange={(_, d) => setKey(d.value)} />
+          <Input type="password" value={key} disabled={authMode === 'entra'} aria-label="API キー" autoComplete="off" onChange={(_, d) => setKey(d.value)} />
         </Field>
         <div style={{ display: 'flex', gap: tokens.spacingHorizontalS }}>
           <Button type="submit" appearance="primary" aria-label="Foundry の接続情報を保存">保存</Button>
