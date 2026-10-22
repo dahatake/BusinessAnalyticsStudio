@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 // FR-245〜248 Graph の描画面の操作（パン・拡大縮小・全画面・詳細カード・表の行からの移動）の単体・結合テスト。
 // 期待値は docs/requirements/graph-twin.md の AC-593〜601 と PARAM-057（1.25）・PARAM-087（0.25〜4）・PARAM-088（40px）・PARAM-105（5 件）。
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { FluentProvider, webLightTheme } from '@fluentui/react-components';
 import { GraphSurface, type GraphEdgeIn, type GraphNodeIn } from '../../src/components/GraphSurface';
 import { GraphAlt } from '../../src/components/GraphAlt';
+import { whenSettled } from '../../src/components/GraphViewport';
 import { GRAPH_VIEW_INIT, requestGraphFocus, useGraphViewStore } from '../../src/components/graphViewStore';
 import { useSelectionStore } from '../../src/store/selection';
 
@@ -69,6 +70,21 @@ describe('FR-245〜248 Graph の描画面の操作', () => {
     expect(document.querySelectorAll('[data-zoom-cluster]').length).toBe(2);
     fireEvent.click(btn('拡大'));
     expect(document.querySelectorAll('[data-testid="graph-node"]').length).toBe(8);
+  });
+
+  // FR-245 AC-594: 「全体に戻す」の直後に全ノードが面に収まる（拡大の動きの途中の位置を残さない。動きのトランジションを止めて即時に戻す）
+  it('FR-245 AC-594 拡大の動きの途中で「全体表示に戻す」を押しても、動きを止めて即時に全体表示に戻る', () => {
+    const content = () => document.querySelector('[data-zoom-surface="graph"] [style*="transform"]') as HTMLElement;
+    fireEvent.click(btn('全体表示に戻す'));
+    const still = content().className;
+    fireEvent.click(btn('拡大'));
+    expect(content().className, '拡大は動きのトランジションを付ける').not.toBe(still);
+    fireEvent.click(btn('全体表示に戻す'));
+    expect(content().className, '全体表示に戻すは動きを付けない').toBe(still);
+    expect([num('data-pan-x'), num('data-pan-y'), num('data-scale')]).toEqual([0, 0, 1]);
+    fireEvent.click(btn('拡大'));
+    fireEvent.keyDown(surface(), { key: '0' });
+    expect(content().className, '0 キーの全体表示も動きを付けない').toBe(still);
   });
 
   it('FR-245 AC-594 ホイールとピンチ（Ctrl＋ホイール）で拡大縮小できる', () => {
@@ -169,5 +185,40 @@ describe('FR-245〜248 Graph の描画面の操作', () => {
     expect(node('k1').getAttribute('data-row-highlight')).toBeNull();
     requestGraphFocus('other-origin', 'k1');
     expect(node('k1').getAttribute('data-row-highlight')).toBeNull();
+  });
+});
+
+// FR-248 AC-600: 表の行からの移動は、階層の切替・拡大縮小の動きが落ち着いてから対象の位置を測る（動きの途中の位置でパンの量を決めない）
+describe('FR-248 AC-600 whenSettled（位置が落ち着いてから測る）', () => {
+  afterEach(() => vi.unstubAllGlobals());
+  const frames = () => {
+    const q: FrameRequestCallback[] = [];
+    vi.stubGlobal('requestAnimationFrame', (f: FrameRequestCallback) => { q.push(f); return q.length; });
+    return { step: () => { const f = q.shift(); f?.(0); return !!f; } };
+  };
+
+  it('FR-248 AC-600 位置が動いている間は待ち、2 フレーム続けて同じ位置になってから呼ぶ', () => {
+    const f = frames();
+    const xs = [100, 80, 60, 50, 50, 50, 50];
+    let i = 0;
+    const el = document.createElement('div');
+    el.getBoundingClientRect = () => ({ left: xs[Math.min(i++, xs.length - 1)], top: 0, width: 10, height: 10 }) as DOMRect;
+    let called = 0;
+    whenSettled(el, () => { called = i; });
+    while (f.step()) { /* フレームを進める */ }
+    expect(called, '動いている途中で呼んだ').toBeGreaterThanOrEqual(6);
+  });
+
+  it('FR-248 AC-600 落ち着かないときも上限のフレーム数で打ち切って呼ぶ', () => {
+    const f = frames();
+    let x = 0;
+    const el = document.createElement('div');
+    el.getBoundingClientRect = () => ({ left: (x += 5), top: 0, width: 10, height: 10 }) as DOMRect;
+    let called = false;
+    whenSettled(el, () => { called = true; }, 10);
+    let n = 0;
+    while (f.step()) n++;
+    expect(called).toBe(true);
+    expect(n).toBe(11);
   });
 });
