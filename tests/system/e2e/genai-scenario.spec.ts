@@ -95,42 +95,150 @@ test.describe('FR-284 生成AIの効果的な活用シナリオの分析（画�
 });
 
 test.describe('FR-285 Foundry 実接続の切替と失敗時の代替（差し替え部品）', () => {
-  /** 実接続を有効にする（設定の画面。了承の記録 → 有効化の確認）。キーは差し替え部品の /health が「設定済み」を返すことで表す */
+  /** 共通接続の設定パネル（FR-275。設定の中で 1 つだけ） */
+  const COMMON_PANEL = 'Microsoft Foundry（生成AI機能の共通接続）';
+  const DUMMY_KEY = 'dummy-key-for-system-test-0000';
+
+  /** 共通接続を保存する（ダミーのキー。保管庫は差し替え部品の /foundry/config） */
+  async function saveCommonConnection(page: Page, endpoint = 'https://dummy.services.ai.azure.com/openai/v1', deployment = 'dummy-deploy'): Promise<Locator> {
+    const settings = await openScreen(page, 'settings');
+    const region = settings.getByRole('region', { name: COMMON_PANEL });
+    await region.getByRole('textbox', { name: 'エンドポイント', exact: true }).fill(endpoint);
+    await region.getByRole('textbox', { name: 'デプロイ名', exact: true }).fill(deployment);
+    await region.getByLabel(/API キー/).fill(DUMMY_KEY);
+    await region.getByRole('button', { name: /保存/ }).first().click();
+    await expect(region.getByText('設定済み').first()).toBeVisible();
+    return region;
+  }
+
+  /** 実接続を有効にする（設定の画面。共通接続の保存 → 了承の記録 → 有効化の確認） */
   async function enableRealConnection(page: Page): Promise<void> {
     await recordExportConsent(page);
-    const settings = await openScreen(page, 'settings');
-    const region = settings.getByRole('region', { name: '生成AIの活用分析の接続' });
-    await region.getByRole('switch', { name: '実接続を有効にする' }).click();
+    const region = await saveCommonConnection(page);
+    await region.getByRole('switch', { name: '実接続を有効にする', exact: true }).click();
     const confirm = page.getByRole('alertdialog').or(page.getByRole('dialog').filter({ hasText: /有料/ })).last();
     await confirm.getByRole('button', { name: /有効にする|同意|続行/ }).click();
-    await expect(region.getByRole('switch', { name: '実接続を有効にする' })).toBeChecked();
+    await expect(region.getByRole('switch', { name: '実接続を有効にする', exact: true })).toBeChecked();
     await closeSettings(page);
   }
 
   // FR-285 AC-739（設定画面の表示）
-  test('FR-285 AC-739 設定画面に、有料サービスの旨・送信される情報の種類・実接続の有効化（既定は無効）が出て、キーの値は出ない', async ({ page, start }) => {
+  test('FR-285 AC-739 設定画面の Foundry の設定パネルは共通接続の 1 つだけで、独自の設定パネル・エンドポイント・デプロイ名・実接続スイッチはなく、有料・送信情報・実接続の既定無効が出て、キーの値は出ない', async ({ page, start }) => {
     const relay = await startFoundryRelayStub('ok');
     try {
       await start({ relayUrl: relay.url });
       const settings = await openScreen(page, 'settings');
-      const region = settings.getByRole('region', { name: '生成AIの活用分析の接続' });
+      const region = settings.getByRole('region', { name: COMMON_PANEL });
+      await expect(region).toHaveCount(1);
       await expect(region).toBeVisible();
+      // 設定パネルは 1 つ: 旧「生成AIの効果的な活用シナリオの分析（Microsoft Foundry）」の独自パネル・旧の区画名はない
+      await expect(settings.getByRole('region', { name: '生成AIの活用分析の接続' })).toHaveCount(0);
+      await expect(settings.getByRole('region', { name: /生成AIの効果的な活用シナリオの分析（Microsoft Foundry）/ })).toHaveCount(0);
+      await expect(settings.getByRole('heading', { name: /生成AIの効果的な活用シナリオの分析（Microsoft Foundry）/ })).toHaveCount(0);
+      await expect(settings.getByTestId('foundry-settings')).toHaveCount(1);
+      // Foundry の「エンドポイント」「デプロイ名」の入力欄と実接続スイッチは設定全体で 1 組だけ（独自の欄が別にない）
+      await expect(settings.getByRole('textbox', { name: 'エンドポイント', exact: true })).toHaveCount(1);
+      await expect(settings.getByRole('textbox', { name: 'デプロイ名', exact: true })).toHaveCount(1);
+      await expect(settings.getByRole('switch', { name: '実接続を有効にする', exact: true })).toHaveCount(1);
+      // 説明文は、画面の文章を Foundry に送る機能すべてに共通であることを示す
+      await expect(region).toContainText(/共通/);
+      await expect(region).toContainText(/現状の説明/);
+      await expect(region).toContainText(/活用シナリオ/);
       await expect(region).toContainText(/有料/);
       await expect(region).toContainText(/費用/);
       await expect(region).toContainText(/送信/);
       await expect(region).toContainText(/解決策/);
       await expect(region).toContainText(/課題/);
-      const sw = region.getByRole('switch', { name: '実接続を有効にする' });
+      const sw = region.getByRole('switch', { name: '実接続を有効にする', exact: true });
       await expect(sw).toBeVisible();
       await expect(sw).not.toBeChecked();
       // 既定のエンドポイントとデプロイ名が見え、変更できる（FR-285）
-      await expect(region.getByRole('textbox', { name: 'エンドポイント' })).toHaveValue('https://GraphcRecordingPanel.services.ai.azure.com/openai/v1');
-      await expect(region.getByRole('textbox', { name: 'デプロイ名' })).toHaveValue('gpt-chat-latest');
+      await expect(region.getByRole('textbox', { name: 'エンドポイント', exact: true })).toHaveValue('https://GraphcRecordingPanel.services.ai.azure.com/openai/v1');
+      await expect(region.getByRole('textbox', { name: 'デプロイ名', exact: true })).toHaveValue('gpt-chat-latest');
       // キーの値は出さない（入力欄・表示・ページ全体）。環境変数名だけの説明は許す
-      await expect(region.getByRole('textbox', { name: /キー/ })).toHaveCount(0);
       const html = await page.content();
-      expect(html).not.toMatch(/FOUNDRY_API_KEY\s*[=:]\s*\S{8,}/);
+      expect(html).not.toMatch(/FOUNDRY_API_KEY/);
       expect(html).not.toMatch(/\bsk-[A-Za-z0-9]{16,}/);
+    } finally {
+      await relay.close();
+    }
+  });
+
+  // FR-285 AC-737・AC-738・AC-739（共通接続の保存と有効化 → 分析要求は packId・solution だけ。endpoint・deployment は body に無い）
+  test('FR-285 AC-739 AC-738 共通接続を保存して有効にすると、[分析実行] の中継要求の body は packId と solution だけで、endpoint・deployment・キーを含まない', async ({ page, start }) => {
+    const relay = await startFoundryRelayStub('ok');
+    try {
+      await start({ relayUrl: relay.url });
+      await openNewProject(page, '合成株式会社A', 'Project A');
+      await enableRealConnection(page);
+      expect(relay.vault.v?.enabled, '共通接続の有効化が中継（/foundry/connection）へ伝わっていない').toBe(true);
+      await openScreen(page, SCREEN_KEY);
+      const screen = screenOf(page);
+      await screen.getByRole('textbox', { name: /解決策/ }).fill('問い合わせメールの大量の文章を要約し、担当部署へ振り分ける。');
+      await screen.getByRole('button', { name: '分析実行' }).click();
+      await continuePersonConfirm(page, () => false, 1500);
+      await expect(screen.getByRole('region', { name: '分析結果' })).toBeVisible();
+      await expect.poll(() => relay.modelCalls).toBe(1);
+      const calls = relay.received.filter((r) => r.path === '/foundry/analyze');
+      expect(calls).toHaveLength(1);
+      const body = JSON.parse(calls[0].body) as Record<string, unknown>;
+      expect(Object.keys(body).sort()).toEqual(['packId', 'solution']);
+      expect(calls[0].body).not.toContain(DUMMY_KEY);
+      expect(calls[0].body).not.toMatch(/endpoint|deployment|dummy-deploy|dummy\.services/);
+      // キーの値は画面にも出ない
+      await expect(page.locator('body')).not.toContainText(DUMMY_KEY);
+      expect(await page.content()).not.toContain(DUMMY_KEY);
+    } finally {
+      await relay.close();
+    }
+  });
+
+  // FR-285 AC-737（異常系: 共通接続が未設定・保存しただけで無効のとき、外部（モデル）へ 0 回で、モックの結果が出る）
+  test('FR-285 AC-739 AC-737 共通接続が未設定、または保存しただけで無効のとき、[分析実行] はモックで動作し、分析要求は 0 回', async ({ page, start }) => {
+    const relay = await startFoundryRelayStub('ok');
+    try {
+      await start({ relayUrl: relay.url });
+      await openNewProject(page, '合成株式会社A', 'Project A');
+      await recordExportConsent(page);
+      // (1) 未設定
+      await openScreen(page, SCREEN_KEY);
+      const screen = screenOf(page);
+      await screen.getByRole('textbox', { name: /解決策/ }).fill('毎月の請求金額を計算する。');
+      await screen.getByRole('button', { name: '分析実行' }).click();
+      await expect(screen.getByRole('region', { name: '分析結果' })).toBeVisible();
+      expect(analyzeCalls(relay), '未設定なのに分析要求が送られた').toBe(0);
+      // (2) 保存したが有効にしない
+      await saveCommonConnection(page);
+      await closeSettings(page);
+      await openScreen(page, SCREEN_KEY);
+      await screenOf(page).getByRole('button', { name: '分析実行' }).click();
+      await expect(screenOf(page).getByRole('region', { name: '分析結果' })).toBeVisible();
+      expect(analyzeCalls(relay), '無効なのに分析要求が送られた').toBe(0);
+      expect(relay.modelCalls).toBe(0);
+    } finally {
+      await relay.close();
+    }
+  });
+
+  // FR-285 AC-738（共通接続を無効に戻すと、分析は再びモック。FR-274 と FR-284 は同じスイッチ）
+  test('FR-285 AC-739 AC-737 共通接続の有効化を切ると、次の [分析実行] は外部へ送られずモックに戻る', async ({ page, start }) => {
+    const relay = await startFoundryRelayStub('ok');
+    try {
+      await start({ relayUrl: relay.url });
+      await openNewProject(page, '合成株式会社A', 'Project A');
+      await enableRealConnection(page);
+      const settings = await openScreen(page, 'settings');
+      const sw = settings.getByRole('region', { name: COMMON_PANEL }).getByRole('switch', { name: '実接続を有効にする', exact: true });
+      await sw.click();
+      await expect(sw).not.toBeChecked();
+      await closeSettings(page);
+      expect(relay.vault.v?.enabled).toBe(false);
+      await openScreen(page, SCREEN_KEY);
+      const screen = screenOf(page);
+      await screen.getByRole('textbox', { name: /解決策/ }).fill('毎月の請求金額を計算する。');
+      await screen.getByRole('button', { name: '分析実行' }).click();
+      await expect(screen.getByRole('region', { name: '分析結果' })).toBeVisible();
+      expect(analyzeCalls(relay)).toBe(0);
     } finally {
       await relay.close();
     }

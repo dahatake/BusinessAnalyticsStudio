@@ -8,7 +8,7 @@ import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { AZURE_FEATURES, MAX_IMAGE_BASE64_CHARS, MAX_SPEECH_TEXT_CHARS, isValidBase64, isValidStrokeCount, AzureServiceError, type AzureFeature, type AzureServices } from './azure-services';
 import { openSpeechVault, type SpeechVault } from './speech-vault';
-import { CAUSE_STATUS, FoundryError as GenAiFoundryError, type FoundryService } from './genai-foundry';
+import { CAUSE_STATUS, createFoundryService, FoundryError as GenAiFoundryError, type FoundryService } from './genai-foundry';
 import { openFoundryVault, type FoundryVault } from './foundry-vault';
 import { callFoundry, FoundryError } from './foundry';
 
@@ -26,7 +26,7 @@ export interface RelayOptions {
   sdk: CopilotSdk | null;
   /** 音声合成・手書き認識の接続部品（FR-182）。なければ常にモック */
   azure?: AzureServices;
-  /** 生成AIの活用分析の Foundry 接続部品（FR-285）。なければ /foundry/analyze はキー未設定として答える */
+  /** 生成AIの活用分析の Foundry 接続部品（FR-285）の差し替え口。省略すると既定（共通接続の保管庫の値で、foundryFetch・foundryTimeoutMs を使って呼ぶ） */
   foundry?: FoundryService;
   host?: string;
   port?: number;
@@ -97,6 +97,7 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
   const getFoundry = (): FoundryVault => (fvault ??= openFoundryVault());
   /** Foundry の実接続を有効にした顧客パックの ID（再起動で消える） */
   const foundryEnabled = new Set<string>();
+  const genai: FoundryService = opts.foundry ?? createFoundryService({ fetchFn: opts.foundryFetch, timeoutMs: opts.foundryTimeoutMs });
   const speechFetch = opts.speechFetch ?? ((u, i) => fetch(u, i));
   const signedIn = async (): Promise<boolean> => (opts.sdk ? (await opts.sdk.status().catch(() => ({ signedIn: false }))).signedIn : false);
 
@@ -117,15 +118,17 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
     void (async () => {
       try {
         if (req.method === 'GET' && path === '/health') {
-          return json(200, { status: 'ready', copilot: (await signedIn()) ? 'signed-in' : 'signed-out', foundry: { keyConfigured: opts.foundry?.hasKey() ?? false } });
+          return json(200, { status: 'ready', copilot: (await signedIn()) ? 'signed-in' : 'signed-out', foundry: { keyConfigured: getFoundry().secret() !== null } });
         }
-        // ---- FR-285: 生成AIの活用分析の Foundry 接続。キーは中継側の環境変数だけ。応答にキーの値・上流の本文は含めない ----
+        // ---- FR-285: 生成AIの活用分析。共通接続（FR-275）の保管庫のエンドポイント・デプロイ名・キーと、packId 単位の有効化だけを使う。応答にキーの値・上流の本文は含めない ----
         if (req.method === 'POST' && path === '/foundry/analyze') {
-          const b = JSON.parse((await readBody(req)) || '{}') as { solution?: unknown; endpoint?: unknown; deployment?: unknown };
+          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: unknown; solution?: unknown };
           try {
-            if (!opts.foundry) throw new GenAiFoundryError('key-missing');
-            if (typeof b.solution !== 'string' || typeof b.endpoint !== 'string' || typeof b.deployment !== 'string') throw new GenAiFoundryError('bad-request');
-            return json(200, await opts.foundry.analyze({ solution: b.solution, endpoint: b.endpoint, deployment: b.deployment }));
+            if (typeof b.packId !== 'string' || !b.packId || typeof b.solution !== 'string') throw new GenAiFoundryError('bad-request');
+            const secret = getFoundry().secret();
+            if (!secret) throw new GenAiFoundryError('key-missing');
+            if (!foundryEnabled.has(b.packId)) throw new GenAiFoundryError('disabled');
+            return json(200, await genai.analyze({ solution: b.solution, endpoint: secret.endpoint, deployment: secret.deployment, key: secret.key }));
           } catch (e) {
             if (e instanceof GenAiFoundryError) return json(CAUSE_STATUS[e.kind], { error: { cause: e.kind, ...e.detail } });
             throw e;

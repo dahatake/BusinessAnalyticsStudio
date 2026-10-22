@@ -8,7 +8,7 @@ import {
 import { Dialog, DialogSurface } from '../components/Dialog';
 import { usePackStore } from '../store/pack';
 import { useConsent } from './useConsent';
-import { deleteFoundryConfig, fetchFoundryView, putFoundryConfig, setFoundryConnection, type FoundryView } from './foundryClient';
+import { DEFAULT_FOUNDRY_DEPLOYMENT, DEFAULT_FOUNDRY_ENDPOINT, deleteFoundryConfig, fetchFoundryView, putFoundryConfig, setFoundryConnection, type FoundryView } from './foundryClient';
 import { tokens } from '../theme/tokens';
 
 export function FoundrySettings() {
@@ -17,8 +17,8 @@ export function FoundrySettings() {
   const packId = pack.status === 'ready' ? pack.pack.data.customer.name : '';
   const { granted } = useConsent();
   const [view, setView] = useState<FoundryView | null>(null);
-  const [endpoint, setEndpoint] = useState('');
-  const [deployment, setDeployment] = useState('');
+  const [endpoint, setEndpoint] = useState(DEFAULT_FOUNDRY_ENDPOINT);
+  const [deployment, setDeployment] = useState(DEFAULT_FOUNDRY_DEPLOYMENT);
   const [key, setKey] = useState('');
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -28,7 +28,7 @@ export function FoundrySettings() {
     void fetchFoundryView(relayUrl, packId).then((v) => {
       if (!alive) return;
       setView(v);
-      if (v) { setEndpoint(v.endpoint); setDeployment(v.deployment); }
+      if (v) { setEndpoint(v.endpoint || DEFAULT_FOUNDRY_ENDPOINT); setDeployment(v.deployment || DEFAULT_FOUNDRY_DEPLOYMENT); }
     });
     return () => { alive = false; };
   }, [relayUrl, packId]);
@@ -49,7 +49,7 @@ export function FoundrySettings() {
   const remove = async () => {
     const v = await deleteFoundryConfig(relayUrl as string, packId);
     setKey('');
-    if (v) { setView(v); setEndpoint(''); setDeployment(''); setResult({ ok: true, text: '接続情報を削除しました。Foundry は使えません。' }); }
+    if (v) { setView(v); setEndpoint(DEFAULT_FOUNDRY_ENDPOINT); setDeployment(DEFAULT_FOUNDRY_DEPLOYMENT); setResult({ ok: true, text: '接続情報を削除しました。Foundry は使えません。' }); }
     else setResult({ ok: false, text: '削除できませんでした。中継プロセスが起動しているか確認してください。' });
   };
   const enable = async () => {
@@ -66,10 +66,11 @@ export function FoundrySettings() {
   const configured = !!view?.configured;
   return (
     <section role="region" aria-labelledby="foundry-settings-title" data-testid="foundry-settings" style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS }}>
-      <Text id="foundry-settings-title" as="h3" weight="semibold">Microsoft Foundry（現状の説明の生成）</Text>
+      <Text id="foundry-settings-title" as="h3" weight="semibold">Microsoft Foundry（生成AI機能の共通接続）</Text>
       <Text size={200}>
+        この接続は、生成AI機能全般（「現状の説明」の生成と「生成AIの効果的な活用シナリオ」の分析）に共通で使います。
         Microsoft Foundry は有料サービスで、実接続を有効にすると利用に応じて費用が発生します。
-        有効にすると、ローカルの中継プロセスを通じて、現在画面に表示している課題・解決策・KPI/OKR の文章が Foundry に送信されます。
+        有効にすると、ローカルの中継プロセスを通じて、現在画面に表示している課題・解決策・KPI/OKR の文章、活用シナリオの分析で入力した解決策の文章、およびチャットの質問・直近の履歴・顧客パックの根拠が Foundry に送信されます。
         接続情報は手元の中継プロセスが暗号化して保管し、設定したエンドポイント以外へは送りません。既定は無効です。
       </Text>
       <Text size={200}>接続情報の状態: <b data-testid="foundry-status">{configured ? '設定済み' : '未設定'}</b>
@@ -94,7 +95,7 @@ export function FoundrySettings() {
       <Switch
         checked={!!view?.enabled}
         disabled={!relayUrl || !packId || !granted || !configured}
-        label="Microsoft Foundry への送信を有効にする（現状の説明）"
+        label="実接続を有効にする"
         onChange={(_, d) => { if (d.checked) setConfirming(true); else void disable(); }}
       />
       <Text size={200} data-testid="foundry-mode">現在の状態: {view?.enabled ? '接続済み' : 'モック（外部へは送信しません）'}</Text>
@@ -105,7 +106,7 @@ export function FoundrySettings() {
           <DialogBody>
             <DialogTitle>Foundry の実接続を有効にしますか</DialogTitle>
             <DialogContent>
-              Microsoft Foundry は有料サービスで、費用が発生します。有効にすると、現在画面に表示している課題・解決策・KPI/OKR の文章が、ローカルの中継プロセスを通じて設定したエンドポイントに送信されます。
+              Microsoft Foundry は有料サービスで、費用が発生します。有効にすると、現在画面に表示している課題・解決策・KPI/OKR の文章、活用シナリオの分析で入力した解決策の文章、およびチャットの質問・直近の履歴・顧客パックの根拠が、ローカルの中継プロセスを通じて設定したエンドポイントに送信されます。
             </DialogContent>
             <DialogActions>
               <Button appearance="secondary" onClick={() => setConfirming(false)}>キャンセル</Button>

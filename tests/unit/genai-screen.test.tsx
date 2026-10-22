@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // FR-284 AC-733・AC-734・AC-736、FR-285 AC-737・AC-739 の結合テスト: 画面の押したときだけ実行・モック・入力検査・失敗時の代替。
-// Foundry へは接続しない（fetch の差し替え）。
+// Foundry へは接続しない（fetch の差し替え）。共通接続の有効化は中継の GET /foundry/config の enabled に従う（FR-275）。
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { FluentProvider, webLightTheme } from '@fluentui/react-components';
@@ -9,8 +9,6 @@ import { SCREENS } from '../../src/screens/registry';
 import { usePackStore } from '../../src/store/pack';
 import { useConsentStore } from '../../src/ai/useConsent';
 import { consentKeyOf } from '../../src/ai/consent';
-import { useGenAiStore } from '../../src/genai/useGenAi';
-import { DEFAULT_FOUNDRY_DEPLOYMENT, DEFAULT_FOUNDRY_ENDPOINT } from '../../src/genai/foundryClient';
 
 const data = {
   customer: { name: '合成株式会社', projectName: 'P' },
@@ -33,7 +31,6 @@ class RO { observe() {} unobserve() {} disconnect() {} }
 beforeEach(() => {
   fetchMock = vi.fn();
   vi.stubGlobal('fetch', fetchMock);
-  useGenAiStore.setState({ enabledPack: null, endpoint: DEFAULT_FOUNDRY_ENDPOINT, deployment: DEFAULT_FOUNDRY_DEPLOYMENT });
   useConsentStore.setState({ records: {} });
   setPack('http://127.0.0.1:8787');
 });
@@ -99,12 +96,13 @@ describe('FR-284 AC-736 入力の検査と解決策の選択', () => {
 });
 
 describe('FR-285 AC-737・AC-739 実接続の条件と失敗時の代替', () => {
-  const enable = () => {
-    useConsentStore.setState({ records: { [consentKeyOf('合成株式会社', 'P')]: { confirmedOn: '2026-10-21', note: '同意書あり' } } as never });
-    useGenAiStore.setState({ enabledPack: '合成株式会社' });
-  };
-  it('AC-737 実接続を有効にしても、了承の記録がなければモックで外部呼び出し 0 回', () => {
-    useGenAiStore.setState({ enabledPack: '合成株式会社' });
+  const consent = () => useConsentStore.setState({ records: { [consentKeyOf('合成株式会社', 'P')]: { confirmedOn: '2026-10-21', note: '同意書あり' } } as never });
+  /** 共通接続（FR-275）の状態を返す中継の差し替え。analyze の応答は分析ごとに指定する */
+  const relayMock = (cfg: { configured: boolean; enabled: boolean }, analyze: () => Response) => fetchMock.mockImplementation((u: string) =>
+    Promise.resolve(String(u).includes('/foundry/config') ? new Response(JSON.stringify({ ...cfg, endpoint: 'https://x.services.ai.azure.com/openai/v1', host: 'x.services.ai.azure.com', deployment: 'd', keyMask: '••••' }), { status: 200 }) : analyze()));
+  const enable = () => consent();
+  it('AC-737 共通接続が有効でも、了承の記録がなければモックで外部呼び出し 0 回', () => {
+    relayMock({ configured: true, enabled: true }, () => new Response('{}', { status: 500 }));
     view();
     fireEvent.change(input(), { target: { value: '文章を要約する' } });
     run();
@@ -113,26 +111,37 @@ describe('FR-285 AC-737・AC-739 実接続の条件と失敗時の代替', () =>
   });
   it('AC-739 失敗（キー未設定）は原因を表示し、ルールベースの結果を代替で表示する。要求は 1 回で再試行しない', async () => {
     enable();
-    fetchMock.mockResolvedValue(new Response(JSON.stringify({ error: { cause: 'key-missing' } }), { status: 503 }));
+    relayMock({ configured: true, enabled: true }, () => new Response(JSON.stringify({ error: { cause: 'key-missing' } }), { status: 503 }));
     view();
     fireEvent.change(input(), { target: { value: '問い合わせメールの文章を要約する' } });
     run();
-    await waitFor(() => expect(screen.getByRole('alert').textContent).toMatch(/キー.*設定されていません/));
+    await waitFor(() => expect(screen.getByRole('alert').textContent).toMatch(/接続情報.*設定されていません/));
     expect(screen.getByRole('region', { name: '分析結果' }).textContent).toContain('代替');
-    expect(fetchMock).toHaveBeenCalledTimes(1);
-    const [url, init] = fetchMock.mock.calls[0]!;
+    const calls = fetchMock.mock.calls.filter((c) => String(c[0]).includes('/foundry/analyze'));
+    expect(calls).toHaveLength(1);
+    const [url, init] = calls[0]!;
     expect(url).toBe('http://127.0.0.1:8787/foundry/analyze');
-    expect(JSON.parse(init.body)).toEqual({ solution: '問い合わせメールの文章を要約する', endpoint: DEFAULT_FOUNDRY_ENDPOINT, deployment: DEFAULT_FOUNDRY_DEPLOYMENT });
+    expect(JSON.parse(init.body)).toEqual({ packId: '合成株式会社', solution: '問い合わせメールの文章を要約する' });
   });
   it('AC-738 成功時は Foundry の結果を表示する', async () => {
     enable();
-    fetchMock.mockResolvedValue(new Response(JSON.stringify({
+    relayMock({ configured: true, enabled: true }, () => new Response(JSON.stringify({
       conclusion: 'conditional', criteria: [{ id: 'cost-benefit', verdict: 'partial', reason: '差し替えの根拠' }], reason: '差し替えの理由', alternatives: ['業務改善'],
     }), { status: 200 }));
     view();
     fireEvent.change(input(), { target: { value: '文章を要約する' } });
     run();
     await waitFor(() => expect(screen.getByRole('region', { name: '分析結果' }).textContent).toContain('差し替えの理由'));
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+  it('AC-737 共通接続が無効（enabled=false）のときは了承ありでも /foundry/analyze を呼ばずモックで動く', async () => {
+    enable();
+    relayMock({ configured: true, enabled: false }, () => new Response('{}', { status: 500 }));
+    view();
+    fireEvent.change(input(), { target: { value: '文章を要約する' } });
+    run();
+    await waitFor(() => expect(screen.getByRole('region', { name: '分析結果' }).textContent).toContain('モック'));
+    expect(fetchMock.mock.calls.filter((c) => String(c[0]).includes('/foundry/analyze'))).toHaveLength(0);
     expect(screen.queryByRole('alert')).toBeNull();
   });
 });
