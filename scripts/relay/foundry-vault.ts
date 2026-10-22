@@ -14,9 +14,15 @@ export interface FoundrySettingsView {
   deployment: string;
   /** 伏せ字。値そのものは返さない */
   keyMask: string;
+  /** 認証方式（FR-282）。entra のときは API キーを持たない */
+  authMethod: AuthMethod;
 }
 
-interface Stored { endpoint: string; deployment: string; key: string }
+export type AuthMethod = 'api-key' | 'entra';
+/** 値に由来しない固定の伏せ字（末尾の文字も出さない。FR-282 AC-726） */
+export const FIXED_KEY_MASK = '••••••••';
+
+interface Stored { endpoint: string; deployment: string; key: string; authMethod?: AuthMethod }
 
 export interface FoundryVault {
   view(): FoundrySettingsView;
@@ -25,6 +31,8 @@ export interface FoundryVault {
   remove(): void;
   /** 接続先へ送るための値。中継の内部だけで使う */
   secret(): { endpoint: string; deployment: string; key: string } | null;
+  /** 認証方式が Entra ID で、エンドポイント・デプロイ名が揃っているか（トークン取得は別部品） */
+  entraReady(): boolean;
 }
 
 export function openFoundryVault(dataDir: string = defaultDataDir(), opts: VaultOptions = {}): FoundryVault {
@@ -86,13 +94,18 @@ export function openFoundryVault(dataDir: string = defaultDataDir(), opts: Vault
       const deployment = input.deployment.trim();
       if (!deployment) throw new Error('デプロイ名を入力してください');
       const cur = load();
-      const key = input.key !== undefined && input.key.trim() !== '' ? input.key.trim() : cur?.key;
-      if (!key) throw new Error('API キーを入力してください');
-      const next: Stored = { endpoint: input.endpoint.trim(), deployment, key };
+      const authMethod: AuthMethod = input.authMethod === 'entra' ? 'entra' : 'api-key';
+      const key = authMethod === 'entra' ? '' : input.key !== undefined && input.key.trim() !== '' ? input.key.trim() : cur?.key;
+      if (authMethod === 'api-key' && !key) throw new Error('API キーを入力してください');
+      const next: Stored = { endpoint: input.endpoint.trim(), deployment, key: key ?? '', authMethod };
       store(next);
       return toView(next);
     },
     remove() { fs.rmSync(dataFile, { force: true }); },
+    entraReady() {
+      const s = load();
+      return !!s && s.authMethod === 'entra' && !!s.deployment && isAllowedEndpoint(s.endpoint);
+    },
     secret() {
       const s = load();
       return s && s.key && s.deployment && isAllowedEndpoint(s.endpoint) ? { endpoint: s.endpoint, deployment: s.deployment, key: s.key } : null;
