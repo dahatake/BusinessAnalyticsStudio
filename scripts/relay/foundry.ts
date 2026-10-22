@@ -23,6 +23,8 @@ function extractText(j: unknown): string | null {
 
 export async function callFoundry(
   s: FoundrySecret, input: string, f: typeof fetch = (u, i) => fetch(u, i), timeoutMs = FOUNDRY_TIMEOUT_MS,
+  /** 出力のトークンの上限（FR-276）。指定すると max_output_tokens として依頼する */
+  maxOutputTokens?: number,
 ): Promise<string> {
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), timeoutMs);
@@ -32,7 +34,7 @@ export async function callFoundry(
       redirect: 'error',
       signal: ctl.signal,
       headers: { 'content-type': 'application/json', authorization: `Bearer ${s.key}`, 'api-key': s.key },
-      body: JSON.stringify({ model: s.deployment, input }),
+      body: JSON.stringify({ model: s.deployment, input, ...(maxOutputTokens ? { max_output_tokens: maxOutputTokens } : {}) }),
     });
     if (!res.ok) throw new FoundryError(`Foundry がエラーを返しました（HTTP ${res.status}）`, 'http');
     const text = extractText(await res.json().catch(() => null));
