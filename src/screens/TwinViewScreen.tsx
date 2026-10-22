@@ -17,6 +17,7 @@ import { onEntityKey, useEntityBinding, useSelection } from '../selection/hooks'
 import { usePackStore } from '../store/pack';
 import { useSelectionStore } from '../store/selection';
 import { Items3DSurface } from '../three/Items3DSurface';
+import { AnnotationControls, AnnotationLayer } from '../ink/AnnotationLayer';
 import {
   CONTROL_NOTE, FLOW_TEXT, FRESHNESS_NOTE, LAYER_LABELS, REAL_GROUP_LABELS, buildTwinModel, flowTouches,
   type TwinEntityInput, type TwinFlow, type TwinFlowInput, type TwinItem, type TwinModel,
@@ -124,6 +125,13 @@ export function TwinViewScreen() {
   const view = useComponentView(ORIGIN);
   const { graph, selectedIds, related } = useSelection();
   const [asTable, setAsTable] = useState(false);
+  const [annotating, setAnnotatingState] = useState(false);
+  const surf3dRef = useRef<HTMLDivElement>(null);
+  // 注釈を書き始めるとき、書く面（3D）がペインの上端から見える位置まで送る（ペインが小さくても、面の上で書けるように）
+  const setAnnotating = (on: boolean): void => {
+    setAnnotatingState(on);
+    if (on) surf3dRef.current?.scrollIntoView?.({ block: 'start', inline: 'nearest' });
+  };
   const [depth, setDepth] = useState(1);
   const [focusCluster, setFocusCluster] = useState<string | undefined>();
   const [detailId, setDetailId] = useState<string | undefined>();
@@ -257,7 +265,13 @@ export function TwinViewScreen() {
           <>
             <ZoomBar label="Twin ビュー" depth={depth} elementDepth={ELEMENT_DEPTH} onGo={goDepth} elementLabels={focusCluster ? [focusCluster] : []} detailLabel={detailItem?.name} />
             {surf3d ? (
-              <Items3DSurface viewKey={ORIGIN} origin={ORIGIN} label="Twin ビュー（現実世界の面とデジタル世界の面）" items={items3d} links={links3d} axes={{ y: '下: 現実世界／上: デジタル世界', z: '層' }} />
+              <>
+                <div ref={surf3dRef} style={{ position: 'relative' }}>
+                  <Items3DSurface viewKey={ORIGIN} origin={ORIGIN} label="Twin ビュー（現実世界の面とデジタル世界の面）" items={items3d} links={links3d} axes={{ y: '下: 現実世界／上: デジタル世界', z: '層' }} />
+                  <AnnotationLayer viewKey={ORIGIN} label="Twin ビュー" active={annotating} />
+                </div>
+                <AnnotationControls viewKey={ORIGIN} active={annotating} onToggle={setAnnotating} />
+              </>
             ) : null}
             <GraphScope active={isGraph} origin={ORIGIN} label="Twin ビュー">
               {depth === 0 ? <ZoomClusters clusters={clusters} onOpen={openCluster} /> : null}

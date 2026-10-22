@@ -50,7 +50,7 @@ const TOPIC: Def = { kind: 'topic', file: 'show', key: 'chapters', nameKey: 'tit
 
 interface Loc {
   def: Def;
-  /** 議題のとき、所属する章の位置 */
+  /** 論点のとき、所属する章の位置 */
   chapter?: number;
   index: number;
   rec: Rec;
@@ -238,7 +238,7 @@ export function renameRecord(d: PackData, id: string, raw: string): EditResult {
 
 const NEW_NAMES: Record<NodeKind, string> = {
   entity: '新しいエンティティ', issue: '新しい課題', solution: '新しい解決策', product: '新しい製品', feature: '新しい機能',
-  task: '新しいタスク', architecture: '新しいノード', mock: '新しいモック', chapter: '新しい章', topic: '新しい議題', source: '新しい出典',
+  task: '新しいタスク', architecture: '新しいノード', mock: '新しいモック', chapter: '新しい章', topic: '新しい論点', source: '新しい出典',
 };
 
 function templateFor(d: PackData, kind: NodeKind, sib: Rec | undefined): Rec | string {

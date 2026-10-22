@@ -11,11 +11,11 @@
     "AC-008": "sha256:8282b7ebb15f910d",
     "AC-009": "sha256:d621bf9f23168663",
     "AC-013": "sha256:7103995e6b3d4cb7",
-    "AC-015": "sha256:da7d282cbcd52f31",
+    "AC-015": "sha256:99db3b3d5978fb1d",
     "AC-016": "sha256:7ab7683c7036e96e",
     "AC-017": "sha256:ffe4b87e559ed605",
     "AC-018": "sha256:dfdbe8e929a60eb3",
-    "AC-019": "sha256:6784a504a48fe6e8",
+    "AC-019": "sha256:32363a82fd497091",
     "AC-020": "sha256:c3b0e7ee9a642810",
     "AC-021": "sha256:6fa41db02bd2717a",
     "AC-022": "sha256:07d54283290fcea9",
@@ -24,7 +24,7 @@
     "AC-025": "sha256:057ecc2f521306e4",
     "AC-026": "sha256:fb78d2fa1aa08e48",
     "AC-027": "sha256:0a9292f0f81ec117",
-    "AC-030": "sha256:9b188ee68b80f0a2",
+    "AC-030": "sha256:3d7db084e9561878",
     "AC-031": "sha256:c7a70886ebc67910",
     "AC-032": "sha256:abe28f93ca3a202c",
     "AC-033": "sha256:6fdba92e0d59e4f0",
@@ -65,7 +65,7 @@
     "AC-077": "sha256:6c1486eced8803c9",
     "AC-079": "sha256:55491c6d679558ad",
     "AC-080": "sha256:7f9d63fb851bded8",
-    "AC-081": "sha256:0d3fd96a8418316d",
+    "AC-081": "sha256:02f929b8dded0074",
     "AC-085": "sha256:f62e1ceb7e4ee593",
     "AC-087": "sha256:23004fc9a7b816cd",
     "AC-088": "sha256:c6358146976b4d9e",
@@ -80,7 +80,7 @@
     "AC-101": "sha256:c907f7f3095197db",
     "AC-102": "sha256:aad77cdd9749fe0c",
     "AC-103": "sha256:b6aebfdf395b20ad",
-    "AC-104": "sha256:7740d817414032a6",
+    "AC-104": "sha256:ea4bb1fa657e3e23",
     "AC-107": "sha256:3b51bfe25df9be6a",
     "AC-109": "sha256:f4e1f9f5f95e7eb8",
     "AC-111": "sha256:141ff5e366dacee7",
@@ -120,7 +120,7 @@
     "AC-187": "sha256:a962f1f245029c87",
     "AC-188": "sha256:66a2b234889f892e",
     "AC-189": "sha256:c37510aa9027e09a",
-    "AC-192": "sha256:de8a0d1dc8ab70f9",
+    "AC-192": "sha256:1c0f34a2478c5cea",
     "AC-193": "sha256:4810254bd9a33324",
     "AC-195": "sha256:09294c7e744f31dc",
     "AC-197": "sha256:80784a06ad648e82",
@@ -237,8 +237,8 @@
     "AC-476": "sha256:c892e980bd9a9fb2",
     "AC-477": "sha256:6264ce46061588fb",
     "AC-480": "sha256:70f3f74137d70d72",
-    "AC-483": "sha256:24059c02da3891e8",
-    "AC-484": "sha256:6b68134d53b22e03",
+    "AC-483": "sha256:ca3a11cf565ad616",
+    "AC-484": "sha256:9aa43763e9f0486e",
     "AC-485": "sha256:d2bb408cf763ce57",
     "AC-493": "sha256:715798a091545dad",
     "AC-495": "sha256:993c4a32aa8e6bff",
@@ -707,7 +707,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-013",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-113-202610221546.log",
@@ -717,6 +717,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-10-22T23:25:37+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
         }
       ]
     },
@@ -732,7 +738,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-015",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-114-202610221546.log",
@@ -742,6 +748,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-10-22T23:13:58+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "廃止予定の要求（依頼 2026-10-22。FR-012/020/146/147。画面 view3d・drawing2d・canvas の廃止）にだけ紐づくため、実装後は対象画面がない。決定状態「廃止」への切替え後に台帳から外す対象。テストコードも削除済み"
         }
       ]
     },
@@ -813,7 +825,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-018",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-117-202610221547.log",
@@ -823,6 +835,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-10-22T23:25:38+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
         }
       ]
     },
@@ -839,15 +857,21 @@
       "command": "node tests/system/run.mjs AC-019",
       "canary": false,
       "status": "pass",
-      "last_commit": "6252b6a",
-      "last_run_at": "2026-10-22T17:10:49+09:00",
-      "evidence": "work/runs/202610221530/logs/system-test/E2E-118-202610221547.log",
+      "last_commit": "53b05f0",
+      "last_run_at": "2026-10-23T01:45:51+09:00",
+      "evidence": "work/runs/202610222251/logs/system-test/E2E-118-202610230142.log",
       "history": [
         {
           "at": "2026-10-12T14:06:05+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-10-22T23:25:38+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
         }
       ]
     },
@@ -864,15 +888,21 @@
       "command": "node tests/system/run.mjs AC-192",
       "canary": false,
       "status": "pass",
-      "last_commit": "6252b6a",
-      "last_run_at": "2026-10-22T17:10:49+09:00",
-      "evidence": "work/runs/202610221530/logs/system-test/E2E-119-202610221547.log",
+      "last_commit": "53b05f0",
+      "last_run_at": "2026-10-23T01:45:51+09:00",
+      "evidence": "work/runs/202610222251/logs/system-test/E2E-119-202610230142.log",
       "history": [
         {
           "at": "2026-10-12T14:06:07+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-10-22T23:25:39+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
         }
       ]
     },
@@ -988,7 +1018,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-024",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-124-202610221548.log",
@@ -998,6 +1028,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-10-22T23:13:59+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "廃止予定の要求（依頼 2026-10-22。FR-012/020/146/147。画面 view3d・drawing2d・canvas の廃止）にだけ紐づくため、実装後は対象画面がない。決定状態「廃止」への切替え後に台帳から外す対象。テストコードも削除済み"
         }
       ]
     },
@@ -1088,7 +1124,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-030",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-128-202610221548.log",
@@ -1098,6 +1134,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-10-22T23:25:40+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
         }
       ]
     },
@@ -1939,9 +1981,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "ab5972f",
-      "last_run_at": "2026-10-23T00:29:56+09:00",
-      "evidence": "work/runs/202610222205/logs/system-test/E2E-162-202610230029.log",
+      "last_commit": "53b05f0",
+      "last_run_at": "2026-10-23T01:45:51+09:00",
+      "evidence": "work/runs/202610222251/logs/system-test/E2E-162-202610230142.log",
       "history": [
         {
           "at": "2026-10-12T14:07:28+09:00",
@@ -2113,7 +2155,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-081",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-169-202610221553.log",
@@ -2123,6 +2165,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-10-22T23:25:40+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
         }
       ]
     },
@@ -2163,7 +2211,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-087",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-171-202610221553.log",
@@ -2173,6 +2221,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-10-22T23:25:41+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
         }
       ]
     },
@@ -2514,15 +2568,21 @@
       "command": "node tests/system/run.mjs AC-104",
       "canary": false,
       "status": "pass",
-      "last_commit": "6252b6a",
-      "last_run_at": "2026-10-22T17:10:49+09:00",
-      "evidence": "work/runs/202610221530/logs/system-test/E2E-185-202610221556.log",
+      "last_commit": "53b05f0",
+      "last_run_at": "2026-10-23T01:45:51+09:00",
+      "evidence": "work/runs/202610222251/logs/system-test/E2E-185-202610230142.log",
       "history": [
         {
           "at": "2026-10-12T14:08:03+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-10-22T23:25:41+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
         }
       ]
     },
@@ -3019,7 +3079,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-137",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-205-202610221600.log",
@@ -3029,6 +3089,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-10-22T23:25:42+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
         }
       ]
     },
@@ -3524,7 +3590,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-243",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-223-202610221601.log",
@@ -3534,6 +3600,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:14:00+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "廃止予定の要求（依頼 2026-10-22。FR-012/020/146/147。画面 view3d・drawing2d・canvas の廃止）にだけ紐づくため、実装後は対象画面がない。決定状態「廃止」への切替え後に台帳から外す対象。テストコードも削除済み"
         }
       ]
     },
@@ -3549,7 +3621,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-244",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-224-202610221602.log",
@@ -3559,6 +3631,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:14:01+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "廃止予定の要求（依頼 2026-10-22。FR-012/020/146/147。画面 view3d・drawing2d・canvas の廃止）にだけ紐づくため、実装後は対象画面がない。決定状態「廃止」への切替え後に台帳から外す対象。テストコードも削除済み"
         }
       ]
     },
@@ -3605,7 +3683,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-246",
       "canary": false,
-      "status": "fail",
+      "status": "blocked",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-226-202610221602.log",
@@ -3615,6 +3693,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:14:02+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "廃止予定の要求（依頼 2026-10-22。FR-012/020/146/147。画面 view3d・drawing2d・canvas の廃止）にだけ紐づくため、実装後は対象画面がない。決定状態「廃止」への切替え後に台帳から外す対象。テストコードも削除済み"
         }
       ]
     },
@@ -3630,7 +3714,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-247",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-227-202610221602.log",
@@ -3640,6 +3724,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:14:02+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "廃止予定の要求（依頼 2026-10-22。FR-012/020/146/147。画面 view3d・drawing2d・canvas の廃止）にだけ紐づくため、実装後は対象画面がない。決定状態「廃止」への切替え後に台帳から外す対象。テストコードも削除済み"
         }
       ]
     },
@@ -3655,7 +3745,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-248",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-228-202610221602.log",
@@ -3665,6 +3755,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:14:03+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "廃止予定の要求（依頼 2026-10-22。FR-012/020/146/147。画面 view3d・drawing2d・canvas の廃止）にだけ紐づくため、実装後は対象画面がない。決定状態「廃止」への切替え後に台帳から外す対象。テストコードも削除済み"
         }
       ]
     },
@@ -3680,7 +3776,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-081 AC-087",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-229-202610221602.log",
@@ -3690,6 +3786,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:14:04+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "廃止予定の要求（依頼 2026-10-22。FR-012/020/146/147。画面 view3d・drawing2d・canvas の廃止）にだけ紐づくため、実装後は対象画面がない。決定状態「廃止」への切替え後に台帳から外す対象。テストコードも削除済み"
         }
       ]
     },
@@ -3705,7 +3807,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-250",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-230-202610221603.log",
@@ -3715,6 +3817,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:14:04+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "廃止予定の要求（依頼 2026-10-22。FR-012/020/146/147。画面 view3d・drawing2d・canvas の廃止）にだけ紐づくため、実装後は対象画面がない。決定状態「廃止」への切替え後に台帳から外す対象。テストコードも削除済み"
         }
       ]
     },
@@ -3755,7 +3863,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-254",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-232-202610221603.log",
@@ -3765,6 +3873,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:25:43+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
         }
       ]
     },
@@ -3830,7 +3944,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-261",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-235-202610221604.log",
@@ -3840,6 +3954,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:25:43+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
         }
       ]
     },
@@ -4186,7 +4306,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-352",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-270-202610221606.log",
@@ -4196,6 +4316,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-22T23:25:44+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
         }
       ]
     },
@@ -5208,7 +5334,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-483",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-308-202610221616.log",
@@ -5224,6 +5350,12 @@
           "by": "test-designer",
           "change": "title: '320px で全画面に横スクロールなし・全コンポーネントに到達、文字だけ 200% で切れ・重なり 0（異常系: 情報が欠けない）' -> '320px で全画面に横スクロールなし・全コンポーネントに到達、文字だけ 200% で切れ・重なり 0（拡大・縮小できる面の中は省略記号＋全文・面の中のスクロール、3D・地図は代替の表。異常系: 情報が欠けない）'",
           "reason": "AC-483 の変更（commit da9dfa9・A-51）: 拡大・縮小できる面の中の文字を数え方から除き、省略記号＋全文のツールチップかアクセシブルな名前・面の中のスクロール・代替の表で判定する"
+        },
+        {
+          "at": "2026-10-22T23:25:45+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
         }
       ]
     },
@@ -5239,7 +5371,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-484",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-309-202610221617.log",
@@ -5255,6 +5387,12 @@
           "by": "test-designer",
           "change": "title: '全画面のダイアログ・メニューを Esc で閉じるとフォーカスが戻り、見出しの段が飛ばない（異常系: 作業先）' -> '全画面の一時的な表示（ダイアログ・メニュー・ドロップダウンの一覧など）を Esc で閉じるとフォーカスが戻る、見出しの段が飛ばない（異常系: 常設の listbox「議題」は対象外で残る、作業先）'",
           "reason": "AC-484 の変更（commit da9dfa9・A-51）: 一時的な表示をダイアログ・メニュー・ポップオーバー・ツールチップ・ドロップダウンの一覧・コマンドパレットに限り、常設の listbox「議題」などを対象外にする"
+        },
+        {
+          "at": "2026-10-22T23:25:47+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
         }
       ]
     },
@@ -5346,9 +5484,9 @@
       "command": "node tests/system/run.mjs AC-499",
       "canary": false,
       "status": "pass",
-      "last_commit": "6252b6a",
-      "last_run_at": "2026-10-22T17:10:49+09:00",
-      "evidence": "work/runs/202610221530/logs/system-test/E2E-313-202610221620.log",
+      "last_commit": "53b05f0",
+      "last_run_at": "2026-10-23T01:45:51+09:00",
+      "evidence": "work/runs/202610222251/logs/system-test/E2E-313-202610230142.log",
       "history": [
         {
           "at": "2026-10-17T22:07:18+09:00",
@@ -5370,7 +5508,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-503",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-314-202610221623.log",
@@ -5392,6 +5530,12 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "TODO-006・A-57 で期待値を変更したため未実行に戻す"
+        },
+        {
+          "at": "2026-10-22T23:25:48+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
         }
       ]
     },
@@ -5408,9 +5552,9 @@
       "command": "node tests/system/run.mjs AC-501",
       "canary": false,
       "status": "pass",
-      "last_commit": "6252b6a",
-      "last_run_at": "2026-10-22T17:10:49+09:00",
-      "evidence": "work/runs/202610221530/logs/system-test/E2E-315-202610221623.log",
+      "last_commit": "53b05f0",
+      "last_run_at": "2026-10-23T01:45:51+09:00",
+      "evidence": "work/runs/202610222251/logs/system-test/E2E-315-202610230142.log",
       "history": [
         {
           "at": "2026-10-18T20:15:21+09:00",
@@ -5458,9 +5602,9 @@
       "command": "node tests/system/run.mjs AC-515",
       "canary": false,
       "status": "pass",
-      "last_commit": "6252b6a",
-      "last_run_at": "2026-10-22T17:10:49+09:00",
-      "evidence": "work/runs/202610221530/logs/system-test/E2E-317-202610221624.log",
+      "last_commit": "53b05f0",
+      "last_run_at": "2026-10-23T01:45:51+09:00",
+      "evidence": "work/runs/202610222251/logs/system-test/E2E-317-202610230142.log",
       "history": [
         {
           "at": "2026-10-19T20:56:46+09:00",
@@ -5507,7 +5651,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-518",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-319-202610221625.log",
@@ -5517,6 +5661,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "run 202610192037: FR-222 AC-518 のケース（実装前・not_run）"
+        },
+        {
+          "at": "2026-10-22T23:25:49+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
         }
       ]
     },
@@ -5932,7 +6082,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-584",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-336-202610221641.log",
@@ -5942,6 +6092,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "run 202610200517: FR-243 AC-584 のケース（未実装・not_run）"
+        },
+        {
+          "at": "2026-10-22T23:25:51+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
         }
       ]
     },
@@ -6043,7 +6199,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-587",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/E2E-339-202610221641.log",
@@ -6053,6 +6209,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "run 202610200517: FR-244 AC-587 のケース（未実装・not_run）"
+        },
+        {
+          "at": "2026-10-22T23:25:52+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
         }
       ]
     },
@@ -6264,9 +6426,9 @@
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat --workers=1",
       "canary": true,
       "status": "pass",
-      "last_commit": "ab5972f",
-      "last_run_at": "2026-10-23T00:29:56+09:00",
-      "evidence": "work/runs/202610222205/logs/system-test/E2E-345-202610230029.log",
+      "last_commit": "53b05f0",
+      "last_run_at": "2026-10-23T01:45:51+09:00",
+      "evidence": "work/runs/202610222251/logs/system-test/E2E-345-202610230142.log",
       "history": [
         {
           "at": "2026-10-21T17:19:59+09:00",
@@ -6302,9 +6464,9 @@
       "command": "node tests/system/run.mjs AC-593",
       "canary": true,
       "status": "pass",
-      "last_commit": "ab5972f",
-      "last_run_at": "2026-10-23T00:29:56+09:00",
-      "evidence": "work/runs/202610222205/logs/system-test/E2E-346-202610230029.log",
+      "last_commit": "53b05f0",
+      "last_run_at": "2026-10-23T01:45:51+09:00",
+      "evidence": "work/runs/202610222251/logs/system-test/E2E-346-202610230142.log",
       "history": [
         {
           "at": "2026-10-21T17:32:44+09:00",
@@ -6487,9 +6649,9 @@
       "command": "node tests/system/run.mjs AC-598",
       "canary": true,
       "status": "pass",
-      "last_commit": "ab5972f",
-      "last_run_at": "2026-10-23T00:29:56+09:00",
-      "evidence": "work/runs/202610222205/logs/system-test/E2E-351-202610230029.log",
+      "last_commit": "53b05f0",
+      "last_run_at": "2026-10-23T01:45:51+09:00",
+      "evidence": "work/runs/202610222251/logs/system-test/E2E-351-202610230142.log",
       "history": [
         {
           "at": "2026-10-21T17:33:47+09:00",
@@ -7009,7 +7171,7 @@
       "layer": "nonfunctional",
       "command": "node tests/system/run.mjs AC-173",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "6252b6a",
       "last_run_at": "2026-10-22T17:10:49+09:00",
       "evidence": "work/runs/202610221530/logs/system-test/IT-021-202610221656.log",
@@ -7019,6 +7181,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-10-22T23:25:52+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
         }
       ]
     },
@@ -9689,6 +9857,181 @@
       "history": [
         {
           "at": "2026-10-22T23:09:07+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-423",
+      "requirement_ids": [
+        "FR-279"
+      ],
+      "ac_ids": [
+        "AC-718"
+      ],
+      "title": "AC-718 Copilot の案（AI 生成）のラベル・別の欄・データは実行前と同じ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-718",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-23T00:49:57+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-424",
+      "requirement_ids": [
+        "FR-278"
+      ],
+      "ac_ids": [
+        "AC-715"
+      ],
+      "title": "AC-715 Copilot で分析実行: ボタン・進行表示・各コンポーネントの案・localhost のみ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-715",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-23T00:50:00+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-425",
+      "requirement_ids": [
+        "FR-280"
+      ],
+      "ac_ids": [
+        "AC-721"
+      ],
+      "title": "AC-721 案の反映・再読み込みで復元",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-721",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-23T00:50:03+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-426",
+      "requirement_ids": [
+        "FR-279"
+      ],
+      "ac_ids": [
+        "AC-719"
+      ],
+      "title": "AC-719 案の編集・レイアウト変更で保持・破棄",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-719",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-23T00:50:07+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-427",
+      "requirement_ids": [
+        "FR-282"
+      ],
+      "ac_ids": [
+        "AC-725"
+      ],
+      "title": "AC-725 Foundry の接続設定の保存・変更・削除・キーボード操作",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-725",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-23T00:50:13+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-428",
+      "requirement_ids": [
+        "FR-283"
+      ],
+      "ac_ids": [
+        "AC-727"
+      ],
+      "title": "AC-727 未設定で分析実行: 呼び出し 0 回・案内",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-727",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-23T00:50:17+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-429",
+      "requirement_ids": [
+        "FR-278"
+      ],
+      "ac_ids": [
+        "AC-717"
+      ],
+      "title": "AC-717 案はコンポーネントごとにだけ表示・案なしの文字",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-717",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-23T00:50:21+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"

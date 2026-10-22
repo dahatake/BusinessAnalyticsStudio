@@ -9,7 +9,6 @@ import type { BrowserItemId, Finding, SmokeContext, SmokeRunner } from './verify
 
 /** 主要画面（要求定義書 §3.5、[ASSUMPTION] A-13）と data-testid のキー */
 export const MAIN_SCREEN_KEYS: ReadonlyArray<readonly [string, string]> = [
-  ['canvas', 'キャンバス'],
   ['issue-solution', '課題-解決策分析'],
   ['priority', '優先順位分析'],
   ['knowledge-graph', 'ナレッジグラフ'],

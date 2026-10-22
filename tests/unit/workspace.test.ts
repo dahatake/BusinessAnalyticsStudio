@@ -4,7 +4,7 @@ import {
   defaultLayout, hide, isLayout, keysOf, leaf, mergeIntoTabs, move, prune, resize, show, split, splitFromTabs, toggleDirection,
   type Layout, type SplitNode,
 } from '../../src/workspace/layoutModel';
-import { centerOn, clampZoom, isCenteredOn, keyViewport, zoomAt, MAX_ZOOM, MIN_ZOOM } from '../../src/workspace/viewport';
+import { areaPanDelta } from '../../src/workspace/areaPan';
 
 const biz = () => defaultLayout('事業部門');
 
@@ -101,31 +101,15 @@ describe('FR-110 既定のレイアウトへの復元', () => {
   });
 });
 
-describe('FR-012 キャンバスのパン/ズーム', () => {
-  const v = { x: 0, y: 0, zoom: 1 };
-
-  // FR-012 AC-015
-  it('FR-012 AC-015 矢印キーでパンし、+/- でズームする', () => {
-    expect(keyViewport(v, 'ArrowRight', 800, 600)!.x).toBeLessThan(0);
-    expect(keyViewport(v, 'ArrowDown', 800, 600)!.y).toBeLessThan(0);
-    expect(keyViewport(v, '+', 800, 600)!.zoom).toBeGreaterThan(1);
-    expect(keyViewport(v, '-', 800, 600)!.zoom).toBeLessThan(1);
-    expect(keyViewport(v, 'a', 800, 600)).toBeNull();
-  });
-
-  // FR-012 AC-015
-  it('FR-012 AC-015 ホイールのズームはカーソルの下の点を動かさず、倍率は範囲に収まる', () => {
-    const z = zoomAt({ x: 10, y: 20, zoom: 1 }, 2, 100, 100);
-    expect((100 - z.x) / z.zoom).toBeCloseTo((100 - 10) / 1);
-    expect((100 - z.y) / z.zoom).toBeCloseTo((100 - 20) / 1);
-    expect(clampZoom(100)).toBe(MAX_ZOOM);
-    expect(clampZoom(0)).toBe(MIN_ZOOM);
-  });
-
-  // FR-012 AC-015
-  it('FR-012 AC-015 議題の位置へ移動すると、その議題が表示領域の中央に来る', () => {
-    const c = centerOn({ x: 0, y: 0, zoom: 1.5 }, 500, 300, 800, 600);
-    expect(isCenteredOn(c, 500, 300, 800, 600)).toBe(true);
-    expect(isCenteredOn(v, 500, 300, 800, 600)).toBe(false);
+describe('FR-016 作業領域の矢印キー操作', () => {
+  // FR-016 AC-192
+  it('FR-016 AC-192 矢印キーで作業領域をパンする（修飾キー付き・他のキーは受けない）', () => {
+    expect(areaPanDelta({ key: 'ArrowRight' })!.dx).toBeGreaterThan(0);
+    expect(areaPanDelta({ key: 'ArrowLeft' })!.dx).toBeLessThan(0);
+    expect(areaPanDelta({ key: 'ArrowDown' })!.dy).toBeGreaterThan(0);
+    expect(areaPanDelta({ key: 'ArrowUp' })!.dy).toBeLessThan(0);
+    expect(areaPanDelta({ key: 'ArrowUp', ctrlKey: true })).toBeNull();
+    expect(areaPanDelta({ key: 'a' })).toBeNull();
   });
 });
+

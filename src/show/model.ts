@@ -56,7 +56,7 @@ export function usesEnterMotion(intensity: Intensity): boolean {
 
 export interface ChapterRef { chapterId: string; chapterTitle: string; chapterIndex: number }
 
-/** 現在のチャプターの次のチャプター（最後のチャプターなら null）。議題の並びから、章の順に求める */
+/** 現在のチャプターの次のチャプター（最後のチャプターなら null）。論点の並びから、章の順に求める */
 export function nextChapterOf(topics: readonly ChapterRef[], index: number): ChapterRef | null {
   const cur = topics[index];
   if (!cur) return null;
@@ -73,7 +73,7 @@ function strings(v: unknown): string[] {
   return Array.isArray(v) ? v.filter((x): x is string => typeof x === 'string' && x !== '') : [];
 }
 
-/** 議題の telop を読む。本文が空・欠けていれば null */
+/** 論点の telop を読む。本文が空・欠けていれば null */
 export function readTelop(topic: unknown): Telop | null {
   const t = isRecord(topic) ? topic.telop : undefined;
   if (!isRecord(t) || typeof t.text !== 'string' || t.text.trim() === '') return null;
@@ -88,7 +88,7 @@ function side(v: unknown, fallbackLabel: string): BeforeAfterSide | null {
   return { label: typeof v.label === 'string' && v.label !== '' ? v.label : fallbackLabel, text: v.text };
 }
 
-/** 議題の beforeAfter を読む。どちらかが欠けていれば null */
+/** 論点の beforeAfter を読む。どちらかが欠けていれば null */
 export function readBeforeAfter(topic: unknown): BeforeAfter | null {
   const b = isRecord(topic) ? topic.beforeAfter : undefined;
   if (!isRecord(b)) return null;
@@ -99,7 +99,7 @@ export function readBeforeAfter(topic: unknown): BeforeAfter | null {
 
 export interface RoiAnnouncement { label: string; value: number; unit: string; caption?: string; sourceIds: string[] }
 
-/** 議題の roi を読む。値が数でなければ null */
+/** 論点の roi を読む。値が数でなければ null */
 export function readRoi(topic: unknown): RoiAnnouncement | null {
   const r = isRecord(topic) ? topic.roi : undefined;
   if (!isRecord(r) || typeof r.value !== 'number' || !Number.isFinite(r.value)) return null;
@@ -112,7 +112,7 @@ export function readRoi(topic: unknown): RoiAnnouncement | null {
   };
 }
 
-/** 議題の type（なければ undefined） */
+/** 論点の type（なければ undefined） */
 export function topicTypeOf(topic: unknown): string | undefined {
   const t = isRecord(topic) ? topic.type : undefined;
   return typeof t === 'string' && t !== '' ? t : undefined;
