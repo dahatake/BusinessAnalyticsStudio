@@ -87,7 +87,7 @@ export function openFoundryVault(dataDir: string = defaultDataDir(), opts: Vault
     if (!s || (authMethod === 'api-key' && !s.key)) return { configured: false, endpoint: s?.endpoint ?? '', host: '', deployment: s?.deployment ?? '', keyMask: '', authMethod };
     let host = '';
     try { host = new URL(s.endpoint).host; } catch { /* 空のまま */ }
-    return { configured: !!host && !!s.deployment, endpoint: s.endpoint, host, deployment: s.deployment, keyMask: authMethod === 'entra' ? '' : FIXED_KEY_MASK, authMethod };
+    return { configured: !!host && !!s.deployment, endpoint: s.endpoint, host, deployment: s.deployment, keyMask: authMethod === 'api-key' ? FIXED_KEY_MASK : '', authMethod };
   };
 
   return {
@@ -118,7 +118,7 @@ export function openFoundryVault(dataDir: string = defaultDataDir(), opts: Vault
     },
     secret() {
       const s = load();
-      return s && s.key && s.deployment && isAllowedEndpoint(s.endpoint) ? { endpoint: s.endpoint, deployment: s.deployment, key: s.key } : null;
+      return s && s.authMethod !== 'entra' && s.key && s.deployment && isAllowedEndpoint(s.endpoint) ? { endpoint: s.endpoint, deployment: s.deployment, key: s.key } : null;
     },
   };
 }

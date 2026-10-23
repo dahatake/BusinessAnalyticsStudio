@@ -11,6 +11,8 @@ import { useConsent } from './useConsent';
 import { DEFAULT_FOUNDRY_DEPLOYMENT, DEFAULT_FOUNDRY_ENDPOINT, deleteFoundryConfig, fetchFoundryView, putFoundryConfig, setFoundryConnection, type FoundryView } from './foundryClient';
 import { tokens } from '../theme/tokens';
 
+/** 値に由来しない固定の伏せ字（末尾の文字も出さない。FR-282 AC-726） */
+
 export function FoundrySettings() {
   const relayUrl = usePackStore((s) => s.runtime.relayUrl);
   const pack = usePackStore((s) => s.state);
@@ -50,7 +52,7 @@ export function FoundrySettings() {
   const remove = async () => {
     const v = await deleteFoundryConfig(relayUrl as string, packId);
     setKey('');
-    if (v) { setView(v); setEndpoint(DEFAULT_FOUNDRY_ENDPOINT); setDeployment(DEFAULT_FOUNDRY_DEPLOYMENT); setResult({ ok: true, text: '接続情報を削除しました。Foundry は使えません。' }); }
+    if (v) { setView(v); setEndpoint(DEFAULT_FOUNDRY_ENDPOINT); setDeployment(DEFAULT_FOUNDRY_DEPLOYMENT); setAuthMethod('api-key'); setResult({ ok: true, text: '接続情報を削除しました。Foundry は使えません。' }); }
     else setResult({ ok: false, text: '削除できませんでした。中継プロセスが起動しているか確認してください。' });
   };
   const enable = async () => {
