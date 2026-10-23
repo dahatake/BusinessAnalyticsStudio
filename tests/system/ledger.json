@@ -323,7 +323,8 @@
     "AC-749": "sha256:3ebadb7dbc267134",
     "AC-750": "sha256:b6c5b0e523bd09d1",
     "AC-751": "sha256:5298ffecc4f6209d",
-    "AC-752": "sha256:8be350ff566287fb"
+    "AC-752": "sha256:8be350ff566287fb",
+    "AC-769": "sha256:4a843785b500f292"
   },
   "cases": [
     {
@@ -10812,6 +10813,31 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "検証レベル=integration は System Test の対象外。テストは先行作成済み。実装役が統合テストとして実行する"
+        }
+      ]
+    },
+    {
+      "id": "E2E-441",
+      "requirement_ids": [
+        "FR-275"
+      ],
+      "ac_ids": [
+        "AC-769"
+      ],
+      "title": "生成AIの接続先の単一選択（既定 Foundry）・欄の切替・/ai/provider の保存と再起動後の保持・認証情報を含まない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-769",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-24T05:55:01+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "AC-769 新設（run 202610240522）"
         }
       ]
     }
