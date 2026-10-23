@@ -54,7 +54,6 @@ export interface Relay {
 /** 接続テスト（FR-282 AC-763）: 顧客データを含まない最小の入力・最小の出力上限。連打の間隔は PARAM-116（5 秒） */
 const FOUNDRY_TEST_INPUT = 'ping';
 const FOUNDRY_TEST_MAX_OUTPUT_TOKENS = 16;
-const FOUNDRY_TEST_MIN_INTERVAL_MS = 5000;
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', '::1']);
 const LOOPBACK_NAMES = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
 
@@ -108,8 +107,6 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
   const getFoundry = (): FoundryVault => (fvault ??= openFoundryVault());
   /** Foundry の実接続を有効にした顧客パックの ID（再起動で消える） */
   const foundryEnabled = new Set<string>();
-  /** 直近の接続テストの開始時刻（連打の防御。画面側が主の判定で、これは二重の保険） */
-  let lastFoundryTestAt: number | null = null;
   const genai: FoundryService = opts.foundry ?? createFoundryService({ fetchFn: opts.foundryFetch, timeoutMs: opts.foundryTimeoutMs });
   const speechFetch = opts.speechFetch ?? ((u, i) => fetch(u, i));
   const signedIn = async (): Promise<boolean> => (opts.sdk ? (await opts.sdk.status().catch(() => ({ signedIn: false }))).signedIn : false);
@@ -135,14 +132,8 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
         }
         // ---- FR-282 AC-763: 接続テスト。保存済みの接続情報で最小の入力を 1 回だけ送る。了承・有効化は問わない。返すのは成功か原因種別だけ（キー・トークン・上流の本文は返さない） ----
         if (req.method === 'POST' && path === '/foundry/test') {
-          const nowMs = Date.now();
-          if (lastFoundryTestAt !== null && nowMs - lastFoundryTestAt < FOUNDRY_TEST_MIN_INTERVAL_MS) {
-            const wait = Math.max(1, Math.ceil((FOUNDRY_TEST_MIN_INTERVAL_MS - (nowMs - lastFoundryTestAt)) / 1000));
-            return json(429, { ok: false, cause: 'too-frequent', retryAfterSeconds: wait, message: `前回の接続テストから間もないため、${wait} 秒ほど待ってからもう一度押してください` });
-          }
           const secret = getFoundry().importSecret();
           if (!secret) return json(200, { ok: false, cause: 'not-configured', message: 'Foundry の接続情報が未設定です' });
-          lastFoundryTestAt = nowMs;
           try {
             await callFoundryWithInput(secret, FOUNDRY_TEST_INPUT, opts.foundryFetch, opts.foundryTimeoutMs, opts.foundryToken, FOUNDRY_TEST_MAX_OUTPUT_TOKENS);
             return json(200, { ok: true, message: '接続できました' });
