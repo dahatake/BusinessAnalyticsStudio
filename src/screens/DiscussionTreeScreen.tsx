@@ -24,7 +24,7 @@ import { useDiscussionStore } from '../store/discussion';
 import { useEditStore } from '../store/edit';
 import { useLayout } from '../store/layout';
 import { usePackStore } from '../store/pack';
-import { useTreeStore } from '../store/tree';
+import { useTreeDoc, useTreeStore } from '../store/tree';
 import { useSelectionStore } from '../store/selection';
 import { ViewAsTableButton, ViewTable } from '../components/ViewTable';
 import { Items3DSurface } from '../three/Items3DSurface';
@@ -85,7 +85,7 @@ function DiscussionTreeScreen() {
   const editEnabled = useEditStore((st) => st.editMode);
   const data = state.status === 'ready' ? state.pack.data : undefined;
   const key = data ? packKeyOf(data.customer.name, data.customer.projectName) : '';
-  const doc = useTreeStore((st) => st.docs[key]);
+  const doc = useTreeDoc(key, data);
   const job = useTreeStore((st) => (st.job?.key === key ? st.job : null));
   const error = useTreeStore((st) => st.error);
   const canUndo = useTreeStore((st) => (st.past[key]?.length ?? 0) > 0);

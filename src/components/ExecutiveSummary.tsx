@@ -14,7 +14,7 @@ import { useEditStore } from '../store/edit';
 import { usePackStore } from '../store/pack';
 import { usePriorityStore } from '../store/priority';
 import { activeEdited, useSummaryStore } from '../store/summary';
-import { useTreeStore } from '../store/tree';
+import { useTreeDoc } from '../store/tree';
 import { NumericValue } from './NumericValue';
 import { elevationStyles } from '../theme/tokens';
 
@@ -47,7 +47,7 @@ export function ExecutiveSummary({ scope }: ExecutiveSummaryProps) {
   const { mode, ask } = useAi();
   const data = state.status === 'ready' ? state.pack.data : undefined;
   const key = data ? packKeyOf(data.customer.name, data.customer.projectName) : '';
-  const tree = useTreeStore((st) => st.docs[key]);
+  const tree = useTreeDoc(key, data);
   const stored = useSummaryStore((st) => st.byPack[key]?.[scope]);
 
   const generated: SummaryContent | undefined = useMemo(

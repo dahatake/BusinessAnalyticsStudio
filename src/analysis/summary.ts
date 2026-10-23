@@ -65,7 +65,7 @@ export function buildSummary(scope: SummaryScope, data: PackData, ctx: SummaryCo
       const first = issues[0];
       return {
         conclusion: first ? `課題「${first.title}」を起点に、解決策を整理できます。` : '課題がまだ整理されていません。',
-        evidence: [`根拠: 課題 ${issues.length} 件に対し解決策 ${solutions.length} 件があり、解決策のない課題は ${noSolution.length} 件です。`],
+        evidence: [`根拠: 課題 ${issues.length} 件に対し解決策 ${solutions.length} 件があり、${noSolution.length > 0 ? `解決策のない課題は ${noSolution.length} 件です` : '解決策のない課題はありません'}。`],
         action: noSolution.length > 0 ? `解決策のない課題（${noSolution[0]?.title}）の打ち手を検討してください。` : '優先度の高い課題から議論テーマにしてください。',
       };
     }
@@ -86,7 +86,7 @@ export function buildSummary(scope: SummaryScope, data: PackData, ctx: SummaryCo
       const c = (k: string) => d.elements.filter((e) => e.diff === k).length;
       return {
         conclusion: 'ToBe では、AsIs から要素の追加・削除・変更を伴う構成へ変わります。',
-        evidence: [`根拠: AsIs から ToBe で、追加 ${c('added')} 件・削除 ${c('removed')} 件・変更 ${c('changed')} 件（要素 ${v.tobe.elements.length} 件）です。`],
+        evidence: [`根拠: AsIs から ToBe で、${[['追加', c('added')], ['削除', c('removed')], ['変更', c('changed')]].map(([k, n]) => (n === 0 ? `${k}なし` : `${k} ${n} 件`)).join('・')}（要素 ${v.tobe.elements.length} 件）です。`],
         action: '追加される要素の製品適合と、削除される要素の移行手順を確認してください。',
       };
     }
