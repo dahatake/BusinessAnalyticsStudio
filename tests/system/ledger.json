@@ -323,7 +323,11 @@
     "AC-749": "sha256:3ebadb7dbc267134",
     "AC-750": "sha256:b6c5b0e523bd09d1",
     "AC-751": "sha256:5298ffecc4f6209d",
-    "AC-752": "sha256:8be350ff566287fb"
+    "AC-752": "sha256:8be350ff566287fb",
+    "AC-761": "sha256:2d47552f43564343",
+    "AC-762": "sha256:f998e7e05e260c7e",
+    "AC-763": "sha256:20fa3487ab3317ea",
+    "AC-764": "sha256:726601016c247e6d"
   },
   "cases": [
     {
@@ -10812,6 +10816,124 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "検証レベル=integration は System Test の対象外。テストは先行作成済み。実装役が統合テストとして実行する"
+        }
+      ]
+    },
+    {
+      "id": "IT-082",
+      "requirement_ids": [
+        "FR-282"
+      ],
+      "ac_ids": [
+        "AC-761"
+      ],
+      "title": "Entra ID のトークン取得（start.ts が部品を渡す・秘密が出ない・取得失敗の案内）",
+      "layer": "api",
+      "command": "npx tsx --test tests/system/api/foundry-entra.test.ts --test-name-pattern AC-761",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-23T23:56:08+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T23:56:36+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integration のため System Test の対象外（CHK-10）。テスト tests/system/api/foundry-entra.test.ts は実装役の統合テストの雛形として残す"
+        }
+      ]
+    },
+    {
+      "id": "IT-083",
+      "requirement_ids": [
+        "FR-282"
+      ],
+      "ac_ids": [
+        "AC-762"
+      ],
+      "title": "Entra ID は API キーなしで analyze・health keyConfigured",
+      "layer": "api",
+      "command": "npx tsx --test tests/system/api/foundry-entra.test.ts --test-name-pattern AC-762",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-23T23:56:11+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T23:56:37+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integration のため System Test の対象外（CHK-10）。テスト tests/system/api/foundry-entra.test.ts は実装役の統合テストの雛形として残す"
+        }
+      ]
+    },
+    {
+      "id": "IT-084",
+      "requirement_ids": [
+        "FR-282"
+      ],
+      "ac_ids": [
+        "AC-763"
+      ],
+      "title": "接続テスト POST /foundry/test（1 回・原因種別・未設定は 0 回）",
+      "layer": "api",
+      "command": "npx tsx --test tests/system/api/foundry-entra.test.ts --test-name-pattern AC-763",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-23T23:56:14+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T23:56:37+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベル=integration のため System Test の対象外（CHK-10）。テスト tests/system/api/foundry-entra.test.ts は実装役の統合テストの雛形として残す"
+        }
+      ]
+    },
+    {
+      "id": "E2E-440",
+      "requirement_ids": [
+        "FR-282"
+      ],
+      "ac_ids": [
+        "AC-764"
+      ],
+      "title": "エンドポイントの入力案内と不正値の検証メッセージ",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-764",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-23T23:56:17+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
         }
       ]
     }
