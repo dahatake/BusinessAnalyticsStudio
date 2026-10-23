@@ -32,6 +32,20 @@ describe('FR-011 official SDK adapter',()=>{
     await expect(s.adapter.complete('chat','customer data')).rejects.toMatchObject({kind:'timeout'});
     resolveAuth({isAuthenticated:true});await new Promise(r=>setTimeout(r,5));expect(s.client.createSession).not.toHaveBeenCalled();expect(s.session.sendAndWait).not.toHaveBeenCalled();
   });
+  it('FR-275 AC-770 revocation while the real adapter awaits authentication prevents session creation and customer transmission',async()=>{
+    const s=setup({},1000);let authorized=true;let resolveAuth!:(value:{isAuthenticated:boolean})=>void;
+    s.client.getAuthStatus.mockImplementationOnce(()=>new Promise(resolve=>{resolveAuth=resolve;}));
+    const pending=s.adapter.complete('chat','customer data',{authMethod:'signin',model:''},()=>authorized);
+    await vi.waitFor(()=>expect(s.client.getAuthStatus).toHaveBeenCalledOnce());authorized=false;resolveAuth({isAuthenticated:true});
+    await expect(pending).rejects.toMatchObject({kind:'auth'});expect(s.client.createSession).not.toHaveBeenCalled();expect(s.session.sendAndWait).not.toHaveBeenCalled();expect(s.client.stop).toHaveBeenCalledOnce();
+  });
+  it('FR-275 AC-770 revocation during session creation closes the session without sending customer data',async()=>{
+    const s=setup({},1000);let authorized=true;let resolveSession!:(session:typeof s.session)=>void;
+    s.client.createSession.mockImplementationOnce(()=>new Promise(resolve=>{resolveSession=resolve;}));
+    const pending=s.adapter.complete('chat','customer data',{authMethod:'signin',model:''},()=>authorized);
+    await vi.waitFor(()=>expect(s.client.createSession).toHaveBeenCalledOnce());authorized=false;resolveSession(s.session);
+    await expect(pending).rejects.toMatchObject({kind:'auth'});expect(s.session.sendAndWait).not.toHaveBeenCalled();expect(s.session.disconnect).toHaveBeenCalledOnce();expect(s.client.stop).toHaveBeenCalledOnce();
+  });
   it('FR-275 AC-707 errors and timeouts are sanitized and every client/session is closed',async()=>{
     for(const over of [{startFail:true},{authFail:true},{sendFail:'dummy-secret'},{sendFail:'Timeout after 50ms waiting for session.idle'},{hang:true}]){
       const s=setup(over,15); await expect(s.adapter.complete('chat','input')).rejects.toSatisfy((e:Error)=>!e.message.includes('secret'));expect(s.client.stop).toHaveBeenCalledOnce();expect(s.client.forceStop).toHaveBeenCalled();

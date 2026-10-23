@@ -82,7 +82,7 @@ describe('FR-275 common provider integration', () => {
     expect(saved.body).toMatchObject({tokenConfigured:true,tokenMask:'••••••••'}); expect(JSON.stringify(saved.body)).not.toContain(TOKEN);
     expect(fs.readFileSync(path.join(s.dir,'copilot','foundry.enc'),'utf8')).not.toContain(TOKEN);
     expect(JSON.stringify((await s.request('/copilot/config')).body)).not.toContain(TOKEN);
-    await s.enable(); await s.request('/foundry/ask',payload); expect(s.sdk!.complete).toHaveBeenLastCalledWith('chat','質問',{authMethod:'token',model:'model-x',token:TOKEN});
+    await s.enable(); await s.request('/foundry/ask',payload); expect(s.sdk!.complete).toHaveBeenLastCalledWith('chat','質問',{authMethod:'token',model:'model-x',token:TOKEN},expect.any(Function));
     await s.request('/copilot/config',undefined,'DELETE'); expect(s.store.config().token).toBeUndefined(); expect(s.store.config().authMethod).toBe('token');
     expect((await s.enable()).status).toBe(409); expect((await s.request('/foundry/ask',payload)).body.mode).toBe('unavailable'); expect(s.sdk!.complete).toHaveBeenCalledTimes(1);
     expect(fs.existsSync(path.join(s.dir,'copilot','foundry.enc'))).toBe(false);
@@ -111,5 +111,53 @@ describe('FR-275 common provider integration', () => {
     // No token provider was installed: safe failure, and no Copilot fallback.
     for (const route of ['ask','review','analyze']) expect(JSON.stringify((await s.request('/foundry/'+route,payload)).body)).not.toContain(TOKEN);
     expect(s.sdk!.complete).not.toHaveBeenCalled();
+  });
+});
+
+// Reviewer P1: authentication is intentionally suspended while real HTTP settings/disable requests run.
+// FR-275 AC-705/706/770: neither an old enable nor an old generation may survive revocation, including ABA.
+type Fixture = Awaited<ReturnType<typeof setup>>;
+const races: Array<[string, (s: Fixture) => Promise<unknown>, boolean]> = [
+  ['provider switch', s => s.select('foundry'), false],
+  ['provider ABA', async s => { await s.select('foundry'); await s.select('copilot'); }, false],
+  ['model change', s => s.request('/copilot/config',{authMethod:'signin',model:'new-model'},'PUT'), false],
+  ['auth change', s => s.request('/copilot/config',{authMethod:'token',model:'',token:TOKEN},'PUT'), false],
+  ['token change', s => s.request('/copilot/config',{authMethod:'token',model:'',token:TOKEN+'-changed'},'PUT'), false],
+  ['token deletion', s => s.request('/copilot/config',undefined,'DELETE'), false],
+  ['Foundry config change', s => s.saveFoundry({deployment:'changed'}), false],
+  ['Foundry config deletion', s => s.request('/foundry/config',undefined,'DELETE'), false],
+  ['disable', s => s.enable({enable:false}), false],
+  ['disable and newer enable', async s => { await s.enable({enable:false}); expect((await s.enable()).status).toBe(200); }, true],
+];
+function suspendNextAuth(status: ReturnType<typeof vi.fn>) {
+  let entered!: () => void; let release!: (v: {signedIn:boolean}) => void;
+  const started = new Promise<void>(r => { entered=r; });
+  const auth = new Promise<{signedIn:boolean}>(r => { release=r; });
+  status.mockImplementationOnce(() => { entered(); return auth; });
+  return { started, release: () => release({signedIn:true}) };
+}
+describe('FR-275 AC-770 delayed-auth configuration and connection races', () => {
+  it.each(races)('FR-275 AC-770 pending enable cannot restore authorization after %s', async (_name, mutate, newerEnabled) => {
+    const sdk={status:vi.fn(async()=>({signedIn:true})),complete:vi.fn(async()=> '回答')};
+    const s=await setup(true,sdk);await s.saveFoundry();await s.select('copilot');
+    if (_name.startsWith('token')) await s.request('/copilot/config',{authMethod:'token',model:'',token:TOKEN},'PUT');
+    const auth=suspendNextAuth(sdk.status);const pending=s.enable();await auth.started;
+    try { await mutate(s); } finally { auth.release(); }
+    expect(await pending).toMatchObject({status:409,body:{mode:'mock'}});
+    expect((await s.request('/foundry/config?packId=P')).body.enabled).toBe(newerEnabled);
+    expect(sdk.complete).not.toHaveBeenCalled();expect(s.foundryFetch).not.toHaveBeenCalled();expect(s.analyze).not.toHaveBeenCalled();
+  });
+  for (const route of ['ask','review','analyze']) it.each(races)(`FR-275 AC-770 pending ${route} sends zero requests after %s`, async (_name,mutate,newerEnabled)=>{
+    const sdk={status:vi.fn(async()=>({signedIn:true})),complete:vi.fn(async()=> '回答')};
+    const s=await setup(true,sdk);await s.saveFoundry();await s.select('copilot');
+    if (_name.startsWith('token')) await s.request('/copilot/config',{authMethod:'token',model:'',token:TOKEN},'PUT');
+    await s.enable();
+    const auth=suspendNextAuth(sdk.status);const pending=s.request('/foundry/'+route,payload);await auth.started;
+    try { await mutate(s); } finally { auth.release(); }
+    const response=await pending;
+    if(route==='analyze')expect(response.status).toBe(502);else expect(response.body.mode).toBe('unavailable');
+    expect(sdk.complete).not.toHaveBeenCalled();expect(s.foundryFetch).not.toHaveBeenCalled();expect(s.analyze).not.toHaveBeenCalled();
+    expect((await s.request('/foundry/config?packId=P')).body.enabled).toBe(newerEnabled);
+    if(newerEnabled) { expect((await s.request('/foundry/ask',payload)).body.mode).toBe('connected');expect(sdk.complete).toHaveBeenCalledOnce(); }
   });
 });

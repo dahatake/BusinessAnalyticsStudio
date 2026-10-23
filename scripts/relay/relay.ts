@@ -23,7 +23,7 @@ export type AiKind = (typeof AI_KINDS)[number];
 export interface CopilotSdk {
   /** サインイン済み・利用可能か */
   status(config?: CopilotConfig): Promise<{ signedIn: boolean }>;
-  complete(kind: AiKind, prompt: string, config?: CopilotConfig): Promise<string>;
+  complete(kind: AiKind, prompt: string, config?: CopilotConfig, canSend?: () => boolean): Promise<string>;
 }
 
 export interface RelayOptions {
@@ -111,14 +111,39 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
   const foundryEnabled = new Set<string>();
   const provider = opts.aiProvider ?? openAiProvider();
   const signin = opts.copilotSignin ?? createCopilotSignin();
-  const copilotReady = async () => {
-    const cfg = provider.config();
-    if (!opts.sdk || (cfg.authMethod === 'token' && !cfg.token)) return false;
-    return (await opts.sdk.status(cfg).catch(() => ({ signedIn: false }))).signedIn;
+  // FR-275 AC-770: async authentication must not outlive the configuration or
+  // per-pack authorization which was explicitly confirmed by the user.
+  let configRevision = 0;
+  const connectionRevisions = new Map<string, number>();
+  const nextConnectionRevision = (packId: string) => {
+    const revision = (connectionRevisions.get(packId) ?? 0) + 1;
+    connectionRevisions.set(packId, revision);
+    return revision;
   };
-  const copilotComplete = async (prompt: string) => {
-    if (!await copilotReady()) throw new CopilotError('auth');
-    return opts.sdk!.complete('chat', prompt, provider.config());
+  const invalidateConfiguration = () => { configRevision++; foundryEnabled.clear(); };
+  const snapshot = (packId: string) => ({
+    provider: provider.provider(), configRevision,
+    connectionRevision: connectionRevisions.get(packId) ?? 0,
+    config: provider.config(),
+  });
+  const isCurrent = (packId: string, captured: ReturnType<typeof snapshot>) =>
+    captured.configRevision === configRevision && captured.provider === provider.provider()
+    && captured.connectionRevision === (connectionRevisions.get(packId) ?? 0);
+  const copilotReady = async () => {
+    const captured = snapshot('');
+    const cfg = captured.config;
+    if (!opts.sdk || (cfg.authMethod === 'token' && !cfg.token)) return false;
+    const status = await opts.sdk.status(cfg).catch(() => ({ signedIn: false }));
+    return isCurrent('', captured) && status.signedIn;
+  };
+  const copilotComplete = async (packId: string, prompt: string) => {
+    const captured = snapshot(packId);
+    const canSend = () => captured.provider === 'copilot' && isCurrent(packId, captured) && foundryEnabled.has(packId);
+    if (!canSend() || !opts.sdk || (captured.config.authMethod === 'token' && !captured.config.token)) throw new CopilotError('auth');
+    const status = await opts.sdk.status(captured.config).catch(() => ({ signedIn: false }));
+    if (!canSend() || !status.signedIn) throw new CopilotError('auth');
+    // The real adapter repeats this check after its own startup/auth/session awaits.
+    return opts.sdk.complete('chat', prompt, captured.config, canSend);
   };
   const genai: FoundryService = opts.foundry ?? createFoundryService({ fetchFn: opts.foundryFetch, timeoutMs: opts.foundryTimeoutMs });
   const speechFetch = opts.speechFetch ?? ((u, i) => fetch(u, i));
@@ -146,8 +171,9 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           if (req.method === 'PUT') {
             const b = JSON.parse((await readBody(req)) || '{}');
             if (b.provider !== 'foundry' && b.provider !== 'copilot') return json(400, { error: '接続先を確認してください' });
-            if (b.provider !== provider.provider()) foundryEnabled.clear();
+            const changed = b.provider !== provider.provider();
             provider.setProvider(b.provider);
+            if (changed) invalidateConfiguration();
             return json(200, { provider: provider.provider() });
           }
         }
@@ -156,10 +182,10 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           if (req.method === 'PUT') {
             const b = JSON.parse((await readBody(req)) || '{}');
             if (!['signin', 'token'].includes(b.authMethod) || typeof b.model !== 'string' || (b.token !== undefined && typeof b.token !== 'string')) return json(400, { error: '認証方式・モデル名を確認してください' });
-            try { provider.save({ authMethod: b.authMethod, model: b.model, token: b.token }); foundryEnabled.clear(); return json(200, { ...provider.view(), signedIn: await copilotReady() }); }
+            try { provider.save({ authMethod: b.authMethod, model: b.model, token: b.token }); invalidateConfiguration(); return json(200, { ...provider.view(), signedIn: await copilotReady() }); }
             catch { return json(400, { error: 'Copilot 設定を保存できませんでした' }); }
           }
-          if (req.method === 'DELETE') { provider.removeToken(); foundryEnabled.clear(); return json(200, { ...provider.view(), signedIn: false }); }
+          if (req.method === 'DELETE') { provider.removeToken(); invalidateConfiguration(); return json(200, { ...provider.view(), signedIn: false }); }
         }
         if (path === '/copilot/signin') {
           if (req.method === 'POST') return json(200, { ...signin.start(copilotReady), signedIn: await copilotReady() });
@@ -178,7 +204,7 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
             if (b.consent !== true || (b.includesPerson && !b.personConfirmed)) return json(403, { error: { cause: 'disabled' } });
             if (provider.provider() === 'copilot') {
               if (b.consent !== true) return json(403, { error: { cause: 'disabled' } });
-              return json(200, parseJsonText(await copilotComplete(buildPrompt(b.solution))));
+              return json(200, parseJsonText(await copilotComplete(b.packId, buildPrompt(b.solution))));
             }
             const secret = getFoundry().importSecret();
             if (!secret) throw new GenAiFoundryError('key-missing');
@@ -213,7 +239,7 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
             const b = JSON.parse((await readBody(req)) || '{}') as { endpoint?: string; deployment?: string; key?: string; authMethod?: string };
             try {
               getFoundry().save({ endpoint: String(b.endpoint ?? ''), deployment: String(b.deployment ?? ''), key: typeof b.key === 'string' ? b.key : undefined, authMethod: b.authMethod === 'entra' ? 'entra' : 'api-key' });
-              foundryEnabled.clear();
+              invalidateConfiguration();
               return json(200, await withMode());
             } catch (e) {
               return json(400, { error: '接続情報を保存できませんでした。エンドポイント・デプロイ名・認証方式を確認してください' });
@@ -221,18 +247,26 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           }
           if (req.method === 'DELETE') {
             getFoundry().remove();
-            foundryEnabled.clear();
+            invalidateConfiguration();
             return json(200, await withMode());
           }
         }
         if (req.method === 'POST' && path === '/foundry/connection') {
           const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; enable?: boolean; confirmed?: boolean; consent?: boolean };
           if (typeof b.packId !== 'string' || !b.packId) return json(400, { error: 'packId が必要です' });
-          if (!b.enable) { foundryEnabled.delete(b.packId); return json(200, { mode: 'mock' }); }
+          if (!b.enable) { nextConnectionRevision(b.packId); foundryEnabled.delete(b.packId); return json(200, { mode: 'mock' }); }
           if (b.consent !== true) return json(403, { error: '顧客の了承の記録がないため、実接続を有効にできません', mode: 'mock' });
           if (b.confirmed !== true) return json(400, { error: '費用と送信内容の確認が必要です' });
-          if (provider.provider() === 'copilot' && !await copilotReady()) return json(409, { error: 'Copilot SDK が未認証、トークン未保存、または利用できません。Copilot CLI の /login またはトークン方式を確認してください', mode: 'mock' });
-          if (provider.provider() === 'foundry' && !getFoundry().importSecret()) return json(409, { error: 'Foundry の接続情報が未設定です', mode: 'mock' });
+          nextConnectionRevision(b.packId);
+          foundryEnabled.delete(b.packId);
+          const captured = snapshot(b.packId);
+          if (captured.provider === 'copilot') {
+            const ready = await copilotReady();
+            if (!isCurrent(b.packId, captured)) return json(409, { error: '接続設定または有効化状態が変更されました。再確認して有効にしてください', mode: 'mock' });
+            if (!ready) return json(409, { error: 'Copilot SDK が未認証、トークン未保存、または利用できません。Copilot CLI の /login またはトークン方式を確認してください', mode: 'mock' });
+          }
+          if (!isCurrent(b.packId, captured)) return json(409, { error: '接続設定または有効化状態が変更されました。再確認してください', mode: 'mock' });
+          if (captured.provider === 'foundry' && !getFoundry().importSecret()) return json(409, { error: 'Foundry の接続情報が未設定です', mode: 'mock' });
           foundryEnabled.add(b.packId);
           return json(200, { mode: 'connected' });
         }
@@ -247,7 +281,7 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           if (provider.provider() === 'foundry' && !secret) return unavailable('not-configured', 'Foundry の接続情報が未設定です');
           if (b.includesPerson === true && b.personConfirmed !== true) return unavailable('person-unconfirmed', '種別「人」を含む顧客パックは、送信前の確認が必要です');
           try {
-            const answer = provider.provider() === 'copilot' ? await copilotComplete(b.prompt) : secret!.authMethod === 'entra'
+            const answer = provider.provider() === 'copilot' ? await copilotComplete(b.packId, b.prompt) : secret!.authMethod === 'entra'
               ? await callFoundryWithInput(secret!, b.prompt, opts.foundryFetch, opts.foundryTimeoutMs, opts.foundryToken)
               : await callFoundry(secret!, b.prompt, opts.foundryFetch, opts.foundryTimeoutMs);
             return json(200, { answer, mode: 'connected' });
@@ -271,7 +305,7 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           if (b.includesPerson === true && b.personConfirmed !== true) return unavailable('person-unconfirmed', '種別「人」を含む顧客パックは、送信前の確認が必要です');
           try {
             const prompt = buildReviewPrompt(comps);
-            const text = provider.provider() === 'copilot' ? await copilotComplete(prompt) : secret!.authMethod === 'entra'
+            const text = provider.provider() === 'copilot' ? await copilotComplete(b.packId, prompt) : secret!.authMethod === 'entra'
               ? await callFoundryWithInput(secret!, prompt, opts.foundryFetch, opts.foundryTimeoutMs, opts.foundryToken)
               : await callFoundry(secret!, prompt, opts.foundryFetch, opts.foundryTimeoutMs);
             const reviews = parseReviewReply(text, comps.map((c) => c.id));
@@ -407,6 +441,6 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
     host,
     port,
     url: `http://${host.includes(':') ? `[${host}]` : host}:${port}`,
-    close: () => { signin.close(); return new Promise<void>((r) => { server.close(() => r()); server.closeAllConnections?.(); }); },
+    close: () => { invalidateConfiguration(); signin.close(); return new Promise<void>((r) => { server.close(() => r()); server.closeAllConnections?.(); }); },
   };
 }
