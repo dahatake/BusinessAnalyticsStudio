@@ -4667,9 +4667,9 @@
       "command": "node tests/system/run.mjs AC-379",
       "canary": false,
       "status": "pass",
-      "last_commit": "6252b6a",
-      "last_run_at": "2026-10-22T17:10:49+09:00",
-      "evidence": "work/runs/202610221530/logs/system-test/E2E-282-202610221608.log",
+      "last_commit": "8937d19",
+      "last_run_at": "2026-10-23T12:49:59+09:00",
+      "evidence": "work/runs/202610230630/logs/system-test/E2E-282-202610231249.log",
       "history": [
         {
           "at": "2026-10-15T12:58:31+09:00",
