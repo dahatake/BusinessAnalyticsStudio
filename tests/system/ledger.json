@@ -2171,7 +2171,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-081",
       "canary": false,
-      "status": "fail",
+      "status": "not_run",
       "last_commit": "c09c02a",
       "last_run_at": "2026-10-24T07:35:37+09:00",
       "evidence": "work/runs/202610240636/logs/system-test/E2E-169-202610240727.log",
@@ -2187,6 +2187,12 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
+        },
+        {
+          "at": "2026-10-24T07:46:17+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "テスト書き直し。再実行は pass 確認済み"
         }
       ]
     },
