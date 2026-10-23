@@ -193,3 +193,13 @@ describe('FR-276 課金の安全策', () => {
     expect(isRaise(DEFAULT_LIMITS, { ...DEFAULT_LIMITS, unitYenPerMInput: 1 })).toBe(false);
   });
 });
+
+// FR-275 AC-706: selected-provider explanation may not bypass the existing person confirmation.
+describe('FR-275 AC-706 explanation person confirmation', () => {
+  it('FR-275 AC-706 without person confirmation there are zero generation calls; explicit confirmation forwards flags', async () => {
+    const t = setup(); t.deps.includesPerson = true;
+    expect(await runExplain(t.deps,t.session,snap)).toMatchObject({kind:'fallback',reason:'person-unconfirmed'});expect(t.calls).toHaveLength(0);
+    t.deps.confirmPerson = async () => ({allowed:false});await runExplain(t.deps,t.session,snap);expect(t.calls).toHaveLength(0);
+    t.deps.confirmPerson = async () => ({allowed:true});await runExplain(t.deps,t.session,snap);expect(t.calls[0]).toMatchObject({includesPerson:true,personConfirmed:true});
+  });
+});

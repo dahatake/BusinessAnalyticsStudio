@@ -9,4 +9,4 @@ const sdk = await loadCopilotSdk();
 const azure = createAzureServices(azureConfigFromEnv(process.env));
 // Microsoft Foundry（現状の説明・生成AIの活用分析）の接続情報は、設定画面から入れて中継の暗号化した保管庫に置く共通接続（FR-275）だけ。環境変数は使わない
 const relay = await startRelay({ sdk, azure, port });
-console.log(`中継プロセスを ${relay.url} で待ち受けています（Copilot SDK: ${sdk ? '利用可能' : '未導入または未サインイン。モックで動作'}）`);
+console.log(`中継プロセスを ${relay.url} で待ち受けています（SDK の認証状態は設定画面で確認してください。未認証では実接続できません）`);

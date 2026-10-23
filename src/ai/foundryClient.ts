@@ -9,6 +9,7 @@ export const DEFAULT_FOUNDRY_DEPLOYMENT = 'gpt-chat-latest';
 export type AuthMethod = 'api-key' | 'entra';
 
 export interface FoundryView {
+  provider?: 'foundry' | 'copilot';
   configured: boolean;
   endpoint: string;
   host: string;
