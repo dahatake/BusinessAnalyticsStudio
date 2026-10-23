@@ -181,8 +181,8 @@ test('FR-282 AC-763 異常系: 未設定のときは Foundry を呼ばず（0 �
   } finally { await e.cleanup(); }
 });
 
-// FR-282 AC-763 AC-710（連打間隔内は 0 回・待ち時間を示す。PARAM-116 = 5 秒）と最小の出力トークン上限
-test('FR-282 AC-763 AC-710 異常系: 前回の呼び出しの開始から 5 秒未満の再押下は Foundry を 0 回で待ち時間を示し、1 回目の呼び出しは最小の出力トークン上限を付ける', async () => {
+// FR-282 AC-763（中継側: 停止・間隔は判定せず、受けた要求ごとに Foundry を 1 回だけ呼ぶ。間隔・予算停止の 0 回は画面側の責任）と最小の出力トークン上限
+test('FR-282 AC-763 中継側: 間隔内に続けて受けた要求も間隔を判定せず 1 要求につき Foundry を 1 回呼び、1 回の呼び出しは最小の出力トークン上限を付ける', async () => {
   const e = await setup({ auth: 'api-key' });
   try {
     const first = await e.call('POST', '/foundry/test', {});
@@ -192,9 +192,9 @@ test('FR-282 AC-763 AC-710 異常系: 前回の呼び出しの開始から 5 秒
     assert.equal(typeof sent.max_output_tokens, 'number', '出力トークンの上限が付いていない');
     assert.ok(sent.max_output_tokens > 0 && sent.max_output_tokens <= 100, `出力トークン上限が最小ではない: ${sent.max_output_tokens}`);
     const second = await e.call('POST', '/foundry/test', {});
-    assert.equal(e.calls.length, 1, '間隔内の再押下で Foundry を呼んだ');
-    assert.notEqual(second.text, first.text);
-    assert.match(second.text, /秒|待/, '待ち時間が示されていない');
+    assert.equal(second.status, 200, second.text);
+    assert.equal(e.calls.length, 2, '中継側が間隔を判定して Foundry を呼ばなかった（判定は画面側）');
+    assert.equal(JSON.parse(e.calls[1].body).max_output_tokens, sent.max_output_tokens);
     noSecrets('応答', second.text);
   } finally { await e.cleanup(); }
 });

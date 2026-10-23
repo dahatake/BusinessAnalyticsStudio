@@ -326,7 +326,7 @@
     "AC-752": "sha256:8be350ff566287fb",
     "AC-761": "sha256:2d47552f43564343",
     "AC-762": "sha256:f998e7e05e260c7e",
-    "AC-763": "sha256:80f7379b8ce81452",
+    "AC-763": "sha256:2aff7e48a3665f4e",
     "AC-764": "sha256:726601016c247e6d"
   },
   "cases": [
@@ -10901,7 +10901,7 @@
       "ac_ids": [
         "AC-763"
       ],
-      "title": "接続テスト POST /foundry/test（1 回・原因種別・未設定は 0 回）",
+      "title": "接続テスト POST /foundry/test（中継: 1 回・間隔非判定・原因種別・未設定は 0 回）",
       "layer": "api",
       "command": "npx tsx --test tests/system/api/foundry-entra.test.ts --test-name-pattern AC-763",
       "canary": false,
@@ -10939,6 +10939,12 @@
           "by": "test-designer",
           "change": "ac_ids: ['AC-763', 'AC-710', 'AC-711', 'AC-761'] -> ['AC-763']",
           "reason": "AC-710/711/761 は他ケースの担当。AC-763 に戻す"
+        },
+        {
+          "at": "2026-10-24T05:24:30+09:00",
+          "by": "test-designer",
+          "change": "title: '接続テスト POST /foundry/test（1 回・原因種別・未設定は 0 回）' -> '接続テスト POST /foundry/test（中継: 1 回・間隔非判定・原因種別・未設定は 0 回）'",
+          "reason": "AC-763 本文変更: 停止・間隔の判定は画面側、中継は判定せず 1 回呼ぶ"
         }
       ]
     },
