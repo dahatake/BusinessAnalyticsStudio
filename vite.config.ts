@@ -67,5 +67,5 @@ export default defineConfig({
     ? { server: { fs: { deny: ['.env', '.env.*', '*.{crt,pem}', '**/.DS_Store'] } } }
     : {}),
   // 負荷時（並列実行・統合の verify）でも、ファイル走査や起動を含むテストが既定の 5 秒でタイムアウトしないようにする。並列のワーカー数も抑える
-  test: { include: ['tests/unit/**/*.test.{ts,tsx}'], environment: 'node', testTimeout: 60_000, hookTimeout: 60_000, maxWorkers: 4, minWorkers: 1 },
+  test: { include: ['tests/unit/**/*.test.{ts,tsx}'], environment: 'node', testTimeout: 60_000, hookTimeout: 60_000, maxWorkers: 4, minWorkers: 1, poolOptions: { forks: { execArgv: ['--no-experimental-webstorage'] }, threads: { execArgv: ['--no-experimental-webstorage'] } } },
 });
