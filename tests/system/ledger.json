@@ -326,7 +326,7 @@
     "AC-752": "sha256:8be350ff566287fb",
     "AC-761": "sha256:2d47552f43564343",
     "AC-762": "sha256:f998e7e05e260c7e",
-    "AC-763": "sha256:20fa3487ab3317ea",
+    "AC-763": "sha256:80f7379b8ce81452",
     "AC-764": "sha256:726601016c247e6d"
   },
   "cases": [
@@ -10831,7 +10831,7 @@
       "layer": "api",
       "command": "npx tsx --test tests/system/api/foundry-entra.test.ts --test-name-pattern AC-761",
       "canary": false,
-      "status": "blocked",
+      "status": "not_run",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -10847,6 +10847,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "検証レベル=integration のため System Test の対象外（CHK-10）。テスト tests/system/api/foundry-entra.test.ts は実装役の統合テストの雛形として残す"
+        },
+        {
+          "at": "2026-10-24T00:03:07+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC-761〜763 の検証レベルを system に変更したため有効化"
         }
       ]
     },
@@ -10862,7 +10868,7 @@
       "layer": "api",
       "command": "npx tsx --test tests/system/api/foundry-entra.test.ts --test-name-pattern AC-762",
       "canary": false,
-      "status": "blocked",
+      "status": "not_run",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -10878,6 +10884,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "検証レベル=integration のため System Test の対象外（CHK-10）。テスト tests/system/api/foundry-entra.test.ts は実装役の統合テストの雛形として残す"
+        },
+        {
+          "at": "2026-10-24T00:03:07+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC-761〜763 の検証レベルを system に変更したため有効化"
         }
       ]
     },
@@ -10893,7 +10905,7 @@
       "layer": "api",
       "command": "npx tsx --test tests/system/api/foundry-entra.test.ts --test-name-pattern AC-763",
       "canary": false,
-      "status": "blocked",
+      "status": "not_run",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -10909,6 +10921,24 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "検証レベル=integration のため System Test の対象外（CHK-10）。テスト tests/system/api/foundry-entra.test.ts は実装役の統合テストの雛形として残す"
+        },
+        {
+          "at": "2026-10-24T00:03:08+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC-761〜763 の検証レベルを system に変更したため有効化"
+        },
+        {
+          "at": "2026-10-24T00:03:09+09:00",
+          "by": "test-designer",
+          "change": "ac_ids: ['AC-763'] -> ['AC-763', 'AC-710', 'AC-711', 'AC-761']",
+          "reason": "AC-763 追加条件（間隔内 0 回・最小の出力上限・Entra 未設定）を同ファイルに追加"
+        },
+        {
+          "at": "2026-10-24T00:03:20+09:00",
+          "by": "test-designer",
+          "change": "ac_ids: ['AC-763', 'AC-710', 'AC-711', 'AC-761'] -> ['AC-763']",
+          "reason": "AC-710/711/761 は他ケースの担当。AC-763 に戻す"
         }
       ]
     },

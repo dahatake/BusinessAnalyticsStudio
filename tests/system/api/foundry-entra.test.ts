@@ -180,3 +180,38 @@ test('FR-282 AC-763 異常系: 未設定のときは Foundry を呼ばず（0 �
     assert.notEqual(r.text, okBody, '未設定と成功の応答が同じ');
   } finally { await e.cleanup(); }
 });
+
+// FR-282 AC-763 AC-710（連打間隔内は 0 回・待ち時間を示す。PARAM-116 = 5 秒）と最小の出力トークン上限
+test('FR-282 AC-763 AC-710 異常系: 前回の呼び出しの開始から 5 秒未満の再押下は Foundry を 0 回で待ち時間を示し、1 回目の呼び出しは最小の出力トークン上限を付ける', async () => {
+  const e = await setup({ auth: 'api-key' });
+  try {
+    const first = await e.call('POST', '/foundry/test', {});
+    assert.equal(first.status, 200, first.text);
+    assert.equal(e.calls.length, 1);
+    const sent = JSON.parse(e.calls[0].body);
+    assert.equal(typeof sent.max_output_tokens, 'number', '出力トークンの上限が付いていない');
+    assert.ok(sent.max_output_tokens > 0 && sent.max_output_tokens <= 100, `出力トークン上限が最小ではない: ${sent.max_output_tokens}`);
+    const second = await e.call('POST', '/foundry/test', {});
+    assert.equal(e.calls.length, 1, '間隔内の再押下で Foundry を呼んだ');
+    assert.notEqual(second.text, first.text);
+    assert.match(second.text, /秒|待/, '待ち時間が示されていない');
+    noSecrets('応答', second.text);
+  } finally { await e.cleanup(); }
+});
+
+// FR-282 AC-763 AC-761（未設定 = Entra でトークンを取得できない。認証失敗とは区別され、Foundry は 0 回）
+test('FR-282 AC-763 AC-761 異常系: Entra ID でトークンを取得できないときは「未設定」として Foundry を 0 回で返し、成功・認証失敗の応答とは異なる', async () => {
+  const bodies: string[] = [];
+  for (const reply of [{ status: 200, text: 'OK' }, { status: 401 }] as Reply[]) {
+    const e = await setup({ auth: 'entra', reply: () => reply });
+    try { bodies.push((await e.call('POST', '/foundry/test', {})).text); } finally { await e.cleanup(); }
+  }
+  const e = await setup({ auth: 'entra', token: async () => { throw new Error(`az: not logged in ${TOKEN}`); } });
+  try {
+    const r = await e.call('POST', '/foundry/test', {});
+    assert.equal(e.calls.length, 0, 'トークンなしで Foundry を呼んだ');
+    assert.ok(!bodies.includes(r.text), '未設定が成功・認証失敗と区別されていない');
+    noSecrets('応答', r.text);
+    noSecrets('ログ', e.logs.join('\n'));
+  } finally { await e.cleanup(); }
+});
