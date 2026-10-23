@@ -51,8 +51,8 @@ describe('FR-220 左メニューから「3D ビュー」の切替の項目を削
       expect(builtinCommands(COMPONENT_SCREENS).some((c) => c.id === `view.show.${key}`)).toBe(false);
       expect(keysOf(defaultLayout('現場'))).not.toContain(key);
     }
-    expect(PERSONA_PRIMARY['現場']).toBe('map');
-    expect(keysOf(defaultLayout('現場'))).toContain('map');
+    expect(PERSONA_PRIMARY['現場']).toBe('twin-view');
+    expect(keysOf(defaultLayout('現場'))).toContain('twin-view');
   });
 });
 describe('FR-221 「メニューを最小化」の文字が切れない', () => {

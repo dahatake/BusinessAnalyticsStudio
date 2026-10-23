@@ -40,7 +40,7 @@ describe('FR-015 AC-018 / FR-112 AC-137 ペルソナ別の既定の情報表現'
   it('FR-112 AC-137 4 つのペルソナの既定のレイアウトで、最大の領域が §7 の表の既定の情報表現になる', () => {
     expect(PERSONAS).toEqual(['経営層', '事業部門', 'IT', '現場']);
     for (const p of PERSONAS) expect(primaryOf(p), p).toBe(PERSONA_PRIMARY[p]);
-    expect(PERSONA_PRIMARY).toEqual({ 経営層: 'matrix', 事業部門: 'issue-solution', IT: 'architecture', 現場: 'map' });
+    expect(PERSONA_PRIMARY).toEqual({ 経営層: 'matrix', 事業部門: 'issue-solution', IT: 'architecture', 現場: 'twin-view' });
     expect(personaDefaultsMatchTable()).toBe(true);
   });
 
