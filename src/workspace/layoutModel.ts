@@ -341,7 +341,7 @@ export function defaultLayout(persona: Persona): Layout {
     case 'IT': // 主領域にアーキテクチャ図、右にナレッジグラフと KPI/OKR、下に製品の一覧
       return tierTree('architecture', ['knowledge-graph', 'kpi-okr'], ['products']);
     case '現場': // 主領域に 3D/地図、右にミニ・モックアプリと KPI/OKR、下にガント
-      return tierTree('map', ['mock-app', 'kpi-okr'], ['gantt']);
+      return tierTree('twin-view', ['mock-app', 'kpi-okr'], ['gantt']);
   }
 }
 
