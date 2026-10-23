@@ -3,6 +3,8 @@ import { flushSync } from 'react-dom';
 import { MessageBar, MessageBarBody, MessageBarTitle } from '@fluentui/react-components';
 import { AiStatus } from '../ai/AiStatus';
 import { CopilotReviewButton } from '../review/CopilotReviewButton';
+import { ExplainButton, ExplainHost } from '../explain/ExplainPanel';
+import { useCurrentScreen } from '../explain/store';
 import { DiscussionFileActions } from '../discussion/FileActions';
 import { ExportButton, ExportHost } from '../export/ExportButton';
 import { AppShell } from '../components/AppShell';
@@ -62,6 +64,7 @@ registerViewDecls(SCREENS);
 
 /** ナビゲーションの選択: 非表示なら再表示し、そのコンポーネントへフォーカスを移す。 */
 function openComponent(key: string): void {
+  useCurrentScreen.getState().set(key); // FR-274: 「現状の説明」が見ている画面
   useLayout.getState().showComponent(key);
   window.setTimeout(() => {
     const el = document.querySelector<HTMLElement>(`[data-testid="component-${key}"]`);
@@ -192,7 +195,7 @@ export function App() {
         screens={NAV_SCREENS /* FR-220 AC-590: 左メニューには nav: false の画面を出さない */}
         onSelect={onSelect}
         stepper={<Stepper onNavigate={onSelect} />}
-        headerExtra={<><CopilotReviewButton /><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><AiStatus /></>}
+        headerExtra={<><CopilotReviewButton /><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><ExplainButton /><AiStatus /></>}
         actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><AutoSizeSwitch /><ScreenViewButton /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /><GuideButton /></>}
         dock={<Dock screens={COMPONENT_SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
@@ -231,7 +234,7 @@ export function App() {
         <StoryHost />
         <ProjectsPanel onNavigate={onSelect} />
         <ShowStage />
-        <Workspace screens={COMPONENT_SCREENS} />
+        <ExplainHost><Workspace screens={COMPONENT_SCREENS} /></ExplainHost>
       </AppShell>
     </>
   );

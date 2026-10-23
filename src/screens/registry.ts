@@ -1,7 +1,7 @@
 import {
   Chat24Regular, Building24Regular, CommentMultiple24Regular, Database24Regular, DataBarHorizontal24Regular, DataScatter24Regular, DocumentBulletList24Regular, Layer24Regular, Map24Regular,
   Organization24Regular, PhoneDesktop24Regular, Settings24Regular, Table24Regular, TaskListSquareLtr24Regular, TextBulletListTree24Regular,
-  Target24Regular, TextNumberListLtr24Regular, Lightbulb24Regular, Trophy24Regular, Whiteboard24Regular,
+  Notepad24Regular, Target24Regular, TextNumberListLtr24Regular, Lightbulb24Regular, Trophy24Regular, Whiteboard24Regular,
 } from '@fluentui/react-icons';
 import type { ScreenDefinition } from './types';
 import { tableWorldDecl, type ViewDecl } from '../view/viewModel';
@@ -29,8 +29,8 @@ import { BusinessGraphScreen } from './BusinessGraphScreen';
 import { TwinViewScreen } from './TwinViewScreen';
 import { SpatialScreen } from './SpatialScreen';
 import { ChatScreen } from '../ai/ChatScreen';
-import { GenAiScenarioScreen } from './GenAiScenarioScreen';
 import { MemoScreen } from './MemoScreen';
+import { GenAiScenarioScreen } from './GenAiScenarioScreen';
 import '../analysis/commands';
 
 /** 2D の表現だけを持ち、世界区分を持つデータを表示しない画面の宣言（FR-217・FR-218） */
@@ -70,9 +70,9 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'spatial-view', label: '空間ビュー', icon: Building24Regular, component: SpatialScreen, view: { has2D: true, has3D: true, hasGraph: true, defaultMode: '3d', world: false, kinds: [] } },
   { key: 'whiteboard', label: 'ホワイトボード', icon: Whiteboard24Regular, component: WhiteboardScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['付箋', 'ストローク'], 'ボードの付箋・ストローク'), kinds: [] } },
   { key: 'themes', label: '議論テーマ', icon: CommentMultiple24Regular, component: ThemesScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['議論テーマ']), kinds: [] } },
-  { key: 'memo', label: 'メモ', icon: DocumentBulletList24Regular, component: MemoScreen, view: V2, nav: false },
   { key: 'settings', label: '設定パネル', icon: Settings24Regular, component: SettingsScreen, view: V2, modal: true },
   { key: 'genai-scenario', label: '生成AIの効果的な活用シナリオの分析', icon: Lightbulb24Regular, component: GenAiScenarioScreen, view: V2 },
+  { key: 'memo', label: 'メモ', icon: Notepad24Regular, component: MemoScreen, view: V2 },
   { key: 'chat', label: 'チャット', icon: Chat24Regular, component: ChatScreen, view: V2 },
 ];
 

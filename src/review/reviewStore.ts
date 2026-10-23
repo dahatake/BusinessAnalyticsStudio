@@ -24,29 +24,38 @@ interface ReviewState {
   cancel: () => void;
   edit: (key: string, text: string) => void;
   discard: (key: string) => void;
+  /** 反映済みの案のコンポーネント（案の状態: 編集中→反映済み。編集すると編集中に戻る。FR-280） */
+  done: Record<string, true>;
+  /** 案を反映し終えた。そのコンポーネントの状態だけを変える（FR-280） */
+  reflected: (key: string) => void;
   setConfirm: (c: { targets: ReviewTarget[] } | null) => void;
 }
 
 export const useReviewStore = create<ReviewState>()((set) => ({
-  run: 'idle', message: '', notice: null, proposals: {}, none: {}, confirm: null,
+  run: 'idle', message: '', notice: null, proposals: {}, none: {}, done: {}, confirm: null,
   start: () => set({ run: 'running', message: 'Copilot で分析を実行しています。', notice: null }),
   finish: (all, proposals, warning) => {
     const none: Record<string, true> = {};
     for (const k of all) if (!(k in proposals)) none[k] = true;
     set({
-      run: 'done', proposals, none, notice: warning ?? null,
+      run: 'done', proposals, none, done: {}, notice: warning ?? null,
       message: `Copilot の分析が完了しました。案は ${Object.keys(proposals).length} 件です。`,
     });
   },
   fail: (text) => set({ run: 'failed', notice: text, message: `Copilot の分析に失敗しました。${text}` }),
   block: (text) => set({ run: 'idle', notice: text, message: text }),
   cancel: () => set({ run: 'idle', notice: null, message: '送信を取り消しました。' }),
-  edit: (key, text) => set((s) => ({ proposals: { ...s.proposals, [key]: text } })),
+  edit: (key, text) => set((s) => {
+    const { [key]: _d, ...done } = s.done;
+    return { proposals: { ...s.proposals, [key]: text }, done };
+  }),
   discard: (key) => set((s) => {
     const { [key]: _p, ...proposals } = s.proposals;
     const { [key]: _n, ...none } = s.none;
-    return { proposals, none, message: '案を破棄しました。' };
+    const { [key]: _d, ...done } = s.done;
+    return { proposals, none, done, message: '案を破棄しました。' };
   }),
+  reflected: (key) => set((s) => ({ done: { ...s.done, [key]: true }, message: '案を反映しました。' })),
   setConfirm: (confirm) => set({ confirm }),
 }));
 
