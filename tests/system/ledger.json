@@ -10298,11 +10298,11 @@
       "ac_ids": [
         "AC-757"
       ],
-      "title": "Foundry 未設定のとき AI 取り込みは無効で案内が出て、送信は 0 回（無効のボタンの強制操作の異常系含む）",
+      "title": "AI取り込みは接続先・設定・有効化・了承の不足時に無効、Copilot SDKでは未対応と案内し送信0回（強制操作を含む）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-757",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "484f3ef",
       "last_run_at": "2026-10-23T04:22:42+09:00",
       "evidence": "work/runs/202610230336/logs/system-test/E2E-384-202610230421.log",
@@ -10318,6 +10318,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC-757/758/759 の本文が変更済み（Entra ID 両方式・実接続の有効化・了承・送信前確認・停止水準）。spec は旧本文のままで、G-5 により書き込めず未見直し。見直すまで実行対象にしない"
+        },
+        {
+          "at": "2026-10-24T07:43:35+09:00",
+          "by": "test-designer",
+          "change": "title: 'Foundry 未設定のとき AI 取り込みは無効で案内が出て、送信は 0 回（無効のボタンの強制操作の異常系含む）' -> 'AI取り込みは接続先・設定・有効化・了承の不足時に無効、Copilot SDKでは未対応と案内し送信0回（強制操作を含む）'",
+          "reason": "AC-757追加条件を既存E2E-384へ拡張。Copilot選択時の未対応表示・無効化・両接続先の送信0回、接続先変更時の再有効化を検証"
         }
       ]
     },
