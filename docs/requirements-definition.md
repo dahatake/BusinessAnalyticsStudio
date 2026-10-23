@@ -19,6 +19,7 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 
 | 日付 | 依頼の要約 | 行き先（要求 ID・Q・不採用の理由） | 反映した回答 | 監査で直した不整合 |
 |---|---|---|---|---|
+| 2026-10-24 | 依頼（run 202610240522）: 生成AIの接続先として、Microsoft Foundry に加えて GitHub Copilot SDK を設定画面で選べるようにする。可能なら VS Code の GitHub Copilot と同様のシングルサインオン（キー不要）、難しければキー（トークン）認証 | 新しい要求は作らず既存の変更で収めた。FR-011（認証方式〈サインイン〈既定・gh auth login --web〉／トークン〉、AC-771・AC-772 を追加、PARAM-126）、FR-275（題名と本文に接続先の選択・振り分け・Copilot 選択時の有効化の条件・AI 取り込みは Foundry のみ、AC-769・AC-770 を追加。AC-706・AC-707 を接続先にかかわらない文面に変更）、用語「Copilot で分析実行」の定義、§8 の Copilot SDK の行、SRC-051。依頼原文として承認済み。競合なし（C-03 の基本は Copilot SDK に限るため、Copilot SDK の選択は C-03 の範囲内） | なし | なし |
 | 2026-10-23 | 整合（run 202610230545）: main の取り込みで登録簿が 27 件から 24 件に減った（canvas・view3d・drawing2d の廃止。run 202610222251）ため、FR-287 の件数・画面の列挙を合わせる | FR-287（AC-748・AC-749・AC-750・AC-753）の「27 件」を「24 件」、「26 件」を「23 件」に直し、廃止した 3 画面を列挙から除いた。意味・方針は不変 | なし | なし |
 | 2026-10-22 | 依頼（run 202610222208）: デモのデータを再構築し、全画面コンポーネント（27 件）にデータを備え、初めての人に「何が見えるか」を示す | FR-287（AC-748〜AC-753）、PARAM-124 を追加。依頼原文として承認済み。FR-008・FR-104・FR-144・FR-177・FR-180・FR-266 の文面は変えず、競合なし（FR-180 の件数・文面は維持し不足分のみ補う）。影響確認: `trace FR-180`・`trace FR-104` | なし | なし |
 | 2026-10-22 | 依頼（run 202610222205）: チャットの質問を Foundry へ送る（設定済み・有効・了承あり・「人」確認済みのとき）。複数ターン・根拠と出典カード・送信内容の確認・新しい会話・失敗の理由表示（黙って切り替えない）を Copilot のチャットと同じに保つ。ストリーミングは対象外 | FR-286（新規）、AC-741〜AC-747、PARAM-123、Q-059、A-71。FR-010・C-03 の例外の文を最小限に広げた（チャットの回答を追加）。FR-011・FR-017・FR-132・FR-275・FR-276 の文面は不変。影響確認: `rdcheck trace FR-017`・`trace FR-275` | なし | なし |
@@ -260,6 +261,7 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 | PARAM-105 | 詳細カードに示す主要な関係の件数の上限 | 5 | 件 | カードが図を覆わない目安。超える分は「ほか N 件」とし全件は代替表示の表で読める。変更で戻せる。AI提案。FR-247 | 承認済み（包括承認 2026-10-21・approval_policy） |
 | PARAM-125 | AI 取り込み（FR-289）で送れるファイル 1 件の大きさの上限 | 10 | MB | AI提案。送信量と費用を抑える目安の仮の値。変更で戻せる。Q-061。FR-289 | 承認済み（包括承認 2026-10-22・approval_policy） |
 | PARAM-120 | 「Copilot で分析実行」の月の予算の上限 | 100000 | 円／月（税・為替の扱いは Azure の請求に従う） | 依頼（run 202610212148）「100,000円/月までの予算」。NFR-COST-001 | 承認済み（依頼 2026-10-21） |
+| PARAM-126 | GitHub へのサインイン（`gh auth login --web`）を待つ時間の上限 | 300 | 秒 | ワンタイムコードの入力とブラウザーでの承認に足りる目安。超えたら打ち切り、理由とトークン方式を案内する。変更で戻せる。AI提案。FR-011 | 承認済み（依頼 2026-10-24。値は提案値） |
 ### 3.4 用語
 
 | 用語 | 定義 | 禁止同義語 |
@@ -360,7 +362,7 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 | Twin の流れ | 現実世界とデジタル世界のエンティティを結ぶ向き付きの流れ。Data は現実世界からデジタル世界へ、Control はデジタル世界から現実世界へ（FR-239・FR-241） | なし |
 | Twin の層 | デジタル世界のエンティティが属する層。Operations（稼働・保守・自動化）、Experience（人と空間の体験）、Insights（分析・KPI・予測）（FR-239・FR-241） | なし |
 | 空間ビュー | 空間の階層（全体→拠点→フロア→部屋・設備）に KPI を重ねて見る画面（FR-240） | なし |
-| Copilot で分析実行 | 画面上部のボタンから、現在の画面のすべてのコンポーネントのデータを Microsoft Foundry の生成 AI にレビューさせ、コンポーネントごとの案を得る操作（FR-278）。名前に Copilot を含むが、使う生成 AI は Microsoft Foundry（C-03 の例外） | なし |
+| Copilot で分析実行 | 画面上部のボタンから、現在の画面のすべてのコンポーネントのデータを Microsoft Foundry の生成 AI にレビューさせ、コンポーネントごとの案を得る操作（FR-278）。名前に Copilot を含むが、使う生成 AI は設定画面で選んだ接続先（既定は Microsoft Foundry〈C-03 の例外〉。GitHub Copilot SDK も選べる。FR-275） | なし |
 | Copilot の分析実行 | 「Copilot で分析実行」の 1 回の実行。実行状態と利用量を持つ（FR-278・NFR-COST-001） | なし |
 | Copilot の案 | 分析実行の結果として、コンポーネントごとに示す AI 生成の変更案。反映するまで画面・管理データを変えない（FR-279・FR-280） | なし |
 | Foundry 接続設定 | 設定画面で入力する Microsoft Foundry のエンドポイント・デプロイ名・認証方式・API キー。キーは中継プロセスが暗号化して端末内だけに保管し、再表示しない（FR-282・NFR-SEC-012） | なし |
@@ -944,7 +946,7 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 
 | 連携先 | 方式 | やり取りする情報（方向・頻度） | 使う場所 | 備考 |
 |---|---|---|---|---|
-| GitHub Copilot SDK（LLM） | 中継プロセスからの SDK 呼び出し（ブラウザー → localhost の中継プロセス → Copilot） | 議論の内容・顧客パックの一部を送り、構造化・要約・回答を受け取る。利用者の操作のたび | アプリ（FR-010、FR-011）、生成パイプライン（FR-121、FR-125） | 送信の条件は Q-001（回答 A）。顧客の了承の記録（FR-181）がある案件で、利用者が明示的に有効にした場合だけ送る（FR-132）。既定・未接続時はモック |
+| GitHub Copilot SDK（LLM） | 中継プロセスからの SDK 呼び出し（ブラウザー → localhost の中継プロセス → Copilot） | 議論の内容・顧客パックの一部を送り、構造化・要約・回答を受け取る。利用者の操作のたび | アプリ（FR-010、FR-011）、生成パイプライン（FR-121、FR-125） | 送信の条件は Q-001（回答 A）。顧客の了承の記録（FR-181）がある案件で、利用者が明示的に有効にした場合だけ送る（FR-132）。既定・未接続時はモック。認証は利用者の PC の GitHub のサインイン（既定。gh auth login --web で GitHub と通信）またはトークン（中継側で暗号化保管）（FR-011）。「現状の説明」「Copilot で分析実行」「活用分析」のチャット以外の機能も、設定画面で接続先に Copilot SDK を選んだときはこの連携を使う（FR-275） |
 | WorkIQ | Copilot Skill からの検索 | 顧客名で社内情報を検索し、要旨を受け取る。`research` のたび | 生成パイプライン（FR-121） | 使えない場合は Web → サンプル。機密区分を付ける（FR-117） |
 | 企業データカタログ（利用者が持つファイル） | 利用者が JSON/CSV を取り込む（端末内で完結。送信なし）。Web サイトにあるものは URL を出典に記録するだけで取得しない | 企業のデータの名称・説明・ID を受け取る（一方向、利用者の操作のたび） | データカタログ（FR-161、FR-162） | 正本は企業のデータカタログ。BAS 側の独自の採番はしない。ID 対応表の保守者は EABK 側（Q-018、A-41） |
 | Web（公式サイト・プレスキット・IR 資料） | Copilot Skill からの検索・取得 | 顧客名・ブランドで検索し、公開情報を受け取る。`research` のたび | 生成パイプライン（FR-121、FR-122） | 非公式サイトは使わない |
@@ -1079,6 +1081,7 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 | 2026-10-22 | FR-286、AC-741〜AC-747、PARAM-123、FR-010、C-03、Q-059、A-71 | 依頼（run 202610222205）によりチャットの Foundry 送信を追加。競合の整理: FR-010・C-03 は Foundry の例外を「現状の説明」だけに限っていたため、依頼で例外にチャットの回答（FR-286）を足す最小の文面の更新を行った（ほかの文面は不変）。FR-275 の接続設定・了承・「人」の確認・キー保護、FR-276 の課金の安全策（回数・大きさ・予算）は、チャットにもそのまま適用する（FR-286 が参照）。FR-132 は Copilot の実接続の要求で、Foundry の有効化は FR-275 が担うため競合しない。課金・外部送信に触れるため approval_policy の包括承認の対象外だが、依頼で明示されたので FR は「依頼による承認」とした。PARAM-123 だけ包括承認 | 依頼原文 | 202610222205 |
 | 2026-10-22 | FR-275、FR-285、AC-703、AC-737〜AC-739、NFR-SEC-012、FR-182、Q-057（効力の置換）、Q-058 | 依頼（run 202610222200）: 設定画面の Foundry 接続を 1 つの共通接続（FR-275 の保管庫・有効化。見出し「Microsoft Foundry（生成AI機能の共通接続）」）に統一。FR-285 の独自のパネル・エンドポイント・デプロイ名・実接続スイッチ・環境変数 `FOUNDRY_API_KEY` を廃止し、実接続は「共通接続が設定済みかつ当該 Project で有効」＋了承の記録＋種別「人」の個人情報確認の条件。中継 POST /foundry/analyze の body は packId・solution だけ。通信先の限定（https・Azure 標準ドメイン・リダイレクトを追わない）とキーの非表示は維持。Q-057 A（環境変数のキーを NFR-SEC-001 の範囲とする例外）は、環境変数の廃止により効力を失う。影響（trace）: AC-737〜AC-739 の文面、カタログ（POST /foundry/analyze・edb.genai・生成AIの活用分析）、integration-catalog。実装・テストの変更が必要（implementer へ） | 依頼による承認（承認済み） | 202610222200 |
 | 2026-10-22 | Q-056、AUD-91、A-60 | Q-056: 設けない（＝A）。「2D 図面」の入口はドック・コマンドだけのまま。左メニューに戻さず、FR-020 は廃止しない。FR-020・FR-220 の本文は変えず、A-60 に確定した旨を 1 文追記 | 利用者の回答 2026-10-22 | 202610221530 |
+| 2026-10-24 | FR-011、FR-275、AC-706、AC-707、AC-769〜AC-772、PARAM-126、SRC-051 | 依頼（run 202610240522）: 生成AIの接続先の単一選択（Microsoft Foundry〈既定〉／GitHub Copilot SDK）を FR-275 に、Copilot SDK の認証方式（サインイン〈既定・キー不要・useLoggedInUser・gh auth login --web で SSO〉／トークン〈NFR-SEC-005 の暗号化保管〉）を FR-011 に加えた。新規の要求は作らない（同じ目的・同じ対象エンティティ「AI 接続」のため）。外部送信の条件（了承・有効化と費用・送信内容・「人」の確認・認証情報を出さない）は接続先にかかわらず同じ。AI 取り込み（FR-289）は Foundry のみ（C-03 の例外のまま）。FR-276 の回数・大きさの上限は両方に、円の予算は Foundry だけに適用。認証・秘密情報に触れるが、依頼原文と conductor の指示（設計判断は依頼の範囲内）により承認済み（依頼 2026-10-24）。PARAM-126 の値（300 秒）は提案値。NFR-SEC-002（外部通信は Copilot SDK と設定した AI API）・NFR-SEC-005（秘密情報の保管）・AC-012（ループバック限定）と整合を確認し、競合なし | 依頼 2026-10-24 | 202610240522 |
 
 ## 10. 仮定・未解決事項
 
@@ -1611,3 +1614,4 @@ run 202610152209 の監査 run1（HEAD e3f5197。work/runs/202610152209/audit/20
 | SRC-044 | 利用者提示の Foundry 呼び出し例（ローカル資料、秘密値を除く） | 2026-10-21 | OpenAI 互換 v1 エンドポイント（`https://<resource>.services.ai.azure.com/openai/v1`）、デプロイ名を model に指定、Responses API（stream）、認証は Microsoft Entra ID（DefaultAzureCredential、scope `https://ai.azure.com/.default`）または API キー | 2026-10-21 | 要旨のみ（秘密値は転記しない） |
 | SRC-047 | リポジトリのソース `src/`（取り込み・書き出しの実装の事実確認。`src/data/loader.ts`、`src/discussion/FileActions.tsx`、`src/edit/EditControls.tsx`、`src/screens/DataCatalogScreen.tsx`、`src/ink/InkToolbar.tsx`、`src/export/*`、`src/analysis/exportFile.ts`、`src/show/ShortVideo.tsx`、`src/ai/FoundrySettings.tsx`・`foundryClient.ts`） | 2026-10-22、調査時の作業ツリー | 取り込み: 顧客パック JSON・議論メモ `.md`・データ `.json`/`.csv`・データカタログ `.json`/`.csv`（5 MB 超は読まない）・ボードの画像貼り付け。書き出し: データ JSON/CSV・議論メモ `.md`・エクスポート `.md`/`.zip`（assets・フォローアップ）・サマリー ZIP（PDF）・ボード Markdown ZIP・ボード PDF・SVG/PNG/テキスト・WebM。PDF・画像ファイル・Office 文書の取り込みの欄はない。Foundry の設定状態は `view.configured` で判る | 2026-10-22 | コード確認済み（grep と抜粋の読み取り。実行はしていない） |
 | SRC-045 | Microsoft Learn「Azure OpenAI responses（v1）」 https://learn.microsoft.com/rest/api/microsoft-foundry/azureopenai/responses 、「Generate responses」 https://learn.microsoft.com/azure/foundry/foundry-models/how-to/generate-responses 、「Configure Entra ID」 https://learn.microsoft.com/azure/foundry/foundry-models/how-to/configure-entra-id | 2026-10-21 時点 | v1 の Responses API のサーバー `{endpoint}/openai/v1`、API キー認証の存在（Microsoft Learn MCP の検索結果の要約） | 2026-10-21 | 要旨のみ（本文未確認） |
+| SRC-051 | GitHub Copilot SDK（Node.js `@github/copilot-sdk`）の公式の説明（https://github.com/github/copilot-sdk/tree/main/nodejs 、https://www.npmjs.com/package/@github/copilot-sdk ） | 2026-10-24 時点の公開版 | 認証: CopilotClient の `useLoggedInUser`（既定。Copilot CLI・GitHub CLI でサインイン済みの利用者の資格情報を使う）と `gitHubToken`（OAuth・GitHub App・fine-grained PAT のトークン。指定すると優先）。取得: web_search（run 202610240522） | 2026-10-24 | 要旨のみ（本文未確認） |
