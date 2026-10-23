@@ -9067,9 +9067,9 @@
       "command": "node tests/system/run.mjs AC-721",
       "canary": false,
       "status": "pass",
-      "last_commit": "70034a4",
-      "last_run_at": "2026-10-23T12:15:24+09:00",
-      "evidence": "work/runs/202610230630/logs/system-test/E2E-389-202610231215.log",
+      "last_commit": "b2ef9eb",
+      "last_run_at": "2026-10-23T12:17:28+09:00",
+      "evidence": "work/runs/202610230630/logs/system-test/E2E-389-202610231217.log",
       "history": [
         {
           "at": "2026-10-22T22:51:10+09:00",
