@@ -11,6 +11,7 @@ import { openSpeechVault, type SpeechVault } from './speech-vault';
 import { CAUSE_STATUS, createFoundryService, FoundryError as GenAiFoundryError, type FoundryService } from './genai-foundry';
 import { openFoundryVault, type FoundryVault } from './foundry-vault';
 import { callFoundry, FoundryError } from './foundry';
+import { buildReviewPrompt, parseReviewComponents, parseReviewReply } from './foundry-review';
 
 export const AI_KINDS = ['structure', 'summary', 'recommend', 'chat', 'exec-summary'] as const;
 export type AiKind = (typeof AI_KINDS)[number];
@@ -155,9 +156,9 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           const withMode = () => ({ ...getFoundry().view(), enabled: foundryEnabled.has(packId) });
           if (req.method === 'GET') return json(200, withMode());
           if (req.method === 'PUT') {
-            const b = JSON.parse((await readBody(req)) || '{}') as { endpoint?: string; deployment?: string; key?: string };
+            const b = JSON.parse((await readBody(req)) || '{}') as { endpoint?: string; deployment?: string; key?: string; authMethod?: string };
             try {
-              getFoundry().save({ endpoint: String(b.endpoint ?? ''), deployment: String(b.deployment ?? ''), key: typeof b.key === 'string' ? b.key : undefined });
+              getFoundry().save({ endpoint: String(b.endpoint ?? ''), deployment: String(b.deployment ?? ''), key: typeof b.key === 'string' ? b.key : undefined, authMethod: b.authMethod === 'entra' ? 'entra' : 'api-key' });
               return json(200, withMode());
             } catch (e) {
               return json(400, { error: e instanceof Error ? e.message : '保存できませんでした' });
@@ -175,7 +176,7 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           if (!b.enable) { foundryEnabled.delete(b.packId); return json(200, { mode: 'mock' }); }
           if (b.consent !== true) return json(403, { error: '顧客の了承の記録がないため、実接続を有効にできません', mode: 'mock' });
           if (b.confirmed !== true) return json(400, { error: '費用と送信内容の確認が必要です' });
-          if (!getFoundry().secret()) return json(409, { error: 'Foundry の接続情報が未設定です', mode: 'mock' });
+          if (!getFoundry().secret() && !getFoundry().entraReady()) return json(409, { error: 'Foundry の接続情報が未設定です', mode: 'mock' });
           foundryEnabled.add(b.packId);
           return json(200, { mode: 'connected' });
         }
@@ -196,6 +197,29 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
             const kind = e instanceof FoundryError ? e.kind : 'network';
             const msg = (e instanceof FoundryError ? e.message : 'Foundry に接続できませんでした').split(secret.key).join('•••');
             return unavailable(kind === 'timeout' ? 'timeout' : 'error', msg, 200);
+          }
+        }
+        // 「Copilot で分析実行」（FR-278）。条件は /foundry/ask と同じ（了承・実接続の有効・設定・種別「人」の確認）。欠けると Foundry を呼ばない
+        if (req.method === 'POST' && path === '/foundry/review') {
+          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; consent?: boolean; includesPerson?: boolean; personConfirmed?: boolean; components?: unknown };
+          if (typeof b.packId !== 'string' || !b.packId) return json(400, { error: 'packId が必要です' });
+          const comps = parseReviewComponents(b.components);
+          if (comps.length === 0) return json(400, { error: 'components が必要です' });
+          const unavailable = (reason: string, message: string) => json(200, { mode: 'unavailable', reason, message });
+          if (b.consent !== true) return unavailable('consent', '顧客の了承の記録がないため、AI は使えません');
+          if (!foundryEnabled.has(b.packId)) return unavailable('disabled', 'Foundry の実接続が有効ではありません');
+          const secret = getFoundry().secret();
+          if (!secret) return unavailable('not-configured', 'Foundry の接続情報が未設定です');
+          if (b.includesPerson === true && b.personConfirmed !== true) return unavailable('person-unconfirmed', '種別「人」を含む顧客パックは、送信前の確認が必要です');
+          try {
+            const text = await callFoundry(secret, buildReviewPrompt(comps), opts.foundryFetch, opts.foundryTimeoutMs);
+            const reviews = parseReviewReply(text, comps.map((c) => c.id));
+            if (!reviews) return unavailable('error', 'Foundry の応答の形式が想定と異なります');
+            return json(200, { reviews, mode: 'connected' });
+          } catch (e) {
+            const kind = e instanceof FoundryError ? e.kind : 'network';
+            const msg = (e instanceof FoundryError ? e.message : 'Foundry に接続できませんでした').split(secret.key).join('•••');
+            return unavailable(kind === 'timeout' ? 'timeout' : 'error', msg);
           }
         }
         if (req.method === 'POST' && path === '/speech/synthesize') {

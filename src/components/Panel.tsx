@@ -13,6 +13,7 @@ import { useSelectionStore } from '../store/selection';
 import { useComponentView } from '../view/useView';
 import { HIDDEN_SELECTION_TEXT, selectionHiddenIn, singleWorldNote } from '../view/viewModel';
 import { isEditableTarget, panelKeyAction, runPanelKeyAction, titleDoubleClick, type KeyLike } from './panelKeys';
+import { CopilotProposal } from '../review/CopilotProposal';
 import { TIER_APPEARANCE, TIER_LABEL } from '../workspace/tiers';
 
 /** これより狭いコンポーネントは、見出しの操作アイコンを出さず「…」メニューに任せる（FR-150 AC-259）。
@@ -270,7 +271,11 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
         {world.hiddenNote && !minimized ? <Text size={300} role="status" className={s.worldNote} data-testid="view-hidden-selection">{HIDDEN_SELECTION_TEXT}</Text> : null}
       </div>
       {/* 1 つの世界の画面は、いつも同じ包みに入れて表示・非表示だけを変える（中身を作り直さない） */}
-      {world.single ? <div data-testid="view-world-body" style={{ display: world.hideAll ? 'none' : 'contents' }}>{children}</div> : children}
+      {/* component-data: コンポーネントが保持している現在のデータの欄（「Copilot で分析実行」が読む。FR-278）。Copilot の案（FR-279）はその外に別の欄で出す */}
+      <div data-testid="component-data" style={{ display: 'contents' }}>
+        {world.single ? <div data-testid="view-world-body" style={{ display: world.hideAll ? 'none' : 'contents' }}>{children}</div> : children}
+      </div>
+      <CopilotProposal componentKey={testId.replace(/^component-/, '')} title={title} />
       </div>
       {pane && !pane.maximized && !pane.minimized ? (
         // 縁・角のつまみ（FR-224）。縦と横を独立に変える。ホバー・フォーカスで見えるようにし、ドラッグを使わない手段は「…」メニューとコマンド
