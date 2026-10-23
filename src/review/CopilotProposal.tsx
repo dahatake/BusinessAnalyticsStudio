@@ -5,6 +5,20 @@ import { useId } from 'react';
 import { Button, Text, Textarea, makeStyles, tokens } from '@fluentui/react-components';
 import { reflectorOf, useReviewStore } from './reviewStore';
 
+/** 「反映」（FR-280）: そのコンポーネントの部品に案の内容を渡し、成功したらそのコンポーネントの案だけを「反映済み」にして取り除く。失敗したら案を残す */
+export async function reflectProposal(componentKey: string, text: string): Promise<boolean> {
+  const reflect = reflectorOf(componentKey);
+  if (!reflect) return false;
+  try {
+    await reflect(text);
+  } catch (e) {
+    void e;
+    return false;
+  }
+  useReviewStore.getState().reflected(componentKey);
+  return true;
+}
+
 const useStyles = makeStyles({
   box: {
     display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS,
@@ -21,6 +35,7 @@ export function CopilotProposal({ componentKey, title }: { componentKey: string;
   const labelId = useId();
   const text = useReviewStore((st) => st.proposals[componentKey]);
   const none = useReviewStore((st) => st.none[componentKey] === true);
+  const isDone = useReviewStore((st) => st.done[componentKey] === true);
   const edit = useReviewStore((st) => st.edit);
   const discard = useReviewStore((st) => st.discard);
   if (text === undefined) {
@@ -36,12 +51,13 @@ export function CopilotProposal({ componentKey, title }: { componentKey: string;
         resize="vertical"
         onChange={(_, d) => edit(componentKey, d.value)}
       />
+      {isDone ? <Text size={200} data-testid="copilot-reflected">反映済み</Text> : null}
       <div className={s.actions}>
         <Button
           appearance="primary"
           disabledFocusable={!reflect}
           title={reflect ? undefined : 'このコンポーネントは、案の反映にまだ対応していません'}
-          onClick={() => { void reflect?.(text); }}
+          onClick={() => { void reflectProposal(componentKey, text); }}
         >
           反映
         </Button>
