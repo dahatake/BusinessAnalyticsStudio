@@ -11,7 +11,7 @@ describe('FR-223 設定のモーダル表示', () => {
     expect(settings?.modal).toBe(true);
     setAvailableComponents(SCREENS.filter((s) => !s.modal).map((s) => s.key));
     expect(isComponentVisible('settings')).toBe(false);
-    expect(isComponentVisible('canvas')).toBe(true);
+    expect(isComponentVisible('matrix')).toBe(true);
   });
 
   // FR-223 AC-520

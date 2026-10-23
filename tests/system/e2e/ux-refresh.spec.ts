@@ -281,7 +281,7 @@ test.describe('FR-222 画面コンポーネント右上の操作アイコン', (
       expect(shown, `${key}: 表示中の画面コンポーネントが 1 つもない`).toBeGreaterThanOrEqual(1);
     }
     // 1 つのコンポーネントで、名前（ホバー・フォーカス）と結果（FR-151 最小化・FR-013 最大化）とキーボード操作を確かめる
-    const c = await openScreen(page, 'canvas');
+    const c = await openScreen(page, 'priority'); // 画面「キャンバス」は廃止（FR-012）
     await c.focus();
     const a = actions(c);
     await a.getByRole('button', { name: '最小化' }).hover();

@@ -97,8 +97,8 @@ test.describe('FR-149 users-guide の全ユーザー操作を画面から', () =
   // 操作の一覧（利用者の操作名 → 画面上の操作部品）。ショートカット・コマンドパレットは使わない。
   test('FR-149 AC-254 users-guide の操作それぞれに、画面上の操作部品があり、その操作だけで結果が得られる', async ({ page, start }) => {
     await start();
-    await openScreen(page, 'canvas');
-    const c = component(page, 'canvas');
+    await openScreen(page, 'priority'); // 画面「キャンバス」は廃止（FR-012）。別の画面のコンポーネントで確かめる
+    const c = component(page, 'priority');
     await c.focus();
     // コンポーネントの最大化 → 通常表示
     const before = await box(c);
@@ -124,20 +124,20 @@ test.describe('FR-149 users-guide の全ユーザー操作を画面から', () =
     // 非表示（H）
     await c.focus();
     await icon(c, '非表示').click();
-    await expect(component(page, 'canvas')).toBeHidden();
+    await expect(component(page, 'priority')).toBeHidden();
   });
 
   // FR-149 AC-254（異常系: キー操作に頼らない。キーを押さずに非表示にしたコンポーネントを一覧から戻せる）
   test('FR-149 AC-254 異常系: 非表示にしたコンポーネントを、キー操作なしに非表示の一覧から再表示できる', async ({ page, start }) => {
     await start();
-    await openScreen(page, 'canvas');
-    const c = component(page, 'canvas');
+    await openScreen(page, 'priority');
+    const c = component(page, 'priority');
     await c.focus();
     await icon(c, '非表示').click();
-    await expect(component(page, 'canvas')).toBeHidden();
+    await expect(component(page, 'priority')).toBeHidden();
     await page.getByRole('button', { name: /非表示のコンポーネント/ }).click();
-    await page.getByRole('menuitem', { name: /キャンバス|canvas/i }).first().click();
-    await expect(component(page, 'canvas')).toBeVisible();
+    await page.getByRole('menuitem', { name: /優先順位|priority/i }).first().click();
+    await expect(component(page, 'priority')).toBeVisible();
   });
 });
 
@@ -208,13 +208,13 @@ test.describe('FR-151 最小化と左メニューのアイコン表示', () => {
   // FR-151 AC-261
   test('FR-151 AC-261 左メニューを最小化するとアイコンだけの列になり、ホバーで画面名が出て、押すと画面が開き、元の幅に戻せる（キーボードのみ）', async ({ page, start }) => {
     await start();
-    const nav = page.getByTestId('nav-canvas');
+    const nav = page.getByTestId('nav-priority');
     const wide = await box(nav);
     await page.getByRole('button', { name: 'メニューを最小化' }).focus();
     await page.keyboard.press('Enter');
-    const narrow = await box(page.getByTestId('nav-canvas'));
+    const narrow = await box(page.getByTestId('nav-priority'));
     expect(narrow.width, 'アイコンだけの細い列になる').toBeLessThan(wide.width);
-    await expect(page.getByTestId('nav-canvas')).toHaveAccessibleName(/./);
+    await expect(page.getByTestId('nav-priority')).toHaveAccessibleName(/./);
     await page.getByTestId('nav-settings').hover();
     await expect(page.getByRole('tooltip')).toContainText(/設定/);
     await page.getByTestId('nav-settings').click();
@@ -222,14 +222,14 @@ test.describe('FR-151 最小化と左メニューのアイコン表示', () => {
     await closeSettings(page); // 設定はモーダル（FR-223）
     await page.getByRole('button', { name: /メニューを(元の幅に戻す|展開)/ }).focus();
     await page.keyboard.press('Enter');
-    expect((await box(page.getByTestId('nav-canvas'))).width).toBeGreaterThanOrEqual(wide.width - 2);
+    expect((await box(page.getByTestId('nav-priority'))).width).toBeGreaterThanOrEqual(wide.width - 2);
   });
 
   // FR-151 AC-261（異常系: 最小化していても画面へ到達できなくならない）
   test('FR-151 AC-261 異常系: 最小化した左メニューでも、すべての画面のアイコンに名前があり、到達できる', async ({ page, start }) => {
     await start();
     await page.getByRole('button', { name: 'メニューを最小化' }).click();
-    for (const k of ['canvas', 'priority', 'architecture', 'gantt', 'whiteboard', 'settings']) {
+    for (const k of ['priority', 'architecture', 'gantt', 'whiteboard', 'settings']) {
       const n = page.getByTestId(`nav-${k}`);
       await expect(n).toBeVisible();
       await expect(n).toHaveAccessibleName(/./);

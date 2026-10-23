@@ -8,9 +8,9 @@ import http from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { AZURE_FEATURES, MAX_IMAGE_BASE64_CHARS, MAX_SPEECH_TEXT_CHARS, isValidBase64, isValidStrokeCount, AzureServiceError, type AzureFeature, type AzureServices } from './azure-services';
 import { openSpeechVault, type SpeechVault } from './speech-vault';
-import { CAUSE_STATUS, FoundryError as GenAiFoundryError, type FoundryService } from './genai-foundry';
+import { CAUSE_STATUS, createFoundryService, FoundryError as GenAiFoundryError, type FoundryService } from './genai-foundry';
 import { openFoundryVault, type FoundryVault } from './foundry-vault';
-import { callFoundry, FoundryError } from './foundry';
+import { callFoundry, callFoundryWithInput, FoundryError, importWithFoundry, type TokenProvider } from './foundry';
 
 export const AI_KINDS = ['structure', 'summary', 'recommend', 'chat', 'exec-summary'] as const;
 export type AiKind = (typeof AI_KINDS)[number];
@@ -26,7 +26,7 @@ export interface RelayOptions {
   sdk: CopilotSdk | null;
   /** 音声合成・手書き認識の接続部品（FR-182）。なければ常にモック */
   azure?: AzureServices;
-  /** 生成AIの活用分析の Foundry 接続部品（FR-285）。なければ /foundry/analyze はキー未設定として答える */
+  /** 生成AIの活用分析の Foundry 接続部品（FR-285）の差し替え口。省略すると既定（共通接続の保管庫の値で、foundryFetch・foundryTimeoutMs を使って呼ぶ） */
   foundry?: FoundryService;
   host?: string;
   port?: number;
@@ -39,6 +39,8 @@ export interface RelayOptions {
   /** Foundry への送信口（差し替え部品）。検査ではスタブを渡す */
   foundryFetch?: typeof fetch;
   foundryTimeoutMs?: number;
+  /** Microsoft Entra ID 方式のトークン取得口（FR-289。差し替え部品。なければ取得に失敗として扱う） */
+  foundryToken?: TokenProvider;
 }
 
 export interface Relay {
@@ -66,6 +68,10 @@ function originAllowed(origin: string | undefined): boolean {
 }
 
 class PayloadTooLarge extends Error {}
+
+/** AI 取り込み（FR-289）で送れるファイル 1 件の大きさ。PARAM-125（10 MB） */
+export const AI_IMPORT_MAX_BYTES = 10 * 1024 * 1024;
+const IMPORT_BODY_LIMIT = Math.ceil((AI_IMPORT_MAX_BYTES * 4) / 3) + 200_000;
 
 function readBody(req: http.IncomingMessage, limit = 1_000_000): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -97,6 +103,7 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
   const getFoundry = (): FoundryVault => (fvault ??= openFoundryVault());
   /** Foundry の実接続を有効にした顧客パックの ID（再起動で消える） */
   const foundryEnabled = new Set<string>();
+  const genai: FoundryService = opts.foundry ?? createFoundryService({ fetchFn: opts.foundryFetch, timeoutMs: opts.foundryTimeoutMs });
   const speechFetch = opts.speechFetch ?? ((u, i) => fetch(u, i));
   const signedIn = async (): Promise<boolean> => (opts.sdk ? (await opts.sdk.status().catch(() => ({ signedIn: false }))).signedIn : false);
 
@@ -117,15 +124,17 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
     void (async () => {
       try {
         if (req.method === 'GET' && path === '/health') {
-          return json(200, { status: 'ready', copilot: (await signedIn()) ? 'signed-in' : 'signed-out', foundry: { keyConfigured: opts.foundry?.hasKey() ?? false } });
+          return json(200, { status: 'ready', copilot: (await signedIn()) ? 'signed-in' : 'signed-out', foundry: { keyConfigured: getFoundry().secret() !== null } });
         }
-        // ---- FR-285: 生成AIの活用分析の Foundry 接続。キーは中継側の環境変数だけ。応答にキーの値・上流の本文は含めない ----
+        // ---- FR-285: 生成AIの活用分析。共通接続（FR-275）の保管庫のエンドポイント・デプロイ名・キーと、packId 単位の有効化だけを使う。応答にキーの値・上流の本文は含めない ----
         if (req.method === 'POST' && path === '/foundry/analyze') {
-          const b = JSON.parse((await readBody(req)) || '{}') as { solution?: unknown; endpoint?: unknown; deployment?: unknown };
+          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: unknown; solution?: unknown };
           try {
-            if (!opts.foundry) throw new GenAiFoundryError('key-missing');
-            if (typeof b.solution !== 'string' || typeof b.endpoint !== 'string' || typeof b.deployment !== 'string') throw new GenAiFoundryError('bad-request');
-            return json(200, await opts.foundry.analyze({ solution: b.solution, endpoint: b.endpoint, deployment: b.deployment }));
+            if (typeof b.packId !== 'string' || !b.packId || typeof b.solution !== 'string') throw new GenAiFoundryError('bad-request');
+            const secret = getFoundry().secret();
+            if (!secret) throw new GenAiFoundryError('key-missing');
+            if (!foundryEnabled.has(b.packId)) throw new GenAiFoundryError('disabled');
+            return json(200, await genai.analyze({ solution: b.solution, endpoint: secret.endpoint, deployment: secret.deployment, key: secret.key }));
           } catch (e) {
             if (e instanceof GenAiFoundryError) return json(CAUSE_STATUS[e.kind], { error: { cause: e.kind, ...e.detail } });
             throw e;
@@ -152,9 +161,9 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           const withMode = () => ({ ...getFoundry().view(), enabled: foundryEnabled.has(packId) });
           if (req.method === 'GET') return json(200, withMode());
           if (req.method === 'PUT') {
-            const b = JSON.parse((await readBody(req)) || '{}') as { endpoint?: string; deployment?: string; key?: string };
+            const b = JSON.parse((await readBody(req)) || '{}') as             { endpoint?: string; deployment?: string; key?: string; authMethod?: string };
             try {
-              getFoundry().save({ endpoint: String(b.endpoint ?? ''), deployment: String(b.deployment ?? ''), key: typeof b.key === 'string' ? b.key : undefined });
+                          getFoundry().save({ endpoint: String(b.endpoint ?? ''), deployment: String(b.deployment ?? ''), key: typeof b.key === 'string' ? b.key : undefined, authMethod: b.authMethod === 'entra' ? 'entra' : 'api-key' });
               return json(200, withMode());
             } catch (e) {
               return json(400, { error: e instanceof Error ? e.message : '保存できませんでした' });
@@ -172,7 +181,7 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           if (!b.enable) { foundryEnabled.delete(b.packId); return json(200, { mode: 'mock' }); }
           if (b.consent !== true) return json(403, { error: '顧客の了承の記録がないため、実接続を有効にできません', mode: 'mock' });
           if (b.confirmed !== true) return json(400, { error: '費用と送信内容の確認が必要です' });
-          if (!getFoundry().secret()) return json(409, { error: 'Foundry の接続情報が未設定です', mode: 'mock' });
+          if (!getFoundry().importSecret()) return json(409, { error: 'Foundry の接続情報が未設定です', mode: 'mock' });
           foundryEnabled.add(b.packId);
           return json(200, { mode: 'connected' });
         }
@@ -183,16 +192,43 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           const unavailable = (reason: string, message: string, status = 200) => json(status, { mode: 'unavailable', reason, message });
           if (b.consent !== true) return unavailable('consent', '顧客の了承の記録がないため、AI は使えません');
           if (!foundryEnabled.has(b.packId)) return unavailable('disabled', 'Foundry の実接続が有効ではありません');
-          const secret = getFoundry().secret();
+          const secret = getFoundry().importSecret();
           if (!secret) return unavailable('not-configured', 'Foundry の接続情報が未設定です');
           if (b.includesPerson === true && b.personConfirmed !== true) return unavailable('person-unconfirmed', '種別「人」を含む顧客パックは、送信前の確認が必要です');
           try {
-            const answer = await callFoundry(secret, b.prompt, opts.foundryFetch, opts.foundryTimeoutMs);
+            const answer = secret.authMethod === 'entra'
+              ? await callFoundryWithInput(secret, b.prompt, opts.foundryFetch, opts.foundryTimeoutMs, opts.foundryToken)
+              : await callFoundry(secret, b.prompt, opts.foundryFetch, opts.foundryTimeoutMs);
             return json(200, { answer, mode: 'connected' });
           } catch (e) {
             const kind = e instanceof FoundryError ? e.kind : 'network';
             const msg = (e instanceof FoundryError ? e.message : 'Foundry に接続できませんでした').split(secret.key).join('•••');
             return unavailable(kind === 'timeout' ? 'timeout' : 'error', msg, 200);
+          }
+        }
+        // ---- FR-289: AI 取り込み。条件が 1 つでも欠けると Foundry を呼ばない（呼び出し 0 回）。応答・エラーに認証情報は含めない ----
+        if (req.method === 'POST' && path === '/foundry/import') {
+          const b = JSON.parse((await readBody(req, IMPORT_BODY_LIMIT)) || '{}') as {
+            packId?: string; consent?: boolean; confirmed?: boolean; includesPerson?: boolean; personConfirmed?: boolean;
+            fileName?: string; mime?: string; size?: number; dataBase64?: string;
+          };
+          const fail = (status: number, cause: string, extra: Record<string, unknown> = {}, message?: string) => json(status, { error: { cause, ...extra, ...(message ? { message } : {}) } });
+          if (typeof b.packId !== 'string' || !b.packId || typeof b.dataBase64 !== 'string' || typeof b.fileName !== 'string') return fail(400, 'bad-request');
+          if (b.consent !== true) return fail(403, 'consent');
+          if (!foundryEnabled.has(b.packId)) return fail(403, 'disabled');
+          const secret = getFoundry().importSecret();
+          if (!secret) return fail(503, 'key-missing');
+          if (b.includesPerson === true && b.personConfirmed !== true) return fail(403, 'person-unconfirmed');
+          if (b.confirmed !== true) return fail(400, 'unconfirmed');
+          const bytes = Buffer.byteLength(b.dataBase64, 'base64');
+          if (bytes > AI_IMPORT_MAX_BYTES || (typeof b.size === 'number' && b.size > AI_IMPORT_MAX_BYTES)) return fail(413, 'too-large', { limitBytes: AI_IMPORT_MAX_BYTES });
+          try {
+            const entities = await importWithFoundry(secret, { name: b.fileName, mime: String(b.mime ?? ''), dataBase64: b.dataBase64 }, opts.foundryFetch, opts.foundryTimeoutMs, opts.foundryToken);
+            return json(200, { preview: { entities } });
+          } catch (e) {
+            const kind = e instanceof FoundryError ? e.kind : 'network';
+            const status = /HTTP (\d+)/.exec(e instanceof Error ? e.message : '')?.[1];
+            return fail(kind === 'timeout' ? 504 : 502, kind === 'http' ? 'upstream-status' : kind, status ? { status: Number(status) } : {});
           }
         }
         if (req.method === 'POST' && path === '/speech/synthesize') {

@@ -6,7 +6,7 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 
 // ───────── FR-080 AI ナビゲーター ─────────
 
-/** 議題の台本（narration）を読む。空・欠けていれば null */
+/** 論点の台本（narration）を読む。空・欠けていれば null */
 export function readNarration(topic: unknown): string | null {
   const n = isRecord(topic) ? topic.narration : undefined;
   return typeof n === 'string' && n.trim() !== '' ? n.trim() : null;
@@ -62,7 +62,7 @@ export function quizMaxScore(questions: readonly QuizQuestion[]): number {
   return questions.reduce((sum, q) => sum + Math.max(0, ...q.options.map((o) => o.score)), 0);
 }
 
-/** 議題の quiz を読む。質問が 1 問もなければ null */
+/** 論点の quiz を読む。質問が 1 問もなければ null */
 export function readQuiz(topic: unknown): Quiz | null {
   const q = isRecord(topic) ? topic.quiz : undefined;
   if (!isRecord(q) || !Array.isArray(q.questions)) return null;

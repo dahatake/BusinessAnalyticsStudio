@@ -173,9 +173,7 @@ describe('NFR-A11Y-009 AC-485 操作の対象の大きさ（部品の指定）',
 
 describe('NFR-A11Y-009 AC-483 拡大・縮小できる面の印と、面の中の文字の省略記号＋全文', () => {
   // NFR-A11Y-009 AC-483（A-51。CONTRACT.md §21 の data-zoom-surface）
-  it('NFR-A11Y-009 AC-483 キャンバス・3D・地図・ホワイトボード・グラフの描画領域に data-zoom-surface を付ける', () => {
-    expect(readFileSync('src/screens/canvas/CanvasScreen.tsx', 'utf8')).toMatch(/data-zoom-surface="canvas"/);
-    expect(readFileSync('src/screens/View3DScreen.tsx', 'utf8')).toMatch(/data-zoom-surface="3d"/);
+  it('NFR-A11Y-009 AC-483 地図・ホワイトボード・グラフの描画領域に data-zoom-surface を付ける', () => {
     expect(readFileSync('src/screens/MapScreen.tsx', 'utf8')).toMatch(/data-zoom-surface="map"/);
     expect(readFileSync('src/ink/BoardSurface.tsx', 'utf8')).toMatch(/data-zoom-surface=\{overlay \? undefined : 'whiteboard'\}/);
     expect(readFileSync('src/screens/KnowledgeGraphScreen.tsx', 'utf8')).toMatch(/data-zoom-surface="graph"/);
@@ -190,10 +188,7 @@ describe('NFR-A11Y-009 AC-483 拡大・縮小できる面の印と、面の中�
   });
 
   // NFR-A11Y-009 AC-483
-  it('NFR-A11Y-009 AC-483 キャンバスのカードと地図の拠点は省略記号を使い、全文をカードの title・ボタンの名前に持つ', () => {
-    const canvas = readFileSync('src/screens/canvas/CanvasScreen.tsx', 'utf8');
-    expect(canvas).toMatch(/cardText: \{[^}]*textOverflow: 'ellipsis'/);
-    expect(canvas).toMatch(/title=\{`\$\{c\.chapter\}: \$\{c\.title\}`\}/);
+  it('NFR-A11Y-009 AC-483 地図の拠点は省略記号を使い、全文をボタンの名前に持つ', () => {
     const map = readFileSync('src/screens/MapScreen.tsx', 'utf8');
     expect(map).toMatch(/marker: \{[\s\S]*?textOverflow: 'ellipsis'/);
     expect(map).toMatch(/aria-label=\{`拠点 \$\{site\.name\}/);

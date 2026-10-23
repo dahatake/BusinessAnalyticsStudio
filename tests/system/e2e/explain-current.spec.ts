@@ -78,6 +78,18 @@ test.describe('FR-275 Microsoft Foundry の接続設定', () => {
       const settings = await openScreen(page, 'settings');
       const foundry = settings.getByTestId('foundry-settings');
     await expect(foundry).toBeVisible();
+    // 設定パネルは共通接続の 1 つだけ（FR-275 の改訂 2026-10-22）。見出しと共通の旨の説明。独自のパネルはない
+    await expect(settings.getByTestId('foundry-settings')).toHaveCount(1);
+    await expect(settings.getByRole('region', { name: 'Microsoft Foundry（生成AI機能の共通接続）' })).toHaveCount(1);
+    await expect(settings.getByText('Microsoft Foundry（生成AI機能の共通接続）').first()).toBeVisible();
+    await expect(foundry).toContainText(/共通/);
+    await expect(foundry).toContainText(/現状の説明/);
+    await expect(foundry).toContainText(/活用シナリオ/);
+    await expect(settings.getByRole('region', { name: '生成AIの活用分析の接続' })).toHaveCount(0);
+    await expect(settings.getByText(/生成AIの効果的な活用シナリオの分析（Microsoft Foundry）/)).toHaveCount(0);
+    await expect(settings.getByRole('textbox', { name: 'エンドポイント', exact: true })).toHaveCount(1);
+    await expect(settings.getByRole('textbox', { name: 'デプロイ名', exact: true })).toHaveCount(1);
+    await expect(settings.getByRole('switch', { name: '実接続を有効にする', exact: true }).or(settings.getByRole('checkbox', { name: /Foundry.*(実接続|有効)/ }))).toHaveCount(1);
     await expect(foundry.getByLabel(/エンドポイント/)).toBeVisible();
     await expect(foundry.getByLabel(/デプロイ名/)).toBeVisible();
     const key = foundry.getByLabel(/API キー/);
@@ -92,6 +104,11 @@ test.describe('FR-275 Microsoft Foundry の接続設定', () => {
     await expect(foundry).toContainText(/費用/);
     await expect(foundry).toContainText(/課題/);
     await expect(foundry).toContainText(/KPI/);
+    await expect(foundry).toContainText(/OKR/);
+    // AC-703（改訂）: チャットの質問・直近の履歴・顧客パックの根拠も送信される情報として示される
+    await expect(foundry).toContainText(/質問/);
+    await expect(foundry).toContainText(/履歴/);
+    await expect(foundry).toContainText(/根拠/);
 
     // ダミーのキーを保存すると「設定済み」だけが表示され、値は再表示されない
     const dummy = 'dummy-key-for-system-test-0000';

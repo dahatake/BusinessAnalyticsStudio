@@ -10,8 +10,8 @@ const REFLOW_WIDTH = 320; // PARAM-029
 const MIN_TARGET = 24; // PARAM-040
 const TEXT_ZOOM = 2; // 200%（WCAG 2.2 1.4.4）
 
-/** 2 次元の操作が本質の面（地図・3D・キャンバス）の画面。中の横スクロールは判定から除く（NFR-A11Y-009） */
-const TWO_D_SURFACES = new Set(['map', 'view3d', 'canvas', 'whiteboard']);
+/** 2 次元の操作が本質の面（地図・3D）の画面。中の横スクロールは判定から除く（NFR-A11Y-009）。画面 view3d・canvas は廃止（FR-020・FR-012）。Twin ビューは 3D の面を持つ */
+const TWO_D_SURFACES = new Set(['map', 'twin-view', 'whiteboard']);
 
 async function pageOverflowX(page: Page): Promise<number> {
   return page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -205,7 +205,7 @@ test.describe('NFR-A11Y-009 リフローと文字の拡大', () => {
     await page.setViewportSize({ width: 1600, height: 900 });
     const app = await start();
     const labels: Record<string, () => Promise<string[]>> = {
-      view3d: async () => (await scene.objects(page)).filter((o) => o.visible).map((o) => o.entityId),
+      'twin-view': async () => (await scene.objects(page)).filter((o) => o.visible).map((o) => o.entityId),
       map: async () => (await hook<Array<{ entityId: string }>>(page, 't.map.markers()')).map((m) => m.entityId),
     };
     for (const key of Object.keys(labels)) {
@@ -227,7 +227,7 @@ test.describe('NFR-A11Y-009 リフローと文字の拡大', () => {
   });
 
   // NFR-A11Y-009 AC-483（異常系: 2 次元の操作が本質の面を除く画面で、320px の幅でも情報（見出し・操作）が欠けない）
-  test('NFR-A11Y-009 AC-483 異常系: 320 CSS px の幅でも、地図・3D・キャンバス以外の画面の見出しと操作が 1600px の幅と同じだけある（情報が欠けない）', async ({ page, start }) => {
+  test('NFR-A11Y-009 AC-483 異常系: 320 CSS px の幅でも、地図・3D 以外の画面の見出しと操作が 1600px の幅と同じだけある（情報が欠けない）', async ({ page, start }) => {
     test.setTimeout(300_000);
     await start();
     await selectPersona(page, '事業部門');
@@ -268,7 +268,7 @@ async function activeIs(page: Page, loc: Locator): Promise<boolean> {
 const TRANSIENT_ROLES = '[role="menu"], [role="dialog"], [role="alertdialog"], [role="listbox"], [role="tooltip"]';
 
 /**
- * 開く前から見えている部品（キャンバスの listbox「議題」、常設のパネル・一覧・タブ）に印を付ける。
+ * 開く前から見えている部品（作業領域の listbox「論点」、常設のパネル・一覧・タブ）に印を付ける。
  * 開いた後に新しく現れたものだけを一時的な表示として扱い、常設の部品は対象外にする（AC-484。A-51）。
  */
 async function markPersistent(page: Page): Promise<void> {
@@ -289,7 +289,7 @@ function newTransient(page: Page): Locator {
 
 test.describe('NFR-A11Y-009 焦点の戻りと見出しの段', () => {
   // NFR-A11Y-009 AC-484
-  test('NFR-A11Y-009 AC-484 全画面のダイアログ・メニュー（一時的な表示）をキーボードで開いて Esc で閉じると、フォーカスが開いた操作の要素に戻る（常設の listbox「議題」・パネル・一覧・タブは対象外）', async ({ page, start }) => {
+  test('NFR-A11Y-009 AC-484 全画面のダイアログ・メニュー（一時的な表示）をキーボードで開いて Esc で閉じると、フォーカスが開いた操作の要素に戻る（常設の listbox「論点」・パネル・一覧・タブは対象外）', async ({ page, start }) => {
     test.setTimeout(300_000);
     await start();
     await selectPersona(page, '事業部門');
@@ -327,12 +327,13 @@ test.describe('NFR-A11Y-009 焦点の戻りと見出しの段', () => {
     expect(bad).toEqual([]);
   });
 
-  // NFR-A11Y-009 AC-484（異常系: 常設の listbox「議題」は一時的な表示ではない。メニューを開いて Esc で閉じても常設のまま残り、フォーカスはメニューを開いた操作に戻る）
-  test('NFR-A11Y-009 AC-484 異常系: キャンバスでその他の操作のメニューを開いて Esc で閉じても、常設の listbox「議題」は表示されたままで、フォーカスはメニューを開いた操作に戻る', async ({ page, start }) => {
+  // NFR-A11Y-009 AC-484（異常系: 常設の listbox「論点」は一時的な表示ではない。メニューを開いて Esc で閉じても常設のまま残り、フォーカスはメニューを開いた操作に戻る）
+  test('NFR-A11Y-009 AC-484 異常系: コンポーネントでその他の操作のメニューを開いて Esc で閉じても、常設の listbox「論点」は表示されたままで、フォーカスはメニューを開いた操作に戻る', async ({ page, start }) => {
     await start();
-    const c = await gotoScreen(page, 'canvas');
-    const agenda = page.getByRole('listbox', { name: '議題' });
-    await expect(agenda, '常設の listbox「議題」がない').toBeVisible();
+    // 画面「キャンバス」は廃止（FR-012）。論点の listbox は配置を受ける作業領域（workspace）に常設される
+    const c = await gotoScreen(page, 'priority');
+    const agenda = page.getByRole('listbox', { name: '論点' });
+    await expect(agenda, '常設の listbox「論点」がない').toBeVisible();
     const opener = c.getByTestId('component-menu').first();
     await c.focus();
     await markPersistent(page);
@@ -342,7 +343,7 @@ test.describe('NFR-A11Y-009 焦点の戻りと見出しの段', () => {
     await expect(popup).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(popup).toBeHidden();
-    await expect(agenda, '常設の listbox「議題」が Esc で閉じた').toBeVisible();
+    await expect(agenda, '常設の listbox「論点」が Esc で閉じた').toBeVisible();
     expect(await activeIs(page, opener), 'フォーカスがメニューを開いた操作に戻らない').toBe(true);
   });
 

@@ -48,8 +48,9 @@
 - 自動サイズ調整: フォーカスしたコンポーネントの面積が基準の PARAM-033（1.5）倍になる。switch「サイズの自動調整」で切り替える。
 - 作業先: 常に表示する `data-testid="work-target"`（「デモ」または「企業名 / Project 名」）。ボタン「作業先」で dialog「作業先の選択」を開く。候補は option（「デモ」「<企業名> … <Project 名>」「実際の Project を登録」）。起動直後はメイン画面（§15）で、選択画面は「Project を開く」で必ず出る（FR-144 AC-237・AC-239、Q-026 で改訂）。support/fixtures.ts の `skipOpening` は、メイン画面と選択画面を進めてデモ（なければ最初の Project）を選ぶ。選択画面そのものを確かめるテストは `skipOpening: false` で起動し `pressOpeningEscape`（オープニングだけ飛ばす）を使う。
 - デモの非表示（FR-144 AC-240・AC-241）: 設定画面（`nav-settings`）の switch「選択画面にデモを表示」（既定: オン）。オフにすると dialog「作業先の選択」にデモの option が出ない。端末内（localStorage 等）に保存され、再読込後も維持され、別の browser context には引き継がれない。
-- 最初のフレーム（FR-147 AC-246〜250）: 新しいフックは使わない。「最初のフレーム」は `scene.info().frame > 0` かつ `scene.objects()` に `visible` な拠点がある状態。開いた時刻は `openScreen(view3d)` の直前。
-- 3D の描画面（FR-146 AC-243・AC-244）: `data-testid="component-view3d"` の中の `canvas` と、その親要素（表示領域）の大きさを比べる。クリックは `scene.objects` の画面座標へ `page.mouse.click`。
+- （廃止）最初のフレーム（FR-147 AC-246〜250）: FR-147 は廃止予定（2026-10-22）。ケースは台帳で blocked。`scene.info()`・`scene.objects()` のフックは AC-081・AC-087・AC-030 などが引き続き使う。
+- （廃止）3D の描画面（FR-146 AC-243・AC-244）: FR-146 は廃止予定（2026-10-22）。ケースは台帳で blocked。
+- 廃止した画面と読み替え（2026-10-22。Q-062 A）: 画面 `view3d`・`drawing2d`・`canvas` はない。`support/fixtures.ts` の `openScreen`・`component` は、旧 key `canvas` を配置を受ける作業領域（`data-testid="workspace"`。パン/ズームの面 `canvas-surface`・listbox「論点」・`t.canvas.*` のフックはその中・それに対して）に、旧 key `view3d` を Twin ビュー（`twin-view`）を見出しの「ビュー」で 3D にしたもの（`open3dView`。4 つの 3D シーン・拠点の描画・クロスハイライト・注釈・`t.scene.*` のフックはここ）に読み替える。注釈のフックの key は `t.annotations.count("twin-view")`。「議題」の表示名は「論点」（listbox の名前も「論点」）。
 - 表示設定: Light/Dark は `emulateMedia({colorScheme})`、ハイコントラストは `forcedColors: 'active'`、動きの軽減は `reducedMotion: 'reduce'`。
 
 ## 10. 作業先メニュー・操作アイコン・最小化・スナップ・KPI/OKR（FR-148〜154・NFR-UX-008。workspace-ops.spec.ts が前提にする画面の探し方）
@@ -70,7 +71,7 @@
 - 自由配置・拡大（FR-173〜175）: 移動は見出し（heading）のドラッグ。置いた位置は再読込後も維持され、`workspace` の外へ出ない。重なったときは、ぶつかられたものが押し出されて重ならない（§15。Q-025 で改訂。「手前に出す」は廃止）。ダブルクリックで拡大中のコンポーネントは `data-expanded="true"`（最大化は `data-maximized="true"` で別。拡大では付かない）。拡大の寸法は `workspace` の境界に対する割合（PARAM-058=75%）。
 - 設定（FR-175）: 設定画面（`nav-settings`）の radiogroup「拡大表示の位置」に radio「上」「左」「右」「下」（既定: 上）。
 - 作業先メニュー（FR-176）: `work-target-menu` とボタン「企業を登録」が最上段（ほかの `nav-*`・ペルソナ・編集モード・`stepper` より上端が上か同じ）。
-- ストーリー（FR-177〜179）: ボタン「プレゼンテーションを開始」→ dialog「ペルソナの選択」（button 経営層・事業部門・IT・現場。Esc で閉じるとストーリーは始まらない）→ `data-testid="story"`。現在のシーン `story-scene`（見出し heading は 1 つ。`data-story-part`=1〜4（①解決策②理由③KPI/OKR④ユースケース）、①は `data-solution-id`、不足データのシーンは `data-no-data="true"` で本文に「データなし」・理由・補う入口）。`story-position`（「n / 全体」）。`→`/`←`/`Esc` で操作。
+- ストーリー（FR-177〜179）: ボタン「プレゼンテーションを開始」→ dialog「ペルソナの選択」（button 経営層・事業部門・IT・現場。Esc で閉じるとストーリーは始まらない）→ `data-testid="story"`。現在のシーン `story-scene`（見出し heading は 1 つ。`data-story-part`=1〜4（①解決策②理由③KPI/OKR④ユースケース）、①は `data-solution-id`、不足データのシーンは `data-no-data="true"` で本文に「データなし」・理由・補う入口）。`story-position`（「n / 全体」）。`→`/`←`/`Esc` で操作。配置（FR-178 AC-740。story-layout.spec.ts）: `story-scene` 内の各要素に `data-story-el="kicker|big|big-label|heading|body-line|cta"`（本文は 1 行＝1 要素ではなく、折り返し前の 1 段落でもよい。表示していない要素は付けないか、矩形が 0）。テストは各要素の外接矩形（文字の描画矩形を含む）で交差・ビューポート外を判定する。
 - ユースケース一覧（FR-180）: ステッパーの「ユースケース作成」→ `usecase-list` の listitem に `data-persona`（経営層・事業部門・IT・現場）、子に `usecase-name`・`usecase-summary`・`usecase-steps`・`usecase-effect`・`usecase-solution`・`usecase-kpi`。
 - 優先順位（FR-177 の期待値の元）: `priority` 画面内の `data-entity-id`（`sol-` で始まる解決策 ID）の出現順。
 ## 15. メイン画面・ハンドル・押し出し・アニメーション（FR-183〜187。Q-025・Q-026 の改訂を含む。main-screen.spec.ts・workspace-handle.spec.ts・workspace-layout.spec.ts・workspace-free-layout.spec.ts が前提にする画面の探し方）
@@ -106,8 +107,8 @@
 - 入口: メイン画面の Project 名のリンク（role=link、名前は Project 名）をクリックすると、その Project 画面（stepper が見える）が開く。ブラウザーの戻る（history back）でメイン画面に戻る。
 
 ## 21. Fluent 2 の全画面適用・ピン止め・ビュー切替（NFR-UX-015〜017・NFR-A11Y-009・FR-215〜218。fluent-design.spec.ts・a11y-all-screens.spec.ts・pin.spec.ts・view-switch.spec.ts が前提にする画面の探し方）
-- 全画面（画面の登録）: 左メニュー navigation「画面」の `nav-<key>`（`nav-toggle` を除く）を表示の順に走査し、左メニューに項目を持たない画面（FR-220 AC-590: `view3d`「3D ビューと 2D 図面」・`drawing2d`「2D 図面」。`support/fixtures.ts` の `OFF_MENU_SCREENS`）を末尾に足す（`support/screens.ts` の `listScreenKeys`）。§4 の主要画面がすべて含まれること。表示幅が狭く左メニューが隠れるときは button「メニュー」から開く。
-- 左メニューにない画面の開き方（FR-220 AC-590。AC の期待値は変えない）: `openScreen`・`gotoScreen` は、`OFF_MENU_SCREENS` か `nav-<key>` が無い画面を、コマンドパレット（`Ctrl+K`。dialog「コマンドパレット」）に「show <key>」と入れ、option `id="command-view.show.<key>"`（「<画面名>を表示する」。FR-111）を押して開く（`openScreenByCommand`）。テストは `nav-view3d`・`nav-drawing2d` を使わない。
+- 全画面（画面の登録）: 左メニュー navigation「画面」の `nav-<key>`（`nav-toggle` を除く）を表示の順に走査する（`support/screens.ts` の `listScreenKeys`）。§4 の主要画面がすべて含まれ、廃止した画面 `view3d`・`drawing2d`・`canvas`（FR-220 AC-590）が含まれないこと。表示幅が狭く左メニューが隠れるときは button「メニュー」から開く。
+- 左メニューにない画面（`OFF_MENU_SCREENS`）は今はない（空）。`openScreenByCommand`（コマンドパレット「show <key>」・option `id="command-view.show.<key>"`）は、将来の左メニューにない画面のために残す。
 - カード: Fluent のカードの面に `data-surface="card"`（影の段 4 の判定に使う。ハイコントラストでは 4 辺の境界線か輪郭線の判定に使う。AC-476）。メニューは role=menu、ツールチップは role=tooltip、ダイアログは role=dialog（コマンドパレット）。
 - 拡大・縮小できる面（AC-483。A-51）: ビュアー・グラフ・キャンバス・ホワイトボード・地図・3D の、拡大・縮小する描画領域の要素に `data-zoom-surface`（値は `viewer`／`graph`／`canvas`／`whiteboard`／`map`／`3d`）。見出し・ハンドル・ツールバーなど面の外の部品には付けない。この中の文字は文字 200% の切れ・重なりの数え方から除き、表示しきれない文字は省略記号（text-overflow: ellipsis か line-clamp）＋全文のアクセシブルな名前（aria-label・title・aria-labelledby）かツールチップ（role=tooltip）、または面の中のスクロール（overflow: auto/scroll）で読めることを判定する。3D と地図のラベルは NFR-A11Y-003 AC-173 と同じ button「表で見る」の表で読めることを判定する。
 - ピン止め（FR-215）: フォーカスしたコンポーネントの `component-actions` に button 1 つ。名前は「ピン止めする」（固定なし）／「ピン止めを外す」（固定中）。`aria-pressed`（false／true）と `data-icon-variant`（`regular`／`filled`）を持ち、ツールチップ（role=tooltip）の文言も名前と同じ。状態は端末内のレイアウトとして保存され、再読込で復元される。
@@ -146,7 +147,7 @@
 - 画面の見出し（FR-220 AC-515）: `data-testid="screen-heading"` の中の button「ビュー」（名前は「ビュー」で始まる。§21 のコンポーネントの「ビュー」と同じメニュー）。左メニュー navigation「画面」に 2D/3D の切替の項目（menuitemradio「2D」「3D」・switch・名前が「3D ビュー」だけの項目）を置かない（FR-220 の改訂で、画面「3D ビューと 2D 図面」「2D 図面」の項目は左メニューに置かない＝AC-590。§21 の開き方で開く）。
 - 操作アイコン（FR-222 AC-518）: §10 の `component-actions` の button「最小化」「最大化」（最大化中は「通常表示」か「元に戻す」）が見出しの右上に並び、図（svg か img）を持つ。名前はホバー・フォーカスで role=tooltip に出る。最大化中は `data-maximized="true"`、最小化中は `data-minimized="true"`。常設ボタン（「その他の操作」を除く）は 6 個以下（PARAM-073）。
 - 設定のモーダル（FR-223 AC-519）: 左メニューの `nav-settings` で role=dialog「設定」（`aria-modal="true"`、button「閉じる」）が開く。背面の覆いは `data-testid="modal-backdrop"`（透明でない背景色）。設定は `component-settings` としてワークスペースに並ばない。
-- 設定の区画（NFR-SEC-002 AC-176・FR-285 AC-739。run 202610212134）: AI 接続（GitHub Copilot）の実接続は region「AI・音声・手書きの接続」の中の switch（名前に「実接続」を含む。例「AI の実接続を有効にする（GitHub Copilot）」）。生成AIの活用分析（Foundry）の実接続は region「生成AIの活用分析の接続」の中の switch「実接続を有効にする」。名前「実接続」は設定の中で一意ではないため、テストは switch を必ず区画（region）に絞って探す。
+- 設定の区画（NFR-SEC-002 AC-176・FR-285 AC-739。run 202610212134）: AI 接続（GitHub Copilot）の実接続は region「AI・音声・手書きの接続」の中の switch（名前に「実接続」を含む。例「AI の実接続を有効にする（GitHub Copilot）」）。生成AIの活用分析（FR-285）の独自の実接続 switch・region「生成AIの活用分析の接続」は廃止（2026-10-22）。Foundry の実接続は、共通接続の region「Microsoft Foundry（生成AI機能の共通接続）」（§25）の中の switch「実接続を有効にする」1 つだけ。名前「実接続」は設定の中で一意ではないため、テストは switch を必ず区画（region）に絞り、name は exact で探す。
 - サイズ変更（FR-224 AC-521）: コンポーネントの縁・角のつまみ `data-testid="resize-e"`（右の縁）・`resize-s`（下の縁）・`resize-se`（右下の角）。ホバーで利用できる。ドラッグで縦だけ・横だけ・両方が変わる。
 - 作業先（FR-226 AC-525）: 「[顧客名] - [プロジェクト名]」の見える文字は `work-target-menu`（§10）だけ。`work-target` を残す場合は見える同じ文字を持たず、アクセシブルな名前に作業先を含む。
 - 強調（FR-227 AC-526）: 各コンポーネントの項目 `[data-entity-id]` の `data-highlight`（selected・related・dimmed。強調なしは属性なしか空）。選択中は、項目を持つすべてのコンポーネントで、各項目が selected/related か dimmed のどちらか一方になる。解除は Esc か同じ項目の再クリック。
@@ -158,11 +159,11 @@
 
 ## 25. 生成AIの効果的な活用シナリオの分析・Foundry 実接続（FR-284・FR-285 AC-733・739。genai-scenario.spec.ts が前提にする画面の探し方。run 202610212224）
 - 画面: 左メニュー（navigation「画面」）に `nav-genai-scenario`（文字「生成AIの効果的な活用シナリオの分析」）、開くと `component-genai-scenario`。中に textbox（名前に「解決策」）と button「分析実行」。結果は region「分析結果」（結論・判断基準・代替案の文字を含む）。開いた直後・入力直後は region「分析結果」がない。
-- 設定（role=dialog「設定」）に region「生成AIの活用分析の接続」: 「有料」「費用」「送信」「解決策」「課題」の語、switch「実接続を有効にする」（既定は off。on にすると有料・送信情報の確認 alertdialog があり、button「有効にする」で確定）、textbox「エンドポイント」（既定 https://GraphcRecordingPanel.services.ai.azure.com/openai/v1）・「デプロイ名」（既定 gpt-chat-latest）。キーの値を入れる・出す欄はない。
-- 接続（差し替え部品 support/relay-stub.ts の startFoundryRelayStub）: ブラウザー → 中継（runtime-config の relayUrl）の `POST /foundry/analyze`（body: 解決策・endpoint・deployment）。`GET /health` は `foundry.keyConfigured`（真偽）を返す。失敗は 5xx で `{error:{cause:'key-missing'|'unreachable'|'timeout'|'upstream-status'}}`。失敗時は role=alert に原因ごとの文言（キー未設定／接続できません／タイムアウト／ステータス 500）を出し、ルールベースの結果（region「分析結果」）を代替で出す。自動の再試行はしない。
+- 設定（role=dialog「設定」）の Foundry は、共通接続の 1 つだけの region「Microsoft Foundry（生成AI機能の共通接続）」（`data-testid="foundry-settings"`。2026-10-22 の FR-275・FR-285 の改訂）。中に: 「有料」「費用」「送信」「解決策」「課題」「共通」「現状の説明」「活用シナリオ」の語、textbox「エンドポイント」（既定 https://GraphcRecordingPanel.services.ai.azure.com/openai/v1）・「デプロイ名」（既定 gpt-chat-latest）・「API キー」（type=password。値は再表示しない）、button「保存」「削除」、「設定済み」表示、switch「実接続を有効にする」（既定は off。on にすると有料・送信情報の確認 alertdialog があり、button「有効にする」で確定）。設定全体で「エンドポイント」「デプロイ名」の textbox・switch「実接続を有効にする」は 1 組だけ。旧 region「生成AIの活用分析の接続」と見出し「生成AIの効果的な活用シナリオの分析（Microsoft Foundry）」の独自パネルは存在しない。環境変数 FOUNDRY_API_KEY は使わない（画面にも書かない）。
+- 接続（差し替え部品 support/relay-stub.ts の startFoundryRelayStub。共通の保管庫つき）: 保存は中継の `PUT /foundry/config`（body endpoint・deployment・key）、有効化は `POST /foundry/connection`（実中継の形。body `{packId, enable:boolean, consent, confirmed}`。スタブは `{enabled}` も許容、PUT も可。未設定で enable=true は 409）。ブラウザー → 中継（runtime-config の relayUrl）の `POST /foundry/analyze` の body は **packId と solution だけ**（endpoint・deployment・キーは送らない・受けても使わない）。保管庫が未設定・無効のときは、中継は外部（モデル）を呼ばず 503 `key-missing`。`GET /health` は `foundry.keyConfigured`（真偽）を返す。失敗は 5xx で `{error:{cause:'key-missing'|'unreachable'|'timeout'|'upstream-status'}}`。失敗時は role=alert に原因ごとの文言（キー未設定／接続できません／タイムアウト／ステータス 500）を出し、ルールベースの結果（region「分析結果」）を代替で出す。自動の再試行はしない。共通接続が未設定・無効なら、ブラウザーは /foundry/analyze を呼ばずモックで動く。
 ## 25. 「現状の説明」・Foundry 接続設定・課金の安全策の表示（FR-274〜277 AC-699・702・703・712・713。explain-current.spec.ts が前提にする画面の探し方）
 - 画面上部: button「現状の説明」（読み取り専用）。押すとサイドパネル `data-testid="explain-panel"`（`data-screen` に表示中の画面の key）が開く。内部に `explain-body`（説明の本文）、`explain-reason`（使えない理由）、button「閉じる」、button「作り直す」（画面切替後に示す）。AI 生成のときだけ `ai-generated-label` を持つ。Esc か閉じるで閉じ、焦点はボタンへ戻る。
-- 設定のモーダル内: `foundry-settings`（ラベル「エンドポイント」「デプロイ名」「API キー」（type=password）、実接続の checkbox/switch（既定 off）、「設定済み」表示、button「保存」「削除」、費用・送信情報の注意文）。
+- 設定のモーダル内: `foundry-settings`（共通接続の 1 つだけの設定パネル。見出し・region 名「Microsoft Foundry（生成AI機能の共通接続）」。ラベル「エンドポイント」「デプロイ名」「API キー」（type=password）、実接続の checkbox/switch（既定 off）、「設定済み」表示、button「保存」「削除」、費用・送信情報の注意文、共通の旨の説明。§25 前節）。
 - 設定のモーダル内: `ai-usage`（当日の回数と上限・今月の概算費用と予算・警告／停止の状態・単価。「1 日の上限」の入力は上げる保存で確認ダイアログ）。
 ## 25. Graph の操作（FR-245〜248。graph-interaction.spec.ts が前提にする画面の探し方。run 202610211713）
 - 対象: Graph の面 `[data-zoom-surface="graph"]`（ビジネス関係グラフを除く五画面: twin-view・spatial-view・issue-solution・kpi-okr・data-viewer）。面は `data-pan-x`・`data-pan-y`（CSS px）・`data-scale`（全体表示を 1。範囲 0.25〜4）を持ち、キーボードでフォーカスできる（tabindex）。
@@ -173,8 +174,23 @@
 - 追補（仕様変更 75285d8）: Enter は詳細カードの開閉でズームインしない（ズームインはダブルクリック・「拡大」ボタン・「+」。ダブルクリックはカードを開閉しない）。カードの主要な関係は `data-testid="card-relation"` で最大 5 件（PARAM-105）、超える分は文字「ほか N 件」。全画面は図にフォーカスして F キーでも入れる。Esc はカードが開いていればカードだけ閉じ、次の Esc で全画面終了。表の行で対象が塊に集約されて見えないときは、見える階層へ切り替えてからパンする。
 
 
-## 26. 「Copilot で分析実行」・Copilot の案・Foundry 接続設定（FR-278〜283 AC-715・717〜719・721・725・727。copilot-analysis-run.spec.ts が前提にする画面の探し方。run 202610230545）
-- 画面上部: button「Copilot で分析実行」。実行中は role=status に「実行中」を示し、ほかの操作を妨げない。未設定なら role=alert/status に「未設定」と設定画面への案内（button「設定を開く」）を出し、中継へ `/foundry/review` を送らない。
-- 各コンポーネント（`component(page,key)`）: 現在のデータの欄 `data-testid="component-current-data"`、案の欄 `copilot-proposal`（文字「Copilot の案（AI 生成）」、textbox「案の編集」、button「反映」「破棄」。現在のデータの欄の外）。案が返らない・データなしは `copilot-proposal-none`（文字「案なし」）。
-- 設定の `foundry-settings`: ラベル「エンドポイント」「デプロイ名」「認証方式」「API キー」、`foundry-status`（「設定済み」「未設定」）、button「保存」「削除」。
-- 中継（差し替え部品 support/review-stub.ts）: `POST /foundry/review` body `{components:[{key,data}]}` → `{proposals:[{key,text}]}`。`GET /health` は `foundry.keyConfigured`。
+## 27. Copilot で分析実行・Copilot の案・Foundry 接続設定（FR-278〜283 AC-715・717・718・719・721・725・727。copilot-review.spec.ts が前提にする画面の探し方。run 202610222205）
+- 画面上部: button「Copilot で分析実行」。送信前の確認は role=alertdialog（button「送信する」）。進行中は `copilot-running`、未設定などの案内は `copilot-notice`。
+- 各コンポーネント `component-<key>`（table・issue-solution・memo など）の中: 現在のデータ `component-data`、案 `copilot-proposal`（文字「Copilot の案（AI 生成）」、編集欄 textbox、button「反映」「破棄」はコンポーネント内）。案が返らない・データがないコンポーネントは文字「案なし」。
+- 接続（差し替え部品 support/review-stub.ts）: ブラウザー → 中継の `POST /foundry/review`（body `{components:[{id,data}]}` → `{reviews:[{id,proposal}]}`）。設定は §25 の `foundry-settings`（認証方式の欄を含む）。未設定なら /foundry/review を呼ばない。
+
+## 26. チャットの Foundry 送信（FR-286 AC-741〜747。chat-foundry.spec.ts が前提にする画面の探し方）
+- 差し替え部品: support/relay-stub.ts の startChatFoundryStub。GET /health（foundry.keyConfigured）・GET /foundry/config（configured・enabled）・POST /foundry/ask（body は askFoundry の req。応答は {mode:'connected',answer} か {mode:'unavailable',reason,message}）・POST /ask（Copilot の中継。呼ばれた回数を数える）。
+- チャット画面: 送信中は `chat-sending`、失敗の理由は `chat-error`（キーの値を含まない。上限・停止の理由も同じ）、古い履歴を落としたときは `chat-trim-notice`、button「送信内容を確認」で `chat-preview`（送る質問・履歴・根拠。Esc で閉じる）、button「新しい会話」で履歴を消す。回答は `chat-answer`（Foundry の回答には「AI 生成」と「Foundry」の表示）と `source-card`。送信中は button「送信」が disabled。失敗後の再送信は button「送信」（または「再送信」）。
+- 1 日の上限は設定の `ai-usage` の「1 日の上限」の入力と button「保存」（下げる変更は確認なし）。直近の履歴は PARAM-123（5 組）、入力の上限は PARAM-114（8000 トークン）。
+
+## 28. 「Copilot で分析実行」と「Copilot の案」（FR-278〜283 AC-715・717・718・719・721・725・727。copilot-analyze.spec.ts が前提にする画面の探し方。run 202610222251）
+- 実行: 画面上部に常時 button「Copilot で分析実行」。押すと、送る情報の種類と対象コンポーネントの一覧を示す alertdialog（確認 button 名に「送信」「実行」「続行」のいずれか）。完了までは role=status に「実行中」「進行中」「分析中」のいずれかを示し、画面は操作できる。未設定（接続設定なし）のときは確認に進まず、role=alert か status に「未設定」と設定画面への案内（文字に「設定画面」「設定を開」「設定で」のいずれか）を示し、中継への呼び出しは 0 回。
+- 案: 各コンポーネント（component-<key>）の中に `data-testid="copilot-draft"`（region。名前は「Copilot の案」で始まり、文字「Copilot の案（AI 生成）」を含む）。中に textbox「案の編集」、button「反映」「破棄」。案が返らない・データを持たないコンポーネントは文字「案なし」。案は現在のデータの欄（copilot-draft の外）に混ぜない。
+- 接続（差し替え部品 support/copilot-review-stub.ts）: `POST /foundry/review`（body: `{components:[{key,data}]}`）→ `{drafts:[{key,text}]}`。`GET/PUT/DELETE /foundry/config`（PUT body: `{endpoint,deployment,auth,key}`。auth は `api-key` か `entra`）。設定の `foundry-settings` に textbox「エンドポイント」「デプロイ名」、combobox か radiogroup「認証方式」、「API キー」（type=password）、button「保存」「削除」、`foundry-status`（「設定済み」「未設定」）。
+
+## 29. 外部ファイルの対応形式のガイド・AI 取り込み（FR-288・FR-289 AC-754〜760。import-export-guide.spec.ts・ai-import.spec.ts が前提にする契約。run 202610222215）
+- ガイド（FR-288）: `users-guide/` 配下の新しい Markdown 文書。ファイル名は決めない。`users-guide/README.md` の利用者向けの表に、「取り込み」「書き出し」の両方の語を含む 1 行（`[題](相対パス.md)` のリンクと内容の一行）を置く。文書には見出しに「取り込み」「書き出し」を含む節があり、それぞれに表（列: 画面・操作／形式（拡張子）／条件／コードの位置）を置く。取り込みは 5 行以上、書き出しは 8 行以上。「未対応」の語で PDF・画像ファイル・Office 文書・非定型テキストを明記し、「AI 取り込み」を案内する。コードの位置は `src/...` の実在するパスで 5 件以上。
+- 取り込みの画面: データカタログの画面（`component-data-catalog`）の中に `data-testid="ai-import"`。button「AI 取り込み」（Foundry の接続情報が未設定のとき disabled。設定済みで enabled）。未設定のときだけ `ai-import-guide`（文字に「Foundry」「接続情報」「設定」を含む）を出す。押すと、ラベル「AI 取り込みのファイル」の file input（PDF・画像・Office 文書・テキストを受ける）が出る。
+- プレビュー: region「取り込みのプレビュー」（取り込んだエンティティの名称を文字で含む）、button「反映」「破棄」。反映するまで `entity-list` は変わらない。エラーは `ai-import` 内の role=alert（上限超過は「10 MB」と「大きい／超」を含む。Foundry 失敗は原因（失敗・500 など）と次の行動（もう一度・設定を確認 など）を含む）。ファイルの上限は PARAM-125（10 MB。ちょうど 10 MB は可、1 バイト超で不可）。
+- 接続（差し替え部品 support/ai-import-stub.ts）: 接続情報は GET/PUT/DELETE `/foundry/config`（FR-275 と同じ）。取り込みは、ブラウザー → 中継（runtime-config の relayUrl）の `POST /foundry/import`（本文にキーを含めない）。応答は 200 `{preview:{entities:[{name,description}]}}`、失敗は 5xx `{error:{cause, status?}}`。`/health` は `foundry.keyConfigured`。ブラウザーの通信先は localhost（127.0.0.1）だけ。

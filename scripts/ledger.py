@@ -4,7 +4,7 @@
 Usage:
   python scripts/ledger.py summary
   python scripts/ledger.py add --req FR-012 --ac AC-031 --title "..." --layer e2e --command "npx playwright test ..." [--canary] [--reason "..."]
-  python scripts/ledger.py update ID [--command ...] [--title ...] [--ac ...] [--req ...] [--canary true|false] [--serial true|false] --reason "..."
+  python scripts/ledger.py update ID [--command ...] [--title ...] [--ac ...] [--req ...] [--canary true|false] --reason "..."
   python scripts/ledger.py block ID --reason "..."          # never delete a case; block it with a reason
   python scripts/ledger.py set ID pass|fail|blocked|not_run [--evidence PATH] [--reason ...]
   python scripts/ledger.py digests [--update]               # ac_digests (PARAM expanded AC text)
@@ -12,12 +12,6 @@ Usage:
   python scripts/ledger.py preflight [--cases ID,..] [--all]  # pytest 'collect-only': syntax errors / 0 tests selected (test-designer, before implementation)
   python scripts/ledger.py run [--cases E2E-001,IT-002 | --select changed|failed|all] [--base REF]
                                [--canary-first] [--max-minutes N] [--no-record] [--results PATH]
-
-Use a newer CLI against another tree before integration:
-  python <new-cli-tree>/scripts/ledger.py --root <target-tree> --by test-designer update E2E-001 --serial true --reason "shared server isolation"
---root precedes the subcommand; the target tree's config selects its ledger.
-serial=true runs the case alone; false restores normal scheduling. A changed
-value resets status to not_run and records the reason in history.
 
 Rules enforced here: cases are never deleted; command/ac_ids changes require --reason (history);
 status pass/fail is recorded only from an executed command's exit code.
@@ -124,11 +118,6 @@ def cmd_update(args, root, cfg) -> int:
         if val != c.get("canary"):
             changes.append(f"canary: {c.get('canary')} -> {val}")
             c["canary"] = val
-    if args.serial is not None:
-        val = args.serial == "true"
-        if val != c.get("serial"):
-            changes.append(f"serial: {c.get('serial')} -> {val}")
-            c["serial"] = val
     if not changes:
         print("変更はありません")
         return 0
@@ -732,7 +721,6 @@ def main(argv=None) -> int:
     u.add_argument("--ac")
     u.add_argument("--req")
     u.add_argument("--canary")
-    u.add_argument("--serial", choices=("true", "false"), help="true: 他のケースと並行せず単独実行。false: 通常の並列実行に戻す（変更には --reason が必要）")
     u.add_argument("--reason", required=False)
     b = sub.add_parser("block")
     b.add_argument("id")

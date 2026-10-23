@@ -15,6 +15,7 @@ import { DataViewer } from '../components/DataViewer';
 import { usePublishViewItems } from '../view/useView';
 import { toViewerEntities } from '../datacatalog/viewer';
 import { deriveViewerRelations } from '../datacatalog/relations';
+import { AiImport } from '../ai/AiImport';
 import { usePackStore } from '../store/pack';
 import { useDataCatalog, useExplicitLinks, useImportedCatalog } from '../store/datacatalog';
 import { useSelectionStore } from '../store/selection';
@@ -285,6 +286,7 @@ function DataCatalogScreen() {
               <label htmlFor="dc-file">企業データカタログのファイル</label>{' '}
               <input id="dc-file" type="file" accept=".json,.csv,application/json,text/csv" onChange={(ev) => { void onFile(ev.target.files?.[0]); ev.target.value = ''; }} />
             </div>
+            <AiImport projectId={projectId} onApplied={(m) => { setImportErrors([]); setImportedMsg(m); setTodoResult(''); }} />
             {importedMsg ? <Text role="status">{importedMsg}</Text> : null}
             {importErrors.length > 0 ? (
               <MessageBar intent="error" layout="multiline" role="alert">

@@ -15,9 +15,9 @@ export interface StepDefinition {
 /** 業務改善プロセスの全ステップ（課題定義→現状分析→KPI 測定→ユースケース作成→施策計画）。 */
 export const STEPS: readonly StepDefinition[] = [
   { key: 'issue', label: '課題定義', screen: 'issue-solution', screens: ['issue-solution', 'themes', 'discussion-tree', 'sources'] },
-  { key: 'analysis', label: '現状分析', screen: 'knowledge-graph', screens: ['knowledge-graph', 'analysis', 'architecture', 'table', 'map', 'view3d', 'drawing2d'] },
+  { key: 'analysis', label: '現状分析', screen: 'knowledge-graph', screens: ['knowledge-graph', 'analysis', 'architecture', 'table', 'map'] },
   { key: 'kpi', label: 'KPI 測定', screen: 'priority', screens: ['priority', 'ranking', 'matrix'] },
-  { key: 'usecase', label: 'ユースケース作成', screen: 'mock-app', screens: ['mock-app', 'canvas', 'whiteboard', 'usecase'], also: ['usecase'] },
+  { key: 'usecase', label: 'ユースケース作成', screen: 'mock-app', screens: ['mock-app', 'whiteboard', 'usecase'], also: ['usecase'] },
   { key: 'plan', label: '施策計画', screen: 'gantt', screens: ['gantt', 'summary'] },
 ];
 

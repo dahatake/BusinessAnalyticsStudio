@@ -8,7 +8,7 @@ import {
 import { Dialog, DialogSurface } from '../components/Dialog';
 import { usePackStore } from '../store/pack';
 import { useConsent } from './useConsent';
-import { deleteFoundryConfig, fetchFoundryView, putFoundryConfig, setFoundryConnection, type FoundryView } from './foundryClient';
+import { DEFAULT_FOUNDRY_DEPLOYMENT, DEFAULT_FOUNDRY_ENDPOINT, deleteFoundryConfig, fetchFoundryView, putFoundryConfig, setFoundryConnection, type FoundryView } from './foundryClient';
 import { tokens } from '../theme/tokens';
 
 export function FoundrySettings() {
@@ -17,9 +17,10 @@ export function FoundrySettings() {
   const packId = pack.status === 'ready' ? pack.pack.data.customer.name : '';
   const { granted } = useConsent();
   const [view, setView] = useState<FoundryView | null>(null);
-  const [endpoint, setEndpoint] = useState('');
-  const [deployment, setDeployment] = useState('');
+  const [endpoint, setEndpoint] = useState(DEFAULT_FOUNDRY_ENDPOINT);
+  const [deployment, setDeployment] = useState(DEFAULT_FOUNDRY_DEPLOYMENT);
   const [key, setKey] = useState('');
+  const [authMethod, setAuthMethod] = useState<'api-key' | 'entra'>('api-key');
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
   const [confirming, setConfirming] = useState(false);
 
@@ -28,7 +29,7 @@ export function FoundrySettings() {
     void fetchFoundryView(relayUrl, packId).then((v) => {
       if (!alive) return;
       setView(v);
-      if (v) { setEndpoint(v.endpoint); setDeployment(v.deployment); }
+      if (v) { setEndpoint(v.endpoint || DEFAULT_FOUNDRY_ENDPOINT); setDeployment(v.deployment || DEFAULT_FOUNDRY_DEPLOYMENT); setAuthMethod(v.authMethod === 'entra' ? 'entra' : 'api-key'); }
     });
     return () => { alive = false; };
   }, [relayUrl, packId]);
@@ -41,7 +42,7 @@ export function FoundrySettings() {
   }, [granted, view?.enabled, relayUrl, packId]);
 
   const save = async () => {
-    const r = await putFoundryConfig(relayUrl as string, packId, { endpoint, deployment, key });
+    const r = await putFoundryConfig(relayUrl as string, packId, { endpoint, deployment, key, authMethod });
     setKey('');
     if (r.ok) { setView(r.view); setResult({ ok: true, text: '接続情報を保存しました（API キーは画面に再表示しません）。' }); }
     else setResult({ ok: false, text: `保存できませんでした。${r.message}` });
@@ -49,7 +50,7 @@ export function FoundrySettings() {
   const remove = async () => {
     const v = await deleteFoundryConfig(relayUrl as string, packId);
     setKey('');
-    if (v) { setView(v); setEndpoint(''); setDeployment(''); setResult({ ok: true, text: '接続情報を削除しました。Foundry は使えません。' }); }
+    if (v) { setView(v); setEndpoint(DEFAULT_FOUNDRY_ENDPOINT); setDeployment(DEFAULT_FOUNDRY_DEPLOYMENT); setResult({ ok: true, text: '接続情報を削除しました。Foundry は使えません。' }); }
     else setResult({ ok: false, text: '削除できませんでした。中継プロセスが起動しているか確認してください。' });
   };
   const enable = async () => {
@@ -66,16 +67,17 @@ export function FoundrySettings() {
   const configured = !!view?.configured;
   return (
     <section role="region" aria-labelledby="foundry-settings-title" data-testid="foundry-settings" style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS }}>
-      <Text id="foundry-settings-title" as="h3" weight="semibold">Microsoft Foundry（現状の説明の生成）</Text>
+      <Text id="foundry-settings-title" as="h3" weight="semibold">Microsoft Foundry（生成AI機能の共通接続）</Text>
       <Text size={200}>
+        この接続は、生成AI機能全般（「現状の説明」の生成と「生成AIの効果的な活用シナリオ」の分析）に共通で使います。
         Microsoft Foundry は有料サービスで、実接続を有効にすると利用に応じて費用が発生します。
-        有効にすると、ローカルの中継プロセスを通じて、現在画面に表示している課題・解決策・KPI/OKR の文章が Foundry に送信されます。
+        有効にすると、ローカルの中継プロセスを通じて、現在画面に表示している課題・解決策・KPI/OKR の文章、活用シナリオの分析で入力した解決策の文章、およびチャットの質問・直近の履歴・顧客パックの根拠が Foundry に送信されます。
         接続情報は手元の中継プロセスが暗号化して保管し、設定したエンドポイント以外へは送りません。既定は無効です。
       </Text>
       <Text size={200}>接続情報の状態: <b data-testid="foundry-status">{configured ? '設定済み' : '未設定'}</b>
         {configured ? `（送信先: ${view?.host}）` : null}
       </Text>
-      {configured ? <Text size={200} data-testid="foundry-key-mask">API キー: 設定済み（{view?.keyMask}）</Text> : null}
+      {configured && view?.authMethod !== 'entra' ? <Text size={200} data-testid="foundry-key-mask">API キー: 設定済み（{view?.keyMask}）</Text> : null}
       <form data-testid="foundry-form" onSubmit={(e) => { e.preventDefault(); void save(); }} style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS }}>
         <Field label="エンドポイント">
           <Input value={endpoint} aria-label="エンドポイント" onChange={(_, d) => setEndpoint(d.value)} />
@@ -83,8 +85,14 @@ export function FoundrySettings() {
         <Field label="デプロイ名">
           <Input value={deployment} aria-label="デプロイ名" onChange={(_, d) => setDeployment(d.value)} />
         </Field>
+        <Field label="認証方式" hint="Microsoft Entra ID を選ぶと API キーは不要です（サインイン中の資格情報で中継プロセスが接続します）。">
+          <select aria-label="認証方式" value={authMethod} onChange={(e) => setAuthMethod(e.target.value === 'entra' ? 'entra' : 'api-key')}>
+            <option value="api-key">API キー</option>
+            <option value="entra">Microsoft Entra ID</option>
+          </select>
+        </Field>
         <Field label="API キー" hint="入力したキーは手元の中継プロセスが暗号化して保管します。保存後は再表示しません。変更するときは新しいキーを入れて保存してください。">
-          <Input type="password" value={key} aria-label="API キー" autoComplete="off" onChange={(_, d) => setKey(d.value)} />
+          <Input type="password" value={key} disabled={authMethod === 'entra'} aria-label="API キー" autoComplete="off" onChange={(_, d) => setKey(d.value)} />
         </Field>
         <div style={{ display: 'flex', gap: tokens.spacingHorizontalS }}>
           <Button type="submit" appearance="primary" aria-label="Foundry の接続情報を保存">保存</Button>
@@ -94,7 +102,7 @@ export function FoundrySettings() {
       <Switch
         checked={!!view?.enabled}
         disabled={!relayUrl || !packId || !granted || !configured}
-        label="Microsoft Foundry への送信を有効にする（現状の説明）"
+        label="実接続を有効にする"
         onChange={(_, d) => { if (d.checked) setConfirming(true); else void disable(); }}
       />
       <Text size={200} data-testid="foundry-mode">現在の状態: {view?.enabled ? '接続済み' : 'モック（外部へは送信しません）'}</Text>
@@ -105,7 +113,7 @@ export function FoundrySettings() {
           <DialogBody>
             <DialogTitle>Foundry の実接続を有効にしますか</DialogTitle>
             <DialogContent>
-              Microsoft Foundry は有料サービスで、費用が発生します。有効にすると、現在画面に表示している課題・解決策・KPI/OKR の文章が、ローカルの中継プロセスを通じて設定したエンドポイントに送信されます。
+              Microsoft Foundry は有料サービスで、費用が発生します。有効にすると、現在画面に表示している課題・解決策・KPI/OKR の文章、活用シナリオの分析で入力した解決策の文章、およびチャットの質問・直近の履歴・顧客パックの根拠が、ローカルの中継プロセスを通じて設定したエンドポイントに送信されます。
             </DialogContent>
             <DialogActions>
               <Button appearance="secondary" onClick={() => setConfirming(false)}>キャンセル</Button>

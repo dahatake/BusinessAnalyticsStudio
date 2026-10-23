@@ -206,7 +206,7 @@ const TABLE_WORLDS: Record<string, World> = {
   'products:.products[]': 'digital', // Microsoft 製品（デジタル世界・システム）
   'sources:.sources[]': 'digital', // 出典（デジタル世界・データ）
   'show:.chapters[]': 'digital', // チャプター（デジタル世界・画面コンポーネント）
-  'show:.chapters[].topics[]': 'real', // 議題（現実世界・コト）
+  'show:.chapters[].topics[]': 'real', // 論点（現実世界・コト）
   'show:.chapters[].topics[].quiz.questions[]': 'digital', // ショー（クイズ）→ ショー（デジタル世界・画面コンポーネント）
 };
 
@@ -249,14 +249,14 @@ function equipmentWithTwins(pack: Pack): any {
   return ents.find((e) => e.world === 'real' && level(e) === '設備' && twins.some((t) => t.realId === e.id));
 }
 
-/** 表示している項目の ID（一覧表は行、ナレッジグラフはノード、3D ビューはオブジェクト） */
-async function shownIds(page: Page, key: 'table' | 'knowledge-graph' | 'view3d'): Promise<string[]> {
+/** 表示している項目の ID（一覧表は行、ナレッジグラフはノード、Twin ビューの 3D はオブジェクト。画面 view3d は廃止。Q-062 A） */
+async function shownIds(page: Page, key: 'table' | 'knowledge-graph' | 'twin-view'): Promise<string[]> {
   if (key === 'table') return tableRows(component(page, 'table')).evaluateAll((els) => els.map((e) => e.getAttribute('data-entity-id')!).filter(Boolean));
   if (key === 'knowledge-graph') return (await hook<Array<{ id: string; visible: boolean }>>(page, 't.graph.nodes()')).filter((n) => n.visible).map((n) => n.id);
   return (await scene.objects(page)).filter((o) => o.visible).map((o) => o.entityId);
 }
 
-async function checkWorlds(page: Page, pack: Pack, key: 'table' | 'knowledge-graph' | 'view3d'): Promise<void> {
+async function checkWorlds(page: Page, pack: Pack, key: 'table' | 'knowledge-graph' | 'twin-view'): Promise<void> {
   const worlds = worldsOf(pack);
   const twins = twinsOf(pack);
   const c = await gotoScreen(page, key);
@@ -292,11 +292,11 @@ async function checkWorlds(page: Page, pack: Pack, key: 'table' | 'knowledge-gra
 test.describe('FR-218 現実世界／デジタル世界／両方の表示の切替', () => {
   for (const kind of ['mono', 'koto'] as PackKind[]) {
     // FR-218 AC-503
-    test(`FR-218 AC-503 ${kind}: 一覧表・ナレッジグラフ・3D ビューで「現実世界」「デジタル世界」はその世界の項目だけ、「両方」は和（区分なしを含む）とツイン関係の線か印を表示する`, async ({ page, start }) => {
+    test(`FR-218 AC-503 ${kind}: 一覧表・ナレッジグラフ・Twin ビューで「現実世界」「デジタル世界」はその世界の項目だけ、「両方」は和（区分なしを含む）とツイン関係の線か印を表示する`, async ({ page, start }) => {
       test.setTimeout(180_000);
       const pack = examplePack(kind);
       await start({ pack: kind });
-      for (const key of ['table', 'knowledge-graph', 'view3d'] as const) await checkWorlds(page, pack, key);
+      for (const key of ['table', 'knowledge-graph', 'twin-view'] as const) await checkWorlds(page, pack, key);
     });
   }
 
@@ -308,10 +308,10 @@ test.describe('FR-218 現実世界／デジタル世界／両方の表示の切�
     const eq = equipmentWithTwins(pack);
     expect(eq, 'お手本パックにツイン関係を持つ現実世界の設備がない').toBeTruthy();
     const twinIds = twinsOf(pack).filter((t) => t.realId === eq.id).map((t) => t.digitalId);
-    for (const key of ['view3d', 'knowledge-graph', 'table'] as const) await chooseView(page, await gotoScreen(page, key), '両方');
+    for (const key of ['twin-view', 'knowledge-graph', 'table'] as const) await chooseView(page, await gotoScreen(page, key), '両方');
     const table = component(page, 'table');
     await entity(table, eq.id).first().click();
-    // 3D ビュー（別の画面）
+    // Twin ビューの 3D（別の画面）
     const objs = await scene.objects(page);
     const in3d = twinIds.filter((id) => objs.some((o) => o.entityId === id));
     const graphNodes = await hook<Array<{ id: string; visible: boolean }>>(page, 't.graph.nodes()');
