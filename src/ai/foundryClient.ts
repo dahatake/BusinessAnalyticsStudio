@@ -104,3 +104,34 @@ export async function askFoundry(
     return { mode: 'unavailable', reason: 'relay', message: NO_RELAY };
   }
 }
+
+// ---- FR-282 AC-764: エンドポイントの入力案内と検証（値は検証メッセージに含めない） ----
+export const ENDPOINT_FORMAT_EXAMPLES = ['https://<リソース名>.openai.azure.com/openai/v1', 'https://<リソース名>.services.ai.azure.com/openai/v1'] as const;
+const AZURE_HOST = /^[a-z0-9-]+(\.[a-z0-9-]+)*\.(services\.ai|openai|cognitiveservices)\.azure\.com$/i;
+
+/** 保存してよいエンドポイントか。よければ null、不正なら理由（入力値は含めない） */
+export function validateFoundryEndpoint(value: string): string | null {
+  const v = value.trim();
+  if (!v) return 'エンドポイントを入力してください。例: https://<リソース名>.openai.azure.com/openai/v1';
+  let u: URL;
+  try { u = new URL(v); } catch { return 'URL の形式で入力してください。例: https://<リソース名>.openai.azure.com/openai/v1'; }
+  if (u.protocol !== 'https:') return 'https で始まる URL を入力してください。';
+  if (u.username || u.password || u.port || !AZURE_HOST.test(u.hostname)) return 'Azure の標準のドメイン（*.openai.azure.com・*.services.ai.azure.com・*.cognitiveservices.azure.com）の URL を入力してください。';
+  return null;
+}
+
+// ---- FR-282 AC-763: 接続テスト（中継の POST /foundry/test。結果は成功か原因種別だけ） ----
+export type FoundryTestCause = 'not-configured' | 'auth' | 'endpoint' | 'deployment' | 'timeout' | 'other' | 'too-frequent' | 'relay';
+export type FoundryTestResult = { ok: true; message: string } | { ok: false; cause: FoundryTestCause; message: string; retryAfterSeconds?: number };
+
+export async function testFoundry(relayUrl: string | undefined, f: F = dflt): Promise<FoundryTestResult> {
+  if (!relayUrl || !isLoopbackUrl(relayUrl)) return { ok: false, cause: 'relay', message: NO_RELAY };
+  try {
+    const r = await f(`${relayUrl}/foundry/test`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
+    const j = (await r.json()) as Partial<FoundryTestResult> & { ok?: boolean; cause?: FoundryTestCause; message?: string; retryAfterSeconds?: number };
+    if (j.ok === true) return { ok: true, message: '接続できました' };
+    return { ok: false, cause: j.cause ?? 'other', message: j.message ?? '接続を確認できませんでした', retryAfterSeconds: j.retryAfterSeconds };
+  } catch {
+    return { ok: false, cause: 'relay', message: NO_RELAY };
+  }
+}

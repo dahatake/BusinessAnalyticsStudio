@@ -7,7 +7,7 @@
 export const FOUNDRY_TIMEOUT_MS = 60_000; // PARAM-121（60 秒）
 export const FOUNDRY_MAX_INPUT_CHARS = 8000; // PARAM-122
 
-export type FoundryCause = 'key-missing' | 'disabled' | 'unreachable' | 'timeout' | 'upstream-status' | 'bad-response' | 'bad-request';
+export type FoundryCause = 'key-missing' | 'disabled' | 'unreachable' | 'timeout' | 'upstream-status' | 'bad-response' | 'bad-request' | 'token';
 
 export class FoundryError extends Error {
   constructor(readonly kind: FoundryCause, readonly detail: { upstreamStatus?: number; timeoutSeconds?: number } = {}) {
@@ -28,7 +28,7 @@ export function isValidFoundryEndpoint(e: unknown): e is string {
 export const isValidDeployment = (d: unknown): d is string => typeof d === 'string' && /^[A-Za-z0-9._-]{1,64}$/.test(d);
 
 export interface FoundryService {
-  analyze(req: { solution: string; endpoint: string; deployment: string; key: string }): Promise<unknown>;
+  analyze(req: { solution: string; endpoint: string; deployment: string; key: string; authMethod?: 'api-key' | 'entra'; getToken?: () => Promise<string> }): Promise<unknown>;
 }
 
 const CRITERIA_IDS = ['unstructured-input', 'open-output', 'hard-to-ruleify', 'error-tolerance', 'accountability', 'confidentiality', 'cost-benefit'];
@@ -66,8 +66,18 @@ export function createFoundryService(
   const fetchFn = opts.fetchFn ?? ((u, i) => fetch(u, i));
   const timeoutMs = opts.timeoutMs ?? FOUNDRY_TIMEOUT_MS;
   return {
-    async analyze({ solution, endpoint, deployment, key }) {
-      if (!key) throw new FoundryError('key-missing');
+    async analyze({ solution, endpoint, deployment, key, authMethod, getToken }) {
+      // Entra ID ではキーの代わりにトークンを使う（取得できなければ呼ばない。値は応答・ログに出さない）
+      let headers: Record<string, string>;
+      if (authMethod === 'entra') {
+        let token = '';
+        try { token = getToken ? await getToken() : ''; } catch { token = ''; }
+        if (!token) throw new FoundryError('token');
+        headers = { 'content-type': 'application/json', authorization: ['Bearer', token].join(' ') };
+      } else {
+        if (!key) throw new FoundryError('key-missing');
+        headers = { 'content-type': 'application/json', 'api-key': key };
+      }
       if (!isValidFoundryEndpoint(endpoint) || !isValidDeployment(deployment) || solution.length === 0 || solution.length > FOUNDRY_MAX_INPUT_CHARS) throw new FoundryError('bad-request');
       const ctl = new AbortController();
       const timer = setTimeout(() => ctl.abort(), timeoutMs);
@@ -75,7 +85,7 @@ export function createFoundryService(
       try {
         res = await fetchFn(`${endpoint.replace(/\/+$/, '')}/responses`, {
           method: 'POST',
-          headers: { 'content-type': 'application/json', 'api-key': key },
+          headers,
           body: JSON.stringify({ model: deployment, input: buildPrompt(solution) }),
           signal: ctl.signal,
           redirect: 'manual',
@@ -101,5 +111,5 @@ export function createFoundryService(
 
 /** 原因ごとの HTTP の状態（ブラウザー向けの応答。キーの値・上流の本文は含めない） */
 export const CAUSE_STATUS: Record<FoundryCause, number> = {
-  'key-missing': 503, disabled: 503, unreachable: 502, timeout: 504, 'upstream-status': 502, 'bad-response': 502, 'bad-request': 400,
+  'key-missing': 503, disabled: 503, unreachable: 502, timeout: 504, 'upstream-status': 502, 'bad-response': 502, 'bad-request': 400, token: 503,
 };
