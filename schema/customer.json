@@ -5,11 +5,6 @@
     "screenGuides": {
       "type": "object",
       "properties": {
-        "canvas": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 120
-        },
         "issue-solution": {
           "type": "string",
           "minLength": 1,
@@ -61,16 +56,6 @@
           "maxLength": 120
         },
         "gantt": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 120
-        },
-        "view3d": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 120
-        },
-        "drawing2d": {
           "type": "string",
           "minLength": 1,
           "maxLength": 120
@@ -142,7 +127,6 @@
         }
       },
       "required": [
-        "canvas",
         "issue-solution",
         "priority",
         "summary",
@@ -154,8 +138,6 @@
         "discussion-tree",
         "table",
         "gantt",
-        "view3d",
-        "drawing2d",
         "map",
         "kpi-okr",
         "twin-view",

@@ -10,26 +10,26 @@ import { spawnSync } from 'node:child_process';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const MAX = 120; // PARAM-124
 
-/** 画面の登録簿（src/screens/registry.ts）の 27 件のキー（要求定義書 FR-287 の列挙順） */
+/** 画面の登録簿（src/screens/registry.ts）の 24 件のキー（要求定義書 FR-287 の列挙順） */
 const SCREEN_KEYS = [
-  'canvas', 'issue-solution', 'priority', 'summary', 'matrix', 'ranking', 'knowledge-graph', 'business-graph',
-  'architecture', 'discussion-tree', 'table', 'gantt', 'view3d', 'drawing2d', 'map', 'kpi-okr', 'twin-view',
+  'issue-solution', 'priority', 'summary', 'matrix', 'ranking', 'knowledge-graph', 'business-graph',
+  'architecture', 'discussion-tree', 'table', 'gantt', 'map', 'kpi-okr', 'twin-view',
   'sources', 'mock-app', 'usecase', 'data-catalog', 'spatial-view', 'whiteboard', 'themes', 'settings',
   'genai-scenario', 'chat',
 ];
 
 const customer = (kind) => JSON.parse(fs.readFileSync(path.join(root, 'examples', kind, 'public', 'data', 'customer.json'), 'utf8'));
 
-test('FR-287 AC-748 前提: 登録簿のキーが 27 件で、本テストの一覧と一致する', () => {
+test('FR-287 AC-748 前提: 登録簿のキーが 24 件で、本テストの一覧と一致する', () => {
   const src = fs.readFileSync(path.join(root, 'src', 'screens', 'registry.ts'), 'utf8');
   const keys = [...src.matchAll(/\{\s*key:\s*'([^']+)'/g)].map((m) => m[1]);
-  assert.equal(keys.length, 27);
+  assert.equal(keys.length, 24);
   assert.deepEqual([...keys].sort(), [...SCREEN_KEYS].sort());
 });
 
 for (const kind of ['mono', 'koto']) {
   // FR-287 AC-748
-  test(`FR-287 AC-748 ${kind}: screenGuides は 27 件すべてのキーを持ち、各説明が空でなく ${MAX} 文字以内`, () => {
+  test(`FR-287 AC-748 ${kind}: screenGuides は 24 件すべてのキーを持ち、各説明が空でなく ${MAX} 文字以内`, () => {
     const g = customer(kind).screenGuides;
     assert.ok(g && typeof g === 'object' && !Array.isArray(g), 'screenGuides（キー→説明文のオブジェクト）がない');
     const missing = SCREEN_KEYS.filter((k) => !(k in g));
@@ -73,7 +73,7 @@ test('FR-287 AC-751 異常系: screenGuides の説明が上限超過・キー欠
     fs.cpSync(path.join(root, 'examples', 'mono'), dst, { recursive: true });
     const f = path.join(dst, 'public', 'data', 'customer.json');
     const c = JSON.parse(fs.readFileSync(f, 'utf8'));
-    c.screenGuides = { ...(c.screenGuides ?? {}), canvas: 'あ'.repeat(MAX + 1) };
+    c.screenGuides = { ...(c.screenGuides ?? {}), table: 'あ'.repeat(MAX + 1) };
     delete c.screenGuides.chat;
     fs.writeFileSync(f, JSON.stringify(c, null, 2));
     const r = spawnSync('npx', ['tsx', 'scripts/check-pack.ts', dst], { cwd: root, encoding: 'utf8', shell: true });

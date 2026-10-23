@@ -22,10 +22,10 @@ export const MetricSchema = z.looseObject({
   sourceIds: z.array(IdSchema).min(1),
 });
 
-/** 画面の説明（screenGuides）のキー。画面の登録簿（src/screens/registry.ts）の 27 件と一致する（FR-287 AC-748。テストで突き合わせる） */
+/** 画面の説明（screenGuides）のキー。画面の登録簿（src/screens/registry.ts）の 24 件と一致する（FR-287 AC-748。テストで突き合わせる） */
 export const SCREEN_GUIDE_KEYS = [
-  'canvas', 'issue-solution', 'priority', 'summary', 'matrix', 'ranking', 'knowledge-graph', 'business-graph',
-  'architecture', 'discussion-tree', 'table', 'gantt', 'view3d', 'drawing2d', 'map', 'kpi-okr', 'twin-view',
+  'issue-solution', 'priority', 'summary', 'matrix', 'ranking', 'knowledge-graph', 'business-graph',
+  'architecture', 'discussion-tree', 'table', 'gantt', 'map', 'kpi-okr', 'twin-view',
   'sources', 'mock-app', 'usecase', 'data-catalog', 'spatial-view', 'whiteboard', 'themes', 'settings',
   'genai-scenario', 'chat',
 ] as const;
@@ -33,7 +33,7 @@ export const SCREEN_GUIDE_KEYS = [
 export const SCREEN_GUIDE_MAX = 120;
 
 export const CustomerSchema = z.looseObject({
-  /** 画面のキー → 初めての人向けの説明（「この画面で何が見えるか」1〜2 文、120 文字以内。FR-287 AC-748）。あるときは 27 件すべてを持つ */
+  /** 画面のキー → 初めての人向けの説明（「この画面で何が見えるか」1〜2 文、120 文字以内。FR-287 AC-748）。あるときは 24 件すべてを持つ */
   screenGuides: z.strictObject(Object.fromEntries(
     SCREEN_GUIDE_KEYS.map((k) => [k, z.string().trim().min(1).max(SCREEN_GUIDE_MAX)]),
   ) as Record<(typeof SCREEN_GUIDE_KEYS)[number], z.ZodString>).optional(),

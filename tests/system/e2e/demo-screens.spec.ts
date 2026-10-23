@@ -1,12 +1,12 @@
-// System Test: FR-287 デモの全画面（27 件）の説明（screenGuides）とデータの表示、実際の Project との分離
+// System Test: FR-287 デモの全画面（24 件）の説明（screenGuides）とデータの表示、実際の Project との分離
 // 期待値は受入基準だけから決める（実装は読まない）。
 import { test, expect, openScreen, component, setEditMode, tableRows, chooseWorkTarget, closeSettings } from '../support/fixtures';
 import { examplePack } from '../support/packs';
 
-/** 登録簿（27 件）。設定パネルはモーダル */
+/** 登録簿（24 件）。設定パネルはモーダル */
 const KEYS = [
-  'canvas', 'issue-solution', 'priority', 'summary', 'matrix', 'ranking', 'knowledge-graph', 'business-graph',
-  'architecture', 'discussion-tree', 'table', 'gantt', 'view3d', 'drawing2d', 'map', 'kpi-okr', 'twin-view',
+  'issue-solution', 'priority', 'summary', 'matrix', 'ranking', 'knowledge-graph', 'business-graph',
+  'architecture', 'discussion-tree', 'table', 'gantt', 'map', 'kpi-okr', 'twin-view',
   'sources', 'mock-app', 'usecase', 'data-catalog', 'spatial-view', 'whiteboard', 'themes', 'settings',
   'genai-scenario', 'chat',
 ] as const;
@@ -16,9 +16,9 @@ const KEYS = [
  * settings（設定パネル）は対象外（入力欄の既定値の説明で足りる）。
  */
 export const DATA_KIND: Record<string, string> = {
-  canvas: 'ノード（議題・章）', 'issue-solution': '行（課題・解決策）', priority: '行（課題・解決策）', summary: '行（サマリーの項目）',
+  'issue-solution': '行（課題・解決策）', priority: '行（課題・解決策）', summary: '行（サマリーの項目）',
   matrix: 'ノード（課題・解決策の点）', ranking: '行（順位）', 'knowledge-graph': 'ノード', 'business-graph': 'ノード',
-  architecture: '図形（構成要素）', 'discussion-tree': 'ノード', table: '行', gantt: '工程', view3d: '図形', drawing2d: '図形',
+  architecture: '図形（構成要素）', 'discussion-tree': 'ノード', table: '行', gantt: '工程',
   map: '場所', 'kpi-okr': '行（KPI/OKR）', 'twin-view': 'ノード', sources: '行（出典）', 'mock-app': '図形（画面の部品）',
   usecase: '行（ユースケース）', 'data-catalog': '行（データエンティティ）', 'spatial-view': '図形（空間）', whiteboard: '付箋',
   themes: '行（議論テーマ）', 'genai-scenario': '行（シナリオ）', chat: 'メッセージ',
@@ -38,7 +38,7 @@ async function guideOf(kind: 'mono' | 'koto', key: string): Promise<string> {
 for (const kind of ['mono', 'koto'] as const) {
   test.describe(`FR-287 デモ（${kind}）`, () => {
     // FR-287 AC-749
-    test(`FR-287 AC-749 ${kind}: 27 画面のどれも、見出しまたは補足に screenGuides の説明が表示される`, async ({ page, start }) => {
+    test(`FR-287 AC-749 ${kind}: 24 画面のどれも、見出しまたは補足に screenGuides の説明が表示される`, async ({ page, start }) => {
       await start({ pack: kind });
       const missing: string[] = [];
       for (const key of KEYS) {
@@ -53,9 +53,9 @@ for (const kind of ['mono', 'koto'] as const) {
     });
 
     // FR-287 AC-750
-    test(`FR-287 AC-750 ${kind}: 設定パネルを除く 26 画面がデータを 1 件以上表示し、「データなし」「空」「0 件」にならない`, async ({ page, start }) => {
+    test(`FR-287 AC-750 ${kind}: 設定パネルを除く 23 画面がデータを 1 件以上表示し、「データなし」「空」「0 件」にならない`, async ({ page, start }) => {
       await start({ pack: kind });
-      expect(Object.keys(DATA_KIND)).toHaveLength(26);
+      expect(Object.keys(DATA_KIND)).toHaveLength(23);
       const problems: string[] = [];
       for (const key of KEYS.filter((k) => k !== 'settings')) {
         const c = await openScreen(page, key);
