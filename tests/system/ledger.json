@@ -8984,7 +8984,8 @@
     {
       "id": "E2E-434",
       "requirement_ids": [
-        "FR-279"
+        "FR-279",
+        "FR-278"
       ],
       "ac_ids": [
         "AC-717"
@@ -9003,6 +9004,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T07:08:09+09:00",
+          "by": "rdfix",
+          "change": "requirement_ids: ['FR-279'] -> ['FR-279', 'FR-278']",
+          "reason": "rdfix: 受入基準の「対応する要求」と要求定義書に合わせる"
         }
       ]
     },
