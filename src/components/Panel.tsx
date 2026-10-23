@@ -111,6 +111,7 @@ const useStyles = makeStyles({
   sampleBadge: { flexShrink: 0, whiteSpace: 'nowrap' },
   // 世界の表示の注記（FR-218）
   worldNote: { color: tokens.colorNeutralForeground2 },
+  guide: { color: tokens.colorNeutralForeground2 },
 });
 
 /**
@@ -152,6 +153,8 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
   const pane = usePane();
   const state = usePackStore((st) => st.state);
   const sample = state.status === 'ready' && hasSampleData(state.pack.data);
+  // 画面の説明（顧客パックの screenGuides。FR-287）。ないパック（実際の Project など）では出さない
+  const guide = state.status === 'ready' ? state.pack.data.customer?.screenGuides?.[testId.replace(/^component-/, '') as keyof NonNullable<typeof state.pack.data.customer.screenGuides>] : undefined;
   const ref = useRef<HTMLElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   // フォーカス中のコンポーネントだけ、見出しに操作アイコンを出す（FR-150）
@@ -267,6 +270,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
         </div>
                   {pane && showTier && !minimized ? <Text size={300} role="status" data-testid="tier-reason" className={s.worldNote}>{pane.tierReason}</Text> : null}
         {description && !minimized ? <Text size={300}>{description}</Text> : null}
+        {guide && !minimized ? <Text size={300} className={s.guide} data-testid="screen-guide">{guide}</Text> : null}
         {world.note && !minimized ? <Text size={300} className={s.worldNote} data-testid="view-world-note">{world.note}</Text> : null}
         {world.hiddenNote && !minimized ? <Text size={300} role="status" className={s.worldNote} data-testid="view-hidden-selection">{HIDDEN_SELECTION_TEXT}</Text> : null}
       </div>

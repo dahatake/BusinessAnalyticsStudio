@@ -36,12 +36,14 @@
       { "id": "sys-mono-tablet", "createdBy": "sample", "name": "現場入力アプリ", "kind": "app", "layer": "アプリ", "productId": "prod-mono-002", "solutionIds": ["sol-mono-002"] },
       { "id": "sys-mono-edge", "createdBy": "sample", "name": "設備のゲートウェイ", "kind": "system", "layer": "現場" },
       { "id": "sys-mono-analytics", "createdBy": "sample", "name": "予兆検知サービス", "kind": "system", "layer": "分析", "productId": "prod-mono-001", "solutionIds": ["sol-mono-001"] },
-      { "id": "sys-mono-mes", "createdBy": "sample", "name": "生産管理システム", "kind": "system", "layer": "基幹" }
+      { "id": "sys-mono-mes", "createdBy": "sample", "name": "生産管理システム", "kind": "system", "layer": "基幹" },
+      { "id": "sys-mono-board", "createdBy": "sample", "name": "停止原因ダッシュボード", "kind": "app", "layer": "アプリ", "solutionIds": ["sol-mono-002"] }
     ],
     "links": [
       { "from": "sys-mono-edge", "to": "sys-mono-analytics", "label": "稼働データ" },
       { "from": "sys-mono-tablet", "to": "sys-mono-analytics", "label": "停止原因（即時入力）" },
-      { "from": "sys-mono-analytics", "to": "sys-mono-mes", "label": "保全の計画" }
+      { "from": "sys-mono-analytics", "to": "sys-mono-mes", "label": "保全の計画" },
+      { "from": "sys-mono-analytics", "to": "sys-mono-board", "label": "停止原因の集計" }
     ]
   }
 }
