@@ -184,11 +184,6 @@
 - チャット画面: 送信中は `chat-sending`、失敗の理由は `chat-error`（キーの値を含まない。上限・停止の理由も同じ）、古い履歴を落としたときは `chat-trim-notice`、button「送信内容を確認」で `chat-preview`（送る質問・履歴・根拠。Esc で閉じる）、button「新しい会話」で履歴を消す。回答は `chat-answer`（Foundry の回答には「AI 生成」と「Foundry」の表示）と `source-card`。送信中は button「送信」が disabled。失敗後の再送信は button「送信」（または「再送信」）。
 - 1 日の上限は設定の `ai-usage` の「1 日の上限」の入力と button「保存」（下げる変更は確認なし）。直近の履歴は PARAM-123（5 組）、入力の上限は PARAM-114（8000 トークン）。
 
-## 28. 「Copilot で分析実行」と「Copilot の案」（FR-278〜283 AC-715・717・718・719・721・725・727。copilot-analyze.spec.ts が前提にする画面の探し方。run 202610222251）
-- 実行: 画面上部に常時 button「Copilot で分析実行」。押すと、送る情報の種類と対象コンポーネントの一覧を示す alertdialog（確認 button 名に「送信」「実行」「続行」のいずれか）。完了までは role=status に「実行中」「進行中」「分析中」のいずれかを示し、画面は操作できる。未設定（接続設定なし）のときは確認に進まず、role=alert か status に「未設定」と設定画面への案内（文字に「設定画面」「設定を開」「設定で」のいずれか）を示し、中継への呼び出しは 0 回。
-- 案: 各コンポーネント（component-<key>）の中に `data-testid="copilot-draft"`（region。名前は「Copilot の案」で始まり、文字「Copilot の案（AI 生成）」を含む）。中に textbox「案の編集」、button「反映」「破棄」。案が返らない・データを持たないコンポーネントは文字「案なし」。案は現在のデータの欄（copilot-draft の外）に混ぜない。
-- 接続（差し替え部品 support/copilot-review-stub.ts）: `POST /foundry/review`（body: `{components:[{key,data}]}`）→ `{drafts:[{key,text}]}`。`GET/PUT/DELETE /foundry/config`（PUT body: `{endpoint,deployment,auth,key}`。auth は `api-key` か `entra`）。設定の `foundry-settings` に textbox「エンドポイント」「デプロイ名」、combobox か radiogroup「認証方式」、「API キー」（type=password）、button「保存」「削除」、`foundry-status`（「設定済み」「未設定」）。
-
 ## 29. 外部ファイルの対応形式のガイド・AI 取り込み（FR-288・FR-289 AC-754〜760。import-export-guide.spec.ts・ai-import.spec.ts が前提にする契約。run 202610222215）
 - ガイド（FR-288）: `users-guide/` 配下の新しい Markdown 文書。ファイル名は決めない。`users-guide/README.md` の利用者向けの表に、「取り込み」「書き出し」の両方の語を含む 1 行（`[題](相対パス.md)` のリンクと内容の一行）を置く。文書には見出しに「取り込み」「書き出し」を含む節があり、それぞれに表（列: 画面・操作／形式（拡張子）／条件／コードの位置）を置く。取り込みは 5 行以上、書き出しは 8 行以上。「未対応」の語で PDF・画像ファイル・Office 文書・非定型テキストを明記し、「AI 取り込み」を案内する。コードの位置は `src/...` の実在するパスで 5 件以上。
 - 取り込みの画面: データカタログの画面（`component-data-catalog`）の中に `data-testid="ai-import"`。button「AI 取り込み」（Foundry の接続情報が未設定のとき disabled。設定済みで enabled）。未設定のときだけ `ai-import-guide`（文字に「Foundry」「接続情報」「設定」を含む）を出す。押すと、ラベル「AI 取り込みのファイル」の file input（PDF・画像・Office 文書・テキストを受ける）が出る。
