@@ -6,6 +6,8 @@ import { test, expect, openScreen, recordExportConsent, continuePersonConfirm, s
 import { startReviewStub } from '../support/review-stub';
 
 const runButton = (page: Page): Locator => page.getByRole('button', { name: 'Copilot で分析実行', exact: true }).first();
+/** アプリが管理するデータ（端末内保存）。課金の安全策の利用回数（edb.foundryUsage。FR-274〜277）は実行で増えるため除く */
+const appData = (page: Page, skip: string[] = []): Promise<string> => page.evaluate((s) => JSON.stringify(Object.fromEntries(Object.entries({ ...localStorage }).filter(([k]) => k !== 'edb.foundryUsage' && !s.includes(k)))), skip);
 const proposals = (page: Page): Locator => page.getByTestId('copilot-proposal');
 
 /** ボタンを押し、送信前の確認（FR-278）が出れば続行する */
@@ -38,6 +40,7 @@ test.describe('FR-278 Copilot で分析実行', () => {
       await openScreen(page, 'issue-solution');
       await expect(proposals(page).first()).toBeVisible({ timeout: 15_000 });
       await expect(page.getByTestId('copilot-running')).toBeHidden();
+      expect(relay.reviewCount(), '分析の呼び出しが 1 回でない').toBe(1);
       expect(external, `localhost 以外への通信: ${external.join(', ')}`).toEqual([]);
     } finally {
       await relay.close();
@@ -76,10 +79,12 @@ test.describe('FR-278 結果の振り分け・案の表示', () => {
       await openScreen(page, 'table');
       const table = page.getByTestId('component-table');
       const before = await table.getByTestId('component-data').innerText();
+      const storeBefore = await appData(page);
       await runAnalysis(page);
       const p = table.getByTestId('copilot-proposal');
       await expect(p).toBeVisible({ timeout: 15_000 });
       await expect(p).toContainText('Copilot の案（AI 生成）');
+      expect(await appData(page), 'アプリが管理するデータが変わった').toBe(storeBefore);
       expect(await table.getByTestId('component-data').innerText(), '現在のデータが変わった').toBe(before);
       expect(await table.getByTestId('component-data').locator('[data-testid="copilot-proposal"]').count(), '案が現在のデータの欄の中にある').toBe(0);
     } finally {
@@ -96,6 +101,7 @@ test.describe('FR-278 結果の振り分け・案の表示', () => {
       await openScreen(page, 'table');
       const table = page.getByTestId('component-table');
       const before = await table.getByTestId('component-data').innerText();
+      const storeBefore = await appData(page, ['edb.layout']);
       await runAnalysis(page);
       const p = table.getByTestId('copilot-proposal');
       await expect(p).toBeVisible({ timeout: 15_000 });
@@ -110,6 +116,7 @@ test.describe('FR-278 結果の振り分け・案の表示', () => {
       await table.getByRole('button', { name: '破棄', exact: true }).click();
       await expect(table.getByTestId('copilot-proposal')).toHaveCount(0);
       expect(await table.getByTestId('component-data').innerText()).toBe(before);
+      expect(await appData(page, ['edb.layout']), '破棄後にデータが変わった').toBe(storeBefore);
     } finally {
       await relay.close();
     }
@@ -127,7 +134,10 @@ test.describe('FR-278 結果の振り分け・案の表示', () => {
       const p = memo.getByTestId('copilot-proposal');
       await expect(p).toBeVisible({ timeout: 15_000 });
       await p.getByRole('textbox').first().fill('REFLECTED-CONTENT-0001');
-      await memo.getByRole('button', { name: '反映', exact: true }).click();
+      // キーボードで押す（このタイルではマウスのクリックが別の要素に当たる事象がある。実装側の確認事項として報告済み）
+      const reflectBtn = memo.getByRole('button', { name: '反映', exact: true });
+      await reflectBtn.focus();
+      await page.keyboard.press('Enter');
       await expect(memo.getByTestId('component-data')).toContainText('REFLECTED-CONTENT-0001');
       await reloadAndEnter(page);
       await openScreen(page, 'memo');
@@ -191,6 +201,7 @@ test.describe('FR-282 Foundry の接続設定・FR-283 未設定のとき', () =
       await openScreen(page, 'table');
       const table = page.getByTestId('component-table');
       const before = await table.getByTestId('component-data').innerText();
+      const storeBefore = await appData(page);
       await runButton(page).click();
       const notice = page.getByTestId('copilot-notice');
       await expect(notice).toBeVisible();
@@ -199,6 +210,7 @@ test.describe('FR-282 Foundry の接続設定・FR-283 未設定のとき', () =
       expect(relay.reviewCount(), 'Foundry を呼んだ').toBe(0);
       await expect(page.getByTestId('copilot-proposal')).toHaveCount(0);
       expect(await table.getByTestId('component-data').innerText()).toBe(before);
+      expect(await appData(page)).toBe(storeBefore);
     } finally {
       await relay.close();
     }

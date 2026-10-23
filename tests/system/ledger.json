@@ -9042,7 +9042,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-725",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "6a68b0d",
       "last_run_at": "2026-10-23T06:23:47+09:00",
       "evidence": "work/runs/202610230334/logs/system-test/E2E-388-202610230622.log",
@@ -9052,6 +9052,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T10:56:55+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -9067,7 +9073,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-721",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "e25d791",
       "last_run_at": "2026-10-23T09:53:57+09:00",
       "evidence": "work/runs/202610230654/logs/system-test/E2E-389-202610230952.log",
@@ -9077,6 +9083,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T10:56:56+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -9092,7 +9104,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-719",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "6a68b0d",
       "last_run_at": "2026-10-23T06:23:47+09:00",
       "evidence": "work/runs/202610230334/logs/system-test/E2E-390-202610230622.log",
@@ -9102,6 +9114,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T10:56:57+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -9118,7 +9136,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-718",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "6a68b0d",
       "last_run_at": "2026-10-23T06:23:47+09:00",
       "evidence": "work/runs/202610230334/logs/system-test/E2E-391-202610230622.log",
@@ -9134,6 +9152,12 @@
           "by": "rdfix",
           "change": "requirement_ids: ['FR-278'] -> ['FR-278', 'FR-279']",
           "reason": "rdfix: 受入基準の「対応する要求」と要求定義書に合わせる"
+        },
+        {
+          "at": "2026-10-23T10:56:58+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -9149,7 +9173,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-717",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "6a68b0d",
       "last_run_at": "2026-10-23T06:23:47+09:00",
       "evidence": "work/runs/202610230334/logs/system-test/E2E-392-202610230622.log",
@@ -9159,6 +9183,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T10:56:58+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -9174,7 +9204,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-727",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "6a68b0d",
       "last_run_at": "2026-10-23T06:23:47+09:00",
       "evidence": "work/runs/202610230334/logs/system-test/E2E-393-202610230622.log",
@@ -9184,6 +9214,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T10:56:59+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -9199,7 +9235,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-715",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "6a68b0d",
       "last_run_at": "2026-10-23T06:23:47+09:00",
       "evidence": "work/runs/202610230334/logs/system-test/E2E-394-202610230622.log",
@@ -9209,6 +9245,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T10:57:00+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -9302,6 +9344,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "Copilot で分析実行（FR-278〜283）の画面・Foundry 接続の実装が未着手で、画面の場所・ラベルの実体が確定できないため spec 未作成。実装後に test-designer が spec を書いて unblock"
+        },
+        {
+          "at": "2026-10-23T10:57:01+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -9333,6 +9381,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "Copilot で分析実行（FR-278〜283）の画面・Foundry 接続の実装が未着手で、画面の場所・ラベルの実体が確定できないため spec 未作成。実装後に test-designer が spec を書いて unblock"
+        },
+        {
+          "at": "2026-10-23T10:57:01+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -9364,6 +9418,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "Copilot で分析実行（FR-278〜283）の画面・Foundry 接続の実装が未着手で、画面の場所・ラベルの実体が確定できないため spec 未作成。実装後に test-designer が spec を書いて unblock"
+        },
+        {
+          "at": "2026-10-23T10:57:02+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -9402,6 +9462,12 @@
           "by": "rdfix",
           "change": "requirement_ids: ['FR-278'] -> ['FR-278', 'FR-279']",
           "reason": "rdfix: 受入基準の「対応する要求」と要求定義書に合わせる"
+        },
+        {
+          "at": "2026-10-23T10:57:03+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -9433,6 +9499,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "Copilot で分析実行（FR-278〜283）の画面・Foundry 接続の実装が未着手で、画面の場所・ラベルの実体が確定できないため spec 未作成。実装後に test-designer が spec を書いて unblock"
+        },
+        {
+          "at": "2026-10-23T10:57:04+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -9464,6 +9536,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "Copilot で分析実行（FR-278〜283）の画面・Foundry 接続の実装が未着手で、画面の場所・ラベルの実体が確定できないため spec 未作成。実装後に test-designer が spec を書いて unblock"
+        },
+        {
+          "at": "2026-10-23T10:57:04+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -9495,6 +9573,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "Copilot で分析実行（FR-278〜283）の画面・Foundry 接続の実装が未着手で、画面の場所・ラベルの実体が確定できないため spec 未作成。実装後に test-designer が spec を書いて unblock"
+        },
+        {
+          "at": "2026-10-23T10:57:05+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -9902,7 +9986,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-718",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -9912,6 +9996,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T10:57:11+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -9927,7 +10017,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-715",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -9937,6 +10027,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T10:57:12+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -9952,7 +10048,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-721",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -9962,6 +10058,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T10:57:12+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -9977,7 +10079,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-719",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -9987,6 +10089,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T10:57:13+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -10002,7 +10110,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-725",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -10012,6 +10120,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T10:57:14+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -10027,7 +10141,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-727",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -10037,6 +10151,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T10:57:14+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -10052,7 +10172,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-717",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -10062,6 +10182,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-23T10:57:15+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -10310,6 +10436,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "実行できるテストが未作成: 画面の探し方（CONTRACT）が未定義で、test-designer の書き込み権限（G-5）も得られていない。再設計で解消する"
+        },
+        {
+          "at": "2026-10-23T10:57:06+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -10341,6 +10473,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "実行できるテストが未作成: 画面の探し方（CONTRACT）が未定義で、test-designer の書き込み権限（G-5）も得られていない。再設計で解消する"
+        },
+        {
+          "at": "2026-10-23T10:57:07+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -10372,6 +10510,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "実行できるテストが未作成: 画面の探し方（CONTRACT）が未定義で、test-designer の書き込み権限（G-5）も得られていない。再設計で解消する"
+        },
+        {
+          "at": "2026-10-23T10:57:07+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -10403,6 +10547,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "実行できるテストが未作成: 画面の探し方（CONTRACT）が未定義で、test-designer の書き込み権限（G-5）も得られていない。再設計で解消する"
+        },
+        {
+          "at": "2026-10-23T10:57:08+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -10434,6 +10584,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "実行できるテストが未作成: 画面の探し方（CONTRACT）が未定義で、test-designer の書き込み権限（G-5）も得られていない。再設計で解消する"
+        },
+        {
+          "at": "2026-10-23T10:57:09+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -10465,6 +10621,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "実行できるテストが未作成: 画面の探し方（CONTRACT）が未定義で、test-designer の書き込み権限（G-5）も得られていない。再設計で解消する"
+        },
+        {
+          "at": "2026-10-23T10:57:10+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     },
@@ -10496,6 +10658,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "実行できるテストが未作成: 画面の探し方（CONTRACT）が未定義で、test-designer の書き込み権限（G-5）も得られていない。再設計で解消する"
+        },
+        {
+          "at": "2026-10-23T10:57:10+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-278〜283 の System Test を E2E-409〜415 (copilot-review.spec.ts) に一本化。重複・旧参照のため blocked"
         }
       ]
     }
