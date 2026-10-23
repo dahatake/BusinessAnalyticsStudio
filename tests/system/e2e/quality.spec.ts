@@ -177,13 +177,13 @@ test.describe('NFR-A11Y-001 WCAG 2.2 AA・キーボード', () => {
 test.describe('NFR-A11Y-003 視覚的な表現の代替', () => {
   type Shown = { ids: string[] };
   const shown: Record<string, (page: Page, c: Locator) => Promise<Shown>> = {
-    view3d: async (page) => ({ ids: (await scene.objects(page)).filter((o) => o.visible).map((o) => o.entityId) }),
+    view3d: async (page) => ({ ids: (await scene.objects(page)).map((o) => o.entityId) }),
     map: async (page) => ({ ids: (await hook<Array<{ entityId: string }>>(page, 't.map.markers()')).map((m) => m.entityId) }),
     'knowledge-graph': async (page) => ({ ids: (await hook<Array<{ id: string; visible: boolean }>>(page, 't.graph.nodes()')).filter((n) => n.visible).map((n) => n.id) }),
     matrix: async (_p, c) => ({ ids: await c.locator('[data-entity-id]').evaluateAll((els) => [...new Set(els.map((e) => e.getAttribute('data-entity-id')!))]) }),
   };
   const all = () => [...mono.issues(), ...mono.solutions(), ...mono.products(), ...mono.entities()];
-  // NFR-A11Y-003 AC-173
+  // NFR-A11Y-003 AC-173（明確化: 表は LOD で 3D 上非表示の項目も含むモデルの全項目。3D は visible で絞らず全件と比べる）
   test('NFR-A11Y-003 AC-173 3D・地図・ナレッジグラフ・2×2 で「表で見る」を選ぶと同じ件数・同じ値の表が出て、表の選択が元の表現でも選択される', async ({ page, start }) => {
     await start();
     for (const key of Object.keys(shown)) {
@@ -287,7 +287,7 @@ test.describe('NFR-SEC-002 外部への通信の限定と明示', () => {
       const chat = await openScreen(page, 'chat');
       const q = '送信内容の確認ST-176';
       await chat.getByRole('textbox', { name: /質問/ }).fill(q);
-      await chat.getByRole('button', { name: '送信' }).click();
+      await chat.getByRole('button', { name: '送信', exact: true }).click();
       // FR-219 AC-511 AC-512: 種別「人」を含み了承がある案件では送信前に確認が出る。出たら続行まで進める（出なければそのまま）
       const personConfirm = page.locator('[role="alertdialog"], [role="dialog"]').filter({ hasText: /種別「人」/ }).filter({ hasText: /了承/ });
       await expect(personConfirm.or(page.getByTestId('sending-indicator')).first()).toBeVisible();
@@ -327,7 +327,7 @@ test.describe('NFR-SEC-002 実接続の有効化は了承の記録が条件（�
       // 質問してもモックの回答で、中継プロセスには何も送られない
       const chat = await openScreen(page, 'chat');
       await chat.getByRole('textbox', { name: /質問/ }).fill('了承なしの確認ST-176');
-      await chat.getByRole('button', { name: '送信' }).click();
+      await chat.getByRole('button', { name: '送信', exact: true }).click();
       await expect(chat.getByTestId('chat-answer').last()).toContainText('AI 生成（モック）', { timeout: 15_000 });
       expect(relay.received.some((r) => r.body.includes('了承なしの確認ST-176'))).toBe(false);
     } finally {
@@ -346,7 +346,7 @@ test.describe('NFR-LEGAL-002 サンプル・AI 生成・モックの明示', () 
     }
     const chat = await openScreen(page, 'chat');
     await chat.getByRole('textbox', { name: /質問/ }).fill('概要を教えて');
-    await chat.getByRole('button', { name: '送信' }).click();
+    await chat.getByRole('button', { name: '送信', exact: true }).click();
     await expect(chat.getByTestId('chat-answer').last()).toContainText('AI 生成');
     await expect((await openScreen(page, 'priority')).getByTestId('executive-summary')).toContainText('AI 生成');
     // ツリー
