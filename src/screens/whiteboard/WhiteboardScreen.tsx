@@ -2,7 +2,7 @@
 // 論点（議論テーマ）ごとに複数のボードを持つ。背景（無地/方眼/ドット/罫線）・全体表示・拡大縮小・ミニマップ・インクの道具を備える。
 // 付箋・コネクター・フレーム・グループ・整列（FR-097）、アプリのデータのカード（FR-098）、
 // 付箋のクラスタリング・ドット投票・タイマー（FR-099）をこの画面が受け持つ。
-import { useCallback, useLayoutEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import {
   Badge, Button, DialogActions, DialogBody, DialogContent, DialogTitle, DialogTrigger, Dropdown, Field, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, Option, SpinButton, Tab, TabList, Text, makeStyles, tokens,
@@ -40,7 +40,7 @@ const useStyles = makeStyles({
   controls: { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalS },
   organize: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalS, rowGap: tokens.spacingVerticalS },
   forcedAuto: { forcedColorAdjust: 'auto', '@media (forced-colors: active)': { forcedColorAdjust: 'auto' } },
-  stage: { position: 'relative', height: 'clamp(420px, 62vh, 900px)', minHeight: 0 },
+  stage: { position: 'relative', height: 'clamp(420px, 62vh, 900px)', minHeight: 0, flexShrink: 0 },
   recognized: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS, margin: 0, paddingLeft: tokens.spacingHorizontalXL },
   recognizedItem: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalS },
   status: { height: '1.4em', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' },
@@ -162,7 +162,15 @@ export function WhiteboardScreen() {
   const mine = boards.filter((b) => b.kind === 'board' && b.topicId === topicId);
   const active = boards.find((b) => b.id === activeId && b.kind === 'board');
   const bg = BACKGROUNDS.find((b) => b.value === active?.background) ?? BACKGROUNDS[0]!;
-
+  // 開いたとき、描画面を見える位置まで送る（ペインが小さく、面が下に隠れても描ける。FR-088）
+  const stageRef = useRef<HTMLDivElement>(null);
+  const activeBoardId = active?.id;
+  useEffect(() => {
+    const go = () => stageRef.current?.scrollIntoView?.({ block: 'nearest', inline: 'nearest' });
+    go();
+    const t = window.setTimeout(go, 0);
+    return () => window.clearTimeout(t);
+  }, [activeBoardId]);
   const zoomBy = (factor: number) => {
     if (!active) return;
     setView(active.id, zoomView(active.view, factor, active.size.w / 2, active.size.h / 2));
@@ -359,7 +367,7 @@ export function WhiteboardScreen() {
           </Text>
         ) : null}
         {active && (
-          <div className={s.stage}>
+          <div ref={stageRef} className={s.stage}>
             {/* 状態の表示は描画面の上端に重ねる（場所を取らず、描画面をできるだけ上に置く。ショーコントロールバーに隠れにくくする） */}
             <Text role="status" className={s.statusOverlay} size={200}>
               {status}{connectFrom ? ' 接続元を選びました。つなぐ相手の項目をクリックしてください（Esc で取り消し）。' : ''}
