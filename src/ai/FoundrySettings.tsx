@@ -1,14 +1,18 @@
 // 設定画面の Microsoft Foundry 欄（FR-275）。エンドポイント・デプロイ名・API キーを入力・変更・削除できる。
 // キーは入力欄（伏せ字）から中継プロセスへ送るだけで、保存後は「設定済み」と伏せ字だけを示し、値を再表示しない。
 // 実接続の既定は無効。有効にする前に、有料で費用が発生する旨と送信される情報の種類を示して確認を求める。
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Input, MessageBar, MessageBarBody, Switch, Text,
 } from '@fluentui/react-components';
 import { Dialog, DialogSurface } from '../components/Dialog';
 import { usePackStore } from '../store/pack';
 import { useConsent } from './useConsent';
-import { DEFAULT_FOUNDRY_DEPLOYMENT, DEFAULT_FOUNDRY_ENDPOINT, deleteFoundryConfig, fetchFoundryView, putFoundryConfig, setFoundryConnection, type FoundryView } from './foundryClient';
+import {
+  DEFAULT_FOUNDRY_DEPLOYMENT, DEFAULT_FOUNDRY_ENDPOINT, ENDPOINT_FORMAT_EXAMPLES, deleteFoundryConfig, fetchFoundryView, putFoundryConfig, setFoundryConnection, testFoundry, validateFoundryEndpoint, type FoundryView,
+} from './foundryClient';
+import { newFoundryTestSession, runFoundryTest } from './foundryTest';
+import { explainLimitsNow, explainUsageNow, setExplainUsage } from '../explain/store';
 import { tokens } from '../theme/tokens';
 
 /** 値に由来しない固定の伏せ字（末尾の文字も出さない。FR-282 AC-726） */
@@ -25,6 +29,10 @@ export function FoundrySettings() {
   const [authMethod, setAuthMethod] = useState<'api-key' | 'entra'>('api-key');
   const [result, setResult] = useState<{ ok: boolean; text: string } | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const [endpointError, setEndpointError] = useState<string | null>(null);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<{ ok: boolean; text: string } | null>(null);
+  const testSession = useRef(newFoundryTestSession());
 
   useEffect(() => {
     let alive = true;
@@ -44,6 +52,10 @@ export function FoundrySettings() {
   }, [granted, view?.enabled, relayUrl, packId]);
 
   const save = async () => {
+    // 不正なエンドポイントは保存しない（中継へも送らない）。保存済みの値は変わらない。理由に入力値は含めない（AC-764）
+    const invalid = validateFoundryEndpoint(endpoint);
+    setEndpointError(invalid);
+    if (invalid) { setResult({ ok: false, text: '保存できませんでした。エンドポイントの入力を確認してください。' }); return; }
     const r = await putFoundryConfig(relayUrl as string, packId, { endpoint, deployment, key, authMethod });
     setKey('');
     if (r.ok) { setView(r.view); setResult({ ok: true, text: '接続情報を保存しました（API キーは画面に再表示しません）。' }); }
@@ -66,6 +78,20 @@ export function FoundrySettings() {
     setView((v) => (v ? { ...v, enabled: false } : v));
   };
 
+  const connectionTest = async () => {
+    setTesting(true);
+    try {
+      const o = await runFoundryTest(
+        { now: () => new Date(), limits: explainLimitsNow, usage: { get: explainUsageNow, set: setExplainUsage }, test: () => testFoundry(relayUrl) },
+        testSession.current,
+      );
+      if (o.kind === 'result') setTestResult({ ok: o.result.ok, text: o.result.ok ? '接続テスト: 成功しました。' : `接続テスト: 失敗しました。${o.result.message}` });
+      else setTestResult({ ok: false, text: `接続テストは実行していません。${o.message}` });
+    } finally {
+      setTesting(false);
+    }
+  };
+
   const configured = !!view?.configured;
   return (
     <section role="region" aria-labelledby="foundry-settings-title" data-testid="foundry-settings" style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS }}>
@@ -81,8 +107,13 @@ export function FoundrySettings() {
       </Text>
       {configured && view?.authMethod !== 'entra' ? <Text size={200} data-testid="foundry-key-mask">API キー: 設定済み（{view?.keyMask}）</Text> : null}
       <form data-testid="foundry-form" onSubmit={(e) => { e.preventDefault(); void save(); }} style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS }}>
-        <Field label="エンドポイント">
-          <Input value={endpoint} aria-label="エンドポイント" onChange={(_, d) => setEndpoint(d.value)} />
+        <Field
+          label="エンドポイント"
+          hint={`入力例: ${ENDPOINT_FORMAT_EXAMPLES[0]}　または　${ENDPOINT_FORMAT_EXAMPLES[1]}（https で始まる Azure の標準ドメインだけ使えます）`}
+          validationState={endpointError ? 'error' : 'none'}
+          validationMessage={endpointError ?? undefined}
+        >
+          <Input value={endpoint} aria-label="エンドポイント" onChange={(_, d) => { setEndpoint(d.value); setEndpointError(null); }} />
         </Field>
         <Field label="デプロイ名">
           <Input value={deployment} aria-label="デプロイ名" onChange={(_, d) => setDeployment(d.value)} />
@@ -99,7 +130,10 @@ export function FoundrySettings() {
         <div style={{ display: 'flex', gap: tokens.spacingHorizontalS }}>
           <Button type="submit" appearance="primary" aria-label="Foundry の接続情報を保存">保存</Button>
           <Button type="button" aria-label="Foundry の接続情報を削除" disabled={!configured} onClick={() => void remove()}>削除</Button>
+          <Button type="button" aria-label="Foundry の接続テスト" disabled={!configured || !relayUrl || testing} onClick={() => void connectionTest()}>接続テスト</Button>
         </div>
+        <Text size={200}>接続テストは、保存済みの接続情報で、接続の確認だけの少額の呼び出しを 1 回行います（費用は小さい。顧客のデータは送りません）。</Text>
+        {testResult ? <MessageBar intent={testResult.ok ? 'success' : 'warning'} role={testResult.ok ? 'status' : 'alert'} data-testid="foundry-test-result"><MessageBarBody>{testResult.text}</MessageBarBody></MessageBar> : null}
       </form>
       <Switch
         checked={!!view?.enabled}

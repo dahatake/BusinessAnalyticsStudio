@@ -16,10 +16,11 @@ describe('FR-282 AC-761 Azure CLI のトークン取得部品', () => {
     expect(await p()).toBe(TOKEN);
     expect(await p()).toBe(TOKEN);
     expect(calls).toHaveLength(1);
-    expect(calls[0]!.file).toBe('az');
-    expect(calls[0]!.args).toEqual(['account', 'get-access-token', '--resource', FOUNDRY_TOKEN_RESOURCE, '--query', 'accessToken', '-o', 'tsv']);
-    expect(calls[0]!.shell).toBe(false);
-    expect(calls[0]!.timeout).toBeGreaterThan(0);
+    const c0 = calls[0]!;
+    expect(c0.file).toBe('az');
+    expect(c0.args).toEqual(['account', 'get-access-token', '--resource', FOUNDRY_TOKEN_RESOURCE, '--query', 'accessToken', '-o', 'tsv']);
+    expect(c0.shell).toBe(false);
+    expect(c0.timeout).toBeGreaterThan(0);
     t += 61_000;
     await p();
     expect(calls).toHaveLength(2);
