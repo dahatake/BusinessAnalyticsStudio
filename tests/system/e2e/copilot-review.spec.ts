@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準だけから決める。画面の探し方は CONTRACT.md §27。
 // Foundry は差し替え部品の中継（support/review-stub.ts）。本物は呼ばない。
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, recordExportConsent, continuePersonConfirm, settingsDialog, selectPersona } from '../support/fixtures';
+import { test, expect, openScreen, reloadAndEnter, recordExportConsent, continuePersonConfirm, settingsDialog, selectPersona } from '../support/fixtures';
 import { startReviewStub } from '../support/review-stub';
 
 const runButton = (page: Page): Locator => page.getByRole('button', { name: 'Copilot で分析実行', exact: true }).first();
@@ -129,7 +129,7 @@ test.describe('FR-278 結果の振り分け・案の表示', () => {
       await p.getByRole('textbox').first().fill('REFLECTED-CONTENT-0001');
       await memo.getByRole('button', { name: '反映', exact: true }).click();
       await expect(memo.getByTestId('component-data')).toContainText('REFLECTED-CONTENT-0001');
-      await page.reload();
+      await reloadAndEnter(page);
       await openScreen(page, 'memo');
       await expect(page.getByTestId('component-memo').getByTestId('component-data')).toContainText('REFLECTED-CONTENT-0001');
     } finally {
