@@ -75,10 +75,6 @@ class PayloadTooLarge extends Error {}
 
 /** AI 取り込み（FR-289）で送れるファイル 1 件の大きさ。PARAM-125（10 MB） */
 export const AI_IMPORT_MAX_BYTES = 10 * 1024 * 1024;
-/** 接続テスト（FR-282 AC-763）: 顧客データを含まない最小の入力・最小の出力上限。連打の間隔は PARAM-116（5 秒） */
-const FOUNDRY_TEST_INPUT = 'ping';
-const FOUNDRY_TEST_MAX_OUTPUT_TOKENS = 16;
-const FOUNDRY_TEST_MIN_INTERVAL_MS = 5000;
 const IMPORT_BODY_LIMIT = Math.ceil((AI_IMPORT_MAX_BYTES * 4) / 3) + 200_000;
 
 function readBody(req: http.IncomingMessage, limit = 1_000_000): Promise<string> {
