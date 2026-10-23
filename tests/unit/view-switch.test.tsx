@@ -378,7 +378,6 @@ describe('FR-218 AC-502 全画面の世界区分の宣言が §3.7 の分類表�
       'spatial-view': false,
       // FR-284 生成AIの効果的な活用シナリオの分析（世界区分を持つデータを表示しない）
       'genai-scenario': false,
-      // FR-280 メモ（端末内に保存される文章。世界区分を持つデータを表示しない）
       memo: false,
     };
     expect(SCREENS.map((x) => x.key).sort()).toEqual(Object.keys(want).sort());

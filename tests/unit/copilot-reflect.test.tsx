@@ -1,57 +1,66 @@
 // @vitest-environment jsdom
-// FR-280 「反映」による画面コンポーネントと管理データの更新（AC-721 の単体・結合、AC-722）。AC-721 の System Test は E2E-393。
+// FR-280 「反映」による画面コンポーネントと管理データの更新（AC-721 の単体・結合、AC-722。AC-721 の System Test は E2E-413）。
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { FluentProvider, webLightTheme } from '@fluentui/react-components';
-import { CopilotProposal, reflectProposal } from '../../src/review/CopilotProposal';
+import { CopilotProposal } from '../../src/review/CopilotProposal';
 import { registerReflector, useReviewStore } from '../../src/review/reviewStore';
-import { useMemoStore } from '../../src/store/memo';
+import { MemoScreen } from '../../src/screens/MemoScreen';
+import { MEMO_STORAGE_KEY, useMemoStore } from '../../src/store/memo';
+import { SCREENS } from '../../src/screens/registry';
 
-const wrap = (ui: React.ReactNode) => render(<FluentProvider theme={webLightTheme}>{ui}</FluentProvider>);
+const wrap = (n: React.ReactNode) => <FluentProvider theme={webLightTheme}>{n}</FluentProvider>;
 
 beforeEach(() => {
-  useReviewStore.setState({ proposals: { memo: '案-memo', table: '案-table' }, none: {} });
-  useMemoStore.setState({ byPack: {} });
+  localStorage.clear();
+  useMemoStore.setState({ text: '元のメモ', author: 'user' });
+  useReviewStore.setState({ proposals: {}, none: {} });
 });
 afterEach(() => cleanup());
 
-describe('FR-280 AC-721 反映（単体・結合）', () => {
-  it('編集した案で反映すると、メモが編集後の内容で保存され、そのコンポーネントの案は「反映済み」になる', async () => {
-    const off = registerReflector('memo', (t) => { useMemoStore.getState().save('P / Q', t, 'ai-assisted'); });
-    wrap(<CopilotProposal componentKey="memo" title="メモ" />);
-    fireEvent.change(screen.getByRole('textbox'), { target: { value: 'REFLECTED-0001' } });
+describe('FR-280 AC-721 反映でメモの表示と保存データが案の内容になる', () => {
+  it('メモ画面はレジストリにあり、左メニューには出ない', () => {
+    const s = SCREENS.find((x) => x.key === 'memo');
+    expect(s?.nav).toBe(false);
+  });
+
+  it('案を編集して「反映」を押すと、表示が編集後の内容になり、端末内に保存される（AI 提案の採用）', async () => {
+    useReviewStore.setState({ proposals: { memo: '案の初期' } });
+    render(wrap(<MemoScreen />));
+    fireEvent.change(screen.getByLabelText('メモの Copilot の案を編集'), { target: { value: 'REFLECTED-CONTENT-0001' } });
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: '反映' })); });
-    expect(useMemoStore.getState().byPack['P / Q']).toEqual({ text: 'REFLECTED-0001', author: 'ai-assisted' });
-    expect(useReviewStore.getState().done.memo).toBe(true);
-    off();
+    expect(screen.getByTestId('memo-text').textContent).toBe('REFLECTED-CONTENT-0001');
+    const saved = JSON.parse(localStorage.getItem(MEMO_STORAGE_KEY) ?? '{}');
+    expect(saved.state.text).toBe('REFLECTED-CONTENT-0001');
+    expect(saved.state.author).toBe('ai-adopted');
   });
 
-  it('メモのストアは localStorage に保存され、再読み込み後も復元される', async () => {
-    useMemoStore.getState().save('P / Q', '保存される内容', 'ai-assisted');
+  it('保存済みの内容は、store の再読み込み（復元）で戻る', async () => {
+    useMemoStore.setState({ text: '', author: 'user' });
+    localStorage.setItem(MEMO_STORAGE_KEY, JSON.stringify({ state: { text: '保存する内容', author: 'ai-adopted' }, version: 1 }));
     await useMemoStore.persist.rehydrate();
-    expect(useMemoStore.getState().byPack['P / Q']?.text).toBe('保存される内容');
-    expect(localStorage.getItem('edb.memo') ?? '').toContain('保存される内容');
-  });
-
-  it('反映に対応していない・反映が失敗したときは案を残す', async () => {
-    expect(await reflectProposal('table', '内容')).toBe(false);
-    const off = registerReflector('table', () => { throw new Error('x'); });
-    expect(await reflectProposal('table', '内容')).toBe(false);
-    expect(useReviewStore.getState().proposals.table).toBe('案-table');
-    off();
+    expect(useMemoStore.getState().text).toBe('保存する内容');
   });
 });
 
-describe('FR-280 AC-722 反映はコンポーネントごと（結合）', () => {
-  it('一つだけ反映すると、ほかのコンポーネントの案とデータは変わらない', async () => {
-    const offM = registerReflector('memo', (t) => { useMemoStore.getState().save('P / Q', t, 'ai-assisted'); });
-    const calls: string[] = [];
-    const offT = registerReflector('table', (t) => { calls.push(t); });
-    await reflectProposal('memo', '案-memo');
-    expect(useReviewStore.getState().proposals).toEqual({ memo: '案-memo', table: '案-table' });
-    expect(useReviewStore.getState().done).toEqual({ memo: true });
-    expect(calls).toEqual([]);
-    expect(useMemoStore.getState().byPack).toEqual({ 'P / Q': { text: '案-memo', author: 'ai-assisted' } });
-    offM(); offT();
+describe('FR-280 AC-722 反映は押したコンポーネントだけを変える', () => {
+  it('二つの案があるとき一つだけ反映すると、もう一つの表示・保存データ・案は変わらない', async () => {
+    let otherCalled = 0;
+    const off = registerReflector('other', () => { otherCalled++; });
+    useReviewStore.setState({ proposals: { memo: '新メモ', other: '他の案' }, none: {} });
+    render(wrap(<><MemoScreen /><CopilotProposal componentKey="other" title="他" /></>));
+    await act(async () => { fireEvent.click(within(screen.getByTestId('component-memo')).getByRole('button', { name: '反映' })); });
+    expect(useMemoStore.getState().text).toBe('新メモ');
+    expect(otherCalled).toBe(0);
+    expect(useReviewStore.getState().proposals.other).toBe('他の案');
+    off();
+  });
+
+  it('メモの反映は、メモ以外の保存データ（localStorage のほかのキー）を書かない', async () => {
+    localStorage.setItem('eabk.projects.v1', 'UNCHANGED');
+    useReviewStore.setState({ proposals: { memo: 'x' } });
+    render(wrap(<MemoScreen />));
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: '反映' })); });
+    expect(localStorage.getItem('eabk.projects.v1')).toBe('UNCHANGED');
   });
 });

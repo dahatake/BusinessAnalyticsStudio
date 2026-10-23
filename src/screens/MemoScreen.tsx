@@ -1,50 +1,36 @@
-// メモ（FR-280）。端末内に保存される文章を持つコンポーネント。「Copilot の案」の「反映」で内容を更新できる（reviewStore の registerReflector）。
-import { useEffect, useState } from 'react';
-import { Button, Text, Textarea, makeStyles, tokens } from '@fluentui/react-components';
-import { Edit16Regular } from '@fluentui/react-icons';
+// メモ画面（FR-280）。端末内に保存される文章のコンポーネント。「Copilot の案」の「反映」で、表示と保存したデータを案の内容に更新する。
+import { Field, Text, Textarea, makeStyles, tokens } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
-import { LoadingView } from '../components/StateViews';
-import { packKeyOf } from '../discussion/model';
 import { registerReflector } from '../review/reviewStore';
-import { usePackStore } from '../store/pack';
-import { MEMO_EMPTY_TEXT, useMemoStore } from '../store/memo';
+import { useMemoStore } from '../store/memo';
 
 const useStyles = makeStyles({
   body: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM },
-  text: { whiteSpace: 'pre-wrap' },
+  shown: { whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' },
 });
 
-function MemoScreen() {
+/** 案の「反映」の部品。メモのデータを案の内容で更新する（作成者の種別は AI 提案の採用） */
+export function reflectMemo(text: string): void {
+  useMemoStore.getState().setText(text, 'ai-adopted');
+}
+
+// 反映の部品は、画面を読み込んだ時点で登録する（案の「反映」の可否が、描画の順序に左右されないように）
+registerReflector('memo', reflectMemo);
+
+export function MemoScreen() {
   const s = useStyles();
-  const data = usePackStore((st) => (st.state.status === 'ready' ? st.state.pack.data : undefined));
-  const key = data ? packKeyOf(data.customer.name, data.customer.projectName) : '';
-  const stored = useMemoStore((st) => st.byPack[key]);
-  const text = stored?.text ?? '';
-  const [editing, setEditing] = useState(false);
-  // 「反映」の登録。案の内容をこの顧客パックのメモとして保存する（作成者の種別は A-71 の AI 支援）
-  useEffect(() => {
-    if (!key) return undefined;
-    return registerReflector('memo', (proposal) => { useMemoStore.getState().save(key, proposal, 'ai-assisted'); });
-  }, [key]);
-  if (!data) return <LoadingView label="メモを読み込み中" />;
+  const text = useMemoStore((st) => st.text);
+  const author = useMemoStore((st) => st.author);
+  const setText = useMemoStore((st) => st.setText);
   return (
-    <Panel testId="component-memo" title="メモ" description="検討の論点・前提・次の行動を書き留めます。この端末に保存されます。">
+    <Panel testId="component-memo" title="メモ" description="この端末にだけ保存される自由なメモです。Copilot の案を「反映」すると、この内容が案の内容に変わります。" maxWidth="900px">
       <div className={s.body}>
-        <Text className={s.text} data-testid="memo-text">{text.trim() === '' ? MEMO_EMPTY_TEXT : text}</Text>
-        <div>
-          <Button size="small" icon={<Edit16Regular aria-hidden />} aria-label={editing ? 'メモの編集を閉じる' : 'メモを編集する'} aria-expanded={editing} onClick={() => setEditing((v) => !v)} />
-        </div>
-        {editing ? (
-          <Textarea
-            aria-label="メモを編集"
-            value={text}
-            resize="vertical"
-            onChange={(_, d) => useMemoStore.getState().save(key, d.value, 'human')}
-          />
-        ) : null}
+        <Text className={s.shown} data-testid="memo-text">{text === '' ? '（メモはまだありません）' : text}</Text>
+        {author === 'ai-adopted' && text !== '' && <Text size={200}>Copilot の案を採用した内容です。</Text>}
+        <Field label="メモを編集">
+          <Textarea value={text} resize="vertical" onChange={(_, d) => setText(d.value)} />
+        </Field>
       </div>
     </Panel>
   );
 }
-
-export { MemoScreen };

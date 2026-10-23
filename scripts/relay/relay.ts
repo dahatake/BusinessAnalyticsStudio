@@ -10,7 +10,7 @@ import { AZURE_FEATURES, MAX_IMAGE_BASE64_CHARS, MAX_SPEECH_TEXT_CHARS, isValidB
 import { openSpeechVault, type SpeechVault } from './speech-vault';
 import { CAUSE_STATUS, createFoundryService, FoundryError as GenAiFoundryError, type FoundryService } from './genai-foundry';
 import { openFoundryVault, type FoundryVault } from './foundry-vault';
-import { callFoundry, FoundryError } from './foundry';
+import { callFoundry, callFoundryWithInput, FoundryError, importWithFoundry, type TokenProvider } from './foundry';
 import { buildReviewPrompt, parseReviewComponents, parseReviewReply } from './foundry-review';
 
 export const AI_KINDS = ['structure', 'summary', 'recommend', 'chat', 'exec-summary'] as const;
@@ -40,6 +40,8 @@ export interface RelayOptions {
   /** Foundry への送信口（差し替え部品）。検査ではスタブを渡す */
   foundryFetch?: typeof fetch;
   foundryTimeoutMs?: number;
+  /** Microsoft Entra ID 方式のトークン取得口（FR-289。差し替え部品。なければ取得に失敗として扱う） */
+  foundryToken?: TokenProvider;
 }
 
 export interface Relay {
@@ -67,6 +69,10 @@ function originAllowed(origin: string | undefined): boolean {
 }
 
 class PayloadTooLarge extends Error {}
+
+/** AI 取り込み（FR-289）で送れるファイル 1 件の大きさ。PARAM-125（10 MB） */
+export const AI_IMPORT_MAX_BYTES = 10 * 1024 * 1024;
+const IMPORT_BODY_LIMIT = Math.ceil((AI_IMPORT_MAX_BYTES * 4) / 3) + 200_000;
 
 function readBody(req: http.IncomingMessage, limit = 1_000_000): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -156,9 +162,9 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           const withMode = () => ({ ...getFoundry().view(), enabled: foundryEnabled.has(packId) });
           if (req.method === 'GET') return json(200, withMode());
           if (req.method === 'PUT') {
-            const b = JSON.parse((await readBody(req)) || '{}') as { endpoint?: string; deployment?: string; key?: string; authMethod?: string };
+            const b = JSON.parse((await readBody(req)) || '{}') as             { endpoint?: string; deployment?: string; key?: string; authMethod?: string };
             try {
-              getFoundry().save({ endpoint: String(b.endpoint ?? ''), deployment: String(b.deployment ?? ''), key: typeof b.key === 'string' ? b.key : undefined, authMethod: b.authMethod === 'entra' ? 'entra' : 'api-key' });
+                          getFoundry().save({ endpoint: String(b.endpoint ?? ''), deployment: String(b.deployment ?? ''), key: typeof b.key === 'string' ? b.key : undefined, authMethod: b.authMethod === 'entra' ? 'entra' : 'api-key' });
               return json(200, withMode());
             } catch (e) {
               return json(400, { error: e instanceof Error ? e.message : '保存できませんでした' });
@@ -176,22 +182,24 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           if (!b.enable) { foundryEnabled.delete(b.packId); return json(200, { mode: 'mock' }); }
           if (b.consent !== true) return json(403, { error: '顧客の了承の記録がないため、実接続を有効にできません', mode: 'mock' });
           if (b.confirmed !== true) return json(400, { error: '費用と送信内容の確認が必要です' });
-          if (!getFoundry().secret() && !getFoundry().entraReady()) return json(409, { error: 'Foundry の接続情報が未設定です', mode: 'mock' });
+          if (!getFoundry().importSecret()) return json(409, { error: 'Foundry の接続情報が未設定です', mode: 'mock' });
           foundryEnabled.add(b.packId);
           return json(200, { mode: 'connected' });
         }
         // 「現状の説明」などの生成。条件が 1 つでも欠けると Foundry を呼ばない（呼び出し 0 回。FR-275 AC-706）
         if (req.method === 'POST' && path === '/foundry/ask') {
-          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; prompt?: string;           consent?: boolean; includesPerson?: boolean; personConfirmed?: boolean; maxOutputTokens?: number };
+          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; prompt?: string; consent?: boolean; includesPerson?: boolean; personConfirmed?: boolean };
           if (typeof b.packId !== 'string' || !b.packId || typeof b.prompt !== 'string') return json(400, { error: 'packId・prompt が必要です' });
           const unavailable = (reason: string, message: string, status = 200) => json(status, { mode: 'unavailable', reason, message });
           if (b.consent !== true) return unavailable('consent', '顧客の了承の記録がないため、AI は使えません');
           if (!foundryEnabled.has(b.packId)) return unavailable('disabled', 'Foundry の実接続が有効ではありません');
-          const secret = getFoundry().secret();
+          const secret = getFoundry().importSecret();
           if (!secret) return unavailable('not-configured', 'Foundry の接続情報が未設定です');
           if (b.includesPerson === true && b.personConfirmed !== true) return unavailable('person-unconfirmed', '種別「人」を含む顧客パックは、送信前の確認が必要です');
           try {
-            const answer = await callFoundry(secret, b.prompt, opts.foundryFetch, opts.foundryTimeoutMs, typeof b.maxOutputTokens === 'number' && b.maxOutputTokens > 0 ? Math.floor(b.maxOutputTokens) : undefined);
+            const answer = secret.authMethod === 'entra'
+              ? await callFoundryWithInput(secret, b.prompt, opts.foundryFetch, opts.foundryTimeoutMs, opts.foundryToken)
+              : await callFoundry(secret, b.prompt, opts.foundryFetch, opts.foundryTimeoutMs);
             return json(200, { answer, mode: 'connected' });
           } catch (e) {
             const kind = e instanceof FoundryError ? e.kind : 'network';
@@ -208,11 +216,14 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           const unavailable = (reason: string, message: string) => json(200, { mode: 'unavailable', reason, message });
           if (b.consent !== true) return unavailable('consent', '顧客の了承の記録がないため、AI は使えません');
           if (!foundryEnabled.has(b.packId)) return unavailable('disabled', 'Foundry の実接続が有効ではありません');
-          const secret = getFoundry().secret();
+          const secret = getFoundry().importSecret();
           if (!secret) return unavailable('not-configured', 'Foundry の接続情報が未設定です');
           if (b.includesPerson === true && b.personConfirmed !== true) return unavailable('person-unconfirmed', '種別「人」を含む顧客パックは、送信前の確認が必要です');
           try {
-            const text = await callFoundry(secret, buildReviewPrompt(comps), opts.foundryFetch, opts.foundryTimeoutMs);
+            const prompt = buildReviewPrompt(comps);
+            const text = secret.authMethod === 'entra'
+              ? await callFoundryWithInput(secret, prompt, opts.foundryFetch, opts.foundryTimeoutMs, opts.foundryToken)
+              : await callFoundry(secret, prompt, opts.foundryFetch, opts.foundryTimeoutMs);
             const reviews = parseReviewReply(text, comps.map((c) => c.id));
             if (!reviews) return unavailable('error', 'Foundry の応答の形式が想定と異なります');
             return json(200, { reviews, mode: 'connected' });
@@ -220,6 +231,31 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
             const kind = e instanceof FoundryError ? e.kind : 'network';
             const msg = (e instanceof FoundryError ? e.message : 'Foundry に接続できませんでした').split(secret.key).join('•••');
             return unavailable(kind === 'timeout' ? 'timeout' : 'error', msg);
+          }
+        }
+        // ---- FR-289: AI 取り込み。条件が 1 つでも欠けると Foundry を呼ばない（呼び出し 0 回）。応答・エラーに認証情報は含めない ----
+        if (req.method === 'POST' && path === '/foundry/import') {
+          const b = JSON.parse((await readBody(req, IMPORT_BODY_LIMIT)) || '{}') as {
+            packId?: string; consent?: boolean; confirmed?: boolean; includesPerson?: boolean; personConfirmed?: boolean;
+            fileName?: string; mime?: string; size?: number; dataBase64?: string;
+          };
+          const fail = (status: number, cause: string, extra: Record<string, unknown> = {}, message?: string) => json(status, { error: { cause, ...extra, ...(message ? { message } : {}) } });
+          if (typeof b.packId !== 'string' || !b.packId || typeof b.dataBase64 !== 'string' || typeof b.fileName !== 'string') return fail(400, 'bad-request');
+          if (b.consent !== true) return fail(403, 'consent');
+          if (!foundryEnabled.has(b.packId)) return fail(403, 'disabled');
+          const secret = getFoundry().importSecret();
+          if (!secret) return fail(503, 'key-missing');
+          if (b.includesPerson === true && b.personConfirmed !== true) return fail(403, 'person-unconfirmed');
+          if (b.confirmed !== true) return fail(400, 'unconfirmed');
+          const bytes = Buffer.byteLength(b.dataBase64, 'base64');
+          if (bytes > AI_IMPORT_MAX_BYTES || (typeof b.size === 'number' && b.size > AI_IMPORT_MAX_BYTES)) return fail(413, 'too-large', { limitBytes: AI_IMPORT_MAX_BYTES });
+          try {
+            const entities = await importWithFoundry(secret, { name: b.fileName, mime: String(b.mime ?? ''), dataBase64: b.dataBase64 }, opts.foundryFetch, opts.foundryTimeoutMs, opts.foundryToken);
+            return json(200, { preview: { entities } });
+          } catch (e) {
+            const kind = e instanceof FoundryError ? e.kind : 'network';
+            const status = /HTTP (\d+)/.exec(e instanceof Error ? e.message : '')?.[1];
+            return fail(kind === 'timeout' ? 504 : 502, kind === 'http' ? 'upstream-status' : kind, status ? { status: Number(status) } : {});
           }
         }
         if (req.method === 'POST' && path === '/speech/synthesize') {

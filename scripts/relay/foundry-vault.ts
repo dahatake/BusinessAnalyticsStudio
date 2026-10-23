@@ -31,6 +31,8 @@ export interface FoundryVault {
   remove(): void;
   /** 接続先へ送るための値。中継の内部だけで使う */
   secret(): { endpoint: string; deployment: string; key: string } | null;
+  /** FR-289・/foundry/ask 用。Entra ID 方式ではキーなしでも返す（認証方式つき） */
+  importSecret(): { endpoint: string; deployment: string; key: string; authMethod: AuthMethod } | null;
   /** 認証方式が Entra ID で、エンドポイント・デプロイ名が揃っているか（トークン取得は別部品） */
   entraReady(): boolean;
 }
@@ -106,6 +108,13 @@ export function openFoundryVault(dataDir: string = defaultDataDir(), opts: Vault
     entraReady() {
       const s = load();
       return !!s && s.authMethod === 'entra' && !!s.deployment && isAllowedEndpoint(s.endpoint);
+    },
+    importSecret() {
+      const s = load();
+      if (!s || !s.deployment || !isAllowedEndpoint(s.endpoint)) return null;
+      const authMethod: AuthMethod = s.authMethod === 'entra' ? 'entra' : 'api-key';
+      if (authMethod === 'api-key' && !s.key) return null;
+      return { endpoint: s.endpoint, deployment: s.deployment, key: s.key, authMethod };
     },
     secret() {
       const s = load();
