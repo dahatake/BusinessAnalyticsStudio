@@ -1,7 +1,7 @@
 // プレゼンテーションモードの操作と進行バー（FR-016）。
 // - 開始/終了のボタン（ヘッダー）。`internal` の項目を含むパックでは、開始の前に件数と確認の画面を出す（NFR-SEC-003）
-// - 進行バー: チャプターを順に並べ、現在のチャプターを文字（「現在」）でも示す。現在の議題と、前/次のボタン
-// - `←`/`→` で前/次の議題へ。キャンバスにフォーカスがあっても、パンではなく議題の移動にする（`↑`/`↓`・`Shift`+矢印はパンのまま）
+// - 進行バー: チャプターを順に並べ、現在のチャプターを文字（「現在」）でも示す。現在の論点と、前/次のボタン
+// - `←`/`→` で前/次の論点へ。キャンバスにフォーカスがあっても、パンではなく論点の移動にする（`↑`/`↓`・`Shift`+矢印はパンのまま）
 import { useEffect, useMemo, useState } from 'react';
 import {
   Button, DialogActions, DialogBody, DialogContent, DialogTitle, Text, makeStyles, mergeClasses, tokens,
@@ -50,7 +50,7 @@ const useStyles = makeStyles({
   annotate: { display: 'flex', alignItems: 'center' },
 });
 
-/** 顧客パックの show.json から、プレゼンテーションで巡る議題の一覧を作る（パックが読めていなければ空）。 */
+/** 顧客パックの show.json から、プレゼンテーションで巡る論点の一覧を作る（パックが読めていなければ空）。 */
 function usePackTopics(): PresentationTopic[] {
   const state = usePackStore((s) => s.state);
   return state.status === 'ready' ? flattenTopics(state.pack.data.show?.chapters ?? []) : [];
@@ -71,7 +71,7 @@ export function PresentationButton() {
   const end = usePresentationStore((s) => s.end);
   const openPicker = useStoryStore((s) => s.openPicker);
   const [confirming, setConfirming] = useState(false);
-  // 開始: 議題を巡るプレゼンテーション（FR-016）を始め、ペルソナを選ぶとその上でストーリーを再生する（FR-177）。選ばずに閉じれば議題を巡るまま続く
+  // 開始: 論点を巡るプレゼンテーション（FR-016）を始め、ペルソナを選ぶとその上でストーリーを再生する（FR-177）。選ばずに閉じれば論点を巡るまま続く
   const begin = () => { if (start(topics)) openPicker(); };
   if (active) return <Button icon={<Stop20Regular aria-hidden />} onClick={() => { useStoryStore.getState().reset(); end(); }}>プレゼンテーションを終了</Button>;
   return (
@@ -109,7 +109,7 @@ export function PresentationButton() {
   );
 }
 
-/** プレゼンテーション中だけ、`←`/`→` を議題の移動として受ける（キャンバスなどより先に捕まえる）。 */
+/** プレゼンテーション中だけ、`←`/`→` を論点の移動として受ける（キャンバスなどより先に捕まえる）。 */
 function usePresentationKeys(): void {
   const active = usePresentationStore((s) => s.active);
   useEffect(() => {
@@ -166,10 +166,10 @@ export function PresentationBar() {
         </RadioGroup>
       </div>
       <div className={s.topic}>
-        <Button size="small" icon={<ChevronLeft20Regular aria-hidden />} aria-label="前の議題" disabled={st.index === 0} onClick={st.prev} />
-        <Text size={200}>議題 {st.index + 1} / {st.topics.length}</Text>
+        <Button size="small" icon={<ChevronLeft20Regular aria-hidden />} aria-label="前の論点" disabled={st.index === 0} onClick={st.prev} />
+        <Text size={200}>論点 {st.index + 1} / {st.topics.length}</Text>
         <Text weight="semibold" className={s.topicTitle} data-testid="current-topic" role="status" aria-live="polite">{cur.title}</Text>
-        <Button size="small" icon={<ChevronRight20Regular aria-hidden />} aria-label="次の議題" disabled={st.index >= st.topics.length - 1} onClick={st.next} />
+        <Button size="small" icon={<ChevronRight20Regular aria-hidden />} aria-label="次の論点" disabled={st.index >= st.topics.length - 1} onClick={st.next} />
       </div>
     </section>
   );

@@ -87,11 +87,9 @@ export const NOT_APPLICABLE = '該当なし';
 
 /** 画面別の範囲で出す節（画面の key → 節）。対応のない画面は概要だけを出す。 */
 const SCREEN_SECTIONS: Record<string, readonly SectionId[]> = {
-  canvas: ['overview', 'graph', 'architecture'],
   'issue-solution': ['matrix', 'research', 'references'],
   table: ['overview', 'research', 'matrix', 'references', 'graph', 'products', 'gantt', 'kpi', 'attribution'],
   gantt: ['gantt'],
-  view3d: ['architecture', 'graph'],
   whiteboard: ['whiteboard'],
   themes: ['themes', 'decisions'],
   settings: ['overview'],

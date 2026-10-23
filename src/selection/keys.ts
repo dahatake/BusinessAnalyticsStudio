@@ -21,7 +21,7 @@ export function shouldClearSelectionOnEscape(c: EscapeContext): boolean {
 }
 
 // 開いているダイアログ・メニューに加え、展開中の combobox（Dropdown・Combobox は、開いている間 aria-expanded="true"。コマンドパレットも）を数える。
-// これらは Esc で自分を閉じるので、選択の解除は起こさない。常時表示の listbox（キャンバスの議題の一覧など）は、開いているポップアップではないので数えない。
+// これらは Esc で自分を閉じるので、選択の解除は起こさない。常時表示の listbox（キャンバスの論点の一覧など）は、開いているポップアップではないので数えない。
 const OVERLAY = '[role="dialog"],[role="alertdialog"],[role="menu"],[role="combobox"][aria-expanded="true"],[aria-haspopup][aria-expanded="true"]';
 
 /** 開いているダイアログ・メニューがあるか（オープニングは role="dialog"） */

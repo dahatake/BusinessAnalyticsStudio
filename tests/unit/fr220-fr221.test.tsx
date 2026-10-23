@@ -42,23 +42,19 @@ describe('FR-220 左メニューから「3D ビュー」の切替の項目を削
     expect(nav.querySelector('[data-testid="nav-knowledge-graph"]')).not.toBeNull();
   });
 
-  // FR-220 AC-590（画面 FR-020 は廃止しない）: 開ける経路はドック・コマンド。view3d はペルソナ（現場）・既定のレイアウトでも表示され、両画面はステッパーの「現状分析」の関連画面に含まれる（ステッパーは開く入口ではない）
-  it('FR-220 AC-590 view3d・drawing2d はドック・コマンドから開け、view3d はペルソナ（現場）・既定のレイアウトでも表示され、両画面はステップ「現状分析」の関連画面に含まれる', () => {
-    for (const key of ['view3d', 'drawing2d']) {
-      expect(SCREENS.some((s) => s.key === key)).toBe(true);
-      // ドックの対象（Dock・Workspace・setAvailableComponents に渡す一覧）
-      expect(COMPONENT_SCREENS.some((s) => s.key === key)).toBe(true);
-      // ステッパーの「現状分析」の関連画面に含まれる（開く入口ではない）
-      expect(stepIndexForScreen(key)).toBe(STEPS.findIndex((s) => s.key === 'analysis'));
-      // コマンド（「…を表示する」）
-      expect(builtinCommands(COMPONENT_SCREENS).some((c) => c.id === `view.show.${key}`)).toBe(true);
+  // FR-220 AC-590（FR-020・FR-146・FR-147 の廃止に伴い、画面 view3d・drawing2d は registry から外れた）: ドック・コマンド・ステッパー・ペルソナの既定からも参照されない
+  it('FR-220 AC-590 view3d・drawing2d はレジストリ・ドック・コマンド・ステッパーに残らず、ペルソナ（現場）の既定は地図になる', () => {
+    for (const key of ['view3d', 'drawing2d', 'canvas']) {
+      expect(SCREENS.some((s) => s.key === key)).toBe(false);
+      expect(COMPONENT_SCREENS.some((s) => s.key === key)).toBe(false);
+      expect(stepIndexForScreen(key)).toBeUndefined();
+      expect(builtinCommands(COMPONENT_SCREENS).some((c) => c.id === `view.show.${key}`)).toBe(false);
+      expect(keysOf(defaultLayout('現場'))).not.toContain(key);
     }
-    // view3d はペルソナ（現場）・既定のレイアウトでも表示される
-    expect(PERSONA_PRIMARY['現場']).toBe('view3d');
-    expect(keysOf(defaultLayout('現場'))).toContain('view3d');
+    expect(PERSONA_PRIMARY['現場']).toBe('map');
+    expect(keysOf(defaultLayout('現場'))).toContain('map');
   });
 });
-
 describe('FR-221 「メニューを最小化」の文字が切れない', () => {
   // FR-221 AC-517（文字を囲む要素の高さが文字の高さ以上で、はみ出して切り取られない）・FR-221 AC-476（文字の大きさと行の高さの組が Fluent 2 の文字の段に一致）
   // 切れる原因: Fluent のボタンは overflow: hidden。和文フォントの文字の箱が行より高いと上下が切り取られる

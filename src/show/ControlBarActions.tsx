@@ -139,7 +139,7 @@ function formatElapsed(sec: number): string {
   return `${String(m).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
 }
 
-/** プレゼンタービュー: 発表者向けに、いまの議題・次の議題・台本のメモ・経過時間を出す */
+/** プレゼンタービュー: 発表者向けに、いまの論点・次の論点・台本のメモ・経過時間を出す */
 export function PresenterView() {
   const s = useStyles();
   const on = useShowUi((st) => st.presenterView);
@@ -163,12 +163,12 @@ export function PresenterView() {
       <Text weight="semibold">プレゼンタービュー</Text>
       {cur ? (
         <>
-          <Text size={200}>{cur.chapterTitle} ・ 議題 {pres.index + 1} / {pres.topics.length}</Text>
+          <Text size={200}>{cur.chapterTitle} ・ 論点 {pres.index + 1} / {pres.topics.length}</Text>
           <Text data-testid="presenter-current">いま: {cur.title}</Text>
-          <Text data-testid="presenter-next">次: {next ? next.title : 'なし（最後の議題）'}</Text>
+          <Text data-testid="presenter-next">次: {next ? next.title : 'なし（最後の論点）'}</Text>
           {notes ? <Text size={200} data-testid="presenter-notes">台本: {notes}</Text> : null}
         </>
-      ) : <Text size={200}>プレゼンテーションを開始すると、いまの議題・次の議題・台本のメモが出ます。</Text>}
+      ) : <Text size={200}>プレゼンテーションを開始すると、いまの論点・次の論点・台本のメモが出ます。</Text>}
       <Text size={200} data-testid="presenter-elapsed">経過時間: {formatElapsed(sec)}</Text>
       <div><Button size="small" onClick={() => close(false)}>プレゼンタービューを閉じる</Button></div>
     </section>

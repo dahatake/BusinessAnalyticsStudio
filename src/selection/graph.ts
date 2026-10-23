@@ -23,7 +23,7 @@ export const KIND_LABELS: Record<NodeKind, string> = {
   architecture: 'アーキテクチャ',
   mock: 'モック',
   chapter: '章',
-  topic: '議題',
+  topic: '論点',
   source: '出典',
 };
 
@@ -42,7 +42,7 @@ export const NODE_KIND_TABLE_ROW: Record<NodeKind, string | null> = {
   architecture: 'アーキテクチャ',
   mock: 'モック',
   chapter: 'チャプター',
-  topic: '議題',
+  topic: '論点',
   source: '出典',
 };
 
@@ -88,7 +88,7 @@ export interface GraphEdge {
   id: string;
   from: string;
   to: string;
-  /** ref: 項目内の ID の参照、relation: アーキテクチャの接続など from/to を持つレコード、contain: 章と議題 */
+  /** ref: 項目内の ID の参照、relation: アーキテクチャの接続など from/to を持つレコード、contain: 章と論点 */
   kind: EdgeKind;
   /** 参照した項目名（issueId・sourceIds など）。relation はレコードの label */
   label?: string;

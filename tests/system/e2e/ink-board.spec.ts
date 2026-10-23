@@ -37,7 +37,7 @@ async function drawLine(page: Page, s: Locator, from: [number, number], to: [num
 
 test.describe('FR-086 無限キャンバスと複数ボード', () => {
   // FR-086 AC-104
-  test('FR-086 AC-104 議題に 2 枚目のボードを追加して方眼にし、全体表示で全ストロークが収まり、3D の上の注釈がビューの切替後も残る', async ({ page, start }) => {
+  test('FR-086 AC-104 論点に 2 枚目のボードを追加して方眼にし、全体表示で全ストロークが収まり、3D の上の注釈がビューの切替後も残る', async ({ page, start }) => {
     await start();
     const s = await surface(page);
     const wb = component(page, 'whiteboard');
@@ -64,17 +64,17 @@ test.describe('FR-086 無限キャンバスと複数ボード', () => {
       expect(k.bounds.x + k.bounds.w).toBeLessThanOrEqual(vp.x + vp.width + 1);
       expect(k.bounds.y + k.bounds.h).toBeLessThanOrEqual(vp.y + vp.height + 1);
     }
-    // 3D ビューの上に注釈
+    // 3D の表現（Twin ビュー。画面 view3d は廃止。Q-062 A）の上に注釈
     const v3 = await openScreen(page, 'view3d');
     await v3.getByRole('button', { name: '注釈を書く' }).click();
     const overlay = v3.getByTestId('annotation-layer');
     await drawLine(page, overlay, [60, 60], [180, 120]);
-    const a0 = await hook<number>(page, 't.annotations.count("view3d")');
+    const a0 = await hook<number>(page, 't.annotations.count("twin-view")');
     expect(a0).toBeGreaterThan(0);
     await openScreen(page, 'gantt');
     await openScreen(page, 'view3d');
-    expect(await hook<number>(page, 't.annotations.count("view3d")')).toBe(a0);
-    await expect(component(page, 'view3d').getByTestId('annotation-layer')).toBeVisible();
+    expect(await hook<number>(page, 't.annotations.count("twin-view")')).toBe(a0);
+    await expect(component(page, 'twin-view').getByTestId('annotation-layer')).toBeVisible();
   });
 });
 

@@ -1,4 +1,4 @@
-// AI ナビゲーター（FR-080）。プレゼンテーション中、議題に台本（show.json の narration）があるときに、字幕つきで出す。
+// AI ナビゲーター（FR-080）。プレゼンテーション中、論点に台本（show.json の narration）があるときに、字幕つきで出す。
 // 台本は AI が生成したものなので、「AI 生成」のラベルを常に付ける。音声合成（任意）の接続先は設定されていないので、字幕だけで進行する（外部へは接続しない）。
 // 字幕は文ごとに順に出す。アニメーションが停止中（または動きを減らす設定）のときは、台本の全文を一度に出す。
 import { useEffect, useMemo, useState } from 'react';
@@ -47,13 +47,13 @@ const useStyles = makeStyles({
   },
 });
 
-/** 議題の台本の字幕。台本を文に分け、再生中は文ごとに順に出す */
+/** 論点の台本の字幕。台本を文に分け、再生中は文ごとに順に出す */
 export function Navigator({ script, topicId }: { script: string; topicId: string }) {
   const s = useStyles();
   const playing = usePlaying();
   const sentences = useMemo(() => splitSubtitles(script), [script]);
   const [index, setIndex] = useState(0);
-  // 議題が変わったら先頭から出し直す
+  // 論点が変わったら先頭から出し直す
   useEffect(() => { setIndex(0); }, [topicId, script]);
   useEffect(() => {
     if (!playing || index >= sentences.length - 1) return undefined;
