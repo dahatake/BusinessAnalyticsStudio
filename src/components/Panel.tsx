@@ -276,7 +276,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
       </div>
       {/* 1 つの世界の画面は、いつも同じ包みに入れて表示・非表示だけを変える（中身を作り直さない） */}
       {/* component-data: コンポーネントが保持している現在のデータの欄（「Copilot で分析実行」が読む。FR-278）。Copilot の案（FR-279）はその外に別の欄で出す */}
-      <div data-testid="component-data" style={{ display: 'contents' }}>
+      <div data-testid="component-data" data-tier="supporting" style={{ display: 'contents' }}>
         {world.single ? <div data-testid="view-world-body" style={{ display: world.hideAll ? 'none' : 'contents' }}>{children}</div> : children}
       </div>
       <CopilotProposal componentKey={testId.replace(/^component-/, '')} title={title} />
