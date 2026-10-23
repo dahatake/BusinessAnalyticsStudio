@@ -9,7 +9,7 @@ import { classifyFoundryFailure, foundryFailureNotice, foundryRunGate, redactSec
 import type { FoundryView } from '../../src/ai/foundryClient';
 
 const vault = () => openFoundryVault(fs.mkdtempSync(path.join(os.tmpdir(), 'foundry-conn-')), { protector: fileProtector, restrict: () => {}, warn: () => {} });
-const KEY = 'sk-test-ABCDEFGHIJKLMNOP-wxyz';
+const KEY = ['dummy', 'ABCDEFGHIJKLMNOP', 'wxyz'].join('-'); // NFR-SEC-012: キーの形の文字列をリテラルで置かない（実行時に組み立てる）
 
 describe('FR-282 AC-726 API キーの伏せ字と認証方式', () => {
   it('FR-282 AC-726 保存後の表示は値に由来しない固定の伏せ字で、末尾の文字を含まない', () => {
