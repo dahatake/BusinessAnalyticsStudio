@@ -16,14 +16,14 @@ const payload = { packId: 'P', consent: true, prompt: '質問', solution: '解�
 const review = { reviews: [{ id: 'x', proposal: '案' }] };
 const result = { conclusion: 'conditional', criteria: [], reason: '根拠', alternatives: [] };
 afterEach(async () => { await Promise.all(relays.splice(0).map(r => r.close())); for (const dir of dirs.splice(0)) fs.rmSync(dir, { recursive: true, force: true }); });
-async function setup(signedIn = true, suppliedSdk?: CopilotSdk | null, foundryToken?: () => Promise<string>) {
+async function setup(signedIn = true, suppliedSdk?: CopilotSdk | null, foundryToken?: () => Promise<string>, useDefaultFoundry = false) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'provider-unit-')); dirs.push(dir);
   const store = openAiProvider(dir, opts);
   const sdk = suppliedSdk === undefined ? { status: vi.fn(async (_c?: CopilotConfig) => ({ signedIn })), complete: vi.fn(async (_k: string, prompt: string, _c?: CopilotConfig) => prompt.includes('コンポーネント') ? JSON.stringify(review) : prompt.includes('判断基準') ? JSON.stringify(result) : '回答') } : suppliedSdk;
   const foundryFetch = vi.fn(async () => new Response(JSON.stringify({ output_text: JSON.stringify(review) })));
   const analyze = vi.fn(async () => result);
   const foundryVault = openFoundryVault(path.join(dir, 'foundry'), opts);
-  const r = await startRelay({ sdk, aiProvider: store, foundryVault, foundryFetch: foundryFetch as typeof fetch, foundryToken, foundry: { analyze } }); relays.push(r);
+  const r = await startRelay({ sdk, aiProvider: store, foundryVault, foundryFetch: foundryFetch as typeof fetch, foundryToken, foundry: useDefaultFoundry ? undefined : { analyze } }); relays.push(r);
   const request = async (url: string, body?: unknown, method = body === undefined ? 'GET' : 'POST') => { const response = await fetch(r.url + url, { method, ...(body === undefined ? {} : { body: JSON.stringify(body), headers: { 'content-type': 'application/json' } }) }); return { status: response.status, body: await response.json() }; };
   const select = (provider: string) => request('/ai/provider', {provider}, 'PUT');
   const enable = (over = {}) => request('/foundry/connection', { packId: 'P', enable: true, consent: true, confirmed: true, ...over });
@@ -99,7 +99,8 @@ describe('FR-275 common provider integration', () => {
     const r=await s.select('copilot');expect(r.status).toBe(500);expect(JSON.stringify(r.body)).not.toContain(TOKEN);
   });
   it('FR-275 AC-706 Foundry Entra forwards bearer only to Foundry and supports all three generation paths without a key', async () => {
-    const getToken=vi.fn(async()=> 'dummy-entra-bearer'); const s=await setup(true,undefined,getToken);
+    // Exercise the real analysis transport as well as ask/review; only HTTP and token retrieval are stubbed.
+    const getToken=vi.fn(async()=> 'dummy-entra-bearer'); const s=await setup(true,undefined,getToken,true);
     await s.saveFoundry({authMethod:'entra',key:undefined}); expect((await s.enable()).status).toBe(200);
     for(const route of ['ask','review','analyze']) { const r=await s.request('/foundry/'+route,payload); expect(r.status).toBe(200);expect(JSON.stringify(r.body)).not.toContain('dummy-entra-bearer'); }
     expect(getToken).toHaveBeenCalledTimes(3);expect(s.sdk!.complete).not.toHaveBeenCalled();expect(s.foundryFetch).toHaveBeenCalledTimes(3);

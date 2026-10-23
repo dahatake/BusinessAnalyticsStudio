@@ -13,7 +13,7 @@ import { AZURE_FEATURES, MAX_IMAGE_BASE64_CHARS, MAX_SPEECH_TEXT_CHARS, isValidB
 import { openSpeechVault, type SpeechVault } from './speech-vault';
 import { CAUSE_STATUS, buildPrompt, parseJsonText, FOUNDRY_MAX_INPUT_CHARS, createFoundryService, FoundryError as GenAiFoundryError, type FoundryService } from './genai-foundry';
 import { openFoundryVault, type FoundryVault } from './foundry-vault';
-import { callFoundry, callFoundryWithInput, FoundryError, importWithFoundry, type TokenProvider } from './foundry';
+import { callFoundry, callFoundryWithInput, FoundryError, importWithFoundry, TOKEN_UNAVAILABLE_MESSAGE, type TokenProvider } from './foundry';
 import { buildReviewPrompt, parseReviewComponents, parseReviewReply } from './foundry-review';
 
 export const AI_KINDS = ['structure', 'summary', 'recommend', 'chat', 'exec-summary'] as const;
@@ -56,6 +56,9 @@ export interface Relay {
   close(): Promise<void>;
 }
 
+/** 接続テスト（FR-282 AC-763）: 顧客データを含まない最小の入力・最小の出力上限。連打の間隔は PARAM-116（5 秒） */
+const FOUNDRY_TEST_INPUT = 'ping';
+const FOUNDRY_TEST_MAX_OUTPUT_TOKENS = 16;
 const LOOPBACK_HOSTS = new Set(['127.0.0.1', '::1']);
 const LOOPBACK_NAMES = new Set(['localhost', '127.0.0.1', '[::1]', '::1']);
 
@@ -192,7 +195,25 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           if (req.method === 'GET') return json(200, { ...signin.view(), signedIn: await copilotReady() });
         }
         if (req.method === 'GET' && path === '/health') {
-          return json(200, { status: 'ready', copilot: (await signedIn()) ? 'signed-in' : 'signed-out', foundry: { keyConfigured: getFoundry().secret() !== null } });
+          return json(200, { status: 'ready', copilot: (await signedIn()) ? 'signed-in' : 'signed-out', foundry: { keyConfigured: getFoundry().secret() !== null || getFoundry().entraReady() } });
+        }
+        // ---- FR-282 AC-763: 接続テスト。保存済みの接続情報で最小の入力を 1 回だけ送る。了承・有効化は問わない。返すのは成功か原因種別だけ（キー・トークン・上流の本文は返さない） ----
+        if (req.method === 'POST' && path === '/foundry/test') {
+          const secret = getFoundry().importSecret();
+          if (!secret) return json(200, { ok: false, cause: 'not-configured', message: 'Foundry の接続情報が未設定です' });
+          try {
+            await callFoundryWithInput(secret, FOUNDRY_TEST_INPUT, opts.foundryFetch, opts.foundryTimeoutMs, opts.foundryToken, FOUNDRY_TEST_MAX_OUTPUT_TOKENS);
+            return json(200, { ok: true, message: '接続できました' });
+          } catch (e) {
+            const fe = e instanceof FoundryError ? e : null;
+            const status = Number(/HTTP (\d+)/.exec(fe?.message ?? '')?.[1] ?? 0);
+            if (fe?.kind === 'token') return json(200, { ok: false, cause: 'not-configured', message: TOKEN_UNAVAILABLE_MESSAGE });
+            if (fe?.kind === 'timeout') return json(200, { ok: false, cause: 'timeout', message: '接続先の応答がタイムアウトしました' });
+            if (fe?.kind === 'network') return json(200, { ok: false, cause: 'endpoint', message: '接続先に届きませんでした。エンドポイントを確認してください' });
+            if (status === 401 || status === 403) return json(200, { ok: false, cause: 'auth', message: '認証に失敗しました。API キーまたは Entra ID の権限を確認してください' });
+            if (status === 404) return json(200, { ok: false, cause: 'deployment', message: 'デプロイ名が見つかりません。デプロイ名を確認してください' });
+            return json(200, { ok: false, cause: 'other', message: '接続を確認できませんでした' });
+          }
         }
         // ---- FR-285: 生成AIの活用分析。共通接続（FR-275）の保管庫のエンドポイント・デプロイ名・キーと、packId 単位の有効化だけを使う。応答にキーの値・上流の本文は含めない ----
         if (req.method === 'POST' && path === '/foundry/analyze') {
@@ -208,8 +229,7 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
             }
             const secret = getFoundry().importSecret();
             if (!secret) throw new GenAiFoundryError('key-missing');
-            if (secret.authMethod === 'entra') return json(200, parseJsonText(await callFoundryWithInput(secret!, buildPrompt(b.solution), opts.foundryFetch, opts.foundryTimeoutMs, opts.foundryToken)));
-            return json(200, await genai.analyze({ solution: b.solution, endpoint: secret.endpoint, deployment: secret.deployment, key: secret.key }));
+            return json(200, await genai.analyze({ solution: b.solution, endpoint: secret.endpoint, deployment: secret.deployment, key: secret.key, authMethod: secret.authMethod, getToken: opts.foundryToken }));
           } catch (e) {
             if (e instanceof GenAiFoundryError) return json(CAUSE_STATUS[e.kind], { error: { cause: e.kind, ...e.detail } });
             return json(e instanceof CopilotError && e.kind === 'timeout' ? 504 : 502, { error: { cause: e instanceof CopilotError && e.kind === 'timeout' ? 'timeout' : 'unreachable' } });
@@ -287,7 +307,7 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
             return json(200, { answer, mode: 'connected' });
           } catch (e) {
             const kind = e instanceof FoundryError || e instanceof CopilotError ? e.kind : 'network';
-            const msg = e instanceof CopilotError ? e.message : e instanceof FoundryError ? e.message : '生成AI に接続できませんでした';
+            const msg = (e instanceof CopilotError || e instanceof FoundryError ? e.message : '生成AI に接続できませんでした').split(secret?.key || '\u0000').join('•••');
             return unavailable(kind === 'timeout' ? 'timeout' : 'error', msg, 200);
           }
         }
@@ -313,7 +333,7 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
             return json(200, { reviews, mode: 'connected' });
           } catch (e) {
             const kind = e instanceof FoundryError || e instanceof CopilotError ? e.kind : 'network';
-            const msg = e instanceof CopilotError ? e.message : e instanceof FoundryError ? e.message : '生成AI に接続できませんでした';
+            const msg = (e instanceof CopilotError || e instanceof FoundryError ? e.message : '生成AI に接続できませんでした').split(secret?.key || '\u0000').join('•••');
             return unavailable(kind === 'timeout' ? 'timeout' : 'error', msg);
           }
         }
