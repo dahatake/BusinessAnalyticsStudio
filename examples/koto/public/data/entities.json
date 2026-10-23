@@ -16,16 +16,22 @@
     {"id": "ent-koto-dt-network-map", "createdBy": "sample", "type": "model", "name": "窓口網の配置モデル", "world": "digital", "kind": "model", "sourceIds": ["src-koto-001"]},
     {"id": "ent-koto-dt-booking-system", "createdBy": "sample", "type": "system", "name": "予約システム", "world": "digital", "kind": "system", "sourceIds": ["src-koto-001"]},
     {"id": "ent-koto-dt-counter-screen", "createdBy": "sample", "type": "ui-component", "name": "窓口の受付画面", "parentId": "ent-koto-dt-booking-system", "world": "digital", "kind": "ui-component", "sourceIds": ["src-koto-002"]},
-    {"id": "ent-koto-dt-wait-metric", "createdBy": "sample", "type": "metric", "name": "電話の待ち時間の指標", "world": "digital", "kind": "metric", "sourceIds": ["src-koto-001"]}
+    {"id": "ent-koto-dt-wait-metric", "createdBy": "sample", "type": "metric", "name": "電話の待ち時間の指標", "world": "digital", "kind": "metric", "sourceIds": ["src-koto-001"],
+      "metrics": [ {"label": "電話の平均待ち時間", "value": 7, "unit": "分", "sourceIds": ["src-koto-001"]} ]},
+    {"id": "ent-koto-dt-member-page", "createdBy": "sample", "type": "ui-component", "name": "会員ページ", "parentId": "ent-koto-dt-booking-system", "world": "digital", "kind": "ui-component", "sourceIds": ["src-koto-002"]}
   ],
   "flows": [
-    {"id": "flow-koto-001", "createdBy": "sample", "from": "ent-koto-counter", "to": "ent-koto-hub", "label": "窓口の予約データ", "kind": "data", "volume": 120, "unit": "件/時", "peakHour": 11, "sourceIds": ["src-koto-001"]},
-    {"id": "flow-koto-002", "createdBy": "sample", "from": "ent-koto-callcenter", "to": "ent-koto-hub", "label": "電話予約の連携", "kind": "data", "volume": 200, "unit": "件/時", "peakHour": 14, "sourceIds": ["src-koto-001"]},
-    {"id": "flow-koto-003", "createdBy": "sample", "from": "ent-koto-hub", "to": "ent-koto-hotel", "label": "宿泊の手配", "kind": "goods", "volume": 90, "unit": "件/時", "peakHour": 16, "sourceIds": ["src-koto-002"]},
-    {"id": "flow-koto-004", "createdBy": "sample", "from": "ent-koto-hub", "to": "ent-koto-airport", "label": "航空券の手配", "kind": "goods", "volume": 60, "unit": "件/時", "peakHour": 9, "sourceIds": ["src-koto-002"]},
-    {"id": "flow-koto-005", "createdBy": "sample", "from": "ent-koto-hotel", "to": "ent-koto-counter", "label": "確認書の返送", "kind": "data", "volume": 45, "unit": "件/時", "peakHour": 19, "sourceIds": ["src-koto-002"]}
+    {"id": "flow-koto-001", "createdBy": "sample", "from": "ent-koto-counter", "to": "ent-koto-hub", "label": "窓口の予約データ", "kind": "data", "volume": 120, "unit": "回/時", "peakHour": 11, "sourceIds": ["src-koto-001"]},
+    {"id": "flow-koto-002", "createdBy": "sample", "from": "ent-koto-callcenter", "to": "ent-koto-hub", "label": "電話予約の連携", "kind": "data", "volume": 200, "unit": "回/時", "peakHour": 14, "sourceIds": ["src-koto-001"]},
+    {"id": "flow-koto-003", "createdBy": "sample", "from": "ent-koto-hub", "to": "ent-koto-hotel", "label": "宿泊の手配", "kind": "goods", "volume": 90, "unit": "回/時", "peakHour": 16, "sourceIds": ["src-koto-002"]},
+    {"id": "flow-koto-004", "createdBy": "sample", "from": "ent-koto-hub", "to": "ent-koto-airport", "label": "航空券の手配", "kind": "goods", "volume": 60, "unit": "回/時", "peakHour": 9, "sourceIds": ["src-koto-002"]},
+    {"id": "flow-koto-005", "createdBy": "sample", "from": "ent-koto-hotel", "to": "ent-koto-counter", "label": "確認書の返送", "kind": "data", "volume": 45, "unit": "回/時", "peakHour": 19, "sourceIds": ["src-koto-002"]}
   ],
   "twins": [
+    {"realId": "ent-koto-counter", "digitalId": "ent-koto-dt-wait-metric", "relation": "measures", "sourceIds": ["src-koto-001"]},
+    {"realId": "ent-koto-hub", "digitalId": "ent-koto-dt-wait-metric", "relation": "measures", "sourceIds": ["src-koto-001"]},
+    {"realId": "ent-koto-airport", "digitalId": "ent-koto-dt-wait-metric", "relation": "measures", "sourceIds": ["src-koto-001"]},
+    {"realId": "ent-koto-hotel", "digitalId": "ent-koto-dt-wait-metric", "relation": "measures", "sourceIds": ["src-koto-001"]},
     {"realId": "ent-koto-hub", "digitalId": "ent-koto-dt-network-map", "relation": "represents", "sourceIds": ["src-koto-001"]},
     {"realId": "ent-koto-counter", "digitalId": "ent-koto-dt-counter-screen", "relation": "displays", "sourceIds": ["src-koto-002"]},
     {"realId": "ent-koto-callcenter", "digitalId": "ent-koto-dt-wait-metric", "relation": "measures", "sourceIds": ["src-koto-001"]},
