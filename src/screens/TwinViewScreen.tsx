@@ -294,9 +294,9 @@ export function TwinViewScreen() {
               ) : null}
             </GraphScope>
             {depth === 1 && (surf3d || isGraph) ? flowList : null}
-            {surf3d || isGraph ? (
+            {surf3d || isGraph || (is3d && asTable) ? (
               <GraphAlt
-                origin={ORIGIN} label="Twin ビュー" columns={['世界']}
+                origin={ORIGIN} label="Twin ビュー" columns={['世界']} showTableButton={!is3d}
                 nodes={allItems.map((i) => ({ id: i.id, name: i.name, kind: clusterOfItem(i), values: [i.world === 'real' ? '現実世界' : 'デジタル世界'] }))}
                 relations={graphEdges.map((e) => ({ id: e.id, from: e.from, to: e.to, label: e.label }))}
                 summary={`現実世界 ${model.real.length} 件、デジタル世界 ${model.digital.length} 件（${model.layers.filter((l) => l.layer !== 'none').map((l) => `${l.layer} ${l.items.length}`).join('、')}）`}

@@ -4,6 +4,7 @@
 import type { Page } from '@playwright/test';
 import { test, expect, openScreen, component, entity, hook, scene, expectCanvasDrawn, waitFirstFrame, captureDownload, recordExportConsent, setEditMode } from '../support/fixtures';
 import { examplePack, makeVariant } from '../support/packs';
+import { gotoScreen, chooseView } from '../support/screens';
 
 const mono = examplePack('mono');
 const koto = examplePack('koto');
@@ -280,36 +281,47 @@ test.describe('FR-065 WebGL2 へのフォールバック', () => {
 });
 
 test.describe('FR-066 必須の 3D シーン', () => {
-  const SCENES: Array<[string, RegExp]> = [
-    ['hero', /ヒーロー|デジタルツイン/],
-    ['kpi-tower', /KPI タワー/],
-    ['dataflow', /データフロー/],
-    ['asis-tobe', /AsIs.*ToBe/],
-  ];
+  // Q-062 A: 4 つのシーンは既存の画面に帰属する（①Twin ビュー ②KPI/OKR の 3D ③地図 ④アーキテクチャ図）。
   // FR-066 AC-081
-  test('FR-066 AC-081 4 つのシーンのそれぞれで 3D 要素が描画されページエラーがなく、業種プリセットでヒーローが変わる', async ({ page, start, pageErrors }) => {
+  test('FR-066 AC-081 4 つのシーンはそれぞれの画面で 3D 要素が描画されページエラーがなく、業種プリセットでヒーロー（Twin ビュー）が変わる', async ({ page, start, pageErrors }) => {
     await start();
-    const v3 = await openScreen(page, 'view3d');
-    for (const [key, name] of SCENES) {
-      await v3.getByRole('tab', { name }).click();
-      await expect.poll(async () => (await scene.info(page)).scene).toBe(key);
-      await expectCanvasDrawn(v3.locator('canvas').first());
-      expect((await scene.info(page)).objectCount, `${key} の 3D 要素がない`).toBeGreaterThan(0);
-    }
+    // ① ヒーロー: Twin ビュー
+    const twin = await gotoScreen(page, 'twin-view');
+    await chooseView(page, twin, '3D');
+    await expectCanvasDrawn(twin.locator('canvas').first());
+    expect((await scene.info(page)).objectCount, 'ヒーローの 3D 要素がない').toBeGreaterThan(0);
+    // ② KPI タワー: KPI/OKR の 3D
+    const kpi = await gotoScreen(page, 'kpi-okr');
+    await chooseView(page, kpi, '3D');
+    await expect(kpi.locator('[data-zoom-surface="3d"]').first(), 'KPI タワーの 3D 面が表示されない').toBeVisible();
+    await expectCanvasDrawn(kpi.locator('canvas').first());
+    // ③ データフロー: 地図（流れの粒子）
+    const map = await openScreen(page, 'map');
+    await expectCanvasDrawn(map.locator('canvas').first());
+    // ④ AsIs→ToBe: アーキテクチャ図の 3D（AsIs と ToBe の両方）
+    const arch = await gotoScreen(page, 'architecture');
+    await chooseView(page, arch, '3D');
+    await expectCanvasDrawn(arch.locator('canvas').first());
+    await arch.getByRole('radio', { name: 'ToBe' }).check();
+    await expectCanvasDrawn(arch.locator('canvas').first());
+    await arch.getByRole('radio', { name: 'AsIs' }).check();
+    await expectCanvasDrawn(arch.locator('canvas').first());
     expect(pageErrors).toEqual([]);
-    await v3.getByRole('tab', { name: SCENES[0][1] }).click();
+    const v3 = await gotoScreen(page, 'twin-view');
+    await chooseView(page, v3, '3D');
     await toggleAnimation(page, '停止中');
     const before = await v3.locator('canvas').first().screenshot();
     const preset0 = (await scene.info(page)).industryPreset;
     const settings = await openScreen(page, 'settings');
     const combo = settings.getByRole('combobox', { name: '業種プリセット' });
     await combo.click();
-    const options = page.getByRole('option');
+    const options = page.getByRole('listbox', { name: '業種プリセット' }).getByRole('option');
     expect(await options.count()).toBeGreaterThanOrEqual(5);
     const other = options.filter({ hasNotText: new RegExp(preset0) }).first();
     await other.click();
     await expect.poll(async () => (await scene.info(page)).industryPreset).not.toBe(preset0);
-    const v3b = await openScreen(page, 'view3d');
+    const v3b = await gotoScreen(page, 'twin-view');
+    await chooseView(page, v3b, '3D');
     await nextFrames(page, 3);
     const after = await v3b.locator('canvas').first().screenshot();
     expect(after.equals(before), '業種プリセットを変えてもヒーローの表示が変わらない').toBe(false);
