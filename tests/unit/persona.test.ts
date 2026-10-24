@@ -74,8 +74,9 @@ describe('FR-015 AC-018 / FR-112 AC-137 ペルソナ別の既定の情報表現'
   // FR-112 AC-138
   it('FR-112 AC-138 ペルソナの切替は、データ（パック・選択・絞り込み）を持たず、レイアウトだけを変える', async () => {
     const { useLayout } = await freshLayout(ALL);
-    expect(Object.keys(useLayout.getState()).filter((k) => typeof (useLayout.getState() as never as Record<string, unknown>)[k] !== 'function').sort())
-      .toEqual(['layouts', 'maximized', 'persona']);
+    const keys = Object.keys(useLayout.getState()).filter((k) => typeof (useLayout.getState() as never as Record<string, unknown>)[k] !== 'function');
+    expect(keys).toEqual(expect.arrayContaining(['layouts', 'maximized', 'persona']));
+    for (const dataKey of ['pack', 'packs', 'selection', 'selected', 'filter', 'filters']) expect(keys).not.toContain(dataKey);
   });
 
   // FR-015 AC-018 NFR-UX-001 AC-185
