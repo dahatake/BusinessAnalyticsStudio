@@ -36,14 +36,14 @@ type F = typeof fetch;
 const dflt: F = (u, i) => fetch(u, i);
 const NO_RELAY = '中継プロセスに届きませんでした。`npm run relay` で起動しているか確認してください';
 
-export async function fetchFoundryView(relayUrl: string | undefined, packId: string, f: F = dflt): Promise<FoundryView | null> {
+export async function fetchFoundryView(relayUrl: string | undefined, packId: string, f: F = dflt, withProvider = true): Promise<FoundryView | null> {
   if (!relayUrl || !isLoopbackUrl(relayUrl)) return null;
   try {
     const r = await f(`${relayUrl}/foundry/config?packId=${encodeURIComponent(packId)}`);
     if (!r.ok) return null;
     const v = (await r.json()) as FoundryView;
     // FR-275 AC-769: 接続先の選択は GET /ai/provider が正（CONTRACT.md §30）。設定の応答に含まれないときだけ問い合わせる
-    if (v.provider !== 'foundry' && v.provider !== 'copilot') {
+    if (withProvider && v.provider !== 'foundry' && v.provider !== 'copilot') {
       try {
         const p = await f(`${relayUrl}/ai/provider`);
         const j = p.ok ? ((await p.json()) as { provider?: unknown }) : {};
@@ -72,7 +72,7 @@ export async function putFoundryConfig(
   }
 }
 
-export async function deleteFoundryConfig(relayUrl: string, packId: string, f: F = dflt): Promise<FoundryView | null> {
+export async function deleteFoundryConfig(relayUrl: string, packId: string, f: F = dflt, withProvider = true): Promise<FoundryView | null> {
   if (!isLoopbackUrl(relayUrl)) return null;
   try {
     const r = await f(`${relayUrl}/foundry/config?packId=${encodeURIComponent(packId)}`, { method: 'DELETE' });
