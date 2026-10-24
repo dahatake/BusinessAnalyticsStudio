@@ -1,7 +1,9 @@
 // 作業領域の上部に置く、中核オブジェクト（FR-018）とビジネス⇔IT のレンズ（FR-019）。
 // 画面「キャンバス」の廃止（FR-012）に伴い、画面ではなく作業領域の帯に移した（機能は変えない）。
 import { useState } from 'react';
-import { Button, Text, makeStyles, tokens } from '@fluentui/react-components';
+import { Button, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
+import { usePackTopics } from '../presentation/PresentationMode';
+import { currentTopic, usePresentationStore } from '../store/presentation';
 import { CoreObjectPanel } from '../coreobject/CoreObjectPanel';
 import { LensView } from '../lens/LensView';
 import { useCoreObject } from '../store/coreObject';
@@ -13,11 +15,46 @@ const useStyles = makeStyles({
     borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
   },
   row: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalS },
+  topics: { display: 'flex', flexWrap: 'wrap', flexShrink: 0, columnGap: tokens.spacingHorizontalS, rowGap: tokens.spacingVerticalXS, maxHeight: '4.5rem', overflowY: 'auto' },
+  topic: {
+    display: 'inline-flex', alignItems: 'center', minHeight: '24px', minWidth: '24px', cursor: 'pointer',
+    padding: `0 ${tokens.spacingHorizontalS}`, borderRadius: tokens.borderRadiusMedium, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
+  },
+  topicOn: { backgroundColor: tokens.colorBrandBackground2, border: `${tokens.strokeWidthThick} solid ${tokens.colorBrandStroke1}` },
   core: {
     display: 'inline-flex', columnGap: tokens.spacingHorizontalS, alignItems: 'baseline', padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalM}`,
     backgroundColor: tokens.colorBrandBackground2, border: `${tokens.strokeWidthThick} solid ${tokens.colorBrandStroke1}`, borderRadius: tokens.borderRadiusXLarge,
   },
 });
+
+/** 常設の論点の一覧。プレゼンテーション中は現在の論点を選択中で示し、選ぶとその論点へ移る */
+function TopicList() {
+  const s = useStyles();
+  const topics = usePackTopics();
+  const current = usePresentationStore((st) => currentTopic(st));
+  if (topics.length === 0) return null;
+  return (
+    <div role="listbox" aria-label="論点" className={s.topics}>
+      {topics.map((t) => {
+        const selected = current?.id === t.id;
+        return (
+          <div
+            key={t.id}
+            role="option"
+            aria-selected={selected}
+            tabIndex={0}
+            title={t.title}
+            className={mergeClasses(s.topic, selected ? s.topicOn : undefined)}
+            onClick={() => { const st = usePresentationStore.getState(); const i = st.topics.findIndex((x) => x.id === t.id); if (st.active && i >= 0) usePresentationStore.setState({ index: i }); }}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }}
+          >
+            <Text size={200}>{selected ? `現在: ${t.title}` : t.title}</Text>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 
 export function WorkspaceOverview() {
   const s = useStyles();
@@ -35,6 +72,7 @@ export function WorkspaceOverview() {
         <Button aria-expanded={showReason} aria-controls="core-object-reason" onClick={() => setShowReason((v) => !v)}>選定理由</Button>
       </div>
       <div id="core-object-reason">{showReason ? <CoreObjectPanel /> : null}</div>
+      <TopicList />
       <LensView />
     </section>
   );

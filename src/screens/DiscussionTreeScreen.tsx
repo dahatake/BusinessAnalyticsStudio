@@ -46,7 +46,7 @@ const KIND_TOKEN: Record<TreeKind, string> = {
 
 const useStyles = makeStyles({
   toolbar: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalS, rowGap: tokens.spacingVerticalS },
-  viewport: { overflow: 'auto', flexShrink: 0, minHeight: '240px', maxHeight: '60vh', border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium, cursor: 'grab', touchAction: 'pan-x pan-y' },
+  viewport: { overflow: 'auto', flexShrink: 0, minHeight: '240px', border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium, cursor: 'grab', touchAction: 'pan-x pan-y' },
   tree: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS, padding: tokens.spacingHorizontalM, transformOrigin: 'top left', boxSizing: 'border-box', width: '100%' },
   row: {
     display: 'flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS, flexWrap: 'wrap',

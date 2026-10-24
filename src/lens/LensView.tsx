@@ -48,7 +48,7 @@ function LensPane({ testId, title, items, field }: { testId: string; title: stri
   const hl = useHighlightClass();
   return (
     <section className={s.pane} data-testid={testId} aria-label={`${title}のレンズ`}>
-      <Text as="h3" weight="semibold">{title}のレンズ</Text>
+      <Text as="h2" weight="semibold">{title}のレンズ</Text>
       <ul className={s.list}>
         {items.map((it) => {
           const props = bind(it.id, { filterable: false });

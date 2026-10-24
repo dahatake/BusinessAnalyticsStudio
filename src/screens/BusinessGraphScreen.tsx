@@ -33,6 +33,7 @@ const useStyles = makeStyles({
   toolbar: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalS },
   group: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalXS, border: 'none', margin: 0, padding: 0 },
   check: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalXS, minHeight: `${MIN_TARGET_PX}px` },
+  box: { width: `${MIN_TARGET_PX}px`, height: `${MIN_TARGET_PX}px`, margin: 0 },
   scroll: { overflow: 'auto', maxHeight: '70vh', borderRadius: tokens.borderRadiusMedium, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`, backgroundColor: tokens.colorNeutralBackground2 },
   canvas: { position: 'relative' },
   node: {
@@ -43,7 +44,7 @@ const useStyles = makeStyles({
   },
   marker: { width: '22px', height: '22px', backgroundColor: tokens.colorBrandForeground1, display: 'inline-block' },
   name: { position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', fontSize: tokens.fontSizeBase300, lineHeight: tokens.lineHeightBase300, backgroundColor: tokens.colorNeutralBackground1, paddingInline: tokens.spacingHorizontalXXS },
-  srOnly: { position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' },
+  srOnly: { position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap', opacity: 0 },
   clusters: { display: 'flex', flexWrap: 'wrap', gap: tokens.spacingHorizontalM, padding: tokens.spacingHorizontalM },
   cluster: {
     display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: '140px', minHeight: `${MIN_TARGET_PX}px`, padding: tokens.spacingHorizontalM, cursor: 'pointer',
@@ -280,7 +281,7 @@ function BusinessGraphScreen() {
         <fieldset className={s.group} role="group" aria-label="種別">
           {types.map((t) => (
             <label key={t} className={s.check}>
-              <input type="checkbox" data-filter-value={t} checked={!hiddenTypes.has(t)} onChange={(e) => setHiddenTypes((h) => toggle(h, t, e.target.checked))} />
+              <input type="checkbox" className={s.box} data-filter-value={t} checked={!hiddenTypes.has(t)} onChange={(e) => setHiddenTypes((h) => toggle(h, t, e.target.checked))} />
               <Text>{t}</Text>
             </label>
           ))}
@@ -288,7 +289,7 @@ function BusinessGraphScreen() {
         <fieldset className={s.group} role="group" aria-label="意味の種類">
           {meaningsPresent.map((m: Meaning) => (
             <label key={m} className={s.check}>
-              <input type="checkbox" data-filter-value={m} checked={!hiddenMeanings.has(m)} onChange={(e) => setHiddenMeanings((h) => toggle(h, m, e.target.checked))} />
+              <input type="checkbox" className={s.box} data-filter-value={m} checked={!hiddenMeanings.has(m)} onChange={(e) => setHiddenMeanings((h) => toggle(h, m, e.target.checked))} />
               <Text>{meaningName(m)}</Text>
             </label>
           ))}

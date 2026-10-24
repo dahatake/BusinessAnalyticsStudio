@@ -51,7 +51,7 @@ const useStyles = makeStyles({
 });
 
 /** 顧客パックの show.json から、プレゼンテーションで巡る論点の一覧を作る（パックが読めていなければ空）。 */
-function usePackTopics(): PresentationTopic[] {
+export function usePackTopics(): PresentationTopic[] {
   const state = usePackStore((s) => s.state);
   return state.status === 'ready' ? flattenTopics(state.pack.data.show?.chapters ?? []) : [];
 }
