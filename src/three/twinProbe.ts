@@ -74,7 +74,9 @@ export function sceneObjects(): SceneObjectInfo[] {
   rehomeIfPristine(viewportAspect());
   syncLod();
   const key = useLod.getState().key;
-  const world = viewStateOf('view3d').world;
+  // 画面 view3d は廃止（Q-062 A）。3D の世界の表示は、Twin ビューの設定を使う（Twin ビューで「両方」のときは従来の view3d の設定）
+  const twinWorld = viewStateOf('twin-view').world;
+  const world = twinWorld !== 'both' ? twinWorld : viewStateOf('view3d').world;
   const { meshes } = ensureProbe(layout, key, world);
   const rect = viewportRect();
   syncCamera(rect);
