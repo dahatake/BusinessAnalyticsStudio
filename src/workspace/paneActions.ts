@@ -56,5 +56,5 @@ export function paneAction(id: PaneActionId, on = false): PaneActionView {
 export const PIN_MOVE_REASON = 'ピン止めを外すと移動できます';
 export const PIN_RESIZE_REASON = 'ピン止めを外すと大きさを変更できます';
 export const NO_RESIZE_REASON = 'この画面の幅では、コンポーネントの大きさは変更できません';
-export const PIN_TABS_REASON = 'ピン止めを外すとタブにまとめられます';
+export const PIN_TABS_REASON = 'ピンを外すとタブにまとめられます';
 export const PIN_NO_ROOM_REASON = 'ピン止めしたコンポーネントと重ならない場所がないため、元の位置に戻しました';
