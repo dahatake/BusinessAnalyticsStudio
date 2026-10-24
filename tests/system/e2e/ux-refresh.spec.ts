@@ -487,51 +487,58 @@ test.describe('FR-225 Fluent 2 のコントラスト', () => {
 });
 
 // ───────────────────────────── FR-226 ─────────────────────────────
-/** 画面上で見えている文字のうち、text を含む文字ノードの数 */
-async function visibleTextCount(page: Page, text: string): Promise<number> {
-  return page.evaluate((t) => {
-    let n = 0;
-    const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
-    for (let node = w.nextNode(); node; node = w.nextNode()) {
-      if (!node.textContent?.replace(/\s+/g, ' ').includes(t)) continue;
-      const el = node.parentElement;
-      if (!el) continue;
-      const r = el.getBoundingClientRect();
-      const s = getComputedStyle(el);
-      if (r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none') n++;
-    }
-    return n;
-  }, text);
-}
-
 test.describe('FR-226 「[顧客名] - [プロジェクト名]」の表示を 1 か所にする', () => {
   // FR-226 AC-525
-  test('FR-226 AC-525 企業・Project を選んだ分析画面で「[顧客名] - [プロジェクト名]」の表記がちょうど 1 か所で、作業先メニューの最上段にあり、現在の作業先が識別できる', async ({ page, start }) => {
+  test('FR-226 AC-525 閉じたヘッダーの現在先は最上段の同じ領域だけで、同社 Project 切替後も連結・個別の重複や旧名がない', async ({ page, start }) => {
     await start();
     await openNewProject(page, '合成株式会社A', '業務改善 2026');
-    const label = '合成株式会社A - 業務改善 2026';
-    expect(await visibleTextCount(page, label), '「[顧客名] - [プロジェクト名]」の表示数').toBe(1);
-    const menu = page.getByTestId('work-target-menu');
-    await expect(menu).toContainText(label);
-    await expect(menu).toHaveAccessibleName(/合成株式会社A.*業務改善 2026/);
-    // 取り除いた側（上から 2 番目の行）が残っているなら、見える文字はなくても、現在の作業先を読める名前がある
-    const second = page.getByTestId('work-target');
-    if (await second.count()) await expect(second.first()).toHaveAccessibleName(/合成株式会社A.*業務改善 2026/);
-    await menu.click();
-    await expect(page.getByRole('menu', { name: '作業先' }).getByRole('menuitemradio', { checked: true })).toHaveCount(1);
-  });
-
-  // FR-226 AC-525（異常系: 別の Project に移っても、表記は 1 か所のまま・前の Project の表記は残らない）
-  test('FR-226 AC-525 異常系: 別の Project を選び直しても、新しい作業先の表記が 1 か所で、前の作業先の表記は残らない', async ({ page, start }) => {
-    await start();
-    await openNewProject(page, '合成株式会社A', '業務改善 2026');
+    const header = page.getByTestId('app-header');
+    const target = header.getByTestId('work-target-display');
+    async function expectSingleTarget(project: string, oldProject?: string) {
+      await expect(page.getByRole('menu', { name: '同じ企業の Project', exact: true })).toBeHidden();
+      await expect(page.getByRole('menu', { name: '作業先', exact: true })).toBeHidden();
+      await expect(target).toHaveCount(1);
+      await expect(target).toBeVisible();
+      await expect(target).toContainText('合成株式会社A');
+      await expect(target).toContainText(project);
+      await expect(target).toHaveAccessibleName(new RegExp(`合成株式会社A.*${project}`));
+      // 連結文字列に限定しない。全ヘッダー段を走査し、企業名だけ・Project 名だけの複製も拒否する。
+      await expect.poll(() => header.evaluate((root, names) => {
+        const display = root.querySelector('[data-testid="work-target-display"]');
+        const texts: string[] = [];
+        const allTexts: string[] = [];
+        const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+          if (!n.parentElement?.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) continue;
+          const range = document.createRange();
+          range.selectNodeContents(n);
+          if (![...range.getClientRects()].some(r => r.width > 0 && r.height > 0)) continue;
+          allTexts.push(n.textContent ?? '');
+          if (!display?.contains(n)) texts.push(n.textContent ?? '');
+        }
+        const elsewhere = texts.join(' ');
+        const all = allTexts.join(' ');
+        return names.filter((name, i) => i < 2 ? elsewhere.includes(name) : all.includes(name));
+      }, ['合成株式会社A', project, ...(oldProject ? [oldProject] : [])]),
+      '他段の個別・連結の重複、または前の Project 名が残っている').toEqual([]);
+      const h = await header.boundingBox();
+      const t = await target.boundingBox();
+      expect(h).not.toBeNull();
+      expect(t).not.toBeNull();
+      // 最上段: ほかの可視ヘッダー操作が、この表示領域より上の段にない。
+      const upperControls = await header.locator('button:visible, a:visible, [role="button"]:visible').evaluateAll(
+        (els, top) => els.filter(el => el.getBoundingClientRect().bottom <= top).length, t!.y,
+      );
+      expect(upperControls).toBe(0);
+    }
+    await expectSingleTarget('業務改善 2026');
     await page.getByRole('button', { name: 'Project 一覧へ' }).click();
     await createProject(page, '合成株式会社A', '在庫最適化');
-    await page.getByTestId('work-target-menu').click();
-    await page.getByRole('menu', { name: '作業先' }).getByRole('menuitemradio', { name: /合成株式会社A.*在庫最適化/ }).click();
+    await page.getByRole('region', { name: '企業 合成株式会社A' }).getByRole('link', { name: '業務改善 2026', exact: true }).click();
+    await target.getByTestId('current-company-menu').click();
+    await page.getByRole('menu', { name: '同じ企業の Project', exact: true }).getByRole('menuitemradio', { name: /合成株式会社A.*在庫最適化/ }).click();
     await expect(page.getByTestId('stepper')).toBeVisible();
-    expect(await visibleTextCount(page, '合成株式会社A - 在庫最適化')).toBe(1);
-    expect(await visibleTextCount(page, '合成株式会社A - 業務改善 2026'), '前の作業先の表記が残る').toBe(0);
+    await expectSingleTarget('在庫最適化', '業務改善 2026');
   });
 });
 

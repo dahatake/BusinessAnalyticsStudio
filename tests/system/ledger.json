@@ -152,7 +152,7 @@
     "AC-248": "sha256:8b26ee69dd22cf3a",
     "AC-249": "sha256:6afbeb628863d6bb",
     "AC-250": "sha256:48e7168573414b71",
-    "AC-251": "sha256:4f5453185a5aa36f",
+    "AC-251": "sha256:785d27954a03c2a6",
     "AC-254": "sha256:8c4b41cce658f864",
     "AC-257": "sha256:f2c1a59d0c97e880",
     "AC-260": "sha256:4690110bce071259",
@@ -252,7 +252,7 @@
     "AC-519": "sha256:808c1eb3df6b87b7",
     "AC-521": "sha256:0f3620c4a95cec35",
     "AC-523": "sha256:fcb5bcca0e5a3af7",
-    "AC-525": "sha256:aae7ec59f6431f78",
+    "AC-525": "sha256:b7038a9d5d78abe3",
     "AC-526": "sha256:972af3511eec95dd",
     "AC-528": "sha256:a3fad302aa45bbdc",
     "AC-529": "sha256:862c46ce942f320c",
@@ -3875,11 +3875,11 @@
       "ac_ids": [
         "AC-251"
       ],
-      "title": "作業先メニューにデモと全 Project を一覧し移動できる（異常系: Esc で変わらない）",
+      "title": "全企業・デモ一覧と企業名からの同社Project切替で分析・ステッパー復元（Esc取消・狭幅キーボード）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-251",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "363684c",
       "last_run_at": "2026-10-24T22:59:55+09:00",
       "evidence": "work/runs/202610242109/logs/system-test/E2E-231-202610242240.log",
@@ -3889,6 +3889,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-25T08:48:48+09:00",
+          "by": "test-designer",
+          "change": "title: '作業先メニューにデモと全 Project を一覧し移動できる（異常系: Esc で変わらない）' -> '全企業・デモ一覧と企業名からの同社Project切替で分析・ステッパー復元（Esc取消・狭幅キーボード）'",
+          "reason": "run 202610250840: 改訂AC-251へ既存ケースを拡張。AC-253の同社一覧のキーボード・現在先識別も回帰確認。先行設計のためnot_run"
         }
       ]
     },
@@ -5794,11 +5800,11 @@
       "ac_ids": [
         "AC-525"
       ],
-      "title": "「[顧客名] - [プロジェクト名]」の表記が 1 か所／Project を切り替えても 1 か所で前の表記が残らない（異常系）",
+      "title": "閉じたヘッダーの現在先を最上段の同じ領域だけに表示し、同社Project切替後も個別・連結重複と旧名を拒否",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-525",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "363684c",
       "last_run_at": "2026-10-24T22:59:55+09:00",
       "evidence": "work/runs/202610242109/logs/system-test/E2E-323-202610242246.log",
@@ -5808,6 +5814,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "run 202610192037: FR-226 AC-525 のケース（実装前・not_run）"
+        },
+        {
+          "at": "2026-10-25T08:48:48+09:00",
+          "by": "test-designer",
+          "change": "title: '「[顧客名] - [プロジェクト名]」の表記が 1 か所／Project を切り替えても 1 か所で前の表記が残らない（異常系）' -> '閉じたヘッダーの現在先を最上段の同じ領域だけに表示し、同社Project切替後も個別・連結重複と旧名を拒否'",
+          "reason": "run 202610250840: 改訂AC-525へ既存ケースを拡張。固定の連結表記ではなく企業名とProject名それぞれの他段重複を検出。先行設計のためnot_run"
         }
       ]
     },

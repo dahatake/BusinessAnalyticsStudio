@@ -56,11 +56,15 @@ async function dragHeading(page: Page, c: Locator, toX: number, toY: number, rel
 
 test.describe('FR-148 最上段の作業先メニュー', () => {
   // FR-148 AC-251
-  test('FR-148 AC-251 企業 2 社（各 2 Project）で、作業先メニューにデモと 4 Project が企業名・Project 名で並び、選ぶと移動して表示が変わる', async ({ page, start }) => {
+  test('FR-148 AC-251 全企業・デモの一覧と企業名からの同社 Project 切替で分析・ステッパーを復元し、Esc では移動しない', async ({ page, start }) => {
     await start();
     await seedProjects(page, '合成株式会社A', ['業務改善 2026', '在庫最適化']);
-    await page.getByRole('button', { name: 'Project 一覧へ' }).click({ timeout: 500 }).catch(() => undefined);
     await seedProjects(page, '合成株式会社B', ['需要予測', '品質改善']);
+    await page.getByRole('region', { name: '企業 合成株式会社A' }).getByRole('link', { name: '業務改善 2026', exact: true }).click();
+    const stepper = page.getByTestId('stepper');
+    await page.getByRole('button', { name: '分析を開始' }).click();
+    await page.getByRole('listbox', { name: '分析手法' }).getByRole('option', { name: 'SWOT 分析', exact: true }).click();
+    await stepper.getByRole('button', { name: '現状分析', exact: true }).click();
     const menu = page.getByTestId('work-target-menu');
     await menu.click();
     const list = page.getByRole('menu', { name: '作業先' });
@@ -70,25 +74,58 @@ test.describe('FR-148 最上段の作業先メニュー', () => {
       await expect(list.getByRole('menuitemradio', { name: new RegExp(`${c}.*${p}`) })).toBeVisible();
     }
     await expect(list.getByRole('menuitemradio', { checked: true }), '現在の作業先が 1 つだけ識別できる').toHaveCount(1);
+    await expect(list.getByRole('menuitemradio', { name: /合成株式会社A.*業務改善 2026/ })).toBeChecked();
+    // 全企業への入口も維持する。他社から戻った後、同社専用の入口で切り替える。
     await list.getByRole('menuitemradio', { name: /合成株式会社B.*品質改善/ }).click();
-    await expect(page.getByTestId('stepper')).toBeVisible();
+    await expect(stepper).toBeVisible();
     await expect(menu).toContainText('合成株式会社B');
     await expect(menu).toContainText('品質改善');
-    await expect(page.getByTestId('work-target')).toContainText('品質改善');
-  });
-
-  // FR-148 AC-251（異常系: 閉じて何も選ばなければ作業先は変わらない）
-  test('FR-148 AC-251 異常系: メニューを Esc で閉じても作業先は変わらず、現在の作業先の表示が保たれる', async ({ page, start }) => {
-    await start();
-    await seedProjects(page, '合成株式会社A', ['業務改善 2026']);
-    await page.getByRole('link', { name: '業務改善 2026' }).click();
-    const menu = page.getByTestId('work-target-menu');
-    await expect(menu).toContainText('業務改善 2026');
     await menu.click();
+    await list.getByRole('menuitemradio', { name: /合成株式会社A.*在庫最適化/ }).click();
+    await page.getByRole('button', { name: '分析を開始' }).click();
+    await page.getByRole('listbox', { name: '分析手法' }).getByRole('option', { name: '3C 分析', exact: true }).click();
+    await stepper.getByRole('button', { name: '施策計画', exact: true }).click();
+
+    // AC-253 の同社一覧のキーボード・支援技術・狭幅の回帰も、この切替経路で確認。
+    await page.setViewportSize({ width: 320, height: 800 }); // PARAM-029
+    const target = page.getByTestId('work-target-display');
+    const company = target.getByTestId('current-company-menu');
+    await expect(company).toContainText('合成株式会社A');
+    await expect(company).toBeInViewport();
+    for (let tabs = 0; tabs < 80; tabs++) {
+      if (await company.evaluate(el => el === document.activeElement)) break;
+      await page.keyboard.press('Tab');
+    }
+    await expect(company).toBeFocused();
+    await company.press('Enter');
+    const projects = page.getByRole('menu', { name: '同じ企業の Project', exact: true });
+    await expect(projects).toBeVisible();
+    await expect(projects.getByRole('menuitemradio')).toHaveCount(2);
+    const previous = projects.getByRole('menuitemradio', { name: /合成株式会社A.*業務改善 2026/ });
+    const current = projects.getByRole('menuitemradio', { name: /合成株式会社A.*在庫最適化/ });
+    await expect(current).toBeChecked();
+    await expect(previous).not.toBeChecked();
+    // 異常系: 選択せず閉じると、現在先・分析・ステッパーは変化しない。
     await page.keyboard.press('Escape');
-    await expect(page.getByRole('menu', { name: '作業先' })).toBeHidden();
-    await expect(menu).toContainText('合成株式会社A');
-    await expect(menu).toContainText('業務改善 2026');
+    await expect(projects).toBeHidden();
+    await expect(company).toBeFocused();
+    await expect(target).toHaveAccessibleName(/合成株式会社A.*在庫最適化/);
+    await expect(page.getByTestId('analysis')).toContainText('3C 分析');
+    await expect(stepper.locator('[data-step-state="current"]')).toContainText('施策計画');
+
+    await company.press('Enter');
+    // menu の Home/End/Arrow キーと Enter だけで候補を選ぶ（マウス選択しない）。
+    await page.keyboard.press('Home');
+    if (!(await previous.evaluate(el => el === document.activeElement))) await page.keyboard.press('ArrowDown');
+    await expect(previous).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(projects).toBeHidden();
+    await expect(target).toContainText('合成株式会社A');
+    await expect(target).toContainText('業務改善 2026');
+    await expect(target).toHaveAccessibleName(/合成株式会社A.*業務改善 2026/);
+    await expect(page.getByTestId('analysis')).toContainText('SWOT 分析');
+    await expect(page.getByTestId('analysis')).not.toContainText('3C 分析');
+    await expect(stepper.locator('[data-step-state="current"]')).toContainText('現状分析');
   });
 });
 

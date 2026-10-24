@@ -55,6 +55,7 @@
 
 ## 10. 作業先メニュー・操作アイコン・最小化・スナップ・KPI/OKR（FR-148〜154・NFR-UX-008。workspace-ops.spec.ts が前提にする画面の探し方）
 - 作業先メニュー（FR-148）: 最上段に常時 `data-testid="work-target-menu"`（button。表示は現在の作業先）。押すと menu「作業先」。項目は menuitemradio（「デモ」「<企業名> … <Project 名>」。現在の作業先は checked）。Esc で閉じる。
+- run 202610250840 の改訂 AC-251・AC-525: ヘッダー全段を `app-header`、最上段の現在先の同じ表示領域を `work-target-display`（アクセシブルな名前に現在の企業名・Project 名）で探す。現在の企業名の操作入口は、その領域内の button `current-company-menu`。押すと menu「同じ企業の Project」にその企業の menuitemradio（企業名・Project 名、現在先のみ checked）を表示する。キーボードは Enter で開く・確定、Home/ArrowDown で候補移動、Esc で閉じて企業名の入口にフォーカスを戻す。分析・ステッパーは §8。これは実装前の探索契約であり、連結の区切り文字や CSS の構造を期待値にしない。
 - 操作アイコン（FR-150）: フォーカス中のコンポーネントの見出しに `data-testid="component-actions"`。その中の button（名前: 最大化・通常表示・最小化・元に戻す・タブにまとめる・非表示・その他の操作）。最小化中は `data-minimized="true"`。非表示の一覧は button「非表示のコンポーネント」→ menuitem。常時見える操作部品: ミュート・アニメーションの停止/再生・編集モード・レイアウトを既定に戻す（FR-149）。
 - 左メニューの最小化（FR-151）: button「メニューを最小化」／「メニューを元の幅に戻す」。最小化中も `nav-<key>` は名前つきで表示され、ホバーで tooltip に画面名。
 - スナップ（FR-152）: 端から 32 CSS px 以内で `data-testid="snap-candidates"`（候補は button「左半分」「右半分」「上半分」「下半分」「4 分割」「3 分割」「タブ化」）と `snap-preview`。候補の上で離すと配置。
@@ -149,7 +150,7 @@
 - 設定のモーダル（FR-223 AC-519）: 左メニューの `nav-settings` で role=dialog「設定」（`aria-modal="true"`、button「閉じる」）が開く。背面の覆いは `data-testid="modal-backdrop"`（透明でない背景色）。設定は `component-settings` としてワークスペースに並ばない。
 - 設定の区画（NFR-SEC-002 AC-176・FR-285 AC-739。run 202610212134）: AI 接続（GitHub Copilot）の実接続は region「AI・音声・手書きの接続」の中の switch（名前に「実接続」を含む。例「AI の実接続を有効にする（GitHub Copilot）」）。生成AIの活用分析（FR-285）の独自の実接続 switch・region「生成AIの活用分析の接続」は廃止（2026-10-22）。Foundry の実接続は、共通接続の region「Microsoft Foundry（生成AI機能の共通接続）」（§25）の中の switch「実接続を有効にする」1 つだけ。名前「実接続」は設定の中で一意ではないため、テストは switch を必ず区画（region）に絞り、name は exact で探す。
 - サイズ変更（FR-224 AC-521）: コンポーネントの縁・角のつまみ `data-testid="resize-e"`（右の縁）・`resize-s`（下の縁）・`resize-se`（右下の角）。ホバーで利用できる。ドラッグで縦だけ・横だけ・両方が変わる。
-- 作業先（FR-226 AC-525）: 「[顧客名] - [プロジェクト名]」の見える文字は `work-target-menu`（§10）だけ。`work-target` を残す場合は見える同じ文字を持たず、アクセシブルな名前に作業先を含む。
+- 作業先（FR-226 AC-525、run 202610250840 改訂）: Project 一覧を閉じたヘッダーの企業名・Project 名は最上段の `work-target-display`（§10）のみ。他段では連結表示だけでなく企業名単独・Project 名単独の重複も認めない。同社の別 Project に切り替えても同じ契約を維持し、前の Project 名を残さない。区切り文字「 - 」の有無は判定しない。
 - 強調（FR-227 AC-526）: 各コンポーネントの項目 `[data-entity-id]` の `data-highlight`（selected・related・dimmed。強調なしは属性なしか空）。選択中は、項目を持つすべてのコンポーネントで、各項目が selected/related か dimmed のどちらか一方になる。解除は Esc か同じ項目の再クリック。
 - ステップ（FR-228 AC-528・529）: `stepper` の各 listitem は番号（先頭の数字）か svg/img/`data-step-icon` を持ち、ステップ間に `data-testid="step-flow"`（4 個以上）、現在のステップは `data-step-state="current"` と `aria-current="step"`。ステップの button は高さ・幅とも 44 CSS px 以上。再配置の対象のコンポーネントは `data-step-relevant="true|false"`（そのステップへの関連）、`data-step-rank`（工程の順の整数。小さいほど先）、`data-step-importance="high|normal"`、非表示のものは `data-hidden="true"`（関連しないものは非表示にしない）を持つ。
 - 既存の spec への影響（実装工程の注意）: 設定がモーダルになるため、`openScreen(page, 'settings')` と `component(page, 'settings')` を使う既存の spec（brand-settings・consent-settings・workspace-layout など）は、設定画面の探し方を role=dialog「設定」に合わせて見直す必要がある（AC の期待値は変わらない。conductor が競合として扱う）。
