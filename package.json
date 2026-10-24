@@ -21,6 +21,7 @@
   "dependencies": {
     "@fluentui/react-components": "9.74.9",
     "@fluentui/react-icons": "2.0.343",
+    "@github/copilot-sdk": "1.0.26",
     "@react-three/drei": "9.122.0",
     "@react-three/fiber": "8.18.0",
     "react": "18.3.1",

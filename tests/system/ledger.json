@@ -112,7 +112,7 @@
     "AC-172": "sha256:c4041eff2e77946f",
     "AC-173": "sha256:a599be4b653dc924",
     "AC-174": "sha256:06881765522b7ab6",
-    "AC-176": "sha256:467a3386f5da0431",
+    "AC-176": "sha256:a298e45ae10524cf",
     "AC-178": "sha256:32d6763aff3d7dd9",
     "AC-180": "sha256:affed7abeb0f0e6a",
     "AC-185": "sha256:d18893906a5e5a75",
@@ -294,13 +294,13 @@
     "AC-712": "sha256:0e69695d5457cad9",
     "AC-713": "sha256:706deed685a6f99e",
     "AC-733": "sha256:416fb88a5cfaff0a",
-    "AC-739": "sha256:a8441c9dc7b54ba7",
+    "AC-739": "sha256:f466779f59189f59",
     "AC-754": "sha256:1319d272e6722bfc",
     "AC-755": "sha256:689ba7bcf2746159",
     "AC-756": "sha256:a7eec8533851fffa",
-    "AC-757": "sha256:ccbcd971f201fa8c",
-    "AC-758": "sha256:52554d84c2b9a99d",
-    "AC-759": "sha256:a43fbd98f53acd9c",
+    "AC-757": "sha256:2433de09061f9b51",
+    "AC-758": "sha256:6bdf4f625ebc4469",
+    "AC-759": "sha256:38fa6ab469e791af",
     "AC-760": "sha256:3c13c06d3965be06",
     "AC-741": "sha256:2010ae0c69c02c30",
     "AC-742": "sha256:802001b934592362",
@@ -317,13 +317,14 @@
     "AC-725": "sha256:16746748b9a89485",
     "AC-727": "sha256:87421ea12b582983",
     "AC-740": "sha256:2450e8e383f93767",
-    "AC-737": "sha256:42d750bc2e4bf3fd",
-    "AC-738": "sha256:24a432ee2b6b2941",
+    "AC-737": "sha256:a346e0c8a0069beb",
+    "AC-738": "sha256:cd9bca7de1d96aec",
     "AC-748": "sha256:8028a96e89c11476",
     "AC-749": "sha256:3ebadb7dbc267134",
     "AC-750": "sha256:b6c5b0e523bd09d1",
     "AC-751": "sha256:5298ffecc4f6209d",
     "AC-752": "sha256:8be350ff566287fb",
+    "AC-769": "sha256:4a843785b500f292",
     "AC-761": "sha256:2d47552f43564343",
     "AC-762": "sha256:f998e7e05e260c7e",
     "AC-763": "sha256:2aff7e48a3665f4e",
@@ -10313,14 +10314,14 @@
       "ac_ids": [
         "AC-757"
       ],
-      "title": "Foundry 未設定のとき AI 取り込みは無効で案内が出て、送信は 0 回（無効のボタンの強制操作の異常系含む）",
+      "title": "AI取り込みは接続先・設定・有効化・了承の不足時に無効、Copilot SDKでは未対応と案内し送信0回（強制操作を含む）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-757",
       "canary": false,
-      "status": "pass",
-      "last_commit": "0107561",
-      "last_run_at": "2026-10-24T06:18:05+09:00",
-      "evidence": "work/runs/202610232345/logs/system-test/E2E-384-202610240603.log",
+      "status": "not_run",
+      "last_commit": "484f3ef",
+      "last_run_at": "2026-10-23T04:22:42+09:00",
+      "evidence": "work/runs/202610230336/logs/system-test/E2E-384-202610230421.log",
       "history": [
         {
           "at": "2026-10-22T22:32:17+09:00",
@@ -10333,6 +10334,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC-757/758/759 の本文が変更済み（Entra ID 両方式・実接続の有効化・了承・送信前確認・停止水準）。spec は旧本文のままで、G-5 により書き込めず未見直し。見直すまで実行対象にしない"
+        },
+        {
+          "at": "2026-10-24T07:43:35+09:00",
+          "by": "test-designer",
+          "change": "title: 'Foundry 未設定のとき AI 取り込みは無効で案内が出て、送信は 0 回（無効のボタンの強制操作の異常系含む）' -> 'AI取り込みは接続先・設定・有効化・了承の不足時に無効、Copilot SDKでは未対応と案内し送信0回（強制操作を含む）'",
+          "reason": "AC-757追加条件を既存E2E-384へ拡張。Copilot選択時の未対応表示・無効化・両接続先の送信0回、接続先変更時の再有効化を検証"
         }
       ]
     },
@@ -10828,6 +10835,31 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "検証レベル=integration は System Test の対象外。テストは先行作成済み。実装役が統合テストとして実行する"
+        }
+      ]
+    },
+    {
+      "id": "E2E-441",
+      "requirement_ids": [
+        "FR-275"
+      ],
+      "ac_ids": [
+        "AC-769"
+      ],
+      "title": "生成AIの接続先の単一選択（既定 Foundry）・欄の切替・/ai/provider の保存と再起動後の保持・認証情報を含まない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-769",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-24T05:55:01+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "AC-769 新設（run 202610240522）"
         }
       ]
     },

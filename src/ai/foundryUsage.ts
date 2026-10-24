@@ -53,11 +53,12 @@ export function estimateCost(tokensIn: number, tokensOut: number, l: UsageLimits
 export type UsageGate = { allowed: true; warning?: string } | { allowed: false; reason: string };
 
 /** 呼ぶ前の判定。1 日の回数の上限・予算の停止に達していたら呼ばない */
-export function checkUsage(r0: UsageRecord, l: UsageLimits, now: Date): UsageGate {
+export function checkUsage(r0: UsageRecord, l: UsageLimits, now: Date, provider: 'foundry' | 'copilot' = 'foundry'): UsageGate {
   const r = rollover(r0, now);
   if (r.dayCount >= l.dailyLimit) {
     return { allowed: false, reason: `1 日の回数の上限（${l.dailyLimit} 回）に達したため、Microsoft Foundry へは送信しません。明日 0 時以降に再開します。` };
   }
+  if (provider === 'copilot') return { allowed: true };
   const pct = l.monthlyBudget > 0 ? (r.monthCost / l.monthlyBudget) * 100 : 100;
   if (pct >= l.stopPercent) {
     return { allowed: false, reason: `今月の概算費用が予算（${l.monthlyBudget} 円）の ${l.stopPercent}% に達したため、停止しています。月初に再開します。` };
@@ -67,7 +68,7 @@ export function checkUsage(r0: UsageRecord, l: UsageLimits, now: Date): UsageGat
 }
 
 /** 1 回の呼び出しを数える（失敗した呼び出しも数える）。出力は上限で数える */
-export function addUsage(r0: UsageRecord, l: UsageLimits, now: Date, tokensIn: number, tokensOut: number = MAX_OUTPUT_TOKENS): UsageRecord {
+export function addUsage(r0: UsageRecord, l: UsageLimits, now: Date, tokensIn: number, tokensOut: number = MAX_OUTPUT_TOKENS, provider: 'foundry' | 'copilot' = 'foundry'): UsageRecord {
   const r = rollover(r0, now);
   return {
     ...r,
@@ -75,7 +76,7 @@ export function addUsage(r0: UsageRecord, l: UsageLimits, now: Date, tokensIn: n
     monthCount: r.monthCount + 1,
     monthTokensIn: r.monthTokensIn + tokensIn,
     monthTokensOut: r.monthTokensOut + tokensOut,
-    monthCost: r.monthCost + estimateCost(tokensIn, tokensOut, l),
+    monthCost: r.monthCost + (provider === 'foundry' ? estimateCost(tokensIn, tokensOut, l) : 0),
   };
 }
 
@@ -84,9 +85,9 @@ interface UsageState {
   record: UsageRecord;
   setLimits: (l: UsageLimits) => void;
   /** 呼ぶ前の判定 */
-  check: (now?: Date) => UsageGate;
+  check: (now?: Date, provider?: 'foundry' | 'copilot') => UsageGate;
   /** 呼んだ後に数える */
-  count: (tokensIn: number, now?: Date) => void;
+  count: (tokensIn: number, now?: Date, provider?: 'foundry' | 'copilot') => void;
 }
 
 export const useUsageStore = create<UsageState>()(
@@ -95,8 +96,8 @@ export const useUsageStore = create<UsageState>()(
       limits: DEFAULT_LIMITS,
       record: emptyRecord(new Date()),
       setLimits: (limits) => set({ limits }),
-      check: (now = new Date()) => checkUsage(get().record, get().limits, now),
-      count: (tokensIn, now = new Date()) => set((s) => ({ record: addUsage(s.record, s.limits, now, tokensIn) })),
+      check: (now = new Date(), provider) => checkUsage(get().record, get().limits, now, provider),
+      count: (tokensIn, now = new Date(), provider) => set((s) => ({ record: addUsage(s.record, s.limits, now, tokensIn, MAX_OUTPUT_TOKENS, provider) })),
     }),
     { name: 'edb.foundryUsage', version: 1, partialize: (s) => ({ limits: s.limits, record: s.record }) },
   ),

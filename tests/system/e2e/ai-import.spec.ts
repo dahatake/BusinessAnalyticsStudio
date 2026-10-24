@@ -50,7 +50,7 @@ function writeFile(name: string, data: Buffer | string): string {
 async function saveFoundryInSettings(page: Page, key: string, authMethod: 'api-key' | 'entra' = 'api-key'): Promise<void> {
   const settings = await openScreen(page, 'settings');
   const foundry = settings.getByTestId('foundry-settings');
-  await foundry.getByLabel(/エンドポイント/).fill('https://dummy.openai.azure.com/openai/v1');
+  await foundry.getByLabel(/エンドポイント/).fill('https://dummyres.openai.azure.com/openai/v1');
   await foundry.getByLabel(/デプロイ名/).fill('dummy-deploy');
   if (authMethod === 'entra') await foundry.getByLabel('認証方式').selectOption('entra');
   else await foundry.getByLabel(/API キー/).fill(key);
@@ -146,6 +146,53 @@ test.describe('FR-289 AI 取り込み（選べる条件）', () => {
     await expect(ai.getByLabel('AI 取り込みのファイル')).toHaveCount(0);
     await expect(ai.getByTestId('ai-import-guide')).toBeVisible();
     expect(relay.importCalls()).toBe(0);
+  });
+
+  // FR-289 AC-757（接続先条件。FR-275 AC-769/770 の選択・有効化解除を前提にする）
+  test('FR-289 AC-757 Copilot SDK 選択時は AI 取り込みが無効で「Copilot SDK では未対応」と案内し、操作を試みても両接続先への送信は 0 回', async ({ page, start }) => {
+    relay = await startAiImportRelayStub({ configured: true, enabled: true, provider: 'copilot' });
+    await start({ relayUrl: relay.url });
+    await openNewProject(page);
+    await recordExportConsent(page);
+    // 設定済み・有効・了承ありでも、接続先だけで取り込みを拒否する。
+    const assertCopilotBlocked = async () => {
+      const { ai } = await openImportScreen(page);
+      const button = ai.getByRole('button', { name: 'AI 取り込み', exact: true });
+      await expect(button).toBeDisabled();
+      const guide = ai.getByTestId('ai-import-guide');
+      await expect(guide).toContainText('Copilot SDK では未対応');
+      await expect(guide).toContainText(/欠けている条件[:：][^）]*接続先/);
+      await expect(guide).toContainText('設定画面');
+      await button.dispatchEvent('click');
+      await expect(ai.getByLabel('AI 取り込みのファイル')).toHaveCount(0);
+      await expect(guide).toBeVisible();
+      await page.waitForTimeout(500);
+      expect(relay.importCalls()).toBe(0);
+      expect(relay.received.filter((r) =>
+        r.method === 'POST' && /^\/(?:ask|foundry\/(?:ask|review|analyze|import))$/.test(r.path),
+      ), 'Foundry・Copilot SDK への送信要求は 0 回').toHaveLength(0);
+    };
+    await assertCopilotBlocked();
+
+    // 画面からの変更も保存され、Foundry に戻すだけでは有効化されない。
+    let settings = await openScreen(page, 'settings');
+    await settings.getByRole('radiogroup', { name: '生成AIの接続先' })
+      .getByRole('radio', { name: /Microsoft Foundry/ }).check();
+    await expect(settings.getByTestId('foundry-mode')).toContainText('モック');
+    await closeSettings(page);
+    await expectAiImportBlocked(page, relay, '有効化');
+    await enableFoundry(page);
+    await expectAiImportSelectable(page);
+
+    settings = await openScreen(page, 'settings');
+    await settings.getByRole('radiogroup', { name: '生成AIの接続先' })
+      .getByRole('radio', { name: /GitHub Copilot SDK/ }).check();
+    await expect(settings.getByTestId('copilot-settings')).toBeVisible();
+    await expect.poll(() => relay.received.filter((r) =>
+      r.method === 'PUT' && r.path === '/ai/provider',
+    ).map((r) => JSON.parse(r.body).provider)).toEqual(expect.arrayContaining(['foundry', 'copilot']));
+    await closeSettings(page);
+    await assertCopilotBlocked();
   });
 
   // FR-289 AC-758（認証方式 API キー / Microsoft Entra ID の両方）

@@ -234,3 +234,9 @@ iPad の Safari では、インクとタッチの主要機能（ペンの描画�
 ## ライセンスと権利
 
 [LICENSE](LICENSE) と [CREDITS.md](CREDITS.md) を見てください。
+
+### 生成AIの接続先（Foundry / GitHub Copilot SDK）
+
+`npm ci` → `npm run relay` の後、設定の「生成AIの接続先」で選びます。既定は Microsoft Foundry（API キー／Entra ID の従来設定を維持）です。Copilot はサインイン（キー不要）を優先し、「GitHub にサインイン」で固定の Web 確認 URL とコードを表示します。GitHub CLI の成功だけで接続済みとは扱いません。SDK が未認証なら `copilot` の `/login` 後に再確認するか、暗号化トークン方式を使ってください。モデル名は任意です。
+
+接続先・認証方式・モデル・トークン等を変更すると実接続は解除されます。顧客了承、送信先・費用・送信内容を再確認して有効にするまで生成要求は送信しません。Copilot の費用は利用者の契約に従います。AI 取り込み・ファイル添付は Foundry 専用です。既存 `/ask` の 5 種の処理は今回の選択の対象外です。[認証と接続の詳しい手順](users-guide/engineering/05-ai-relay.md#56-共通生成aiの接続先と認証fr-275fr-011) を参照してください。

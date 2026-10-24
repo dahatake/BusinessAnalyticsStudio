@@ -10,7 +10,7 @@ export const NOT_CONFIGURED_NOTICE =
 
 /** 接続設定から送信してよいかを決める。view が null（中継に届かない・未取得）も未設定として扱い、送信しない */
 export function foundryRunGate(view: FoundryView | null): FoundryRunGate {
-  const ok = !!view && view.configured && !!view.endpoint && !!view.deployment;
+  const ok = !!view && view.configured && (view.provider === 'copilot' || (!!view.endpoint && !!view.deployment));
   return ok ? { ok: true } : { ok: false, kind: 'not-configured', message: NOT_CONFIGURED_NOTICE };
 }
 

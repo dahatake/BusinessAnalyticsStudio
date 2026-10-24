@@ -132,11 +132,12 @@ export function ChatScreen() {
         // Foundry 送信（FR-286）。失敗は理由を出すだけで、Copilot・モックへは切り替えない
         const data = pack.status === 'ready' ? pack.pack.data : undefined;
         const usage = useUsageStore.getState();
+        const provider = (await fetchFoundryView(relayUrl, packId))?.provider ?? 'foundry';
         const out = await sendFoundryChat({
           relayUrl, packId, consent: consentGranted,
           includesPerson: !!data && countPersons(data) > 0,
           confirmPerson: () => gatePersonConfirm({ destination: 'ai', scopeLabel: FOUNDRY_SCOPE_LABEL, data: data!, consent: consentRecord, confirm: confirmViaUi }),
-          usage: { check: () => usage.check(), count: (n) => usage.count(n) },
+          usage: { check: () => usage.check(new Date(), provider), count: (n) => usage.count(n, new Date(), provider) },
         }, built);
         if (out.kind === 'answer') {
           setText('');

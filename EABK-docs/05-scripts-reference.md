@@ -102,11 +102,14 @@ python scripts/ledger.py --by test-designer update E2E-001 --command "…" --rea
 python scripts/ledger.py --by test-designer block E2E-001 --reason "…"                 # 削除の代わりに使う
 python scripts/ledger.py set E2E-001 blocked --reason "…"
 python scripts/ledger.py digests [--update]
+python scripts/ledger.py --by test-designer restore --from-ref main --cases IT-082,IT-083,IT-084,E2E-440
 python scripts/ledger.py repair [--apply]          # 要求定義書に合わせて台帳を直す（rdfix.py から使う）
 python scripts/ledger.py preflight [--cases ID,..] [--all]   # pytest を collect-only で確認（構文・import・-k/node id の誤りで 0 件）。test-designer の終了前と工程 4 の完了前に exit 0 にする
 python scripts/ledger.py --by conductor run --select changed|failed|all [--canary-first] [--stop-on-canary-fail] [--max-minutes N]
 python scripts/ledger.py run --cases E2E-001,IT-002 --no-record   # 作業役の worktree で、台帳を更新せずに実行だけする
 ```
+
+`restore` は Git ref を commit に固定し、設定された台帳から既存ケースを復元します。ID・履歴・証跡・実行状態はそのまま保持し、選択ケースの `ac_digests` だけを現在の要求本文（PARAM 展開込み）に同期します。新規採番やテスト実行はしません。同一内容の既存 ID は保持（再実行可能）し、異なる内容の同一 ID・別 ID の同名ケース・不正な ref/JSON/台帳形式・要求との参照不整合は、全件を書き込まず拒否します。復元は test-designer が行います。
 
 `run` の出力は、元の Prompt が定める報告形式（`<id> <requirement_ids> <pass|fail> <秒> <証跡>` と `結果: …`）です。結果の詳細は `work/runs/<run-id>/results.json` にあります。
 

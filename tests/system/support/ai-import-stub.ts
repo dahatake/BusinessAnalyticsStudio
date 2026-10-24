@@ -14,8 +14,9 @@ export interface AiImportRelayStub extends RelayStub {
   forceEnabled(v: boolean): void;
 }
 
-export async function startAiImportRelayStub(opts: { configured?: boolean; mode?: AiImportMode; initialKey?: string; enabled?: boolean; authMethod?: 'api-key' | 'entra' } = {}): Promise<AiImportRelayStub> {
+export async function startAiImportRelayStub(opts: { configured?: boolean; mode?: AiImportMode; initialKey?: string; enabled?: boolean; authMethod?: 'api-key' | 'entra'; provider?: 'foundry' | 'copilot' } = {}): Promise<AiImportRelayStub> {
   const received: RelayStub['received'] = [];
+  let provider = opts.provider ?? 'foundry';
   let foundry: { endpoint: string; deployment: string; key: string; authMethod: 'api-key' | 'entra' } | null = opts.configured
     ? { endpoint: 'https://dummy.openai.azure.com/openai/v1', deployment: 'dummy-deploy', key: opts.initialKey ??     'dummy-key-for-system-test-9999', authMethod: opts.authMethod ?? 'api-key' }
     : null;
@@ -47,6 +48,20 @@ export async function startAiImportRelayStub(opts: { configured?: boolean; mode?
         foundry
           ? { configured: true, endpoint: foundry.endpoint, host: new URL(foundry.endpoint).host, deployment: foundry.deployment, keyMask: foundry.authMethod === 'entra' ? '' : `••••${foundry.key.slice(-4)}`, authMethod: foundry.authMethod, enabled }
           : { configured: false, endpoint: '', host: '', deployment: '', keyMask: '', authMethod: 'api-key', enabled };
+      // FR-275 AC-769/770、CONTRACT.md §30。接続先の変更後は再有効化が必要。
+      if (u.pathname === '/ai/provider') {
+        if (req.method === 'PUT') {
+          try {
+            const b = JSON.parse(body) as { provider?: unknown };
+            if (b.provider !== 'foundry' && b.provider !== 'copilot') return json(400, { error: '不正な接続先です' });
+            if (provider !== b.provider) enabled = false;
+            provider = b.provider;
+          } catch {
+            return json(400, { error: '不正な入力です' });
+          }
+        } else if (req.method !== 'GET') return json(405, { error: 'method not allowed' });
+        return json(200, { provider });
+      }
       if (u.pathname === '/foundry/config') {
         if (req.method === 'PUT') {
           try {
@@ -54,6 +69,7 @@ export async function startAiImportRelayStub(opts: { configured?: boolean; mode?
                         const authMethod = b.authMethod === 'entra' ? 'entra' : 'api-key';
                         if (!b.endpoint || !b.deployment || (authMethod === 'api-key' && !b.key)) return json(400, { error: authMethod === 'entra' ? 'エンドポイント・デプロイ名を入力してください' : 'エンドポイント・デプロイ名・API キーを入力してください' });
                         foundry = { endpoint: b.endpoint, deployment: b.deployment, key: authMethod === 'entra' ? '' : (b.key as string), authMethod };
+                        enabled = false;
           } catch {
             return json(400, { error: '不正な入力です' });
           }
@@ -69,6 +85,7 @@ export async function startAiImportRelayStub(opts: { configured?: boolean; mode?
       }
       if (u.pathname === '/health') return json(200, { status: 'ready', copilot: 'signed-in', foundry: { keyConfigured: foundry !== null } });
       if (u.pathname === '/foundry/import') {
+        if (provider === 'copilot') return json(503, { error: { cause: 'unsupported', message: 'Copilot SDK では未対応' } });
         if (!foundry) return json(503, { error: { cause: 'key-missing' } });
         if (!enabled) return json(503, { error: { cause: 'disabled' } });
         if (mode === 'upstream-error') return json(502, { error: { cause: 'upstream-status', status: 500 } });

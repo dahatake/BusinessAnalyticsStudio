@@ -112,7 +112,7 @@ test.describe('FR-275 Microsoft Foundry の接続設定', () => {
 
     // ダミーのキーを保存すると「設定済み」だけが表示され、値は再表示されない
     const dummy = 'dummy-key-for-system-test-0000';
-    await foundry.getByLabel(/エンドポイント/).fill('https://dummy.openai.azure.com/openai/v1');
+    await foundry.getByLabel(/エンドポイント/).fill('https://dummyres.openai.azure.com/openai/v1');
     await foundry.getByLabel(/デプロイ名/).fill('dummy-deploy');
     await key.fill(dummy);
     await foundry.getByRole('button', { name: /保存/ }).first().click();

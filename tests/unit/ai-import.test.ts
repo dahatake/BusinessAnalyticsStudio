@@ -71,6 +71,30 @@ describe('FR-289 AC-757 AC-758 選べる条件', () => {
     expect(aiImportAvailability(view(), true)).toEqual({ available: true, missing: [], guide: '' });
   });
 
+  // FR-289 AC-757（接続先が Copilot SDK）
+  it('FR-289 AC-757 接続先が Copilot SDK なら、ほかの条件がそろっていても選べず、欠けている条件「接続先」と「Copilot SDK では未対応」・設定画面への案内が示される', () => {
+    const a = aiImportAvailability(view({ provider: 'copilot' }), true);
+    expect(a.available).toBe(false);
+    expect(a.missing).toEqual(['接続先']);
+    expect(a.guide).toMatch(/欠けている条件[:：][^）]*接続先/);
+    expect(a.guide).toContain('Copilot SDK では未対応');
+    expect(a.guide).toContain('設定画面');
+  });
+
+  // FR-275 AC-769 / FR-289 AC-757: 設定の応答に接続先が無いときは GET /ai/provider の選択を使う
+  it('FR-289 AC-757 fetchFoundryView は /foundry/config に provider が無いとき GET /ai/provider の接続先を補う（取得できなければ未指定）', async () => {
+    const urls: string[] = [];
+    const f = (prov: unknown) => (async (u: string) => {
+      urls.push(String(u));
+      return String(u).endsWith('/ai/provider')
+        ? new Response(JSON.stringify(prov), { status: prov ? 200 : 404 })
+        : new Response(JSON.stringify(view()), { status: 200 });
+    }) as unknown as typeof fetch;
+    expect((await fetchFoundryView('http://127.0.0.1:1', 'P', f({ provider: 'copilot' })))?.provider).toBe('copilot');
+    expect(urls.some((u) => u.endsWith('/ai/provider'))).toBe(true);
+    expect((await fetchFoundryView('http://127.0.0.1:1', 'P', f(null)))?.provider).toBeUndefined();
+  });
+
   it('API キー方式・Entra ID 方式のどちらでも、保存すると設定済みになり、削除すると未設定に戻る', async () => {
     const { url } = await setup();
     expect((await putFoundryConfig(url, 'P', { endpoint: EP, deployment: 'd', key: DUMMY_KEY })).ok).toBe(true);
@@ -175,6 +199,8 @@ describe('FR-289 AC-760 キーの秘匿と送信先', () => {
 
     // Entra ID 方式
     await putFoundryConfig(url, 'P', { endpoint: EP, deployment: 'd', key: '', authMethod: 'entra' });
+    // FR-275 AC-705: 共有の接続設定を変えたら、使う前に確認し直す
+    await setFoundryConnection(url, 'P', true, { consent: true, confirmed: true });
     await requestAiImport(url, req(mkFile('b.pdf', '%PDF')));
     expect(calls[1]!.auth).toBe('Bearer dummy-entra-token-ABCDE');
   });
