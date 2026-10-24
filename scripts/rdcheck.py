@@ -29,7 +29,6 @@ sys.dont_write_bytecode = True  # FR-1062 AC-343: 導出は読み取り専用。
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ebaklib as h  # noqa: E402
 import entities as ent  # noqa: E402
-import integration_catalog as ic  # noqa: E402
 
 # requirements that must have a row in the function table of the catalog (same as rdfix.CATALOG_STATES)
 CATALOG_STATES = ("承認済み", "承認待ち", "保留")
@@ -147,7 +146,7 @@ class Checker:
         for fn in (self.chk01_02, self.chk03, self.chk04, self.chk05, self.chk06_22, self.chk07_08,
                    self.chk09, self.chk10_11, self.chk12, self.chk13_14_15, self.chk16, self.chk17,
                    self.chk18, self.chk19, self.chk20, self.chk21, self.chk23, self.chk25, self.chk26,
-                   self.chk27, self.chk24, self.chk28, self.chk28_catalog, self.chk29, self.chk30, self.chk31, self.chk32, self.chk33):
+                   self.chk27, self.chk24, self.chk28, self.chk29, self.chk30, self.chk31, self.chk32, self.chk33):
             fn()
         return self.findings
 
@@ -790,11 +789,6 @@ class Checker:
                              f"{r.id} の関連する既存資産 {m.group(1)}「{m.group(2)}」がカタログの{label[k]}の表にありません")
 
 
-    def chk28_catalog(self) -> None:
-        """外部連携カタログ docs/integration-catalog.md（FR-188〜FR-199・NFR-OPS-001）。INT-xxx の chk28 とは独立で、同じ CHK-28 に出す。"""
-        for level, loc, msg in ic.check(self.root, self.cfg, self.doc):
-            self.add(level, "CHK-28", loc, msg)
-
     # ------------------------------------------------------------------ CHK-28 (FR-1035 / FR-1036)
     def chk28(self) -> None:
         """外部連携カタログ（任意）の形式・ID・観点の欄・秘密値・要求との対応。カタログがなければ何も報告しない。"""
@@ -1142,13 +1136,6 @@ def cmd_show(args, root, cfg) -> int:
 def cmd_list(args, root, cfg) -> int:
     doc = h.parse_requirements(root, cfg)
     reqs: list = []
-    if args.kind in ("外部連携", "IC"):  # FR-199 AC-428: 外部連携カタログの一覧
-        _, _, rows = ic.parse(root, cfg)
-        for r in rows:
-            if args.state and ic._clean(r.get("状態")) != args.state:
-                continue
-            print(f"{r.name}\t{ic._clean(r.get('状態')) or '-'}\t{ic._clean(r.get('関連する要求 ID')) or '-'}\t{ic.path_of(cfg)}:{r.line}")
-        return 0
     if args.kind == "AC" or args.level:
         for ac in doc.acs.values():
             req = doc.requirements.get(ac.requirement or "")
@@ -1537,12 +1524,6 @@ def trace_one(ck: "Checker", key: str, code: Dict[str, Set[str]]) -> dict:
                         if ln == names[kind][key]:
                             reqs = sorted(set(reqs) | set(h.REQ_ID_RE.findall(" ".join(cells))))
             return {"id": key, "kind": label, "at": f"{h.mf(ck.cfg, 'catalog')}:{names[kind][key]}", "requirements": reqs}
-    t = ic.trace(ck.root, ck.cfg, doc, key)
-    if t:
-        return {"id": key, "kind": "外部連携", "at": t["at"], "state": "", "priority": "",
-                "requirements": [f"{q['id']} {q['title']}" for q in t["requirements"]],
-                "acceptance": [f"{a}（{q['id']}）" for q in t["requirements"] for a in q["acs"]],
-                "catalog_row": f"{t['at']}（状態: {t['state'] or '-'}、最終確認日: {t['date'] or '-'}）"}
     return {"id": key, "kind": "not_found"}
 
 
