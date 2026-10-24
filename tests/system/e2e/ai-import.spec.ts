@@ -50,7 +50,7 @@ function writeFile(name: string, data: Buffer | string): string {
 async function saveFoundryInSettings(page: Page, key: string, authMethod: 'api-key' | 'entra' = 'api-key'): Promise<void> {
   const settings = await openScreen(page, 'settings');
   const foundry = settings.getByTestId('foundry-settings');
-  await foundry.getByLabel(/エンドポイント/).fill('https://example.invalid/openai/v1');
+  await foundry.getByLabel(/エンドポイント/).fill('https://dummyres.openai.azure.com/openai/v1');
   await foundry.getByLabel(/デプロイ名/).fill('dummy-deploy');
   if (authMethod === 'entra') await foundry.getByLabel('認証方式').selectOption('entra');
   else await foundry.getByLabel(/API キー/).fill(key);

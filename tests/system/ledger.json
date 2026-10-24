@@ -10307,9 +10307,9 @@
       "command": "node tests/system/run.mjs AC-757",
       "canary": false,
       "status": "not_run",
-      "last_commit": "0107561",
-      "last_run_at": "2026-10-24T06:18:05+09:00",
-      "evidence": "work/runs/202610232345/logs/system-test/E2E-384-202610240603.log",
+      "last_commit": "484f3ef",
+      "last_run_at": "2026-10-23T04:22:42+09:00",
+      "evidence": "work/runs/202610230336/logs/system-test/E2E-384-202610230421.log",
       "history": [
         {
           "at": "2026-10-22T22:32:17+09:00",

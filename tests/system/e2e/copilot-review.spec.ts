@@ -166,7 +166,7 @@ test.describe('FR-282 Foundry の接続設定・FR-283 未設定のとき', () =
       for (const f of [endpoint, deploy, auth, key]) await expect(f).toBeVisible();
       // キーボードだけで入力・保存
       await endpoint.focus();
-      await page.keyboard.type('https://example.invalid/');
+      await page.keyboard.type('https://dummyres.openai.azure.com/openai/v1');
       await deploy.focus();
       await page.keyboard.type('dummy-deploy');
       await key.focus();
