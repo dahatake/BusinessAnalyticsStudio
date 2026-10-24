@@ -6,7 +6,7 @@ import { Badge, Button, Field, MessageBar, MessageBarBody, Select, Text, Textare
 import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
 import { usePackStore } from '../store/pack';
-import { confirmViaUi, countPersons, gatePersonConfirm } from '../ai/personConfirm';
+import { confirmViaUi, gatePersonConfirm } from '../ai/personConfirm';
 import { useGenAi, isGenAiReal } from '../genai/useGenAi';
 import { fetchFoundryView } from '../ai/foundryClient';
 import { analyzeViaRelay } from '../genai/foundryClient';
@@ -59,7 +59,7 @@ export function GenAiScenarioScreen() {
       // FR-219: 種別「人」を含む案件の外部送信は、確認（了承の記録がなければ止める）を通す
       const gate = await gatePersonConfirm({ destination: 'ai', scopeLabel: GENAI_SCOPE_LABEL, data: g.data!, consent: g.consent, confirm: confirmViaUi });
       if (!gate.allowed) { setNotice(`${gate.reason ?? '送信しませんでした。'}ルールベースの結果を表示します。`); setShown({ result: rule, source: 'fallback' }); return; }
-      const out = await analyzeViaRelay({ relayUrl: g.relayUrl, packId: g.packId, consent: g.granted, includesPerson: countPersons(g.data!) > 0, personConfirmed: true }, v.text);
+      const out = await analyzeViaRelay({ relayUrl: g.relayUrl, packId: g.packId }, v.text);
       if (out.ok) setShown({ result: out.result, source: 'foundry' });
       else { setNotice(`${out.message}ルールベースの結果を代替として表示します。`); setShown({ result: rule, source: 'fallback' }); }
     } finally {

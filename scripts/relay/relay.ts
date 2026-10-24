@@ -222,9 +222,10 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
             if (typeof b.packId !== 'string' || !b.packId || typeof b.solution !== 'string' || !b.solution || b.solution.length > FOUNDRY_MAX_INPUT_CHARS) throw new GenAiFoundryError('bad-request');
             if (provider.provider() === 'foundry' && !getFoundry().importSecret()) throw new GenAiFoundryError('key-missing');
             if (!foundryEnabled.has(b.packId)) throw new GenAiFoundryError('disabled');
-            if (b.consent !== true || (b.includesPerson && !b.personConfirmed)) return json(403, { error: { cause: 'disabled' } });
+            // FR-285 の契約は body に packId・solution だけ（了承は有効化〈/foundry/connection〉で確かめ済み）。
+            // 画面が了承の取り消し（consent: false）や「人」の未確認を明示したときだけ、ここでも止める（AC-706）。
+            if (b.consent === false || (b.includesPerson && !b.personConfirmed)) return json(403, { error: { cause: 'disabled' } });
             if (provider.provider() === 'copilot') {
-              if (b.consent !== true) return json(403, { error: { cause: 'disabled' } });
               return json(200, parseJsonText(await copilotComplete(b.packId, buildPrompt(b.solution))));
             }
             const secret = getFoundry().importSecret();

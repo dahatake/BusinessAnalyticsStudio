@@ -28,7 +28,7 @@ const CAUSES: readonly string[] = ['key-missing', 'disabled', 'unreachable', 'ti
 
 /** 解決策の文章を中継プロセスへ送り、Foundry の分析結果を得る。失敗しても例外は投げず、原因を返す */
 export async function analyzeViaRelay(
-  env: { relayUrl?: string; packId: string; consent?: boolean; includesPerson?: boolean; personConfirmed?: boolean; fetchFn?: FetchFn; timeoutMs?: number },
+  env: { relayUrl?: string; packId: string; fetchFn?: FetchFn; timeoutMs?: number },
   solution: string,
 ): Promise<FoundryOutcome> {
   if (!env.relayUrl || !isLoopbackUrl(env.relayUrl)) return { ok: false, cause: 'unreachable', message: causeMessage('unreachable') };
@@ -39,7 +39,7 @@ export async function analyzeViaRelay(
   try {
     const res = await f(`${env.relayUrl}/foundry/analyze`, {
       method: 'POST', headers: { 'content-type': 'application/json' }, signal: ctl.signal,
-      body: JSON.stringify({ packId: env.packId, solution, consent: env.consent, includesPerson: env.includesPerson, personConfirmed: env.personConfirmed }),
+      body: JSON.stringify({ packId: env.packId, solution }),
     });
     const j = (await res.json().catch(() => ({}))) as Record<string, unknown>;
     if (!res.ok) {

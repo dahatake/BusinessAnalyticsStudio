@@ -1,6 +1,7 @@
 // FR-275 AC-769/770 and FR-011 AC-771/772. Reuses Fluent UI and the shared design foundation.
 import { useEffect, useState } from 'react';
-import { Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Input, MessageBar, MessageBarBody, Radio, RadioGroup, Switch, Text } from '@fluentui/react-components';
+import { Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Input, MessageBar, MessageBarBody, Switch, Text } from '@fluentui/react-components';
+import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { Dialog, DialogSurface } from '../components/Dialog';
 import { tokens } from '../theme/tokens';
 import { usePackStore } from '../store/pack';

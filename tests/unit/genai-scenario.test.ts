@@ -113,7 +113,7 @@ async function relayWith(key: string | undefined, fetchFn: typeof fetch, timeout
   }
   return r;
 }
-const env = (r: Relay, over: Partial<Parameters<typeof analyzeViaRelay>[0]> = {}) => ({ relayUrl: r.url, packId: PACK, consent: true, ...over });
+const env = (r: Relay, over: Partial<Parameters<typeof analyzeViaRelay>[0]> = {}) => ({ relayUrl: r.url, packId: PACK, ...over });
 
 describe('FR-285 AC-738 Responses API の呼び出し（差し替え部品）', () => {
   it('AC-738 既定のエンドポイント・デプロイ名で Responses API の要求を 1 回送り、キーは api-key ヘッダーだけ。応答・ブラウザー向けの結果にキーは出ない', async () => {
