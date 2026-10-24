@@ -269,8 +269,6 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
           {pane ? <span className={mergeClasses(s.actionGroup, compact ? s.actionGroupCompact : undefined)}><ComponentActions pane={pane} title={title} active={focused || minimized} narrow={narrow} menu={{ open: menuOpen, onOpenChange: setMenuOpen, onShowTier: () => setShowTier(true) }} /></span> : null}
         </div>
                   {pane && showTier && !minimized ? <Text size={300} role="status" data-testid="tier-reason" className={s.worldNote}>{pane.tierReason}</Text> : null}
-        {description && !minimized ? <Text size={300}>{description}</Text> : null}
-        {guide && !minimized ? <Text size={300} className={s.guide} data-testid="screen-guide">{guide}</Text> : null}
         {world.note && !minimized ? <Text size={300} className={s.worldNote} data-testid="view-world-note">{world.note}</Text> : null}
         {world.hiddenNote && !minimized ? <Text size={300} role="status" className={s.worldNote} data-testid="view-hidden-selection">{HIDDEN_SELECTION_TEXT}</Text> : null}
       </div>
@@ -279,6 +277,9 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
       <div data-testid="component-data" data-tier="supporting" style={{ display: 'contents' }}>
         {world.single ? <div data-testid="view-world-body" style={{ display: world.hideAll ? 'none' : 'contents' }}>{children}</div> : children}
       </div>
+      {/* 画面の説明（description・screenGuides）は、結論のサマリーを各コンポーネントの上部に出すため（FR-041 AC-051）、データの下に置く */}
+      {description && !minimized ? <Text size={300} data-testid="screen-description">{description}</Text> : null}
+      {guide && !minimized ? <Text size={300} className={s.guide} data-testid="screen-guide">{guide}</Text> : null}
       <CopilotProposal componentKey={testId.replace(/^component-/, '')} title={title} />
       </div>
       {pane && !pane.maximized && !pane.minimized ? (

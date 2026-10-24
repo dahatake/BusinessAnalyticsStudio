@@ -17,7 +17,7 @@ export interface AiImportRelayStub extends RelayStub {
 export async function startAiImportRelayStub(opts: { configured?: boolean; mode?: AiImportMode; initialKey?: string; enabled?: boolean; authMethod?: 'api-key' | 'entra' } = {}): Promise<AiImportRelayStub> {
   const received: RelayStub['received'] = [];
   let foundry: { endpoint: string; deployment: string; key: string; authMethod: 'api-key' | 'entra' } | null = opts.configured
-    ? { endpoint: 'https://example.invalid/openai/v1', deployment: 'dummy-deploy', key: opts.initialKey ??     'dummy-key-for-system-test-9999', authMethod: opts.authMethod ?? 'api-key' }
+    ? { endpoint: 'https://dummy.openai.azure.com/openai/v1', deployment: 'dummy-deploy', key: opts.initialKey ??     'dummy-key-for-system-test-9999', authMethod: opts.authMethod ?? 'api-key' }
     : null;
       // 実接続の有効化（FR-275）。configured 指定の既存ケースは有効で始まる（enabled で上書きできる）
       let enabled = opts.enabled ?? !!opts.configured;

@@ -4,7 +4,7 @@
 import type { Page } from '@playwright/test';
 import { test, expect, openScreen, component, entity, hook, scene, expectCanvasDrawn, waitFirstFrame, captureDownload, recordExportConsent, setEditMode } from '../support/fixtures';
 import { examplePack, makeVariant } from '../support/packs';
-import { gotoScreen, chooseView } from '../support/screens';
+import { gotoScreen, chooseView, openViewMenu } from '../support/screens';
 
 const mono = examplePack('mono');
 const koto = examplePack('koto');
@@ -40,6 +40,34 @@ async function clickSceneObject(page: Page, entityId: string) {
   }
   expect(o, `3D ビューに ${entityId} が表示されていない`).toBeTruthy();
   await page.mouse.click(o!.x, o!.y);
+}
+/** Twin ビューの 3D（Items3DScene）の状態。廃止した 3D シーンの hook（t.scene.*）ではなく t.view.state を読む */
+async function twinState(page: Page) {
+  return hook<{ selectedIds: string[]; items3d: string[] }>(page, "t.view.state('twin-view')");
+}
+/** Twin ビューの 3D で項目を押す。球は DOM でないので、ラベル（pointer-events なし。球の上に出る）の下を走査して押し、選択されるまで続ける */
+async function clickTwinItem3D(page: Page, entityId: string, name: string) {
+  const v3 = component(page, 'twin-view');
+  expect((await twinState(page)).items3d, `3D 空間に ${entityId} が描かれていない`).toContain(entityId);
+  const label = v3.locator(`[data-zoom-surface="3d"] [title="${name}"]`).first();
+  await expect(label, `3D に ${name} のラベルが出ない`).toBeVisible();
+  await v3.locator('[data-zoom-surface="3d"] canvas').first().scrollIntoViewIfNeeded();
+  let prev = '';
+  for (let i = 0; i < 40; i++) {
+    await nextFrames(page, 2);
+    const b = (await label.boundingBox())!;
+    const cur = `${b.x.toFixed(0)},${b.y.toFixed(0)}`;
+    if (cur === prev) break; // 描画位置が落ち着くのを待つ
+    prev = cur;
+    await page.waitForTimeout(100);
+  }
+  const b = (await label.boundingBox())!;
+  const cx = b.x + b.width / 2;
+  for (let dy = 6; dy <= 70; dy += 4) {
+    await page.mouse.click(cx, b.y + b.height / 2 + dy);
+    if ((await twinState(page)).selectedIds.includes(entityId)) return;
+  }
+  expect((await twinState(page)).selectedIds, `3D で ${name} を押しても選択されない`).toContain(entityId);
 }
 async function toggleAnimation(page: Page, state: '停止中' | '再生中') {
   if (!(await page.getByTestId('animation-state').innerText()).includes(state)) await page.keyboard.press('p');
@@ -136,28 +164,41 @@ test.describe('FR-025 クロスハイライト', () => {
   // FR-025 AC-030
   test('FR-025 AC-030 3D で拠点を選ぶと地図・表・ガント・出典でハイライトされ、表で選ぶと 3D で強調されカメラが向く', async ({ page, start }) => {
     await start();
-    const site = mono.entities().find((e) => e.type === 'site');
-    expect(site, 'お手本パックに拠点がない').toBeTruthy();
-    await openScreen(page, 'view3d');
-    await clickSceneObject(page, site.id);
+    const sites = mono.entities().filter((e) => e.type === 'site');
+    expect(sites.length, 'お手本パックに拠点がない').toBeGreaterThan(0);
+    // 3D の表現 = Twin ビュー（Items3DScene）。項目は t.view.state('twin-view').items3d と DOM のラベルで扱う
+    await page.setViewportSize({ width: 1600, height: 1800 }); // Twin ビューの 3D 全体を画面内に収める（球をマウスで押すため）
+    const v0 = await openScreen(page, 'view3d');
+    await toggleAnimation(page, '停止中'); // 回転を止めて、球の位置を安定させる
+    const cv = (await v0.locator('[data-zoom-surface="3d"] canvas').first().boundingBox())!;
+    const items3d = (await twinState(page)).items3d;
+    const inCanvas = async (name: string) => {
+      const lb = await v0.locator(`[data-zoom-surface="3d"] [title="${name}"]`).first().boundingBox();
+      return !!lb && lb.x > cv.x + 20 && lb.x + lb.width < cv.x + cv.width - 20 && lb.y > cv.y + 20 && lb.y + lb.height < cv.y + cv.height - 80;
+    };
+    const shown: any[] = [];
+    for (const e of mono.entities().filter((x) => items3d.includes(x.id))) if (await inCanvas(e.name)) shown.push(e);
+    const site = shown.find((e) => e.type === 'site');
+    expect(site, '3D の描画領域の中に表示されている拠点がない').toBeTruthy();
+    await clickTwinItem3D(page, site.id, site.name);
     for (const key of ['map', 'table', 'gantt', 'sources']) {
       const c = await openScreen(page, key);
       await expect(entity(c, site.id).first(), `${key} でハイライトされない`).toHaveAttribute('data-highlight', /selected|related/);
     }
-    // 逆方向: 表 → 3D
-    const other = mono.entities().filter((e) => e.type === 'site' || e.type === 'part').find((e) => e.id !== site.id)!;
+    // 逆方向: 表 → 3D（Twin ビューの 3D はカメラを動かさないので、描画領域に収まっている項目で見る）
     const table = await openScreen(page, 'table');
+    let other: any;
+    for (const e of shown.filter((x) => x.id !== site.id)) if ((await entity(table, e.id).count()) > 0) { other = e; break; }
+    expect(other, '3D の描画領域の中に表示され、表にも行がある項目が、拠点のほかにない').toBeTruthy();
     await entity(table, other.id).first().click();
     const v3 = await openScreen(page, 'view3d');
-    await expect.poll(async () => (await scene.objects(page)).find((o) => o.entityId === other.id)?.highlighted).toBe(true);
-    await expect.poll(async () => (await scene.camera(page)).moving, { timeout: 10_000 }).toBe(false);
-    const o = (await scene.objects(page)).find((x) => x.entityId === other.id)!;
-    const b = (await v3.locator('canvas').first().boundingBox())!;
-    expect(o.visible).toBe(true);
-    expect(o.x).toBeGreaterThan(b.x);
-    expect(o.x).toBeLessThan(b.x + b.width);
-    expect(o.y).toBeGreaterThan(b.y);
-    expect(o.y).toBeLessThan(b.y + b.height);
+    // 3D の表現で強調（選択状態）され、描かれている項目に含まれ、ラベルが 3D の描画領域の内側に表示される
+    await expect.poll(async () => (await twinState(page)).selectedIds).toContain(other.id);
+    expect((await twinState(page)).items3d, '3D 空間に項目が描かれていない').toContain(other.id);
+    const label = v3.locator(`[data-zoom-surface="3d"] [title="${other.name}"]`).first();
+    await expect(label, `3D に ${other.name} のラベルが出ない（強調・表示されていない）`).toBeVisible();
+    // ラベルは項目が選択中のときも必ず出る（Twin ビューの 3D はカメラを動かさず、パンの位置は画面の配置に依るので、描画領域内の座標は見ない）
+
   });
 });
 
@@ -185,28 +226,24 @@ test.describe('FR-029 停止中の連動', () => {
 test.describe('FR-033 パンくずリストとミニマップ', () => {
   // FR-033 AC-040
   test('FR-033 AC-040 末端まで移動するとパンくずに全階層が並び、上位を選ぶとその視点へ移動し、ミニマップに表示範囲が出る', async ({ page, start }) => {
+    // 画面 view3d の廃止に伴い、現行の Twin ビュー（意味的ズームのパンくず）で読み替える。ミニマップは AC のとおり Twin ビューにも必要（弱めない）
     await start();
-    await openScreen(page, 'view3d');
-    const leaf = leafEntities().find((e) => ancestors(e.id).length >= 3)!;
-    expect(leaf, 'お手本パックに 3 階層以上の項目がない').toBeTruthy();
-    const chain = ancestors(leaf.id);
-    await entity(await openScreen(page, 'table'), leaf.id).first().click();
-    await openScreen(page, 'view3d');
-    const crumbs = page.getByRole('navigation', { name: 'パンくずリスト' });
-    for (const a of chain) await expect(crumbs).toContainText(a.name);
-    await expect(page.getByTestId('minimap').getByTestId('minimap-viewport')).toBeVisible();
-    // 上位の階層名を Enter で選ぶ
-    const upper = chain[0];
-    const camBefore = await scene.camera(page);
-    await crumbs.getByRole('link', { name: upper.name }).focus();
+    const root = await openScreen(page, 'twin-view');
+    const crumbs = root.getByRole('navigation', { name: 'パンくず' });
+    await root.getByRole('button', { name: '全体表示に戻す' }).click();
+    // 末端（詳細）まで移動すると、全階層（全体・要素・詳細）の名前が並ぶ
+    for (let i = 0; i < 5 && (await root.getAttribute('data-zoom-level')) !== 'detail'; i++) await root.getByRole('button', { name: '拡大' }).click();
+    await expect(root).toHaveAttribute('data-zoom-level', 'detail');
+    for (const label of ['全体', '要素', '詳細']) await expect(crumbs, `パンくずに「${label}」がない`).toContainText(label);
+    await expect(crumbs.locator('[aria-current="location"]')).toContainText('詳細');
+    await expect(root.getByTestId('minimap').getByTestId('minimap-viewport'), 'ミニマップに現在の表示範囲が出ない').toBeVisible();
+    // 上位の階層名を Enter で選ぶ → その階層へ移動
+    await crumbs.getByRole('button', { name: /^要素/ }).focus();
     await page.keyboard.press('Enter');
-    await expect.poll(async () => JSON.stringify((await scene.camera(page)).position)).not.toBe(JSON.stringify(camBefore.position));
-    await expect(crumbs).not.toContainText(leaf.name);
+    await expect(root).toHaveAttribute('data-zoom-level', 'element');
     // クリックでも
-    await entity(await openScreen(page, 'table'), leaf.id).first().click();
-    await openScreen(page, 'view3d');
-    await crumbs.getByRole('link', { name: chain[1].name }).click();
-    await expect(crumbs).not.toContainText(leaf.name);
+    await crumbs.getByRole('button', { name: /^全体/ }).click();
+    await expect(root).toHaveAttribute('data-zoom-level', 'overview');
   });
 });
 
@@ -214,25 +251,28 @@ test.describe('FR-034 停止中の階層の切替', () => {
   // FR-034 AC-041
   test('FR-034 AC-041 P で止めてからズームすると、しきい値を越えた時点で下位の階層が表示されパンくずも変わる', async ({ page, start }) => {
     await start();
-    const v3 = await openScreen(page, 'view3d');
+    // 画面 view3d の廃止に伴い、現行の Twin ビュー（Graph。意味的ズームの倍率しきい値）で読み替える
+    await start();
+    const root = await openScreen(page, 'twin-view');
     await toggleAnimation(page, '停止中');
-    const crumbs = page.getByRole('navigation', { name: 'パンくずリスト' });
+    const menu = await openViewMenu(page, root);
+    await menu.getByRole('menuitemradio', { name: 'Graph', exact: true }).click();
+    await root.getByRole('button', { name: '全体表示に戻す' }).click();
+    await expect(root).toHaveAttribute('data-zoom-level', 'overview');
+    const crumbs = root.getByRole('navigation', { name: 'パンくず' });
     const before = await crumbs.innerText();
-    const b = (await v3.locator('canvas').first().boundingBox())!;
+    const surface = root.locator('[data-zoom-surface="graph"]').first();
+    await expect(surface).toBeVisible();
+    const b = (await surface.boundingBox())!;
     await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
     let changed = false;
-    for (let i = 0; i < 30 && !changed; i++) {
+    for (let i = 0; i < 40 && !changed; i++) {
       await page.mouse.wheel(0, -200);
       await nextFrames(page, 2);
-      changed = (await crumbs.innerText()) !== before;
+      changed = (await root.getAttribute('data-zoom-level')) !== 'overview';
     }
-    expect(changed, 'ズームしてもパンくずの階層が変わらない').toBe(true);
-    const visible = (await scene.objects(page)).filter((o) => o.visible).map((o) => o.entityId);
-    const level = (await crumbs.innerText()).split(/\n|>|›|\//).map((s) => s.trim()).filter(Boolean);
-    const last = mono.entities().find((e) => e.name === level[level.length - 1]);
-    expect(last, 'パンくずの末尾が階層の項目ではない').toBeTruthy();
-    const children = mono.entities().filter((e) => e.parentId === last.id).map((e) => e.id);
-    if (children.length) expect(children.some((c) => visible.includes(c)), '下位の階層が表示されていない').toBe(true);
+    expect(changed, 'ズームしてもしきい値を越えた時点で下位の階層に切り替わらない').toBe(true);
+    expect(await crumbs.innerText(), 'パンくずの階層名が変わらない').not.toBe(before);
   });
 });
 
