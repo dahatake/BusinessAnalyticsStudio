@@ -156,6 +156,8 @@ interface DragState {
   snap?: SnapState | null;
   /** 自由配置で動かしている間の、すべてのコンポーネントの位置と大きさ（作業領域に対する割合。押し出し済み。ドロップで保存する。FR-173・FR-184） */
   live?: Record<string, FloatRect> | null;
+  /** ポインターがピン止めしたコンポーネントの上にある（置き先にならない。FR-216 AC-496） */
+  overPinned?: boolean;
 }
 
 /** 拡大表示の位置と大きさ（作業領域に対する割合。FR-174・FR-175） */
@@ -885,6 +887,11 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     // 動かし始めの配置（画面上の座標）。置き場所の判定と、押し出しの計算の元にする（FR-173・FR-184）
     const start = measureAll();
     const hitRects = snapshotRects();
+    // ピン止めしたものは置き先の一覧に入らないので、その上にいるかの判定用に、位置を別に控える
+    const pinRects: DOMRect[] = [...pinSet].filter((k) => k !== key).flatMap((k) => {
+      const r = rootRef.current?.querySelector(`[data-testid="component-${k}"]`)?.getBoundingClientRect();
+      return r && r.width > 0 && r.height > 0 ? [r] : [];
+    });
     const skipEdges = new Set<Edge>(edgesAtPoint(sx, sy));
     // つかんだ位置（コンポーネントの左上からの差）。置いた位置の計算に使う（FR-173）
     const grabRect = rootRef.current?.querySelector(`[data-testid="component-${key}"]`)?.getBoundingClientRect() ?? null;
@@ -918,12 +925,16 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
         active = true;
         document.body.style.userSelect = 'none';
       }
-      const hit = hitTest(ev.clientX, ev.clientY, key, hitRects);
+      const hitAny = hitTest(ev.clientX, ev.clientY, key, hitRects);
+      // ピン止めしたコンポーネントの上は置き先にならない（置き先の表示も出さない。FR-216 AC-496）
+      const hitPinned = pinRects.some((r) => ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom);
+      const overPinned = hitPinned;
+      const hit = overPinned ? null : hitAny;
       const snap = snapAt(ev.clientX, ev.clientY, key, hit?.key ?? null, skipEdges);
       // 分割へ入れる置き場所（上下左右の辺）でも、端のスナップでもなければ、ポインターに追従して置く（自由配置。ぶつかるものは押し出す。FR-173・FR-184）
       const docking = !!snap || (hit !== null && (hit.zone !== 'tabs' || compact));
       lastLive = docking ? null : liveAt(ev.clientX, ev.clientY);
-      lastDrag = { key, target: hit && !snap && docking ? { key: hit.key, zone: hit.zone, rect: hit.rect } : null, snap, live: lastLive };
+      lastDrag = { key, target: hit && !snap && docking ? { key: hit.key, zone: hit.zone, rect: hit.rect } : null, snap, live: lastLive, overPinned };
       setDrag(lastDrag);
     };
     const onUp = () => {
@@ -1085,6 +1096,19 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
           </Text>
         </div>
       ) : null}
+      {drag && !drag.target && !drag.snap && !drag.overPinned && drag.live?.[drag.key] ? (() => {
+        const area = rootRef.current?.getBoundingClientRect();
+        const lr = drag.live![drag.key]!;
+        if (!area) return null;
+        return (
+          <div
+            data-testid="drop-indicator"
+            aria-hidden
+            className={s.drop}
+            style={{ left: area.left + lr.x * area.width, top: area.top + lr.y * area.height, width: lr.w * area.width, height: lr.h * area.height }}
+          />
+        );
+      })() : null}
       {drag?.snap ? (() => {
         const sn = drag.snap;
         const area = rootRef.current?.getBoundingClientRect();
