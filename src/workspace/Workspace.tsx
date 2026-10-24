@@ -73,7 +73,7 @@ const useStyles = makeStyles({
   },
   noticeIdle: { position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' },
   // 分割の木を入れる箱。拡大表示中は、余白で残りの領域に収める（FR-174）
-  treeBox: { display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 'min(420px, 50vh)', minWidth: 0, boxSizing: 'border-box' },
+  treeBox: { display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 'min(240px, 30vh)', minWidth: 0, boxSizing: 'border-box' },
   // 自由配置・拡大表示のコンポーネントの置き場（作業領域に対する絶対配置。重なりを許す。FR-173）
   floatBox: { position: 'absolute', display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, boxSizing: 'border-box', boxShadow: tokens.shadow16, borderRadius: tokens.borderRadiusMedium, overflow: 'hidden' },
   // 移動中・直後の滑らかな動き（FR-185）。OS の「動きの軽減」が有効なときは途中の動きを省く（AC-394）
