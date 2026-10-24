@@ -8,7 +8,7 @@ export const PERSONA_PRIMARY: Readonly<Record<Persona, string>> = {
   経営層: 'matrix',
   事業部門: 'issue-solution',
   IT: 'architecture',
-  現場: 'map',
+  現場: 'twin-view',
 };
 
 /** レイアウトの中で、面積の割合が最大のコンポーネント（タブのまとまりは、前面のタブを数える）。同じ大きさなら先の方。 */

@@ -26,6 +26,9 @@ const useStyles = makeStyles({
     border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     borderRadius: tokens.borderRadiusMedium,
     minWidth: 0,
+    // 詳細が親のコンポーネントより大きな領域を占めないよう高さに上限を設け、超えた分は内側でスクロールする（FR-110 AC-135: 最大の領域は主役のコンポーネント）
+    maxHeight: 'min(40vh, 360px)',
+    overflowY: 'auto',
   },
   section: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS },
   badges: { display: 'flex', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalXS, rowGap: tokens.spacingVerticalXS },
