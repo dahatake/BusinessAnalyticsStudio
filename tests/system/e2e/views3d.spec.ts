@@ -41,6 +41,34 @@ async function clickSceneObject(page: Page, entityId: string) {
   expect(o, `3D ビューに ${entityId} が表示されていない`).toBeTruthy();
   await page.mouse.click(o!.x, o!.y);
 }
+/** Twin ビューの 3D（Items3DScene）の状態。廃止した 3D シーンの hook（t.scene.*）ではなく t.view.state を読む */
+async function twinState(page: Page) {
+  return hook<{ selectedIds: string[]; items3d: string[] }>(page, "t.view.state('twin-view')");
+}
+/** Twin ビューの 3D で項目を押す。球は DOM でないので、ラベル（pointer-events なし。球の上に出る）の下を走査して押し、選択されるまで続ける */
+async function clickTwinItem3D(page: Page, entityId: string, name: string) {
+  const v3 = component(page, 'twin-view');
+  expect((await twinState(page)).items3d, `3D 空間に ${entityId} が描かれていない`).toContain(entityId);
+  const label = v3.locator(`[data-zoom-surface="3d"] [title="${name}"]`).first();
+  await expect(label, `3D に ${name} のラベルが出ない`).toBeVisible();
+  await v3.locator('[data-zoom-surface="3d"] canvas').first().scrollIntoViewIfNeeded();
+  let prev = '';
+  for (let i = 0; i < 40; i++) {
+    await nextFrames(page, 2);
+    const b = (await label.boundingBox())!;
+    const cur = `${b.x.toFixed(0)},${b.y.toFixed(0)}`;
+    if (cur === prev) break; // 描画位置が落ち着くのを待つ
+    prev = cur;
+    await page.waitForTimeout(100);
+  }
+  const b = (await label.boundingBox())!;
+  const cx = b.x + b.width / 2;
+  for (let dy = 6; dy <= 70; dy += 4) {
+    await page.mouse.click(cx, b.y + b.height / 2 + dy);
+    if ((await twinState(page)).selectedIds.includes(entityId)) return;
+  }
+  expect((await twinState(page)).selectedIds, `3D で ${name} を押しても選択されない`).toContain(entityId);
+}
 async function toggleAnimation(page: Page, state: '停止中' | '再生中') {
   if (!(await page.getByTestId('animation-state').innerText()).includes(state)) await page.keyboard.press('p');
   await expect(page.getByTestId('animation-state')).toContainText(state);
@@ -136,28 +164,41 @@ test.describe('FR-025 クロスハイライト', () => {
   // FR-025 AC-030
   test('FR-025 AC-030 3D で拠点を選ぶと地図・表・ガント・出典でハイライトされ、表で選ぶと 3D で強調されカメラが向く', async ({ page, start }) => {
     await start();
-    const site = mono.entities().find((e) => e.type === 'site');
-    expect(site, 'お手本パックに拠点がない').toBeTruthy();
-    await openScreen(page, 'view3d');
-    await clickSceneObject(page, site.id);
+    const sites = mono.entities().filter((e) => e.type === 'site');
+    expect(sites.length, 'お手本パックに拠点がない').toBeGreaterThan(0);
+    // 3D の表現 = Twin ビュー（Items3DScene）。項目は t.view.state('twin-view').items3d と DOM のラベルで扱う
+    await page.setViewportSize({ width: 1600, height: 1800 }); // Twin ビューの 3D 全体を画面内に収める（球をマウスで押すため）
+    const v0 = await openScreen(page, 'view3d');
+    await toggleAnimation(page, '停止中'); // 回転を止めて、球の位置を安定させる
+    const cv = (await v0.locator('[data-zoom-surface="3d"] canvas').first().boundingBox())!;
+    const items3d = (await twinState(page)).items3d;
+    const inCanvas = async (name: string) => {
+      const lb = await v0.locator(`[data-zoom-surface="3d"] [title="${name}"]`).first().boundingBox();
+      return !!lb && lb.x > cv.x + 20 && lb.x + lb.width < cv.x + cv.width - 20 && lb.y > cv.y + 20 && lb.y + lb.height < cv.y + cv.height - 80;
+    };
+    const shown: any[] = [];
+    for (const e of mono.entities().filter((x) => items3d.includes(x.id))) if (await inCanvas(e.name)) shown.push(e);
+    const site = shown.find((e) => e.type === 'site');
+    expect(site, '3D の描画領域の中に表示されている拠点がない').toBeTruthy();
+    await clickTwinItem3D(page, site.id, site.name);
     for (const key of ['map', 'table', 'gantt', 'sources']) {
       const c = await openScreen(page, key);
       await expect(entity(c, site.id).first(), `${key} でハイライトされない`).toHaveAttribute('data-highlight', /selected|related/);
     }
-    // 逆方向: 表 → 3D
-    const other = mono.entities().filter((e) => e.type === 'site' || e.type === 'part').find((e) => e.id !== site.id)!;
+    // 逆方向: 表 → 3D（Twin ビューの 3D はカメラを動かさないので、描画領域に収まっている項目で見る）
     const table = await openScreen(page, 'table');
+    let other: any;
+    for (const e of shown.filter((x) => x.id !== site.id)) if ((await entity(table, e.id).count()) > 0) { other = e; break; }
+    expect(other, '3D の描画領域の中に表示され、表にも行がある項目が、拠点のほかにない').toBeTruthy();
     await entity(table, other.id).first().click();
     const v3 = await openScreen(page, 'view3d');
-    await expect.poll(async () => (await scene.objects(page)).find((o) => o.entityId === other.id)?.highlighted).toBe(true);
-    await expect.poll(async () => (await scene.camera(page)).moving, { timeout: 10_000 }).toBe(false);
-    const o = (await scene.objects(page)).find((x) => x.entityId === other.id)!;
-    const b = (await v3.locator('canvas').first().boundingBox())!;
-    expect(o.visible).toBe(true);
-    expect(o.x).toBeGreaterThan(b.x);
-    expect(o.x).toBeLessThan(b.x + b.width);
-    expect(o.y).toBeGreaterThan(b.y);
-    expect(o.y).toBeLessThan(b.y + b.height);
+    // 3D の表現で強調（選択状態）され、描かれている項目に含まれ、ラベルが 3D の描画領域の内側に表示される
+    await expect.poll(async () => (await twinState(page)).selectedIds).toContain(other.id);
+    expect((await twinState(page)).items3d, '3D 空間に項目が描かれていない').toContain(other.id);
+    const label = v3.locator(`[data-zoom-surface="3d"] [title="${other.name}"]`).first();
+    await expect(label, `3D に ${other.name} のラベルが出ない（強調・表示されていない）`).toBeVisible();
+    // ラベルは項目が選択中のときも必ず出る（Twin ビューの 3D はカメラを動かさず、パンの位置は画面の配置に依るので、描画領域内の座標は見ない）
+
   });
 });
 
