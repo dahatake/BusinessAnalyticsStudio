@@ -2,8 +2,11 @@
 // - 送信先は、設定したエンドポイント配下の /responses だけ。リダイレクトは追わない（キーを別の宛先へ送らない。NFR-SEC-005 ⑤）。
 // - エラー・応答の文字列にキーの値は含めない。
 export class FoundryError extends Error {
-  constructor(message: string, readonly kind: 'timeout' | 'http' | 'network' | 'format') { super(message); }
+  constructor(message: string, readonly kind: 'timeout' | 'http' | 'network' | 'format' | 'token') { super(message); }
 }
+
+/** Entra ID のトークンを取得できないときの案内（値は含めない。FR-282 AC-761） */
+export const TOKEN_UNAVAILABLE_MESSAGE = 'Microsoft Entra ID のトークンを取得できませんでした。ターミナルで `az login` を実行して Azure にサインインしてください（Azure CLI が必要です）';
 
 export const FOUNDRY_TIMEOUT_MS = 30_000;
 
@@ -69,12 +72,12 @@ function importInput(file: ImportFile): unknown {
 /** 認証情報を付けて Responses API を呼ぶ。エラー・応答の文字列に認証情報は含めない */
 export async function callFoundryWithInput(
   s: FoundrySecret & { authMethod?: 'api-key' | 'entra' }, input: unknown,
-  f: typeof fetch = (u, i) => fetch(u, i), timeoutMs = FOUNDRY_TIMEOUT_MS, getToken?: TokenProvider,
+  f: typeof fetch = (u, i) => fetch(u, i), timeoutMs = FOUNDRY_TIMEOUT_MS, getToken?: TokenProvider, maxOutputTokens?: number,
 ): Promise<string> {
   let credential = s.key;
   if (s.authMethod === 'entra') {
     try { credential = getToken ? await getToken() : ''; } catch { credential = ''; }
-    if (!credential) throw new FoundryError('Microsoft Entra ID のトークンを取得できませんでした', 'http');
+    if (!credential) throw new FoundryError(TOKEN_UNAVAILABLE_MESSAGE, 'token');
   }
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), timeoutMs);
@@ -82,7 +85,7 @@ export async function callFoundryWithInput(
     const headers: Record<string, string> = { 'content-type': 'application/json', authorization: ['Bearer', credential].join(' ') };
     if (s.authMethod !== 'entra') headers['api-key'] = credential;
     const res = await f(responsesUrl(s.endpoint), {
-      method: 'POST', redirect: 'error', signal: ctl.signal, headers, body: JSON.stringify({ model: s.deployment, input }),
+      method: 'POST', redirect: 'error', signal: ctl.signal, headers, body: JSON.stringify({ model: s.deployment, input, ...(maxOutputTokens ? { max_output_tokens: maxOutputTokens } : {}) }),
     });
     if (!res.ok) throw new FoundryError(`Foundry がエラーを返しました（HTTP ${res.status}）`, 'http');
     const text = extractText(await res.json().catch(() => null));

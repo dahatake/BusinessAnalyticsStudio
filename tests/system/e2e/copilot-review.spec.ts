@@ -166,7 +166,7 @@ test.describe('FR-282 Foundry の接続設定・FR-283 未設定のとき', () =
       for (const f of [endpoint, deploy, auth, key]) await expect(f).toBeVisible();
       // キーボードだけで入力・保存
       await endpoint.focus();
-      await page.keyboard.type('https://example.invalid/');
+      await page.keyboard.type('https://dummyres.openai.azure.com/openai/v1');
       await deploy.focus();
       await page.keyboard.type('dummy-deploy');
       await key.focus();
@@ -211,6 +211,55 @@ test.describe('FR-282 Foundry の接続設定・FR-283 未設定のとき', () =
       await expect(page.getByTestId('copilot-proposal')).toHaveCount(0);
       expect(await table.getByTestId('component-data').innerText()).toBe(before);
       expect(await appData(page)).toBe(storeBefore);
+    } finally {
+      await relay.close();
+    }
+  });
+});
+
+test.describe('FR-282 エンドポイントの入力案内と検証', () => {
+  // FR-282 AC-764
+  test('FR-282 AC-764 エンドポイント欄に入力形式の案内が表示され、不正な値（http・Azure 標準ドメイン以外）は保存されず、欄に結び付いた理由が値を含めずに示され、保存済みの値は変わらない', async ({ page, start }) => {
+    const relay = await startReviewStub({ foundry: 'not-configured' });
+    try {
+      await start({ relayUrl: relay.url });
+      await selectPersona(page, '事業部門');
+      const settings = await openScreen(page, 'settings');
+      const foundry = settings.getByTestId('foundry-settings');
+      await expect(foundry).toBeVisible();
+      // 入力形式の案内（例）
+      await expect(foundry).toContainText('https://<リソース名>.openai.azure.com/openai/v1');
+      await expect(foundry).toContainText('https://<リソース名>.services.ai.azure.com/openai/v1');
+      const endpoint = foundry.getByLabel(/エンドポイント/);
+      const deploy = foundry.getByLabel(/デプロイ名/);
+      const key = foundry.getByLabel(/API キー/);
+      const save = foundry.getByRole('button', { name: /保存/ }).first();
+      const puts = () => relay.received.filter((r) => r.method === 'PUT' && r.path === '/foundry/config');
+      await deploy.fill('dummy-deploy');
+      await key.fill('dummy-key-for-system-test-0000');
+      // 異常系: https でない / Azure 標準ドメイン以外
+      for (const bad of ['http://bad-host.example.test/openai/v1', 'https://bad-host.example.test/openai/v1', 'not a url']) {
+        await endpoint.fill(bad);
+        await save.click();
+        expect(puts().length, `不正な値「${bad}」が保存された`).toBe(0);
+        await expect(foundry.getByTestId('foundry-status')).toContainText('未設定');
+        await expect(endpoint).toHaveAttribute('aria-invalid', 'true');
+        const msgId = await endpoint.getAttribute('aria-describedby');
+        expect(msgId, '検証メッセージが欄に結び付いていない（aria-describedby）').toBeTruthy();
+        const message = (await page.locator(msgId!.split(/\s+/).map((i) => `[id="${i}"]`).join(', ')).allInnerTexts()).join(' ');
+        expect(message.trim().length, '検証メッセージが空').toBeGreaterThan(0);
+        expect(message, '検証メッセージに入力値が含まれる').not.toContain('bad-host.example.test');
+      }
+      // 正しい値は保存でき、保存済みの値のあとで不正な値を保存しようとしても変わらない
+      await endpoint.fill('https://dummyres.openai.azure.com/openai/v1');
+      await save.click();
+      await expect(foundry.getByText('設定済み').first()).toBeVisible();
+      const before = puts().length;
+      expect(before).toBe(1);
+      await endpoint.fill('http://bad-host.example.test/openai/v1');
+      await save.click();
+      expect(puts().length, '不正な値で保存の呼び出しが増えた').toBe(before);
+      await expect(foundry.getByText('設定済み').first()).toBeVisible();
     } finally {
       await relay.close();
     }
