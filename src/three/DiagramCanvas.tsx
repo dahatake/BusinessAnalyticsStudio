@@ -33,6 +33,7 @@ export function DiagramCanvas({ children, cameraPosition = [9, 8, 11], label }: 
   const quality = useView3D((s) => s.quality);
   const playing = useAnimation((s) => s.playing);
   const preset = useIndustryPreset();
+  const setRenderer = useView3D((s) => s.setRenderer);
   const profile = QUALITY_PROFILES[quality];
   return (
     <div style={{ position: 'relative', width: '100%', height: '60vh', minHeight: 320, flexShrink: 0, overflow: 'hidden', borderRadius: tokens.borderRadiusMedium }} role="img" aria-label={label} data-testid="diagram-3d">
@@ -41,6 +42,8 @@ export function DiagramCanvas({ children, cameraPosition = [9, 8, 11], label }: 
           gl={{ antialias: profile.antialias, preserveDrawingBuffer: true, powerPreference: 'high-performance' }}
           dpr={Math.min(typeof window === 'undefined' ? 1 : window.devicePixelRatio, profile.maxDpr)}
           frameloop={playing ? 'always' : 'demand'}
+          // この枠は WebGL2 で描く（FR-065 AC-080）。設定パネルの描画方式に反映する
+          onCreated={() => setRenderer('WebGL2')}
           camera={{ position: cameraPosition, fov: 45 }}
           style={{ width: '100%', height: '100%', display: 'block' }}
         >

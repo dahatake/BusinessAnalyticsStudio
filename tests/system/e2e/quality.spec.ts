@@ -177,13 +177,13 @@ test.describe('NFR-A11Y-001 WCAG 2.2 AA・キーボード', () => {
 test.describe('NFR-A11Y-003 視覚的な表現の代替', () => {
   type Shown = { ids: string[] };
   const shown: Record<string, (page: Page, c: Locator) => Promise<Shown>> = {
-    view3d: async (page) => ({ ids: (await scene.objects(page)).filter((o) => o.visible).map((o) => o.entityId) }),
+    view3d: async (page) => ({ ids: (await scene.objects(page)).map((o) => o.entityId) }),
     map: async (page) => ({ ids: (await hook<Array<{ entityId: string }>>(page, 't.map.markers()')).map((m) => m.entityId) }),
     'knowledge-graph': async (page) => ({ ids: (await hook<Array<{ id: string; visible: boolean }>>(page, 't.graph.nodes()')).filter((n) => n.visible).map((n) => n.id) }),
     matrix: async (_p, c) => ({ ids: await c.locator('[data-entity-id]').evaluateAll((els) => [...new Set(els.map((e) => e.getAttribute('data-entity-id')!))]) }),
   };
   const all = () => [...mono.issues(), ...mono.solutions(), ...mono.products(), ...mono.entities()];
-  // NFR-A11Y-003 AC-173
+  // NFR-A11Y-003 AC-173（明確化: 表は LOD で 3D 上非表示の項目も含むモデルの全項目。3D は visible で絞らず全件と比べる）
   test('NFR-A11Y-003 AC-173 3D・地図・ナレッジグラフ・2×2 で「表で見る」を選ぶと同じ件数・同じ値の表が出て、表の選択が元の表現でも選択される', async ({ page, start }) => {
     await start();
     for (const key of Object.keys(shown)) {

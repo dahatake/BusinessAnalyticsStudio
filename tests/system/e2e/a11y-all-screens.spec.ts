@@ -205,7 +205,7 @@ test.describe('NFR-A11Y-009 リフローと文字の拡大', () => {
     await page.setViewportSize({ width: 1600, height: 900 });
     const app = await start();
     const labels: Record<string, () => Promise<string[]>> = {
-      'twin-view': async () => (await scene.objects(page)).filter((o) => o.visible).map((o) => o.entityId),
+      'twin-view': async () => (await scene.objects(page)).map((o) => o.entityId),
       map: async () => (await hook<Array<{ entityId: string }>>(page, 't.map.markers()')).map((m) => m.entityId),
     };
     for (const key of Object.keys(labels)) {

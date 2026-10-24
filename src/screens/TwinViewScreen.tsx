@@ -17,6 +17,7 @@ import { onEntityKey, useEntityBinding, useSelection } from '../selection/hooks'
 import { usePackStore } from '../store/pack';
 import { useSelectionStore } from '../store/selection';
 import { Items3DSurface } from '../three/Items3DSurface';
+import { TwinMinimap } from './TwinMinimap';
 import { AnnotationControls, AnnotationLayer } from '../ink/AnnotationLayer';
 import {
   CONTROL_NOTE, FLOW_TEXT, FRESHNESS_NOTE, LAYER_LABELS, REAL_GROUP_LABELS, buildTwinModel, flowTouches,
@@ -197,6 +198,9 @@ export function TwinViewScreen() {
   const openItem = (id: string): void => { useSelectionStore.getState().select(id, { origin: ORIGIN }); setDetailId(id); setDepth(2); };
   const openCluster = (name: string): void => { setFocusCluster(name); setDepth(1); };
   const detailItem = detailId ? allItems.find((i) => i.id === detailId) : undefined;
+  const minimapIds = new Set<string>(
+    depth === 2 && detailItem ? [detailItem.id] : depth === 1 && focusCluster ? allItems.filter((i) => clusterOfItem(i) === focusCluster).map((i) => i.id) : [],
+  );
   const nameOf = (id: string): string => names.get(id) ?? id;
 
   const realColumn = showReal ? (
@@ -253,17 +257,18 @@ export function TwinViewScreen() {
       description="現実世界の設備・人・拠点と、デジタル世界の三つの層（Operations・Experience・Insights）を、Data と Control の流れで結んで見ます。"
       maxWidth="1200px"
     >
-      <div ref={rootRef} style={{ display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM }}>
+      <div ref={rootRef} style={{ position: 'relative', display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM }}>
         <div className={s.notes}>
           <Badge appearance="tint" color="informative" data-testid="twin-freshness">{FRESHNESS_NOTE}{fresh ? ` 出典の取得日: ${fresh}` : ' 取得日の記載なし'}</Badge>
           {hasControl || view.world === 'both' ? <Badge appearance="tint" color="warning" data-testid="twin-control-note">Control: {CONTROL_NOTE}</Badge> : null}
-          {is3d ? <ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} /> : null}
+          {!isGraph ? <ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} /> : null}
         </div>
         {model.itemIds.length === 0 ? (
           <EmptyView message="Twin ビューに表示する項目がありません（エンティティに世界区分（現実世界・デジタル世界）が必要です）。" />
         ) : (
           <>
             <ZoomBar label="Twin ビュー" depth={depth} elementDepth={ELEMENT_DEPTH} onGo={goDepth} elementLabels={focusCluster ? [focusCluster] : []} detailLabel={detailItem?.name} />
+            <TwinMinimap items={items3d} inView={minimapIds} status={`現在の表示範囲: ${depth === 2 && detailItem ? detailItem.name : depth === 1 && focusCluster ? focusCluster : '全体'}`} />
             {surf3d ? (
               <>
                 <div ref={surf3dRef} style={{ position: 'relative' }}>
@@ -276,7 +281,7 @@ export function TwinViewScreen() {
             <GraphScope active={isGraph} origin={ORIGIN} label="Twin ビュー">
               {depth === 0 ? <ZoomClusters clusters={clusters} onOpen={openCluster} /> : null}
               {depth === 1 && isGraph ? <GraphSurface origin={ORIGIN} label="Twin ビュー" nodes={graphNodes} edges={graphEdges} onOpen={openItem} zoomControls="external" /> : null}
-              {depth === 1 && !surf3d && !isGraph ? (
+              {depth === 1 && !surf3d && !isGraph && !asTable ? (
                 <div className={mergeClasses(s.board, !(showReal && showDigital) && s.boardOne)} data-testid="twin-board">
                   {realColumn}
                   {view.world === 'both' ? flowList : null}
@@ -294,9 +299,9 @@ export function TwinViewScreen() {
               ) : null}
             </GraphScope>
             {depth === 1 && (surf3d || isGraph) ? flowList : null}
-            {surf3d || isGraph ? (
+            {surf3d || isGraph || asTable ? (
               <GraphAlt
-                origin={ORIGIN} label="Twin ビュー" columns={['世界']}
+                origin={ORIGIN} label="Twin ビュー" columns={['世界']} showTableButton={isGraph}
                 nodes={allItems.map((i) => ({ id: i.id, name: i.name, kind: clusterOfItem(i), values: [i.world === 'real' ? '現実世界' : 'デジタル世界'] }))}
                 relations={graphEdges.map((e) => ({ id: e.id, from: e.from, to: e.to, label: e.label }))}
                 summary={`現実世界 ${model.real.length} 件、デジタル世界 ${model.digital.length} 件（${model.layers.filter((l) => l.layer !== 'none').map((l) => `${l.layer} ${l.items.length}`).join('、')}）`}

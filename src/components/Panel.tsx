@@ -56,7 +56,7 @@ const useStyles = makeStyles({
     color: tokens.colorNeutralForeground1,
     ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`, outlineOffset: '-2px' },
   },
-  paneBody: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minHeight: 0, minWidth: 0, overflow: 'auto', boxSizing: 'border-box', rowGap: tokens.spacingVerticalM, padding: `0 ${tokens.spacingHorizontalL} ${tokens.spacingVerticalS}` },
+  paneBody: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minHeight: 0, minWidth: 0, overflow: 'auto', boxSizing: 'border-box', rowGap: tokens.spacingVerticalS, padding: `0 ${tokens.spacingHorizontalL} ${tokens.spacingVerticalS}` },
   maximized: { position: 'absolute', inset: 0, zIndex: 10, height: 'auto' },
   // 縁・角のつまみ（FR-224）。当たり判定は 8px 以上。ホバーで色の付いた線を見せる
   resize: { position: 'absolute', zIndex: 3, touchAction: 'none', ':hover': { backgroundColor: tokens.colorNeutralStrokeAccessible } },
@@ -269,16 +269,17 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
           {pane ? <span className={mergeClasses(s.actionGroup, compact ? s.actionGroupCompact : undefined)}><ComponentActions pane={pane} title={title} active={focused || minimized} narrow={narrow} menu={{ open: menuOpen, onOpenChange: setMenuOpen, onShowTier: () => setShowTier(true) }} /></span> : null}
         </div>
                   {pane && showTier && !minimized ? <Text size={300} role="status" data-testid="tier-reason" className={s.worldNote}>{pane.tierReason}</Text> : null}
-        {description && !minimized ? <Text size={300}>{description}</Text> : null}
-        {guide && !minimized ? <Text size={300} className={s.guide} data-testid="screen-guide">{guide}</Text> : null}
         {world.note && !minimized ? <Text size={300} className={s.worldNote} data-testid="view-world-note">{world.note}</Text> : null}
         {world.hiddenNote && !minimized ? <Text size={300} role="status" className={s.worldNote} data-testid="view-hidden-selection">{HIDDEN_SELECTION_TEXT}</Text> : null}
       </div>
       {/* 1 つの世界の画面は、いつも同じ包みに入れて表示・非表示だけを変える（中身を作り直さない） */}
       {/* component-data: コンポーネントが保持している現在のデータの欄（「Copilot で分析実行」が読む。FR-278）。Copilot の案（FR-279）はその外に別の欄で出す */}
-      <div data-testid="component-data" style={{ display: 'contents' }}>
+      <div data-testid="component-data" data-tier="supporting" style={{ display: 'contents' }}>
         {world.single ? <div data-testid="view-world-body" style={{ display: world.hideAll ? 'none' : 'contents' }}>{children}</div> : children}
       </div>
+      {/* 画面の説明（description・screenGuides）は、結論のサマリーを各コンポーネントの上部に出すため（FR-041 AC-051）、データの下に置く */}
+      {description && !minimized ? <Text size={300} data-testid="screen-description">{description}</Text> : null}
+      {guide && !minimized ? <Text size={300} className={s.guide} data-testid="screen-guide">{guide}</Text> : null}
       <CopilotProposal componentKey={testId.replace(/^component-/, '')} title={title} />
       </div>
       {pane && !pane.maximized && !pane.minimized ? (

@@ -119,6 +119,7 @@ export function GraphViewport({ origin, label, standalone = false, className, at
   const rootRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const closerRef = useRef<(() => boolean) | null>(null);
+  const levelClick = useRef(false);
   const fsRef = useRef<HTMLButtonElement>(null);
   const exitRef = useRef<HTMLButtonElement>(null);
   const [cardHost, setCardHost] = useState<HTMLElement | null>(null);
@@ -191,7 +192,7 @@ export function GraphViewport({ origin, label, standalone = false, className, at
     const h = (e: MouseEvent): void => {
       const btn = (e.target as Element | null)?.closest?.('button');
       const root = rootRef.current;
-      if (!btn || !root || root.contains(btn)) return;
+      if (!btn || !root || root.contains(btn) || levelClick.current) return;
       const host = root.closest(HOST_SEL);
       if (!host || !host.contains(btn)) return;
       const name = btn.getAttribute('aria-label') || (btn.textContent ?? '').trim();
@@ -245,7 +246,17 @@ export function GraphViewport({ origin, label, standalone = false, className, at
       if ((e.target as Element | null)?.closest?.('[data-testid="detail-card"]')) return;
       e.preventDefault(); e.stopPropagation();
       const r = el.getBoundingClientRect();
+      const band = (sc: number): number => (sc >= 2.5 ? 2 : sc >= 1.5 ? 1 : 0);
+      const before = band(get().s);
       zoomBy(Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)), { x: e.clientX - r.left - r.width / 2, y: e.clientY - r.top - r.height / 2 });
+      // 画面側が階層を持つ面は、倍率のしきい値を越えたとき、画面の拡大・縮小ボタンと同じ操作で階層を切り替える（パンくずも変わる）
+      const after = band(get().s);
+      if (!standalone && after !== before) {
+        const host = rootRef.current?.closest<HTMLElement>(HOST_SEL);
+        const name = after > before ? '拡大' : '縮小';
+        const btn = [...(host?.querySelectorAll('button') ?? [])].find((b) => !rootRef.current?.contains(b) && (b.getAttribute('aria-label') || (b.textContent ?? '').trim()) === name && !b.disabled);
+        if (btn) { levelClick.current = true; try { btn.click(); } finally { levelClick.current = false; } }
+      }
     };
     el.addEventListener('wheel', h, { passive: false });
     return () => el.removeEventListener('wheel', h);

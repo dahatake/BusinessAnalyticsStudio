@@ -17,7 +17,7 @@ export function ProviderSettings() {
   useEffect(() => { let alive = true; void providerRequest<{provider: Provider}>(relay, '/ai/provider').then(v => { if (alive) { setProvider(v.provider === 'copilot' ? 'copilot' : 'foundry'); setError(''); } }).catch(e => { if (alive) setError((e as Error).message); }); return () => { alive = false; }; }, [relay]);
   return <section aria-label="生成AIの共通接続設定" style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalM }}>
     <Field label="生成AIの接続先"><RadioGroup aria-label="生成AIの接続先" value={provider} disabled={busy || !relay} onChange={(_, d) => { const previous = provider; setProvider(d.value === 'copilot' ? 'copilot' : 'foundry'); setBusy(true); void providerRequest<{provider: Provider}>(relay, '/ai/provider', 'PUT', {provider: d.value}).then(v => { setProvider(v.provider === 'copilot' ? 'copilot' : 'foundry'); setError(''); }).catch(e => { setProvider(previous); setError((e as Error).message); }).finally(() => setBusy(false)); }}>
-      <Radio value="foundry" label="Microsoft Foundry"/><Radio value="copilot" label="GitHub Copilot SDK"/>
+      <Radio value="foundry" label={{ children: 'Microsoft Foundry', style: { margin: 0 } }} style={{ height: 'auto', minHeight: 32 }}/><Radio value="copilot" label={{ children: 'GitHub Copilot SDK', style: { margin: 0 } }} style={{ height: 'auto', minHeight: 32 }}/>
     </RadioGroup></Field>
     <Text size={200}>接続先や認証情報を変更すると実接続が解除されます。新しい送信先・費用・送信内容を確認して再有効化してください。既存の議論整理など 5 種の AI 処理は Copilot SDK 固定のままです。</Text>
     {error && <MessageBar intent="warning"><MessageBarBody>{error}</MessageBarBody></MessageBar>}

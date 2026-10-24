@@ -72,9 +72,8 @@ const useStyles = makeStyles({
     pointerEvents: 'none',
   },
   noticeIdle: { position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' },
-  // 分割の木を入れる箱。拡大表示中は、余白で残りの領域に収める（FR-174）。
-  // 上の帯（中核オブジェクトとレンズ）が高いときも、コンポーネントの領域を作業領域の半分までは確保する（高さ 0 で見えなくならない）
-  treeBox: { display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: '50%', minWidth: 0, boxSizing: 'border-box' },
+  // 分割の木を入れる箱。拡大表示中は、余白で残りの領域に収める（FR-174）
+  treeBox: { display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 'min(240px, 30vh)', minWidth: 0, boxSizing: 'border-box' },
   // 自由配置・拡大表示のコンポーネントの置き場（作業領域に対する絶対配置。重なりを許す。FR-173）
   floatBox: { position: 'absolute', display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, boxSizing: 'border-box', boxShadow: tokens.shadow16, borderRadius: tokens.borderRadiusMedium, overflow: 'hidden' },
   // 移動中・直後の滑らかな動き（FR-185）。OS の「動きの軽減」が有効なときは途中の動きを省く（AC-394）
@@ -171,13 +170,14 @@ export function expandRect(pos: ExpandPosition): FloatRect {
 }
 
 /** 拡大表示の分だけ、残りのコンポーネントを置く領域を狭める余白（px） */
-function expandInset(pos: ExpandPosition, w: number, h: number): CSSProperties {
+function expandInset(pos: ExpandPosition, w: number, h: number, treeTop = 0): CSSProperties {
   const r = EXPAND_RATIO;
   switch (pos) {
     case 'left': return { paddingLeft: w * r };
     case 'right': return { paddingRight: w * r };
     case 'bottom': return { paddingBottom: h * r };
-    default: return { paddingTop: h * r };
+    // 木の枠は、領域の上端から treeTop だけ下にある。拡大表示の下端（領域の上から h*r）までを、その分だけ詰めた余白にする
+    default: return { paddingTop: Math.max(0, h * r - treeTop) };
   }
 }
 
@@ -329,6 +329,15 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   useEffect(() => { if (resetCount > 0) { setFocusKey(null); setPicked(null); } }, [resetCount]);
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(0);
+  const treeRef = useRef<HTMLDivElement>(null);
+  const [treeTop, setTreeTop] = useState(0);
+  useLayoutEffect(() => {
+    const t = treeRef.current;
+    const root = rootRef.current;
+    if (!t || !root) return;
+    const top = Math.round(t.getBoundingClientRect().top - root.getBoundingClientRect().top);
+    if (top !== treeTop) setTreeTop(top);
+  });
   const [drag, setDrag] = useState<DragState | null>(null);
   const dragRef = useRef<DragState | null>(null);
   dragRef.current = drag;
@@ -370,7 +379,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   const animated = motionOn && (!!live || settling !== null);
   const outKeys = useMemo(() => (expandedOut ? [expandedOut] : floatKeys), [expandedOut, floatKeys]);
   const treeBase = useMemo(() => (outKeys.length === 0 ? base : prune(base, new Set([...baseKeys].filter((k) => !outKeys.includes(k))))), [base, baseKeys, outKeys]);
-  const inset = expandedOut ? expandInset(expandPos, width, height) : undefined;
+  const inset = expandedOut ? expandInset(expandPos, width, height, treeTop) : undefined;
   // 拡大表示中は「操作中」の更新を止める（復帰したとき、拡大前と同じ大きさに戻すため。FR-174）
   const expandedRef = useRef<string | null>(null);
   expandedRef.current = expandedOut;
@@ -1107,7 +1116,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
         );
       })() : null}
       <div data-testid="workspace-notice" role="status" aria-live="polite" className={notice ? s.notice : s.noticeIdle}>{notice?.text ?? ''}</div>
-      <div className={s.treeBox} style={inset}>
+      <div ref={treeRef} className={s.treeBox} style={inset ? { ...inset, minHeight: 0 } : undefined}>
         {layout ? (compact ? renderStack(layout) : render(layout, [])) : (
           <Text className={s.empty} size={400}>{outKeys.length > 0 ? '' : '表示中のコンポーネントがありません。左のドックから再表示してください。'}</Text>
         )}

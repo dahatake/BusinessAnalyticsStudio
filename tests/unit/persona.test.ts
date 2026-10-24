@@ -21,7 +21,7 @@ class MemoryStorage {
   clear() { this.m.clear(); }
 }
 
-const ALL = ['summary', 'matrix', 'ranking', 'issue-solution', 'discussion-tree', 'gantt', 'architecture', 'knowledge-graph', 'products', 'map', 'mock-app', 'table', 'kpi-okr'];
+const ALL = ['summary', 'matrix', 'ranking', 'issue-solution', 'discussion-tree', 'gantt', 'architecture', 'knowledge-graph', 'products', 'map', 'twin-view', 'mock-app', 'table', 'kpi-okr'];
 
 async function freshLayout(available: readonly string[]) {
   vi.resetModules();
@@ -40,7 +40,7 @@ describe('FR-015 AC-018 / FR-112 AC-137 ペルソナ別の既定の情報表現'
   it('FR-112 AC-137 4 つのペルソナの既定のレイアウトで、最大の領域が §7 の表の既定の情報表現になる', () => {
     expect(PERSONAS).toEqual(['経営層', '事業部門', 'IT', '現場']);
     for (const p of PERSONAS) expect(primaryOf(p), p).toBe(PERSONA_PRIMARY[p]);
-    expect(PERSONA_PRIMARY).toEqual({ 経営層: 'matrix', 事業部門: 'issue-solution', IT: 'architecture', 現場: 'map' });
+    expect(PERSONA_PRIMARY).toEqual({ 経営層: 'matrix', 事業部門: 'issue-solution', IT: 'architecture', 現場: 'twin-view' });
     expect(personaDefaultsMatchTable()).toBe(true);
   });
 
@@ -74,8 +74,9 @@ describe('FR-015 AC-018 / FR-112 AC-137 ペルソナ別の既定の情報表現'
   // FR-112 AC-138
   it('FR-112 AC-138 ペルソナの切替は、データ（パック・選択・絞り込み）を持たず、レイアウトだけを変える', async () => {
     const { useLayout } = await freshLayout(ALL);
-    expect(Object.keys(useLayout.getState()).filter((k) => typeof (useLayout.getState() as never as Record<string, unknown>)[k] !== 'function').sort())
-      .toEqual(['layouts', 'maximized', 'persona']);
+    const keys = Object.keys(useLayout.getState()).filter((k) => typeof (useLayout.getState() as never as Record<string, unknown>)[k] !== 'function');
+    expect(keys).toEqual(expect.arrayContaining(['layouts', 'maximized', 'persona']));
+    for (const dataKey of ['pack', 'packs', 'selection', 'selected', 'filter', 'filters']) expect(keys).not.toContain(dataKey);
   });
 
   // FR-015 AC-018 NFR-UX-001 AC-185

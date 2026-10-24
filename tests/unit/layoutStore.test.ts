@@ -15,7 +15,7 @@ class MemoryStorage {
   clear() { this.m.clear(); }
 }
 
-const ALL = ['summary', 'matrix', 'ranking', 'issue-solution', 'discussion-tree', 'gantt', 'architecture', 'knowledge-graph', 'products', 'map', 'mock-app', 'table', 'kpi-okr'];
+const ALL = ['summary', 'matrix', 'ranking', 'issue-solution', 'discussion-tree', 'gantt', 'architecture', 'knowledge-graph', 'products', 'map', 'twin-view', 'mock-app', 'table', 'kpi-okr'];
 
 /** 新しいストアを、保存値（あれば）を読んだ状態で作る。 */
 async function freshStore(available: readonly string[], saved?: unknown) {

@@ -293,6 +293,9 @@ test.describe('NFR-UX-003 時間のかかる処理', () => {
     await start({ aiMockDelayMs: 15_000 });
     await setEditMode(page, true);
     const themes = await makeTheme(page);
+    const treeBefore = await openScreen(page, 'discussion-tree');
+    const decisionsBefore = await treeBefore.locator('[role="treeitem"][data-node-kind="決定事項"]').count();
+    await openScreen(page, 'themes');
     await themes.getByRole('button', { name: 'ツリーを生成' }).click();
     const progress = page.getByRole('progressbar', { name: /生成/ }).or(page.getByRole('status').filter({ hasText: /生成中/ })).first();
     await expect(progress).toBeVisible();
@@ -313,6 +316,7 @@ test.describe('NFR-UX-003 時間のかかる処理', () => {
     await expect(progress).toBeHidden();
     await page.waitForTimeout(16_000);
     const tree = await openScreen(page, 'discussion-tree');
-    await expect(tree.locator('[role="treeitem"][data-node-kind="決定事項"]')).toHaveCount(0);
+    // 先に出ている議論ツリー（デモ）の決定事項は残るので、取り消した生成結果で増えていないことを比較する
+    await expect(tree.locator('[role="treeitem"][data-node-kind="決定事項"]')).toHaveCount(decisionsBefore);
   });
 });

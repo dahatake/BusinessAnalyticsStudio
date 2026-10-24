@@ -87,7 +87,7 @@ export function ChatScreen() {
   const lastReady = useRef(false);
   const foundryReady = async (): Promise<boolean> => {
     if (!consentGranted || !packId) return false;
-    const v = await fetchFoundryView(relayUrl, packId);
+    const v = await fetchFoundryView(relayUrl, packId, undefined, false);
     if (v) lastReady.current = v.configured && v.enabled;
     return lastReady.current;
   };
