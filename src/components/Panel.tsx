@@ -103,7 +103,8 @@ const useStyles = makeStyles({
   actionGroupCompact: { alignSelf: 'flex-end' },
   actionGroup: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS, marginInlineStart: 'auto' },
   // 見出しをつかんで動かす（FR-142）。つかめることをカーソルで示し、動かしている間に文字が選択されないようにする
-  grab: { flexGrow: 1, cursor: 'grab', userSelect: 'none', touchAction: 'none', ':active': { cursor: 'grabbing' } },
+  // 見出しは大きさ変更の持ち手（zIndex 3）より手前に置く。低い枠で見出しが下端にはみ出しても、見出しの上でドラッグを始められる
+  grab: { flexGrow: 1, position: 'relative', zIndex: 4, cursor: 'grab', userSelect: 'none', touchAction: 'none', ':active': { cursor: 'grabbing' } },
   sample: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS },
   // 詰めた見出し（狭いコンポーネント）: 見出しの上下に標準の余白（h2 の既定）を足さず、上部に結論・数値を置く画面（エグゼクティブサマリーなど）が下に押し下げられないようにする
   titleCompact: { marginBlock: 0 },
