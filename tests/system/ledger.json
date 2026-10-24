@@ -3406,7 +3406,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-224",
       "canary": false,
-      "status": "fail",
+      "status": "blocked",
       "last_commit": "c09c02a",
       "last_run_at": "2026-10-24T07:35:37+09:00",
       "evidence": "work/runs/202610240636/logs/system-test/E2E-216-202610240729.log",
@@ -3416,6 +3416,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-24T10:48:36+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "実装には要求間の判断が要る。AC-224(自由配置でドロップ前に置ける場所を示す)を実装すると tests/unit/panel-pin.test.tsx(FR-216 AC-496: ピン止めしたものは置き先にならず drop-indicator が出ない)と衝突する。加えて table 見出し(y≈870)に show-control-bar(y 854〜888)が重なりドラッグが始まらない(レイアウト側)。rd-author による AC-224 と AC-496 の優先順位の決定待ち"
         }
       ]
     },
