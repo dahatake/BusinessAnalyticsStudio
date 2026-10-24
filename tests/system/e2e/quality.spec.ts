@@ -287,7 +287,7 @@ test.describe('NFR-SEC-002 外部への通信の限定と明示', () => {
       const chat = await openScreen(page, 'chat');
       const q = '送信内容の確認ST-176';
       await chat.getByRole('textbox', { name: /質問/ }).fill(q);
-      await chat.getByRole('button', { name: '送信' }).click();
+      await chat.getByRole('button', { name: '送信', exact: true }).click();
       // FR-219 AC-511 AC-512: 種別「人」を含み了承がある案件では送信前に確認が出る。出たら続行まで進める（出なければそのまま）
       const personConfirm = page.locator('[role="alertdialog"], [role="dialog"]').filter({ hasText: /種別「人」/ }).filter({ hasText: /了承/ });
       await expect(personConfirm.or(page.getByTestId('sending-indicator')).first()).toBeVisible();
@@ -327,7 +327,7 @@ test.describe('NFR-SEC-002 実接続の有効化は了承の記録が条件（�
       // 質問してもモックの回答で、中継プロセスには何も送られない
       const chat = await openScreen(page, 'chat');
       await chat.getByRole('textbox', { name: /質問/ }).fill('了承なしの確認ST-176');
-      await chat.getByRole('button', { name: '送信' }).click();
+      await chat.getByRole('button', { name: '送信', exact: true }).click();
       await expect(chat.getByTestId('chat-answer').last()).toContainText('AI 生成（モック）', { timeout: 15_000 });
       expect(relay.received.some((r) => r.body.includes('了承なしの確認ST-176'))).toBe(false);
     } finally {
@@ -346,7 +346,7 @@ test.describe('NFR-LEGAL-002 サンプル・AI 生成・モックの明示', () 
     }
     const chat = await openScreen(page, 'chat');
     await chat.getByRole('textbox', { name: /質問/ }).fill('概要を教えて');
-    await chat.getByRole('button', { name: '送信' }).click();
+    await chat.getByRole('button', { name: '送信', exact: true }).click();
     await expect(chat.getByTestId('chat-answer').last()).toContainText('AI 生成');
     await expect((await openScreen(page, 'priority')).getByTestId('executive-summary')).toContainText('AI 生成');
     // ツリー
