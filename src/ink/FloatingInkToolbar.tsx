@@ -18,7 +18,8 @@ import { isVisible } from '../workspace/layoutModel';
 export const AUTO_STOW_MS = 30_000;
 
 const useStyles = makeStyles({
-  host: { position: 'fixed', top: '50%', transform: 'translateY(-50%)', zIndex: 20, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS },
+  // 下端に寄せる（中央だと、右端・左端のコンポーネントの見出し（「ビュー」など）に重なって操作を遮る）
+  host: { position: 'fixed', bottom: tokens.spacingVerticalS, zIndex: 20, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS },
   left: { left: tokens.spacingHorizontalS, alignItems: 'flex-start' },
   right: { right: tokens.spacingHorizontalS, alignItems: 'flex-end' },
   panel: {

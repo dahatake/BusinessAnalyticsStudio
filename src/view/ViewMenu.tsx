@@ -24,6 +24,9 @@ const useStyles = makeStyles({
 
 type Checked = Record<string, string[]>;
 
+// 既定の移動（10px の滑り込み）をなくす。開いた直後に項目が動き続けると、操作（クリック）の位置が定まるまで待たされる
+const NO_SLIDE = { distance: 0 } as never;
+
 function Options<T extends string>({ name, options }: { name: string; options: ViewOption<T>[] }) {
   const s = useStyles();
   const base = useId();
@@ -83,7 +86,7 @@ export function ComponentViewButton({ paneKey }: { paneKey: string }) {
   const checked: Checked = { mode: [v.mode], world: [v.world] };
   const text = viewText(v.mode, v.world);
   return (
-    <Menu positioning={{ autoSize: 'height', overflowBoundary: 'window', flipBoundary: 'window' } as never} checkedValues={checked} onCheckedValueChange={onChecked(v.setMode, v.setWorld)}>
+    <Menu surfaceMotion={NO_SLIDE} positioning={{ autoSize: 'height', overflowBoundary: 'window', flipBoundary: 'window' } as never} checkedValues={checked} onCheckedValueChange={onChecked(v.setMode, v.setWorld)}>
       <Tooltip content="ビュー（このコンポーネントの表示モードと世界の表示）" relationship="description" withArrow>
         <MenuTrigger disableButtonEnhancement>
           {/* 見出しの幅を取りすぎないよう、アイコンは付けず文字（現在の表示モード・世界の表示）だけで示す */}
@@ -104,7 +107,7 @@ export function ComponentViewSubmenu({ paneKey }: { paneKey: string }) {
   const v = useComponentView(paneKey);
   const checked: Checked = { mode: [v.mode], world: [v.world] };
   return (
-    <Menu checkedValues={checked} onCheckedValueChange={onChecked(v.setMode, v.setWorld)}>
+    <Menu surfaceMotion={NO_SLIDE} checkedValues={checked} onCheckedValueChange={onChecked(v.setMode, v.setWorld)}>
       <MenuTrigger disableButtonEnhancement>
         <MenuItem>{`ビュー（${viewText(v.mode, v.world)}）`}</MenuItem>
       </MenuTrigger>
@@ -129,6 +132,7 @@ export function ScreenViewButton() {
   const worlds = worldOptions({ ...FALLBACK_DECL, world: 'items' });
   return (
     <Menu
+      surfaceMotion={NO_SLIDE}
       checkedValues={checked}
       onCheckedValueChange={onChecked((m) => applyScreenView({ mode: m }), (w) => applyScreenView({ world: w }))}
     >
