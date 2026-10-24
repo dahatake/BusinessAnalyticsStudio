@@ -215,11 +215,11 @@ test.describe('FR-151 最小化と左メニューのアイコン表示', () => {
     const narrow = await box(page.getByTestId('nav-priority'));
     expect(narrow.width, 'アイコンだけの細い列になる').toBeLessThan(wide.width);
     await expect(page.getByTestId('nav-priority')).toHaveAccessibleName(/./);
-    await page.getByTestId('nav-settings').hover();
-    await expect(page.getByRole('tooltip')).toContainText(/設定/);
-    await page.getByTestId('nav-settings').click();
-    await expect(component(page, 'settings')).toBeVisible();
-    await closeSettings(page); // 設定はモーダル（FR-223）
+    // 設定は左メニューに項目を持たない（FR-223 AC-774）ので、左メニューの画面「ガントチャート」で確かめる
+    await page.getByTestId('nav-gantt').hover();
+    await expect(page.getByRole('tooltip')).toContainText(/ガントチャート/);
+    await page.getByTestId('nav-gantt').click();
+    await expect(component(page, 'gantt')).toBeVisible();
     await page.getByRole('button', { name: /メニューを(元の幅に戻す|展開)/ }).focus();
     await page.keyboard.press('Enter');
     expect((await box(page.getByTestId('nav-priority'))).width).toBeGreaterThanOrEqual(wide.width - 2);
@@ -229,7 +229,7 @@ test.describe('FR-151 最小化と左メニューのアイコン表示', () => {
   test('FR-151 AC-261 異常系: 最小化した左メニューでも、すべての画面のアイコンに名前があり、到達できる', async ({ page, start }) => {
     await start();
     await page.getByRole('button', { name: 'メニューを最小化' }).click();
-    for (const k of ['priority', 'architecture', 'gantt', 'whiteboard', 'settings']) {
+    for (const k of ['priority', 'architecture', 'gantt', 'whiteboard']) { // 設定は左メニューにない（FR-223 AC-774）
       const n = page.getByTestId(`nav-${k}`);
       await expect(n).toBeVisible();
       await expect(n).toHaveAccessibleName(/./);

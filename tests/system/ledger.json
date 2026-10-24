@@ -328,7 +328,10 @@
     "AC-761": "sha256:2d47552f43564343",
     "AC-762": "sha256:f998e7e05e260c7e",
     "AC-763": "sha256:2aff7e48a3665f4e",
-    "AC-764": "sha256:726601016c247e6d"
+    "AC-764": "sha256:726601016c247e6d",
+    "AC-774": "sha256:b022e1c73dde6367",
+    "AC-773": "sha256:a6f4c03f68e07377",
+    "AC-775": "sha256:5027e48468b7da1a"
   },
   "cases": [
     {
@@ -11023,6 +11026,81 @@
       "history": [
         {
           "at": "2026-10-23T23:56:17+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-442",
+      "requirement_ids": [
+        "FR-223"
+      ],
+      "ac_ids": [
+        "AC-774"
+      ],
+      "title": "上部のツールバーの「設定」から設定のモーダルを開ける（左メニューに設定がない・キーボード・320px）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-774",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-25T08:58:48+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-443",
+      "requirement_ids": [
+        "FR-275"
+      ],
+      "ac_ids": [
+        "AC-773"
+      ],
+      "title": "AI の状態表示に生成AIの接続先とモック／有効の状態",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-773",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-25T08:58:51+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-444",
+      "requirement_ids": [
+        "FR-290"
+      ],
+      "ac_ids": [
+        "AC-775"
+      ],
+      "title": "生成 AI でストーリーを作成（選んだ接続先だけを呼ぶ・条件が欠けると呼ばない）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-775",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-25T08:58:53+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
