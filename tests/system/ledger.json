@@ -136,7 +136,7 @@
     "AC-221": "sha256:164d4836ea954368",
     "AC-222": "sha256:bf881f537411b020",
     "AC-223": "sha256:33a4e1bba33a5f94",
-    "AC-224": "sha256:91b35108d50b863d",
+    "AC-224": "sha256:6057a2634956231d",
     "AC-226": "sha256:7484a781161f57f7",
     "AC-229": "sha256:757a6385fc0d83bd",
     "AC-230": "sha256:ca4aa5ac5751ef3a",
@@ -3403,11 +3403,11 @@
       "ac_ids": [
         "AC-224"
       ],
-      "title": "コンポーネントのドラッグ移動（置き場所の表示・再読込後の保持・Esc 中止）",
+      "title": "コンポーネントのドラッグ移動（置ける場所だけに置き場所の表示・ピン止めした辺の上では出ない・再読込後の保持・Esc 中止）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-224",
       "canary": false,
-      "status": "blocked",
+      "status": "not_run",
       "last_commit": "c09c02a",
       "last_run_at": "2026-10-24T07:35:37+09:00",
       "evidence": "work/runs/202610240636/logs/system-test/E2E-216-202610240729.log",
@@ -3423,6 +3423,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "実装には要求間の判断が要る。AC-224(自由配置でドロップ前に置ける場所を示す)を実装すると tests/unit/panel-pin.test.tsx(FR-216 AC-496: ピン止めしたものは置き先にならず drop-indicator が出ない)と衝突する。加えて table 見出し(y≈870)に show-control-bar(y 854〜888)が重なりドラッグが始まらない(レイアウト側)。rd-author による AC-224 と AC-496 の優先順位の決定待ち"
+        },
+        {
+          "at": "2026-10-24T21:13:34+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC-224/AC-496 の明確化: drop-indicator は置き先になれる場所にだけ出し、ピン止めした辺の上では出さない。spec を修正（異常系を追加）"
+        },
+        {
+          "at": "2026-10-24T21:13:34+09:00",
+          "by": "test-designer",
+          "change": "title: 'コンポーネントのドラッグ移動（置き場所の表示・再読込後の保持・Esc 中止）' -> 'コンポーネントのドラッグ移動（置ける場所だけに置き場所の表示・ピン止めした辺の上では出ない・再読込後の保持・Esc 中止）'",
+          "reason": "AC-224 の明確化（AC-496 優先）に合わせてタイトルを更新"
         }
       ]
     },

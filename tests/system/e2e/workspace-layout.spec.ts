@@ -90,6 +90,49 @@ test.describe('FR-142 すべてのコンポーネントのドラッグでの移�
     }
   });
 
+  // FR-142 AC-224 / FR-216 AC-496（異常系: 置き先にならない場所では drop-indicator を出さない。ピン止めした辺の上）
+  // AC-224: drop-indicator は置き先になれる場所の上にいるときだけ出る（どこでも常に出るわけではない）。
+  // AC-496: ピン止めしたコンポーネントの辺の上は置き先にならず、drop-indicator は出ない（AC-224 より優先）。位置と大きさは変わらない。
+  test('FR-142 AC-224 異常系: ピン止めしたコンポーネントの辺の上へドラッグしている間は drop-indicator が出ず、置き先になれる場所では出る', async ({ page, start }) => {
+    await start();
+    await selectPersona(page, '事業部門');
+    const ks = await topKeys(page);
+    expect(ks.length, 'コンポーネントが 2 つ以上必要').toBeGreaterThanOrEqual(2);
+    const [mover, pinned] = ks;
+    // pinned をピン止めする（フォーカス → component-actions の「ピン止めする」）
+    await component(page, pinned).focus();
+    await page.getByTestId('component-actions').getByRole('button', { name: 'ピン止めする' }).click();
+    await expect(page.getByTestId('component-actions').getByRole('button', { name: 'ピン止めを外す' })).toHaveAttribute('aria-pressed', 'true');
+    const pinBefore = await box(component(page, pinned));
+    const c = component(page, mover);
+    const grab = await box(c.getByRole('heading').first());
+    const gx = grab.x + grab.width / 2;
+    const gy = grab.y + grab.height / 2;
+    // 1) ピン止めした辺の上（上辺の中央）へ動かす → drop-indicator は出ない
+    await page.mouse.move(gx, gy);
+    await page.mouse.down();
+    await page.mouse.move((gx + pinBefore.x + pinBefore.width / 2) / 2, (gy + pinBefore.y + 2) / 2, { steps: 6 });
+    await page.mouse.move(pinBefore.x + pinBefore.width / 2, pinBefore.y + 2, { steps: 6 });
+    await expect(page.getByTestId('drop-indicator').first(), 'ピン止めした辺の上では drop-indicator を出さない').toBeHidden();
+    await page.mouse.up();
+    // ピン止めしたコンポーネントの位置と大きさは変わらず、置いたものはそれと重ならない
+    const pinAfter = await box(component(page, pinned));
+    expect(Math.abs(pinAfter.x - pinBefore.x) + Math.abs(pinAfter.y - pinBefore.y), 'ピン止めの位置').toBeLessThanOrEqual(2);
+    expect(Math.abs(pinAfter.width - pinBefore.width) + Math.abs(pinAfter.height - pinBefore.height), 'ピン止めの大きさ').toBeLessThanOrEqual(2);
+    const m = await box(component(page, mover));
+    const overlapW = Math.min(m.x + m.width, pinAfter.x + pinAfter.width) - Math.max(m.x, pinAfter.x);
+    const overlapH = Math.min(m.y + m.height, pinAfter.y + pinAfter.height) - Math.max(m.y, pinAfter.y);
+    expect(overlapW > 1 && overlapH > 1, '置いたコンポーネントがピン止めした領域と重ならない').toBe(false);
+    // 2) 置き先になれる場所（ピン止めしていないコンポーネントの下端の余白の側）では drop-indicator が出る
+    const others = ks.filter((k) => k !== mover && k !== pinned);
+    if (others.length > 0) {
+      const t = await box(component(page, others[0]));
+      const g2 = await box(component(page, mover).getByRole('heading').first());
+      const shown = await dragByHeading(page, component(page, mover), t.x + t.width / 2 - (g2.x + g2.width / 2), t.y + t.height + 6 - (g2.y + g2.height / 2));
+      expect(shown, '置き先になれる場所では drop-indicator が出る').toBe(true);
+    }
+  });
+
   // FR-142 AC-224（異常系: 置けない場所へ放す／Esc で中止）
   test('FR-142 AC-224 異常系: ドラッグ中に Esc を押すと元の位置に戻り、保存されたレイアウトも変わらない', async ({ page, start }) => {
     const app = await start();
