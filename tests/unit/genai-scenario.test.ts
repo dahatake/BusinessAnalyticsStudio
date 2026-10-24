@@ -137,6 +137,10 @@ describe('FR-285 AC-738 Responses API の呼び出し（差し替え部品）', 
     const up = upstream();
     const r = await relayWith(DUMMY_KEY, up.fetchFn);
     await putFoundryConfig(r.url, PACK, { endpoint: 'https://other.openai.azure.com/openai/v1/', deployment: 'my-deploy', key: '' });
+    // FR-275 AC-705: re-confirm after changing the shared connection.
+    expect(await analyzeViaRelay(env(r), '文章を要約する')).toMatchObject({ ok: false, cause: 'disabled' });
+    expect(up.calls).toHaveLength(0);
+    await setFoundryConnection(r.url, PACK, true, { consent: true, confirmed: true });
     await analyzeViaRelay(env(r), '文章を要約する');
     expect(up.calls[0]!.url).toBe('https://other.openai.azure.com/openai/v1/responses');
     expect(JSON.parse(up.calls[0]!.body).model).toBe('my-deploy');
@@ -146,6 +150,7 @@ describe('FR-285 AC-738 Responses API の呼び出し（差し替え部品）', 
     const up = upstream();
     const r = await relayWith(DUMMY_KEY, up.fetchFn);
     await putFoundryConfig(r.url, PACK, { endpoint: 'https://evil.example.com/openai/v1', deployment: 'd', key: '' });
+    await setFoundryConnection(r.url, PACK, true, { consent: true, confirmed: true });
     const out = await analyzeViaRelay(env(r), '文章を要約する');
     expect(out).toMatchObject({ ok: false, cause: 'bad-request' });
     expect(up.calls).toHaveLength(0);
@@ -171,7 +176,7 @@ describe('FR-285 AC-738 Responses API の呼び出し（差し替え部品）', 
       expect(await (await fetch(`${r.url}/health`)).text()).toContain('"keyConfigured":false');
       expect(up.calls).toHaveLength(0);
       const r2 = await relayWith(DUMMY_KEY, up.fetchFn);
-      await fetch(`${r2.url}/foundry/analyze`, { method: 'POST', body: JSON.stringify({ packId: PACK, solution: '文章', endpoint: 'https://evil.openai.azure.com/v1', deployment: 'evil' }) });
+      await fetch(`${r2.url}/foundry/analyze`, { method: 'POST', body: JSON.stringify({ packId: PACK, solution: '文章', consent: true, endpoint: 'https://evil.openai.azure.com/v1', deployment: 'evil' }) });
       expect(up.calls[0]!.url).toBe(`${DEFAULT_FOUNDRY_ENDPOINT}/responses`);
     } finally {
       if (prev === undefined) delete process.env.FOUNDRY_API_KEY; else process.env.FOUNDRY_API_KEY = prev;

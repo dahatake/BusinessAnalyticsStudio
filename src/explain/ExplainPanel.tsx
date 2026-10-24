@@ -6,6 +6,7 @@ import { Badge, Button, Text, makeStyles, tokens } from '@fluentui/react-compone
 import { Dismiss16Regular, Sparkle20Regular } from '@fluentui/react-icons';
 import { askFoundry, fetchFoundryView } from '../ai/foundryClient';
 import { consentKeyOf } from '../ai/consent';
+import { confirmViaUi, countPersons, gatePersonConfirm } from '../ai/personConfirm';
 import { useConsentStore } from '../ai/useConsent';
 import { SCREENS } from '../screens/registry';
 import { usePackStore } from '../store/pack';
@@ -51,7 +52,8 @@ export async function triggerExplain(): Promise<void> {
   const snapshot = buildSnapshot(pack.pack.data, screenKey, labelOf(screenKey));
   const relayUrl = usePackStore.getState().runtime.relayUrl;
   const packId = pack.pack.data.customer.name;
-  const consent = !!useConsentStore.getState().records[consentKeyOf(pack.pack.data.customer.name, pack.pack.data.customer.projectName)];
+  const consentRecord = useConsentStore.getState().records[consentKeyOf(pack.pack.data.customer.name, pack.pack.data.customer.projectName)];
+  const consent = !!consentRecord;
   controller = new AbortController();
   panel.setRunning(true);
   const outcome = await runExplain({
@@ -59,6 +61,8 @@ export async function triggerExplain(): Promise<void> {
     limits: explainLimitsNow,
     usage: { get: explainUsageNow, set: setExplainUsage },
     consent,
+    includesPerson: countPersons(pack.pack.data) > 0,
+    confirmPerson: () => gatePersonConfirm({ destination: 'ai', scopeLabel: '現状の説明の生成（選択した生成AI接続先へ課題・解決策・KPI/OKR の文章を送信）', data: pack.pack.data, consent: consentRecord, confirm: confirmViaUi }),
     fetchView: () => fetchFoundryView(relayUrl, packId),
     ask: (req) => askFoundry(relayUrl, { packId, ...req }),
   }, session, snapshot, controller.signal);

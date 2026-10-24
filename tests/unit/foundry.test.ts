@@ -67,6 +67,10 @@ describe('FR-275 AC-705 変更・削除は再起動なしで次の呼び出し�
     await ready(url);
     await ask(url);
     await putFoundryConfig(url, 'P', { endpoint: 'https://other.example.invalid/v1', deployment: 'dep2', key: 'dummy-second-key-99999999' });
+    // FR-275 AC-705: changing credentials revokes authorization until reconfirmed.
+    expect(await ask(url)).toMatchObject({ mode: 'unavailable', reason: 'disabled' });
+    expect(calls).toHaveLength(1);
+    await setFoundryConnection(url, 'P', true, { consent: true, confirmed: true });
     await ask(url);
     expect(calls[1]!.url).toBe('https://other.example.invalid/v1/responses');
     expect(calls[1]!.auth).toBe('Bearer dummy-second-key-99999999');
