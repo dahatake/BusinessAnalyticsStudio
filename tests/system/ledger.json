@@ -1297,9 +1297,9 @@
       "command": "node tests/system/run.mjs AC-040",
       "canary": false,
       "status": "fail",
-      "last_commit": "c09c02a",
-      "last_run_at": "2026-10-24T07:35:37+09:00",
-      "evidence": "work/runs/202610240636/logs/system-test/E2E-134-202610240727.log",
+      "last_commit": "a5d5fac",
+      "last_run_at": "2026-10-24T10:28:32+09:00",
+      "evidence": "work/runs/202610240636/logs/system-test/E2E-134-202610241028.log",
       "history": [
         {
           "at": "2026-10-12T14:06:39+09:00",
@@ -1322,9 +1322,9 @@
       "command": "node tests/system/run.mjs AC-041",
       "canary": false,
       "status": "fail",
-      "last_commit": "c09c02a",
-      "last_run_at": "2026-10-24T07:35:37+09:00",
-      "evidence": "work/runs/202610240636/logs/system-test/E2E-135-202610240727.log",
+      "last_commit": "a5d5fac",
+      "last_run_at": "2026-10-24T10:28:32+09:00",
+      "evidence": "work/runs/202610240636/logs/system-test/E2E-135-202610241028.log",
       "history": [
         {
           "at": "2026-10-12T14:06:41+09:00",
@@ -3556,10 +3556,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-235",
       "canary": false,
-      "status": "fail",
-      "last_commit": "c09c02a",
-      "last_run_at": "2026-10-24T07:35:37+09:00",
-      "evidence": "work/runs/202610240636/logs/system-test/E2E-221-202610240729.log",
+      "status": "pass",
+      "last_commit": "a5d5fac",
+      "last_run_at": "2026-10-24T10:28:32+09:00",
+      "evidence": "work/runs/202610240636/logs/system-test/E2E-221-202610241028.log",
       "history": [
         {
           "at": "2026-10-13T05:45:25+09:00",
@@ -7374,10 +7374,10 @@
       "layer": "nonfunctional",
       "command": "node tests/system/run.mjs AC-187",
       "canary": false,
-      "status": "fail",
-      "last_commit": "c09c02a",
-      "last_run_at": "2026-10-24T07:35:37+09:00",
-      "evidence": "work/runs/202610240636/logs/system-test/IT-028-202610240733.log",
+      "status": "pass",
+      "last_commit": "a5d5fac",
+      "last_run_at": "2026-10-24T10:28:32+09:00",
+      "evidence": "work/runs/202610240636/logs/system-test/IT-028-202610241028.log",
       "history": [
         {
           "at": "2026-10-12T14:09:15+09:00",

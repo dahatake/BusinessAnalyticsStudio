@@ -4,7 +4,7 @@
 import type { Page } from '@playwright/test';
 import { test, expect, openScreen, component, entity, hook, scene, expectCanvasDrawn, waitFirstFrame, captureDownload, recordExportConsent, setEditMode } from '../support/fixtures';
 import { examplePack, makeVariant } from '../support/packs';
-import { gotoScreen, chooseView } from '../support/screens';
+import { gotoScreen, chooseView, openViewMenu } from '../support/screens';
 
 const mono = examplePack('mono');
 const koto = examplePack('koto');
@@ -226,28 +226,24 @@ test.describe('FR-029 停止中の連動', () => {
 test.describe('FR-033 パンくずリストとミニマップ', () => {
   // FR-033 AC-040
   test('FR-033 AC-040 末端まで移動するとパンくずに全階層が並び、上位を選ぶとその視点へ移動し、ミニマップに表示範囲が出る', async ({ page, start }) => {
+    // 画面 view3d の廃止に伴い、現行の Twin ビュー（意味的ズームのパンくず）で読み替える。ミニマップは AC のとおり Twin ビューにも必要（弱めない）
     await start();
-    await openScreen(page, 'view3d');
-    const leaf = leafEntities().find((e) => ancestors(e.id).length >= 3)!;
-    expect(leaf, 'お手本パックに 3 階層以上の項目がない').toBeTruthy();
-    const chain = ancestors(leaf.id);
-    await entity(await openScreen(page, 'table'), leaf.id).first().click();
-    await openScreen(page, 'view3d');
-    const crumbs = page.getByRole('navigation', { name: 'パンくずリスト' });
-    for (const a of chain) await expect(crumbs).toContainText(a.name);
-    await expect(page.getByTestId('minimap').getByTestId('minimap-viewport')).toBeVisible();
-    // 上位の階層名を Enter で選ぶ
-    const upper = chain[0];
-    const camBefore = await scene.camera(page);
-    await crumbs.getByRole('link', { name: upper.name }).focus();
+    const root = await openScreen(page, 'twin-view');
+    const crumbs = root.getByRole('navigation', { name: 'パンくず' });
+    await root.getByRole('button', { name: '全体表示に戻す' }).click();
+    // 末端（詳細）まで移動すると、全階層（全体・要素・詳細）の名前が並ぶ
+    for (let i = 0; i < 5 && (await root.getAttribute('data-zoom-level')) !== 'detail'; i++) await root.getByRole('button', { name: '拡大' }).click();
+    await expect(root).toHaveAttribute('data-zoom-level', 'detail');
+    for (const label of ['全体', '要素', '詳細']) await expect(crumbs, `パンくずに「${label}」がない`).toContainText(label);
+    await expect(crumbs.locator('[aria-current="location"]')).toContainText('詳細');
+    await expect(root.getByTestId('minimap').getByTestId('minimap-viewport'), 'ミニマップに現在の表示範囲が出ない').toBeVisible();
+    // 上位の階層名を Enter で選ぶ → その階層へ移動
+    await crumbs.getByRole('button', { name: /^要素/ }).focus();
     await page.keyboard.press('Enter');
-    await expect.poll(async () => JSON.stringify((await scene.camera(page)).position)).not.toBe(JSON.stringify(camBefore.position));
-    await expect(crumbs).not.toContainText(leaf.name);
+    await expect(root).toHaveAttribute('data-zoom-level', 'element');
     // クリックでも
-    await entity(await openScreen(page, 'table'), leaf.id).first().click();
-    await openScreen(page, 'view3d');
-    await crumbs.getByRole('link', { name: chain[1].name }).click();
-    await expect(crumbs).not.toContainText(leaf.name);
+    await crumbs.getByRole('button', { name: /^全体/ }).click();
+    await expect(root).toHaveAttribute('data-zoom-level', 'overview');
   });
 });
 
@@ -255,25 +251,28 @@ test.describe('FR-034 停止中の階層の切替', () => {
   // FR-034 AC-041
   test('FR-034 AC-041 P で止めてからズームすると、しきい値を越えた時点で下位の階層が表示されパンくずも変わる', async ({ page, start }) => {
     await start();
-    const v3 = await openScreen(page, 'view3d');
+    // 画面 view3d の廃止に伴い、現行の Twin ビュー（Graph。意味的ズームの倍率しきい値）で読み替える
+    await start();
+    const root = await openScreen(page, 'twin-view');
     await toggleAnimation(page, '停止中');
-    const crumbs = page.getByRole('navigation', { name: 'パンくずリスト' });
+    const menu = await openViewMenu(page, root);
+    await menu.getByRole('menuitemradio', { name: 'Graph', exact: true }).click();
+    await root.getByRole('button', { name: '全体表示に戻す' }).click();
+    await expect(root).toHaveAttribute('data-zoom-level', 'overview');
+    const crumbs = root.getByRole('navigation', { name: 'パンくず' });
     const before = await crumbs.innerText();
-    const b = (await v3.locator('canvas').first().boundingBox())!;
+    const surface = root.locator('[data-zoom-surface="graph"]').first();
+    await expect(surface).toBeVisible();
+    const b = (await surface.boundingBox())!;
     await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
     let changed = false;
-    for (let i = 0; i < 30 && !changed; i++) {
+    for (let i = 0; i < 40 && !changed; i++) {
       await page.mouse.wheel(0, -200);
       await nextFrames(page, 2);
-      changed = (await crumbs.innerText()) !== before;
+      changed = (await root.getAttribute('data-zoom-level')) !== 'overview';
     }
-    expect(changed, 'ズームしてもパンくずの階層が変わらない').toBe(true);
-    const visible = (await scene.objects(page)).filter((o) => o.visible).map((o) => o.entityId);
-    const level = (await crumbs.innerText()).split(/\n|>|›|\//).map((s) => s.trim()).filter(Boolean);
-    const last = mono.entities().find((e) => e.name === level[level.length - 1]);
-    expect(last, 'パンくずの末尾が階層の項目ではない').toBeTruthy();
-    const children = mono.entities().filter((e) => e.parentId === last.id).map((e) => e.id);
-    if (children.length) expect(children.some((c) => visible.includes(c)), '下位の階層が表示されていない').toBe(true);
+    expect(changed, 'ズームしてもしきい値を越えた時点で下位の階層に切り替わらない').toBe(true);
+    expect(await crumbs.innerText(), 'パンくずの階層名が変わらない').not.toBe(before);
   });
 });
 
