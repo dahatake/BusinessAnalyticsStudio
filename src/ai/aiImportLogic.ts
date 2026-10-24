@@ -19,7 +19,7 @@ export const IMPORT_OUTPUT_TOKENS = 4000;
 
 export const SETTINGS_GUIDE = '設定画面の「Microsoft Foundry」で接続情報を設定し、送信を有効にしてください。';
 
-export type MissingCondition = '設定' | '有効化' | '了承';
+export type MissingCondition = '設定' | '有効化' | '了承' | '接続先';
 
 export interface Availability {
   available: boolean;
@@ -31,6 +31,8 @@ export interface Availability {
 /** 3 つの条件（設定済み・実接続の有効化・了承の記録）がそろうときだけ選べる */
 export function aiImportAvailability(view: FoundryView | null, consentGranted: boolean): Availability {
   const missing: MissingCondition[] = [];
+  // FR-289 AC-757: 接続先が Copilot SDK のときは、ほかの条件がそろっていても選べない（欠けている条件「接続先」）
+  if (view?.provider === 'copilot') return { available: false, missing: ['接続先'], guide: 'AI 取り込みは使えません（欠けている条件: 接続先）。Copilot SDK では未対応です。AI 取り込み・ファイル添付には、設定画面の「生成AIの接続先」で Microsoft Foundry を選択してください。' };
   if (!view?.configured) missing.push('設定');
   if (!view?.enabled) missing.push('有効化');
   if (!consentGranted) missing.push('了承');

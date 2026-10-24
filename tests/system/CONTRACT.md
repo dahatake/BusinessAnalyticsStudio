@@ -189,3 +189,9 @@
 - 取り込みの画面: データカタログの画面（`component-data-catalog`）の中に `data-testid="ai-import"`。button「AI 取り込み」（Foundry の接続情報が未設定のとき disabled。設定済みで enabled）。未設定のときだけ `ai-import-guide`（文字に「Foundry」「接続情報」「設定」を含む）を出す。押すと、ラベル「AI 取り込みのファイル」の file input（PDF・画像・Office 文書・テキストを受ける）が出る。
 - プレビュー: region「取り込みのプレビュー」（取り込んだエンティティの名称を文字で含む）、button「反映」「破棄」。反映するまで `entity-list` は変わらない。エラーは `ai-import` 内の role=alert（上限超過は「10 MB」と「大きい／超」を含む。Foundry 失敗は原因（失敗・500 など）と次の行動（もう一度・設定を確認 など）を含む）。ファイルの上限は PARAM-125（10 MB。ちょうど 10 MB は可、1 バイト超で不可）。
 - 接続（差し替え部品 support/ai-import-stub.ts）: 接続情報は GET/PUT/DELETE `/foundry/config`（FR-275 と同じ）。取り込みは、ブラウザー → 中継（runtime-config の relayUrl）の `POST /foundry/import`（本文にキーを含めない）。応答は 200 `{preview:{entities:[{name,description}]}}`、失敗は 5xx `{error:{cause, status?}}`。`/health` は `foundry.keyConfigured`。ブラウザーの通信先は localhost（127.0.0.1）だけ。
+
+## 30. 生成AIの接続先の選択（FR-275 AC-769。ai-provider.spec.ts が前提にする画面の探し方と中継の口。run 202610240522）
+- 設定（role=dialog「設定」）の中に radiogroup「生成AIの接続先」が 1 つだけ。radio は 2 つ: 名前に「Microsoft Foundry」（既定 checked）と「GitHub Copilot SDK」。
+- Microsoft Foundry を選ぶと `foundry-settings`（§25）が見える。GitHub Copilot SDK を選ぶと `data-testid="copilot-settings"` が見え、中に radiogroup「認証方式」（radio「サインイン」〈既定〉・「トークン」）、サインイン状態の表示 `copilot-signin-status`、textbox「モデル名」（任意。空なら SDK の既定）。
+- 中継（実物の scripts/relay/relay.ts の startRelay をテストのプロセス内で起動。データフォルダーは環境変数 EDB_RELAY_DATA）: `GET /ai/provider` → 200 `{ provider: 'foundry' | 'copilot' }`（ほかの項目は任意。認証情報の値は含めない）。`PUT /ai/provider` body `{ provider }`（余分な項目は保存しない）。選択はデータフォルダーに保存し、同じデータフォルダーで再起動しても保つ。画面は選択を変えたら PUT する。
+- テストが渡す Copilot SDK の差し替え部品は `{ status(): Promise<{signedIn:false}>, complete() }`（未サインイン）。実 GitHub・実 gh・実 Foundry には接続しない。サインイン状態は SDK の実状態（getAuthStatus 等）で判定し、クライアントの起動成功だけでサインイン済みとしない（AC-771 の結合テストの側で確かめる）。

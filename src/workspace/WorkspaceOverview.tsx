@@ -8,7 +8,8 @@ import { useCoreObject } from '../store/coreObject';
 
 const useStyles = makeStyles({
   root: {
-    display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS, flex: '0 0 auto', maxHeight: '35vh', overflowY: 'auto',
+    // 案件を開いて上の帯（企業・Project・外部連携）が高いときは、この帯が縮んでスクロールし、下のコンポーネントの領域を潰さない
+    display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS, flex: '0 1 auto', minHeight: 0, maxHeight: '35vh', overflowY: 'auto',
     padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalM}`,
     borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
   },

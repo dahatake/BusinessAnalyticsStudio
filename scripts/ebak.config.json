@@ -64,6 +64,10 @@
       {
         "name": "unit-world",
         "run": "npx vitest run tests/unit/world.test.ts tests/unit/world-pack.test.ts tests/unit/world-default.test.ts"
+      },
+      {
+        "name": "unit-ai-provider",
+        "run": "npx vitest run tests/unit/ai-provider.test.ts tests/unit/copilot-adapter.test.ts tests/unit/copilot-signin.test.ts tests/unit/provider-settings.test.tsx tests/unit/foundry.test.ts tests/unit/foundry-connection.test.ts tests/unit/foundry-chat.test.ts tests/unit/genai-scenario.test.ts tests/unit/explain.test.ts tests/unit/foundry-secret-hygiene.test.ts tests/unit/provider-usage.test.ts"
       }
     ]
   },

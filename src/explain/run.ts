@@ -13,8 +13,10 @@ export interface ExplainDeps {
   usage: { get: () => UsageState; set: (s: UsageState) => void };
   /** 顧客の了承の記録があるか（FR-181） */
   consent: boolean;
+  includesPerson?: boolean;
+  confirmPerson?: () => Promise<{ allowed: boolean }>;
   fetchView: () => Promise<FoundryView | null>;
-  ask: (req: { prompt: string; consent: boolean; maxOutputTokens: number }) => Promise<FoundryAskResult>;
+  ask: (req: { prompt: string; consent: boolean; maxOutputTokens: number; includesPerson?: boolean; personConfirmed?: boolean }) => Promise<FoundryAskResult>;
 }
 
 /** 前回の呼び出しの開始時刻と、生成中かどうか（二重の呼び出しをしない。FR-276 (4)） */
@@ -53,8 +55,10 @@ export async function runExplain(
   if (!view.configured) return fallback(snapshot, 'not-configured');
   if (!view.enabled) return fallback(snapshot, 'disabled');
 
+  if (deps.includesPerson && (!deps.confirmPerson || !(await deps.confirmPerson()).allowed)) return fallback(snapshot, 'person-unconfirmed');
+
   // FR-276 (1)(5) 回数と予算
-  const g = gate(deps.usage.get(), limits, now);
+  const g = gate(deps.usage.get(), limits, now, view.provider);
   if (!g.ok) return fallback(snapshot, g.kind, { resumeAt: g.resumeAt });
 
   // (2) 入力は上限以下に切り詰める
@@ -62,17 +66,17 @@ export async function runExplain(
   const prompt = buildPrompt(fit.snapshot);
 
   // 失敗も数える（安全側）: 呼び出しの開始時に回数・トークン・概算費用を記録する
-  const after = recordCall(deps.usage.get(), fit.tokens, limits, now);
+  const after = recordCall(deps.usage.get(), fit.tokens, limits, now, view.provider);
   deps.usage.set(after);
   session.lastStartMs = now.getTime();
   session.inFlight = true;
   const level = budgetLevel(rollover(after, now), limits);
-  const warning = level === 'warn' || level === 'stop' ? NOTICE_WARN(after.costYen, limits) : undefined;
+  const warning = view.provider !== 'copilot' && (level === 'warn' || level === 'stop') ? NOTICE_WARN(after.costYen, limits) : undefined;
   try {
     const aborted = new Promise<'aborted'>((res) => { signal?.addEventListener('abort', () => res('aborted'), { once: true }); });
     if (signal?.aborted) return { kind: 'cancelled' };
     // (3) 出力は上限を指定して依頼する
-    const r = await Promise.race([deps.ask({ prompt, consent: deps.consent, maxOutputTokens: limits.outputMaxTokens }), aborted]);
+    const r = await Promise.race([deps.ask({ prompt, consent: deps.consent, maxOutputTokens: limits.outputMaxTokens, ...(deps.includesPerson ? { includesPerson: true, personConfirmed: true } : {}) }), aborted]);
     if (r === 'aborted') return { kind: 'cancelled' };
     if (r.mode === 'unavailable') return fallback(snapshot, r.reason, { truncated: fit.truncated, warning });
     const parsed = parseAiExplanation(r.answer, fit.snapshot);

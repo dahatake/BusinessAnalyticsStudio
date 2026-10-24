@@ -39,7 +39,7 @@ export function estimateCostYen(inputTokens: number, outputTokens: number, l: Ex
 }
 
 /** 呼び出しの開始時に数える（失敗した呼び出しも数える安全側。出力は上限で数える） */
-export function recordCall(s: UsageState, inputTokens: number, l: ExplainLimits, now: Date): UsageState {
+export function recordCall(s: UsageState, inputTokens: number, l: ExplainLimits, now: Date, provider: 'foundry' | 'copilot' = 'foundry'): UsageState {
   const r = rollover(s, now);
   const out = l.outputMaxTokens;
   return {
@@ -47,7 +47,7 @@ export function recordCall(s: UsageState, inputTokens: number, l: ExplainLimits,
     count: r.count + 1,
     inputTokens: r.inputTokens + inputTokens,
     outputTokens: r.outputTokens + out,
-    costYen: r.costYen + estimateCostYen(inputTokens, out, l),
+    costYen: r.costYen + (provider === 'foundry' ? estimateCostYen(inputTokens, out, l) : 0),
   };
 }
 
@@ -70,10 +70,10 @@ export type GateResult =
   | { ok: false; kind: 'budget'; resumeAt: Date };
 
 /** 回数と予算の判定（呼び出しの前）。間隔と二重の呼び出しは intervalWait で判定する */
-export function gate(s: UsageState, l: ExplainLimits, now: Date): GateResult {
+export function gate(s: UsageState, l: ExplainLimits, now: Date, provider: 'foundry' | 'copilot' = 'foundry'): GateResult {
   const r = rollover(s, now);
   if (r.count >= l.dailyLimit) return { ok: false, kind: 'daily-limit', resumeAt: nextMidnight(now) };
-  if (budgetLevel(r, l) === 'stop') return { ok: false, kind: 'budget', resumeAt: nextMonthStart(now) };
+  if (provider === 'foundry' && budgetLevel(r, l) === 'stop') return { ok: false, kind: 'budget', resumeAt: nextMonthStart(now) };
   return { ok: true };
 }
 
