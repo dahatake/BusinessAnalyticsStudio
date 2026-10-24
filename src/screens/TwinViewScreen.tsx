@@ -17,6 +17,7 @@ import { onEntityKey, useEntityBinding, useSelection } from '../selection/hooks'
 import { usePackStore } from '../store/pack';
 import { useSelectionStore } from '../store/selection';
 import { Items3DSurface } from '../three/Items3DSurface';
+import { TwinMinimap } from './TwinMinimap';
 import { AnnotationControls, AnnotationLayer } from '../ink/AnnotationLayer';
 import {
   CONTROL_NOTE, FLOW_TEXT, FRESHNESS_NOTE, LAYER_LABELS, REAL_GROUP_LABELS, buildTwinModel, flowTouches,
@@ -197,6 +198,9 @@ export function TwinViewScreen() {
   const openItem = (id: string): void => { useSelectionStore.getState().select(id, { origin: ORIGIN }); setDetailId(id); setDepth(2); };
   const openCluster = (name: string): void => { setFocusCluster(name); setDepth(1); };
   const detailItem = detailId ? allItems.find((i) => i.id === detailId) : undefined;
+  const minimapIds = new Set<string>(
+    depth === 2 && detailItem ? [detailItem.id] : depth === 1 && focusCluster ? allItems.filter((i) => clusterOfItem(i) === focusCluster).map((i) => i.id) : [],
+  );
   const nameOf = (id: string): string => names.get(id) ?? id;
 
   const realColumn = showReal ? (
@@ -253,7 +257,7 @@ export function TwinViewScreen() {
       description="現実世界の設備・人・拠点と、デジタル世界の三つの層（Operations・Experience・Insights）を、Data と Control の流れで結んで見ます。"
       maxWidth="1200px"
     >
-      <div ref={rootRef} style={{ display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM }}>
+      <div ref={rootRef} style={{ position: 'relative', display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM }}>
         <div className={s.notes}>
           <Badge appearance="tint" color="informative" data-testid="twin-freshness">{FRESHNESS_NOTE}{fresh ? ` 出典の取得日: ${fresh}` : ' 取得日の記載なし'}</Badge>
           {hasControl || view.world === 'both' ? <Badge appearance="tint" color="warning" data-testid="twin-control-note">Control: {CONTROL_NOTE}</Badge> : null}
@@ -264,6 +268,7 @@ export function TwinViewScreen() {
         ) : (
           <>
             <ZoomBar label="Twin ビュー" depth={depth} elementDepth={ELEMENT_DEPTH} onGo={goDepth} elementLabels={focusCluster ? [focusCluster] : []} detailLabel={detailItem?.name} />
+            <TwinMinimap items={items3d} inView={minimapIds} status={`現在の表示範囲: ${depth === 2 && detailItem ? detailItem.name : depth === 1 && focusCluster ? focusCluster : '全体'}`} />
             {surf3d ? (
               <>
                 <div ref={surf3dRef} style={{ position: 'relative' }}>
