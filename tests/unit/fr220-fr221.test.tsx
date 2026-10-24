@@ -43,7 +43,7 @@ describe('FR-220 左メニューから「3D ビュー」の切替の項目を削
   });
 
   // FR-220 AC-590（FR-020・FR-146・FR-147 の廃止に伴い、画面 view3d・drawing2d は registry から外れた）: ドック・コマンド・ステッパー・ペルソナの既定からも参照されない
-  it('FR-220 AC-590 view3d・drawing2d はレジストリ・ドック・コマンド・ステッパーに残らず、ペルソナ（現場）の既定は地図になる', () => {
+  it('FR-220 AC-590 view3d・drawing2d はレジストリ・ドック・コマンド・ステッパーに残らず、ペルソナ（現場）の既定は Twin ビューになる（Q-062 A）', () => {
     for (const key of ['view3d', 'drawing2d', 'canvas']) {
       expect(SCREENS.some((s) => s.key === key)).toBe(false);
       expect(COMPONENT_SCREENS.some((s) => s.key === key)).toBe(false);
@@ -51,8 +51,8 @@ describe('FR-220 左メニューから「3D ビュー」の切替の項目を削
       expect(builtinCommands(COMPONENT_SCREENS).some((c) => c.id === `view.show.${key}`)).toBe(false);
       expect(keysOf(defaultLayout('現場'))).not.toContain(key);
     }
-    expect(PERSONA_PRIMARY['現場']).toBe('map');
-    expect(keysOf(defaultLayout('現場'))).toContain('map');
+    expect(PERSONA_PRIMARY['現場']).toBe('twin-view');
+    expect(keysOf(defaultLayout('現場'))).toContain('twin-view');
   });
 });
 describe('FR-221 「メニューを最小化」の文字が切れない', () => {
