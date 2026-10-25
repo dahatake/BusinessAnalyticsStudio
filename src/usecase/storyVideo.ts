@@ -58,7 +58,7 @@ export function storyVideoAvailability(view: FoundryView | null, consentGranted:
 }
 
 // ---- 見積り（FR-292 (1)(2)） ----
-export const estimateTokens = (chars: number): number => Math.ceil(chars / 4);
+export const estimateTokens = (chars: number): number => Math.ceil(chars / 1.5); // 日本語でも過少にならない保守的な見積り（英数字 4 文字/トークンより多め）
 export function callCostYen(inputTokens: number, outputTokens: number, prices: Prices, safety = STORY_VIDEO_SAFETY_FACTOR): number {
   return safety * ((inputTokens * prices.inPerM + outputTokens * prices.outPerM) / 1_000_000);
 }
@@ -182,7 +182,7 @@ var s=document.querySelectorAll('svg');for(var i=0;i<s.length;i++){try{p?s[i].pa
 /** 検査を通った HTML を iframe の srcdoc にする（外部通信を禁じる CSP と、再生・一時停止の制御を足す） */
 export function toSrcDoc(html: string): string {
   const meta = `<meta http-equiv="Content-Security-Policy" content="${CSP}">`;
-  const head = /<head[^>]*>/i;
+  const head = /<head(\s[^>]*)?>/i;
   const doc = head.test(html) ? html.replace(head, (m) => `${m}${meta}`) : `<!doctype html><html><head><meta charset="utf-8">${meta}</head><body>${html}</body></html>`;
   return /<\/body>/i.test(doc) ? doc.replace(/<\/body>/i, `${CONTROL}</body>`) : `${doc}${CONTROL}`;
 }

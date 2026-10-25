@@ -57,6 +57,11 @@ describe('FR-291 AC-779 生成物の検査と隔離表示', () => {
     expect(doc).toContain("default-src 'none'");
     expect(toSrcDoc('<svg></svg>')).toContain('Content-Security-Policy');
   });
+  it('<header> を含み <head> のない HTML でも CSP の meta が入り、<header> 内には入らない', () => {
+    const doc = toSrcDoc('<header>h</header><svg></svg>');
+    expect(doc).toContain("default-src 'none'");
+    expect(doc.indexOf('Content-Security-Policy')).toBeLessThan(doc.indexOf('<header>'));
+  });
 });
 
 describe('FR-291 AC-780 共通接続・送信内容・条件', () => {
