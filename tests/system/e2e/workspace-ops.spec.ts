@@ -14,6 +14,15 @@ async function box(loc: Locator) {
   return b!;
 }
 
+/** Tab 操作だけで対象へフォーカスを移す（到達不能なら失敗）。 */
+async function tabTo(page: Page, target: Locator): Promise<void> {
+  for (let i = 0; i < 80; i++) {
+    if (await target.evaluate((el) => el === document.activeElement).catch(() => false)) return;
+    await page.keyboard.press('Tab');
+  }
+  throw new Error('Tab 操作で対象に到達できない');
+}
+
 /** 直下のコンポーネント（component-menu と入れ子を除く）の key 一覧 */
 async function topKeys(page: Page): Promise<string[]> {
   return page.getByTestId('workspace').evaluate((ws) => {
@@ -55,31 +64,82 @@ async function dragHeading(page: Page, c: Locator, toX: number, toY: number, rel
 }
 
 test.describe('FR-148 最上段の作業先メニュー', () => {
-  // FR-148 AC-251
-  test('FR-148 AC-251 企業 2 社（各 2 Project）で、作業先メニューにデモと 4 Project が企業名・Project 名で並び、選ぶと移動して表示が変わる', async ({ page, start }) => {
+  // FR-148 AC-251（AC-253 のキーボード・支援技術での到達も同じ導線で確認）
+  test('FR-148 AC-251 企業を選ぶと当該企業の Project のみ表示し、選択だけでは作業先を変えず確定後に切り替える', async ({ page, start }) => {
     await start();
     await seedProjects(page, '合成株式会社A', ['業務改善 2026', '在庫最適化']);
-    await page.getByRole('button', { name: 'Project 一覧へ' }).click({ timeout: 500 }).catch(() => undefined);
     await seedProjects(page, '合成株式会社B', ['需要予測', '品質改善']);
-    const menu = page.getByTestId('work-target-menu');
-    await menu.click();
-    const list = page.getByRole('menu', { name: '作業先' });
-    await expect(list.getByRole('menuitemradio')).toHaveCount(5);
-    await expect(list.getByRole('menuitemradio', { name: /デモ/ })).toBeVisible();
-    for (const [c, p] of [['合成株式会社A', '業務改善 2026'], ['合成株式会社A', '在庫最適化'], ['合成株式会社B', '需要予測'], ['合成株式会社B', '品質改善']]) {
-      await expect(list.getByRole('menuitemradio', { name: new RegExp(`${c}.*${p}`) })).toBeVisible();
-    }
-    await expect(list.getByRole('menuitemradio', { checked: true }), '現在の作業先が 1 つだけ識別できる').toHaveCount(1);
-    await list.getByRole('menuitemradio', { name: /合成株式会社B.*品質改善/ }).click();
+    await page.getByRole('region', { name: '企業 合成株式会社A' }).getByRole('link', { name: '業務改善 2026' }).click();
+    const menuButton = page.getByTestId('work-target-menu');
+    const current = page.getByTestId('work-target');
+    await expect(current).toContainText('合成株式会社A');
+    await expect(current).toContainText('業務改善 2026');
+    await expect(menuButton).toContainText('合成株式会社A');
+    await expect(menuButton).toContainText('業務改善 2026');
+    await menuButton.click();
+    const menu = page.getByRole('menu', { name: '作業先' });
+    await expect(menu.getByRole('menuitemradio', { name: /デモ/ })).toBeVisible();
+
+    const chooseCompany = async (company: string, expected: string[], excluded: string[]) => {
+      const choice = menu.getByRole('button', { name: company, exact: true });
+      await expect(choice).toBeVisible();
+      await expect(choice).toHaveAccessibleName(company);
+      await choice.click();
+      const projects = menu.getByRole('menuitemradio', { name: new RegExp(company) });
+      await expect(projects).toHaveCount(2);
+      for (const project of expected) {
+        const item = menu.getByRole('menuitemradio', { name: new RegExp(`${company}.*${project}`) });
+        await expect(item).toBeVisible();
+        await expect(item).toHaveAccessibleName(new RegExp(`${company}.*${project}`));
+      }
+      for (const project of excluded) {
+        await expect(menu.getByRole('menuitemradio', { name: new RegExp(project) })).toHaveCount(0);
+      }
+      await expect(current).toContainText('合成株式会社A');
+      await expect(current).toContainText('業務改善 2026');
+      await expect(menuButton).toContainText('合成株式会社A');
+      await expect(menuButton).toContainText('業務改善 2026');
+    };
+
+    await chooseCompany('合成株式会社A', ['業務改善 2026', '在庫最適化'], ['需要予測', '品質改善']);
+    await chooseCompany('合成株式会社B', ['需要予測', '品質改善'], ['業務改善 2026', '在庫最適化']);
+    await expect(menu).toHaveAccessibleDescription(/合成株式会社B/);
+    await expect(menu.getByRole('menuitemradio', { name: /デモ/ })).toBeVisible();
+    await menu.getByRole('menuitemradio', { name: /合成株式会社B.*品質改善/ }).click();
     await expect(page.getByTestId('stepper')).toBeVisible();
-    await expect(menu).toContainText('合成株式会社B');
-    await expect(menu).toContainText('品質改善');
-    const selectedProject = page.getByTestId('work-target');
-    await expect(selectedProject).toContainText('合成株式会社B');
-    await expect(selectedProject).toContainText('品質改善');
-    const menuBox = await box(menu);
+    await expect(current).toContainText('合成株式会社B');
+    await expect(current).toContainText('品質改善');
+    await expect(menuButton).toContainText('合成株式会社B');
+    await expect(menuButton).toContainText('品質改善');
+    const menuBox = await box(menuButton);
     const stepperBox = await box(page.getByTestId('stepper'));
     expect(menuBox.y, '作業先メニューがステッパーより上段にある').toBeLessThan(stepperBox.y);
+
+    // マウスを使わずに最上段を開き、企業・Project の同じ導線をキーボードだけで完了する。
+    await tabTo(page, menuButton);
+    await page.keyboard.press('Enter');
+    await expect(menu).toBeVisible();
+    const companyA = menu.getByRole('button', { name: '合成株式会社A', exact: true });
+    await tabTo(page, companyA);
+    await page.keyboard.press('Enter');
+    await expect(menu.getByRole('menuitemradio', { name: /合成株式会社A/ })).toHaveCount(2);
+    await expect(menu.getByRole('menuitemradio', { name: /合成株式会社A.*業務改善 2026/ })).toBeVisible();
+    await expect(menu.getByRole('menuitemradio', { name: /合成株式会社B.*需要予測/ })).toHaveCount(0);
+    await expect(current).toContainText('合成株式会社B');
+    await expect(current).toContainText('品質改善');
+    const projectA = menu.getByRole('menuitemradio', { name: /合成株式会社A.*在庫最適化/ });
+    await tabTo(page, projectA);
+    await page.keyboard.press('Enter');
+    await expect(current).toContainText('合成株式会社A');
+    await expect(current).toContainText('在庫最適化');
+    await expect(menuButton).toContainText('合成株式会社A');
+    await expect(menuButton).toContainText('在庫最適化');
+
+    await menuButton.click();
+    const demo = menu.getByRole('menuitemradio', { name: /デモ/ });
+    await expect(demo).toBeVisible();
+    await demo.click();
+    await expect(current).toContainText('デモ');
   });
 
   // FR-148 AC-251（異常系: 閉じて何も選ばなければ作業先は変わらない）

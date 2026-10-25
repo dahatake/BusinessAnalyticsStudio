@@ -152,7 +152,7 @@
     "AC-248": "sha256:8b26ee69dd22cf3a",
     "AC-249": "sha256:6afbeb628863d6bb",
     "AC-250": "sha256:48e7168573414b71",
-    "AC-251": "sha256:4f5453185a5aa36f",
+    "AC-251": "sha256:a7a5f2195f0c9f11",
     "AC-254": "sha256:8c4b41cce658f864",
     "AC-257": "sha256:f2c1a59d0c97e880",
     "AC-260": "sha256:4690110bce071259",
@@ -252,7 +252,7 @@
     "AC-519": "sha256:808c1eb3df6b87b7",
     "AC-521": "sha256:0f3620c4a95cec35",
     "AC-523": "sha256:fcb5bcca0e5a3af7",
-    "AC-525": "sha256:aae7ec59f6431f78",
+    "AC-525": "sha256:774be91f6e997167",
     "AC-526": "sha256:972af3511eec95dd",
     "AC-528": "sha256:a3fad302aa45bbdc",
     "AC-529": "sha256:862c46ce942f320c",
@@ -3875,7 +3875,7 @@
       "ac_ids": [
         "AC-251"
       ],
-      "title": "企業名・Project 名を示す最上段の作業先メニューで全 Project を識別し、切替後に分析先が一致する（異常系: Esc）",
+      "title": "企業を二段階で選び、対象 Project のみ表示・確定後に作業先が変わる（キーボード・支援技術を含む）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-251",
       "canary": false,
@@ -3901,6 +3901,12 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "System Test を AC-251 の追加検証を含む形に更新したため、再実行待ち"
+        },
+        {
+          "at": "2026-10-25T15:06:01+09:00",
+          "by": "test-designer",
+          "change": "title: '企業名・Project 名を示す最上段の作業先メニューで全 Project を識別し、切替後に分析先が一致する（異常系: Esc）' -> '企業を二段階で選び、対象 Project のみ表示・確定後に作業先が変わる（キーボード・支援技術を含む）'",
+          "reason": "run 202610251431: AC-251 の企業別 Project 絞り込み・企業選択時の現状維持・Project 確定後の切替を拡張し、AC-253 のキーボード導線と支援技術名も確認"
         }
       ]
     },
@@ -5806,7 +5812,7 @@
       "ac_ids": [
         "AC-525"
       ],
-      "title": "選択した作業先の表記が上部に 1 か所だけ現れ、Project 切替後に旧表記が残らない（異常系）",
+      "title": "上部メニューだけに現在作業先を可視表示し、展開中も企業選択だけでは変えない（異常系）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-525",
       "canary": false,
@@ -5832,6 +5838,12 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "System Test を AC-525 の追加検証を含む形に更新したため、再実行待ち"
+        },
+        {
+          "at": "2026-10-25T15:06:01+09:00",
+          "by": "test-designer",
+          "change": "title: '選択した作業先の表記が上部に 1 か所だけ現れ、Project 切替後に旧表記が残らない（異常系）' -> '上部メニューだけに現在作業先を可視表示し、展開中も企業選択だけでは変えない（異常系）'",
+          "reason": "run 202610251431: AC-525 の閉じた分析画面上部の表示数を明確化し、展開メニュー内の Project 項目を除外して確認"
         }
       ]
     },
