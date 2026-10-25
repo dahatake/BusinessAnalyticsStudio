@@ -22,6 +22,7 @@ import { usePackStore } from '../store/pack';
 import { storyboardState } from '../usecase/storyboard';
 import { StoryboardEditor, StoryboardPlayer, StylePicker } from '../usecase/StoryboardPlayer';
 import { useStoryboardUi } from '../store/storyboardUi';
+import { StoryVideoItemActions, StoryVideoSection, resetStoryVideoUi } from '../usecase/StoryVideoPanel';
 
 const useStyles = makeStyles({
   list: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS },
@@ -68,7 +69,7 @@ const usePlaying = create<PlayingStore>((set) => ({
   setState: (state) => set({ state }),
 }));
 /** 再生の状態を初期に戻す（テスト用・Project を閉じるとき用） */
-export function resetPlayback() { usePlaying.getState().set(null); useUseCaseDialog.getState().set(null); useStoryboardUi.getState().close(); useStoryboardUi.getState().edit(null); }
+export function resetPlayback() { usePlaying.getState().set(null); useUseCaseDialog.getState().set(null); useStoryboardUi.getState().close(); useStoryboardUi.getState().edit(null); resetStoryVideoUi(); }
 
 function UseCaseDialog({ projectId }: { projectId: string }) {
   const s = useStyles();
@@ -307,6 +308,7 @@ function UseCaseScreen() {
                       {sb ? <Button size="small" onClick={() => setSbEditId(uc.id)}>ストーリーボードを編集</Button> : null}
                       <Button size="small" className={s.forced} disabled={!sb} onClick={() => setSbPlayId(uc.id)}>ストーリーボードを再生</Button>
                     </div>
+                    <StoryVideoItemActions uc={uc} video={set.storyVideos?.[uc.id]} />
                   </li>
                 );
               })}
@@ -324,6 +326,7 @@ function UseCaseScreen() {
                 scenes={set.storyboards[sbPlayId]!.scenes} onClose={() => setSbPlayId(null)} />
             ) : null}
             {playing && playingAnim ? <AnimationPlayer key={`${playing.id}:${playingAnim.createdAt}`} uc={playing} anim={playingAnim} onClose={() => setPlaying(null)} /> : null}
+            <StoryVideoSection projectId={projectId} items={set.items} videos={set.storyVideos} />
             <section aria-label="導出の候補" data-testid="usecase-candidates" className={s.form}>
               <div className={s.row}>
                 <Text weight="semibold">導出の候補（課題と解決策から導出。登録するまで保存されません）</Text>
