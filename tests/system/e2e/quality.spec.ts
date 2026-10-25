@@ -338,7 +338,9 @@ test.describe('NFR-SEC-002 実接続の有効化は了承の記録が条件（�
 
 test.describe('NFR-LEGAL-002 サンプル・AI 生成・モックの明示', () => {
   // NFR-LEGAL-002 AC-180
-  test('NFR-LEGAL-002 AC-180 主要画面に「サンプル」、AI の回答・サマリー・ツリーに「AI 生成」、ミニ・モックアプリに「モック（イメージ）」', async ({ page, start }) => {
+  // FR-043 AC-054 によりミニ・モックアプリ（mock-app）は廃止。「モック（イメージ）」の表示は FR-043 で「提供を継続する条件にしない」
+  // とされたため、AC-180 のうち廃止画面の部分は確かめない（AC-180 の本文の更新は rd-author へ競合として返す）。
+  test('NFR-LEGAL-002 AC-180 主要画面に「サンプル」、AI の回答・サマリー・ツリーに「AI 生成」（ミニ・モックアプリは FR-043 で廃止）', async ({ page, start }) => {
     await start();
     for (const [key, name] of MAIN_SCREENS) {
       const c = await openScreen(page, key);
@@ -357,9 +359,7 @@ test.describe('NFR-LEGAL-002 サンプル・AI 生成・モックの明示', () 
     await themes.getByRole('button', { name: 'ツリーを生成' }).click();
     const tree = component(page, 'discussion-tree');
     await expect(tree.getByRole('treeitem').nth(1)).toContainText('AI 生成', { timeout: 15_000 });
-    // モック
-    const sol = mono.solutions().find((s) => mono.mocks().some((m) => m.solutionId === s.id))!;
-    await entity(await openScreen(page, 'issue-solution'), sol.id).first().click();
-    await expect(await openScreen(page, 'mock-app')).toContainText('モック（イメージ）');
+    // 廃止したミニ・モックアプリ（FR-043）は開けない
+    await expect(page.getByTestId('nav-mock-app')).toHaveCount(0);
   });
 });

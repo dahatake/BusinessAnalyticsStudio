@@ -20,11 +20,17 @@ const SCREEN_KEYS = [
 
 const customer = (kind) => JSON.parse(fs.readFileSync(path.join(root, 'examples', kind, 'public', 'data', 'customer.json'), 'utf8'));
 
-test('FR-287 AC-748 前提: 登録簿のキーが23件で、要求の一覧と一致し mock-app がない', () => {
+/** FR-287 の 23 件の対象外で、FR-043 の廃止とも無関係な既存画面（削除しない。conductor の判断 2026-10-25） */
+const UNRELATED_KEYS = ['memo'];
+
+test('FR-287 AC-748 前提: 登録簿は要求の23キーをすべて持ち、mock-app がない（無関係な memo は残してよい）', () => {
   const src = fs.readFileSync(path.join(root, 'src', 'screens', 'registry.ts'), 'utf8');
   const keys = [...src.matchAll(/\{\s*key:\s*'([^']+)'/g)].map((m) => m[1]);
-  assert.equal(keys.length, 23);
-  assert.deepEqual([...keys].sort(), [...SCREEN_KEYS].sort());
+  assert.ok(!keys.includes('mock-app'), '廃止した mock-app が登録簿に残っている（FR-043）');
+  const missing = SCREEN_KEYS.filter((k) => !keys.includes(k));
+  assert.deepEqual(missing, [], `登録簿にない要求の画面: ${missing.join(', ')}`);
+  const extra = keys.filter((k) => !SCREEN_KEYS.includes(k) && !UNRELATED_KEYS.includes(k));
+  assert.deepEqual(extra, [], `要求にない画面: ${extra.join(', ')}`);
 });
 
 for (const kind of ['mono', 'koto']) {

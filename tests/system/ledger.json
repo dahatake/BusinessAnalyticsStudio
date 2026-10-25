@@ -6359,11 +6359,11 @@
       "ac_ids": [
         "AC-591"
       ],
-      "title": "自由配置の全25画面で最大化矩形を既定最大化と比較し全作業領域・最前面を確認",
+      "title": "自由配置の全画面（mock-app 廃止後）で最大化/復元の矩形を確認（E2E-342）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-591",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "363684c",
       "last_run_at": "2026-10-24T22:59:55+09:00",
       "evidence": "work/runs/202610242109/logs/system-test/E2E-342-202610242252.log",
@@ -6379,6 +6379,12 @@
           "by": "test-designer",
           "change": "serial: None -> True",
           "reason": "共有previewサーバーの競合を防ぐため単独実行"
+        },
+        {
+          "at": "2026-10-25T09:16:49+09:00",
+          "by": "test-designer",
+          "change": "title: '自由配置の全25画面で最大化矩形を既定最大化と比較し全作業領域・最前面を確認' -> '自由配置の全画面（mock-app 廃止後）で最大化/復元の矩形を確認（E2E-342）'",
+          "reason": "FR-043 AC-054 で mock-app を廃止（63f4363）。対象画面から mock-app を除外"
         }
       ],
       "serial": true
@@ -6391,11 +6397,11 @@
       "ac_ids": [
         "AC-592"
       ],
-      "title": "全25画面で見出し通常表示による自由配置矩形復元と同一ペルソナ再読込の保存非破壊",
+      "title": "自由配置の全画面（mock-app 廃止後）で最大化/復元の矩形を確認（E2E-343）",
       "layer": "e2e",
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button --workers=1",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "363684c",
       "last_run_at": "2026-10-24T22:59:55+09:00",
       "evidence": "work/runs/202610242109/logs/system-test/E2E-343-202610242252.log",
@@ -6417,6 +6423,12 @@
           "by": "test-designer",
           "change": "command: 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button' -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button --workers=1'",
           "reason": "共有preview環境でPlaywright内部並列によるタイムアウトを防ぐためworkers=1で実行"
+        },
+        {
+          "at": "2026-10-25T09:16:49+09:00",
+          "by": "test-designer",
+          "change": "title: '全25画面で見出し通常表示による自由配置矩形復元と同一ペルソナ再読込の保存非破壊' -> '自由配置の全画面（mock-app 廃止後）で最大化/復元の矩形を確認（E2E-343）'",
+          "reason": "FR-043 AC-054 で mock-app を廃止（63f4363）。対象画面から mock-app を除外"
         }
       ],
       "serial": true
@@ -6429,11 +6441,11 @@
       "ac_ids": [
         "AC-592"
       ],
-      "title": "全25画面でEscによる自由配置矩形復元と同一ペルソナ再読込の保存非破壊",
+      "title": "自由配置の全画面（mock-app 廃止後）で最大化/復元の矩形を確認（E2E-344）",
       "layer": "e2e",
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape --workers=1",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "363684c",
       "last_run_at": "2026-10-24T22:59:55+09:00",
       "evidence": "work/runs/202610242109/logs/system-test/E2E-344-202610242256.log",
@@ -6455,6 +6467,12 @@
           "by": "test-designer",
           "change": "command: 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape' -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape --workers=1'",
           "reason": "共有preview環境でPlaywright内部並列によるタイムアウトを防ぐためworkers=1で実行"
+        },
+        {
+          "at": "2026-10-25T09:16:50+09:00",
+          "by": "test-designer",
+          "change": "title: '全25画面でEscによる自由配置矩形復元と同一ペルソナ再読込の保存非破壊' -> '自由配置の全画面（mock-app 廃止後）で最大化/復元の矩形を確認（E2E-344）'",
+          "reason": "FR-043 AC-054 で mock-app を廃止（63f4363）。対象画面から mock-app を除外"
         }
       ],
       "serial": true
@@ -7320,11 +7338,11 @@
       "ac_ids": [
         "AC-180"
       ],
-      "title": "AC-180 標準の検証条件で、主要画面に「サンプル」、AI の回答・サマリー・ツリーに「AI 生成」、ミニ・モックアプリに「モック（",
+      "title": "NFR-LEGAL-002 AC-180 主要画面に「サンプル」、AI の回答・サマリー・ツリーに「AI 生成」（モック表示は FR-043 で廃止）",
       "layer": "nonfunctional",
       "command": "node tests/system/run.mjs AC-180",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "363684c",
       "last_run_at": "2026-10-24T22:59:55+09:00",
       "evidence": "work/runs/202610242109/logs/system-test/IT-025-202610242248.log",
@@ -7334,6 +7352,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-10-25T09:16:49+09:00",
+          "by": "test-designer",
+          "change": "title: 'AC-180 標準の検証条件で、主要画面に「サンプル」、AI の回答・サマリー・ツリーに「AI 生成」、ミニ・モックアプリに「モック（' -> 'NFR-LEGAL-002 AC-180 主要画面に「サンプル」、AI の回答・サマリー・ツリーに「AI 生成」（モック表示は FR-043 で廃止）'",
+          "reason": "FR-043 AC-054 で mock-app を廃止（63f4363）。モック（イメージ）は FR-043 で継続条件外のため検証から外す"
         }
       ]
     },
