@@ -3,7 +3,7 @@
 // キーボードだけで開き（Enter/Space/↓）、矢印で選び、Enter で確定、Esc で閉じる（Fluent の Menu が提供。AC-253）。
 import { Button, Menu, MenuDivider, MenuGroup, MenuGroupHeader, MenuItem, MenuItemRadio, MenuList, MenuPopover, MenuTrigger, makeStyles, tokens, useId } from '@fluentui/react-components';
 import { ChevronDown16Regular } from '@fluentui/react-icons';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { Company, Project } from '../store/projects';
 import { DEMO_VALUE, MENU_DEMO_LABEL, menuGroups, parseChoice, workTargetLabel, type TargetChoice } from './workTarget';
 
@@ -32,6 +32,10 @@ export function WorkTargetMenu(props: {
   const labelId = useId('work-target-menu-label');
   const companyLabelId = useId('company-project-menu-label');
   const [allOpen, setAllOpen] = useState(false);
+  // ポップオーバーを再表示したときも、マウントされた項目へフォーカスを渡す。
+  const focusCompanyMenu = useCallback((node: HTMLDivElement | null) => {
+    node?.querySelector<HTMLElement>('[role="menuitemradio"]')?.focus();
+  }, []);
   const groups = menuGroups(props.projects, props.companies);
   const label = props.demoOnly ? 'デモ' : workTargetLabel(props.openId, props.projects, props.companies);
   const current = props.demoOnly || !props.openId ? DEMO_VALUE : `project:${props.openId}`;
@@ -55,7 +59,17 @@ export function WorkTargetMenu(props: {
           </MenuTrigger>
           <MenuPopover className={s.popover} onClick={(e) => e.stopPropagation()}>
             <span id={companyLabelId} className={s.sr}>同じ企業の Project</span>
-            <MenuList aria-labelledby={companyLabelId}>
+            <MenuList ref={focusCompanyMenu} aria-labelledby={companyLabelId} onKeyDown={(e) => {
+              if (!['Home', 'End', 'ArrowDown', 'ArrowUp'].includes(e.key) || e.altKey || e.ctrlKey || e.metaKey) return;
+              const items = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('[role="menuitemradio"]'));
+              if (!items.length) return;
+              const index = items.indexOf(e.currentTarget.ownerDocument.activeElement as HTMLElement);
+              const next = e.key === 'Home' ? 0 : e.key === 'End' ? items.length - 1
+                : (index + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+              e.preventDefault();
+              e.stopPropagation();
+              items[next]?.focus();
+            }}>
               {companyGroup.projects.map((p) => (
                 <MenuItemRadio key={p.id} name="target" value={`project:${p.id}`}>{companyGroup.company.name} / {p.name}</MenuItemRadio>
               ))}
