@@ -42,6 +42,12 @@ export interface StoryScene {
   noData?: { reason: string; entry: string };
   /** 最後のシーンだけ: 行動につなぐ一言 */
   cta?: string;
+  /** 生成 AI が作った見出し（FR-290。材料にない数値を含むときは付けない） */
+  aiHeading?: string;
+  /** 生成 AI が作った語りの文章（FR-290。材料にない数値を含む文は除いてある） */
+  narration?: string[];
+  /** 材料にない数値を含むため表示しなかった文の数（FR-290） */
+  removedSentences?: number;
 }
 
 /** ストーリーが読むユースケース（デモ・実際の Project のどちらでも、解決策との結び付きを solutionId で持つ） */
@@ -86,13 +92,13 @@ export function rankSolutions(issues: readonly Issue[], solutions: readonly Solu
 
 const fmtNum = (n: number): string => n.toLocaleString('ja-JP');
 
-function evalOf(row: PriorityRow, issues: readonly Issue[], key: 'roi' | 'cost' | 'feasibility' | 'risk'): { value: number | string; unit?: string } | undefined {
+export function evalOf(row: PriorityRow, issues: readonly Issue[], key: 'roi' | 'cost' | 'feasibility' | 'risk'): { value: number | string; unit?: string } | undefined {
   const issue = issues.find((i) => i.id === row.id);
   const v = issue?.evaluation?.[key];
   return v ? { value: v.value, unit: v.unit } : undefined;
 }
 
-function withUnit(v: { value: number | string; unit?: string } | undefined): string | undefined {
+export function withUnit(v: { value: number | string; unit?: string } | undefined): string | undefined {
   if (!v) return undefined;
   return typeof v.value === 'number' ? `${fmtNum(v.value)} ${v.unit ?? ''}`.trim() : String(v.value);
 }

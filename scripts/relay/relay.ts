@@ -293,8 +293,11 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
         }
         // 「現状の説明」などの生成。条件が 1 つでも欠けると Foundry を呼ばない（呼び出し 0 回。FR-275 AC-706）
         if (req.method === 'POST' && path === '/foundry/ask') {
-          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; prompt?: string; consent?: boolean; includesPerson?: boolean; personConfirmed?: boolean };
+          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; prompt?: string; consent?: boolean; includesPerson?: boolean; personConfirmed?: boolean; maxOutputTokens?: unknown; timeoutSeconds?: unknown };
           if (typeof b.packId !== 'string' || !b.packId || typeof b.prompt !== 'string') return json(400, { error: 'packId・prompt が必要です' });
+          // FR-276・FR-290: 呼び出し元が出力の上限（PARAM-132 など）と応答待ちの上限（PARAM-127 など）を指定できる。範囲外は無視する
+          const askMaxOut = typeof b.maxOutputTokens === 'number' && Number.isFinite(b.maxOutputTokens) && b.maxOutputTokens >= 1 ? Math.min(Math.floor(b.maxOutputTokens), 32000) : undefined;
+          const askTimeoutMs = opts.foundryTimeoutMs ?? (typeof b.timeoutSeconds === 'number' && Number.isFinite(b.timeoutSeconds) && b.timeoutSeconds >= 1 ? Math.min(b.timeoutSeconds, 600) * 1000 : undefined);
           const unavailable = (reason: string, message: string, status = 200) => json(status, { mode: 'unavailable', reason, message });
           if (b.consent !== true) return unavailable('consent', '顧客の了承の記録がないため、AI は使えません');
           if (!foundryEnabled.has(b.packId)) return unavailable('disabled', 'Foundry の実接続が有効ではありません');
@@ -303,8 +306,8 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           if (b.includesPerson === true && b.personConfirmed !== true) return unavailable('person-unconfirmed', '種別「人」を含む顧客パックは、送信前の確認が必要です');
           try {
             const answer = provider.provider() === 'copilot' ? await copilotComplete(b.packId, b.prompt) : secret!.authMethod === 'entra'
-              ? await callFoundryWithInput(secret!, b.prompt, opts.foundryFetch, opts.foundryTimeoutMs, opts.foundryToken)
-              : await callFoundry(secret!, b.prompt, opts.foundryFetch, opts.foundryTimeoutMs);
+              ? await callFoundryWithInput(secret!, b.prompt, opts.foundryFetch, askTimeoutMs, opts.foundryToken, askMaxOut)
+              : await callFoundry(secret!, b.prompt, opts.foundryFetch, askTimeoutMs, askMaxOut);
             return json(200, { answer, mode: 'connected' });
           } catch (e) {
             const kind = e instanceof FoundryError || e instanceof CopilotError ? e.kind : 'network';
