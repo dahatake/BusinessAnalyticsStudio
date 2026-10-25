@@ -328,7 +328,8 @@
     "AC-761": "sha256:2d47552f43564343",
     "AC-762": "sha256:f998e7e05e260c7e",
     "AC-763": "sha256:2aff7e48a3665f4e",
-    "AC-764": "sha256:726601016c247e6d"
+    "AC-764": "sha256:726601016c247e6d",
+    "AC-778": "sha256:8350fd04a65308f1"
   },
   "cases": [
     {
@@ -11026,6 +11027,31 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-445",
+      "requirement_ids": [
+        "FR-291"
+      ],
+      "ac_ids": [
+        "AC-778"
+      ],
+      "title": "ユースケース A のストーリー動画: 確認前は呼び出し 0 回、A だけの順序つきシーンと隔離枠のアニメーション、再生・一時停止",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-778",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-25T09:04:28+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "FR-291 AC-778 のケースを作成"
         }
       ]
     }
