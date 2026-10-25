@@ -340,8 +340,8 @@ export function defaultLayout(persona: Persona): Layout {
       return tierTree('issue-solution', ['discussion-tree', 'kpi-okr'], ['gantt', 'table']);
     case 'IT': // 主領域にアーキテクチャ図、右にナレッジグラフと KPI/OKR、下に製品の一覧
       return tierTree('architecture', ['knowledge-graph', 'kpi-okr'], ['products']);
-    case '現場': // 主領域に Twin ビュー（3D デジタルツイン。Q-062 A）、右にミニ・モックアプリと KPI/OKR、下にガント
-      return tierTree('twin-view', ['mock-app', 'kpi-okr'], ['gantt']);
+    case '現場': // 主領域に Twin ビュー（3D デジタルツイン。Q-062 A）、右に KPI/OKR、下にガント
+      return tierTree('twin-view', ['kpi-okr'], ['gantt']);
   }
 }
 

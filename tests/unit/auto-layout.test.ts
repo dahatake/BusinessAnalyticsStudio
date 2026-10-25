@@ -15,7 +15,7 @@ class MemoryStorage {
   removeItem(k: string) { this.m.delete(k); }
   clear() { this.m.clear(); }
 }
-const ALL = ['summary', 'matrix', 'ranking', 'issue-solution', 'discussion-tree', 'gantt', 'architecture', 'knowledge-graph', 'products', 'map', 'twin-view', 'mock-app', 'table', 'kpi-okr'];
+const ALL = ['summary', 'matrix', 'ranking', 'issue-solution', 'discussion-tree', 'gantt', 'architecture', 'knowledge-graph', 'products', 'map', 'twin-view', 'table', 'kpi-okr'];
 
 async function freshStore(saved?: unknown) {
   vi.resetModules();
@@ -110,10 +110,14 @@ describe('FR-243 AC-585 AC-586 / FR-244 AC-588 AC-589 ストア', () => {
   // FR-243 AC-584 AC-586（既定のレイアウト（FR-112）は情報の階層の配置と同じ形。既定に戻すと既定の配置）
   it('FR-243 AC-586 保存済みのレイアウトがなければ階層に基づく配置（既定と同じ形）で、既定に戻すと FR-112 の既定の配置になる', async () => {
     const { useLayout, effectiveLayout, autoLayoutFor } = await freshStore();
-    const { defaultLayout, PERSONAS } = await import('../../src/workspace/layoutModel');
+    const { defaultLayout, PERSONAS, tierTree } = await import('../../src/workspace/layoutModel');
     const st = useLayout.getState();
     expect(JSON.stringify(effectiveLayout(st))).toBe(JSON.stringify(defaultLayout('経営層')));
-    for (const p of PERSONAS) expect(JSON.stringify(autoLayoutFor(p, undefined))).toBe(JSON.stringify(defaultLayout(p)));
+    // FR-043 AC-054: 廃止後の現場既定は3画面。FR-243 AC-584の最低4画面は一覧表で補う。
+    for (const p of PERSONAS) {
+      const expected = p === '現場' ? tierTree('twin-view', ['kpi-okr'], ['gantt', 'table']) : defaultLayout(p);
+      expect(JSON.stringify(autoLayoutFor(p, undefined))).toBe(JSON.stringify(expected));
+    }
     st.setTier('summary', 'detail');
     expect(JSON.stringify(effectiveLayout(useLayout.getState()))).not.toBe(JSON.stringify(defaultLayout('経営層')));
     useLayout.getState().resetLayout();
