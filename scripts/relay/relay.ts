@@ -15,6 +15,7 @@ import { CAUSE_STATUS, buildPrompt, parseJsonText, FOUNDRY_MAX_INPUT_CHARS, crea
 import { openFoundryVault, type FoundryVault } from './foundry-vault';
 import { callFoundry, callFoundryWithInput, FoundryError, importWithFoundry, TOKEN_UNAVAILABLE_MESSAGE, type TokenProvider } from './foundry';
 import { buildReviewPrompt, parseReviewComponents, parseReviewReply } from './foundry-review';
+import { approxTokens, buildAnimationPrompt, buildStoryboardPrompt, parseAnimationHtml, parseStoryboard, parseUseCase } from './foundry-story-video';
 
 export const AI_KINDS = ['structure', 'summary', 'recommend', 'chat', 'exec-summary'] as const;
 export type AiKind = (typeof AI_KINDS)[number];
@@ -362,6 +363,37 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
             const kind = e instanceof FoundryError || e instanceof CopilotError ? e.kind : 'network';
             const status = /HTTP (\d+)/.exec(e instanceof Error ? e.message : '')?.[1];
             return fail(kind === 'timeout' ? 504 : 502, kind === 'http' ? 'upstream-status' : kind, status ? { status: Number(status) } : {});
+          }
+        }
+        // ---- FR-291: ストーリー動画。FR-275 の共通接続だけを使う。条件が 1 つでも欠けると Foundry を呼ばない（呼び出し 0 回）。応答・エラーに認証情報は含めない ----
+        if (req.method === 'POST' && path === '/foundry/story-video') {
+          if (provider.provider() === 'copilot') return json(409, { error: { cause: 'unsupported', message: 'Copilot SDK では未対応です。ストーリー動画には Microsoft Foundry を選択してください' } });
+          const b = JSON.parse((await readBody(req)) || '{}') as {
+            packId?: string; kind?: string; usecase?: unknown; consent?: boolean; confirmed?: boolean; includesPerson?: boolean; personConfirmed?: boolean; maxOutputTokens?: number;
+          };
+          const fail = (status: number, cause: string, extra: Record<string, unknown> = {}) => json(status, { error: { cause, ...extra } });
+          const uc = parseUseCase(b.usecase);
+          if (typeof b.packId !== 'string' || !b.packId || (b.kind !== 'storyboard' && b.kind !== 'animation') || !uc) return fail(400, 'bad-request');
+          if (b.consent !== true) return fail(403, 'consent');
+          if (!foundryEnabled.has(b.packId)) return fail(403, 'disabled');
+          const secret = getFoundry().importSecret();
+          if (!secret) return fail(503, 'key-missing');
+          if (b.includesPerson === true && b.personConfirmed !== true) return fail(403, 'person-unconfirmed');
+          if (b.confirmed !== true) return fail(400, 'unconfirmed');
+          const maxOut = Number.isFinite(b.maxOutputTokens) && Number(b.maxOutputTokens) > 0 ? Math.min(Math.floor(Number(b.maxOutputTokens)), 16000) : 4000;
+          const prompt = b.kind === 'storyboard' ? buildStoryboardPrompt(uc) : buildAnimationPrompt(uc);
+          try {
+            const text = await callFoundryWithInput(secret, prompt, opts.foundryFetch, opts.foundryTimeoutMs ?? 120_000, opts.foundryToken, maxOut);
+            const usage = { inputTokens: approxTokens(prompt.length), outputTokens: approxTokens(text.length) };
+            if (b.kind === 'storyboard') {
+              const scenes = parseStoryboard(text);
+              return scenes ? json(200, { scenes, usage }) : fail(502, 'format');
+            }
+            const html = parseAnimationHtml(text);
+            return html ? json(200, { html, usage }) : fail(502, 'format');
+          } catch (e) {
+            const kind = e instanceof FoundryError || e instanceof CopilotError ? e.kind : 'network';
+            return fail(kind === 'timeout' ? 504 : 502, kind === 'http' ? 'upstream-status' : kind);
           }
         }
         if (req.method === 'POST' && path === '/speech/synthesize') {
