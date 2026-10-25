@@ -519,6 +519,11 @@ test.describe('FR-226 「[顧客名] - [プロジェクト名]」の表示を 1 
     if (await second.count()) await expect(second.first()).toHaveAccessibleName(/合成株式会社A.*業務改善 2026/);
     await menu.click();
     await expect(page.getByRole('menu', { name: '作業先' }).getByRole('menuitemradio', { checked: true })).toHaveCount(1);
+    const menuBox = await menu.boundingBox();
+    const stepperBox = await page.getByTestId('stepper').boundingBox();
+    expect(menuBox, '最上段の作業先メニューが表示される').not.toBeNull();
+    expect(stepperBox, '分析のステッパーが表示される').not.toBeNull();
+    expect(menuBox!.y, '作業先メニューがステッパーより上段にある').toBeLessThan(stepperBox!.y);
   });
 
   // FR-226 AC-525（異常系: 別の Project に移っても、表記は 1 か所のまま・前の Project の表記は残らない）

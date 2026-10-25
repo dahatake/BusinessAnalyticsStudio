@@ -74,7 +74,12 @@ test.describe('FR-148 最上段の作業先メニュー', () => {
     await expect(page.getByTestId('stepper')).toBeVisible();
     await expect(menu).toContainText('合成株式会社B');
     await expect(menu).toContainText('品質改善');
-    await expect(page.getByTestId('work-target')).toContainText('品質改善');
+    const selectedProject = page.getByTestId('work-target');
+    await expect(selectedProject).toContainText('合成株式会社B');
+    await expect(selectedProject).toContainText('品質改善');
+    const menuBox = await box(menu);
+    const stepperBox = await box(page.getByTestId('stepper'));
+    expect(menuBox.y, '作業先メニューがステッパーより上段にある').toBeLessThan(stepperBox.y);
   });
 
   // FR-148 AC-251（異常系: 閉じて何も選ばなければ作業先は変わらない）
