@@ -9,7 +9,8 @@ import { startGenaiRelay, chooseProvider, enableCommonConnection } from '../supp
 /** 差し替え部品が返すストーリー（CONTRACT.md §31 の形: scenes[].part・heading・narration） */
 function storyText(tag: string): string {
   return JSON.stringify({
-    scenes: [1, 2, 3, 4].map((p) => ({ part: p, heading: `${tag}見出し${p}`, narration: `${tag}語り${p}` })),
+    // 材料にない数値を含む文は表示されない（AC-776）ため、見出し・語りに数字を含めない
+    scenes: ['A', 'B', 'C', 'D'].map((k, i) => ({ part: i + 1, heading: `${tag}見出し${k}`, narration: `${tag}語り${k}です。` })),
   });
 }
 const F = 'STFOUNDRY';
@@ -52,6 +53,12 @@ async function endStory(page: Page): Promise<void> {
 /** 生成 AI で作成して、作成中の表示の後にストーリーが始まるのを確かめ、シーンを返す */
 async function generateAndCheck(page: Page, tag: string, providerName: string): Promise<void> {
   await beginStory(page, true);
+  // 有効化で確認した送信情報の種類に FR-290 の材料が含まれていなければ再確認が出る（AC-777）。出たら確認する
+  const reconfirm = page.getByRole('alertdialog').or(page.getByRole('dialog').filter({ hasText: /再確認|送信される情報|増え/ })).filter({ hasNotText: 'ペルソナの選択' }).last();
+  if (await reconfirm.isVisible({ timeout: 1_500 }).catch(() => false)) {
+    const ok = reconfirm.getByRole('button', { name: /確認|同意|続行|有効にする/ }).first();
+    if (await ok.isVisible().catch(() => false)) await ok.click();
+  }
   const generating = page.getByTestId('story-generating');
   const personConfirm = page.locator('[role="alertdialog"], [role="dialog"]').filter({ hasText: /種別「人」/ }).filter({ hasText: /了承/ });
   await expect(personConfirm.or(generating).first()).toBeVisible();
@@ -85,7 +92,7 @@ test.describe('FR-290 プレゼンテーション: 生成 AI によるストー�
   // FR-290 AC-775
   test('FR-290 AC-775 条件をそろえたデモで「生成 AI で作成」と経営層を選ぶと、作成中の表示の後、選んでいる接続先の差し替え部品だけが呼ばれ、その見出しと語りを含む①〜④のストーリーが「AI 生成」と接続先の名前つきで始まり、→/← で移れ、接続先を切り替えるともう一方だけが呼ばれる', async ({ page, start }) => {
     test.setTimeout(180_000);
-    const g = await startGenaiRelay({ foundryText: storyText(F), copilotText: storyText(C), delayMs: 2_000 });
+    const g = await startGenaiRelay({ foundryText: storyText(F), copilotText: storyText(C), delayMs: 3_000 });
     try {
       await g.saveFoundryConfig();
       await start({ relayUrl: g.url });
@@ -100,6 +107,8 @@ test.describe('FR-290 プレゼンテーション: 生成 AI によるストー�
       // 接続先を GitHub Copilot SDK に切り替える（切替で有効化は解除されるので、確認して再び有効にする。FR-275）
       await chooseProvider(page, 'copilot');
       await enableCommonConnection(page);
+      // 前回の作成の開始から PARAM-116（5 秒）以上あける（AC-777 の間隔の制限に当たらないように）
+      await page.waitForTimeout(5_500);
       await generateAndCheck(page, C, 'GitHub Copilot');
       expect(g.copilotCalls.length, 'GitHub Copilot SDK の差し替え部品が呼ばれない').toBeGreaterThan(0);
       expect(g.foundryCalls.length, 'Copilot SDK を選んでいるのに Microsoft Foundry が呼ばれた').toBe(foundryCount);

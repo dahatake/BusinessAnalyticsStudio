@@ -176,14 +176,17 @@ test.describe('FR-275 生成AIの接続先の選択', () => {
 // FR-275 AC-773（上部の AI の状態表示に接続先の名前と実接続の状態。差し替え部品は support/genai-relay.ts。CONTRACT.md §31）
 test.describe('FR-275 AI の状態表示に生成AIの接続先', () => {
   // FR-275 AC-773（異常系: 実接続が無効・接続先の切替で有効化が解除されたときはモック）
-  test('FR-275 AC-773 上部の AI の状態表示に接続先「GitHub Copilot」「Microsoft Foundry」とモックが文字で示され、条件をそろえて有効にするとモックが有効の表示に変わり、接続先を切り替えるとモックに戻り、キー・トークンの値は出ない', async ({ page, start }) => {
+  test('FR-275 AC-773 上部の AI の状態表示に接続先「GitHub Copilot」「Microsoft Foundry」とモックが文字で示され、条件をそろえて有効にするとモックが有効の表示に変わり、接続先を切り替えるとモックに戻り、POST /ask だけが接続済みでも共通接続が無効ならモックで、キー・トークンの値は出ない', async ({ page, start }) => {
     const g = await startGenaiRelay();
     try {
       await g.saveFoundryConfig();
+      // 差し替え部品で POST /ask（FR-132）だけを接続済みにする（SDK はサインイン済み）。共通接続（/foundry/*）は無効のまま
+      const health = await (await fetch(`${g.url}/health`)).json();
+      expect(JSON.stringify(health), 'POST /ask の差し替え部品が接続済み（サインイン済み）でない').toMatch(/signed-?in|ready/i);
       await start({ relayUrl: g.url });
       const st = aiProviderStatus(page);
       await expect(st, '上部の AI の状態表示に接続先の表示がない').toBeVisible();
-      // 既定は Microsoft Foundry で、実接続は無効なのでモック
+      // 既定は Microsoft Foundry で、共通接続の実接続は無効なので、POST /ask が接続済みでもモック
       await expect(st).toContainText('Microsoft Foundry');
       await expect(st).toContainText('モック');
       // GitHub Copilot SDK を選ぶと「GitHub Copilot」とモック

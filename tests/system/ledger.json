@@ -290,11 +290,11 @@
     "AC-690": "sha256:ae060af5d4a4546c",
     "AC-699": "sha256:519b0f76a5dc7268",
     "AC-702": "sha256:d47e7a5b9726eed6",
-    "AC-703": "sha256:d68b05fdf0e3bde1",
+    "AC-703": "sha256:c007971af5240b76",
     "AC-712": "sha256:0e69695d5457cad9",
     "AC-713": "sha256:706deed685a6f99e",
     "AC-733": "sha256:416fb88a5cfaff0a",
-    "AC-739": "sha256:f466779f59189f59",
+    "AC-739": "sha256:7cb56a8598cb4d44",
     "AC-754": "sha256:1319d272e6722bfc",
     "AC-755": "sha256:689ba7bcf2746159",
     "AC-756": "sha256:a7eec8533851fffa",
@@ -327,10 +327,10 @@
     "AC-769": "sha256:4a843785b500f292",
     "AC-761": "sha256:2d47552f43564343",
     "AC-762": "sha256:f998e7e05e260c7e",
-    "AC-763": "sha256:2aff7e48a3665f4e",
+    "AC-763": "sha256:1607086f31bdf245",
     "AC-764": "sha256:726601016c247e6d",
     "AC-774": "sha256:b022e1c73dde6367",
-    "AC-773": "sha256:a6f4c03f68e07377",
+    "AC-773": "sha256:a24907aca372f408",
     "AC-775": "sha256:5027e48468b7da1a"
   },
   "cases": [
@@ -8913,11 +8913,11 @@
       "ac_ids": [
         "AC-703"
       ],
-      "title": "Foundry 接続設定の欄とキーの保護表示",
+      "title": "Foundry 接続設定の欄とキーの保護表示・送信情報の種類（プレゼンテーションの材料を含む）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-703",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "363684c",
       "last_run_at": "2026-10-24T22:59:55+09:00",
       "evidence": "work/runs/202610242109/logs/system-test/E2E-369-202610242250.log",
@@ -8933,6 +8933,12 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "Foundry 共通接続への仕様更新で期待値を変更"
+        },
+        {
+          "at": "2026-10-25T09:07:13+09:00",
+          "by": "test-designer",
+          "change": "title: 'Foundry 接続設定の欄とキーの保護表示' -> 'Foundry 接続設定の欄とキーの保護表示・送信情報の種類（プレゼンテーションの材料を含む）'",
+          "reason": "AC-703 改訂（5905ad1）: 送信情報の種類に FR-290 のペルソナと材料"
         }
       ]
     },
@@ -11065,7 +11071,7 @@
       "ac_ids": [
         "AC-773"
       ],
-      "title": "AI の状態表示に生成AIの接続先とモック／有効の状態",
+      "title": "AI の状態表示に共通接続の接続先とモック／有効（POST /ask の接続に左右されない）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-773",
       "canary": false,
@@ -11079,6 +11085,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-25T09:07:12+09:00",
+          "by": "test-designer",
+          "change": "title: 'AI の状態表示に生成AIの接続先とモック／有効の状態' -> 'AI の状態表示に共通接続の接続先とモック／有効（POST /ask の接続に左右されない）'",
+          "reason": "AC-773 改訂（5905ad1）: /ask だけ接続済みでも共通接続が無効ならモック"
         }
       ]
     },
@@ -11090,7 +11102,7 @@
       "ac_ids": [
         "AC-775"
       ],
-      "title": "生成 AI でストーリーを作成（選んだ接続先だけを呼ぶ・条件が欠けると呼ばない）",
+      "title": "生成 AI でストーリーを作成（POST /foundry/ask・選んだ接続先だけを呼ぶ・条件が欠けると呼ばない）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-775",
       "canary": false,
@@ -11104,6 +11116,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-25T09:07:13+09:00",
+          "by": "test-designer",
+          "change": "title: '生成 AI でストーリーを作成（選んだ接続先だけを呼ぶ・条件が欠けると呼ばない）' -> '生成 AI でストーリーを作成（POST /foundry/ask・選んだ接続先だけを呼ぶ・条件が欠けると呼ばない）'",
+          "reason": "AC-775/776/777 改訂（5905ad1）: 材料にない数値の文は表示しないため差し替え部品の文から数字を除く・間隔 PARAM-116・再確認に対応"
         }
       ]
     }

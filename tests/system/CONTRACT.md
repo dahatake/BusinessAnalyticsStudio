@@ -202,3 +202,4 @@
 - ペルソナの選択（§12）に checkbox か switch「生成 AI で作成」（既定は選ばない）。作成中は `data-testid="story-generating"`（ボタン「取り消す」）。条件が欠ける・失敗は `data-testid="story-genai-error"` に理由と、ボタン「生成 AI を使わずに開始」。
 - 生成 AI の応答（中継の `sdk.complete`・Foundry の `output_text`）は JSON `{"scenes":[{"part":1-4,"heading":"…","narration":"…"}]}`（コードフェンスで囲んでもよい）。生成したストーリーは `story` の中に「AI 生成」と接続先の名前を示す。
 - 差し替え部品: `support/genai-relay.ts`（実物の中継を起動し、Copilot SDK と Foundry の fetch だけを差し替える）。
+- 改訂（5905ad1）: `ai-provider-status` は共通接続（/foundry/*）だけを示し、POST /ask（FR-132）が接続済みでも共通接続が無効なら「モック」。FR-290 の作成は中継の POST /foundry/ask を通る。差し替え部品の見出し・語りには数字を含めない（材料にない数値の文は表示されない。AC-776）。
