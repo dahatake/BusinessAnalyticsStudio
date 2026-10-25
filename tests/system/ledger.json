@@ -42,7 +42,7 @@
     "AC-051": "sha256:1d9d845644770de7",
     "AC-052": "sha256:15fda5e384c736a5",
     "AC-053": "sha256:7e267fcf72d0f74f",
-    "AC-054": "sha256:b1b23b80160e03c9",
+    "AC-054": "sha256:ce78bde5404efefa",
     "AC-055": "sha256:06b2fddb6a26dbda",
     "AC-056": "sha256:8023c116d6f9992b",
     "AC-057": "sha256:b8cb85942cb568e2",
@@ -319,9 +319,9 @@
     "AC-740": "sha256:2450e8e383f93767",
     "AC-737": "sha256:a346e0c8a0069beb",
     "AC-738": "sha256:cd9bca7de1d96aec",
-    "AC-748": "sha256:8028a96e89c11476",
-    "AC-749": "sha256:3ebadb7dbc267134",
-    "AC-750": "sha256:b6c5b0e523bd09d1",
+    "AC-748": "sha256:f620577d12004ce1",
+    "AC-749": "sha256:b2635cc5353fd04c",
+    "AC-750": "sha256:244696d1308f07ce",
     "AC-751": "sha256:5298ffecc4f6209d",
     "AC-752": "sha256:8be350ff566287fb",
     "AC-769": "sha256:4a843785b500f292",
@@ -1593,11 +1593,11 @@
       "ac_ids": [
         "AC-054"
       ],
-      "title": "AC-054 標準の検証条件で、解決策を選ぶと mocks.json のその解決策のモックが表示され、画面間のボタンで遷移でき、枠をス",
+      "title": "FR-043 AC-054 廃止: 導線拒否・旧レイアウト安全復元・モックと参照の保存/再読込/ZIP保持・残機能",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-054",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "363684c",
       "last_run_at": "2026-10-24T22:59:55+09:00",
       "evidence": "work/runs/202610242109/logs/system-test/E2E-146-202610242237.log",
@@ -1607,6 +1607,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-10-25T09:10:12+09:00",
+          "by": "test-designer",
+          "change": "title: 'AC-054 標準の検証条件で、解決策を選ぶと mocks.json のその解決策のモックが表示され、画面間のボタンで遷移でき、枠をス' -> 'FR-043 AC-054 廃止: 導線拒否・旧レイアウト安全復元・モックと参照の保存/再読込/ZIP保持・残機能'",
+          "reason": "要求63f4363: 旧提供確認を廃止確認へ差し替え。デモ2種と保存済みProject、旧レイアウト、非破壊条件を集約"
         }
       ]
     },
@@ -10715,11 +10721,11 @@
       "ac_ids": [
         "AC-749"
       ],
-      "title": "デモの 27 画面すべてに screenGuides の説明が見出し／補足に表示される",
+      "title": "FR-287 AC-749 モノ/コトの23画面でscreenGuidesを表示（設定はモーダル、mock-app対象外）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-749",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "363684c",
       "last_run_at": "2026-10-24T22:59:55+09:00",
       "evidence": "work/runs/202610242109/logs/system-test/E2E-430-202610242251.log",
@@ -10729,6 +10735,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-25T09:10:13+09:00",
+          "by": "test-designer",
+          "change": "title: 'デモの 27 画面すべてに screenGuides の説明が見出し／補足に表示される' -> 'FR-287 AC-749 モノ/コトの23画面でscreenGuidesを表示（設定はモーダル、mock-app対象外）'",
+          "reason": "要求63f4363: FR-043廃止後の23画面へ変更"
         }
       ]
     },
@@ -10740,11 +10752,11 @@
       "ac_ids": [
         "AC-750"
       ],
-      "title": "デモの 26 画面（設定除く）がデータを 1 件以上表示し空表示にならない（画面ごとのデータ種別の表は demo-screens.spec.ts の DATA_KIND）",
+      "title": "FR-287 AC-750 モノ/コトの設定以外22画面がデータを表示（種別表: tests/system/prototype-retirement.md）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-750",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "363684c",
       "last_run_at": "2026-10-24T22:59:55+09:00",
       "evidence": "work/runs/202610242109/logs/system-test/E2E-431-202610242251.log",
@@ -10754,6 +10766,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-25T09:10:13+09:00",
+          "by": "test-designer",
+          "change": "title: 'デモの 26 画面（設定除く）がデータを 1 件以上表示し空表示にならない（画面ごとのデータ種別の表は demo-screens.spec.ts の DATA_KIND）' -> 'FR-287 AC-750 モノ/コトの設定以外22画面がデータを表示（種別表: tests/system/prototype-retirement.md）'",
+          "reason": "要求63f4363: 設定以外22画面へ変更、可視データと空表示拒否を検証"
         }
       ]
     },
@@ -10796,9 +10814,9 @@
       "ac_ids": [
         "AC-748"
       ],
-      "title": "デモ（モノ・コト）の screenGuides が登録簿の 27 キーすべてを持ち、120 文字以内（欠落・余分・使い回しの異常系含む）",
+      "title": "FR-287 AC-748 23キーと120文字以内、旧mock-app説明の任意互換・保持、欠落/超過拒否",
       "layer": "data",
-      "command": "node --test tests/system/integration-demo/screen-guides.test.mjs --test-name-pattern=AC-748",
+      "command": "node --test --test-name-pattern=AC-748 tests/system/integration-demo/screen-guides.test.mjs",
       "canary": false,
       "status": "blocked",
       "last_commit": null,
@@ -10816,6 +10834,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "検証レベル=integration は System Test の対象外。テストは先行作成済み。実装役が統合テストとして実行する"
+        },
+        {
+          "at": "2026-10-25T09:10:13+09:00",
+          "by": "test-designer",
+          "change": "command: 'node --test tests/system/integration-demo/screen-guides.test.mjs --test-name-pattern=AC-748' -> 'node --test --test-name-pattern=AC-748 tests/system/integration-demo/screen-guides.test.mjs'; title: 'デモ（モノ・コト）の screenGuides が登録簿の 27 キーすべてを持ち、120 文字以内（欠落・余分・使い回しの異常系含む）' -> 'FR-287 AC-748 23キーと120文字以内、旧mock-app説明の任意互換・保持、欠落/超過拒否'",
+          "reason": "run202610250852の明示依頼でintegration対象外の停止を解除。要求63f4363の23画面と旧キー任意互換へ更新、Nodeオプション位置を修正"
+        },
+        {
+          "at": "2026-10-25T09:11:47+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-748の検証レベルはintegration。CHK-10によりSystem Testでは有効化不可のため停止を維持。要求63f4363向けテストは更新済み、直接Nodeコマンドで実行する"
         }
       ]
     },
