@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { FluentProvider, webLightTheme } from '@fluentui/react-components';
+import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { ProjectsPanel } from '../../src/projects/ProjectsPanel';
 import { menuGroups } from '../../src/projects/workTarget';
@@ -79,15 +80,73 @@ describe('FR-148 作業先メニュー', () => {
     const dlg = await screen.findByRole('dialog', { name: '作業先の選択' });
     fireEvent.click(within(dlg).getAllByRole('option')[0]!);
     await waitFor(() => expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull());
-    const trigger = screen.getByTestId('work-target-menu');
+    const trigger = within(screen.getByTestId('work-target-menu')).getByRole('button', { name: /移動先を選ぶメニュー/ });
     expect(trigger.tagName).toBe('BUTTON'); // Tab で到達でき、Enter・Space で開ける標準のボタン
     act(() => trigger.focus());
-    fireEvent.keyDown(trigger, { key: 'Enter' });
-    fireEvent.click(trigger);
+    await userEvent.keyboard('{Enter}');
     const list = await screen.findByRole('menu', { name: '作業先' });
     fireEvent.keyDown(list, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByRole('menu', { name: '作業先' })).toBeNull());
     expect(screen.getByTestId('work-target-menu').textContent).toContain('業務改善 2026');
+  });
+
+  it('FR-148 AC-251 AC-253 FR-226 AC-525 同社一覧をキーボードで取消・確定し、最上段の名前だけが更新される', async () => {
+    const [p1, p2] = company('合成株式会社A', ['業務改善 2026', '在庫最適化']);
+    company('合成株式会社B', ['需要予測', '品質改善']);
+    st().open(p1!);
+    render(wrap(<ProjectsPanel />));
+    const user = userEvent.setup();
+    const head = screen.getByTestId('projects-head');
+    const target = within(head).getByRole('group', { name: '現在の作業先: 合成株式会社A - 業務改善 2026' });
+    const companyTrigger = within(target).getByTestId('current-company-menu');
+    act(() => companyTrigger.focus());
+    await user.keyboard('{Enter}');
+    let list = await screen.findByRole('menu', { name: '同じ企業の Project' });
+    expect(within(list).getAllByRole('menuitemradio')).toHaveLength(2);
+    expect(within(list).getByRole('menuitemradio', { name: '合成株式会社A / 業務改善 2026' }).getAttribute('aria-checked')).toBe('true');
+    expect(within(list).queryByText(/合成株式会社B/)).toBeNull();
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('menu', { name: '同じ企業の Project' })).toBeNull());
+    expect(document.activeElement).toBe(companyTrigger);
+    expect(st().openId).toBe(p1);
+    await user.keyboard(' ');
+    list = await screen.findByRole('menu', { name: '同じ企業の Project' });
+    await waitFor(() => expect(list.contains(document.activeElement)).toBe(true));
+    await user.keyboard('{End}');
+    expect(document.activeElement).toBe(within(list).getByRole('menuitemradio', { name: '合成株式会社A / 在庫最適化' }));
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(st().openId).toBe(p2));
+    expect(screen.queryByRole('menu', { name: '同じ企業の Project' })).toBeNull();
+    expect(target.getAttribute('aria-label')).toBe('現在の作業先: 合成株式会社A - 在庫最適化');
+    expect(target.textContent).toBe('合成株式会社A - 在庫最適化');
+    // 可視テキストだけでなく、旧名を持つ別の見出しも残さない。
+    const rest = head.cloneNode(true) as HTMLElement;
+    rest.querySelector('[data-testid="work-target-display"]')?.remove();
+    rest.querySelector('[data-testid="work-target"]')?.remove(); // 既存の非表示 status
+    expect(rest.textContent).not.toMatch(/合成株式会社A|業務改善 2026|在庫最適化/);
+    expect(screen.queryByTestId('current-project')).toBeNull();
+  });
+
+  it('FR-148 AC-251 AC-252 同社の切替も未保存確認を経由し、キャンセル時に入力と現在先を保持する', async () => {
+    const [p1, p2] = company('合成株式会社A', ['業務改善 2026', '在庫最適化']);
+    st().open(p1!);
+    useAnalyses.getState().setDraft(p1!, 'param', '9');
+    render(wrap(<ProjectsPanel />));
+    const selectOther = async () => {
+      fireEvent.click(screen.getByTestId('current-company-menu'));
+      fireEvent.click(await screen.findByRole('menuitemradio', { name: '合成株式会社A / 在庫最適化' }));
+    };
+    await selectOther();
+    const dialog = await screen.findByRole('alertdialog', { name: '未保存の入力があります' });
+    fireEvent.click(within(dialog).getByRole('button', { name: 'キャンセル' }));
+    await waitFor(() => expect(screen.queryByRole('alertdialog')).toBeNull());
+    expect(st().openId).toBe(p1);
+    expect(useAnalyses.getState().drafts[p1!]?.param).toBe('9');
+    await selectOther();
+    fireEvent.click(within(await screen.findByRole('alertdialog')).getByRole('button', { name: '切り替える' }));
+    await waitFor(() => expect(st().openId).toBe(p2));
+    expect(useAnalyses.getState().drafts[p1!]?.param).toBe('9');
+    expect(useAnalyses.getState().drafts[p2!]).toBeUndefined();
   });
 
   // FR-148 AC-252 AC-210 AC-209
