@@ -309,6 +309,8 @@
 | FR-288 | 外部ファイルの取り込み・書き出しの対応形式のガイド | 承認済み | 未実装 | tests/system/CONTRACT.md, tests/system/e2e/import-export-guide.spec.ts | - |
 | FR-289 | 生成 AI（Microsoft Foundry）による AI 取り込み | 承認済み | src/ai/AiImport.tsx, src/ai/aiImportLogic.ts, src/ai/foundryClient.ts | tests/system/CONTRACT.md, tests/system/e2e/ai-import.spec.ts, tests/system/e2e/import-export-guide.spec.ts, tests/system/support/ai-import-stub.ts, tests/unit/ai-import.test.ts | - |
 | FR-287 | デモのデータの再構築: 全画面コンポーネントで空にならず、何が見えるかが分かる | 承認済み | src/analysis/tree.ts, src/components/Panel.tsx, src/schema/files.ts, src/screens/SpatialScreen.tsx, src/store/tree.ts | tests/system/e2e/demo-screens.spec.ts, tests/system/integration-demo/screen-guides.test.mjs, tests/unit/screen-guides.test.tsx | - |
+| FR-291 | ユースケースの「ストーリー動画」の生成AIによる作成と画面表示（映画のようなストーリーボードと HTML アニメーション） | 承認済み | 未実装 | 未実装 | - |
+| FR-292 | ストーリー動画の作成 1 回あたりの予算上限（見積り・制御・超過時の中止） | 承認済み | 未実装 | 未実装 | - |
 ## API・イベント
 
 | 名前 | 定義ファイル | 関連する要求 ID |
