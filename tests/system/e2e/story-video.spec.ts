@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準（docs/requirements/app-experience.md）だけから決める。生成AIは呼ばない（中継の差し替え部品 support/ai-import-stub.ts）。
 // 画面の探し方は tests/system/CONTRACT.md §31。
 import type { Page } from '@playwright/test';
-import { test, expect, recordExportConsent } from '../support/fixtures';
+import { test, expect, recordExportConsent, openScreen, closeSettings, continuePersonConfirm } from '../support/fixtures';
 import { startAiImportRelayStub } from '../support/ai-import-stub';
 import type { AiImportRelayStub } from '../support/ai-import-stub';
 
@@ -64,6 +64,12 @@ test.describe('FR-291 ユースケースのストーリー動画（AI 生成・�
     await start({ relayUrl: relay.url });
     await openProjectWithUseCases(page);
     await recordExportConsent(page);
+    // 了承の記録で実接続の有効化が外れるため、設定画面で改めて有効にする（FR-275）
+    const settings = await openScreen(page, 'settings');
+    await settings.getByTestId('foundry-settings').getByRole('switch', { name: '実接続を有効にする', exact: true }).click();
+    await page.getByRole('alertdialog').or(page.getByRole('dialog')).getByRole('button', { name: '有効にする' }).click();
+    await expect(settings.getByTestId('foundry-mode')).toContainText('接続済み');
+    await closeSettings(page);
     await page.getByTestId('stepper').getByRole('button', { name: 'ユースケース作成' }).click();
     // ユースケースを作成しただけでは生成AIの呼び出しは 0 回
     await page.waitForTimeout(500);
@@ -78,6 +84,8 @@ test.describe('FR-291 ユースケースのストーリー動画（AI 生成・�
     await page.waitForTimeout(300);
     expect(relay.storyVideoCalls()).toBe(0);
     await dlg.getByRole('button', { name: '実行' }).click();
+    // 種別「人」の確認（FR-219）が出たら続行する
+    await continuePersonConfirm(page, () => false, 1000);
 
     // ストーリーボード: A の手順 3 件が順序どおり。場面・登場する人・困りごと・実現後の変化がある
     const board = page.getByTestId('story-video-storyboard');
