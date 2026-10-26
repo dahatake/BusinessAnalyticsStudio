@@ -331,7 +331,8 @@
     "AC-764": "sha256:726601016c247e6d",
     "AC-774": "sha256:b022e1c73dde6367",
     "AC-773": "sha256:a24907aca372f408",
-    "AC-775": "sha256:5027e48468b7da1a"
+    "AC-775": "sha256:5027e48468b7da1a",
+    "AC-785": "sha256:46c7dcb2989d1069"
   },
   "cases": [
     {
@@ -11122,6 +11123,37 @@
           "by": "test-designer",
           "change": "title: '生成 AI でストーリーを作成（選んだ接続先だけを呼ぶ・条件が欠けると呼ばない）' -> '生成 AI でストーリーを作成（POST /foundry/ask・選んだ接続先だけを呼ぶ・条件が欠けると呼ばない）'",
           "reason": "AC-775/776/777 改訂（5905ad1）: 材料にない数値の文は表示しないため差し替え部品の文から数字を除く・間隔 PARAM-116・再確認に対応"
+        }
+      ]
+    },
+    {
+      "id": "E2E-446",
+      "requirement_ids": [
+        "FR-290"
+      ],
+      "ac_ids": [
+        "AC-785"
+      ],
+      "title": "生成 AI の作成は企業の外部 AI への送信の許可が条件（不許可・既定は 0 回と代替、許可は選んだ接続先だけ 1 回で他社を含まない、取消後 0 回）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-785",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-26T10:07:33+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準 AC-785（監査 D-02）からケースを作成"
+        },
+        {
+          "at": "2026-10-26T10:08:15+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-785 は検証レベル integration で System Test の対象外（CHK-10）。検証レベルを system にするか結合テストで扱うかを rd-author/conductor が決めるまで停止。テストは story-genai.spec.ts に用意済み"
         }
       ]
     }
