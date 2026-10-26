@@ -156,9 +156,36 @@ export function kanjiToNumber(s: string): number | null {
 const KANJI_COUNTER = '(?=割|%|％|パーセント|ポイント|倍|件|人|名|円|年|か月|カ月|ヶ月|ケ月|週|日|時間|秒|社|点|位|回|個|台|店|拠点|億|万|兆)';
 const NUM_RE = new RegExp(
   // 漢数字は途中で区切らない（「三万の」を「三」と読まない）。万・億・兆で終わる並びは後ろの語に関わらず数として読む
-  `(?<sign>[+\\-−－‐▲△])?(?:(?<arabic>\\d+(?:[.,]\\d+)*)|(?=(?<kanji>[〇零一二三四五六七八九十百千][〇零一二三四五六七八九十百千万億兆]*))\\k<kanji>(?:(?<=[万億兆])|${KANJI_COUNTER}))(?<wari>割)?`,
+  `(?<sign>[+\\-−－‐▲△])?(?:(?<arabic>\\d+(?:[.,]\\d+)*(?:[十百千]?[万億兆](?:\\d+(?:[.,]\\d+)*[十百千]?[万億兆]?)*|[十百千](?![万億兆]))?)|(?=(?<kanji>[〇零一二三四五六七八九十百千][〇零一二三四五六七八九十百千万億兆]*))\\k<kanji>(?:(?<=[万億兆])|${KANJI_COUNTER}))(?<wari>割)?`,
   'g',
 );
+
+/** 算用数字の並び（1.50、1,000）を数の文字列にする。桁区切りは除き、それ以外のカンマは小数点として読む */
+const arabicPlain = (n: string): string => (/,\d{3}(?!\d)/.test(n) ? n.replace(/,/g, '') : n.replace(/,/g, '.'));
+
+/**
+ * 算用数字と倍率の単位の混在（1億、1.5億、3千万、1億2000万、5千）を数にする（FR-290 AC-776）。
+ * 「1億円」を「1」と読まない。読めない並びは文字列のまま返す（材料の同じ文字列とだけ一致する）
+ */
+function arabicWithUnits(s: string): number | string {
+  const parts = s.match(/\d+(?:[.,]\d+)*|[十百千万億兆]/g) ?? [];
+  if (parts.length === 1) {
+    const plain = arabicPlain(parts[0]!);
+    const v = Number(plain);
+    return Number.isFinite(v) ? v : plain;
+  }
+  let total = 0, section = 0, digit: number | null = null;
+  for (const p of parts) {
+    if (p in KANJI_SMALL) { section += (digit ?? 1) * KANJI_SMALL[p]!; digit = null; }
+    else if (p in KANJI_LARGE) { total += (section + (digit ?? 0) || 1) * KANJI_LARGE[p]!; section = 0; digit = null; }
+    else {
+      const v = Number(arabicPlain(p));
+      if (!Number.isFinite(v)) return s;
+      digit = v;
+    }
+  }
+  return Number((total + section + (digit ?? 0)).toPrecision(15));
+}
 
 /**
  * 文に現れる数値（FR-290 AC-776）。全角は半角に、桁区切りは除く（1.50 と 1.5 は同じ）。
@@ -172,10 +199,9 @@ export function numbersIn(text: string): string[] {
     const g = m.groups ?? {};
     let v: number;
     if (g.arabic) {
-      const n = g.arabic;
-      const plain = /,\d{3}(?!\d)/.test(n) ? n.replace(/,/g, '') : n.replace(/,/g, '.');
-      v = Number(plain);
-      if (!Number.isFinite(v)) { out.push(plain); continue; }
+      const r = arabicWithUnits(g.arabic);
+      if (typeof r === 'string') { out.push(r); continue; }
+      v = r;
     } else {
       const k = kanjiToNumber(g.kanji ?? '');
       if (k === null) continue;

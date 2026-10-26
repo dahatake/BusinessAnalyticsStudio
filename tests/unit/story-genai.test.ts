@@ -283,6 +283,28 @@ describe('FR-290 AC-776 漢数字・符号付きの数値と、材料にない�
   });
 });
 
+describe('FR-290 AC-776 算用数字と倍率の単位（万・億・兆）の照合（回帰。単体）', () => {
+  it('FR-290 AC-776 「1億円」を「1」と読まず 100000000 として読む（小数・千・混在・負号も同じパーサー）', () => {
+    expect(numbersIn('売上は1億円です。')).toEqual(['100000000']);
+    expect(numbersIn('売上は１億円です。')).toEqual(['100000000']);
+    expect(numbersIn('1.5億円、3千万円、1億2000万円、2万人、5千件、3兆円')).toEqual(['150000000', '30000000', '120000000', '20000', '5000', '3000000000000']);
+    expect(numbersIn('利益は −2億円、▲1.5万円')).toEqual(['-200000000', '-15000']);
+    expect(numbersIn('100,000,000円、1.50 件、−3.5 %')).toEqual(['100000000', '1.5', '-3.5']);
+  });
+  it('FR-290 AC-776 材料に優先順位「1」しかなければ「売上は1億円です。」は除き、同等の数量（1億・100,000,000・一億）が材料にあれば残す', () => {
+    const onlyRank = filterSentences('売上は1億円です。', materialFacts('優先順位 1'));
+    expect(onlyRank.kept).toEqual([]);
+    expect(onlyRank.removed).toBe(1);
+    for (const mat of ['売上目標 1億円', '売上目標 100,000,000 円', '売上目標 一億円', '売上目標 10000万円']) {
+      const r = filterSentences('売上は1億円です。', materialFacts(mat));
+      expect(r.kept, mat).toEqual(['売上は1億円です。']);
+      expect(r.removed, mat).toBe(0);
+    }
+    // 材料に 1億 があっても 2億 は材料にない
+    expect(filterSentences('売上は2億円です。', materialFacts('売上目標 1億円')).removed).toBe(1);
+  });
+});
+
 describe('FR-290 AC-776 すべての文を除いたときはエラーではなく除去の通知（結合）', () => {
   it('FR-290 AC-776 生成文がすべて材料にない数値・名称を含むときは all-removed（件数と通知の文）を返し、エラー（unavailable）にしない', async () => {
     const bad = reply([1, 2, 3, 4].map((p) => ({ part: p, heading: `「架空ソリューション${p}号」`, narration: `売上が九百九十九億円増えます。` })));
