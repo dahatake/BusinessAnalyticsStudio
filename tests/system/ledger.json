@@ -6452,10 +6452,10 @@
       "layer": "e2e",
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape --workers=1",
       "canary": false,
-      "status": "fail",
-      "last_commit": "c2050c5",
-      "last_run_at": "2026-10-25T15:10:22+09:00",
-      "evidence": "work/runs/202610250857/logs/system-test/E2E-344-202610251504.log",
+      "status": "pass",
+      "last_commit": "989080d",
+      "last_run_at": "2026-10-26T11:07:02+09:00",
+      "evidence": "work/runs/202610261006/logs/system-test/E2E-344-202610261102.log",
       "history": [
         {
           "at": "2026-10-21T17:19:52+09:00",
@@ -8392,10 +8392,10 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[形式:\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "fail",
-      "last_commit": "68fc80f",
-      "last_run_at": "2026-10-25T16:32:36+09:00",
-      "evidence": "work/runs/202610251554/logs/system-test/IT-060-202610251625.log",
+      "status": "pass",
+      "last_commit": "989080d",
+      "last_run_at": "2026-10-26T10:48:56+09:00",
+      "evidence": "work/runs/202610261006/logs/system-test/IT-060-202610261012.log",
       "history": [
         {
           "at": "2026-10-16T08:50:57+09:00",
@@ -8429,10 +8429,10 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[欄を問わない\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "fail",
-      "last_commit": "68fc80f",
-      "last_run_at": "2026-10-25T16:32:36+09:00",
-      "evidence": "work/runs/202610251554/logs/system-test/IT-061-202610251625.log",
+      "status": "pass",
+      "last_commit": "989080d",
+      "last_run_at": "2026-10-26T10:48:56+09:00",
+      "evidence": "work/runs/202610261006/logs/system-test/IT-061-202610261012.log",
       "history": [
         {
           "at": "2026-10-16T08:51:00+09:00",
@@ -8503,10 +8503,10 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[「例」行\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "fail",
-      "last_commit": "68fc80f",
-      "last_run_at": "2026-10-25T16:32:36+09:00",
-      "evidence": "work/runs/202610251554/logs/system-test/IT-063-202610251625.log",
+      "status": "pass",
+      "last_commit": "989080d",
+      "last_run_at": "2026-10-26T10:48:56+09:00",
+      "evidence": "work/runs/202610261006/logs/system-test/IT-063-202610261012.log",
       "history": [
         {
           "at": "2026-10-16T08:51:05+09:00",
@@ -8540,10 +8540,10 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[ダミー値\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "fail",
-      "last_commit": "68fc80f",
-      "last_run_at": "2026-10-25T16:32:36+09:00",
-      "evidence": "work/runs/202610251554/logs/system-test/IT-064-202610251625.log",
+      "status": "pass",
+      "last_commit": "989080d",
+      "last_run_at": "2026-10-26T10:48:56+09:00",
+      "evidence": "work/runs/202610261006/logs/system-test/IT-064-202610261012.log",
       "history": [
         {
           "at": "2026-10-16T08:51:08+09:00",
@@ -8614,10 +8614,10 @@
       "layer": "data",
       "command": "node --test tests/system/integration-catalog/secrets.test.mjs --test-name-pattern=\"\\[山括弧の抜け道\\]\"",
       "canary": false,
-      "status": "fail",
-      "last_commit": "68fc80f",
-      "last_run_at": "2026-10-25T16:32:36+09:00",
-      "evidence": "work/runs/202610251554/logs/system-test/IT-066-202610251625.log",
+      "status": "pass",
+      "last_commit": "989080d",
+      "last_run_at": "2026-10-26T10:48:56+09:00",
+      "evidence": "work/runs/202610261006/logs/system-test/IT-066-202610261012.log",
       "history": [
         {
           "at": "2026-10-16T10:39:35+09:00",
@@ -8639,10 +8639,10 @@
       "layer": "data",
       "command": "node --test tests/system/integration-catalog/secrets.test.mjs --test-name-pattern=\"\\[引用符付き\\]\"",
       "canary": false,
-      "status": "fail",
-      "last_commit": "68fc80f",
-      "last_run_at": "2026-10-25T16:32:36+09:00",
-      "evidence": "work/runs/202610251554/logs/system-test/IT-067-202610251625.log",
+      "status": "pass",
+      "last_commit": "989080d",
+      "last_run_at": "2026-10-26T10:48:56+09:00",
+      "evidence": "work/runs/202610261006/logs/system-test/IT-067-202610261012.log",
       "history": [
         {
           "at": "2026-10-16T10:39:39+09:00",
@@ -8664,10 +8664,10 @@
       "layer": "data",
       "command": "node --test tests/system/integration-catalog/secrets.test.mjs --test-name-pattern=\"\\[BEGIN 単独行\\]\"",
       "canary": false,
-      "status": "fail",
-      "last_commit": "68fc80f",
-      "last_run_at": "2026-10-25T16:32:36+09:00",
-      "evidence": "work/runs/202610251554/logs/system-test/IT-068-202610251625.log",
+      "status": "pass",
+      "last_commit": "989080d",
+      "last_run_at": "2026-10-26T10:48:56+09:00",
+      "evidence": "work/runs/202610261006/logs/system-test/IT-068-202610261012.log",
       "history": [
         {
           "at": "2026-10-16T10:39:42+09:00",
@@ -8689,10 +8689,10 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[最小長\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "fail",
-      "last_commit": "68fc80f",
-      "last_run_at": "2026-10-25T16:32:36+09:00",
-      "evidence": "work/runs/202610251554/logs/system-test/IT-069-202610251625.log",
+      "status": "pass",
+      "last_commit": "989080d",
+      "last_run_at": "2026-10-26T10:48:56+09:00",
+      "evidence": "work/runs/202610261006/logs/system-test/IT-069-202610261012.log",
       "history": [
         {
           "at": "2026-10-16T14:51:44+09:00",
@@ -8714,10 +8714,10 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[ダミー x の下限\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "fail",
-      "last_commit": "68fc80f",
-      "last_run_at": "2026-10-25T16:32:36+09:00",
-      "evidence": "work/runs/202610251554/logs/system-test/IT-070-202610251625.log",
+      "status": "pass",
+      "last_commit": "989080d",
+      "last_run_at": "2026-10-26T10:48:56+09:00",
+      "evidence": "work/runs/202610261006/logs/system-test/IT-070-202610261012.log",
       "history": [
         {
           "at": "2026-10-16T14:51:48+09:00",
@@ -8764,10 +8764,10 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[Bearer 一般語の抜け道なし\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "fail",
-      "last_commit": "68fc80f",
-      "last_run_at": "2026-10-25T16:32:36+09:00",
-      "evidence": "work/runs/202610251554/logs/system-test/IT-072-202610251625.log",
+      "status": "pass",
+      "last_commit": "989080d",
+      "last_run_at": "2026-10-26T10:48:56+09:00",
+      "evidence": "work/runs/202610261006/logs/system-test/IT-072-202610261012.log",
       "history": [
         {
           "at": "2026-10-16T21:20:19+09:00",
@@ -8814,10 +8814,10 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[使う文字 3 種\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "fail",
-      "last_commit": "68fc80f",
-      "last_run_at": "2026-10-25T16:32:36+09:00",
-      "evidence": "work/runs/202610251554/logs/system-test/IT-074-202610251625.log",
+      "status": "pass",
+      "last_commit": "989080d",
+      "last_run_at": "2026-10-26T10:48:56+09:00",
+      "evidence": "work/runs/202610261006/logs/system-test/IT-074-202610261012.log",
       "history": [
         {
           "at": "2026-10-16T21:20:25+09:00",
@@ -8864,10 +8864,10 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[ハッシュ桁数の外\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "fail",
-      "last_commit": "68fc80f",
-      "last_run_at": "2026-10-25T16:32:36+09:00",
-      "evidence": "work/runs/202610251554/logs/system-test/IT-076-202610251626.log",
+      "status": "pass",
+      "last_commit": "989080d",
+      "last_run_at": "2026-10-26T10:48:56+09:00",
+      "evidence": "work/runs/202610261006/logs/system-test/IT-076-202610261012.log",
       "history": [
         {
           "at": "2026-10-16T21:20:31+09:00",
