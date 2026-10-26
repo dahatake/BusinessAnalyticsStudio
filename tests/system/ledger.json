@@ -11138,7 +11138,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-785",
       "canary": false,
-      "status": "blocked",
+      "status": "not_run",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -11154,6 +11154,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC-785 は検証レベル integration で System Test の対象外（CHK-10）。検証レベルを system にするか結合テストで扱うかを rd-author/conductor が決めるまで停止。テストは story-genai.spec.ts に用意済み"
+        },
+        {
+          "at": "2026-10-26T10:10:25+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC-785 を system に変更（d7294c4）。本文は不変のため blocked を解除"
         }
       ]
     }
