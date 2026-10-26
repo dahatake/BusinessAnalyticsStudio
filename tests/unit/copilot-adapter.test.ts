@@ -46,6 +46,13 @@ describe('FR-011 official SDK adapter',()=>{
     await vi.waitFor(()=>expect(s.client.createSession).toHaveBeenCalledOnce());authorized=false;resolveSession(s.session);
     await expect(pending).rejects.toMatchObject({kind:'auth'});expect(s.session.sendAndWait).not.toHaveBeenCalled();expect(s.session.disconnect).toHaveBeenCalledOnce();expect(s.client.stop).toHaveBeenCalledOnce();
   });
+  // FR-290 AC-776: 出力の上限（PARAM-132）は Copilot SDK のセッションのモデルの出力の上限として渡す。指定がなければ上書きしない
+  it('FR-290 AC-776 maxOutputTokens is applied as the session model output limit; omitted when not requested',async()=>{
+    const s=setup(); await s.adapter.complete('chat','材料',{authMethod:'signin',model:''},undefined,{maxOutputTokens:4000});
+    expect(s.client.createSession.mock.calls[0]![0].modelCapabilities).toEqual({limits:{max_output_tokens:4000}});
+    await s.adapter.complete('chat','材料',{authMethod:'signin',model:''});
+    expect(s.client.createSession.mock.calls[1]![0]).not.toHaveProperty('modelCapabilities');
+  });
   it('FR-275 AC-707 errors and timeouts are sanitized and every client/session is closed',async()=>{
     for(const over of [{startFail:true},{authFail:true},{sendFail:'dummy-secret'},{sendFail:'Timeout after 50ms waiting for session.idle'},{hang:true}]){
       const s=setup(over,15); await expect(s.adapter.complete('chat','input')).rejects.toSatisfy((e:Error)=>!e.message.includes('secret'));expect(s.client.stop).toHaveBeenCalledOnce();expect(s.client.forceStop).toHaveBeenCalled();

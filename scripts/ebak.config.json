@@ -59,7 +59,7 @@
       },
       {
         "name": "unit",
-        "run": "npx vitest run tests/unit/projects.test.ts tests/unit/stepper.test.ts tests/unit/analysis-methods.test.ts tests/unit/persist.test.ts tests/unit/ai-layout.test.ts tests/unit/work-target.test.ts tests/unit/work-target-ui.test.tsx tests/unit/work-target-menu.test.tsx tests/unit/main-screen.test.tsx tests/unit/layout-fluent.test.ts tests/unit/layoutStore.test.ts tests/unit/workspace.test.ts tests/unit/minimize.test.ts tests/unit/snap.test.ts tests/unit/usecase.test.tsx tests/unit/demo-data.test.tsx tests/unit/story.test.tsx tests/unit/story-a11y.test.tsx tests/unit/free-layout.test.ts tests/unit/panel-handle.test.tsx tests/unit/workspace-free-layout.test.tsx tests/unit/design-tokens.test.ts tests/unit/design-foundation.test.tsx tests/unit/panel-pin.test.tsx tests/unit/view-switch.test.tsx tests/unit/auto-layout.test.ts"
+        "run": "npx vitest run tests/unit/projects.test.ts tests/unit/stepper.test.ts tests/unit/analysis-methods.test.ts tests/unit/persist.test.ts tests/unit/ai-layout.test.ts tests/unit/work-target.test.ts tests/unit/work-target-ui.test.tsx tests/unit/work-target-menu.test.tsx tests/unit/main-screen.test.tsx tests/unit/layout-fluent.test.ts tests/unit/layoutStore.test.ts tests/unit/workspace.test.ts tests/unit/minimize.test.ts tests/unit/snap.test.ts tests/unit/usecase.test.tsx tests/unit/demo-data.test.tsx tests/unit/story.test.tsx tests/unit/story-a11y.test.tsx tests/unit/story-genai-ui.test.tsx tests/unit/free-layout.test.ts tests/unit/panel-handle.test.tsx tests/unit/workspace-free-layout.test.tsx tests/unit/design-tokens.test.ts tests/unit/design-foundation.test.tsx tests/unit/panel-pin.test.tsx tests/unit/view-switch.test.tsx tests/unit/auto-layout.test.ts"
       },
       {
         "name": "unit-world",
@@ -67,7 +67,7 @@
       },
       {
         "name": "unit-ai-provider",
-        "run": "npx vitest run tests/unit/ai-provider.test.ts tests/unit/copilot-adapter.test.ts tests/unit/copilot-signin.test.ts tests/unit/provider-settings.test.tsx tests/unit/foundry.test.ts tests/unit/foundry-connection.test.ts tests/unit/foundry-chat.test.ts tests/unit/genai-scenario.test.ts tests/unit/explain.test.ts tests/unit/foundry-secret-hygiene.test.ts tests/unit/provider-usage.test.ts"
+        "run": "npx vitest run tests/unit/ai-provider.test.ts tests/unit/copilot-adapter.test.ts tests/unit/copilot-signin.test.ts tests/unit/provider-settings.test.tsx tests/unit/foundry.test.ts tests/unit/foundry-connection.test.ts tests/unit/foundry-chat.test.ts tests/unit/genai-scenario.test.ts tests/unit/explain.test.ts tests/unit/foundry-secret-hygiene.test.ts tests/unit/provider-usage.test.ts tests/unit/story-genai.test.ts"
       }
     ]
   },

@@ -1,6 +1,7 @@
 // Microsoft Foundry の接続設定と生成の呼び出し口（FR-275）。ブラウザーからの送信先は localhost の中継プロセスだけ。
 // キー・エンドポイントの値は、入力した瞬間に中継へ送るだけで、ブラウザーには保存しない。取得できるのは「設定済みか」と伏せ字だけ。
 import { isLoopbackUrl } from './client';
+import { clearConfirmedSendKinds, recordConfirmedSendKinds } from './sendKinds';
 
 /** 設定画面の入力欄の既定（FR-275） */
 export const DEFAULT_FOUNDRY_ENDPOINT = 'https://GraphcRecordingPanel.services.ai.azure.com/openai/v1';
@@ -93,6 +94,9 @@ export async function setFoundryConnection(
     });
     const j = (await r.json()) as { mode?: 'connected' | 'mock'; error?: string };
     if (r.ok) notifyFoundryChanged();
+    // FR-275 AC-703・FR-290 AC-777: 有効化の確認で示した送信情報の種類を記録する（無効にしたら消す）
+    if (r.ok && enable && opt.confirmed && (j.mode ?? 'mock') === 'connected') recordConfirmedSendKinds(packId);
+    if (r.ok && !enable) clearConfirmedSendKinds(packId);
     return { ok: r.ok, mode: j.mode ?? 'mock', message: j.error };
   } catch {
     return { ok: false, mode: 'mock', message: NO_RELAY };
@@ -102,12 +106,13 @@ export async function setFoundryConnection(
 /** 生成の依頼。了承の記録（FR-181）の有無は毎回渡す（取り消すと次の呼び出しから 0 回になる） */
 export async function askFoundry(
   relayUrl: string | undefined,
-  req: { packId: string; prompt: string; consent: boolean; includesPerson?: boolean; personConfirmed?: boolean; maxOutputTokens?: number },
+  req: { packId: string; prompt: string; consent: boolean; includesPerson?: boolean; personConfirmed?: boolean; maxOutputTokens?: number; timeoutSeconds?: number; purpose?: string },
   f: F = dflt,
+  signal?: AbortSignal,
 ): Promise<FoundryAskResult> {
   if (!relayUrl || !isLoopbackUrl(relayUrl)) return { mode: 'unavailable', reason: 'relay', message: NO_RELAY };
   try {
-    const r = await f(`${relayUrl}/foundry/ask`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(req) });
+    const r = await f(`${relayUrl}/foundry/ask`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(req), ...(signal ? { signal } : {}) });
     const j = (await r.json()) as FoundryAskResult & { error?: string };
     if (!r.ok) return { mode: 'unavailable', reason: 'error', message: j.error ?? 'Foundry を呼べませんでした' };
     return j;
