@@ -273,12 +273,17 @@ export const browserPriceStore: PriceStore = {
   get() {
     try {
       const v = JSON.parse(localStorage.getItem(PRICE_KEY) ?? 'null') as Partial<Prices> | null;
-      return v && Number.isFinite(v.inPerM) && Number.isFinite(v.outPerM) && v.inPerM! >= 0 && v.outPerM! >= 0 ? { inPerM: v.inPerM!, outPerM: v.outPerM! } : null;
+      return isValidPrices(v) ? { inPerM: v.inPerM, outPerM: v.outPerM } : null;
     } catch { return null; }
   },
   set(p) { try { localStorage.setItem(PRICE_KEY, JSON.stringify(p)); } catch { /* 保存できなくても動作は続ける */ } },
 };
-export const currentPrices = (s: PriceStore = browserPriceStore): Prices => s.get() ?? DEFAULT_PRICES;
+/** 単価が有効（有限の数で、入力・出力とも 0 より大きい）か（AC-784） */
+export const isValidPrices = (p: Partial<Prices> | null | undefined): p is Prices =>
+  !!p && typeof p.inPerM === 'number' && typeof p.outPerM === 'number' && Number.isFinite(p.inPerM) && Number.isFinite(p.outPerM) && p.inPerM > 0 && p.outPerM > 0;
+/** 利用者が設定画面で入力した単価。未入力・0 以下・数値でないときは null（既定値で代用しない。AC-784） */
+export const currentPrices = (s: PriceStore = browserPriceStore): Prices | null => { const v = s.get(); return isValidPrices(v) ? v : null; };
+export const PRICE_MISSING_GUIDE = 'ストーリー動画の生成AIの単価が未入力です。設定画面の「ストーリー動画の単価」で、入力・出力の単価（円／100万トークン）を入力してから、もう一度作成してください。';
 
 // ---- 中継プロセスへの依頼（FR-275 の共通接続。新しい接続設定・キー保管なし） ----
 type F = typeof fetch;

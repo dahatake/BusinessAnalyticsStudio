@@ -12,7 +12,7 @@ import type { FoundryView } from '../../src/ai/foundryClient';
 import { useUseCases } from '../../src/store/usecases';
 import { emptyDraft, type UseCaseDraft } from '../../src/usecase/model';
 import {
-  DEFAULT_PRICES, STORY_VIDEO_BUDGET_YEN, STORY_VIDEO_MAX_CALLS, STORY_VIDEO_PARAMS, inputTokensOf, STORY_VIDEO_SANDBOX, appendUsageLog, planStoryVideo, requestStoryVideo, runStoryVideo,
+  DEFAULT_PRICES, STORY_VIDEO_BUDGET_YEN, PRICE_MISSING_GUIDE, currentPrices, type PriceStore, type Prices, STORY_VIDEO_MAX_CALLS, STORY_VIDEO_PARAMS, inputTokensOf, STORY_VIDEO_SANDBOX, appendUsageLog, planStoryVideo, requestStoryVideo, runStoryVideo,
   storyVideoAvailability, storyVideoState, toPayload, toSrcDoc, validateAnimationHtml, type CallResult, type RunDeps, type UsageLogEntry,
 } from '../../src/usecase/storyVideo';
 
@@ -165,6 +165,25 @@ describe('FR-292 AC-784 確定値（PARAM-129/130/131）からの見積り', () 
     // 単価を変えると見積りが変わる（ハードコードでない）
     const p2 = planStoryVideo(ucOf(3), { inPerM: 600, outPerM: 3000 }, usage());
     if (p2.ok) expect(p2.estimateYen).toBeCloseTo(p.estimateYen * 2, 10);
+  });
+  it('FR-292 AC-784 単価が未入力・0 以下・数値でないときは currentPrices が null（既定値で代用しない）で、入力すると使える', () => {
+    const mk = (v: unknown): PriceStore => ({ get: () => v as Prices | null, set: () => {} });
+    expect(currentPrices(mk(null))).toBeNull();
+    expect(currentPrices(mk({ inPerM: 0, outPerM: 100 }))).toBeNull();
+    expect(currentPrices(mk({ inPerM: 100, outPerM: -1 }))).toBeNull();
+    expect(currentPrices(mk({ inPerM: Number.NaN, outPerM: 100 }))).toBeNull();
+    expect(currentPrices(mk({ inPerM: '1', outPerM: 100 }))).toBeNull();
+    expect(currentPrices(mk({ inPerM: 300, outPerM: 1500 }))).toEqual({ inPerM: 300, outPerM: 1500 });
+  });
+  it('FR-292 AC-784 画面は単価が未入力のとき作成を始めず（見積り・呼び出しへ進まない）、設定画面での入力を案内し、設定画面に単価の入力欄がある', () => {
+    const src = fs.readFileSync(path.join(__dirname, '../../src/usecase/StoryVideoPanel.tsx'), 'utf8');
+    expect(src).toMatch(/if \(!prices\) \{[^}]*PRICE_MISSING_GUIDE/);
+    expect(src.indexOf('if (!prices)')).toBeLessThan(src.indexOf('planStoryVideo(toDraft(uc), prices'));
+    expect(PRICE_MISSING_GUIDE).toContain('設定画面');
+    const settings = fs.readFileSync(path.join(__dirname, '../../src/ai/AiUsagePanel.tsx'), 'utf8');
+    expect(settings).toContain('story-video-prices');
+    expect(settings).toContain('DEFAULT_PRICES'); // 入力欄の初期表示だけ
+    expect(src).not.toContain('DEFAULT_PRICES');
   });
   it('FR-292 AC-784 見積りの費用が画面に表示される（StoryVideoPanel が plan.estimateYen を表示）', () => {
     const src = fs.readFileSync(path.join(__dirname, '../../src/usecase/StoryVideoPanel.tsx'), 'utf8');
