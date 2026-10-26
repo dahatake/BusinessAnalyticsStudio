@@ -2004,9 +2004,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "d5d20ce",
-      "last_run_at": "2026-10-26T11:28:45+09:00",
-      "evidence": "work\\runs\\202610260959\\logs\\system-test\\E2E-162-202610261127.log",
+      "last_commit": "34e2798",
+      "last_run_at": "2026-10-26T13:32:03+09:00",
+      "evidence": "work/runs/202610261312/logs/system-test/E2E-162-202610261331.log",
       "history": [
         {
           "at": "2026-10-12T14:07:28+09:00",
@@ -6497,9 +6497,9 @@
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat --workers=1",
       "canary": true,
       "status": "pass",
-      "last_commit": "d5d20ce",
-      "last_run_at": "2026-10-26T11:28:45+09:00",
-      "evidence": "work\\runs\\202610260959\\logs\\system-test\\E2E-345-202610261127.log",
+      "last_commit": "34e2798",
+      "last_run_at": "2026-10-26T13:32:03+09:00",
+      "evidence": "work/runs/202610261312/logs/system-test/E2E-345-202610261331.log",
       "history": [
         {
           "at": "2026-10-21T17:19:59+09:00",
@@ -6535,9 +6535,9 @@
       "command": "node tests/system/run.mjs AC-593",
       "canary": true,
       "status": "pass",
-      "last_commit": "d5d20ce",
-      "last_run_at": "2026-10-26T11:28:45+09:00",
-      "evidence": "work\\runs\\202610260959\\logs\\system-test\\E2E-346-202610261127.log",
+      "last_commit": "34e2798",
+      "last_run_at": "2026-10-26T13:32:03+09:00",
+      "evidence": "work/runs/202610261312/logs/system-test/E2E-346-202610261331.log",
       "history": [
         {
           "at": "2026-10-21T17:32:44+09:00",
@@ -6720,9 +6720,9 @@
       "command": "node tests/system/run.mjs AC-598",
       "canary": true,
       "status": "pass",
-      "last_commit": "d5d20ce",
-      "last_run_at": "2026-10-26T11:28:45+09:00",
-      "evidence": "work\\runs\\202610260959\\logs\\system-test\\E2E-351-202610261127.log",
+      "last_commit": "34e2798",
+      "last_run_at": "2026-10-26T13:32:03+09:00",
+      "evidence": "work/runs/202610261312/logs/system-test/E2E-351-202610261331.log",
       "history": [
         {
           "at": "2026-10-21T17:33:47+09:00",
