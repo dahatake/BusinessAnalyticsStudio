@@ -47,7 +47,7 @@
 - 移動: コンポーネントの見出し（heading）をつかんでドラッグする。移動中は置ける場所を `data-testid="drop-indicator"` で示す。Esc で中止できる。
 - 自動サイズ調整: フォーカスしたコンポーネントの面積が基準の PARAM-033（1.5）倍になる。switch「サイズの自動調整」で切り替える。
 - 作業先: 常に表示する `data-testid="work-target"`（「デモ」または「企業名 / Project 名」）。ボタン「作業先」で dialog「作業先の選択」を開く。候補は option（「デモ」「<企業名> … <Project 名>」「実際の Project を登録」）。起動直後はメイン画面（§15）で、選択画面は「Project を開く」で必ず出る（FR-144 AC-237・AC-239、Q-026 で改訂）。support/fixtures.ts の `skipOpening` は、メイン画面と選択画面を進めてデモ（なければ最初の Project）を選ぶ。選択画面そのものを確かめるテストは `skipOpening: false` で起動し `pressOpeningEscape`（オープニングだけ飛ばす）を使う。
-- デモの非表示（FR-144 AC-240・AC-241）: 設定画面（`nav-settings`）の switch「選択画面にデモを表示」（既定: オン）。オフにすると dialog「作業先の選択」にデモの option が出ない。端末内（localStorage 等）に保存され、再読込後も維持され、別の browser context には引き継がれない。
+- デモの非表示（FR-144 AC-240・AC-241）: 設定画面（上部の `settings-button`）の switch「選択画面にデモを表示」（既定: オン）。オフにすると dialog「作業先の選択」にデモの option が出ない。端末内（localStorage 等）に保存され、再読込後も維持され、別の browser context には引き継がれない。
 - （廃止）最初のフレーム（FR-147 AC-246〜250）: FR-147 は廃止予定（2026-10-22）。ケースは台帳で blocked。`scene.info()`・`scene.objects()` のフックは AC-081・AC-087・AC-030 などが引き続き使う。
 - （廃止）3D の描画面（FR-146 AC-243・AC-244）: FR-146 は廃止予定（2026-10-22）。ケースは台帳で blocked。
 - 廃止した画面と読み替え（2026-10-22。Q-062 A）: 画面 `view3d`・`drawing2d`・`canvas` はない。`support/fixtures.ts` の `openScreen`・`component` は、旧 key `canvas` を配置を受ける作業領域（`data-testid="workspace"`。パン/ズームの面 `canvas-surface`・listbox「論点」・`t.canvas.*` のフックはその中・それに対して）に、旧 key `view3d` を Twin ビュー（`twin-view`）を見出しの「ビュー」で 3D にしたもの（`open3dView`。4 つの 3D シーン・拠点の描画・クロスハイライト・注釈・`t.scene.*` のフックはここ）に読み替える。注釈のフックの key は `t.annotations.count("twin-view")`。「議題」の表示名は「論点」（listbox の名前も「論点」）。
@@ -69,7 +69,7 @@
 
 ## 12. 自由配置・拡大表示・ストーリー（FR-173〜180。workspace-free-layout.spec.ts・story.spec.ts が前提にする画面の探し方）
 - 自由配置・拡大（FR-173〜175）: 移動は見出し（heading）のドラッグ。置いた位置は再読込後も維持され、`workspace` の外へ出ない。重なったときは、ぶつかられたものが押し出されて重ならない（§15。Q-025 で改訂。「手前に出す」は廃止）。ダブルクリックで拡大中のコンポーネントは `data-expanded="true"`（最大化は `data-maximized="true"` で別。拡大では付かない）。拡大の寸法は `workspace` の境界に対する割合（PARAM-058=75%）。
-- 設定（FR-175）: 設定画面（`nav-settings`）の radiogroup「拡大表示の位置」に radio「上」「左」「右」「下」（既定: 上）。
+- 設定（FR-175）: 設定画面（上部の `settings-button`）の radiogroup「拡大表示の位置」に radio「上」「左」「右」「下」（既定: 上）。
 - 作業先メニュー（FR-176）: `work-target-menu` とボタン「企業を登録」が最上段（ほかの `nav-*`・ペルソナ・編集モード・`stepper` より上端が上か同じ）。
 - ストーリー（FR-177〜179）: ボタン「プレゼンテーションを開始」→ dialog「ペルソナの選択」（button 経営層・事業部門・IT・現場。Esc で閉じるとストーリーは始まらない）→ `data-testid="story"`。現在のシーン `story-scene`（見出し heading は 1 つ。`data-story-part`=1〜4（①解決策②理由③KPI/OKR④ユースケース）、①は `data-solution-id`、不足データのシーンは `data-no-data="true"` で本文に「データなし」・理由・補う入口）。`story-position`（「n / 全体」）。`→`/`←`/`Esc` で操作。配置（FR-178 AC-740。story-layout.spec.ts）: `story-scene` 内の各要素に `data-story-el="kicker|big|big-label|heading|body-line|cta"`（本文は 1 行＝1 要素ではなく、折り返し前の 1 段落でもよい。表示していない要素は付けないか、矩形が 0）。テストは各要素の外接矩形（文字の描画矩形を含む）で交差・ビューポート外を判定する。
 - ユースケース一覧（FR-180）: ステッパーの「ユースケース作成」→ `usecase-list` の listitem に `data-persona`（経営層・事業部門・IT・現場）、子に `usecase-name`・`usecase-summary`・`usecase-steps`・`usecase-effect`・`usecase-solution`・`usecase-kpi`。
@@ -95,7 +95,7 @@
 - 演出強度（AC-320）: 再生中の `storyboard-player` 内の `data-testid="storyboard-intensity"` に現在の演出強度名（Executive / Showcase / Entertainment）を文字で表示する。再生の既定は Entertainment。
 - 字幕・テロップ（FR-165）: 現在のシーンの `storyboard-caption`（字幕。不透明な背景色を自身に持つ）・`storyboard-telop`（強調テロップ。最初のシーン冒頭。20 文字以内）・その中の強調語 `storyboard-emphasis`。
 - スタイル（FR-166）: ユースケース作成画面の radiogroup「スタイル」に radio 5 つ（3D・アニメ・Geometric 3D・Isometric 3D・Whimsical 3D。既定 Isometric 3D）。再生中の `storyboard-style-name` に現在名。WebGL なしでは `storyboard-style-notice`（「2D」を含む理由）。保存先は端末内。
-- 音声（FR-167）: `runtime-config.json` の `speech: { endpoint, key }`（モック。テストは endpoint を `page.route` で受ける。実際の Azure は呼ばない）。設定画面（`nav-settings`）に region「音声設定」: `speech-status`（「設定済み」/「未設定」）、switch「字幕の読み上げ」、未設定で有効にすると role=alert。再生中: 送信中は `speech-sending-notice`、失敗・未設定・タイムアウト・オフラインは `speech-error`（原因と直し方）で、再生は字幕だけで最後まで進む。ミュート（button「ミュート」, aria-pressed。既定 true）のままでは要求を送らない。送信本文に字幕の文言を含む。
+- 音声（FR-167）: `runtime-config.json` の `speech: { endpoint, key }`（モック。テストは endpoint を `page.route` で受ける。実際の Azure は呼ばない）。設定画面（上部の `settings-button`）に region「音声設定」: `speech-status`（「設定済み」/「未設定」）、switch「字幕の読み上げ」、未設定で有効にすると role=alert。再生中: 送信中は `speech-sending-notice`、失敗・未設定・タイムアウト・オフラインは `speech-error`（原因と直し方）で、再生は字幕だけで最後まで進む。ミュート（button「ミュート」, aria-pressed。既定 true）のままでは要求を送らない。送信本文に字幕の文言を含む。
 
 ## 14. データビュアー（FR-169。data-viewer.spec.ts が前提にする画面の探し方）
 - データカタログ画面（`openScreen(page,'data-catalog')`）の `data-testid="data-viewer"`。`data-view-mode="2d|3d"`、`data-detail-level="bird|entity|column"`（表示している詳細度。文字でも表示）。radiogroup「表示モード」の radio「2D」「3D」。ボタン「拡大」「縮小」「全体表示に戻す」。
@@ -146,7 +146,7 @@
 ## 24. 画面の操作性の刷新（FR-220〜228。ux-refresh.spec.ts が前提にする画面の探し方。run 202610192037）
 - 画面の見出し（FR-220 AC-515）: `data-testid="screen-heading"` の中の button「ビュー」（名前は「ビュー」で始まる。§21 のコンポーネントの「ビュー」と同じメニュー）。左メニュー navigation「画面」に 2D/3D の切替の項目（menuitemradio「2D」「3D」・switch・名前が「3D ビュー」だけの項目）を置かない（FR-220 の改訂で、画面「3D ビューと 2D 図面」「2D 図面」の項目は左メニューに置かない＝AC-590。§21 の開き方で開く）。
 - 操作アイコン（FR-222 AC-518）: §10 の `component-actions` の button「最小化」「最大化」（最大化中は「通常表示」か「元に戻す」）が見出しの右上に並び、図（svg か img）を持つ。名前はホバー・フォーカスで role=tooltip に出る。最大化中は `data-maximized="true"`、最小化中は `data-minimized="true"`。常設ボタン（「その他の操作」を除く）は 6 個以下（PARAM-073）。
-- 設定のモーダル（FR-223 AC-519）: 左メニューの `nav-settings` で role=dialog「設定」（`aria-modal="true"`、button「閉じる」）が開く。背面の覆いは `data-testid="modal-backdrop"`（透明でない背景色）。設定は `component-settings` としてワークスペースに並ばない。
+- 設定のモーダル（FR-223 AC-519）: 上部のツールバーの `settings-button`（FR-223 AC-774。旧 `nav-settings` は廃止）で role=dialog「設定」（`aria-modal="true"`、button「閉じる」）が開く。背面の覆いは `data-testid="modal-backdrop"`（透明でない背景色）。設定は `component-settings` としてワークスペースに並ばない。
 - 設定の区画（NFR-SEC-002 AC-176・FR-285 AC-739。run 202610212134）: AI 接続（GitHub Copilot）の実接続は region「AI・音声・手書きの接続」の中の switch（名前に「実接続」を含む。例「AI の実接続を有効にする（GitHub Copilot）」）。生成AIの活用分析（FR-285）の独自の実接続 switch・region「生成AIの活用分析の接続」は廃止（2026-10-22）。Foundry の実接続は、共通接続の region「Microsoft Foundry（生成AI機能の共通接続）」（§25）の中の switch「実接続を有効にする」1 つだけ。名前「実接続」は設定の中で一意ではないため、テストは switch を必ず区画（region）に絞り、name は exact で探す。
 - サイズ変更（FR-224 AC-521）: コンポーネントの縁・角のつまみ `data-testid="resize-e"`（右の縁）・`resize-s`（下の縁）・`resize-se`（右下の角）。ホバーで利用できる。ドラッグで縦だけ・横だけ・両方が変わる。
 - 作業先（FR-226 AC-525）: 「[顧客名] - [プロジェクト名]」の見える文字は `work-target-menu`（§10）だけ。`work-target` を残す場合は見える同じ文字を持たず、アクセシブルな名前に作業先を含む。
@@ -195,3 +195,17 @@
 - Microsoft Foundry を選ぶと `foundry-settings`（§25）が見える。GitHub Copilot SDK を選ぶと `data-testid="copilot-settings"` が見え、中に radiogroup「認証方式」（radio「サインイン」〈既定〉・「トークン」）、サインイン状態の表示 `copilot-signin-status`、textbox「モデル名」（任意。空なら SDK の既定）。
 - 中継（実物の scripts/relay/relay.ts の startRelay をテストのプロセス内で起動。データフォルダーは環境変数 EDB_RELAY_DATA）: `GET /ai/provider` → 200 `{ provider: 'foundry' | 'copilot' }`（ほかの項目は任意。認証情報の値は含めない）。`PUT /ai/provider` body `{ provider }`（余分な項目は保存しない）。選択はデータフォルダーに保存し、同じデータフォルダーで再起動しても保つ。画面は選択を変えたら PUT する。
 - テストが渡す Copilot SDK の差し替え部品は `{ status(): Promise<{signedIn:false}>, complete() }`（未サインイン）。実 GitHub・実 gh・実 Foundry には接続しない。サインイン状態は SDK の実状態（getAuthStatus 等）で判定し、クライアントの起動成功だけでサインイン済みとしない（AC-771 の結合テストの側で確かめる）。
+
+## 31. 上部の「設定」・AI の接続先表示・生成 AI のストーリー（FR-223 AC-774、FR-275 AC-773、FR-290 AC-775・AC-785。run 202610250836）
+- 上部の「設定」: `data-testid="settings-button"`、role=button、アクセシブル名「設定」。左メニュー（nav）の外で、`ai-status` と同じ行。左メニューに `nav-settings` は置かない。Tab で到達し Enter／Space で開く。
+- AI の接続先表示: `ai-status` の中の `data-testid="ai-provider-status"`。文字に「Microsoft Foundry」か「GitHub Copilot」、実接続が無効のとき「モック」、有効のときは「モック」を含めず「有効」か「接続済み」。キー・トークンの値は出さない。
+- ペルソナの選択（§12）に checkbox か switch「生成 AI で作成」（既定は選ばない）。作成中は `data-testid="story-generating"`（ボタン「取り消す」）。条件が欠ける・失敗は `data-testid="story-genai-error"` に理由と、ボタン「生成 AI を使わずに開始」。
+- 生成 AI の応答（中継の `sdk.complete`・Foundry の `output_text`）は JSON `{"scenes":[{"part":1-4,"heading":"…","narration":"…"}]}`（コードフェンスで囲んでもよい）。生成したストーリーは `story` の中に「AI 生成」と接続先の名前を示す。
+- 差し替え部品: `support/genai-relay.ts`（実物の中継を起動し、Copilot SDK と Foundry の fetch だけを差し替える）。
+- 改訂（5905ad1）: `ai-provider-status` は共通接続（/foundry/*）だけを示し、POST /ask（FR-132）が接続済みでも共通接続が無効なら「モック」。FR-290 の作成は中継の POST /foundry/ask を通る。差し替え部品の見出し・語りには数字を含めない（材料にない数値の文は表示されない。AC-776）。
+- 企業の許可（FR-290 AC-785）: 企業の Project では region「企業 <企業名>」の checkbox「外部 AI への送信を許可する」（FR-140 AC-219。既定は未チェック）が条件に加わる。許可がなければ `story-genai-error` に理由と「生成 AI を使わずに開始」を示し、中継を呼ばない。
+
+## 32. ユースケースのストーリー動画（FR-291 AC-778。story-video.spec.ts が前提にする画面の探し方と中継の口。run 202610250857）
+- 差し替え部品は support/ai-import-stub.ts（生成AIは実呼び出ししない）。ブラウザー → 中継（runtime-config の relayUrl）の `POST /foundry/story-video`。本文 `{kind:'storyboard'|'animation', usecase:{name,summary,persona,steps:[{title,description}],effect}}`（送る内容はこれだけ。キー・ほかのユースケースを含めない）。応答は 200 `storyboard` が `{scenes:[{scene,person,trouble,change}], usage:{inputTokens,outputTokens}}`、`animation` が `{html, usage}`。失敗は 503 `{error:{cause}}`。
+- ユースケース一覧（`usecase-list`）の各項目に button「ストーリー動画を作る」。押しても作成（登録）だけでは呼び出さない。押すと role=dialog「ストーリー動画の作成の確認」に `story-video-estimate`（見積りの費用の「円」と上限「1,000 円」を文字で含む）と button「実行」「キャンセル」。「実行」を押すまで呼び出しは 0 回。
+- 結果: `story-video-status`（文字「最新」など作成状態）、`story-video-storyboard`（シーンを role=listitem で順序どおり。各シーンに場面・登場する人・困りごと・実現後の変化の文字）、iframe `data-testid="story-video-frame"`（sandbox 属性を持ち、`allow-same-origin` を含まない）、button「ストーリー動画を再生」「ストーリー動画を一時停止」と、再生状態 `story-video-state`（文字「再生中」「一時停止中」）。

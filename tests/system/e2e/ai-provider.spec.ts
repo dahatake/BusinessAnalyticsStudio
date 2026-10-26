@@ -6,7 +6,8 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { Locator, Page } from '@playwright/test';
-import { test, expect, selectPersona, openScreen, settingsDialog } from '../support/fixtures';
+import { test, expect, selectPersona, openScreen, settingsDialog, closeSettings, recordExportConsent } from '../support/fixtures';
+import { startGenaiRelay, aiProviderStatus, chooseProvider, enableCommonConnection, GENAI_DUMMY_KEY } from '../support/genai-relay';
 import { unusedPort } from '../support/server';
 import { startRelay } from '../../../scripts/relay/relay';
 
@@ -168,6 +169,57 @@ test.describe('FR-275 生成AIの接続先の選択', () => {
       if (prevData === undefined) delete process.env.EDB_RELAY_DATA;
       else process.env.EDB_RELAY_DATA = prevData;
       fs.rmSync(dataDir, { recursive: true, force: true });
+    }
+  });
+});
+
+// FR-275 AC-773（上部の AI の状態表示に接続先の名前と実接続の状態。差し替え部品は support/genai-relay.ts。CONTRACT.md §31）
+test.describe('FR-275 AI の状態表示に生成AIの接続先', () => {
+  // FR-275 AC-773（異常系: 実接続が無効・接続先の切替で有効化が解除されたときはモック）
+  test('FR-275 AC-773 上部の AI の状態表示に接続先「GitHub Copilot」「Microsoft Foundry」とモックが文字で示され、条件をそろえて有効にするとモックが有効の表示に変わり、接続先を切り替えるとモックに戻り、POST /ask だけが接続済みでも共通接続が無効ならモックで、キー・トークンの値は出ない', async ({ page, start }) => {
+    const g = await startGenaiRelay();
+    try {
+      await g.saveFoundryConfig();
+      // 差し替え部品で POST /ask（FR-132）だけを接続済みにする（SDK はサインイン済み）。共通接続（/foundry/*）は無効のまま
+      const health = await (await fetch(`${g.url}/health`)).json();
+      expect(JSON.stringify(health), 'POST /ask の差し替え部品が接続済み（サインイン済み）でない').toMatch(/signed-?in|ready/i);
+      await start({ relayUrl: g.url });
+      const st = aiProviderStatus(page);
+      await expect(st, '上部の AI の状態表示に接続先の表示がない').toBeVisible();
+      // 既定は Microsoft Foundry で、共通接続の実接続は無効なので、POST /ask が接続済みでもモック
+      await expect(st).toContainText('Microsoft Foundry');
+      await expect(st).toContainText('モック');
+      // GitHub Copilot SDK を選ぶと「GitHub Copilot」とモック
+      await chooseProvider(page, 'copilot');
+      await closeSettings(page);
+      await expect(st).toContainText('GitHub Copilot');
+      await expect(st).not.toContainText('Microsoft Foundry');
+      await expect(st).toContainText('モック');
+      // Microsoft Foundry に切り替えると「Microsoft Foundry」とモック
+      await chooseProvider(page, 'foundry');
+      await closeSettings(page);
+      await expect(st).toContainText('Microsoft Foundry');
+      await expect(st).not.toContainText('GitHub Copilot');
+      await expect(st).toContainText('モック');
+      // AC-706 の条件（了承・接続情報・有効化と確認）をそろえて有効にすると、モックの表示が有効の表示に変わる
+      await recordExportConsent(page);
+      await enableCommonConnection(page);
+      await expect(st).toContainText('Microsoft Foundry');
+      await expect(st, '実接続を有効にしてもモックのまま').not.toContainText('モック');
+      await expect(st).toContainText(/有効|接続済み/);
+      // 異常系: 接続先を切り替えると有効化が解除され（FR-275）、モックに戻る。再び有効にすると有効の表示
+      await chooseProvider(page, 'copilot');
+      await closeSettings(page);
+      await expect(st).toContainText('GitHub Copilot');
+      await expect(st, '接続先の切替の後もモックにならない').toContainText('モック');
+      await enableCommonConnection(page);
+      await expect(st).toContainText('GitHub Copilot');
+      await expect(st).not.toContainText('モック');
+      // どの表示にもキー・トークンの値が含まれない
+      expect(await page.locator('body').innerText()).not.toContain(GENAI_DUMMY_KEY);
+      expect(await page.content()).not.toContain(GENAI_DUMMY_KEY);
+    } finally {
+      await g.close();
     }
   });
 });

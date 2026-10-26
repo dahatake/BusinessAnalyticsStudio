@@ -107,13 +107,11 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
     requestOpen(null, true);
   });
   const current = st.projects.find((p) => p.id === st.openId);
-  const currentCompany = current ? st.companies.find((c) => c.id === current.companyId) : undefined;
   const [slot, setSlot] = useState<HTMLElement | null>(null);
   useEffect(() => { setSlot(document.getElementById('projects-head-slot')); }, []);
   const head = (
     <div className={s.head} data-testid="projects-head">
       <WorkTargetMenu projects={st.projects} companies={st.companies} openId={st.openId} demoOnly={demoOnly} onChoose={choose} onCreateProject={(company) => setModal({ kind: 'project', company })} />
-      <Text weight="semibold">作業先:</Text>
       {/* FR-226 AC-525: 「[顧客名] - [プロジェクト名]」の見える表記は作業先メニューの最上段だけ。ここは文字を持たず、名前だけで現在の作業先を伝える */}
       <span data-testid="work-target" role="status" aria-label={`現在の作業先: ${workTargetLabel(st.openId, st.projects, st.companies)}`} style={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)' }}>
         <span style={{ display: 'none' }}>{workTargetLabel(st.openId, st.projects, st.companies)}</span>
@@ -124,7 +122,6 @@ export function ProjectsPanel({ onNavigate }: { onNavigate?: (screenKey: string)
       <Button size="small" onClick={() => { setDemoOnly(false); setModal({ kind: 'company' }); }}>企業を登録</Button>
       <Button size="small" onClick={backToMain}>メイン画面へ戻る</Button>
       {current ? <Button size="small" onClick={() => requestOpen(null)}>Project 一覧へ</Button> : null}
-      {current && currentCompany ? <Text data-testid="current-project">開いている Project: {currentCompany.name} / {current.name}</Text> : null}
     </div>
   );
   const hasBody = (st.companies.length > 0 && !demoOnly) || !!current;

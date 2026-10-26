@@ -45,7 +45,7 @@ const V2: ViewDecl = { has2D: true, has3D: false, world: false };
  *    項目ごと（items。グラフの節の world＝entities[].world、課題などは §3.7 の分類表の世界区分）＝ナレッジグラフ・一覧表・3D ビュー・2D 図面・地図
  *    現実世界＝キャンバス（論点＝コト）、課題-解決策分析・優先順位分析・2×2 マトリクス・ランキング表（課題・解決策＝コト）、ガントチャート（工程＝業務）、ユースケース（業務）
  *    デジタル世界＝アーキテクチャ図（モデル）、議論ツリー（モデル）、KPI/OKR（センサー/指標）、出典・データカタログ・ホワイトボード（付箋）・議論テーマ（データ）
- *    世界区分を持つデータを表示しない＝サマリー（ほかの画面の数値の要約）・ミニ・モックアプリ・設定パネル・チャット
+ *    世界区分を持つデータを表示しない＝サマリー（ほかの画面の数値の要約）・ミニ・モックアプリ・設定・チャット
  */
 export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'issue-solution', label: '課題-解決策分析', icon: TaskListSquareLtr24Regular, component: IssueSolutionScreen, view: { has2D: true, has3D: true, hasGraph: true, ...tableWorldDecl(['課題', '原因', '解決策', '効果']), kinds: ['issue', 'solution'] } },
@@ -68,7 +68,8 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'spatial-view', label: '空間ビュー', icon: Building24Regular, component: SpatialScreen, view: { has2D: true, has3D: true, hasGraph: true, defaultMode: '3d', world: false, kinds: [] } },
   { key: 'whiteboard', label: 'ホワイトボード', icon: Whiteboard24Regular, component: WhiteboardScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['付箋', 'ストローク'], 'ボードの付箋・ストローク'), kinds: [] } },
   { key: 'themes', label: '議論テーマ', icon: CommentMultiple24Regular, component: ThemesScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['議論テーマ']), kinds: [] } },
-  { key: 'settings', label: '設定パネル', icon: Settings24Regular, component: SettingsScreen, view: V2, modal: true },
+  // 設定は左メニューに項目を持たず、画面上部のボタン「設定」から開くモーダル（FR-223 AC-774。名称は「設定」）
+  { key: 'settings', label: '設定', icon: Settings24Regular, component: SettingsScreen, view: V2, modal: true, nav: false },
   { key: 'genai-scenario', label: '生成AIの効果的な活用シナリオの分析', icon: Lightbulb24Regular, component: GenAiScenarioScreen, view: V2 },
   { key: 'memo', label: 'メモ', icon: Notepad24Regular, component: MemoScreen, view: V2 },
   { key: 'chat', label: 'チャット', icon: Chat24Regular, component: ChatScreen, view: V2 },

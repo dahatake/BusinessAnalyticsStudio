@@ -109,7 +109,7 @@ export function SettingsScreen() {
   const setIndustry = useView3D((st) => st.setIndustry);
   const preset = useIndustryPreset();
   return (
-    <Panel testId="component-settings" title="設定パネル" description="表示の設定です。ハイコントラストは OS の設定に従います。">
+    <Panel testId="component-settings" title="表示と接続の設定" description="表示の設定です。ハイコントラストは OS の設定に従います。">
       <Field label="テーマ">
         <RadioGroup layout="horizontal" value={mode} onChange={(_, d) => setMode(d.value as ThemeMode)}>
           {THEME_MODES.map((m) => <Radio key={m} value={m} label={LABELS[m]} />)}
@@ -160,7 +160,7 @@ export function SettingsScreen() {
         <section className={s.section} aria-label="ブランド">
           <Text as="h3" size={400} weight="semibold">ブランド</Text>
           <BrandRow testId="brand-color" label="色" value={<>Primary {brand.colors.primary}{override ? '（手動で上書き中）' : ''}</>}
-            source={override ? '利用者が設定パネルで上書き' : brand.colors.source} retrievedAt={override ? '—' : brand.colors.retrievedAt}
+            source={override ? '利用者が設定で上書き' : brand.colors.source} retrievedAt={override ? '—' : brand.colors.retrievedAt}
             confidence={override ? '高' : brand.colors.confidence} />
           <BrandRow testId="brand-logo" label="ロゴ"
             value={brand.logo.status === 'confirmed' ? '利用条件: 確認済み（同梱のロゴを表示）' : '利用条件: 不明（プレースホルダーを表示）'}

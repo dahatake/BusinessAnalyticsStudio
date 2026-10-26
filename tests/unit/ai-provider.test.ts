@@ -31,6 +31,17 @@ async function setup(signedIn = true, suppliedSdk?: CopilotSdk | null, foundryTo
   return { dir, store, sdk, r, request, select, enable, saveFoundry, foundryFetch, analyze };
 }
 describe('FR-275 common provider integration', () => {
+  // FR-275 AC-773: GET /ai/provider?packId= は上部の状態表示用に、その案件の実接続の有効（enabled）を返し、認証情報は返さない
+  it('FR-275 AC-773 GET /ai/provider?packId= returns provider and enabled for the pack without credentials', async () => {
+    const s = await setup(); await s.saveFoundry({ key: TOKEN });
+    expect((await s.request('/ai/provider?packId=P')).body).toEqual({ provider: 'foundry', enabled: false });
+    await s.select('copilot'); expect((await s.enable()).status).toBe(200);
+    const on = await s.request('/ai/provider?packId=P');
+    expect(on.body).toEqual({ provider: 'copilot', enabled: true });
+    expect(JSON.stringify(on.body)).not.toContain(TOKEN);
+    expect((await s.request('/ai/provider?packId=Other')).body).toEqual({ provider: 'copilot', enabled: false });
+    expect((await s.request('/ai/provider')).body).toEqual({ provider: 'copilot' });
+  });
   it('FR-275 AC-769 persists only the whitelisted provider and retains it after relay restart', async () => {
     const s = await setup(); expect((await s.request('/ai/provider')).body).toEqual({ provider: 'foundry' });
     expect((await s.select('bad')).status).toBe(400);

@@ -169,7 +169,7 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
           const button = (
             <Button
               key={sc.key}
-              data-testid={`nav-${sc.key}`}
+              data-testid={sc.key === 'settings' ? 'settings-button' : `nav-${sc.key}`}
               className={mergeClasses(s.navButton, navMin ? s.navButtonMin : undefined)}
               aria-label={navMin ? sc.label : undefined}
               appearance={active ? 'secondary' : 'subtle'}

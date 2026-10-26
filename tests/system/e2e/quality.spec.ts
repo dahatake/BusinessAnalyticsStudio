@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準（docs/requirements/quality.md）と PARAM（§3.3）から決める。
 import AxeBuilder from '@axe-core/playwright';
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, entity, hook, scene, MAIN_SCREENS, captureDownload, recordExportConsent, continuePersonConfirm, selectPersona, setEditMode, closeSettings } from '../support/fixtures';
+import { test, expect, openScreen, component, entity, hook, scene, MAIN_SCREENS, captureDownload, recordExportConsent, continuePersonConfirm, selectPersona, setEditMode, closeSettings, screenEntry } from '../support/fixtures';
 import { examplePack } from '../support/packs';
 import { startRelayStub } from '../support/relay-stub';
 
@@ -139,7 +139,7 @@ test.describe('NFR-A11Y-001 WCAG 2.2 AA・キーボード', () => {
         return els.length;
       });
       expect(total, `${name} に操作要素がない`).toBeGreaterThan(0);
-      await page.getByTestId(`nav-${key}`).focus();
+      await screenEntry(page, key).focus(); // 設定は上部のボタン「設定」（FR-223 AC-774）
       const visited = new Set<string>();
       let left = 0;
       let noRing: string[] = [];

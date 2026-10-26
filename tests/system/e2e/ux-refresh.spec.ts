@@ -4,7 +4,7 @@
 // 画面の探し方は CONTRACT.md §23（本ファイルが前提にするもの）。AC-516・520・522・524・527・530 は統合・単体テストの範囲で、この spec では扱わない。
 import AxeBuilder from '@axe-core/playwright';
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, component, selectPersona, openScreen, hook } from '../support/fixtures';
+import { test, expect, component, selectPersona, openScreen, hook, settingsButton, settingsDialog } from '../support/fixtures';
 import { listScreenKeys, gotoScreen, topKeys, actions, pinButton, viewButton, openViewMenu, chooseView, box, type ViewState } from '../support/screens';
 
 const MAX_PERMANENT_BUTTONS = 6; // PARAM-073
@@ -330,9 +330,8 @@ test.describe('FR-222 画面コンポーネント右上の操作アイコン', (
 // ───────────────────────────── FR-223 ─────────────────────────────
 test.describe('FR-223 設定のモーダル表示', () => {
   async function openSettings(page: Page): Promise<Locator> {
-    const nav = page.getByTestId('nav-settings');
-    if (!(await nav.isVisible())) await page.getByRole('button', { name: 'メニュー', exact: true }).click();
-    await nav.click();
+    // 設定は画面上部のツールバーのボタン「設定」から開く（FR-223 AC-774。左メニューには項目がない）
+    await settingsButton(page).click();
     const modal = page.getByRole('dialog', { name: '設定' });
     await expect(modal, '設定のモーダルが開かない').toBeVisible();
     return modal;
@@ -393,6 +392,89 @@ test.describe('FR-223 設定のモーダル表示', () => {
     const [k] = await topKeys(page);
     await component(page, k).focus();
     await expect(actions(component(page, k))).toBeVisible();
+  });
+
+  /** 画面の先頭から Tab だけで上部のボタン「設定」に焦点を移す（到達できなければ失敗） */
+  async function tabToSettingsButton(page: Page): Promise<void> {
+    // 文書の先頭に焦点の起点を置く（Tab の順に入らない tabindex=-1 の印。到達後に取り除く）
+    await page.evaluate(() => {
+      const s = document.createElement('span');
+      s.tabIndex = -1;
+      s.setAttribute('data-st-focus-start', '');
+      document.body.prepend(s);
+      s.focus();
+    });
+    try {
+      for (let i = 0; i < 80; i++) {
+        await page.keyboard.press('Tab');
+        const on = await page.evaluate(() => document.activeElement?.getAttribute('data-testid') === 'settings-button');
+        if (on) return;
+      }
+      throw new Error('画面の上部から Tab でボタン「設定」に到達できない');
+    } finally {
+      await page.evaluate(() => document.querySelector('[data-st-focus-start]')?.remove());
+    }
+  }
+
+  // FR-223 AC-774（左メニューに項目がなく、上部のツールバーのボタン「設定」から開く。異常系: 「設定パネル」の名称・左メニューの項目が残っていれば失敗）
+  test('FR-223 AC-774 左メニューに「設定」「設定パネル」の項目がなく、上部のツールバーのボタン「設定」をクリック・Tab で到達して Enter／Space で押すと最初の見出しが「設定」のモーダルが開き、「設定パネル」の文字はどこにも表示されず、幅 320px でも上部からキーボードで開ける', async ({ page, start }) => {
+    await start();
+    // 左メニューに「設定」「設定パネル」の項目がない
+    const nav = page.getByRole('navigation', { name: '画面', exact: true });
+    await expect(nav, '左メニュー（navigation「画面」）がない').toBeAttached();
+    await expect(page.getByTestId('nav-settings'), '左メニューに設定の項目が残っている').toHaveCount(0);
+    for (const role of ['button', 'link', 'menuitem', 'menuitemradio', 'tab', 'option', 'treeitem'] as const) {
+      await expect(nav.getByRole(role, { name: /^\s*設定(パネル)?\s*$/ }), `左メニューに ${role}「設定」がある`).toHaveCount(0);
+    }
+    await expect(nav.getByText(/^\s*設定(パネル)?\s*$/), '左メニューに「設定」の文字の項目がある').toHaveCount(0);
+
+    // 上部のツールバーに、アクセシブルな名前「設定」のボタンがある（左メニューの外。AI の状態表示と同じ上部の段で、作業先の段より上ではない）
+    const btn = settingsButton(page);
+    await expect(btn, '上部にボタン「設定」がない').toBeVisible();
+    await expect(btn).toHaveRole('button');
+    await expect(btn).toHaveAccessibleName('設定');
+    expect(await btn.evaluate((e) => !!e.closest('nav, [role="navigation"]')), 'ボタン「設定」が左メニューの中にある').toBe(false);
+    const b = await box(btn);
+    const ai = await box(page.getByTestId('ai-status'));
+    expect(b.y < ai.y + ai.height && ai.y < b.y + b.height, `ボタン「設定」（y=${b.y}）が AI の状態表示（y=${ai.y}）と同じ上部の段にない`).toBe(true);
+    const wt = await box(page.getByTestId('work-target-menu'));
+    expect(b.y, 'ボタン「設定」が作業先の段より上にある').toBeGreaterThanOrEqual(wt.y - 1);
+    expect(await page.locator('body').innerText(), '「設定パネル」の文字が表示されている').not.toContain('設定パネル');
+
+    // クリックで開く: AC-519 のモーダル。最初の見出しが「設定」
+    await btn.click();
+    const modal = settingsDialog(page);
+    await expect(modal, 'クリックで設定のモーダルが開かない').toBeVisible();
+    await expect(modal).toHaveAttribute('aria-modal', 'true');
+    await expect(page.getByTestId('modal-backdrop')).toBeVisible();
+    await expect(modal.getByRole('heading').first(), '設定の最初の見出しが「設定」でない').toHaveText('設定');
+    expect(await page.locator('body').innerText(), '設定を開いた画面に「設定パネル」の文字がある').not.toContain('設定パネル');
+    await page.keyboard.press('Escape');
+    await expect(modal).toBeHidden();
+
+    // キーボード: Tab で到達して Enter／Space で開く
+    for (const key of ['Enter', 'Space'] as const) {
+      await tabToSettingsButton(page);
+      await page.keyboard.press(key);
+      await expect(modal, `${key} で設定が開かない`).toBeVisible();
+      await expect(modal.getByRole('heading').first()).toHaveText('設定');
+      await modal.getByRole('button', { name: '閉じる' }).click();
+      await expect(modal).toBeHidden();
+    }
+
+    // 幅 320px（PARAM-029）でも、上部からキーボードでボタン「設定」に到達して開ける
+    await page.setViewportSize({ width: 320, height: 800 });
+    await tabToSettingsButton(page);
+    const nb = await box(settingsButton(page));
+    expect(nb.x + nb.width, '幅 320px でボタン「設定」が画面の外').toBeLessThanOrEqual(321);
+    expect(nb.x).toBeGreaterThanOrEqual(-1);
+    await page.keyboard.press('Enter');
+    await expect(modal, '幅 320px で設定が開かない').toBeVisible();
+    await expect(modal.getByRole('heading').first()).toHaveText('設定');
+    await expect(modal.getByRole('heading').first()).toBeInViewport();
+    expect(await page.locator('body').innerText()).not.toContain('設定パネル');
+    await page.keyboard.press('Escape');
+    await expect(modal).toBeHidden();
   });
 });
 
@@ -465,7 +547,7 @@ test.describe('FR-225 Fluent 2 のコントラスト', () => {
         scanned++;
       }
       // 設定（モーダル）
-      await page.getByTestId('nav-settings').click();
+      await settingsButton(page).click(); // 上部のボタン「設定」（FR-223 AC-774）
       await expect(page.getByRole('dialog', { name: '設定' })).toBeVisible();
       text.push(...(await textContrastViolations(page)).map((x) => `設定: ${x}`));
       nonText.push(...(await nonTextContrastFailures(page)).map((x) => `設定: ${x}`));
@@ -495,7 +577,7 @@ async function visibleTextCount(page: Page, text: string): Promise<number> {
     for (let node = w.nextNode(); node; node = w.nextNode()) {
       if (!node.textContent?.replace(/\s+/g, ' ').includes(t)) continue;
       const el = node.parentElement;
-      if (!el) continue;
+      if (!el || el.closest('[role="menu"]')) continue;
       const r = el.getBoundingClientRect();
       const s = getComputedStyle(el);
       if (r.width > 0 && r.height > 0 && s.visibility !== 'hidden' && s.display !== 'none') n++;
@@ -506,32 +588,60 @@ async function visibleTextCount(page: Page, text: string): Promise<number> {
 
 test.describe('FR-226 「[顧客名] - [プロジェクト名]」の表示を 1 か所にする', () => {
   // FR-226 AC-525
-  test('FR-226 AC-525 企業・Project を選んだ分析画面で「[顧客名] - [プロジェクト名]」の表記がちょうど 1 か所で、作業先メニューの最上段にあり、現在の作業先が識別できる', async ({ page, start }) => {
+  test('FR-226 AC-525 閉じた分析画面上部の現在作業先は最上段に 1 表示だけあり、展開メニュー項目は数えない', async ({ page, start }) => {
     await start();
     await openNewProject(page, '合成株式会社A', '業務改善 2026');
     const label = '合成株式会社A - 業務改善 2026';
-    expect(await visibleTextCount(page, label), '「[顧客名] - [プロジェクト名]」の表示数').toBe(1);
+    expect(await visibleTextCount(page, label), '閉じた分析画面上部の可視表示数').toBe(1);
     const menu = page.getByTestId('work-target-menu');
     await expect(menu).toContainText(label);
     await expect(menu).toHaveAccessibleName(/合成株式会社A.*業務改善 2026/);
-    // 取り除いた側（上から 2 番目の行）が残っているなら、見える文字はなくても、現在の作業先を読める名前がある
-    const second = page.getByTestId('work-target');
-    if (await second.count()) await expect(second.first()).toHaveAccessibleName(/合成株式会社A.*業務改善 2026/);
     await menu.click();
-    await expect(page.getByRole('menu', { name: '作業先' }).getByRole('menuitemradio', { checked: true })).toHaveCount(1);
+    const expandedMenu = page.getByRole('menu', { name: '作業先' });
+    await expect(expandedMenu).toBeVisible();
+    await expect(expandedMenu.getByRole('menuitemradio', { checked: true })).toHaveCount(1);
+    await expect(expandedMenu.getByRole('menuitemradio', { name: /合成株式会社A.*業務改善 2026/ })).toBeVisible();
+    expect(await visibleTextCount(page, label), '展開中のナビゲーション項目と非可視名は重複表示に数えない').toBe(1);
+    const menuBox = await menu.boundingBox();
+    const stepperBox = await page.getByTestId('stepper').boundingBox();
+    expect(menuBox, '最上段の作業先メニューが表示される').not.toBeNull();
+    expect(stepperBox, '分析のステッパーが表示される').not.toBeNull();
+    expect(menuBox!.y, '作業先メニューがステッパーより上段にある').toBeLessThan(stepperBox!.y);
+    await page.keyboard.press('Escape');
+    await expect(expandedMenu).toBeHidden();
+    expect(await visibleTextCount(page, label), 'メニューを閉じた後も最上段だけに表示される').toBe(1);
   });
 
-  // FR-226 AC-525（異常系: 別の Project に移っても、表記は 1 か所のまま・前の Project の表記は残らない）
-  test('FR-226 AC-525 異常系: 別の Project を選び直しても、新しい作業先の表記が 1 か所で、前の作業先の表記は残らない', async ({ page, start }) => {
+  // FR-226 AC-525（異常系: 企業の選択だけでは表示先が変わらず、Project 確定後にだけ切り替わる）
+  test('FR-226 AC-525 異常系: 別企業の選択中は現在表示を維持し、Project 確定後は新表示だけが 1 か所に残る', async ({ page, start }) => {
     await start();
     await openNewProject(page, '合成株式会社A', '業務改善 2026');
     await page.getByRole('button', { name: 'Project 一覧へ' }).click();
-    await createProject(page, '合成株式会社A', '在庫最適化');
-    await page.getByTestId('work-target-menu').click();
-    await page.getByRole('menu', { name: '作業先' }).getByRole('menuitemradio', { name: /合成株式会社A.*在庫最適化/ }).click();
+    await page.getByRole('button', { name: '企業を登録' }).click();
+    const dlg = page.getByRole('dialog');
+    await dlg.getByRole('textbox', { name: '企業名' }).fill('合成株式会社B');
+    await dlg.getByRole('button', { name: '登録' }).click();
+    await expect(dlg).toBeHidden();
+    await createProject(page, '合成株式会社B', '需要予測');
+    await page.getByRole('region', { name: '企業 合成株式会社A' }).getByRole('link', { name: '業務改善 2026' }).click();
     await expect(page.getByTestId('stepper')).toBeVisible();
-    expect(await visibleTextCount(page, '合成株式会社A - 在庫最適化')).toBe(1);
-    expect(await visibleTextCount(page, '合成株式会社A - 業務改善 2026'), '前の作業先の表記が残る').toBe(0);
+    const menuButton = page.getByTestId('work-target-menu');
+    const menu = page.getByRole('menu', { name: '作業先' });
+    const oldLabel = '合成株式会社A - 業務改善 2026';
+    const newLabel = '合成株式会社B - 需要予測';
+    await menuButton.click();
+    await menu.getByRole('button', { name: '合成株式会社B', exact: true }).click();
+    await expect(menu.getByRole('menuitemradio', { name: /合成株式会社B/ })).toHaveCount(1);
+    await expect(menu.getByRole('menuitemradio', { name: /合成株式会社B.*需要予測/ })).toBeVisible();
+    await expect(menu.getByRole('menuitemradio', { name: /合成株式会社A.*業務改善 2026/ })).toHaveCount(0);
+    await expect(menuButton).toContainText('合成株式会社A');
+    await expect(menuButton).toContainText('業務改善 2026');
+    expect(await visibleTextCount(page, oldLabel), '企業だけ選んだ時点で現在作業先は変わらない').toBe(1);
+
+    await menu.getByRole('menuitemradio', { name: /合成株式会社B.*需要予測/ }).click();
+    await expect(page.getByTestId('stepper')).toBeVisible();
+    expect(await visibleTextCount(page, newLabel), '新しい現在作業先の可視表示数').toBe(1);
+    expect(await visibleTextCount(page, oldLabel), '前の作業先の可視表記が残る').toBe(0);
   });
 });
 

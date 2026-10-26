@@ -15,6 +15,7 @@ import { CAUSE_STATUS, buildPrompt, parseJsonText, FOUNDRY_MAX_INPUT_CHARS, crea
 import { openFoundryVault, type FoundryVault } from './foundry-vault';
 import { callFoundry, callFoundryWithInput, FoundryError, importWithFoundry, TOKEN_UNAVAILABLE_MESSAGE, type TokenProvider } from './foundry';
 import { buildReviewPrompt, parseReviewComponents, parseReviewReply } from './foundry-review';
+import { approxTokens, buildAnimationPrompt, buildStoryboardPrompt, parseAnimationHtml, parseStoryboard, parseUseCase } from './foundry-story-video';
 
 export const AI_KINDS = ['structure', 'summary', 'recommend', 'chat', 'exec-summary'] as const;
 export type AiKind = (typeof AI_KINDS)[number];
@@ -23,7 +24,7 @@ export type AiKind = (typeof AI_KINDS)[number];
 export interface CopilotSdk {
   /** サインイン済み・利用可能か */
   status(config?: CopilotConfig): Promise<{ signedIn: boolean }>;
-  complete(kind: AiKind, prompt: string, config?: CopilotConfig, canSend?: () => boolean): Promise<string>;
+  complete(kind: AiKind, prompt: string, config?: CopilotConfig, canSend?: () => boolean, options?: { maxOutputTokens?: number }): Promise<string>;
 }
 
 export interface RelayOptions {
@@ -139,14 +140,15 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
     const status = await opts.sdk.status(cfg).catch(() => ({ signedIn: false }));
     return isCurrent('', captured) && status.signedIn;
   };
-  const copilotComplete = async (packId: string, prompt: string) => {
+  const copilotComplete = async (packId: string, prompt: string, maxOutputTokens?: number) => {
     const captured = snapshot(packId);
     const canSend = () => captured.provider === 'copilot' && isCurrent(packId, captured) && foundryEnabled.has(packId);
     if (!canSend() || !opts.sdk || (captured.config.authMethod === 'token' && !captured.config.token)) throw new CopilotError('auth');
     const status = await opts.sdk.status(captured.config).catch(() => ({ signedIn: false }));
     if (!canSend() || !status.signedIn) throw new CopilotError('auth');
     // The real adapter repeats this check after its own startup/auth/session awaits.
-    return opts.sdk.complete('chat', prompt, captured.config, canSend);
+    // FR-276・FR-290: 出力の上限（PARAM-132 など）は Copilot SDK の経路にも適用する
+    return maxOutputTokens ? opts.sdk.complete('chat', prompt, captured.config, canSend, { maxOutputTokens }) : opts.sdk.complete('chat', prompt, captured.config, canSend);
   };
   const genai: FoundryService = opts.foundry ?? createFoundryService({ fetchFn: opts.foundryFetch, timeoutMs: opts.foundryTimeoutMs });
   const speechFetch = opts.speechFetch ?? ((u, i) => fetch(u, i));
@@ -170,7 +172,11 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
     void (async () => {
       try {
         if (path === '/ai/provider') {
-          if (req.method === 'GET') return json(200, { provider: provider.provider() });
+          if (req.method === 'GET') {
+            // FR-275 AC-773: packId を付けたときだけ、その案件の共通接続の実接続が有効か（enabled）も返す（上部の AI の状態表示用。認証情報は含めない）
+            const pid = new URL(req.url ?? '/', 'http://127.0.0.1').searchParams.get('packId');
+            return json(200, pid === null ? { provider: provider.provider() } : { provider: provider.provider(), enabled: foundryEnabled.has(pid) });
+          }
           if (req.method === 'PUT') {
             const b = JSON.parse((await readBody(req)) || '{}');
             if (b.provider !== 'foundry' && b.provider !== 'copilot') return json(400, { error: '接続先を確認してください' });
@@ -293,8 +299,11 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
         }
         // 「現状の説明」などの生成。条件が 1 つでも欠けると Foundry を呼ばない（呼び出し 0 回。FR-275 AC-706）
         if (req.method === 'POST' && path === '/foundry/ask') {
-          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; prompt?: string; consent?: boolean; includesPerson?: boolean; personConfirmed?: boolean };
+          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; prompt?: string; consent?: boolean; includesPerson?: boolean; personConfirmed?: boolean; maxOutputTokens?: unknown; timeoutSeconds?: unknown };
           if (typeof b.packId !== 'string' || !b.packId || typeof b.prompt !== 'string') return json(400, { error: 'packId・prompt が必要です' });
+          // FR-276・FR-290: 呼び出し元が出力の上限（PARAM-132 など）と応答待ちの上限（PARAM-127 など）を指定できる。範囲外は無視する
+          const askMaxOut = typeof b.maxOutputTokens === 'number' && Number.isFinite(b.maxOutputTokens) && b.maxOutputTokens >= 1 ? Math.min(Math.floor(b.maxOutputTokens), 32000) : undefined;
+          const askTimeoutMs = opts.foundryTimeoutMs ?? (typeof b.timeoutSeconds === 'number' && Number.isFinite(b.timeoutSeconds) && b.timeoutSeconds >= 1 ? Math.min(b.timeoutSeconds, 600) * 1000 : undefined);
           const unavailable = (reason: string, message: string, status = 200) => json(status, { mode: 'unavailable', reason, message });
           if (b.consent !== true) return unavailable('consent', '顧客の了承の記録がないため、AI は使えません');
           if (!foundryEnabled.has(b.packId)) return unavailable('disabled', 'Foundry の実接続が有効ではありません');
@@ -302,9 +311,9 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           if (provider.provider() === 'foundry' && !secret) return unavailable('not-configured', 'Foundry の接続情報が未設定です');
           if (b.includesPerson === true && b.personConfirmed !== true) return unavailable('person-unconfirmed', '種別「人」を含む顧客パックは、送信前の確認が必要です');
           try {
-            const answer = provider.provider() === 'copilot' ? await copilotComplete(b.packId, b.prompt) : secret!.authMethod === 'entra'
-              ? await callFoundryWithInput(secret!, b.prompt, opts.foundryFetch, opts.foundryTimeoutMs, opts.foundryToken)
-              : await callFoundry(secret!, b.prompt, opts.foundryFetch, opts.foundryTimeoutMs);
+            const answer = provider.provider() === 'copilot' ? await copilotComplete(b.packId, b.prompt, askMaxOut) : secret!.authMethod === 'entra'
+              ? await callFoundryWithInput(secret!, b.prompt, opts.foundryFetch, askTimeoutMs, opts.foundryToken, askMaxOut)
+              : await callFoundry(secret!, b.prompt, opts.foundryFetch, askTimeoutMs, askMaxOut);
             return json(200, { answer, mode: 'connected' });
           } catch (e) {
             const kind = e instanceof FoundryError || e instanceof CopilotError ? e.kind : 'network';
@@ -362,6 +371,37 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
             const kind = e instanceof FoundryError || e instanceof CopilotError ? e.kind : 'network';
             const status = /HTTP (\d+)/.exec(e instanceof Error ? e.message : '')?.[1];
             return fail(kind === 'timeout' ? 504 : 502, kind === 'http' ? 'upstream-status' : kind, status ? { status: Number(status) } : {});
+          }
+        }
+        // ---- FR-291: ストーリー動画。FR-275 の共通接続だけを使う。条件が 1 つでも欠けると Foundry を呼ばない（呼び出し 0 回）。応答・エラーに認証情報は含めない ----
+        if (req.method === 'POST' && path === '/foundry/story-video') {
+          if (provider.provider() === 'copilot') return json(409, { error: { cause: 'unsupported', message: 'Copilot SDK では未対応です。ストーリー動画には Microsoft Foundry を選択してください' } });
+          const b = JSON.parse((await readBody(req)) || '{}') as {
+            packId?: string; kind?: string; usecase?: unknown; consent?: boolean; confirmed?: boolean; includesPerson?: boolean; personConfirmed?: boolean; maxOutputTokens?: number;
+          };
+          const fail = (status: number, cause: string, extra: Record<string, unknown> = {}) => json(status, { error: { cause, ...extra } });
+          const uc = parseUseCase(b.usecase);
+          if (typeof b.packId !== 'string' || !b.packId || (b.kind !== 'storyboard' && b.kind !== 'animation') || !uc) return fail(400, 'bad-request');
+          if (b.consent !== true) return fail(403, 'consent');
+          if (!foundryEnabled.has(b.packId)) return fail(403, 'disabled');
+          const secret = getFoundry().importSecret();
+          if (!secret) return fail(503, 'key-missing');
+          if (b.includesPerson === true && b.personConfirmed !== true) return fail(403, 'person-unconfirmed');
+          if (b.confirmed !== true) return fail(400, 'unconfirmed');
+          const maxOut = Number.isFinite(b.maxOutputTokens) && Number(b.maxOutputTokens) > 0 ? Math.min(Math.floor(Number(b.maxOutputTokens)), 16000) : 4000;
+          const prompt = b.kind === 'storyboard' ? buildStoryboardPrompt(uc) : buildAnimationPrompt(uc);
+          try {
+            const text = await callFoundryWithInput(secret, prompt, opts.foundryFetch, opts.foundryTimeoutMs ?? 120_000, opts.foundryToken, maxOut);
+            const usage = { inputTokens: approxTokens(prompt.length), outputTokens: approxTokens(text.length) };
+            if (b.kind === 'storyboard') {
+              const scenes = parseStoryboard(text);
+              return scenes ? json(200, { scenes, usage }) : fail(502, 'format');
+            }
+            const html = parseAnimationHtml(text);
+            return html ? json(200, { html, usage }) : fail(502, 'format');
+          } catch (e) {
+            const kind = e instanceof FoundryError || e instanceof CopilotError ? e.kind : 'network';
+            return fail(kind === 'timeout' ? 504 : 502, kind === 'http' ? 'upstream-status' : kind);
           }
         }
         if (req.method === 'POST' && path === '/speech/synthesize') {
