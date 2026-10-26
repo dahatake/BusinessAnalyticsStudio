@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import { loadPack, loadRuntimeConfig, PackLoadError, type LoadedPack, type RuntimeConfig } from '../data/loader';
 import { formatPackError, type PackData } from '../schema';
+import { useProjects } from './projects';
+import { readProjectPack, saveProjectPack } from './projectPacks';
 
 export type PackState =
   | { status: 'loading' }
@@ -24,17 +26,33 @@ export const usePackStore = create<PackStore>((set, get) => ({
   state: { status: 'loading' },
   runtime: {},
   original: null,
-  setData: (data) => set((s) => (s.state.status === 'ready' ? { state: { ...s.state, pack: { ...s.state.pack, data } } } : s)),
+  setData: (data) => {
+    if (get().state.status !== 'ready') return;
+    saveProjectPack(useProjects.getState().openId, data);
+    set((s) => (s.state.status === 'ready' ? { state: { ...s.state, pack: { ...s.state.pack, data } } } : s));
+  },
   load: async () => {
     set({ state: { status: 'loading' } });
     const fetchFn = (url: string) => fetch(url, { cache: 'no-store' });
     const runtime = await loadRuntimeConfig(fetchFn);
     try {
       const pack = await loadPack(fetchFn);
-      set({ runtime, original: pack.data, state: { status: 'ready', pack, warnings: pack.issues.map(formatPackError) } });
+      const data = readProjectPack(useProjects.getState().openId, pack.brand) ?? pack.data;
+      set({ runtime, original: pack.data, state: { status: 'ready', pack: { ...pack, data }, warnings: pack.issues.map(formatPackError) } });
     } catch (e) {
       const messages = e instanceof PackLoadError ? e.errors.map(formatPackError) : [String(e)];
       set({ runtime, state: { status: 'error', messages } });
     }
   },
 }));
+
+// FR-043 AC-054: 同じProjectを開き直しても配信元へ置き換えない。
+// 別Project・デモへ移った場合だけ、その作業先の保存内容（なければ配信元）へ切り替える。
+useProjects.subscribe((next, previous) => {
+  if (next.openId === previous.openId) return;
+  const current = usePackStore.getState();
+  if (current.state.status !== 'ready' || !current.original) return;
+  const state = current.state;
+  const data = readProjectPack(next.openId, state.pack.brand) ?? current.original;
+  usePackStore.setState({ state: { ...state, pack: { ...state.pack, data } } });
+});

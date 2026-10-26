@@ -133,10 +133,11 @@ describe('FR-158 AC-285 保存と Project の分離', () => {
     expect(useUseCases.getState().byProject['project-A']!.items).toHaveLength(0);
   });
 
-  it('ステッパーの「ユースケース作成」は、対応画面（ミニ・モックアプリ）を変えずに、ユースケースの登録を追加の入口として開く', () => {
+  it('FR-043 AC-054 ステッパーの「ユースケース作成」はユースケースへ直接移動する', () => {
     const step = STEPS.find((s) => s.key === 'usecase')!;
-    expect(step.screen).toBe('mock-app');
-    expect(step.also).toEqual(['usecase']);
+    expect(step.screen).toBe('usecase');
+    expect(step.also).toBeUndefined();
+    expect(step.screens).not.toContain('mock-app');
     expect(step.screens).toContain('usecase');
   });
 });

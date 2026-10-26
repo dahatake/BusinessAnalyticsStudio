@@ -80,11 +80,6 @@
           "minLength": 1,
           "maxLength": 120
         },
-        "mock-app": {
-          "type": "string",
-          "minLength": 1,
-          "maxLength": 120
-        },
         "usecase": {
           "type": "string",
           "minLength": 1,
@@ -124,6 +119,11 @@
           "type": "string",
           "minLength": 1,
           "maxLength": 120
+        },
+        "mock-app": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
         }
       },
       "required": [
@@ -142,7 +142,6 @@
         "kpi-okr",
         "twin-view",
         "sources",
-        "mock-app",
         "usecase",
         "data-catalog",
         "spatial-view",
