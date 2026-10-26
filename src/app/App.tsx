@@ -55,6 +55,7 @@ import { MainScreen } from '../projects/MainScreen';
 import { GuideButton, GuideHost, WelcomeAuto } from '../guide';
 import { useMainScreen } from '../store/mainScreen';
 import { useSettingsModal } from '../store/settingsModal';
+import { SettingsButton } from '../screens/SettingsButton';
 import { SettingsDialog } from '../screens/SettingsDialog';
 
 // モーダルの画面（設定。FR-223）は、ワークスペースのコンポーネントではない
@@ -195,7 +196,7 @@ export function App() {
         screens={NAV_SCREENS /* FR-220 AC-590: 左メニューには nav: false の画面を出さない */}
         onSelect={onSelect}
         stepper={<Stepper onNavigate={onSelect} />}
-        headerExtra={<><CopilotReviewButton /><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><ExplainButton /><AiStatus /></>}
+        headerExtra={<><CopilotReviewButton /><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><ExplainButton /><span style={{ display: 'inline-flex', alignItems: 'center', flexWrap: 'nowrap', columnGap: tokens.spacingHorizontalS }}><AiStatus /><SettingsButton /></span></>}
         actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><AutoSizeSwitch /><ScreenViewButton /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /><GuideButton /></>}
         dock={<Dock screens={COMPONENT_SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
