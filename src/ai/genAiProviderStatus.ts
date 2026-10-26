@@ -1,11 +1,12 @@
 // 画面上部の AI の状態表示に出す、生成AIの共通接続（POST /foundry/*）の接続先と有効／モック（FR-275 AC-773）。
 // POST /ask（FR-132）の接続状態は含めない（監査 C-01）。キー・トークンの値は扱わない（中継の GET /ai/provider?packId= の provider・enabled だけを使う）。
 // 読むだけで、/foundry/* には要求を送らない（実接続の既定のままでは /foundry/* への要求 0 回。FR-285 AC-739）。
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePackStore } from '../store/pack';
 import { useSettingsModal } from '../store/settingsModal';
 import { isLoopbackUrl } from './client';
 import { FOUNDRY_CHANGED_EVENT } from './foundryClient';
+import { confirmedSendKinds } from './sendKinds';
 
 export type GenAiProvider = 'foundry' | 'copilot';
 
@@ -42,23 +43,48 @@ export async function fetchGenAiState(relayUrl: string | undefined, packId: stri
   }
 }
 
-/** 共通接続の状態を中継から読み、設定の変更（FOUNDRY_CHANGED_EVENT）・設定を閉じたとき・案件の切替で読み直す */
+/**
+ * 起動時・案件の切替で中継に状態を問い合わせてよいか（NFR-SEC-004 AC-218）。
+ * この端末で共通接続を確認して有効化した記録（sendKinds）がある案件だけ問い合わせる。
+ * 記録がない既定の状態では中継への要求 0 回で、ローカルの既定（Microsoft Foundry・モック）を表示する
+ */
+export function mayQueryProviderOnLoad(packId: string): boolean {
+  return !!packId && confirmedSendKinds(packId).length > 0;
+}
+
+/**
+ * 共通接続の状態を中継から読む（FR-275 AC-773）。起動時・案件の切替では有効化の記録があるときだけ読み（AC-218）、
+ * 利用者が設定を操作したとき（FOUNDRY_CHANGED_EVENT・設定を閉じたとき）に読み直す
+ */
 export function useGenAiProviderStatus(): GenAiProviderState {
   const relay = usePackStore((s) => s.runtime.relayUrl);
   const pack = usePackStore((s) => s.state);
   const packId = pack.status === 'ready' ? pack.pack.data.customer.name : '';
   const settingsOpen = useSettingsModal((s) => s.open);
   const [state, setState] = useState<GenAiProviderState>({ provider: 'foundry', enabled: false });
+  const seq = useRef(0);
+  const prevOpen = useRef(settingsOpen);
+  const load = useRef<() => void>(() => {});
+  load.current = (): void => {
+    const my = ++seq.current;
+    void fetchGenAiState(relay, packId).then((v) => { if (my === seq.current) setState(v); });
+  };
+  // 起動時・案件の切替: 有効化の記録がなければ問い合わせずに既定を表示する
   useEffect(() => {
-    let alive = true;
-    let seq = 0;
-    const load = (): void => {
-      const my = ++seq;
-      void fetchGenAiState(relay, packId).then((v) => { if (alive && my === seq) setState(v); });
-    };
-    load();
-    window.addEventListener(FOUNDRY_CHANGED_EVENT, load);
-    return () => { alive = false; window.removeEventListener(FOUNDRY_CHANGED_EVENT, load); };
-  }, [relay, packId, settingsOpen]);
+    seq.current++;
+    if (mayQueryProviderOnLoad(packId)) load.current();
+    else setState(toGenAiState(null));
+  }, [relay, packId]);
+  // 設定の変更（接続先の選択・有効化・解除）で読み直す
+  useEffect(() => {
+    const on = (): void => load.current();
+    window.addEventListener(FOUNDRY_CHANGED_EVENT, on);
+    return () => { seq.current++; window.removeEventListener(FOUNDRY_CHANGED_EVENT, on); };
+  }, []);
+  // 設定を閉じたときに読み直す（開いている間に選んだ接続先を反映する）
+  useEffect(() => {
+    if (prevOpen.current && !settingsOpen) load.current();
+    prevOpen.current = settingsOpen;
+  }, [settingsOpen]);
   return state;
 }

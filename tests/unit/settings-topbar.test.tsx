@@ -12,8 +12,9 @@ vi.mock('../../src/store/pack', () => ({
 
 import { SettingsButton } from '../../src/screens/SettingsButton';
 import { useSettingsModal } from '../../src/store/settingsModal';
-import { genAiStatusLabel, providerDisplayName, toGenAiState, useGenAiProviderStatus } from '../../src/ai/genAiProviderStatus';
+import { genAiStatusLabel, mayQueryProviderOnLoad, providerDisplayName, toGenAiState, useGenAiProviderStatus } from '../../src/ai/genAiProviderStatus';
 import { notifyFoundryChanged } from '../../src/ai/foundryClient';
+import { clearConfirmedSendKinds, recordConfirmedSendKinds } from '../../src/ai/sendKinds';
 
 const SECRET = 'dummy-key-unit-773';
 let provider = 'foundry';
@@ -31,7 +32,7 @@ beforeEach(() => {
     throw new Error('unexpected request');
   }));
 });
-afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
+afterEach(() => { cleanup(); vi.unstubAllGlobals(); clearConfirmedSendKinds('P'); });
 
 function Probe() {
   const s = useGenAiProviderStatus();
@@ -84,5 +85,33 @@ describe('FR-275 上部の AI の状態表示の接続先', () => {
     act(() => { useSettingsModal.getState().setOpen(false); });
     await waitFor(() => expect(screen.getByTestId('probe').textContent).toBe('生成AI: GitHub Copilot（有効）'));
     expect(document.body.textContent).not.toContain(SECRET);
+  });
+});
+
+describe('NFR-SEC-004 外部 AI への送信を許可しない既定では、状態表示も中継に問い合わせない（回帰）', () => {
+  // NFR-SEC-004 AC-218 / FR-275 AC-773
+  it('NFR-SEC-004 AC-218 有効化の記録がない既定では起動時の中継への要求 0 回で Microsoft Foundry・モックを表示し、設定を操作したときだけ読み直す', async () => {
+    const f = globalThis.fetch as unknown as ReturnType<typeof vi.fn>;
+    expect(mayQueryProviderOnLoad('P')).toBe(false);
+    expect(mayQueryProviderOnLoad('')).toBe(false);
+    render(<Probe />);
+    expect(screen.getByTestId('probe').textContent).toBe('生成AI: Microsoft Foundry（モック）');
+    await new Promise((r) => setTimeout(r, 50));
+    expect(f).toHaveBeenCalledTimes(0);
+    // 利用者が設定を開いて閉じたときは読み直す（AC-773）
+    provider = 'copilot';
+    act(() => { useSettingsModal.getState().setOpen(true); });
+    act(() => { useSettingsModal.getState().setOpen(false); });
+    await waitFor(() => expect(screen.getByTestId('probe').textContent).toBe('生成AI: GitHub Copilot（モック）'));
+    expect(f).toHaveBeenCalledTimes(1);
+  });
+
+  // FR-275 AC-773
+  it('FR-275 AC-773 この端末で確認して有効化した記録がある案件は、起動時に状態を読み「有効」を表示する', async () => {
+    recordConfirmedSendKinds('P');
+    expect(mayQueryProviderOnLoad('P')).toBe(true);
+    enabled = true;
+    render(<Probe />);
+    await waitFor(() => expect(screen.getByTestId('probe').textContent).toBe('生成AI: Microsoft Foundry（有効）'));
   });
 });
