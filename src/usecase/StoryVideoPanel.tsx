@@ -14,7 +14,7 @@ import { AI_SCOPE_LABEL, confirmViaUi, consentOf, countPersons, gatePersonConfir
 import { browserUsageStore, currentUsage, recordCall } from '../ai/aiImportLogic';
 import { toDraft, type UseCase } from './model';
 import {
-  STORY_VIDEO_BUDGET_YEN, STORY_VIDEO_SANDBOX, appendUsageLog, browserLogStore, browserPriceStore, currentPrices, planStoryVideo, requestStoryVideo,
+  STORY_VIDEO_BUDGET_YEN, STORY_VIDEO_SANDBOX, appendUsageLog, browserLogStore, browserPriceStore, currentPrices, isValidPrices, PRICE_MISSING_GUIDE, planStoryVideo, requestStoryVideo,
   runStoryVideo, storyVideoAvailability, storyVideoState, toSrcDoc, validateAnimationHtml, yen,
   type Plan, type Prices, type StoryVideo, type StoryVideoState,
 } from './storyVideo';
@@ -72,6 +72,7 @@ export function StoryVideoItemActions({ uc, video }: { uc: UseCase; video: Story
     if (!avail.available) { useStoryVideoUi.getState().patch({ notice: { ucId: uc.id, text: avail.guide } }); return; }
     if (uc.steps.length === 0) { useStoryVideoUi.getState().patch({ notice: { ucId: uc.id, text: '手順がないため、ストーリー動画を作成できません。「編集」から手順を追加して保存してください。' } }); return; }
     const prices = currentPrices();
+    if (!prices) { useStoryVideoUi.getState().patch({ notice: { ucId: uc.id, text: PRICE_MISSING_GUIDE } }); return; }
     useStoryVideoUi.getState().patch({ confirm: { ucId: uc.id, plan: planStoryVideo(toDraft(uc), prices, currentUsage(browserUsageStore, new Date())), prices } });
   };
 
@@ -109,7 +110,7 @@ export function StoryVideoSection({ projectId, items, videos }: { projectId: str
 
   const confirm = ui.confirm;
   const setPrice = (p: Prices): void => {
-    if (!confirm) return;
+    if (!confirm || !isValidPrices(p)) return;
     browserPriceStore.set(p);
     const uc = items.find((u) => u.id === confirm.ucId);
     if (uc) ui.patch({ confirm: { ucId: uc.id, prices: p, plan: planStoryVideo(toDraft(uc), p, currentUsage(browserUsageStore, new Date())) } });

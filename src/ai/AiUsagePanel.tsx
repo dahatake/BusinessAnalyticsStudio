@@ -5,6 +5,30 @@ import { Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, I
 import { Dialog, DialogSurface } from '../components/Dialog';
 import { checkUsage, rollover, useUsageStore } from './foundryUsage';
 import { tokens } from '../theme/tokens';
+import { DEFAULT_PRICES, browserPriceStore, currentPrices, isValidPrices } from '../usecase/storyVideo';
+
+/** ストーリー動画の単価（PARAM-130・AC-784）。未入力のときは入力欄に既定の値を初期表示するだけで、実行には使わない */
+function StoryVideoPriceSettings() {
+  const saved = currentPrices();
+  const [pin, setPin] = useState(String((saved ?? DEFAULT_PRICES).inPerM));
+  const [pout, setPout] = useState(String((saved ?? DEFAULT_PRICES).outPerM));
+  const [state, setState] = useState<string | null>(null);
+  const save = () => {
+    const p = { inPerM: Number(pin), outPerM: Number(pout) };
+    if (pin.trim() === '' || pout.trim() === '' || !isValidPrices(p)) { setState('単価は 0 より大きい数で入力してください。'); return; }
+    browserPriceStore.set(p);
+    setState('単価を保存しました。');
+  };
+  return (
+    <div data-testid="story-video-prices" style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS }}>
+      <Text weight="semibold">ストーリー動画の単価（{saved ? '入力済み' : '未入力'}。入力すると作成を始められます）</Text>
+      <Field label="ストーリー動画の単価・入力（円／100万トークン）"><Input value={pin} inputMode="decimal" onChange={(_, d) => setPin(d.value)} /></Field>
+      <Field label="ストーリー動画の単価・出力（円／100万トークン）"><Input value={pout} inputMode="decimal" onChange={(_, d) => setPout(d.value)} /></Field>
+      <div><Button appearance="secondary" onClick={save}>単価を保存</Button></div>
+      {state ? <Text size={200} role="status">{state}</Text> : null}
+    </div>
+  );
+}
 
 export function AiUsagePanel() {
   const limits = useUsageStore((s) => s.limits);
@@ -52,6 +76,7 @@ export function AiUsagePanel() {
         <Input value={priceOut} inputMode="decimal" onChange={(_, d) => setPriceOut(d.value)} />
       </Field>
       <div><Button appearance="secondary" onClick={save}>保存</Button></div>
+      <StoryVideoPriceSettings />
       <Dialog open={pending !== null} modalType="alert" onOpenChange={(_, d) => { if (!d.open) setPending(null); }}>
         <DialogSurface>
           <DialogBody>
