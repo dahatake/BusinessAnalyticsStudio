@@ -12,7 +12,7 @@ import { usePackStore } from '../../src/store/pack';
 import { usePresentationStore } from '../../src/store/presentation';
 import { useStoryStore } from '../../src/store/story';
 import { useAnimation } from '../../src/store/animation';
-import { resetProjects } from '../../src/store/projects';
+import { resetProjects, useProjects } from '../../src/store/projects';
 import { useUseCases } from '../../src/store/usecases';
 import { useConsentStore } from '../../src/ai/useConsent';
 import { consentKeyOf } from '../../src/ai/consent';
@@ -160,5 +160,48 @@ describe('FR-290 「生成 AI で作成」の画面', () => {
     expect(confirmedSendKinds('X')).toEqual(SEND_KINDS.map((k) => k.id));
     await setFoundryConnection(RELAY, 'X', false, { consent: true, confirmed: false });
     expect(confirmedSendKinds('X')).toEqual([]);
+  });
+
+  // FR-290 AC-776: すべての文を除いたときは、エラーではなく除去の通知と「生成 AI を使わずに開始」を示す
+  it('FR-290 AC-776 生成文がすべて材料にない数値・名称を含むときは、エラーではなく除いた旨の通知と「生成 AI を使わずに開始」を示す', async () => {
+    consent(); recordConfirmedSendKinds(packId);
+    const bad = JSON.stringify({ scenes: [1, 2, 3, 4].map((p) => ({ part: p, heading: '「架空ソリューションZ」', narration: '売上が九百九十九億円増えます。' })) });
+    askHandler = async () => new Response(JSON.stringify({ answer: bad, mode: 'connected' }), { status: 200 });
+    open();
+    fireEvent.click(screen.getByRole('checkbox', { name: '生成 AI で作成' }));
+    fireEvent.click(screen.getByRole('button', { name: '経営層' }));
+    const note = await screen.findByTestId('story-genai-removed');
+    expect(note.textContent).toMatch(/8 文.*表示しませんでした/);
+    expect(screen.queryByTestId('story-genai-error')).toBeNull();
+    expect(asks()).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: '生成 AI を使わずに開始' }));
+    expect(screen.getByTestId('story-scene')).toBeTruthy();
+    expect(screen.queryByText('AI 生成')).toBeNull();
+  });
+
+  // FR-290 AC-785: Project の企業が外部 AI への送信を許可していなければ呼び出し 0 回。許可すると呼ばれ、取り消すと 0 回
+  it('FR-290 AC-785 開いている Project の企業が許可していない（既定）ときは呼び出し 0 回で理由（許可）と「生成 AI を使わずに開始」を示し、許可で 1 回、取り消しで 0 回', async () => {
+    consent(); recordConfirmedSendKinds(packId);
+    const pj = useProjects.getState();
+    const co = pj.addCompany('許可合成社QB96'); if (!co.ok) throw new Error(co.reason);
+    const pr = useProjects.getState().addProject(co.id, '許可案件QB96'); if (!pr.ok) throw new Error(pr.reason);
+    act(() => useProjects.getState().open(pr.id));
+    open();
+    fireEvent.click(screen.getByRole('checkbox', { name: '生成 AI で作成' }));
+    fireEvent.click(screen.getByRole('button', { name: '経営層' }));
+    expect((await screen.findByTestId('story-genai-error')).textContent).toMatch(/許可/);
+    expect(screen.getByRole('button', { name: '生成 AI を使わずに開始' })).toBeTruthy();
+    expect(asks()).toHaveLength(0);
+    act(() => { useStoryStore.getState().reset(); useProjects.getState().setAiAllowed(co.id, true); });
+    act(() => useStoryStore.getState().startGenai('経営層'));
+    await screen.findByTestId('story');
+    expect(asks()).toHaveLength(1);
+    const body = asks()[0]!.body!;
+    expect(body).toContain('経営層');
+    act(() => { useStoryStore.getState().reset(); useProjects.getState().setAiAllowed(co.id, false); });
+    clock += 60_000; vi.setSystemTime(clock);
+    act(() => useStoryStore.getState().startGenai('経営層'));
+    expect((await screen.findByTestId('story-genai-error')).textContent).toMatch(/許可/);
+    expect(asks()).toHaveLength(1);
   });
 });

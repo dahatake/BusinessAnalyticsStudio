@@ -7,6 +7,8 @@ import type { StoryPersona, StoryScene } from '../story/model';
 export type StoryGenaiPhase =
   | { phase: 'running'; persona: StoryPersona; runId: number }
   | { phase: 'error'; persona: StoryPersona; reasonText: string }
+  /** 生成された文をすべて除いた（エラーではない。FR-290 AC-776） */
+  | { phase: 'removed'; persona: StoryPersona; message: string }
   | { phase: 'reconfirm'; persona: StoryPersona; added: Array<{ id: string; label: string }> };
 
 export interface AiStory {
@@ -14,7 +16,7 @@ export interface AiStory {
   provider: 'foundry' | 'copilot';
   /** 入力を上限に合わせて切り詰めた */
   truncated: boolean;
-  /** 材料にない数値を含むため表示しなかった文の数 */
+  /** 材料にない数値・名称を含むため表示しなかった文の数 */
   removed: number;
 }
 

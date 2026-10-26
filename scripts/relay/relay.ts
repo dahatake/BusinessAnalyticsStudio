@@ -23,7 +23,7 @@ export type AiKind = (typeof AI_KINDS)[number];
 export interface CopilotSdk {
   /** サインイン済み・利用可能か */
   status(config?: CopilotConfig): Promise<{ signedIn: boolean }>;
-  complete(kind: AiKind, prompt: string, config?: CopilotConfig, canSend?: () => boolean): Promise<string>;
+  complete(kind: AiKind, prompt: string, config?: CopilotConfig, canSend?: () => boolean, options?: { maxOutputTokens?: number }): Promise<string>;
 }
 
 export interface RelayOptions {
@@ -139,14 +139,15 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
     const status = await opts.sdk.status(cfg).catch(() => ({ signedIn: false }));
     return isCurrent('', captured) && status.signedIn;
   };
-  const copilotComplete = async (packId: string, prompt: string) => {
+  const copilotComplete = async (packId: string, prompt: string, maxOutputTokens?: number) => {
     const captured = snapshot(packId);
     const canSend = () => captured.provider === 'copilot' && isCurrent(packId, captured) && foundryEnabled.has(packId);
     if (!canSend() || !opts.sdk || (captured.config.authMethod === 'token' && !captured.config.token)) throw new CopilotError('auth');
     const status = await opts.sdk.status(captured.config).catch(() => ({ signedIn: false }));
     if (!canSend() || !status.signedIn) throw new CopilotError('auth');
     // The real adapter repeats this check after its own startup/auth/session awaits.
-    return opts.sdk.complete('chat', prompt, captured.config, canSend);
+    // FR-276・FR-290: 出力の上限（PARAM-132 など）は Copilot SDK の経路にも適用する
+    return maxOutputTokens ? opts.sdk.complete('chat', prompt, captured.config, canSend, { maxOutputTokens }) : opts.sdk.complete('chat', prompt, captured.config, canSend);
   };
   const genai: FoundryService = opts.foundry ?? createFoundryService({ fetchFn: opts.foundryFetch, timeoutMs: opts.foundryTimeoutMs });
   const speechFetch = opts.speechFetch ?? ((u, i) => fetch(u, i));
@@ -309,7 +310,7 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           if (provider.provider() === 'foundry' && !secret) return unavailable('not-configured', 'Foundry の接続情報が未設定です');
           if (b.includesPerson === true && b.personConfirmed !== true) return unavailable('person-unconfirmed', '種別「人」を含む顧客パックは、送信前の確認が必要です');
           try {
-            const answer = provider.provider() === 'copilot' ? await copilotComplete(b.packId, b.prompt) : secret!.authMethod === 'entra'
+            const answer = provider.provider() === 'copilot' ? await copilotComplete(b.packId, b.prompt, askMaxOut) : secret!.authMethod === 'entra'
               ? await callFoundryWithInput(secret!, b.prompt, opts.foundryFetch, askTimeoutMs, opts.foundryToken, askMaxOut)
               : await callFoundry(secret!, b.prompt, opts.foundryFetch, askTimeoutMs, askMaxOut);
             return json(200, { answer, mode: 'connected' });

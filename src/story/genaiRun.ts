@@ -12,11 +12,12 @@ import {
 import type { StoryScene } from './model';
 
 export type StoryUnavailable =
-  | 'consent' | 'relay' | 'not-configured' | 'disabled' | 'person-unconfirmed'
+  | 'company' | 'consent' | 'relay' | 'not-configured' | 'disabled' | 'person-unconfirmed'
   | 'daily-limit' | 'budget' | 'error' | 'timeout' | 'invalid';
 
 /** 理由の文（接続先に依らない書き方） */
 export const STORY_REASON_TEXT: Record<StoryUnavailable, string> = {
+  company: 'この Project の企業は外部 AI への送信を許可していないため、生成 AI に接続しませんでした（企業の設定の「外部 AI への送信を許可する」で許可できます）',
   consent: '顧客の了承の記録がないため、生成 AI へ送信できません',
   relay: '中継プロセスに届かないため、生成 AI に接続できません（`npm run relay` で起動しているか確認してください）',
   'not-configured': '生成 AI の接続情報が未設定のため、接続できません（設定画面で設定できます）',
@@ -29,6 +30,20 @@ export const STORY_REASON_TEXT: Record<StoryUnavailable, string> = {
   invalid: '生成 AI の出力の形式が想定と異なるため、接続の結果を採用しませんでした',
 };
 
+/**
+ * 開いている作業先の企業の許可（FR-140・FR-290 AC-785）。実際の Project では、その企業の「外部 AI への送信を許可する」だけを見る（既定は許可なし）。
+ * Project を開いていない（お手本パックのデモ）ときは undefined（許可は不要）。
+ */
+export function companyAllowedOf(s: { openId: string | null; projects: ReadonlyArray<{ id: string; companyId: string }>; companies: ReadonlyArray<{ id: string; aiAllowed?: boolean }> }): boolean | undefined {
+  if (!s.openId) return undefined;
+  const project = s.projects.find((p) => p.id === s.openId);
+  return s.companies.find((c) => c.id === project?.companyId)?.aiAllowed === true;
+}
+
+/** すべての文を除いたときの通知（FR-290 AC-776） */
+export const allRemovedText = (n: number): string =>
+  `生成 AI が作った ${n} 文は、すべて材料にない数値・名称（解決策・KPI/OKR・ユースケース）を含むため表示しませんでした`;
+
 export const PROVIDER_LABEL: Record<'foundry' | 'copilot', string> = { foundry: 'Microsoft Foundry', copilot: 'GitHub Copilot SDK' };
 
 export interface StoryGenaiDeps {
@@ -36,6 +51,8 @@ export interface StoryGenaiDeps {
   limits: () => ExplainLimits;
   usage: { get: () => UsageState; set: (s: UsageState) => void };
   consent: boolean;
+  /** 開いている Project の企業が外部 AI への送信を許可しているか（FR-140・FR-290 AC-785）。undefined はお手本パックのデモ（許可は不要） */
+  companyAllowed?: boolean;
   includesPerson?: boolean;
   confirmPerson?: () => Promise<{ allowed: boolean }>;
   fetchView: () => Promise<FoundryView | null>;
@@ -52,6 +69,8 @@ export const newStorySession = (): StoryGenaiSession => ({ lastStartMs: null, in
 export type StoryGenaiOutcome =
   | { kind: 'ai'; scenes: StoryScene[]; provider: 'foundry' | 'copilot'; truncated: boolean; removed: number }
   | { kind: 'unavailable'; reason: StoryUnavailable; reasonText: string }
+  /** 生成された文がすべて材料にない数値・名称を含むため除いた（エラーではなく除去の通知。FR-290 AC-776） */
+  | { kind: 'all-removed'; removed: number; provider: 'foundry' | 'copilot'; message: string }
   | { kind: 'reconfirm'; added: Array<{ id: string; label: string }> }
   | { kind: 'wait'; waitSec: number; message: string }
   | { kind: 'busy'; message: string }
@@ -71,6 +90,8 @@ export async function runStoryGenai(
   const wait = intervalWait(session.lastStartMs, now.getTime(), limits);
   if (wait > 0) return { kind: 'wait', waitSec: wait, message: `前回の作成から ${limits.minIntervalSec} 秒たっていません。あと ${wait} 秒待ってから作成してください` };
 
+  // FR-290 AC-785: Project の企業が外部 AI への送信を許可していなければ、呼び出さない（FR-140。お手本パックのデモは対象外）
+  if (deps.companyAllowed === false) return unavailable('company');
   // AC-776: 了承・中継・接続情報・実接続の有効のどれかが欠けたら、呼び出さない
   if (!deps.consent) return unavailable('consent');
   const view = await deps.fetchView();
@@ -118,7 +139,11 @@ export async function runStoryGenai(
     const gen = parseGenaiScenes(r.answer);
     if (!gen) return unavailable('invalid');
     const composed = composeGenaiStory(base, gen, renderMaterials(materials));
-    if (!composed.scenes.some((s) => s.aiHeading || (s.narration && s.narration.length > 0))) return unavailable('invalid');
+    if (!composed.scenes.some((s) => s.aiHeading || (s.narration && s.narration.length > 0))) {
+      // AC-776: すべての文を除いたときは、エラーではなく除いた旨を知らせる（代替は「生成 AI を使わずに開始」）
+      if (composed.removed > 0) return { kind: 'all-removed', removed: composed.removed, provider, message: allRemovedText(composed.removed) };
+      return unavailable('invalid');
+    }
     return { kind: 'ai', scenes: composed.scenes, provider, truncated: p.truncated, removed: composed.removed };
   } catch {
     return signal?.aborted ? { kind: 'cancelled' } : unavailable('error');

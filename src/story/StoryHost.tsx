@@ -24,7 +24,7 @@ import { useConsentStore } from '../ai/useConsent';
 import { recordConfirmedSendKinds, confirmedSendKinds } from '../ai/sendKinds';
 import { explainLimitsNow, explainUsageNow, setExplainUsage } from '../explain/store';
 import { buildStoryMaterials } from './genai';
-import { PROVIDER_LABEL, newStorySession, runStoryGenai } from './genaiRun';
+import { PROVIDER_LABEL, companyAllowedOf, newStorySession, runStoryGenai } from './genaiRun';
 import { useUseCaseSet } from '../store/usecases';
 import { useAnimation } from '../store/animation';
 import { demoUseCases } from '../usecase/demo';
@@ -209,7 +209,7 @@ function SceneView({ scene, motion }: { scene: StoryScene; motion: boolean }) {
           {scene.narration.map((l, i) => <li key={i} className={motion ? s.anim1 : undefined} style={motion ? { animationDelay: `${300 + i * 150}ms` } : undefined}>{l}</li>)}
         </ul>
       ) : null}
-      {scene.removedSentences ? <Text size={300} className={s.hint} data-story-el="removed">材料にない数値を含む {scene.removedSentences} 文は表示していません</Text> : null}
+      {scene.removedSentences ? <Text size={300} className={s.hint} data-story-el="removed">材料にない数値・名称を含む {scene.removedSentences} 文は表示していません</Text> : null}
       {scene.noData ? (
         <div className={mergeClasses(s.noData, motion && s.anim1)} role="note" style={motion ? { animationDelay: '300ms' } : undefined}>
           <Text weight="semibold" size={500} data-story-el="body-line">データなし</Text>
@@ -248,7 +248,7 @@ function TextView({ scenes, cur }: { scenes: StoryScene[]; cur: number }) {
             <h3>{sc.aiHeading ?? sc.heading}</h3>
             {sc.aiHeading ? <p>{sc.heading}</p> : null}
             {sc.narration && sc.narration.length > 0 ? <p>{sc.narration.join('')}</p> : null}
-            {sc.removedSentences ? <p>材料にない数値を含む {sc.removedSentences} 文は表示していません</p> : null}
+            {sc.removedSentences ? <p>材料にない数値・名称を含む {sc.removedSentences} 文は表示していません</p> : null}
             {sc.noData ? <p>データなし。理由：{sc.noData.reason}　補うには：{sc.noData.entry}</p> : null}
             {sc.lines.length > 0 ? <ul>{sc.lines.map((l, k) => <li key={k}>{l}</li>)}</ul> : null}
             {sc.steps && sc.steps.length > 0 ? <ol aria-label="手順">{sc.steps.map((l, k) => <li key={k}>{l}</li>)}</ol> : null}
@@ -360,7 +360,7 @@ function StoryPlayer({ persona, ai }: { persona: StoryPersona; ai: AiStory | nul
             <Badge appearance="filled" color="brand">AI 生成</Badge>
             <Text size={300}>接続先: {PROVIDER_LABEL[ai.provider]}</Text>
             {ai.truncated ? <Text size={200} className={s.hint}>入力の上限のため、番組構成などの一部の材料を省いて作成しました</Text> : null}
-            {ai.removed > 0 ? <Text size={200} className={s.hint}>材料にない数値を含む {ai.removed} 文は表示していません</Text> : null}
+            {ai.removed > 0 ? <Text size={200} className={s.hint}>材料にない数値・名称を含む {ai.removed} 文は表示していません</Text> : null}
           </div>
         ) : null}
         {demoNote ? <Text size={200} className={s.hint} align="center" data-testid="demo-fictional-note">{demoNote}</Text> : null}
@@ -399,6 +399,8 @@ async function runGenai(persona: StoryPersona, runId: number, input: StoryInput,
   const relayUrl = usePackStore.getState().runtime.relayUrl;
   const packId = data.customer.name;
   const consentRecord = useConsentStore.getState().records[consentKeyOf(data.customer.name, data.customer.projectName)];
+  // FR-140・AC-785: 実際の Project を開いているときは、その企業の「外部 AI への送信を許可する」が必要（お手本パックのデモは不要）
+  const companyAllowed = companyAllowedOf(useProjects.getState());
   genaiController = new AbortController();
   const signal = genaiController.signal;
   const outcome = await runStoryGenai({
@@ -406,6 +408,7 @@ async function runGenai(persona: StoryPersona, runId: number, input: StoryInput,
     limits: explainLimitsNow,
     usage: { get: explainUsageNow, set: setExplainUsage },
     consent: !!consentRecord,
+    companyAllowed,
     includesPerson: countPersons(data) > 0,
     confirmPerson: () => gatePersonConfirm({ destination: 'ai', scopeLabel: 'プレゼンテーションの生成 AI による作成（選択した生成AI接続先へ、選んだペルソナと解決策・優先順位・ROI・コスト・KPI/OKR・ユースケース・番組構成を送信）', data, consent: consentRecord, confirm: confirmViaUi }),
     fetchView: () => fetchFoundryView(relayUrl, packId),
@@ -417,6 +420,7 @@ async function runGenai(persona: StoryPersona, runId: number, input: StoryInput,
   if (outcome.kind === 'ai') s2.playAi(persona, { scenes: outcome.scenes, provider: outcome.provider, truncated: outcome.truncated, removed: outcome.removed });
   else if (outcome.kind === 'reconfirm') s2.setGenai({ phase: 'reconfirm', persona, added: outcome.added });
   else if (outcome.kind === 'unavailable') s2.setGenai({ phase: 'error', persona, reasonText: outcome.reasonText });
+  else if (outcome.kind === 'all-removed') s2.setGenai({ phase: 'removed', persona, message: outcome.message });
   else if (outcome.kind === 'wait' || outcome.kind === 'busy') s2.setGenai({ phase: 'error', persona, reasonText: outcome.message });
   else s2.reset();
 }
@@ -466,6 +470,30 @@ function GenaiError({ persona, reasonText }: { persona: StoryPersona; reasonText
           <DialogContent className={s.dialogStack}>
             <Text as="p" block role="alert" data-testid="story-genai-error">{reasonText}</Text>
             <Text as="p" block>生成 AI を使わずに、材料から作るストーリーで始められます（外部へは送信しません）。</Text>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={reset}>閉じる</Button>
+            <Button appearance="primary" onClick={() => play(persona)}>生成 AI を使わずに開始</Button>
+          </DialogActions>
+        </DialogBody>
+      </DialogSurface>
+    </Dialog>
+  );
+}
+
+/** 生成された文をすべて除いたときの通知（FR-290 AC-776。エラーではない）と、FR-179 のストーリーで始める代替 */
+function GenaiRemoved({ persona, message }: { persona: StoryPersona; message: string }) {
+  const s = useStyles();
+  const play = useStoryStore((x) => x.play);
+  const reset = useStoryStore((x) => x.reset);
+  return (
+    <Dialog open modalType="non-modal" onOpenChange={(_, d) => { if (!d.open) reset(); }}>
+      <DialogSurface aria-label="生成された文を表示しませんでした">
+        <DialogBody>
+          <DialogTitle>生成された文を表示しませんでした</DialogTitle>
+          <DialogContent className={s.dialogStack}>
+            <Text as="p" block role="status" data-testid="story-genai-removed">{message}</Text>
+            <Text as="p" block>材料から作るストーリーで始められます（外部へは送信しません）。</Text>
           </DialogContent>
           <DialogActions>
             <Button onClick={reset}>閉じる</Button>
@@ -544,6 +572,7 @@ export function StoryHost() {
       </Dialog>
       {genai?.phase === 'running' ? <GenaiRunning key={genai.runId} persona={genai.persona} runId={genai.runId} /> : null}
       {genai?.phase === 'error' ? <GenaiError persona={genai.persona} reasonText={genai.reasonText} /> : null}
+      {genai?.phase === 'removed' ? <GenaiRemoved persona={genai.persona} message={genai.message} /> : null}
       {genai?.phase === 'reconfirm' ? <GenaiReconfirm persona={genai.persona} added={genai.added} /> : null}
       {persona ? createPortal(<StoryPlayer key={`${persona}-${ai ? 'ai' : 'base'}`} persona={persona} ai={ai} />, document.body) : null}
     </>
