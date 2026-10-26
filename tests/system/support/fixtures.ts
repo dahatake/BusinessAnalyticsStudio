@@ -19,7 +19,8 @@ export const MAIN_SCREENS = [
   ['discussion-tree', '議論ツリー'],
   ['gantt', 'ガントチャート'],
   ['whiteboard', 'ホワイトボード'],
-  ['settings', '設定パネル'],
+  // 設定は左メニューに項目を持たず、画面上部のツールバーのボタン「設定」から開くモーダル（FR-223 AC-774。名称は「設定」）
+  ['settings', '設定'],
 ] as const;
 export type ScreenKey = (typeof MAIN_SCREENS)[number][0];
 
@@ -245,12 +246,34 @@ export async function openScreen(page: Page, key: string): Promise<Locator> {
   if (key !== 'settings') await closeSettings(page);
   if (key === LEGACY_WORK_AREA) return component(page, key); // 作業領域は常に表示されている（画面ではない）
   if (key === LEGACY_3D) return open3dView(page);
-  else if (await settingsDialog(page).isVisible()) return component(page, key); // すでに開いている
+  if (key === 'settings') {
+    // 設定は画面上部のツールバーのボタン「設定」から開く（FR-223 AC-774。左メニューには項目がない）
+    if (!(await settingsDialog(page).isVisible())) await settingsButton(page).click();
+    const s = component(page, key);
+    await expect(s).toBeVisible();
+    return s;
+  }
   if (await isOffMenuScreen(page, key)) await openScreenByCommand(page, key);
   else await page.getByTestId(`nav-${key}`).click();
   const c = component(page, key);
   await expect(c).toBeVisible();
   return c;
+}
+
+/**
+ * 画面上部のツールバーにあるボタン「設定」（FR-223 AC-774。CONTRACT.md §31）。`data-testid="settings-button"`、アクセシブルな名前「設定」。
+ * 名前と置き場所（左メニューの外・上部の段）は AC-774 のテストが確かめる。
+ */
+export function settingsButton(page: Page): Locator {
+  return page.getByTestId('settings-button');
+}
+
+/**
+ * 画面を開く入口の要素。設定（'settings'）は上部のボタン「設定」、そのほかは左メニューの `nav-<key>`。
+ * 左メニューの項目を巡る既存のテスト（AC-170・AC-186・AC-189 など）が、設定だけ入口を読み替えるのに使う。
+ */
+export function screenEntry(page: Page, key: string): Locator {
+  return key === 'settings' ? settingsButton(page) : page.getByTestId(`nav-${key}`);
 }
 
 /** 設定のモーダル（role=dialog「設定」。FR-223 AC-519。CONTRACT.md §23） */

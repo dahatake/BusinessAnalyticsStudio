@@ -1,6 +1,6 @@
 // System Test: ユースケースの「ストーリー動画」の生成AIによる作成と表示（FR-291 AC-778）。
 // 期待値は要求定義書の受入基準（docs/requirements/app-experience.md）だけから決める。生成AIは呼ばない（中継の差し替え部品 support/ai-import-stub.ts）。
-// 画面の探し方は tests/system/CONTRACT.md §31。
+// 画面の探し方は tests/system/CONTRACT.md §32。
 import type { Page } from '@playwright/test';
 import { test, expect, recordExportConsent, openScreen, closeSettings, continuePersonConfirm } from '../support/fixtures';
 import { startAiImportRelayStub } from '../support/ai-import-stub';

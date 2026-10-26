@@ -1,10 +1,12 @@
 // ペルソナ別ストーリー（FR-177〜FR-179）。ペルソナを選ぶと、顧客パックと Project のデータだけから、フルスクリーンの 1 画面 1 メッセージのシーンを作って順に見せる。
 // 操作: `→`/`←` 次/前、`Home` 先頭、`Space` 自動再生の一時停止・再開、`F` フルスクリーンの開始・終了、`Esc` でフルスクリーンを抜け、もう一度で終了。画面のボタンでも同じことができる。
-// 動き: OS の「視差効果を減らす」・アプリのアニメーション停止（FR-071・FR-072）のときは、動きなしで即座に切り替わる。端末内だけで動き、外部には接続しない。
+// 動き: OS の「視差効果を減らす」・アプリのアニメーション停止（FR-071・FR-072）のときは、動きなしで即座に切り替わる。
+// 既定（「生成 AI で作成」を選ばない）は端末内だけで動き、外部には接続しない（FR-179 AC-362）。
+// 「生成 AI で作成」（FR-290）を選んだときだけ、共通接続（FR-275）の接続先へ材料を送ってストーリーの見出しと語りを作る。
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import {
-  Button, DialogBody, DialogContent, DialogTitle, FluentProvider, Text, makeStyles, mergeClasses, tokens, webDarkTheme,
+  Badge, Button, Checkbox, DialogActions, DialogBody, DialogContent, DialogTitle, FluentProvider, Spinner, Text, makeStyles, mergeClasses, tokens, webDarkTheme,
 } from '@fluentui/react-components';
 import { Dialog, DialogSurface } from '../components/Dialog';
 import {
@@ -14,14 +16,22 @@ import { usePackStore } from '../store/pack';
 import { usePriorityStore } from '../store/priority';
 import { useProjects } from '../store/projects';
 import { usePresentationStore } from '../store/presentation';
-import { useStoryStore } from '../store/story';
+import { useStoryStore, type AiStory } from '../store/story';
+import { askFoundry, fetchFoundryView } from '../ai/foundryClient';
+import { consentKeyOf } from '../ai/consent';
+import { confirmViaUi, countPersons, gatePersonConfirm } from '../ai/personConfirm';
+import { useConsentStore } from '../ai/useConsent';
+import { recordConfirmedSendKinds, confirmedSendKinds } from '../ai/sendKinds';
+import { explainLimitsNow, explainUsageNow, setExplainUsage } from '../explain/store';
+import { buildStoryMaterials } from './genai';
+import { PROVIDER_LABEL, companyAllowedOf, newStorySession, runStoryGenai } from './genaiRun';
 import { useUseCaseSet } from '../store/usecases';
 import { useAnimation } from '../store/animation';
 import { demoUseCases } from '../usecase/demo';
 import { SCENE_SECONDS } from '../usecase/model';
 import {
   PERSONA_ANGLE, STORY_PERSONAS, buildStory, positionText, stepScene, storyKeyAction,
-  type StoryPersona, type StoryScene, type StoryUseCase,
+  type StoryInput, type StoryPersona, type StoryScene, type StoryUseCase,
 } from './model';
 
 const fadeUp = { from: { opacity: 0, transform: 'translateY(32px)' }, to: { opacity: 1, transform: 'translateY(0)' } };
@@ -69,6 +79,11 @@ const useStyles = makeStyles({
   textView: { flexGrow: 1, minHeight: 0, overflowY: 'auto', padding: tokens.spacingHorizontalXXL, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalL },
   textList: { listStyleType: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalL },
   textItem: { padding: tokens.spacingHorizontalL, borderLeft: `${tokens.strokeWidthThickest} solid ${tokens.colorNeutralStroke2}` },
+  aiBar: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', columnGap: tokens.spacingHorizontalS, rowGap: tokens.spacingVerticalXS, padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalM}` },
+  subHeading: { margin: 0, fontWeight: tokens.fontWeightSemibold, fontSize: 'clamp(14px, min(2.6vw, 4.2vh), 32px)', lineHeight: 1.3, overflowWrap: 'anywhere', maxWidth: '32em', color: tokens.colorNeutralForeground2 },
+  narration: { listStyleType: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS, fontSize: 'clamp(13px, min(2.3vw, 3.8vh), 30px)', lineHeight: 1.4, overflowWrap: 'anywhere', maxWidth: '36em' },
+  genaiOpt: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS, marginBlockStart: tokens.spacingVerticalM },
+  dialogStack: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS },
   textItemCur: { borderLeft: `${tokens.strokeWidthThickest} double ${tokens.colorBrandStroke1}`, fontWeight: tokens.fontWeightSemibold },
 });
 
@@ -84,7 +99,8 @@ function useStoryUseCases(): StoryUseCase[] {
   }, [projectId, set, data]);
 }
 
-function useStoryScenes(persona: StoryPersona): StoryScene[] {
+/** ストーリーの入力（FR-179 と FR-290 で同じ材料を使う） */
+function useStoryInput(persona: StoryPersona): StoryInput | null {
   const packState = usePackStore((x) => x.state);
   const weights = usePriorityStore((x) => x.weights);
   const projectId = useProjects((x) => x.openId);
@@ -92,14 +108,29 @@ function useStoryScenes(persona: StoryPersona): StoryScene[] {
   return useMemo(() => {
     // 実際の Project を開いているときは、デモのお手本パック（解決策・優先順位・ROI・KPI/OKR）の値を使わない（FR-138・FR-180）。
     // Project 自身のデータがない要素は「データなし」のシーンになる
-    if (projectId) return buildStory({ persona, issues: [], solutions: [], products: [], customer: undefined, useCases, weights });
-    if (packState.status !== 'ready') return [];
+    if (projectId) return { persona, issues: [], solutions: [], products: [], customer: undefined, useCases, weights };
+    if (packState.status !== 'ready') return null;
     const d = packState.pack.data;
-    return buildStory({
+    return {
       persona, issues: d.issues.issues, solutions: d.issues.solutions, products: d.products.products,
       customer: d.customer as never, useCases, weights,
-    });
+    };
   }, [packState, persona, weights, useCases, projectId]);
+}
+
+function useStoryScenes(persona: StoryPersona): StoryScene[] {
+  const input = useStoryInput(persona);
+  return useMemo(() => (input ? buildStory(input) : []), [input]);
+}
+
+/** 番組構成（デモのときだけ顧客パックの show。実際の Project ではほかの Project・お手本の値を混ぜない） */
+function useShowChapters(): Array<{ title: string; topics?: Array<{ title: string }> }> {
+  const packState = usePackStore((x) => x.state);
+  const projectId = useProjects((x) => x.openId);
+  return useMemo(() => {
+    if (projectId || packState.status !== 'ready') return [];
+    return (packState.pack.data.show?.chapters ?? []).map((c) => ({ title: c.title, topics: (c.topics ?? []).map((t) => ({ title: t.title })) }));
+  }, [packState, projectId]);
 }
 
 /** デモの作業先のときだけ、架空であることの注記（UseCaseScreen と同じ fictionalNote） */
@@ -165,7 +196,20 @@ function SceneView({ scene, motion }: { scene: StoryScene; motion: boolean }) {
           <div className={s.bigLabel} data-story-el="big-label">{scene.big.label}</div>
         </div>
       ) : null}
-      <h2 data-story-el="heading" className={mergeClasses(s.heading, motion && s.anim1)} style={motion ? { animationDelay: scene.big ? '450ms' : '150ms' } : undefined}>{scene.heading}</h2>
+      {scene.aiHeading ? (
+        <>
+          <h2 data-story-el="heading" className={mergeClasses(s.heading, motion && s.anim1)} style={motion ? { animationDelay: scene.big ? '450ms' : '150ms' } : undefined}>{scene.aiHeading}</h2>
+          <p data-story-el="sub-heading" className={s.subHeading}>{scene.heading}</p>
+        </>
+      ) : (
+        <h2 data-story-el="heading" className={mergeClasses(s.heading, motion && s.anim1)} style={motion ? { animationDelay: scene.big ? '450ms' : '150ms' } : undefined}>{scene.heading}</h2>
+      )}
+      {scene.narration && scene.narration.length > 0 ? (
+        <ul className={s.narration} aria-label="語り" data-story-el="narration">
+          {scene.narration.map((l, i) => <li key={i} className={motion ? s.anim1 : undefined} style={motion ? { animationDelay: `${300 + i * 150}ms` } : undefined}>{l}</li>)}
+        </ul>
+      ) : null}
+      {scene.removedSentences ? <Text size={300} className={s.hint} data-story-el="removed">材料にない数値・名称を含む {scene.removedSentences} 文は表示していません</Text> : null}
       {scene.noData ? (
         <div className={mergeClasses(s.noData, motion && s.anim1)} role="note" style={motion ? { animationDelay: '300ms' } : undefined}>
           <Text weight="semibold" size={500} data-story-el="body-line">データなし</Text>
@@ -201,7 +245,10 @@ function TextView({ scenes, cur }: { scenes: StoryScene[]; cur: number }) {
           <li key={sc.id} ref={i === cur ? curRef : undefined} className={mergeClasses(s.textItem, i === cur && s.textItemCur)} aria-current={i === cur ? 'step' : undefined} data-testid="story-text-item">
             <Text as="p" size={200}>{i + 1} / {scenes.length}{i === cur ? '（現在のシーン）' : ''}　{sc.kicker}</Text>
             {sc.big ? <p>{sc.big.value}　{sc.big.label}</p> : null}
-            <h3>{sc.heading}</h3>
+            <h3>{sc.aiHeading ?? sc.heading}</h3>
+            {sc.aiHeading ? <p>{sc.heading}</p> : null}
+            {sc.narration && sc.narration.length > 0 ? <p>{sc.narration.join('')}</p> : null}
+            {sc.removedSentences ? <p>材料にない数値・名称を含む {sc.removedSentences} 文は表示していません</p> : null}
             {sc.noData ? <p>データなし。理由：{sc.noData.reason}　補うには：{sc.noData.entry}</p> : null}
             {sc.lines.length > 0 ? <ul>{sc.lines.map((l, k) => <li key={k}>{l}</li>)}</ul> : null}
             {sc.steps && sc.steps.length > 0 ? <ol aria-label="手順">{sc.steps.map((l, k) => <li key={k}>{l}</li>)}</ol> : null}
@@ -224,9 +271,10 @@ if (typeof document !== 'undefined') {
   });
 }
 
-function StoryPlayer({ persona }: { persona: StoryPersona }) {
+function StoryPlayer({ persona, ai }: { persona: StoryPersona; ai: AiStory | null }) {
   const s = useStyles();
-  const scenes = useStoryScenes(persona);
+  const built = useStoryScenes(persona);
+  const scenes = ai ? ai.scenes : built;
   const demoNote = useDemoNote();
   const index = useStoryStore((x) => x.index);
   const setIndex = useStoryStore((x) => x.setIndex);
@@ -307,6 +355,14 @@ function StoryPlayer({ persona }: { persona: StoryPersona }) {
       <div ref={rootRef} className={s.root} tabIndex={-1} role="dialog" aria-modal="true" aria-label={`${persona}向けのストーリー`} data-testid="story" data-persona={persona}>
         <div className={s.srOnly} role="status" aria-live="polite" aria-atomic="true" data-testid="story-announce">{scene ? `${scene.kicker}、${positionText(cur, Math.max(total, 1))}` : ''}</div>
         {textMode ? <TextView scenes={scenes} cur={cur} /> : scene ? <SceneView key={scene.id} scene={scene} motion={motion} /> : <section className={s.stage} data-testid="story-scene" data-no-data="true"><h2 className={s.heading}>データなし</h2></section>}
+        {ai ? (
+          <div className={s.aiBar} data-testid="story-ai-label">
+            <Badge appearance="filled" color="brand">AI 生成</Badge>
+            <Text size={300}>接続先: {PROVIDER_LABEL[ai.provider]}</Text>
+            {ai.truncated ? <Text size={200} className={s.hint}>入力の上限のため、番組構成などの一部の材料を省いて作成しました</Text> : null}
+            {ai.removed > 0 ? <Text size={200} className={s.hint}>材料にない数値・名称を含む {ai.removed} 文は表示していません</Text> : null}
+          </div>
+        ) : null}
         {demoNote ? <Text size={200} className={s.hint} align="center" data-testid="demo-fictional-note">{demoNote}</Text> : null}
         <ol className={s.progress} aria-hidden="true">
           {scenes.map((sc, i) => <li key={sc.id} className={mergeClasses(s.seg, i <= cur && s.segDone, i === cur && s.segCur)} />)}
@@ -329,13 +385,170 @@ function StoryPlayer({ persona }: { persona: StoryPersona }) {
   );
 }
 
+/** 生成 AI での作成の呼び出しの状態（二重の呼び出し・最小の間隔の判定に使う。保存しない） */
+const genaiSession = newStorySession();
+let genaiController: AbortController | null = null;
+
+/** 「生成 AI で作成」（FR-290）を実行する。材料は選んだペルソナと、この作業先の FR-179 の材料だけ */
+async function runGenai(persona: StoryPersona, runId: number, input: StoryInput, chapters: Array<{ title: string; topics?: Array<{ title: string }> }>): Promise<void> {
+  const st = useStoryStore.getState();
+  const pack = usePackStore.getState().state;
+  const isCurrent = () => { const g = useStoryStore.getState().genai; return g?.phase === 'running' && g.runId === runId; };
+  if (pack.status !== 'ready') { st.setGenai({ phase: 'error', persona, reasonText: '顧客パックが読み込まれていないため、生成 AI に接続しませんでした' }); return; }
+  const data = pack.pack.data;
+  const relayUrl = usePackStore.getState().runtime.relayUrl;
+  const packId = data.customer.name;
+  const consentRecord = useConsentStore.getState().records[consentKeyOf(data.customer.name, data.customer.projectName)];
+  // FR-140・AC-785: 実際の Project を開いているときは、その企業の「外部 AI への送信を許可する」が必要（お手本パックのデモは不要）
+  const companyAllowed = companyAllowedOf(useProjects.getState());
+  genaiController = new AbortController();
+  const signal = genaiController.signal;
+  const outcome = await runStoryGenai({
+    now: () => new Date(),
+    limits: explainLimitsNow,
+    usage: { get: explainUsageNow, set: setExplainUsage },
+    consent: !!consentRecord,
+    companyAllowed,
+    includesPerson: countPersons(data) > 0,
+    confirmPerson: () => gatePersonConfirm({ destination: 'ai', scopeLabel: 'プレゼンテーションの生成 AI による作成（選択した生成AI接続先へ、選んだペルソナと解決策・優先順位・ROI・コスト・KPI/OKR・ユースケース・番組構成を送信）', data, consent: consentRecord, confirm: confirmViaUi }),
+    fetchView: () => fetchFoundryView(relayUrl, packId),
+    confirmedKinds: () => confirmedSendKinds(packId),
+    ask: (req, sig) => askFoundry(relayUrl, { packId, ...req }, undefined, sig),
+  }, genaiSession, buildStoryMaterials(input, chapters), buildStory(input), signal);
+  if (!isCurrent()) return; // 取り消した後に届いた結果は使わない
+  const s2 = useStoryStore.getState();
+  if (outcome.kind === 'ai') s2.playAi(persona, { scenes: outcome.scenes, provider: outcome.provider, truncated: outcome.truncated, removed: outcome.removed });
+  else if (outcome.kind === 'reconfirm') s2.setGenai({ phase: 'reconfirm', persona, added: outcome.added });
+  else if (outcome.kind === 'unavailable') s2.setGenai({ phase: 'error', persona, reasonText: outcome.reasonText });
+  else if (outcome.kind === 'all-removed') s2.setGenai({ phase: 'removed', persona, message: outcome.message });
+  else if (outcome.kind === 'wait' || outcome.kind === 'busy') s2.setGenai({ phase: 'error', persona, reasonText: outcome.message });
+  else s2.reset();
+}
+
+function cancelGenai(): void {
+  genaiController?.abort();
+  useStoryStore.getState().reset();
+}
+
+/** 作成中の進行状況。実行は 1 回の作成（runId）ごとに 1 度だけ */
+function GenaiRunning({ persona, runId }: { persona: StoryPersona; runId: number }) {
+  const input = useStoryInput(persona);
+  const chapters = useShowChapters();
+  const started = useRef<number | null>(null);
+  useEffect(() => {
+    if (!input || started.current === runId) return;
+    started.current = runId;
+    void runGenai(persona, runId, input, chapters);
+  }, [input, chapters, persona, runId]);
+  return (
+    <Dialog open modalType="non-modal" onOpenChange={(_, d) => { if (!d.open) cancelGenai(); }}>
+      <DialogSurface aria-label="ストーリーを作成中" data-testid="story-generating">
+        <DialogBody>
+          <DialogTitle>ストーリーを作成中</DialogTitle>
+          <DialogContent>
+            <Spinner size="small" labelPosition="after" label={`${persona}向けのストーリーを生成 AI で作成しています`} />
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={cancelGenai}>取り消す</Button>
+          </DialogActions>
+        </DialogBody>
+      </DialogSurface>
+    </Dialog>
+  );
+}
+
+/** 生成 AI を使えない理由と、FR-179 のストーリーで始める代替 */
+function GenaiError({ persona, reasonText }: { persona: StoryPersona; reasonText: string }) {
+  const s = useStyles();
+  const play = useStoryStore((x) => x.play);
+  const reset = useStoryStore((x) => x.reset);
+  return (
+    <Dialog open modalType="non-modal" onOpenChange={(_, d) => { if (!d.open) reset(); }}>
+      <DialogSurface aria-label="生成 AI で作成できません">
+        <DialogBody>
+          <DialogTitle>生成 AI で作成できません</DialogTitle>
+          <DialogContent className={s.dialogStack}>
+            <Text as="p" block role="alert" data-testid="story-genai-error">{reasonText}</Text>
+            <Text as="p" block>生成 AI を使わずに、材料から作るストーリーで始められます（外部へは送信しません）。</Text>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={reset}>閉じる</Button>
+            <Button appearance="primary" onClick={() => play(persona)}>生成 AI を使わずに開始</Button>
+          </DialogActions>
+        </DialogBody>
+      </DialogSurface>
+    </Dialog>
+  );
+}
+
+/** 生成された文をすべて除いたときの通知（FR-290 AC-776。エラーではない）と、FR-179 のストーリーで始める代替 */
+function GenaiRemoved({ persona, message }: { persona: StoryPersona; message: string }) {
+  const s = useStyles();
+  const play = useStoryStore((x) => x.play);
+  const reset = useStoryStore((x) => x.reset);
+  return (
+    <Dialog open modalType="non-modal" onOpenChange={(_, d) => { if (!d.open) reset(); }}>
+      <DialogSurface aria-label="生成された文を表示しませんでした">
+        <DialogBody>
+          <DialogTitle>生成された文を表示しませんでした</DialogTitle>
+          <DialogContent className={s.dialogStack}>
+            <Text as="p" block role="status" data-testid="story-genai-removed">{message}</Text>
+            <Text as="p" block>材料から作るストーリーで始められます（外部へは送信しません）。</Text>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={reset}>閉じる</Button>
+            <Button appearance="primary" onClick={() => play(persona)}>生成 AI を使わずに開始</Button>
+          </DialogActions>
+        </DialogBody>
+      </DialogSurface>
+    </Dialog>
+  );
+}
+
+/** 送信される情報の種類が増えたときの再確認（FR-290 AC-777）。確認するまで生成 AI を呼ばない */
+function GenaiReconfirm({ persona, added }: { persona: StoryPersona; added: Array<{ id: string; label: string }> }) {
+  const s = useStyles();
+  const play = useStoryStore((x) => x.play);
+  const reset = useStoryStore((x) => x.reset);
+  const startGenai = useStoryStore((x) => x.startGenai);
+  const confirm = () => {
+    const pack = usePackStore.getState().state;
+    if (pack.status === 'ready') recordConfirmedSendKinds(pack.pack.data.customer.name);
+    startGenai(persona);
+  };
+  return (
+    <Dialog open modalType="alert">
+      <DialogSurface aria-label="送信される情報の再確認">
+        <DialogBody>
+          <DialogTitle>送信される情報の種類が増えました（再確認）</DialogTitle>
+          <DialogContent className={s.dialogStack}>
+            <Text as="p" block>実接続を有効にしたときに確認した内容に加えて、次の情報が生成 AI の接続先へ送信されます。確認するまで送信しません。</Text>
+            <ul>{added.map((k) => <li key={k.id}>{k.label}</li>)}</ul>
+          </DialogContent>
+          <DialogActions>
+            <Button appearance="primary" onClick={confirm}>確認して作成</Button>
+            <Button onClick={() => play(persona)}>生成 AI を使わずに開始</Button>
+            <Button onClick={reset}>キャンセル</Button>
+          </DialogActions>
+        </DialogBody>
+      </DialogSurface>
+    </Dialog>
+  );
+}
+
 /** ペルソナの選択ダイアログと、ストーリーの画面。アプリの上位に 1 つ置く */
 export function StoryHost() {
   const s = useStyles();
   const picking = useStoryStore((x) => x.picking);
   const persona = useStoryStore((x) => x.persona);
+  const ai = useStoryStore((x) => x.aiStory);
+  const genai = useStoryStore((x) => x.genai);
   const closePicker = useStoryStore((x) => x.closePicker);
   const play = useStoryStore((x) => x.play);
+  const startGenai = useStoryStore((x) => x.startGenai);
+  // 「生成 AI で作成」は既定で選ばない（開くたびに選ばない状態へ戻す。FR-179 AC-362）
+  const [useAi, setUseAi] = useState(false);
+  useEffect(() => { if (picking) setUseAi(false); }, [picking]);
   return (
     <>
       <Dialog open={picking} modalType="non-modal" onOpenChange={(_, d) => { if (!d.open) closePicker(); }}>
@@ -346,14 +559,22 @@ export function StoryHost() {
               <Text as="p" block>誰に向けて話すかを選ぶと、そのペルソナ向けに分析の結果をストーリーで示します。選ばずに閉じると、論点を巡るプレゼンテーションのまま続けます。</Text>
               <div className={s.personaList}>
                 {STORY_PERSONAS.map((p) => (
-                  <Button key={p} appearance="primary" size="large" onClick={() => play(p)} title={PERSONA_ANGLE[p]}>{p}</Button>
+                  <Button key={p} appearance="primary" size="large" onClick={() => (useAi ? startGenai(p) : play(p))} title={PERSONA_ANGLE[p]}>{p}</Button>
                 ))}
+              </div>
+              <div className={s.genaiOpt}>
+                <Checkbox label="生成 AI で作成" checked={useAi} onChange={(_, d) => setUseAi(d.checked === true)} />
+                <Text size={200} className={s.hint}>選ぶと、選んだペルソナとこの Project の材料（解決策・優先順位・ROI・コスト・KPI/OKR・ユースケース・番組構成）を設定の生成 AI の接続先へ送り、その場でストーリーを作ります。選ばなければ外部へは送信しません。</Text>
               </div>
             </DialogContent>
           </DialogBody>
         </DialogSurface>
       </Dialog>
-      {persona ? createPortal(<StoryPlayer key={persona} persona={persona} />, document.body) : null}
+      {genai?.phase === 'running' ? <GenaiRunning key={genai.runId} persona={genai.persona} runId={genai.runId} /> : null}
+      {genai?.phase === 'error' ? <GenaiError persona={genai.persona} reasonText={genai.reasonText} /> : null}
+      {genai?.phase === 'removed' ? <GenaiRemoved persona={genai.persona} message={genai.message} /> : null}
+      {genai?.phase === 'reconfirm' ? <GenaiReconfirm persona={genai.persona} added={genai.added} /> : null}
+      {persona ? createPortal(<StoryPlayer key={`${persona}-${ai ? 'ai' : 'base'}`} persona={persona} ai={ai} />, document.body) : null}
     </>
   );
 }

@@ -86,7 +86,7 @@ export async function startAiImportRelayStub(opts: { configured?: boolean; mode?
         return json(200, { mode: enabled ? 'connected' : 'mock' });
       }
       if (u.pathname === '/health') return json(200, { status: 'ready', copilot: 'signed-in', foundry: { keyConfigured: foundry !== null } });
-      // FR-291 AC-778、CONTRACT.md §31。生成AIは呼ばず、受けたユースケースの内容から決まった形の応答を返す。
+      // FR-291 AC-778、CONTRACT.md §32。生成AIは呼ばず、受けたユースケースの内容から決まった形の応答を返す。
       if (u.pathname === '/foundry/story-video' && req.method === 'POST') {
         if (provider === 'copilot') return json(503, { error: { cause: 'unsupported', message: 'Copilot SDK では未対応' } });
         if (!foundry) return json(503, { error: { cause: 'key-missing' } });

@@ -69,7 +69,7 @@ test.describe('FR-274 現状の説明（サイドパネル）', () => {
 
 test.describe('FR-275 Microsoft Foundry の接続設定', () => {
   // FR-275 AC-703
-  test('FR-275 AC-703 設定画面に Foundry の欄（エンドポイント・デプロイ名・API キー）があり、キーは伏せ字・保存後は「設定済み」だけで再表示せず、変更と削除ができ、実接続の既定は無効で、費用と送信情報の種類が表示される', async ({ page, start }) => {
+  test('FR-275 AC-703 設定画面に Foundry の欄（エンドポイント・デプロイ名・API キー）があり、キーは伏せ字・保存後は「設定済み」だけで再表示せず、変更と削除ができ、実接続の既定は無効で、費用と送信情報の種類（プレゼンテーションの生成 AI による作成のペルソナと材料を含む）が表示される', async ({ page, start }) => {
       // FR-275: 接続情報の保存先は中継側だけ。stub の中継（GET/PUT/DELETE /foundry/config）に向けて保存→設定済みを確かめる
       const relay = await startRelayStub();
       try {
@@ -109,6 +109,10 @@ test.describe('FR-275 Microsoft Foundry の接続設定', () => {
     await expect(foundry).toContainText(/質問/);
     await expect(foundry).toContainText(/履歴/);
     await expect(foundry).toContainText(/根拠/);
+    // AC-703（改訂 run 202610250836）: プレゼンテーションの生成 AI による作成のペルソナと材料も送信される情報として示される
+    await expect(foundry).toContainText(/プレゼンテーション/);
+    await expect(foundry).toContainText(/ペルソナ/);
+    for (const m of ['解決策', '優先順位', 'ROI', 'コスト', 'ユースケース', '番組構成']) await expect(foundry, `送信情報の種類に「${m}」がない`).toContainText(m);
 
     // ダミーのキーを保存すると「設定済み」だけが表示され、値は再表示されない
     const dummy = 'dummy-key-for-system-test-0000';

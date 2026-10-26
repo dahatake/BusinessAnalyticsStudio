@@ -1,7 +1,7 @@
 // System Test: キャンバス・コンポーネントのレイアウト・ペルソナ別ビュー・コマンドパレット・縮退
 // 期待値は要求定義書の受入基準（app-core.md・app-experience.md・quality.md）と §7 の表から決める。
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, entity, hook, selectPersona, runCommand, PERSONAS, MAIN_SCREENS } from '../support/fixtures';
+import { test, expect, openScreen, component, entity, hook, selectPersona, runCommand, PERSONAS, MAIN_SCREENS, screenEntry } from '../support/fixtures';
 import { examplePack } from '../support/packs';
 
 const mono = examplePack('mono');
@@ -294,7 +294,8 @@ test.describe('NFR-UX-002 狭い画面での縮退', () => {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow, 'ページ全体に横スクロールが発生').toBeLessThanOrEqual(0);
     for (const [key, name] of MAIN_SCREENS) {
-      const nav = page.getByTestId(`nav-${key}`);
+      // 設定は上部のボタン「設定」から開く（FR-223 AC-774）。ほかは左メニュー
+      const nav = screenEntry(page, key);
       if (!(await nav.isVisible())) await page.getByRole('button', { name: 'メニュー' }).click();
       await nav.click();
       const c = component(page, key);

@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準（docs/requirements/app-experience.md の FR-173〜176）だけから決める。
 // 画面の探し方は tests/system/CONTRACT.md §12。PARAM-058=75（%）、PARAM-059=上、PARAM-029=320（CSS px）。
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, selectPersona, MAIN_SCREENS } from '../support/fixtures';
+import { test, expect, openScreen, component, selectPersona, MAIN_SCREENS, screenEntry } from '../support/fixtures';
 
 const RATIO = 0.75; // PARAM-058
 const TOL = 0.03; // 割合・位置の許容（キャンバスの寸法に対する比）
@@ -216,7 +216,8 @@ test.describe('FR-176 作業先・企業・Project のメニューを画面の�
       const others: Array<[string, Locator]> = [
         ['ペルソナ', page.getByRole('button', { name: /ペルソナ/ })],
         ['編集モード', page.getByRole('switch', { name: '編集モード' })],
-        ...MAIN_SCREENS.map(([k]): [string, Locator] => [`nav-${k}`, page.getByTestId(`nav-${k}`)]),
+        // 設定は上部のボタン「設定」（FR-223 AC-774。作業先の段より上に置かない）
+        ...MAIN_SCREENS.map(([k]): [string, Locator] => [k === 'settings' ? '設定' : `nav-${k}`, screenEntry(page, k)]),
       ];
       const stepper = page.getByTestId('stepper');
       if (await stepper.count()) others.push(['stepper', stepper]);
@@ -244,7 +245,7 @@ test.describe('FR-176 作業先・企業・Project のメニューを画面の�
     for (const key of ['priority', 'settings']) {
       await openScreen(page, key);
       const wt = (await box(page.getByTestId('work-target-menu'))).y;
-      const nav = (await box(page.getByTestId(`nav-${key}`))).y;
+      const nav = (await box(screenEntry(page, key))).y; // 設定は上部のボタン「設定」（FR-223 AC-774）
       expect(wt, `${key} 表示中に作業先が nav より下`).toBeLessThanOrEqual(nav + 1);
     }
   });

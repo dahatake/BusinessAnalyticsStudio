@@ -5,7 +5,7 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import AxeBuilder from '@axe-core/playwright';
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, hook, MAIN_SCREENS, hexToRgb, contrastRatio, pressOpeningEscape, leaveMainScreen, chooseWorkTarget } from '../support/fixtures';
+import { test, expect, openScreen, component, hook, MAIN_SCREENS, hexToRgb, contrastRatio, pressOpeningEscape, leaveMainScreen, chooseWorkTarget, screenEntry } from '../support/fixtures';
 import { examplePack, makeVariant } from '../support/packs';
 import { DIST_DIR } from '../support/server';
 
@@ -314,7 +314,8 @@ test.describe('NFR-UX-005 OS の表示設定への追従', () => {
     await start();
     expect(await bgLuminanceDark(page)).toBe(true);
     for (const [key, name] of MAIN_SCREENS) {
-      const nav = page.getByTestId(`nav-${key}`);
+      // 設定は上部のボタン「設定」から開く（FR-223 AC-774）。ほかは左メニュー
+      const nav = screenEntry(page, key);
       if (!(await nav.isVisible())) await page.getByRole('button', { name: 'メニュー' }).click();
       await nav.click();
       const c = component(page, key);
