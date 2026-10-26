@@ -170,7 +170,11 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
     void (async () => {
       try {
         if (path === '/ai/provider') {
-          if (req.method === 'GET') return json(200, { provider: provider.provider() });
+          if (req.method === 'GET') {
+            // FR-275 AC-773: packId を付けたときだけ、その案件の共通接続の実接続が有効か（enabled）も返す（上部の AI の状態表示用。認証情報は含めない）
+            const pid = new URL(req.url ?? '/', 'http://127.0.0.1').searchParams.get('packId');
+            return json(200, pid === null ? { provider: provider.provider() } : { provider: provider.provider(), enabled: foundryEnabled.has(pid) });
+          }
           if (req.method === 'PUT') {
             const b = JSON.parse((await readBody(req)) || '{}');
             if (b.provider !== 'foundry' && b.provider !== 'copilot') return json(400, { error: '接続先を確認してください' });
