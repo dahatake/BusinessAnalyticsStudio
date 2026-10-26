@@ -58,8 +58,8 @@ test.describe('FR-291 ユースケースのストーリー動画（AI 生成・�
   let relay: AiImportRelayStub;
   test.afterEach(async () => { await relay?.close(); });
 
-  // FR-291 AC-778
-  test('FR-291 AC-778 A で「ストーリー動画を作る」を実行すると、A だけの順序つきシーンのストーリーボードと隔離表示枠のアニメーションが出て再生・一時停止でき、作成だけでは呼び出し 0 回・確認前も 0 回', async ({ page, start }) => {
+  // FR-291 AC-778 / AC-784
+  test('FR-291 AC-778 AC-784 単価未入力なら案内して呼び出し 0 回、設定画面で単価を保存後、A で「ストーリー動画を作る」を実行すると、A だけの順序つきシーンのストーリーボードと隔離表示枠のアニメーションが出て再生・一時停止でき、作成だけでは呼び出し 0 回・確認前も 0 回', async ({ page, start }) => {
     relay = await startAiImportRelayStub({ configured: true, enabled: true });
     await start({ relayUrl: relay.url });
     await openProjectWithUseCases(page);
@@ -76,6 +76,21 @@ test.describe('FR-291 ユースケースのストーリー動画（AI 生成・�
     expect(relay.storyVideoCalls()).toBe(0);
 
     const itemA = page.getByTestId('usecase-list').getByRole('listitem').filter({ hasText: UC_A.name });
+    // FR-291 AC-784 単価が未入力なら作成を始めず、設定画面での入力を案内し、呼び出し 0 回（確認も出ない）
+    await itemA.getByRole('button', { name: 'ストーリー動画を作る' }).click();
+    await expect(page.getByText('単価が未入力')).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'ストーリー動画の作成の確認' })).toHaveCount(0);
+    await page.waitForTimeout(300);
+    expect(relay.storyVideoCalls()).toBe(0);
+    // 設定画面で単価を保存してから作成する
+    const settings2 = await openScreen(page, 'settings');
+    const prices = settings2.getByTestId('story-video-prices');
+    await prices.getByRole('textbox', { name: 'ストーリー動画の単価・入力（円／100万トークン）' }).fill('500');
+    await prices.getByRole('textbox', { name: 'ストーリー動画の単価・出力（円／100万トークン）' }).fill('2000');
+    await prices.getByRole('button', { name: '単価を保存' }).click();
+    await expect(prices).toContainText('単価を保存しました');
+    await closeSettings(page);
+    await page.getByTestId('stepper').getByRole('button', { name: 'ユースケース作成' }).click();
     await itemA.getByRole('button', { name: 'ストーリー動画を作る' }).click();
     // 実行前に見積りと上限（1,000 円）が示され、確認までは呼び出し 0 回
     const dlg = page.getByRole('dialog', { name: 'ストーリー動画の作成の確認' });
