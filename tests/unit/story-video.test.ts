@@ -12,7 +12,7 @@ import type { FoundryView } from '../../src/ai/foundryClient';
 import { useUseCases } from '../../src/store/usecases';
 import { emptyDraft, type UseCaseDraft } from '../../src/usecase/model';
 import {
-  DEFAULT_PRICES, STORY_VIDEO_BUDGET_YEN, STORY_VIDEO_MAX_CALLS, STORY_VIDEO_SANDBOX, appendUsageLog, planStoryVideo, requestStoryVideo, runStoryVideo,
+  DEFAULT_PRICES, STORY_VIDEO_BUDGET_YEN, STORY_VIDEO_MAX_CALLS, STORY_VIDEO_PARAMS, inputTokensOf, STORY_VIDEO_SANDBOX, appendUsageLog, planStoryVideo, requestStoryVideo, runStoryVideo,
   storyVideoAvailability, storyVideoState, toPayload, toSrcDoc, validateAnimationHtml, type CallResult, type RunDeps, type UsageLogEntry,
 } from '../../src/usecase/storyVideo';
 
@@ -148,6 +148,28 @@ describe('FR-292 AC-782 見積りと事前の制御', () => {
     const p = planStoryVideo(ucOf(1), DEFAULT_PRICES, usage(100_000));
     expect(p.ok).toBe(false);
     if (!p.ok) expect(p.reason).toBe('month');
+  });
+});
+
+describe('FR-292 AC-784 確定値（PARAM-129/130/131）からの見積り', () => {
+  it('FR-292 AC-784 安全係数 1.2・最大呼び出し 3 回が設定値で、見積りは利用者入力の単価と係数から算出される', () => {
+    expect(STORY_VIDEO_PARAMS).toEqual({ safetyFactor: 1.2, maxCalls: 3 });
+    expect(STORY_VIDEO_MAX_CALLS).toBe(3);
+    const prices = { inPerM: 300, outPerM: 1500 }; // PARAM-130: 利用者が設定画面で入力した値
+    const p = planStoryVideo(ucOf(3), prices, usage());
+    expect(p.ok).toBe(true);
+    if (!p.ok) return;
+    const inTok = inputTokensOf(p.payload);
+    const expected = 1.2 * ((inTok * 300 + p.limits.storyboard * 1500) / 1e6) + 1.2 * ((inTok * 300 + p.limits.animation * 1500) / 1e6);
+    expect(p.estimateYen).toBeCloseTo(expected, 10);
+    // 単価を変えると見積りが変わる（ハードコードでない）
+    const p2 = planStoryVideo(ucOf(3), { inPerM: 600, outPerM: 3000 }, usage());
+    if (p2.ok) expect(p2.estimateYen).toBeCloseTo(p.estimateYen * 2, 10);
+  });
+  it('FR-292 AC-784 見積りの費用が画面に表示される（StoryVideoPanel が plan.estimateYen を表示）', () => {
+    const src = fs.readFileSync(path.join(__dirname, '../../src/usecase/StoryVideoPanel.tsx'), 'utf8');
+    expect(src).toContain('story-video-estimate');
+    expect(src).toContain('見積りの費用: ${yen(confirm.plan.estimateYen)}');
   });
 });
 
