@@ -7,6 +7,8 @@ import { REPO_ROOT } from '../../scripts/lib/pack-fs';
 import { usePackStore } from '../../src/store/pack';
 import { useProjects, resetProjects } from '../../src/store/projects';
 import { PROJECT_PACKS_KEY, readProjectPack, saveProjectPack } from '../../src/store/projectPacks';
+import { resetEditForTest, useEditStore } from '../../src/store/edit';
+import { updateField } from '../../src/edit/model';
 import type { PackData } from '../../src/schema';
 
 const ready = () => {
@@ -69,6 +71,36 @@ describe('FR-043 AC-054 persisted project packs', () => {
     expect(ready().data).toEqual(original);
     useProjects.getState().open('project-B');
     expect(ready().data).toEqual(savedB);
+  });
+
+  it('FR-043 AC-054 undo/redo history is cleared on Project switch, so another workspace pack is never applied or saved', async () => {
+    await usePackStore.getState().load();
+    const original = structuredClone(ready().data);
+    const id = original.issues.solutions[0]!.id;
+    resetEditForTest();
+    useEditStore.getState().setEditMode(true);
+    useProjects.getState().open('project-A');
+    expect(useEditStore.getState().commit(updateField(ready().data, id, ['title'], 'A-1')).ok).toBe(true);
+    expect(useEditStore.getState().commit(updateField(ready().data, id, ['title'], 'A-2')).ok).toBe(true);
+    const savedA = structuredClone(ready().data);
+    useProjects.getState().open('project-B');
+    expect(ready().data).toEqual(original);
+    expect(useEditStore.getState().past).toHaveLength(0);
+    expect(useEditStore.getState().future).toHaveLength(0);
+    expect(useEditStore.getState().undo()).toBe(false);
+    expect(useEditStore.getState().redo()).toBe(false);
+    expect(ready().data).toEqual(original);
+    expect(JSON.parse(localStorage.getItem(PROJECT_PACKS_KEY)!)['project-B']).toBeUndefined();
+    useProjects.getState().open('project-A');
+    expect(ready().data).toEqual(savedA);
+    // demo -> Project
+    useProjects.getState().open(null);
+    useEditStore.getState().commit(updateField(ready().data, id, ['title'], 'demo-1'));
+    useProjects.getState().open('project-B');
+    expect(useEditStore.getState().undo()).toBe(false);
+    expect(ready().data).toEqual(original);
+    expect(readProjectPack('project-B', ready().brand)).toBeUndefined();
+    resetEditForTest();
   });
 
   it('FR-043 AC-054 invalid storage is not applied or deleted, and unavailable storage does not destroy the in-memory pack', async () => {
