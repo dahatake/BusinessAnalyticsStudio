@@ -9,11 +9,13 @@ import { signature, type UseCaseDraft } from './model';
 
 /** PARAM-128: 作成 1 回あたりの予算の上限（円） */
 export const STORY_VIDEO_BUDGET_YEN = 1000;
-/** PARAM-129: 見積りの安全係数（提案値・承認待ち Q-065） */
-export const STORY_VIDEO_SAFETY_FACTOR = 1.2;
-/** PARAM-131: 1 回の作成で行う生成の呼び出しの最大回数（再試行・修復を含む。提案値・承認待ち Q-065） */
-export const STORY_VIDEO_MAX_CALLS = 3;
-/** PARAM-130: 単価（円／100万トークン）。値は未確定（Q-065）のため仮置きの既定値。利用者が確認・変更できる */
+/** PARAM-129 / PARAM-131 の確定値（承認済み Q-065）。見積り・呼び出しの制御はこの設定値だけから算出する */
+export const STORY_VIDEO_PARAMS = { safetyFactor: 1.2, maxCalls: 3 } as const;
+/** PARAM-129: 見積りの安全係数（承認済み Q-065） */
+export const STORY_VIDEO_SAFETY_FACTOR: number = STORY_VIDEO_PARAMS.safetyFactor;
+/** PARAM-131: 1 回の作成で行う生成の呼び出しの最大回数（再試行・修復を含む。承認済み Q-065） */
+export const STORY_VIDEO_MAX_CALLS: number = STORY_VIDEO_PARAMS.maxCalls;
+/** PARAM-130: 単価（円／100万トークン）。設定画面で利用者が入力した値（入力・出力別）。DEFAULT_PRICES は入力欄の初期表示だけの値 */
 export interface Prices { inPerM: number; outPerM: number }
 export const DEFAULT_PRICES: Prices = { inPerM: 500, outPerM: 2000 };
 /** 依頼に指定する出力のトークンの上限（既定。見積りで超えるときは下げる） */

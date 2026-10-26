@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
-import { MessageBar, MessageBarBody, MessageBarTitle } from '@fluentui/react-components';
+import { MessageBar, MessageBarBody, MessageBarTitle, tokens } from '@fluentui/react-components';
 import { AiStatus } from '../ai/AiStatus';
 import { CopilotReviewButton } from '../review/CopilotReviewButton';
 import { ExplainButton, ExplainHost } from '../explain/ExplainPanel';
