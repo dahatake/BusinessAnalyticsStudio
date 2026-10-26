@@ -333,7 +333,8 @@
     "AC-774": "sha256:b022e1c73dde6367",
     "AC-775": "sha256:5027e48468b7da1a",
     "AC-778": "sha256:8350fd04a65308f1",
-    "AC-785": "sha256:46c7dcb2989d1069"
+    "AC-785": "sha256:46c7dcb2989d1069",
+    "AC-784": "sha256:e0d52d90630368c5"
   },
   "cases": [
     {
@@ -11201,13 +11202,14 @@
         "FR-291"
       ],
       "ac_ids": [
-        "AC-778"
+        "AC-778",
+        "AC-784"
       ],
       "title": "ユースケース A のストーリー動画: 確認前は呼び出し 0 回、A だけの順序つきシーンと隔離枠のアニメーション、再生・一時停止",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-778",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "d5d20ce",
       "last_run_at": "2026-10-26T11:28:45+09:00",
       "evidence": "work\\runs\\202610260959\\logs\\system-test\\E2E-445-202610261128.log",
@@ -11217,6 +11219,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "FR-291 AC-778 のケースを作成"
+        },
+        {
+          "at": "2026-10-26T13:28:07+09:00",
+          "by": "test-designer",
+          "change": "ac_ids: ['AC-778'] -> ['AC-778', 'AC-784']",
+          "reason": "AC-784 単価未入力で呼び出し0回・設定画面で単価保存後に作成"
         }
       ]
     }
