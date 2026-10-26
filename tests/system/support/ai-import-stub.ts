@@ -11,6 +11,8 @@ export interface AiImportRelayStub extends RelayStub {
   savedKey(): string | null;
   /** /foundry/import の呼び出し回数 */
   importCalls(): number;
+  /** /foundry/story-video の呼び出し回数（FR-291） */
+  storyVideoCalls(): number;
   forceEnabled(v: boolean): void;
 }
 
@@ -84,6 +86,31 @@ export async function startAiImportRelayStub(opts: { configured?: boolean; mode?
         return json(200, { mode: enabled ? 'connected' : 'mock' });
       }
       if (u.pathname === '/health') return json(200, { status: 'ready', copilot: 'signed-in', foundry: { keyConfigured: foundry !== null } });
+      // FR-291 AC-778、CONTRACT.md §32。生成AIは呼ばず、受けたユースケースの内容から決まった形の応答を返す。
+      if (u.pathname === '/foundry/story-video' && req.method === 'POST') {
+        if (provider === 'copilot') return json(503, { error: { cause: 'unsupported', message: 'Copilot SDK では未対応' } });
+        if (!foundry) return json(503, { error: { cause: 'key-missing' } });
+        if (!enabled) return json(503, { error: { cause: 'disabled' } });
+        let b: { kind?: string; usecase?: { name?: string; persona?: string; steps?: { title?: string; description?: string }[]; effect?: string } } = {};
+        try { b = JSON.parse(body); } catch { return json(400, { error: '不正な入力です' }); }
+        const uc = b.usecase ?? {};
+        const steps = uc.steps ?? [];
+        const usage = { inputTokens: 500, outputTokens: 500 };
+        if (b.kind === 'storyboard') {
+          return json(200, {
+            scenes: steps.map((s, i) => ({
+              scene: `場面${i + 1}: ${s.title ?? ''}`,
+              person: uc.persona ?? '',
+              trouble: `困りごと${i + 1}: ${s.description ?? ''}`,
+              change: `実現後の変化${i + 1}: ${uc.effect ?? 'よくなる'}`,
+            })),
+            usage,
+          });
+        }
+        const text = [uc.persona ?? '', ...steps.map((s) => s.title ?? '')].join(' / ');
+        const html = `<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0}</style></head><body><svg xmlns="http://www.w3.org/2000/svg" width="320" height="120" data-testid="story-svg"><text x="10" y="40">${text.replace(/[<&]/g, '')}</text></svg><script>var n=0;setInterval(function(){n++;},1000);</script></body></html>`;
+        return json(200, { html, usage });
+      }
       if (u.pathname === '/foundry/import') {
         if (provider === 'copilot') return json(503, { error: { cause: 'unsupported', message: 'Copilot SDK では未対応' } });
         if (!foundry) return json(503, { error: { cause: 'key-missing' } });
@@ -101,6 +128,7 @@ export async function startAiImportRelayStub(opts: { configured?: boolean; mode?
     received,
     savedKey: () => (foundry && foundry.authMethod === 'api-key' ? foundry.key : null),
     importCalls: () => received.filter((r) => r.path === '/foundry/import').length,
+    storyVideoCalls: () => received.filter((r) => r.path === '/foundry/story-video').length,
     /** 設定画面を開かずに、中継の「有効」の状態だけを切り替える（了承の入力後に「設定だけが欠ける」状態を作るため） */
     forceEnabled: (v: boolean) => { enabled = v; },
     close: () => new Promise<void>((r) => server.close(() => r())),

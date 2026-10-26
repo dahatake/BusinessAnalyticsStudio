@@ -3,12 +3,13 @@
 import { create } from 'zustand';
 import { useDataCatalog } from './datacatalog';
 import { createStoryboard, validateScenes, type Storyboard, type StoryScene } from '../usecase/storyboard';
+import type { StoryVideo, StoryVideoScene } from '../usecase/storyVideo';
 import {
-  createAnimation, toDraft, validateDraft,
+  createAnimation, signature, toDraft, validateDraft,
   type Animation, type UseCase, type UseCaseDraft, type UseCaseSource,
 } from '../usecase/model';
 
-export interface UseCaseSet { items: UseCase[]; animations: Record<string, Animation>; seq: number; /** ストーリーボード（FR-163）。古い保存内容にはない */ storyboards?: Record<string, Storyboard> }
+export interface UseCaseSet { items: UseCase[]; animations: Record<string, Animation>; seq: number; /** ストーリーボード（FR-163）。古い保存内容にはない */ storyboards?: Record<string, Storyboard>; /** AI 生成ストーリー動画（FR-291）。古い保存内容にはない */ storyVideos?: Record<string, StoryVideo> }
 const EMPTY: UseCaseSet = { items: [], animations: {}, seq: 0 };
 
 export type SaveResult = { ok: true; id: string } | { ok: false; errors: string[] };
@@ -24,6 +25,8 @@ interface UseCaseState {
   createStoryboard: (projectId: string, id: string) => { ok: true } | { ok: false; errors: string[] };
   /** 編集したシーンを保存する。元のユースケースは変えない */
   saveStoryboardScenes: (projectId: string, id: string, scenes: StoryScene[]) => { ok: true } | { ok: false; errors: string[] };
+  /** 生成した（検査を通った）ストーリー動画を保存する。作成時の内容の署名を持ち、手順などを編集すると「古い」になる（FR-291 AC-781） */
+  saveStoryVideo: (projectId: string, id: string, v: { scenes: StoryVideoScene[]; html: string }, now?: Date) => { ok: true } | { ok: false; errors: string[] };
   reset: () => void;
 }
 
@@ -48,7 +51,8 @@ export const useUseCases = create<UseCaseState>((set, get) => ({
       if (!cur) return s;
       const { [id]: _gone, ...animations } = cur.animations;
       const { [id]: _sb, ...storyboards } = cur.storyboards ?? {};
-      return { byProject: { ...s.byProject, [projectId]: { ...cur, items: cur.items.filter((u) => u.id !== id), animations, storyboards } } };
+      const { [id]: _sv, ...storyVideos } = cur.storyVideos ?? {};
+      return { byProject: { ...s.byProject, [projectId]: { ...cur, items: cur.items.filter((u) => u.id !== id), animations, storyboards, storyVideos } } };
     });
     // FR-160 AC-313: そのユースケースへのデータカタログの明示の紐づけも連動して削除する
     useDataCatalog.getState().removeByUseCase(projectId, id);
@@ -78,6 +82,14 @@ export const useUseCases = create<UseCaseState>((set, get) => ({
     const v = validateScenes(scenes);
     if (!v.ok) return v;
     set((s) => ({ byProject: { ...s.byProject, [projectId]: { ...cur, storyboards: { ...(cur.storyboards ?? {}), [id]: { ...sb, scenes: v.value } } } } }));
+    return { ok: true };
+  },
+  saveStoryVideo: (projectId, id, v, now = new Date()) => {
+    const cur = get().byProject[projectId] ?? EMPTY;
+    const uc = cur.items.find((u) => u.id === id);
+    if (!uc) return { ok: false, errors: ['ユースケースが見つかりません。'] };
+    const video: StoryVideo = { scenes: v.scenes, html: v.html, signature: signature(toDraft(uc)), createdAt: now.toISOString() };
+    set((s) => ({ byProject: { ...s.byProject, [projectId]: { ...cur, storyVideos: { ...(cur.storyVideos ?? {}), [id]: video } } } }));
     return { ok: true };
   },
   reset: () => set({ byProject: {} }),

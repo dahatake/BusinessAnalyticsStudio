@@ -196,10 +196,16 @@
 - 中継（実物の scripts/relay/relay.ts の startRelay をテストのプロセス内で起動。データフォルダーは環境変数 EDB_RELAY_DATA）: `GET /ai/provider` → 200 `{ provider: 'foundry' | 'copilot' }`（ほかの項目は任意。認証情報の値は含めない）。`PUT /ai/provider` body `{ provider }`（余分な項目は保存しない）。選択はデータフォルダーに保存し、同じデータフォルダーで再起動しても保つ。画面は選択を変えたら PUT する。
 - テストが渡す Copilot SDK の差し替え部品は `{ status(): Promise<{signedIn:false}>, complete() }`（未サインイン）。実 GitHub・実 gh・実 Foundry には接続しない。サインイン状態は SDK の実状態（getAuthStatus 等）で判定し、クライアントの起動成功だけでサインイン済みとしない（AC-771 の結合テストの側で確かめる）。
 
-## 31. 上部の「設定」・AI の接続先表示・生成 AI のストーリー（FR-223 AC-774、FR-275 AC-773、FR-290 AC-775。run 202610250836）
+## 31. 上部の「設定」・AI の接続先表示・生成 AI のストーリー（FR-223 AC-774、FR-275 AC-773、FR-290 AC-775・AC-785。run 202610250836）
 - 上部の「設定」: `data-testid="settings-button"`、role=button、アクセシブル名「設定」。左メニュー（nav）の外で、`ai-status` と同じ行。左メニューに `nav-settings` は置かない。Tab で到達し Enter／Space で開く。
 - AI の接続先表示: `ai-status` の中の `data-testid="ai-provider-status"`。文字に「Microsoft Foundry」か「GitHub Copilot」、実接続が無効のとき「モック」、有効のときは「モック」を含めず「有効」か「接続済み」。キー・トークンの値は出さない。
 - ペルソナの選択（§12）に checkbox か switch「生成 AI で作成」（既定は選ばない）。作成中は `data-testid="story-generating"`（ボタン「取り消す」）。条件が欠ける・失敗は `data-testid="story-genai-error"` に理由と、ボタン「生成 AI を使わずに開始」。
 - 生成 AI の応答（中継の `sdk.complete`・Foundry の `output_text`）は JSON `{"scenes":[{"part":1-4,"heading":"…","narration":"…"}]}`（コードフェンスで囲んでもよい）。生成したストーリーは `story` の中に「AI 生成」と接続先の名前を示す。
 - 差し替え部品: `support/genai-relay.ts`（実物の中継を起動し、Copilot SDK と Foundry の fetch だけを差し替える）。
 - 改訂（5905ad1）: `ai-provider-status` は共通接続（/foundry/*）だけを示し、POST /ask（FR-132）が接続済みでも共通接続が無効なら「モック」。FR-290 の作成は中継の POST /foundry/ask を通る。差し替え部品の見出し・語りには数字を含めない（材料にない数値の文は表示されない。AC-776）。
+- 企業の許可（FR-290 AC-785）: 企業の Project では region「企業 <企業名>」の checkbox「外部 AI への送信を許可する」（FR-140 AC-219。既定は未チェック）が条件に加わる。許可がなければ `story-genai-error` に理由と「生成 AI を使わずに開始」を示し、中継を呼ばない。
+
+## 32. ユースケースのストーリー動画（FR-291 AC-778。story-video.spec.ts が前提にする画面の探し方と中継の口。run 202610250857）
+- 差し替え部品は support/ai-import-stub.ts（生成AIは実呼び出ししない）。ブラウザー → 中継（runtime-config の relayUrl）の `POST /foundry/story-video`。本文 `{kind:'storyboard'|'animation', usecase:{name,summary,persona,steps:[{title,description}],effect}}`（送る内容はこれだけ。キー・ほかのユースケースを含めない）。応答は 200 `storyboard` が `{scenes:[{scene,person,trouble,change}], usage:{inputTokens,outputTokens}}`、`animation` が `{html, usage}`。失敗は 503 `{error:{cause}}`。
+- ユースケース一覧（`usecase-list`）の各項目に button「ストーリー動画を作る」。押しても作成（登録）だけでは呼び出さない。押すと role=dialog「ストーリー動画の作成の確認」に `story-video-estimate`（見積りの費用の「円」と上限「1,000 円」を文字で含む）と button「実行」「キャンセル」。「実行」を押すまで呼び出しは 0 回。
+- 結果: `story-video-status`（文字「最新」など作成状態）、`story-video-storyboard`（シーンを role=listitem で順序どおり。各シーンに場面・登場する人・困りごと・実現後の変化の文字）、iframe `data-testid="story-video-frame"`（sandbox 属性を持ち、`allow-same-origin` を含まない）、button「ストーリー動画を再生」「ストーリー動画を一時停止」と、再生状態 `story-video-state`（文字「再生中」「一時停止中」）。
