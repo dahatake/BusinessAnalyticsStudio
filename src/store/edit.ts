@@ -10,6 +10,7 @@ import {
 import type { PackData } from '../schema';
 import { getEntityGraph } from '../selection/hooks';
 import { usePackStore } from './pack';
+import { useProjects } from './projects';
 import { useSelectionStore } from './selection';
 
 /** 元に戻す履歴の上限（PARAM-024） */
@@ -176,6 +177,13 @@ export const useEditStore = create<EditState>((set, get) => {
     undo: () => step('past'),
     redo: () => step('future'),
   };
+});
+
+// FR-043 AC-054: 作業先（Project・デモ）を切り替えたら元に戻す/やり直しの履歴を捨てる。
+// 履歴の Step は別の作業先のパック全体を持つので、残すと Undo で他の作業先のパックが適用・保存されてしまう。
+useProjects.subscribe((next, previous) => {
+  if (next.openId === previous.openId) return;
+  useEditStore.setState({ past: [], future: [] });
 });
 
 /** 単体テスト用: 編集の状態を初期化する */

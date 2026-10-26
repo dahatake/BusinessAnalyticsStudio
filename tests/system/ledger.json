@@ -42,7 +42,7 @@
     "AC-051": "sha256:1d9d845644770de7",
     "AC-052": "sha256:15fda5e384c736a5",
     "AC-053": "sha256:7e267fcf72d0f74f",
-    "AC-054": "sha256:b1b23b80160e03c9",
+    "AC-054": "sha256:7d327d5099c270a2",
     "AC-055": "sha256:06b2fddb6a26dbda",
     "AC-056": "sha256:8023c116d6f9992b",
     "AC-057": "sha256:b8cb85942cb568e2",
@@ -114,7 +114,7 @@
     "AC-174": "sha256:06881765522b7ab6",
     "AC-176": "sha256:a298e45ae10524cf",
     "AC-178": "sha256:32d6763aff3d7dd9",
-    "AC-180": "sha256:affed7abeb0f0e6a",
+    "AC-180": "sha256:c53efa6385e25d4a",
     "AC-185": "sha256:d18893906a5e5a75",
     "AC-186": "sha256:c1e6cb474950c109",
     "AC-187": "sha256:a962f1f245029c87",
@@ -312,9 +312,9 @@
     "AC-745": "sha256:792304841369fa02",
     "AC-746": "sha256:9274749e736b2673",
     "AC-747": "sha256:e644eaf2b9a013e9",
-    "AC-748": "sha256:8028a96e89c11476",
-    "AC-749": "sha256:3ebadb7dbc267134",
-    "AC-750": "sha256:b6c5b0e523bd09d1",
+    "AC-748": "sha256:ff19fd54de20223e",
+    "AC-749": "sha256:466a20eb61523533",
+    "AC-750": "sha256:064e415d31f58cfd",
     "AC-751": "sha256:5298ffecc4f6209d",
     "AC-752": "sha256:8be350ff566287fb",
     "AC-754": "sha256:1319d272e6722bfc",
@@ -1598,20 +1598,26 @@
       "ac_ids": [
         "AC-054"
       ],
-      "title": "AC-054 標準の検証条件で、解決策を選ぶと mocks.json のその解決策のモックが表示され、画面間のボタンで遷移でき、枠をス",
+      "title": "FR-043 AC-054 廃止: 導線拒否・旧レイアウト安全復元・モックと参照の保存/再読込/ZIP保持・残機能",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-054",
       "canary": false,
       "status": "pass",
-      "last_commit": "6fd424e",
-      "last_run_at": "2026-10-26T14:12:18+09:00",
-      "evidence": "work/runs/202610261312/logs/system-test/E2E-146-202610261339.log",
+      "last_commit": "ec5de32",
+      "last_run_at": "2026-10-26T14:08:35+09:00",
+      "evidence": "work/runs/202610250852/logs/system-test/E2E-146-202610261331.log",
       "history": [
         {
           "at": "2026-10-12T14:07:03+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-10-25T09:10:12+09:00",
+          "by": "test-designer",
+          "change": "title: 'AC-054 標準の検証条件で、解決策を選ぶと mocks.json のその解決策のモックが表示され、画面間のボタンで遷移でき、枠をス' -> 'FR-043 AC-054 廃止: 導線拒否・旧レイアウト安全復元・モックと参照の保存/再読込/ZIP保持・残機能'",
+          "reason": "要求63f4363: 旧提供確認を廃止確認へ差し替え。デモ2種と保存済みProject、旧レイアウト、非破壊条件を集約"
         }
       ]
     },
@@ -6382,14 +6388,14 @@
       "ac_ids": [
         "AC-591"
       ],
-      "title": "自由配置の全25画面で最大化矩形を既定最大化と比較し全作業領域・最前面を確認",
+      "title": "自由配置の全画面（mock-app 廃止後）で最大化/復元の矩形を確認（E2E-342）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-591",
       "canary": false,
       "status": "pass",
-      "last_commit": "6fd424e",
-      "last_run_at": "2026-10-26T14:12:18+09:00",
-      "evidence": "work/runs/202610261312/logs/system-test/E2E-342-202610261403.log",
+      "last_commit": "ec5de32",
+      "last_run_at": "2026-10-26T14:08:35+09:00",
+      "evidence": "work/runs/202610250852/logs/system-test/E2E-342-202610261358.log",
       "history": [
         {
           "at": "2026-10-21T17:19:41+09:00",
@@ -6402,6 +6408,12 @@
           "by": "test-designer",
           "change": "serial: None -> True",
           "reason": "共有previewサーバーの競合を防ぐため単独実行"
+        },
+        {
+          "at": "2026-10-25T09:16:49+09:00",
+          "by": "test-designer",
+          "change": "title: '自由配置の全25画面で最大化矩形を既定最大化と比較し全作業領域・最前面を確認' -> '自由配置の全画面（mock-app 廃止後）で最大化/復元の矩形を確認（E2E-342）'",
+          "reason": "FR-043 AC-054 で mock-app を廃止（63f4363）。対象画面から mock-app を除外"
         }
       ],
       "serial": true
@@ -6414,14 +6426,14 @@
       "ac_ids": [
         "AC-592"
       ],
-      "title": "全25画面で見出し通常表示による自由配置矩形復元と同一ペルソナ再読込の保存非破壊",
+      "title": "自由配置の全画面（mock-app 廃止後）で最大化/復元の矩形を確認（E2E-343）",
       "layer": "e2e",
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button --workers=1",
       "canary": false,
       "status": "pass",
-      "last_commit": "6fd424e",
-      "last_run_at": "2026-10-26T14:12:18+09:00",
-      "evidence": "work/runs/202610261312/logs/system-test/E2E-343-202610261404.log",
+      "last_commit": "ec5de32",
+      "last_run_at": "2026-10-26T14:08:35+09:00",
+      "evidence": "work/runs/202610250852/logs/system-test/E2E-343-202610261359.log",
       "history": [
         {
           "at": "2026-10-21T17:19:47+09:00",
@@ -6440,6 +6452,12 @@
           "by": "test-designer",
           "change": "command: 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button' -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button --workers=1'",
           "reason": "共有preview環境でPlaywright内部並列によるタイムアウトを防ぐためworkers=1で実行"
+        },
+        {
+          "at": "2026-10-25T09:16:49+09:00",
+          "by": "test-designer",
+          "change": "title: '全25画面で見出し通常表示による自由配置矩形復元と同一ペルソナ再読込の保存非破壊' -> '自由配置の全画面（mock-app 廃止後）で最大化/復元の矩形を確認（E2E-343）'",
+          "reason": "FR-043 AC-054 で mock-app を廃止（63f4363）。対象画面から mock-app を除外"
         }
       ],
       "serial": true
@@ -6452,14 +6470,14 @@
       "ac_ids": [
         "AC-592"
       ],
-      "title": "全25画面でEscによる自由配置矩形復元と同一ペルソナ再読込の保存非破壊",
+      "title": "自由配置の全画面（mock-app 廃止後）で最大化/復元の矩形を確認（E2E-344）",
       "layer": "e2e",
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape --workers=1",
       "canary": false,
       "status": "pass",
-      "last_commit": "6fd424e",
-      "last_run_at": "2026-10-26T14:12:18+09:00",
-      "evidence": "work/runs/202610261312/logs/system-test/E2E-344-202610261408.log",
+      "last_commit": "ec5de32",
+      "last_run_at": "2026-10-26T14:08:35+09:00",
+      "evidence": "work/runs/202610250852/logs/system-test/E2E-344-202610261404.log",
       "history": [
         {
           "at": "2026-10-21T17:19:52+09:00",
@@ -6478,6 +6496,12 @@
           "by": "test-designer",
           "change": "command: 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape' -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape --workers=1'",
           "reason": "共有preview環境でPlaywright内部並列によるタイムアウトを防ぐためworkers=1で実行"
+        },
+        {
+          "at": "2026-10-25T09:16:50+09:00",
+          "by": "test-designer",
+          "change": "title: '全25画面でEscによる自由配置矩形復元と同一ペルソナ再読込の保存非破壊' -> '自由配置の全画面（mock-app 廃止後）で最大化/復元の矩形を確認（E2E-344）'",
+          "reason": "FR-043 AC-054 で mock-app を廃止（63f4363）。対象画面から mock-app を除外"
         }
       ],
       "serial": true
@@ -7343,20 +7367,26 @@
       "ac_ids": [
         "AC-180"
       ],
-      "title": "AC-180 標準の検証条件で、主要画面に「サンプル」、AI の回答・サマリー・ツリーに「AI 生成」、ミニ・モックアプリに「モック（",
+      "title": "NFR-LEGAL-002 AC-180 主要画面に「サンプル」、AI の回答・サマリー・ツリーに「AI 生成」（モック表示は FR-043 で廃止）",
       "layer": "nonfunctional",
       "command": "node tests/system/run.mjs AC-180",
       "canary": false,
       "status": "pass",
-      "last_commit": "6fd424e",
-      "last_run_at": "2026-10-26T14:12:18+09:00",
-      "evidence": "work/runs/202610261312/logs/system-test/IT-025-202610261400.log",
+      "last_commit": "ec5de32",
+      "last_run_at": "2026-10-26T14:08:35+09:00",
+      "evidence": "work/runs/202610250852/logs/system-test/IT-025-202610261351.log",
       "history": [
         {
           "at": "2026-10-12T14:09:11+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-10-25T09:16:49+09:00",
+          "by": "test-designer",
+          "change": "title: 'AC-180 標準の検証条件で、主要画面に「サンプル」、AI の回答・サマリー・ツリーに「AI 生成」、ミニ・モックアプリに「モック（' -> 'NFR-LEGAL-002 AC-180 主要画面に「サンプル」、AI の回答・サマリー・ツリーに「AI 生成」（モック表示は FR-043 で廃止）'",
+          "reason": "FR-043 AC-054 で mock-app を廃止（63f4363）。モック（イメージ）は FR-043 で継続条件外のため検証から外す"
         }
       ]
     },
@@ -10750,20 +10780,26 @@
       "ac_ids": [
         "AC-749"
       ],
-      "title": "デモの 27 画面すべてに screenGuides の説明が見出し／補足に表示される",
+      "title": "FR-287 AC-749 モノ/コトの23画面でscreenGuidesを表示（設定はモーダル、mock-app対象外）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-749",
       "canary": false,
       "status": "pass",
-      "last_commit": "6fd424e",
-      "last_run_at": "2026-10-26T14:12:18+09:00",
-      "evidence": "work/runs/202610261312/logs/system-test/E2E-430-202610261402.log",
+      "last_commit": "ec5de32",
+      "last_run_at": "2026-10-26T14:08:35+09:00",
+      "evidence": "work/runs/202610250852/logs/system-test/E2E-430-202610261332.log",
       "history": [
         {
           "at": "2026-10-23T03:32:58+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-25T09:10:13+09:00",
+          "by": "test-designer",
+          "change": "title: 'デモの 27 画面すべてに screenGuides の説明が見出し／補足に表示される' -> 'FR-287 AC-749 モノ/コトの23画面でscreenGuidesを表示（設定はモーダル、mock-app対象外）'",
+          "reason": "要求63f4363: FR-043廃止後の23画面へ変更"
         }
       ]
     },
@@ -10775,20 +10811,26 @@
       "ac_ids": [
         "AC-750"
       ],
-      "title": "デモの 26 画面（設定除く）がデータを 1 件以上表示し空表示にならない（画面ごとのデータ種別の表は demo-screens.spec.ts の DATA_KIND）",
+      "title": "FR-287 AC-750 モノ/コトの設定以外22画面がデータを表示（種別表: tests/system/prototype-retirement.md）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-750",
       "canary": false,
       "status": "pass",
-      "last_commit": "6fd424e",
-      "last_run_at": "2026-10-26T14:12:18+09:00",
-      "evidence": "work/runs/202610261312/logs/system-test/E2E-431-202610261402.log",
+      "last_commit": "ec5de32",
+      "last_run_at": "2026-10-26T14:08:35+09:00",
+      "evidence": "work/runs/202610250852/logs/system-test/E2E-431-202610261331.log",
       "history": [
         {
           "at": "2026-10-23T03:33:02+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-25T09:10:13+09:00",
+          "by": "test-designer",
+          "change": "title: 'デモの 26 画面（設定除く）がデータを 1 件以上表示し空表示にならない（画面ごとのデータ種別の表は demo-screens.spec.ts の DATA_KIND）' -> 'FR-287 AC-750 モノ/コトの設定以外22画面がデータを表示（種別表: tests/system/prototype-retirement.md）'",
+          "reason": "要求63f4363: 設定以外22画面へ変更、可視データと空表示拒否を検証"
         }
       ]
     },
@@ -10831,9 +10873,9 @@
       "ac_ids": [
         "AC-748"
       ],
-      "title": "デモ（モノ・コト）の screenGuides が登録簿の 27 キーすべてを持ち、120 文字以内（欠落・余分・使い回しの異常系含む）",
+      "title": "FR-287 AC-748 23キーと120文字以内、旧mock-app説明の任意互換・保持、欠落/超過拒否",
       "layer": "data",
-      "command": "node --test tests/system/integration-demo/screen-guides.test.mjs --test-name-pattern=AC-748",
+      "command": "node --test --test-name-pattern=AC-748 tests/system/integration-demo/screen-guides.test.mjs",
       "canary": false,
       "status": "blocked",
       "last_commit": null,
@@ -10851,6 +10893,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "検証レベル=integration は System Test の対象外。テストは先行作成済み。実装役が統合テストとして実行する"
+        },
+        {
+          "at": "2026-10-25T09:10:13+09:00",
+          "by": "test-designer",
+          "change": "command: 'node --test tests/system/integration-demo/screen-guides.test.mjs --test-name-pattern=AC-748' -> 'node --test --test-name-pattern=AC-748 tests/system/integration-demo/screen-guides.test.mjs'; title: 'デモ（モノ・コト）の screenGuides が登録簿の 27 キーすべてを持ち、120 文字以内（欠落・余分・使い回しの異常系含む）' -> 'FR-287 AC-748 23キーと120文字以内、旧mock-app説明の任意互換・保持、欠落/超過拒否'",
+          "reason": "run202610250852の明示依頼でintegration対象外の停止を解除。要求63f4363の23画面と旧キー任意互換へ更新、Nodeオプション位置を修正"
+        },
+        {
+          "at": "2026-10-25T09:11:47+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-748の検証レベルはintegration。CHK-10によりSystem Testでは有効化不可のため停止を維持。要求63f4363向けテストは更新済み、直接Nodeコマンドで実行する"
         }
       ]
     },

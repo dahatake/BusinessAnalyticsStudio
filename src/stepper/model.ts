@@ -17,7 +17,7 @@ export const STEPS: readonly StepDefinition[] = [
   { key: 'issue', label: '課題定義', screen: 'issue-solution', screens: ['issue-solution', 'themes', 'discussion-tree', 'sources'] },
   { key: 'analysis', label: '現状分析', screen: 'knowledge-graph', screens: ['knowledge-graph', 'analysis', 'architecture', 'table', 'map'] },
   { key: 'kpi', label: 'KPI 測定', screen: 'priority', screens: ['priority', 'ranking', 'matrix'] },
-  { key: 'usecase', label: 'ユースケース作成', screen: 'mock-app', screens: ['mock-app', 'whiteboard', 'usecase'], also: ['usecase'] },
+  { key: 'usecase', label: 'ユースケース作成', screen: 'usecase', screens: ['usecase', 'whiteboard'] },
   { key: 'plan', label: '施策計画', screen: 'gantt', screens: ['gantt', 'summary'] },
 ];
 

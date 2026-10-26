@@ -1,13 +1,13 @@
-// System Test: FR-287 デモの全画面（24 件）の説明（screenGuides）とデータの表示、実際の Project との分離
+// System Test: FR-287 デモの全画面（23 件）の説明（screenGuides）とデータの表示、実際の Project との分離
 // 期待値は受入基準だけから決める（実装は読まない）。
 import { test, expect, openScreen, component, setEditMode, tableRows, chooseWorkTarget, closeSettings } from '../support/fixtures';
 import { examplePack } from '../support/packs';
 
-/** 登録簿（24 件）。設定パネルはモーダル */
+/** FR-287 の列挙した23画面。実装の登録簿から期待値を生成しない。設定パネルはモーダル */
 const KEYS = [
   'issue-solution', 'priority', 'summary', 'matrix', 'ranking', 'knowledge-graph', 'business-graph',
   'architecture', 'discussion-tree', 'table', 'gantt', 'map', 'kpi-okr', 'twin-view',
-  'sources', 'mock-app', 'usecase', 'data-catalog', 'spatial-view', 'whiteboard', 'themes', 'settings',
+  'sources', 'usecase', 'data-catalog', 'spatial-view', 'whiteboard', 'themes', 'settings',
   'genai-scenario', 'chat',
 ] as const;
 
@@ -19,7 +19,7 @@ export const DATA_KIND: Record<string, string> = {
   'issue-solution': '行（課題・解決策）', priority: '行（課題・解決策）', summary: '行（サマリーの項目）',
   matrix: 'ノード（課題・解決策の点）', ranking: '行（順位）', 'knowledge-graph': 'ノード', 'business-graph': 'ノード',
   architecture: '図形（構成要素）', 'discussion-tree': 'ノード', table: '行', gantt: '工程',
-  map: '場所', 'kpi-okr': '行（KPI/OKR）', 'twin-view': 'ノード', sources: '行（出典）', 'mock-app': '図形（画面の部品）',
+  map: '場所', 'kpi-okr': '行（KPI/OKR）', 'twin-view': 'ノード', sources: '行（出典）',
   usecase: '行（ユースケース）', 'data-catalog': '行（データエンティティ）', 'spatial-view': '図形（空間）', whiteboard: '付箋',
   themes: '行（議論テーマ）', 'genai-scenario': '行（シナリオ）', chat: 'メッセージ',
 };
@@ -38,8 +38,9 @@ async function guideOf(kind: 'mono' | 'koto', key: string): Promise<string> {
 for (const kind of ['mono', 'koto'] as const) {
   test.describe(`FR-287 デモ（${kind}）`, () => {
     // FR-287 AC-749
-    test(`FR-287 AC-749 ${kind}: 24 画面のどれも、見出しまたは補足に screenGuides の説明が表示される`, async ({ page, start }) => {
+    test(`FR-287 AC-749 ${kind}: 23 画面のどれも、見出しまたは補足に screenGuides の説明が表示される`, async ({ page, start }) => {
       await start({ pack: kind });
+      expect(KEYS).toHaveLength(23);
       const missing: string[] = [];
       for (const key of KEYS) {
         const guide = await guideOf(kind, key);
@@ -53,9 +54,10 @@ for (const kind of ['mono', 'koto'] as const) {
     });
 
     // FR-287 AC-750
-    test(`FR-287 AC-750 ${kind}: 設定パネルを除く 23 画面がデータを 1 件以上表示し、「データなし」「空」「0 件」にならない`, async ({ page, start }) => {
+    test(`FR-287 AC-750 ${kind}: 設定パネルを除く 22 画面がデータを 1 件以上表示し、「データなし」「空」「0 件」にならない`, async ({ page, start }) => {
       await start({ pack: kind });
-      expect(Object.keys(DATA_KIND)).toHaveLength(23);
+      expect(Object.keys(DATA_KIND)).toHaveLength(22);
+      expect(Object.keys(DATA_KIND).sort()).toEqual(KEYS.filter((k) => k !== 'settings').sort());
       const problems: string[] = [];
       for (const key of KEYS.filter((k) => k !== 'settings')) {
         const c = await openScreen(page, key);
@@ -63,7 +65,7 @@ for (const kind of ['mono', 'koto'] as const) {
         // 画面の説明（screenGuides）自体に含まれる語は除いて、空表示の語を調べる
         const body = text.replace(await guideOf(kind, key), '');
         if (EMPTY.test(body)) problems.push(`${key}: 空の表示（${DATA_KIND[key]}）`);
-        else if ((await c.locator(DATA_SELECTOR).count()) < 1) problems.push(`${key}: ${DATA_KIND[key]}が 0 件`);
+        else if ((await c.locator(DATA_SELECTOR).filter({ visible: true }).count()) < 1) problems.push(`${key}: ${DATA_KIND[key]}が 0 件`);
       }
       expect(problems, problems.join(' / ')).toEqual([]);
     });

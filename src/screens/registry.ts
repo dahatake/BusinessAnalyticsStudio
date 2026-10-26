@@ -1,6 +1,6 @@
 import {
   Chat24Regular, Building24Regular, CommentMultiple24Regular, Database24Regular, DataBarHorizontal24Regular, DataScatter24Regular, DocumentBulletList24Regular, Layer24Regular, Map24Regular,
-  Organization24Regular, PhoneDesktop24Regular, Settings24Regular, Table24Regular, TaskListSquareLtr24Regular, TextBulletListTree24Regular,
+  Organization24Regular, Settings24Regular, Table24Regular, TaskListSquareLtr24Regular, TextBulletListTree24Regular,
   Notepad24Regular, Target24Regular, TextNumberListLtr24Regular, Lightbulb24Regular, Trophy24Regular, Whiteboard24Regular,
 } from '@fluentui/react-icons';
 import type { ScreenDefinition } from './types';
@@ -8,7 +8,6 @@ import { tableWorldDecl, type ViewDecl } from '../view/viewModel';
 import { SettingsScreen } from './SettingsScreen';
 import { ThemesScreen } from './ThemesScreen';
 import { IssueSolutionScreen } from './IssueSolutionScreen';
-import { MockAppScreen } from './MockAppScreen';
 import { TableScreen } from './TableScreen';
 import { GanttScreen } from './GanttScreen';
 import { MapScreen } from './MapScreen';
@@ -64,7 +63,6 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'kpi-okr', label: 'KPI/OKR', icon: Target24Regular, component: KpiOkrScreen, view: { has2D: true, has3D: true, hasGraph: true, ...tableWorldDecl(['KPI', 'OKR']), kinds: [] } },
   { key: 'twin-view', label: 'Twin ビュー', icon: Layer24Regular, component: TwinViewScreen, view: { has2D: true, has3D: true, hasGraph: true, world: 'items', kinds: ['entity'] } },
   { key: 'sources', label: '出典', icon: DocumentBulletList24Regular, component: SourcesScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['出典']), kinds: ['source'] } },
-  { key: 'mock-app', label: 'ミニ・モックアプリ', icon: PhoneDesktop24Regular, component: MockAppScreen, view: V2 },
   { key: 'usecase', label: 'ユースケース', icon: Lightbulb24Regular, component: UseCaseScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['ユースケース']), kinds: [] } },
   { key: 'data-catalog', label: 'データカタログ', icon: Database24Regular, component: DataCatalogScreen, view: { has2D: true, has3D: true, hasGraph: true, ...tableWorldDecl(['データエンティティ', '企業データカタログ']), kinds: [] } },
   { key: 'spatial-view', label: '空間ビュー', icon: Building24Regular, component: SpatialScreen, view: { has2D: true, has3D: true, hasGraph: true, defaultMode: '3d', world: false, kinds: [] } },

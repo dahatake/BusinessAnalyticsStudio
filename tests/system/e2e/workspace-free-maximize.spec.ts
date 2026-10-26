@@ -5,11 +5,12 @@ import { test, expect, component, openScreen, selectPersona } from '../support/f
 
 type Box = { x: number; y: number; width: number; height: number };
 // Public workspace navigation keys. Settings is a modal, not a freely placed pane.
+// FR-043 AC-054: the mini mock app (`mock-app`) is retired, so it is no longer a placeable pane.
 const PANES = [
   'issue-solution', 'priority', 'summary', 'matrix', 'ranking',
   'knowledge-graph', 'business-graph', 'architecture', 'discussion-tree', 'table',
   'gantt', 'map', 'kpi-okr', 'twin-view', 'sources',
-  'mock-app', 'usecase', 'data-catalog', 'spatial-view', 'whiteboard', 'themes', 'chat',
+  'usecase', 'data-catalog', 'spatial-view', 'whiteboard', 'themes', 'chat',
 ] as const;
 const TOL = 2; // CSS-pixel rounding only; not an area-only/fullscreen-state oracle.
 

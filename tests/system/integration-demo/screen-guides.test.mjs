@@ -10,26 +10,32 @@ import { spawnSync } from 'node:child_process';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const MAX = 120; // PARAM-124
 
-/** 画面の登録簿（src/screens/registry.ts）の 24 件のキー（要求定義書 FR-287 の列挙順） */
+/** 要求定義書 FR-287 に列挙された23画面。旧 mock-app は任意の互換キー。 */
 const SCREEN_KEYS = [
   'issue-solution', 'priority', 'summary', 'matrix', 'ranking', 'knowledge-graph', 'business-graph',
   'architecture', 'discussion-tree', 'table', 'gantt', 'map', 'kpi-okr', 'twin-view',
-  'sources', 'mock-app', 'usecase', 'data-catalog', 'spatial-view', 'whiteboard', 'themes', 'settings',
+  'sources', 'usecase', 'data-catalog', 'spatial-view', 'whiteboard', 'themes', 'settings',
   'genai-scenario', 'chat',
 ];
 
 const customer = (kind) => JSON.parse(fs.readFileSync(path.join(root, 'examples', kind, 'public', 'data', 'customer.json'), 'utf8'));
 
-test('FR-287 AC-748 前提: 登録簿のキーが 24 件で、本テストの一覧と一致する', () => {
+/** FR-287 の 23 件の対象外で、FR-043 の廃止とも無関係な既存画面（削除しない。conductor の判断 2026-10-25） */
+const UNRELATED_KEYS = ['memo'];
+
+test('FR-287 AC-748 前提: 登録簿は要求の23キーをすべて持ち、mock-app がない（無関係な memo は残してよい）', () => {
   const src = fs.readFileSync(path.join(root, 'src', 'screens', 'registry.ts'), 'utf8');
   const keys = [...src.matchAll(/\{\s*key:\s*'([^']+)'/g)].map((m) => m[1]);
-  assert.equal(keys.length, 24);
-  assert.deepEqual([...keys].sort(), [...SCREEN_KEYS].sort());
+  assert.ok(!keys.includes('mock-app'), '廃止した mock-app が登録簿に残っている（FR-043）');
+  const missing = SCREEN_KEYS.filter((k) => !keys.includes(k));
+  assert.deepEqual(missing, [], `登録簿にない要求の画面: ${missing.join(', ')}`);
+  const extra = keys.filter((k) => !SCREEN_KEYS.includes(k) && !UNRELATED_KEYS.includes(k));
+  assert.deepEqual(extra, [], `要求にない画面: ${extra.join(', ')}`);
 });
 
 for (const kind of ['mono', 'koto']) {
   // FR-287 AC-748
-  test(`FR-287 AC-748 ${kind}: screenGuides は 24 件すべてのキーを持ち、各説明が空でなく ${MAX} 文字以内`, () => {
+  test(`FR-287 AC-748 ${kind}: screenGuides は23件すべてのキーを持ち、各説明が空でなく ${MAX} 文字以内`, () => {
     const g = customer(kind).screenGuides;
     assert.ok(g && typeof g === 'object' && !Array.isArray(g), 'screenGuides（キー→説明文のオブジェクト）がない');
     const missing = SCREEN_KEYS.filter((k) => !(k in g));
@@ -42,13 +48,36 @@ for (const kind of ['mono', 'koto']) {
     }
   });
 
-  // FR-287 AC-748（異常系: 余分なキーと、使い回しの説明）
-  test(`FR-287 AC-748 ${kind}: screenGuides に登録簿にないキーがなく、説明が画面ごとに異なる（使い回しの文でない）`, () => {
-    const g = customer(kind).screenGuides ?? {};
-    const extra = Object.keys(g).filter((k) => !SCREEN_KEYS.includes(k));
-    assert.deepEqual(extra, [], `登録簿にないキー: ${extra.join(', ')}`);
-    const vals = SCREEN_KEYS.map((k) => String(g[k] ?? '').trim());
-    assert.equal(new Set(vals).size, vals.length, '同じ説明文が複数の画面で使われている');
+  // FR-287 AC-748（旧キーの有無の互換性。内容の理解はAC-753で人が判定する）
+  test(`FR-287 AC-748 ${kind}: 旧 mock-app 説明キーの有無の両方を受け入れ、保存した値を消去しない`, { timeout: 300_000 }, () => {
+    const tmp = fs.mkdtempSync(path.join(root, 'work', 'st-guides-compat-'));
+    try {
+      const dst = path.join(tmp, kind);
+      fs.cpSync(path.join(root, 'examples', kind), dst, { recursive: true });
+      const file = path.join(dst, 'public', 'data', 'customer.json');
+      const c = customer(kind);
+      for (const legacy of [false, true]) {
+        if (legacy) c.screenGuides['mock-app'] = '互換データ: 保存済みの試作画面の説明。';
+        else delete c.screenGuides['mock-app'];
+        const saved = JSON.stringify(c, null, 2);
+        fs.writeFileSync(file, saved);
+        const r = spawnSync(process.execPath, [path.join(root, 'node_modules', 'tsx', 'dist', 'cli.mjs'), 'scripts/check-pack.ts', dst], { cwd: root, encoding: 'utf8' });
+        assert.equal(r.status, 0, `旧キー${legacy ? 'あり' : 'なし'}を拒否: ${(r.stdout ?? '') + (r.stderr ?? '')}`);
+        assert.equal(fs.readFileSync(file, 'utf8'), saved, '互換データが書き換えられた');
+      }
+      // AC-748: 旧キーの互換性が、現役23キーの欠落や文字数超過の許容にならない。
+      for (const bad of ['missing', 'too-long']) {
+        const invalid = structuredClone(c);
+        if (bad === 'missing') delete invalid.screenGuides.chat;
+        else invalid.screenGuides.chat = 'あ'.repeat(MAX + 1);
+        fs.writeFileSync(file, JSON.stringify(invalid, null, 2));
+        const r = spawnSync(process.execPath, [path.join(root, 'node_modules', 'tsx', 'dist', 'cli.mjs'), 'scripts/check-pack.ts', dst], { cwd: root, encoding: 'utf8' });
+        assert.notEqual(r.status, 0, `${bad} のパックを受け入れた`);
+        assert.match((r.stdout ?? '') + (r.stderr ?? ''), /screenGuides/, '説明以外の失敗を誤検出していないか確認');
+      }
+    } finally {
+      fs.rmSync(tmp, { recursive: true, force: true });
+    }
   });
 
   // FR-287 AC-751
