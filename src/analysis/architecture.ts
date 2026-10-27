@@ -1,6 +1,7 @@
 // アーキテクチャ図のモデル（FR-040）。画面・ストアを参照しない純粋なモジュール。
 // AsIs／ToBe の差分、グループ分け、Mermaid・SVG の出力、JSON の検証を受け持つ。
 import type { PackData, PackError, PackFiles } from '../schema';
+import { tr } from '../i18n';
 import { ArchElementSchema, ArchLinkSchema, DATA_FILE_NAMES, formatPackError, validatePack, type ArchKind } from '../schema';
 
 export type ArchElement = {
@@ -18,7 +19,11 @@ export interface ArchModel { elements: ArchElement[]; links: ArchLink[] }
 export type ArchView = 'asis' | 'tobe';
 
 export type DiffKind = 'added' | 'removed' | 'changed' | 'same';
-export const DIFF_LABEL: Record<Exclude<DiffKind, 'same'>, string> = { added: '追加', removed: '削除', changed: '変更' };
+export const DIFF_LABEL: Record<Exclude<DiffKind, 'same'>, string> = {
+  get added() { return tr('追加'); },
+  get removed() { return tr('削除'); },
+  get changed() { return tr('変更'); },
+};
 
 export interface DiffElement { element: ArchElement; diff: DiffKind }
 export interface DiffModel { elements: DiffElement[]; links: Array<ArchLink & { diff: DiffKind }> }
@@ -77,8 +82,8 @@ export type ArchSectionKind = 'capability' | 'stream' | 'layer';
 export interface ArchSection { kind: ArchSectionKind; title: string; items: DiffElement[] }
 
 export const SECTION_TITLE: Record<Exclude<ArchSectionKind, 'layer'>, string> = {
-  capability: 'ビジネス: Capability Map',
-  stream: 'ビジネス: バリューストリーム',
+  get capability() { return tr('ビジネス: Capability Map'); },
+  get stream() { return tr('ビジネス: バリューストリーム'); },
 };
 
 /** 図の区画。Capability Map・バリューストリーム・アプリ/システムの層（出現順）。 */
@@ -91,11 +96,11 @@ export function sectionsOf(model: DiffModel): ArchSection[] {
   const layers = new Map<string, DiffElement[]>();
   for (const e of model.elements) {
     if (e.element.kind === 'capability' || e.element.kind === 'stream') continue;
-    const name = e.element.layer ?? 'その他';
+    const name = e.element.layer ?? tr('その他');
     const l = layers.get(name);
     if (l) l.push(e); else layers.set(name, [e]);
   }
-  for (const [title, items] of layers) out.push({ kind: 'layer', title: `アプリ/システム: ${title}`, items });
+  for (const [title, items] of layers) out.push({ kind: 'layer', title: tr('アプリ/システム: {title}', { title }), items });
   return out;
 }
 
@@ -115,28 +120,28 @@ export function parseArchitectureJson(text: string): ArchJsonResult {
   try {
     raw = JSON.parse(text);
   } catch (e) {
-    return { ok: false, reason: `JSON として読み取れません: ${e instanceof Error ? e.message : String(e)}` };
+    return { ok: false, reason: tr('JSON として読み取れません: {msg}', { msg: e instanceof Error ? e.message : String(e) }) };
   }
-  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return { ok: false, reason: 'JSON の最上位はオブジェクト（asis と tobe を持つ）にしてください。' };
+  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return { ok: false, reason: tr('JSON の最上位はオブジェクト（asis と tobe を持つ）にしてください。') };
   const r = raw as Record<string, unknown>;
   const out = {} as ArchJson;
   for (const key of ['asis', 'tobe'] as const) {
     const v = r[key];
-    if (typeof v !== 'object' || v === null || Array.isArray(v)) return { ok: false, reason: `「${key}」（elements と links を持つオブジェクト）がありません。` };
+    if (typeof v !== 'object' || v === null || Array.isArray(v)) return { ok: false, reason: tr('「{key}」（elements と links を持つオブジェクト）がありません。', { key }) };
     const { elements, links = [] } = v as { elements?: unknown; links?: unknown };
-    if (!Array.isArray(elements)) return { ok: false, reason: `「${key}.elements」は配列にしてください。` };
-    if (!Array.isArray(links)) return { ok: false, reason: `「${key}.links」は配列にしてください。` };
+    if (!Array.isArray(elements)) return { ok: false, reason: tr('「{key}.elements」は配列にしてください。', { key }) };
+    if (!Array.isArray(links)) return { ok: false, reason: tr('「{key}.links」は配列にしてください。', { key }) };
     const ids = new Set<string>();
     for (const [i, el] of elements.entries()) {
       const p = ArchElementSchema.safeParse(el);
-      if (!p.success) return { ok: false, reason: `${key}.elements[${i}]: ${p.error.issues.map((x) => `${x.path.join('.') || '要素'} ${x.message}`).join('、')}` };
-      if (ids.has(p.data.id)) return { ok: false, reason: `${key}.elements[${i}]: ID が重複しています（${p.data.id}）` };
+      if (!p.success) return { ok: false, reason: `${key}.elements[${i}]: ${p.error.issues.map((x) => `${x.path.join('.') || tr('要素')} ${x.message}`).join('、')}` };
+      if (ids.has(p.data.id)) return { ok: false, reason: `${key}.elements[${i}]: ${tr('ID が重複しています（{id}）', { id: p.data.id })}` };
       ids.add(p.data.id);
     }
     for (const [i, l] of links.entries()) {
       const p = ArchLinkSchema.safeParse(l);
       if (!p.success) return { ok: false, reason: `${key}.links[${i}]: ${p.error.issues.map((x) => `${x.path.join('.')} ${x.message}`).join('、')}` };
-      if (!ids.has(p.data.from) || !ids.has(p.data.to)) return { ok: false, reason: `${key}.links[${i}]: 存在しない要素への接続です（${p.data.from} → ${p.data.to}）` };
+      if (!ids.has(p.data.from) || !ids.has(p.data.to)) return { ok: false, reason: `${key}.links[${i}]: ${tr('存在しない要素への接続です（{from} → {to}）', { from: p.data.from, to: p.data.to })}` };
     }
     out[key] = { elements: elements as ArchElement[], links: links as ArchLink[] };
   }

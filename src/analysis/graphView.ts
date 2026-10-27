@@ -2,6 +2,7 @@
 // ホップ数の絞り込み、種別フィルター、節の見た目（色・形・アイコン）、辺の見た目（線種・太さ・粒子）、配置を決める。
 import type { EdgeKind, EntityGraph, GraphEdge, GraphNode, NodeKind } from '../selection/graph';
 import { NODE_KINDS } from '../selection/graph';
+import { tr } from '../i18n';
 
 /** PARAM-014: ホップ数の範囲 */
 export const HOP_MIN = 1;
@@ -42,17 +43,17 @@ export const KIND_STYLE: Record<NodeKind, KindStyle> = {
 
 /** チェックボックスの名前。種別の ID も添える（支援技術・テストで種別を特定できるように） */
 export const KIND_FILTER_LABEL: Record<NodeKind, string> = {
-  entity: 'エンティティ (entity)',
-  issue: '課題 (issue)',
-  solution: '解決策 (solution)',
-  product: '製品 (product)',
-  feature: '機能 (feature)',
-  task: 'タスク (task)',
-  architecture: 'アーキテクチャ (architecture)',
-  mock: 'モック (mock)',
-  chapter: '章 (chapter)',
-  topic: '論点 (topic)',
-  source: '出典 (source)',
+  get entity() { return tr('エンティティ (entity)'); },
+  get issue() { return tr('課題 (issue)'); },
+  get solution() { return tr('解決策 (solution)'); },
+  get product() { return tr('製品 (product)'); },
+  get feature() { return tr('機能 (feature)'); },
+  get task() { return tr('タスク (task)'); },
+  get architecture() { return tr('アーキテクチャ (architecture)'); },
+  get mock() { return tr('モック (mock)'); },
+  get chapter() { return tr('章 (chapter)'); },
+  get topic() { return tr('論点 (topic)'); },
+  get source() { return tr('出典 (source)'); },
 };
 
 export interface EdgeStyle {
@@ -66,10 +67,10 @@ export interface EdgeStyle {
 
 /** 関係の種別ごとの見た目（線種・太さ・粒子）。 */
 export const EDGE_STYLE: Record<EdgeKind, EdgeStyle> = {
-  ref: { dash: '', width: 1.5, particles: false, label: '参照（実線）' },
-  relation: { dash: '6 4', width: 2.5, particles: true, label: '接続（破線・粒子）' },
-  contain: { dash: '2 4', width: 1, particles: false, label: '包含（点線）' },
-  twin: { dash: '8 3 2 3', width: 2, particles: false, label: 'ツイン関係（一点鎖線）' },
+  ref: { dash: '', width: 1.5, particles: false, get label() { return tr('参照（実線）'); } },
+  relation: { dash: '6 4', width: 2.5, particles: true, get label() { return tr('接続（破線・粒子）'); } },
+  contain: { dash: '2 4', width: 1, particles: false, get label() { return tr('包含（点線）'); } },
+  twin: { dash: '8 3 2 3', width: 2, particles: false, get label() { return tr('ツイン関係（一点鎖線）'); } },
 };
 
 /** 無向の隣接。辺の集合から作る。 */
