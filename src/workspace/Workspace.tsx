@@ -589,7 +589,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   const flowRun = useRef<() => void>(() => undefined);
   flowRun.current = () => {
     const m = measureAll();
-    if (!m) { announce('この画面の幅では、ステップに合わせた再配置はできません'); return; }
+    if (!m) { announce(tr('この画面の幅では、ステップに合わせた再配置はできません')); return; }
     const L = actions();
     const keys = Object.keys(m.rects).sort((p, q) => (m.rects[p]!.y - m.rects[q]!.y) || (m.rects[p]!.x - m.rects[q]!.x));
     const pinned: Record<string, PxRect> = {};
