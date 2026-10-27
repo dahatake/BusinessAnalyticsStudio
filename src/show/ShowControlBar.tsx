@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { AudioControls, MuteButton } from '../audio/AudioControls';
+import { useT } from '../i18n';
 
 /** PARAM-026: ショーコントロールバーの（常時表示でない）操作が自動で隠れるまでの時間（秒） */
 export const SHOW_BAR_HIDE_SECONDS = 3;
@@ -60,6 +61,7 @@ const useStyles = makeStyles({
 
 export function ShowControlBar({ children, autoHide = true }: { children?: ReactNode; autoHide?: boolean }) {
   const s = useStyles();
+  const t = useT();
   const [extraVisible, setExtraVisible] = useState(true);
   const ref = useRef<HTMLDivElement>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -99,7 +101,7 @@ export function ShowControlBar({ children, autoHide = true }: { children?: React
   const hidden = hasExtra && !extraVisible;
   return (
     <>
-      <div ref={ref} className={mergeClasses(s.bar, hidden && s.barHidden)} data-testid="show-control-bar" role="toolbar" aria-label="ショーコントロールバー">
+      <div ref={ref} className={mergeClasses(s.bar, hidden && s.barHidden)} data-testid="show-control-bar" role="toolbar" aria-label={t('ショーコントロールバー')}>
         <AudioControls />
         {hasExtra ? <>{children}</> : null}
       </div>

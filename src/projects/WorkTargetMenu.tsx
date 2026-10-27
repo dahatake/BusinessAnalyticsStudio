@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { Button, MenuDivider, MenuGroup, MenuGroupHeader, MenuItem, MenuItemRadio, MenuList, Popover, PopoverSurface, PopoverTrigger, makeStyles, tokens, useArrowNavigationGroup, useId } from '@fluentui/react-components';
 import { ChevronDown16Regular } from '@fluentui/react-icons';
 import type { Company, Project } from '../store/projects';
+import { useT } from '../i18n';
 import { DEMO_VALUE, MENU_DEMO_LABEL, menuGroups, parseChoice, workTargetLabel, type TargetChoice } from './workTarget';
 
 const useStyles = makeStyles({
@@ -30,6 +31,7 @@ export function WorkTargetMenu(props: {
   onCreateProject: (company: Company) => void;
 }) {
   const s = useStyles();
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [companyId, setCompanyId] = useState<string | null>(null);
   const labelId = useId('work-target-menu-label');
@@ -41,7 +43,7 @@ export function WorkTargetMenu(props: {
   const groups = menuGroups(props.projects, props.companies);
   const initialCompanyId = (!props.demoOnly ? props.projects.find((p) => p.id === props.openId)?.companyId : undefined) ?? groups[0]?.company.id;
   const selected = groups.find((g) => g.company.id === (open ? companyId : initialCompanyId)) ?? groups[0];
-  const label = props.demoOnly ? 'デモ' : workTargetLabel(props.openId, props.projects, props.companies);
+  const label = props.demoOnly ? t('デモ') : workTargetLabel(props.openId, props.projects, props.companies);
   const current = props.demoOnly || !props.openId ? DEMO_VALUE : `project:${props.openId}`;
   const changeOpen = (next: boolean) => {
     if (next) setCompanyId(initialCompanyId ?? null);
@@ -50,15 +52,15 @@ export function WorkTargetMenu(props: {
   return (
     <Popover open={open} onOpenChange={(_, d) => changeOpen(d.open)}>
       <PopoverTrigger disableButtonEnhancement>
-        <Button data-testid="work-target-menu" className={s.trigger} size="small" icon={<ChevronDown16Regular aria-hidden />} iconPosition="after" aria-haspopup="menu" aria-expanded={open} aria-label={`現在: ${label}（移動先を選ぶメニュー）`} onKeyDown={(e) => {
+        <Button data-testid="work-target-menu" className={s.trigger} size="small" icon={<ChevronDown16Regular aria-hidden />} iconPosition="after" aria-haspopup="menu" aria-expanded={open} aria-label={t('現在: {label}（移動先を選ぶメニュー）', { label })} onKeyDown={(e) => {
           if (e.key === 'ArrowDown') { e.preventDefault(); changeOpen(true); }
         }}>
           <span className={s.label}>{label}</span>
         </Button>
       </PopoverTrigger>
       <PopoverSurface className={s.popover} role="presentation">
-        <span id={labelId} className={s.sr}>作業先</span>
-        <span id={descriptionId} className={s.sr}>{selected ? `選択企業: ${selected.company.name}。表示中の Project はこの企業に属します。` : '登録済みの企業はありません。'}</span>
+        <span id={labelId} className={s.sr}>{t('作業先')}</span>
+        <span id={descriptionId} className={s.sr}>{selected ? t('選択企業: {name}。表示中の Project はこの企業に属します。', { name: selected.company.name }) : t('登録済みの企業はありません。')}</span>
         <MenuList {...navigation} aria-labelledby={labelId} aria-describedby={descriptionId}
           checkedValues={{ target: [current] }}
           onCheckedValueChange={(_, d) => {
@@ -68,7 +70,7 @@ export function WorkTargetMenu(props: {
             if (c && v !== current) props.onChoose(c);
           }}>
           {groups.length > 0 ? (
-            <div role="group" aria-label="企業を選択" className={s.companies}>
+            <div role="group" aria-label={t('企業を選択')} className={s.companies}>
               {groups.map(({ company }) => (
                 <Button key={company.id} className={s.company} size="small"
                   appearance={selected?.company.id === company.id ? 'primary' : 'secondary'}
@@ -77,16 +79,16 @@ export function WorkTargetMenu(props: {
               ))}
             </div>
           ) : null}
-          <MenuItemRadio className={s.item} name="target" value={DEMO_VALUE}>{MENU_DEMO_LABEL}</MenuItemRadio>
+          <MenuItemRadio className={s.item} name="target" value={DEMO_VALUE}>{t(MENU_DEMO_LABEL)}</MenuItemRadio>
           {groups.length > 0 ? <MenuDivider /> : null}
           {selected ? (
-            <MenuGroup id={projectsId} aria-label={`${selected.company.name} の Project`}>
-              <MenuGroupHeader>{selected.company.name} の Project</MenuGroupHeader>
+            <MenuGroup id={projectsId} aria-label={t('{name} の Project', { name: selected.company.name })}>
+              <MenuGroupHeader>{t('{name} の Project', { name: selected.company.name })}</MenuGroupHeader>
               {selected.projects.map((p) => (
                 <MenuItemRadio className={s.item} key={p.id} name="target" value={`project:${p.id}`}>{selected.company.name} / {p.name}</MenuItemRadio>
               ))}
               {selected.projects.length === 0 ? (
-                <MenuItem className={s.empty} onClick={() => { setOpen(false); props.onCreateProject(selected.company); }}>Project がありません（Project を作成）</MenuItem>
+                <MenuItem className={s.empty} onClick={() => { setOpen(false); props.onCreateProject(selected.company); }}>{t('Project がありません（Project を作成）')}</MenuItem>
               ) : null}
             </MenuGroup>
           ) : null}

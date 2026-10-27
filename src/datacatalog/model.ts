@@ -1,6 +1,7 @@
 // データカタログの導出（FR-159）と、エンティティ×ユースケースの対応表・明示の紐づけ（FR-160）の純関数。
 // 端末内だけで完結し、AI には接続しない。データエンティティと「導出」の対応は保存しない（保存するのは「明示」の紐づけだけ）。
 import type { UseCase } from '../usecase/model';
+import { tr } from '../i18n';
 
 /** 顧客パックのエンティティ（entities.json の entities） */
 export interface PackEntity { id: string; name: string; description?: string; type?: string; /** 任意の属性欄（FR-172。文字列、または { name, type? } の配列） */ attributes?: unknown }
@@ -12,13 +13,13 @@ export const NO_COLUMNS_LABEL = '列の情報なし';
 /** 値を列の配列にする。列名が空・配列でないものは理由を返す（取り込みの検査用）。undefined・null は列なし */
 export function toColumns(v: unknown): { ok: true; columns: DataColumn[] } | { ok: false; error: string } {
   if (v === undefined || v === null) return { ok: true, columns: [] };
-  if (!Array.isArray(v)) return { ok: false, error: 'columns は配列で指定してください。' };
+  if (!Array.isArray(v)) return { ok: false, error: tr('columns は配列で指定してください。') };
   const columns: DataColumn[] = [];
   for (let i = 0; i < v.length; i++) {
     const c = v[i];
     const rawName = typeof c === 'string' ? c : typeof c === 'object' && c !== null && !Array.isArray(c) ? (c as { name?: unknown }).name : undefined;
     const name = typeof rawName === 'string' ? displayName(rawName) : '';
-    if (!name) return { ok: false, error: `columns の ${i + 1} 番目に列名（name）がありません。すべての列に列名を入れてください。` };
+    if (!name) return { ok: false, error: tr('columns の {n} 番目に列名（name）がありません。すべての列に列名を入れてください。', { n: i + 1 }) };
     const rawType = typeof c === 'object' && c !== null ? (c as { type?: unknown }).type : undefined;
     const type = typeof rawType === 'string' ? rawType.trim() : '';
     columns.push({ name, ...(type ? { type } : {}) });
@@ -34,7 +35,9 @@ export function entityColumns(entity: { columns?: readonly DataColumn[] }, impor
 /** 列の総数（FR-171 の簡略表示の判定に使う） */
 export function totalColumns(lists: readonly (readonly DataColumn[])[]): number { return lists.reduce((n, l) => n + l.length, 0); }
 export type OriginKind = 'issue' | 'solution' | 'flow';
-export const ORIGIN_LABELS: Record<OriginKind, string> = { issue: '課題', solution: '解決策', flow: 'フロー' };
+export const ORIGIN_LABELS: Record<OriginKind, string> = {
+  get issue() { return tr('課題'); }, get solution() { return tr('解決策'); }, get flow() { return tr('フロー'); },
+};
 /** 課題・解決策・フローの 1 件と、それが参照するエンティティの ID */
 export interface OriginRecord { kind: OriginKind; id: string; title: string; entityIds: string[] }
 export interface Origin { kind: OriginKind; id: string; title: string }
@@ -72,7 +75,7 @@ export function displayName(name: string): string {
  * packPresent: 顧客パックがあるか（理由の文言を分ける）。
  */
 export function deriveEntities(entities: readonly PackEntity[], records: readonly OriginRecord[], packPresent = true): EntityDerivation {
-  if (!packPresent) return { entities: [], emptyReason: NO_PACK_REASON };
+  if (!packPresent) return { entities: [], emptyReason: tr(NO_PACK_REASON) };
   const byId = new Map(entities.map((e) => [e.id, e]));
   const out = new Map<string, DataEntity>();
   for (const r of records) {
@@ -98,14 +101,16 @@ export function deriveEntities(entities: readonly PackEntity[], records: readonl
     const type = entities.find((x) => normalizeKey(x.name) === e.key && x.type)?.type;
     return { ...e, description: type ? `種別: ${type}` : '（説明なし）' };
   });
-  if (list.length === 0) return { entities: [], emptyReason: NO_REF_REASON };
+  if (list.length === 0) return { entities: [], emptyReason: tr(NO_REF_REASON) };
   return { entities: list };
 }
 
 /** 明示の紐づけ（保存する。FR-160）。エンティティは正規化した名称、ユースケースは登録済みの ID で持つ */
 export interface ExplicitLink { entityKey: string; useCaseId: string }
 export type CellKind = 'derived' | 'explicit' | 'none';
-export const KIND_LABELS: Record<Exclude<CellKind, 'none'>, string> = { derived: '導出', explicit: '明示' };
+export const KIND_LABELS: Record<Exclude<CellKind, 'none'>, string> = {
+  get derived() { return tr('導出'); }, get explicit() { return tr('明示'); },
+};
 
 export const pairKey = (entityKey: string, useCaseId: string): string => `${entityKey}\u0000${useCaseId}`;
 
@@ -177,10 +182,10 @@ export function addLink(
 ): LinkResult {
   const errors: string[] = [];
   const key = normalizeKey(entityName);
-  if (!entities.some((e) => e.key === key)) errors.push(`データエンティティ「${entityName}」は存在しないため、紐づけを追加できません。`);
-  if (!useCases.some((u) => u.id === useCaseId)) errors.push(`ユースケース「${useCaseId}」は登録されていないため、紐づけを追加できません。`);
+  if (!entities.some((e) => e.key === key)) errors.push(tr('データエンティティ「{name}」は存在しないため、紐づけを追加できません。', { name: entityName }));
+  if (!useCases.some((u) => u.id === useCaseId)) errors.push(tr('ユースケース「{id}」は登録されていないため、紐づけを追加できません。', { id: useCaseId }));
   if (errors.length === 0 && links.some((l) => l.entityKey === key && l.useCaseId === useCaseId)) {
-    errors.push('同じデータエンティティとユースケースの紐づけはすでにあります。');
+    errors.push(tr('同じデータエンティティとユースケースの紐づけはすでにあります。'));
   }
   if (errors.length > 0) return { ok: false, errors };
   return { ok: true, links: [...links.map((l) => ({ ...l })), { entityKey: key, useCaseId }] };

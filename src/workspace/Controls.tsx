@@ -5,6 +5,7 @@ import { ArrowReset20Regular, EyeOff20Regular, Person20Regular } from '@fluentui
 import type { ScreenDefinition } from '../screens/types';
 import { effectiveLayout, personaKeys, useLayout } from '../store/layout';
 import { PERSONAS, keysOf, type Persona } from './layoutModel';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   dock: {
@@ -20,6 +21,7 @@ const useStyles = makeStyles({
 });
 
 export function PersonaMenu() {
+  const t = useT();
   const persona = useLayout((s) => s.persona);
   const setPersona = useLayout((s) => s.setPersona);
   return (
@@ -28,11 +30,11 @@ export function PersonaMenu() {
       onCheckedValueChange={(_, d) => { const v = d.checkedItems[0]; if (v) setPersona(v as Persona); }}
     >
       <MenuTrigger disableButtonEnhancement>
-        <Button icon={<Person20Regular aria-hidden />} aria-label={`ペルソナ: ${persona}`}>ペルソナ: {persona}</Button>
+        <Button icon={<Person20Regular aria-hidden />} aria-label={t('ペルソナ: {persona}', { persona: t(persona) })}>{t('ペルソナ: {persona}', { persona: t(persona) })}</Button>
       </MenuTrigger>
       <MenuPopover>
         <MenuList>
-          {PERSONAS.map((p) => <MenuItemRadio key={p} name="persona" value={p}>{p}</MenuItemRadio>)}
+          {PERSONAS.map((p) => <MenuItemRadio key={p} name="persona" value={p}>{t(p)}</MenuItemRadio>)}
         </MenuList>
       </MenuPopover>
     </Menu>
@@ -40,22 +42,25 @@ export function PersonaMenu() {
 }
 
 export function ResetLayoutButton() {
+  const t = useT();
   const reset = useLayout((s) => s.resetLayout);
   return (
-    <Button icon={<ArrowReset20Regular aria-hidden />} onClick={reset}>既定のレイアウトに戻す</Button>
+    <Button icon={<ArrowReset20Regular aria-hidden />} onClick={reset}>{t('既定のレイアウトに戻す')}</Button>
   );
 }
 
 /** 操作中のコンポーネントを大きくする自動のサイズ調整の切替（FR-143 AC-228）。いつでも切り替えられる。 */
 export function AutoSizeSwitch() {
+  const t = useT();
   const on = useLayout((s) => s.autoSize);
   const set = useLayout((s) => s.setAutoSize);
-  return <Switch checked={on} onChange={(_, d) => set(d.checked)} label="サイズの自動調整" />;
+  return <Switch checked={on} onChange={(_, d) => set(d.checked)} label={t('サイズの自動調整')} />;
 }
 
 /** 非表示のコンポーネントを再表示するドック。 */
 export function Dock({ screens }: { screens: readonly ScreenDefinition[] }) {
   const s = useStyles();
+  const t = useT();
   const persona = useLayout((st) => st.persona);
   const stored = useLayout((st) => st.layouts);
   const tiers = useLayout((st) => st.tiers);
@@ -69,27 +74,27 @@ export function Dock({ screens }: { screens: readonly ScreenDefinition[] }) {
     return screens.filter((sc) => !visible.has(sc.key)).map((sc, i) => ({ sc, i })).sort((a, b) => rank(a.sc.key) - rank(b.sc.key) || a.i - b.i).map((x) => x.sc);
   }, [screens, persona, stored, tiers, autoOff]);
   return (
-    <div className={s.dock} data-testid="dock" role="group" aria-label="ドック（非表示のコンポーネント）">
+    <div className={s.dock} data-testid="dock" role="group" aria-label={t('ドック（非表示のコンポーネント）')}>
       {/* 非表示のコンポーネントの再表示ボタンを先に並べる（先頭のボタンがそのまま再表示になる）。一覧のメニューはその後ろ */}
-      {hidden.length === 0 ? <Text size={200}>なし</Text> : null}
+      {hidden.length === 0 ? <Text size={200}>{t('なし')}</Text> : null}
       {hidden.map((sc) => {
         const Icon = sc.icon;
         return (
           <Button key={sc.key} className={s.dockButton} appearance="subtle" icon={<Icon aria-hidden />} onClick={() => show(sc.key)}>
-            {sc.label}を再表示
+            {t('{label}を再表示', { label: t(sc.label) })}
           </Button>
         );
       })}
       <Menu positioning={{ position: 'after', align: 'start', autoSize: 'height', overflowBoundary: undefined, fallbackPositions: ['after-top', 'below-start'] }}>
         <MenuTrigger disableButtonEnhancement>
-          <Button className={s.dockButton} appearance="subtle" icon={<EyeOff20Regular aria-hidden />} aria-label={`非表示のコンポーネント（${hidden.length} 件）`}>
-            非表示のコンポーネント
+          <Button className={s.dockButton} appearance="subtle" icon={<EyeOff20Regular aria-hidden />} aria-label={t('非表示のコンポーネント（{n} 件）', { n: hidden.length })}>
+            {t('非表示のコンポーネント')}
           </Button>
         </MenuTrigger>
         <MenuPopover>
           <MenuList>
-            {hidden.length === 0 ? <MenuItem disabled>なし</MenuItem> : null}
-            {hidden.map((sc) => <MenuItem key={sc.key} onClick={() => show(sc.key)}>{sc.label}を再表示</MenuItem>)}
+            {hidden.length === 0 ? <MenuItem disabled>{t('なし')}</MenuItem> : null}
+            {hidden.map((sc) => <MenuItem key={sc.key} onClick={() => show(sc.key)}>{t('{label}を再表示', { label: t(sc.label) })}</MenuItem>)}
           </MenuList>
         </MenuPopover>
       </Menu>

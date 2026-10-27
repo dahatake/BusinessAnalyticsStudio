@@ -9,6 +9,7 @@ import { focusChain, minimapModel, minimapNeighbor } from '../three/lod';
 import { viewportAspect } from '../three/sceneViewport';
 import { useTwinLayout } from '../three/twin';
 import { elevationStyles } from '../theme/tokens';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   // 面の色を明示する（ハイコントラストでもリンクの文字と背景の比を判定・確保できる。NFR-UX-016）
@@ -60,13 +61,14 @@ export function useFocusChain(layout: TwinLayout | null): TwinObject[] {
 export function Breadcrumb({ chain }: { chain: readonly TwinObject[] }) {
   const s = useStyles();
   const specs = useLod((st) => st.specs);
+  const t = useT();
   return (
-    <nav aria-label="パンくずリスト" data-testid="breadcrumb" className={s.nav}>
+    <nav aria-label={t('パンくずリスト')} data-testid="breadcrumb" className={s.nav}>
       <ol className={s.list}>
         {chain.map((o, i) => {
           const meta = specs[o.depth]?.meta;
           const last = i === chain.length - 1;
-          const title = meta ? `${meta.name ?? `階層 ${o.depth}`}: ${meta.description}（KPI: ${meta.kpi}）` : undefined;
+          const title = meta ? t('{name}: {desc}（KPI: {kpi}）', { name: meta.name ?? t('階層 {n}', { n: o.depth }), desc: meta.description, kpi: meta.kpi }) : undefined;
           return (
             <li key={o.entityId} className={s.item}>
               {i > 0 && <span className={s.sep} aria-hidden="true">›</span>}
@@ -91,6 +93,7 @@ export function Breadcrumb({ chain }: { chain: readonly TwinObject[] }) {
 /** 真上から見た配置図。現在の表示範囲（視野）を枠で示し、場所をクリックするとそこへ移動する。 */
 export function Minimap({ layout, chain }: { layout: TwinLayout; chain: readonly TwinObject[] }) {
   const s = useStyles();
+  const t = useT();
   const position = useCameraRig((st) => st.position);
   const target = useCameraRig((st) => st.target);
   const shown = useLod((st) => st.shownDepth);
@@ -105,8 +108,8 @@ export function Minimap({ layout, chain }: { layout: TwinLayout; chain: readonly
   const tail = chain[chain.length - 1];
   const cursorObj = cursor ? layout.byId.get(cursor) : undefined;
   const status = cursorObj && cursorObj.depth <= shown
-    ? `ミニマップの選択: ${cursorObj.name}。Enter でその場所へ移動します。`
-    : `現在の表示範囲: ${chain.map((o) => o.name).join('、')}。`;
+    ? t('ミニマップの選択: {name}。Enter でその場所へ移動します。', { name: cursorObj.name })
+    : t('現在の表示範囲: {names}。', { names: chain.map((o) => o.name).join(t('、')) });
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>): void => {
     const from = cursorObj && cursorObj.depth <= shown ? cursorObj.entityId : tail?.entityId;
     if (!from) return;
@@ -134,7 +137,7 @@ export function Minimap({ layout, chain }: { layout: TwinLayout; chain: readonly
       data-testid="minimap"
       role="group"
       tabIndex={0}
-      aria-label="ミニマップ。矢印キーで場所を選び、Enter でその場所へ移動します"
+      aria-label={t('ミニマップ。矢印キーで場所を選び、Enter でその場所へ移動します')}
       onKeyDown={onKeyDown}
       onBlur={() => setCursor(null)}
     >

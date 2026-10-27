@@ -10,6 +10,7 @@ import { MIN_TARGET_PX } from '../theme/tokens';
 import type { FluentIcon } from '@fluentui/react-icons';
 import { newId, type ToolId } from './model';
 import { selectCanRedo, selectCanUndo, selectBoard, useInk } from './store';
+import { useT } from '../i18n';
 
 interface ToolDef { id: ToolId; label: string; icon: FluentIcon; whiteboardOnly?: boolean }
 const TOOLS: ReadonlyArray<ToolDef> = [
@@ -94,6 +95,7 @@ async function pasteClipboardImage(boardId: string): Promise<void> {
 
 export function InkToolbar({ boardId, label = 'インクの道具', whiteboard = false, compact = false }: InkToolbarProps) {
   const s = useStyles();
+  const t = useT();
   const tool = useInk((st) => st.tool);
   const color = useInk((st) => st.color);
   const size = useInk((st) => st.size);
@@ -103,7 +105,7 @@ export function InkToolbar({ boardId, label = 'インクの道具', whiteboard =
   const st = useInk.getState;
 
   const button = (id: string, text: string, Icon: FluentIcon, onClick: () => void, opts: { pressed?: boolean; disabled?: boolean } = {}) => (
-    <Tooltip key={id} content={text} relationship="label" withArrow>
+    <Tooltip key={id} content={t(text)} relationship="label" withArrow>
       <Button
         className={s.forcedAuto}
         size="small"
@@ -119,18 +121,18 @@ export function InkToolbar({ boardId, label = 'インクの道具', whiteboard =
 
   return (
     <div>
-      <div role="toolbar" aria-label={label} className={mergeClasses(s.bar, compact && s.compact)}>
-        {TOOLS.filter((t) => whiteboard || !t.whiteboardOnly).map((t) => button(t.id, t.label, t.icon, () => st().setTool(t.id), { pressed: tool === t.id }))}
+      <div role="toolbar" aria-label={t(label)} className={mergeClasses(s.bar, compact && s.compact)}>
+        {TOOLS.filter((d) => whiteboard || !d.whiteboardOnly).map((d) => button(d.id, d.label, d.icon, () => st().setTool(d.id), { pressed: tool === d.id }))}
         {button('image', '画像を貼り付け', ImageAdd24Regular, () => {
           setMessage(null);
-          pasteClipboardImage(boardId).catch((e: unknown) => setMessage(e instanceof Error ? e.message : '画像を貼り付けられませんでした'));
+          pasteClipboardImage(boardId).catch((e: unknown) => setMessage(e instanceof Error ? t(e.message) : t('画像を貼り付けられませんでした')));
         })}
         <Divider vertical style={{ height: 24 }} />
         {button('undo', '元に戻す', ArrowUndo24Regular, () => st().undo(boardId), { disabled: !canUndo })}
         {button('redo', 'やり直し', ArrowRedo24Regular, () => st().redo(boardId), { disabled: !canRedo })}
         <Divider vertical style={{ height: 24 }} />
         {INK_COLORS.map((c) => (
-          <Tooltip key={c.value} content={`色: ${c.label}`} relationship="label" withArrow>
+          <Tooltip key={c.value} content={t('色: {name}', { name: t(c.label) })} relationship="label" withArrow>
             <Button
               className={s.forcedAuto}
               size="small"
@@ -142,8 +144,8 @@ export function InkToolbar({ boardId, label = 'インクの道具', whiteboard =
           </Tooltip>
         ))}
         <span className={mergeClasses(s.size, compact && s.sizeCompact)}>
-          {!compact && <Text size={200}>太さ</Text>}
-          <Slider aria-label="線の太さ" style={compact ? { minWidth: 0, width: 72, minHeight: MIN_TARGET_PX } : undefined} input={{ style: { height: '100%' } }} min={1} max={12} step={1} value={size} onChange={(_, d) => st().setSize(d.value)} />
+          {!compact && <Text size={200}>{t('太さ')}</Text>}
+          <Slider aria-label={t('線の太さ')} style={compact ? { minWidth: 0, width: 72, minHeight: MIN_TARGET_PX } : undefined} input={{ style: { height: '100%' } }} min={1} max={12} step={1} value={size} onChange={(_, d) => st().setSize(d.value)} />
         </span>
       </div>
       {message && <Text role="status" size={200}>{message}</Text>}

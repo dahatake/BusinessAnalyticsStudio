@@ -4,6 +4,7 @@ import type { AiResult } from '../ai/client';
 import type { Analysis } from '../store/analyses';
 import { analysisResult } from '../store/analyses';
 import { getMethod } from '../methods/model';
+import { tr } from '../i18n';
 
 export const NOT_ALLOWED_MESSAGE =
   'この企業は外部 AI への送信が許可されていません。企業の設定で「外部 AI への送信を許可する」を有効にすると、AI 下書きを依頼できます。';
@@ -26,12 +27,12 @@ export async function requestDraft(
   a: Analysis,
   ask: (prompt: string) => Promise<AiResult>,
 ): Promise<DraftOutcome> {
-  if (allowed !== true) return { status: 'not-allowed', message: NOT_ALLOWED_MESSAGE };
+  if (allowed !== true) return { status: 'not-allowed', message: tr(NOT_ALLOWED_MESSAGE) };
   try {
     const r = await ask(draftPrompt(a));
-    if (!r.answer.trim()) return { status: 'error', message: AI_UNAVAILABLE_MESSAGE };
+    if (!r.answer.trim()) return { status: 'error', message: tr(AI_UNAVAILABLE_MESSAGE) };
     return { status: 'draft', text: r.answer, mock: r.mode === 'mock' };
   } catch {
-    return { status: 'error', message: AI_UNAVAILABLE_MESSAGE };
+    return { status: 'error', message: tr(AI_UNAVAILABLE_MESSAGE) };
   }
 }

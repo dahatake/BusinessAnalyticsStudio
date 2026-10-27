@@ -3,6 +3,8 @@
 // api_key=・token=・password= の値、32 文字以上の連続した英数字（使う文字が 2 種類以下・16 進のハッシュ長は除く）、-----BEGIN。
 // 固定のダミー表記（<ここに値>・x の並び・REDACTED・アスタリスクだけ）は検出しない。値そのものは返さず、形式の名前だけ返す。
 
+import { tr } from '../i18n';
+
 /** PARAM-067: ダミー表記とみなす x の並びの最小の長さ */
 export const DUMMY_X_MIN = 3;
 
@@ -25,15 +27,15 @@ export function credentialShapes(text: string, xMin: number = DUMMY_X_MIN): stri
     if (!isDummy(v, xMin) && v.length >= 8 && !BEARER_WORDS.has(v.toLowerCase())) { found.push('Bearer の後の値'); break; }
   }
   for (const m of text.matchAll(KV_RE)) {
-    if (!isDummy(m[1] ?? '', xMin)) { found.push('api_key=・token=・password= の値'); break; }
+    if (!isDummy(m[1] ?? '', xMin)) { found.push(tr('api_key=・token=・password= の値')); break; }
   }
   for (const m of text.matchAll(LONG_RE)) {
     const v = m[0];
     if (new Set(v.toLowerCase()).size <= 2) continue;
     if (/^[0-9a-fA-F]+$/.test(v) && HASH_LENGTHS.has(v.length)) continue;
-    found.push('32 文字以上の連続した英数字');
+    found.push(tr('32 文字以上の連続した英数字'));
     break;
   }
-  if (PEM_RE.test(text)) found.push('鍵・証明書の本文（-----BEGIN）');
+  if (PEM_RE.test(text)) found.push(tr('鍵・証明書の本文（-----BEGIN）'));
   return found;
 }

@@ -5,18 +5,19 @@ import { useEffect } from 'react';
 import { registerCommands, type Command } from '../commands/registry';
 import { openExportDialog } from './ui';
 import { quickSaveAll } from './ExportDialog';
+import { tr } from '../i18n';
 
 export const EXPORT_COMMANDS: readonly Command[] = [
   {
     id: 'export.open',
-    label: 'エクスポートする（全量の Markdown）',
+    get label() { return tr('エクスポートする（全量の Markdown）'); },
     keywords: ['エクスポート', '書き出し', '出力', 'export', 'markdown', 'zip'],
     shortcut: 'Ctrl+Shift+E',
     run: openExportDialog,
   },
   {
     id: 'export.save',
-    label: '保存する（全量の Markdown をエクスポート）',
+    get label() { return tr('保存する（全量の Markdown をエクスポート）'); },
     keywords: ['保存', 'エクスポート', 'save', 'export'],
     shortcut: 'Ctrl+S',
     run: () => { void quickSaveAll(); },

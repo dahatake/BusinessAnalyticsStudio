@@ -10,24 +10,25 @@ import {
   STORY_GENAI_MAX_OUTPUT_TOKENS, STORY_GENAI_TIMEOUT_SEC, type StoryMaterials,
 } from './genai';
 import type { StoryScene } from './model';
+import { tr } from '../i18n';
 
 export type StoryUnavailable =
   | 'company' | 'consent' | 'relay' | 'not-configured' | 'disabled' | 'person-unconfirmed'
   | 'daily-limit' | 'budget' | 'error' | 'timeout' | 'invalid';
 
-/** 理由の文（接続先に依らない書き方） */
+/** 理由の文（接続先に依らない書き方）。言語切替で更新されるよう、読むたびに翻訳する getter にしている */
 export const STORY_REASON_TEXT: Record<StoryUnavailable, string> = {
-  company: 'この Project の企業は外部 AI への送信を許可していないため、生成 AI に接続しませんでした（企業の設定の「外部 AI への送信を許可する」で許可できます）',
-  consent: '顧客の了承の記録がないため、生成 AI へ送信できません',
-  relay: '中継プロセスに届かないため、生成 AI に接続できません（`npm run relay` で起動しているか確認してください）',
-  'not-configured': '生成 AI の接続情報が未設定のため、接続できません（設定画面で設定できます）',
-  disabled: '生成 AI の実接続が有効になっていません（設定画面で有効にできます）',
-  'person-unconfirmed': '種別「人」を含む顧客パックは送信前の確認が必要なため、生成 AI に接続しませんでした',
-  'daily-limit': '1 日の生成の回数の上限に達したため、生成 AI に接続しませんでした',
-  budget: '今月の概算費用が予算の停止の割合に達したため、生成 AI に接続しませんでした',
-  error: '生成 AI の呼び出しに失敗しました（接続先の応答がありません）',
-  timeout: `生成 AI の応答が ${STORY_GENAI_TIMEOUT_SEC} 秒以内に届かなかったため、接続を打ち切りました`,
-  invalid: '生成 AI の出力の形式が想定と異なるため、接続の結果を採用しませんでした',
+  get company() { return tr('この Project の企業は外部 AI への送信を許可していないため、生成 AI に接続しませんでした（企業の設定の「外部 AI への送信を許可する」で許可できます）'); },
+  get consent() { return tr('顧客の了承の記録がないため、生成 AI へ送信できません'); },
+  get relay() { return tr('中継プロセスに届かないため、生成 AI に接続できません（`npm run relay` で起動しているか確認してください）'); },
+  get 'not-configured'() { return tr('生成 AI の接続情報が未設定のため、接続できません（設定画面で設定できます）'); },
+  get disabled() { return tr('生成 AI の実接続が有効になっていません（設定画面で有効にできます）'); },
+  get 'person-unconfirmed'() { return tr('種別「人」を含む顧客パックは送信前の確認が必要なため、生成 AI に接続しませんでした'); },
+  get 'daily-limit'() { return tr('1 日の生成の回数の上限に達したため、生成 AI に接続しませんでした'); },
+  get budget() { return tr('今月の概算費用が予算の停止の割合に達したため、生成 AI に接続しませんでした'); },
+  get error() { return tr('生成 AI の呼び出しに失敗しました（接続先の応答がありません）'); },
+  get timeout() { return tr('生成 AI の応答が {sec} 秒以内に届かなかったため、接続を打ち切りました', { sec: STORY_GENAI_TIMEOUT_SEC }); },
+  get invalid() { return tr('生成 AI の出力の形式が想定と異なるため、接続の結果を採用しませんでした'); },
 };
 
 /**
@@ -42,7 +43,7 @@ export function companyAllowedOf(s: { openId: string | null; projects: ReadonlyA
 
 /** すべての文を除いたときの通知（FR-290 AC-776） */
 export const allRemovedText = (n: number): string =>
-  `生成 AI が作った ${n} 文は、すべて材料にない数値・名称（解決策・KPI/OKR・ユースケース）を含むため表示しませんでした`;
+  tr('生成 AI が作った {n} 文は、すべて材料にない数値・名称（解決策・KPI/OKR・ユースケース）を含むため表示しませんでした', { n });
 
 export const PROVIDER_LABEL: Record<'foundry' | 'copilot', string> = { foundry: 'Microsoft Foundry', copilot: 'GitHub Copilot SDK' };
 
@@ -77,7 +78,7 @@ export type StoryGenaiOutcome =
   | { kind: 'cancelled' };
 
 const unavailable = (reason: StoryUnavailable, resumeAt?: Date): StoryGenaiOutcome => ({
-  kind: 'unavailable', reason, reasonText: `${STORY_REASON_TEXT[reason]}${resumeAt ? `。再開の時刻: ${formatAt(resumeAt)}` : ''}`,
+  kind: 'unavailable', reason, reasonText: `${STORY_REASON_TEXT[reason]}${resumeAt ? `${tr('。再開の時刻: ')}${formatAt(resumeAt)}` : ''}`,
 });
 
 export async function runStoryGenai(
@@ -86,9 +87,9 @@ export async function runStoryGenai(
   const limits = deps.limits();
   const now = deps.now();
   // FR-276 (4): 生成中の二重の呼び出しと、最小の間隔（PARAM-116）に満たない再実行は呼び出さない
-  if (session.inFlight) return { kind: 'busy', message: '生成中です。完了か取り消しを待ってください' };
+  if (session.inFlight) return { kind: 'busy', message: tr('生成中です。完了か取り消しを待ってください') };
   const wait = intervalWait(session.lastStartMs, now.getTime(), limits);
-  if (wait > 0) return { kind: 'wait', waitSec: wait, message: `前回の作成から ${limits.minIntervalSec} 秒たっていません。あと ${wait} 秒待ってから作成してください` };
+  if (wait > 0) return { kind: 'wait', waitSec: wait, message: tr('前回の作成から {sec} 秒たっていません。あと {wait} 秒待ってから作成してください', { sec: limits.minIntervalSec, wait }) };
 
   // FR-290 AC-785: Project の企業が外部 AI への送信を許可していなければ、呼び出さない（FR-140。お手本パックのデモは対象外）
   if (deps.companyAllowed === false) return unavailable('company');

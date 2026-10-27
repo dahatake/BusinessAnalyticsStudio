@@ -78,13 +78,15 @@ describe('FR-293 トグル', () => {
 describe('FR-293 AC-790 英語辞書の健全性', () => {
   const files = import.meta.glob('../../src/i18n/en/*.ts', { eager: true }) as Record<string, { default: Record<string, string> }>;
   it('辞書ファイルがあり、キーが重複せず、値が空でなく、補間の名前が日英で一致する', () => {
-    const seen = new Map<string, string>();
+    // 同じキーの重複は、値が同じなら許容（マージ時に後勝ちでも同じ）。値が異なる重複だけ失敗にする。
+    const seen = new Map<string, { path: string; value: string }>();
     const problems: string[] = [];
     expect(Object.keys(files).length).toBeGreaterThan(0);
     for (const [path, mod] of Object.entries(files)) {
       for (const [k, v] of Object.entries(mod.default)) {
-        if (seen.has(k)) problems.push(`重複: ${k}（${seen.get(k)} と ${path}）`);
-        seen.set(k, path);
+        const prev = seen.get(k);
+        if (prev && prev.value !== v) problems.push(`値が異なる重複: ${k}（${prev.path} と ${path}）`);
+        if (!prev) seen.set(k, { path, value: v });
         if (typeof v !== 'string' || v.trim() === '') problems.push(`空の値: ${k}（${path}）`);
         else {
           const names = (s: string) => (s.match(/\{\w+\}/g) ?? []).sort().join(',');
