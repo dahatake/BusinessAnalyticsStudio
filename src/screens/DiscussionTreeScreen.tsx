@@ -76,7 +76,7 @@ function RationaleLink({ r }: { r: Rationale }) {
       useLayout.getState().showComponent('themes');
     }
   };
-  return <a href="#rationale" onClick={open} style={{ color: tokens.colorBrandForegroundLink }}>{t('根拠:')} {r.label}</a>;
+  return <a href="#rationale" onClick={open} style={{ color: tokens.colorBrandForegroundLink }}>{t('根拠:')} {t(r.label)}</a>;
 }
 
 function DiscussionTreeScreen() {
@@ -224,7 +224,7 @@ function DiscussionTreeScreen() {
               <MenuPopover>
                 <MenuList>
                   {targets.map((t) => (
-                    <MenuItem key={t.id} onClick={() => node && report(store.move(key, node.id, t.id))}>{tr('{kind}: {title} の下へ', { kind: t.kind, title: t.title })}</MenuItem>
+                    <MenuItem key={t.id} onClick={() => node && report(store.move(key, node.id, t.id))}>{tr('{kind}: {title} の下へ', { kind: tr(t.kind), title: t.title })}</MenuItem>
                   ))}
                 </MenuList>
               </MenuPopover>
@@ -277,7 +277,7 @@ function DiscussionTreeScreen() {
                   label={t('議論ツリーのノード')}
                   origin={ORIGIN}
                   columns={[t('階層'), t('種別'), t('名称'), t('親')]}
-                  rows={rows.map((r) => ({ id: r.node.entityId ?? r.node.id, cells: [r.level + 1, r.node.kind, r.node.title, shown.nodes.find((x) => x.id === r.node.parentId)?.title ?? t('（根）')] }))}
+                  rows={rows.map((r) => ({ id: r.node.entityId ?? r.node.id, cells: [r.level + 1, t(r.node.kind), r.node.title, shown.nodes.find((x) => x.id === r.node.parentId)?.title ?? t('（根）')] }))}
                 />
               ) : (
                 <Items3DSurface
@@ -318,7 +318,7 @@ function DiscussionTreeScreen() {
                     >
                       {r.hasChildren ? (r.expanded ? <ChevronDown16Regular /> : <ChevronRight16Regular />) : null}
                     </span>
-                    <Badge appearance="outline" style={{ borderColor: KIND_TOKEN[n.kind] }}>{KIND_MARK[n.kind]} {n.kind}</Badge>
+                    <Badge appearance="outline" style={{ borderColor: KIND_TOKEN[n.kind] }}>{KIND_MARK[n.kind]} {t(n.kind)}</Badge>
                     <Text weight={n.parentId === null ? 'semibold' : 'regular'} className={s.title}>{n.title}</Text>
                     <Badge appearance={n.origin === 'human' ? 'filled' : 'tint'} color={n.origin === 'human' ? 'brand' : 'informative'} size="medium">
                       {n.origin === 'ai' ? t('AI 生成') : n.origin === 'human' ? t('人が編集') : t('パックの議題')}

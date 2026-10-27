@@ -156,7 +156,7 @@ export function SettingsScreen() {
       <Text as="p" data-testid="template-version">{t('雛形のバージョン:')} {TEMPLATE_VERSION}</Text>
       <Text as="p" data-testid="quality-current">{t('現在の品質:')} {quality}</Text>
       <Text as="p" data-testid="fps">{t('FPS: {v} fps（3D 表示中の最後の計測値）', { v: fps.toFixed(1) })}</Text>
-      <Text as="p" data-testid="renderer">{t('描画方式:')} {renderer}</Text>
+      <Text as="p" data-testid="renderer">{t('描画方式:')} {t(renderer)}</Text>
       {notice && <Text as="p" role="status">{notice}</Text>}
 
       {brand ? (

@@ -111,7 +111,7 @@ export function FoundrySettings() {
       <form data-testid="foundry-form" onSubmit={(e) => { e.preventDefault(); void save(); }} style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS }}>
         <Field
           label={t('エンドポイント')}
-          hint={t('入力例: {a}　または　{b}（https で始まる Azure の標準ドメインだけ使えます）', { a: ENDPOINT_FORMAT_EXAMPLES[0], b: ENDPOINT_FORMAT_EXAMPLES[1] })}
+          hint={t('入力例: {a}　または　{b}（https で始まる Azure の標準ドメインだけ使えます）', { a: ENDPOINT_FORMAT_EXAMPLES[0].replace('<リソース名>', t('<リソース名>')), b: ENDPOINT_FORMAT_EXAMPLES[1].replace('<リソース名>', t('<リソース名>')) })}
           validationState={endpointError ? 'error' : 'none'}
           validationMessage={endpointError ?? undefined}
         >

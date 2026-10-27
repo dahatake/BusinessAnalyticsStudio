@@ -118,7 +118,7 @@ export function worldOptions(decl: ViewDecl): ViewOption<WorldView>[] {
 
 /** 「ビュー」ボタンに見せる文字（現在の表示モードと世界の表示。NFR-UX-018・D-01） */
 export function viewText(mode: ViewMode, world: WorldView): string {
-  return `${tr(MODE_LABELS[mode])}・${tr(WORLD_VIEW_LABELS[world])}`;
+  return `${tr(MODE_LABELS[mode])}${tr('・')}${tr(WORLD_VIEW_LABELS[world])}`;
 }
 
 /**

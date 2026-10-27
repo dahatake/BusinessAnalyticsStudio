@@ -218,7 +218,7 @@ function KpiOkrScreen() {
                       <span className={s.state}>
                         {STATE_ICON[st]}
                         <Text weight="semibold" className={s.value} data-testid="kpi-achievement">{achievementText(r.kpi)}</Text>
-                        <Badge appearance="tint" color={STATE_COLOR[st]} data-testid="kpi-state">{st}</Badge>
+                        <Badge appearance="tint" color={STATE_COLOR[st]} data-testid="kpi-state">{t(st)}</Badge>
                       </span>
                     </div>
                   </li>
