@@ -1,6 +1,7 @@
 // ホワイトボードの操作（FR-097・FR-098・FR-099）。ボードの項目の配列を受け取って新しい配列を返す、純粋な関数だけ。
 // コネクター・フレーム・グループ・整列・データのカード・ドット投票・付箋のクラスタリングの並べ替え。
 import { newId, translateItem, unionBounds, type BoardItem, type Bounds } from '../ink/model';
+import { tr } from '../i18n';
 
 export const STICKY_W = 180;
 export const STICKY_H = 140;
@@ -77,7 +78,7 @@ export function frameSelection(
   items: BoardItem[],
   ids: ReadonlySet<string>,
   strokeBounds: ReadonlyArray<Bounds> = [],
-  label = 'フレーム',
+  label = tr('フレーム'),
 ): { items: BoardItem[]; frameId: string } | null {
   const members = items.filter((i) => ids.has(i.id) && i.type !== 'connector' && i.type !== 'frame');
   const box = unionBounds([...members, ...strokeBounds]);
@@ -117,14 +118,14 @@ export function expandGroups(items: ReadonlyArray<BoardItem>, ids: ReadonlyArray
 export type AlignMode = 'left' | 'hcenter' | 'right' | 'top' | 'vcenter' | 'bottom' | 'hdistribute' | 'vdistribute';
 
 export const ALIGN_MODES: ReadonlyArray<{ mode: AlignMode; label: string }> = [
-  { mode: 'left', label: '左揃え' },
-  { mode: 'hcenter', label: '左右中央揃え' },
-  { mode: 'right', label: '右揃え' },
-  { mode: 'top', label: '上揃え' },
-  { mode: 'vcenter', label: '上下中央揃え' },
-  { mode: 'bottom', label: '下揃え' },
-  { mode: 'hdistribute', label: '横に等間隔' },
-  { mode: 'vdistribute', label: '縦に等間隔' },
+  { mode: 'left', get label() { return tr('左揃え'); } },
+  { mode: 'hcenter', get label() { return tr('左右中央揃え'); } },
+  { mode: 'right', get label() { return tr('右揃え'); } },
+  { mode: 'top', get label() { return tr('上揃え'); } },
+  { mode: 'vcenter', get label() { return tr('上下中央揃え'); } },
+  { mode: 'bottom', get label() { return tr('下揃え'); } },
+  { mode: 'hdistribute', get label() { return tr('横に等間隔'); } },
+  { mode: 'vdistribute', get label() { return tr('縦に等間隔'); } },
 ];
 
 /** 整列の対象: 選んだ項目のうち、コネクターと、中の項目も選んでいるフレーム（中身と一緒に動かすので）を除いたもの。 */
@@ -262,10 +263,10 @@ export function clusterTexts(texts: ReadonlyArray<string>): Cluster[] {
       const [i, j] = k.split(',').map(Number) as [number, number];
       if (members.includes(i) && members.includes(j) && w.length > name.length) name = w;
     }
-    clusters.push({ name: name || `グループ ${clusters.length + 1}`, members });
+    clusters.push({ name: name || tr('グループ {n}', { n: clusters.length + 1 }), members });
   }
   clusters.sort((a, b) => a.members[0]! - b.members[0]!);
-  if (others.length > 0) clusters.push({ name: OTHER_CLUSTER, members: others });
+  if (others.length > 0) clusters.push({ name: tr(OTHER_CLUSTER), members: others });
   return clusters;
 }
 
@@ -290,7 +291,7 @@ export function parseClusterJson(answer: string, n: number): Cluster[] | null {
       for (const x of g.members as unknown[]) {
         if (Number.isInteger(x) && (x as number) >= 0 && (x as number) < n && !seen.has(x as number)) { seen.add(x as number); members.push(x as number); }
       }
-      if (members.length > 0) out.push({ name: typeof g.name === 'string' && g.name.trim() ? g.name.trim() : `グループ ${out.length + 1}`, members });
+      if (members.length > 0) out.push({ name: typeof g.name === 'string' && g.name.trim() ? g.name.trim() : tr('グループ {n}', { n: out.length + 1 }), members });
     }
     return seen.size === n ? out : null;
   } catch {

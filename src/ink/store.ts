@@ -1,6 +1,7 @@
 // インク・ボードのストア（FR-086〜FR-089）。複数ボード・道具・選択・元に戻す/やり直し・他のビューの上の注釈。
 // 保存（IndexedDB への自動保存と復旧）は FR-095 が受け持つ。ここではメモリ上に持ち、ビューを切り替えても残る。
 import { create } from 'zustand';
+import { tr } from '../i18n';
 import { registerTestHook } from '../testing/hook';
 import { erasePixels } from './geometry';
 import {
@@ -78,7 +79,7 @@ function mapBoard(boards: Board[], id: string, fn: (b: Board) => Board): Board[]
   return boards.map((b) => (b.id === id ? fn(b) : b));
 }
 
-const firstBoard = createBoard('ボード 1');
+const firstBoard = createBoard(tr('ボード 1'));
 
 export const useInk = create<InkState>()((set, get) => {
   /** 履歴を積んで、ボードの中身を変える。 */
@@ -125,7 +126,7 @@ export const useInk = create<InkState>()((set, get) => {
 
     addBoard: (topicId) => {
       const n = get().boards.filter((b) => b.kind === 'board' && b.topicId === topicId).length + 1;
-      const board = createBoard(`ボード ${n}`, topicId);
+      const board = createBoard(tr('ボード {n}', { n }), topicId);
       set((s) => ({ boards: [...s.boards, board], activeBoardId: board.id, selection: null }));
       return board.id;
     },
@@ -139,7 +140,7 @@ export const useInk = create<InkState>()((set, get) => {
     ensureAnnotationBoard: (viewKey) => {
       const id = annotationBoardId(viewKey);
       if (!get().boards.some((b) => b.id === id)) {
-        set((s) => ({ boards: [...s.boards, createBoard(`注釈: ${viewKey}`, null, 'annotation', id)] }));
+        set((s) => ({ boards: [...s.boards, createBoard(tr('注釈: {key}', { key: viewKey }), null, 'annotation', id)] }));
       }
       return id;
     },

@@ -7,6 +7,7 @@ import { useAnimation } from '../store/animation';
 import { useStoryStyle } from '../store/storyboardStyle';
 import { useStoryboardUi } from '../store/storyboardUi';
 import { useCaptionSpeech } from '../speech/useCaptionSpeech';
+import { useT } from '../i18n';
 import {
   DEFAULT_STORY_INTENSITY, STYLES, is3dStyle, isStyle, moveScene, sceneMs, telopParts, telopPlain, validateScenes, TELOP_MAX,
   type StoryScene, type StoryStyle,
@@ -29,6 +30,7 @@ const STYLE_CLASS: Record<StoryStyle, string> = {
 
 /** 全画面で再生する。Esc・終了で閉じる。全画面にできないときは、画面全体を覆う表示で代わりにする（FR-164 AC-317） */
 export function StoryboardPlayer({ name, scenes, onClose }: { name: string; scenes: readonly StoryScene[]; onClose: () => void }) {
+  const t = useT();
   const style = useStoryStyle((s) => s.style);
   const motionRunning = useAnimation((s) => s.playing);
   const [rootEl, setRootEl] = useState<HTMLElement | null>(null);
@@ -107,19 +109,19 @@ export function StoryboardPlayer({ name, scenes, onClose }: { name: string; scen
       data-testid="storyboard-player"
       role="dialog"
       aria-modal="true"
-      aria-label={`ストーリーボード: ${name}`}
+      aria-label={t('ストーリーボード: {name}', { name })}
       data-storyboard-state={state}
       data-motion={motionRunning ? 'running' : 'stopped'}
     >
       <div className="sbp-bar">
         <b data-testid="storyboard-position" aria-live="polite">{`${index + 1} / ${total}`}</b>
-        <span>スタイル: <b data-testid="storyboard-style-name">{style}</b></span>
-        <span>演出強度: <b data-testid="storyboard-intensity">{DEFAULT_STORY_INTENSITY}</b></span>
-        <span>{state === 'playing' ? (motionRunning ? '再生中' : '再生中（動きは停止中）') : state === 'paused' ? '一時停止中' : '終了'}</span>
+        <span>{t('スタイル: ')}<b data-testid="storyboard-style-name">{t(style)}</b></span>
+        <span>{t('演出強度: ')}<b data-testid="storyboard-intensity">{DEFAULT_STORY_INTENSITY}</b></span>
+        <span>{state === 'playing' ? (motionRunning ? t('再生中') : t('再生中（動きは停止中）')) : state === 'paused' ? t('一時停止中') : t('終了')}</span>
       </div>
-      {fallback ? <p className="sbp-notice" role="status" data-testid="storyboard-fullscreen-fallback">この環境では全画面にできないため、画面全体を覆う表示で再生しています。</p> : null}
-      {flat ? <p className="sbp-notice" role="status" data-testid="storyboard-style-notice">3D を描けない環境（WebGL が使えない）のため、2D のアニメの表現で再生しています。</p> : null}
-      {speech.sending ? <p className="sbp-notice" role="status" data-testid="speech-sending-notice">字幕の文言を音声合成の接続先（{speech.host}）へ送って読み上げています。</p> : null}
+      {fallback ? <p className="sbp-notice" role="status" data-testid="storyboard-fullscreen-fallback">{t('この環境では全画面にできないため、画面全体を覆う表示で再生しています。')}</p> : null}
+      {flat ? <p className="sbp-notice" role="status" data-testid="storyboard-style-notice">{t('3D を描けない環境（WebGL が使えない）のため、2D のアニメの表現で再生しています。')}</p> : null}
+      {speech.sending ? <p className="sbp-notice" role="status" data-testid="speech-sending-notice">{t('字幕の文言を音声合成の接続先（{host}）へ送って読み上げています。', { host: speech.host ?? '' })}</p> : null}
       {speech.error ? <p className="sbp-notice" role="status" data-testid="speech-error">{speech.error}</p> : null}
       <div className="sbp-stage">
         <h2 className="sbp-heading" key={`h${index}`}>{scene.heading}</h2>
@@ -131,14 +133,14 @@ export function StoryboardPlayer({ name, scenes, onClose }: { name: string; scen
         {telopParts(scene.telop).map((p, i) => (p.emphasis ? <span key={i} className="sbp-emphasis" data-testid="storyboard-emphasis">{p.text}</span> : <span key={i}>{p.text}</span>))}
       </p>
       <p className="sbp-caption" data-testid="storyboard-caption" aria-live="polite">{scene.caption}</p>
-      <div className="sbp-controls" role="group" aria-label="再生の操作">
-        <Button appearance="primary" onClick={restartOrPlay}>再生</Button>
-        <Button onClick={() => setState('paused')}>一時停止</Button>
-        <Button onClick={prev} disabled={index === 0}>前へ</Button>
-        <Button onClick={next} disabled={index >= total - 1}>次へ</Button>
-        <Button onClick={onClose}>終了</Button>
+      <div className="sbp-controls" role="group" aria-label={t('再生の操作')}>
+        <Button appearance="primary" onClick={restartOrPlay}>{t('再生')}</Button>
+        <Button onClick={() => setState('paused')}>{t('一時停止')}</Button>
+        <Button onClick={prev} disabled={index === 0}>{t('前へ')}</Button>
+        <Button onClick={next} disabled={index >= total - 1}>{t('次へ')}</Button>
+        <Button onClick={onClose}>{t('終了')}</Button>
       </div>
-      <ol className="sbp-sr" aria-label="全シーンの字幕">
+      <ol className="sbp-sr" aria-label={t('全シーンの字幕')}>
         {scenes.map((sc, i) => <li key={i}>{sc.caption}</li>)}
       </ol>
     </section>
@@ -168,6 +170,7 @@ export function StoryboardEditor({ name, persona, scenes, onSave, onClose }: {
   onClose: () => void;
 }) {
   const s = useStyles();
+  const t = useT();
   const [draft, setDraft] = useState<StoryScene[]>(() => scenes.map((x) => ({ ...x })));
   const [errors, setErrors] = useState<string[]>([]);
   const patch = (i: number, p: Partial<StoryScene>) => setDraft((d) => d.map((x, j) => (j === i ? { ...x, ...p } : x)));
@@ -179,25 +182,25 @@ export function StoryboardEditor({ name, persona, scenes, onSave, onClose }: {
   };
   return (
     <Dialog open modalType="modal" onOpenChange={(_, d) => { if (!d.open) onClose(); }}>
-      <DialogSurface aria-label={`ストーリーボードの編集: ${name}`} style={{ maxHeight: '90vh', overflowY: 'auto' }}>
+      <DialogSurface aria-label={t('ストーリーボードの編集: {name}', { name })} style={{ maxHeight: '90vh', overflowY: 'auto' }}>
         <DialogBody>
           <DialogContent>
             <section className={s.box} data-testid="storyboard-editor">
-              <Text weight="semibold">{`ストーリーボードの編集（対象ペルソナ: ${persona || '（未入力）'}）`}</Text>
+              <Text weight="semibold">{t('ストーリーボードの編集（対象ペルソナ: {persona}）', { persona: persona || t('（未入力）') })}</Text>
               <ol className={s.list} data-testid="storyboard-scenes">
                 {draft.map((sc, i) => (
                   <li key={i} className={s.scene}>
-                    <Text weight="semibold">{`シーン ${i + 1}`}</Text>
-                    <Field label="見出し"><Input aria-label={`シーン ${i + 1} の見出し`} value={sc.heading} onChange={(_, d) => patch(i, { heading: d.value })} /></Field>
-                    <Field label="字幕（読み上げる文と同じ文言）"><Textarea aria-label={`シーン ${i + 1} の字幕`} value={sc.caption} onChange={(_, d) => patch(i, { caption: d.value })} /></Field>
-                    <Field label={`強調テロップ（強調する語は * で囲む。${TELOP_MAX} 文字以内）`} hint={`${Array.from(telopPlain(sc.telop)).length} / ${TELOP_MAX} 文字`}>
-                      <Input aria-label={`シーン ${i + 1} の強調テロップ`} value={sc.telop} onChange={(_, d) => patch(i, { telop: d.value })} />
+                    <Text weight="semibold">{t('シーン {n}', { n: i + 1 })}</Text>
+                    <Field label={t('見出し')}><Input aria-label={t('シーン {n} の見出し', { n: i + 1 })} value={sc.heading} onChange={(_, d) => patch(i, { heading: d.value })} /></Field>
+                    <Field label={t('字幕（読み上げる文と同じ文言）')}><Textarea aria-label={t('シーン {n} の字幕', { n: i + 1 })} value={sc.caption} onChange={(_, d) => patch(i, { caption: d.value })} /></Field>
+                    <Field label={t('強調テロップ（強調する語は * で囲む。{max} 文字以内）', { max: TELOP_MAX })} hint={t('{n} / {max} 文字', { n: Array.from(telopPlain(sc.telop)).length, max: TELOP_MAX })}>
+                      <Input aria-label={t('シーン {n} の強調テロップ', { n: i + 1 })} value={sc.telop} onChange={(_, d) => patch(i, { telop: d.value })} />
                     </Field>
                     <div className={s.row}>
-                      <Button size="small" disabled={i === 0} onClick={() => setDraft((d) => moveScene(d, i, i - 1))}>{`シーン ${i + 1} を前へ`}</Button>
-                      <Button size="small" disabled={i === draft.length - 1} onClick={() => setDraft((d) => moveScene(d, i, i + 1))}>{`シーン ${i + 1} を後ろへ`}</Button>
+                      <Button size="small" disabled={i === 0} onClick={() => setDraft((d) => moveScene(d, i, i - 1))}>{t('シーン {n} を前へ', { n: i + 1 })}</Button>
+                      <Button size="small" disabled={i === draft.length - 1} onClick={() => setDraft((d) => moveScene(d, i, i + 1))}>{t('シーン {n} を後ろへ', { n: i + 1 })}</Button>
                     </div>
-                    <Text size={200}>{`見出し: ${sc.heading} ／ 字幕: ${sc.caption} ／ テロップ: ${telopPlain(sc.telop)}`}</Text>
+                    <Text size={200}>{t('見出し: {heading} ／ 字幕: {caption} ／ テロップ: {telop}', { heading: sc.heading, caption: sc.caption, telop: telopPlain(sc.telop) })}</Text>
                   </li>
                 ))}
               </ol>
@@ -209,8 +212,8 @@ export function StoryboardEditor({ name, persona, scenes, onSave, onClose }: {
             </section>
           </DialogContent>
           <DialogActions>
-            <Button appearance="primary" onClick={save}>保存</Button>
-            <Button onClick={onClose}>閉じる</Button>
+            <Button appearance="primary" onClick={save}>{t('保存')}</Button>
+            <Button onClick={onClose}>{t('閉じる')}</Button>
           </DialogActions>
         </DialogBody>
       </DialogSurface>
@@ -220,12 +223,13 @@ export function StoryboardEditor({ name, persona, scenes, onSave, onClose }: {
 
 /** スタイルの選択（FR-166）。選んだものは端末内に保存される */
 export function StylePicker() {
+  const t = useT();
   const style = useStoryStyle((s) => s.style);
   const setStyle = useStoryStyle((s) => s.setStyle);
   return (
-    <Field label="スタイル" hint="ストーリーボードの再生の見た目（既定は Isometric 3D）">
-      <RadioGroup layout="horizontal" aria-label="スタイル" value={style} onChange={(_, d) => { if (isStyle(d.value)) setStyle(d.value); }}>
-        {STYLES.map((n) => <Radio key={n} value={n} label={n} />)}
+    <Field label={t('スタイル')} hint={t('ストーリーボードの再生の見た目（既定は Isometric 3D）')}>
+      <RadioGroup layout="horizontal" aria-label={t('スタイル')} value={style} onChange={(_, d) => { if (isStyle(d.value)) setStyle(d.value); }}>
+        {STYLES.map((n) => <Radio key={n} value={n} label={t(n)} />)}
       </RadioGroup>
     </Field>
   );

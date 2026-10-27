@@ -1,5 +1,6 @@
 // ストーリーボード（FR-163〜FR-166）の純関数。ユースケース（FR-158）のユーザーストーリーから、再生用のシーンを端末内だけで作る。AI には接続しない。
 import { signature, type Checked, type UseCaseDraft } from './model';
+import { tr } from '../i18n';
 
 /** 再生の目標の長さ（PARAM-052。ミリ秒）。許容の幅は ±PARAM-053（5 秒） */
 export const TARGET_MS = 30_000;
@@ -60,7 +61,7 @@ export function buildStoryScenes(uc: UseCaseDraft): StoryScene[] {
 /** ストーリーボードを作る。手順が 0 件なら拒否する（FR-163 AC-316） */
 export function createStoryboard(uc: UseCaseDraft, now: Date = new Date()): Checked<Storyboard> {
   if (uc.steps.length === 0) {
-    return { ok: false, errors: ['手順がないため、ストーリーボードを作成できません。手順を 1 つ以上追加する（「編集」から手順を追加して保存する）と作成できます。'] };
+    return { ok: false, errors: [tr('手順がないため、ストーリーボードを作成できません。手順を 1 つ以上追加する（「編集」から手順を追加して保存する）と作成できます。')] };
   }
   return { ok: true, value: { scenes: buildStoryScenes(uc), signature: signature(uc), createdAt: now.toISOString() } };
 }
@@ -75,9 +76,9 @@ export function validateScenes(scenes: readonly StoryScene[]): Checked<StoryScen
   const errors: string[] = [];
   scenes.forEach((s, i) => {
     const n = i + 1;
-    if (!s.heading.trim()) errors.push(`シーン ${n} の見出しを入力してください。`);
-    if (!s.caption.trim()) errors.push(`シーン ${n} の字幕を入力してください。`);
-    if (Array.from(telopPlain(s.telop)).length > TELOP_MAX) errors.push(`シーン ${n} の強調テロップは ${TELOP_MAX} 文字以内にしてください（* は数えません）。`);
+    if (!s.heading.trim()) errors.push(tr('シーン {n} の見出しを入力してください。', { n }));
+    if (!s.caption.trim()) errors.push(tr('シーン {n} の字幕を入力してください。', { n }));
+    if (Array.from(telopPlain(s.telop)).length > TELOP_MAX) errors.push(tr('シーン {n} の強調テロップは {max} 文字以内にしてください（* は数えません）。', { n, max: TELOP_MAX }));
   });
   if (errors.length > 0) return { ok: false, errors };
   return { ok: true, value: scenes.map((s) => ({ ...s, heading: s.heading.trim(), caption: s.caption.trim(), telop: s.telop.trim() })) };
