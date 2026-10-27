@@ -4,6 +4,7 @@ import { inkMarkdownEntries } from './inkMarkdown';
 import { assemblePdf, pageSize, pdfSections, todayText } from './pdf';
 import { createZip } from './zip';
 import { sanitizeFilePart, yyyymmdd } from '../discussion/model';
+import { tr } from '../i18n/translate';
 
 export interface SummaryPack { fileName: string; bytes: Uint8Array }
 
@@ -13,12 +14,12 @@ export function summaryLines(input: ExportInput, anonymized: boolean): string[] 
   const strokes = boards.reduce((n, b) => n + b.strokes.filter((s) => !s.temporary).length, 0);
   const notes = boards.reduce((n, b) => n + b.items.filter((i) => i.type === 'sticky').length, 0);
   return [
-    `顧客: ${input.customerName}`,
-    `案件: ${input.projectName}`,
-    `議論のテーマ: ${input.themes.length} 件`,
-    `ホワイトボード: ${boards.length} 枚（手書き ${strokes} 本・付箋 ${notes} 枚）`,
-    `機密区分 internal の項目の匿名化: ${anonymized ? 'する' : '対象なし'}`,
-    'このパックには、PDF（表紙・目次・サマリー・ボード）と、Markdown（全量の Markdown とボードごとの Markdown）が入っています。',
+    `${tr('顧客')}: ${input.customerName}`,
+    `${tr('案件')}: ${input.projectName}`,
+    `${tr('議論のテーマ')}: ${tr('{n} 件', { n: input.themes.length })}`,
+    `${tr('ホワイトボード')}: ${tr('{b} 枚（手書き {s} 本・付箋 {n} 枚）', { b: boards.length, s: strokes, n: notes })}`,
+    `${tr('機密区分 internal の項目の匿名化')}: ${anonymized ? tr('する') : tr('対象なし')}`,
+    tr('このパックには、PDF（表紙・目次・サマリー・ボード）と、Markdown（全量の Markdown とボードごとの Markdown）が入っています。'),
   ];
 }
 
@@ -28,14 +29,14 @@ export async function buildSummaryPack(input: ExportInput, font: Uint8Array): Pr
   const anonymize = countInternal(input.data) > 0;
   const full = buildExport(input, { scope: 'all', anonymize, format: 'zip', followUp: false });
   const boards = (input.boards ?? []).filter((b) => b.kind === 'board');
-  const title = `${input.customerName} ${input.projectName} Engagement サマリー`.trim();
+  const title = `${input.customerName} ${input.projectName} Engagement ${tr('サマリー')}`.trim();
   const pdf = await assemblePdf({
     page: pageSize('A4', 'landscape'),
     title,
-    subtitle: 'ビジネス議論の分析ボード',
+    subtitle: tr('ビジネス議論の分析ボード'),
     dateText: todayText(now),
     sections: pdfSections(boards, boards[0]?.id ?? '', 'all'),
-    summary: { title: 'サマリー', lines: summaryLines(input, anonymize) },
+    summary: { title: tr('サマリー'), lines: summaryLines(input, anonymize) },
     font,
   });
   const base = `${yyyymmdd(now)}-${sanitizeFilePart(input.customerName)}-${sanitizeFilePart(input.projectName)}-engagement-summary`;

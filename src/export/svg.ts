@@ -1,6 +1,7 @@
 // エクスポートに入れる画像（SVG）を作る純粋な関数（FR-053 のアーキテクチャの画像、ホワイトボードの画像）。
 // ブラウザーでも Node でも同じ結果になる。文字・線の色は固定の中立色（ZIP の中の画像は、アプリのテーマに依存しない）。
 import { boardContentBounds, type Board } from '../ink/model';
+import { tr } from '../i18n/translate';
 
 const INK = '#242424';
 const LINE = '#616161';
@@ -38,7 +39,7 @@ export function architectureSvg(nodes: readonly ArchNode[], edges: readonly Arch
     `<rect width="${width}" height="${height}" fill="#ffffff"/>`,
   ];
   layers.forEach((l, i) => {
-    out.push(`<text x="${PAD + i * (W + GX) + W / 2}" y="${PAD + 20}" text-anchor="middle" font-size="14" font-weight="600" fill="${INK}" ${FONT}>${xmlEscape(l || '（層なし）')}</text>`);
+    out.push(`<text x="${PAD + i * (W + GX) + W / 2}" y="${PAD + 20}" text-anchor="middle" font-size="14" font-weight="600" fill="${INK}" ${FONT}>${xmlEscape(l || tr('（層なし）'))}</text>`);
   });
   for (const e of edges) {
     const a = pos.get(e.from), b = pos.get(e.to);

@@ -90,7 +90,7 @@ export function ShortVideoDialog() {
           <DialogTitle>{t('ショート動画の書き出し')}</DialogTitle>
           <DialogContent>
             <Text as="p" block>{t('縦横比 9:16・約 {n} 秒の動画（WebM）を、このブラウザーの中で作ります。外部には送りません。', { n: SHORT_VIDEO_SECONDS })}</Text>
-            <Text as="p" block data-testid="short-watermark">{t('動画には「{mark}」の透かしが入ります。', { mark: SHORT_VIDEO_WATERMARK })}</Text>
+            <Text as="p" block data-testid="short-watermark">{t('動画には「{mark}」の透かしが入ります。', { mark: t(SHORT_VIDEO_WATERMARK) })}</Text>
             {!supported ? <MessageBar intent="warning"><MessageBarBody>{t('このブラウザーは WebM の録画に対応していません。')}</MessageBarBody></MessageBar> : null}
             {phase === 'recording' ? (
               <div data-testid="short-progress">

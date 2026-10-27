@@ -63,13 +63,13 @@ export function drawShortFrame(ctx: CanvasRenderingContext2D, src: ShortVideoSou
   ctx.textBaseline = 'middle';
   ctx.fillStyle = 'rgba(255,255,255,0.28)';
   ctx.font = font(150, 800);
-  ctx.fillText(SHORT_VIDEO_WATERMARK, 0, 0);
+  ctx.fillText(tr(SHORT_VIDEO_WATERMARK), 0, 0);
   ctx.restore();
   ctx.textAlign = 'right';
   ctx.textBaseline = 'top';
   ctx.fillStyle = 'rgba(255,255,255,0.85)';
   ctx.font = font(24, 700);
-  ctx.fillText(SHORT_VIDEO_WATERMARK, w - 30, 24);
+  ctx.fillText(tr(SHORT_VIDEO_WATERMARK), w - 30, 24);
   ctx.textAlign = 'left';
 }
 
