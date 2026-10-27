@@ -18,7 +18,8 @@ import { PresentationInkLayer } from './PresentationInkLayer';
 import { WorkspaceOverview } from './WorkspaceOverview';
 import { PaneContext, type PaneInfo } from './PaneContext';
 import { COMPACT_CELL_HEIGHT, isCompactWidth, stackedLeaves } from './compact';
-import { clampInto, overlapArea, placeNew, resizeRect, resolveAround, resolveOverlaps, type PxMap, type PxRect, type ResizeEdge } from './freeLayout';
+import { clampInto, nearestFree, overlapArea, placeNew, resizeRect, resolveAround, resolveOverlaps, type PxMap, type PxRect, type ResizeEdge } from './freeLayout';
+import { minBorderSize, moveBorder, planSnap, remainingRegion, sharedBorders, type Border } from './snapFloat';
 import { PIN_MOVE_REASON, PIN_NO_ROOM_REASON, PIN_RESIZE_REASON, PIN_TABS_REASON, NO_RESIZE_REASON } from './paneActions';
 import { paneCommands } from './paneCommands';
 import { autoCommands, AUTO_DONE, AUTO_STOPPED, AUTO_UNDONE, AUTO_NO_UNDO, AUTO_NO_ROOM } from './autoCommands';
@@ -50,9 +51,20 @@ const useStyles = makeStyles({
     padding: tokens.spacingHorizontalS, borderRadius: tokens.borderRadiusLarge, boxShadow: tokens.shadow16,
     backgroundColor: tokens.colorNeutralBackground1, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`,
   },
+  // 上端・下端のときは、候補を横に並べる（縦に並べると作業領域の中ほどまで届いて、範囲外へ戻したあとも候補が残るため）
+  snapPanelRow: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '90vw' },
   snapButton: { justifyContent: 'flex-start', minWidth: '96px', minHeight: '32px' },
+  // スナップした直後に、残った領域を埋めるコンポーネントを選ぶ候補（Snap Assist 相当。FR-152 AC-794）。作業領域の下端に出し、見出しを覆わない
+  snapAssist: {
+    position: 'absolute', zIndex: 1002, bottom: tokens.spacingVerticalS, display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center',
+    columnGap: tokens.spacingHorizontalS, rowGap: tokens.spacingVerticalXS, padding: tokens.spacingHorizontalS, borderRadius: tokens.borderRadiusLarge,
+    boxShadow: tokens.shadow16, backgroundColor: tokens.colorNeutralBackground1, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`,
+    transform: 'translateX(-50%)',
+  },
+  // 隣り合って配置されたコンポーネントの共有する境界のつまみ（FR-152 AC-796）。両側が同時にリサイズされる
+  floatSep: { position: 'absolute', zIndex: 700, backgroundColor: 'transparent' },
   snapPreview: {
-    position: 'fixed', zIndex: 1000, pointerEvents: 'none', boxSizing: 'border-box',
+    position: 'fixed', zIndex: 1000, pointerEvents: 'none', boxSizing: 'border-box', opacity: 0.6, // 配置後の領域を半透明で示す（FR-152 AC-793）
     backgroundColor: tokens.colorBrandBackground2, border: `${tokens.strokeWidthThick} solid ${tokens.colorBrandStroke1}`, borderRadius: tokens.borderRadiusMedium,
   },
   dropLabel: {
@@ -332,7 +344,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   useEffect(() => { if (revealed) setPicked(revealed.key); }, [revealed]);
   // 既定のレイアウトに戻した直後は、操作中の扱いを解く（次にコンポーネントを操作するまで既定の寸法。FR-110 AC-135 / FR-143）
   const resetCount = useLayout((st) => st.resetCount);
-  useEffect(() => { if (resetCount > 0) { setFocusKey(null); setPicked(null); } }, [resetCount]);
+  useEffect(() => { if (resetCount > 0) { setFocusKey(null); setPicked(null); snapMem.current.clear(); setAssist(null); } }, [resetCount]);
   const [width, setWidth] = useState(0);
   const [height, setHeight] = useState(0);
   const treeRef = useRef<HTMLDivElement>(null);
@@ -345,6 +357,19 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     if (top !== treeTop) setTreeTop(top);
   });
   const [drag, setDrag] = useState<DragState | null>(null);
+  /** スナップ前の大きさ（作業領域に対する割合。保存しない）。端から引き離したとき、この大きさへ戻す。スナップしたものは、ほかのスナップで動かさない（FR-152 AC-795） */
+  const snapMem = useRef(new Map<string, { w: number; h: number }>());
+  /** スナップした直後に、残った領域を埋めるコンポーネントを選ぶ候補（FR-152 AC-794） */
+  const [assist, setAssist] = useState<{ key: string; rect: FloatRect } | null>(null);
+  // 残った領域の候補は、選ばずに閉じても配置は変わらない。Esc・候補の外の操作で閉じる（FR-152 AC-794）
+  useEffect(() => {
+    if (!assist) return;
+    const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') setAssist(null); };
+    const onDown = (e: globalThis.PointerEvent) => { if (!(e.target as Element | null)?.closest?.('[data-testid="snap-assist"]')) setAssist(null); };
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('pointerdown', onDown, true);
+    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('pointerdown', onDown, true); };
+  }, [assist]);
   const dragRef = useRef<DragState | null>(null);
   dragRef.current = drag;
   // 幅が狭い（または拡大率が高い）ときは、分割を縦に積む。レイアウトの木は変えず、描き方だけを替える。
@@ -384,6 +409,13 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   const motionOn = motionAllowed(playing, prefersReducedMotion());
   const animated = motionOn && (!!live || settling !== null);
   const outKeys = useMemo(() => (expandedOut ? [expandedOut] : floatKeys), [expandedOut, floatKeys]);
+  // 隣り合って配置されたコンポーネントの共有する境界（つまみ）。最大化中・移動中は出さない（FR-152 AC-796）
+  const floatBorders = useMemo<Border[]>(() => {
+    if (expandedOut || maximized !== null || drag || floatKeys.length < 2) return [];
+    const rects: Record<string, FloatRect> = {};
+    for (const k of floatKeys) { const r = pinnedMap?.[k] ?? floatMap?.[k]; if (r) rects[k] = r; }
+    return sharedBorders(rects);
+  }, [expandedOut, maximized, drag, floatKeys, floatMap, pinnedMap]);
   const treeBase = useMemo(() => (outKeys.length === 0 ? base : prune(base, new Set([...baseKeys].filter((k) => !outKeys.includes(k))))), [base, baseKeys, outKeys]);
   const inset = expandedOut ? expandInset(expandPos, width, height, treeTop) : undefined;
   // 拡大表示中は「操作中」の更新を止める（復帰したとき、拡大前と同じ大きさに戻すため。FR-174）
@@ -452,7 +484,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
         if (m && r) commitFree(key, r, m);
       },
       // 重なるのは自由配置のコンポーネントだけ。分割の配置では、手前に出す操作で見た目の位置の基準を変えない（クリックの途中で作業領域のスクロールが動かないように）
-      z: isFloat && zRank >= 0 ? 2 + zRank : undefined,
+      z: isFloat && zRank >= 0 ? 3 + zRank : undefined,
       minimized: minSet.has(key),
       toggleMinimize: () => a.setMinimized(key, !minSet.has(key)),
       visible: group.length === 1 || active === key,
@@ -469,10 +501,10 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
         if (!cur || !m) { a.moveComponent(key, d); return; }
         const step = 0.05;
         const next = clampFloat({ ...cur, x: cur.x + (d === 'right' ? step : d === 'left' ? -step : 0), y: cur.y + (d === 'down' ? step : d === 'up' ? -step : 0) });
-        commitFree(key, { x: next.x * m.bounds.w, y: next.y * m.bounds.h, w: next.w * m.bounds.w, h: next.h * m.bounds.h }, m);
+        commitFree(key, { x: next.x * m.bounds.w, y: next.y * m.bounds.h, w: next.w * m.bounds.w, h: next.h * m.bounds.h }, m, false);
       },
       toggleDirection: () => (pinned ? announce(PIN_MOVE_REASON) : a.toggleDirection(key)),
-      snapTo: (kind) => (pinned ? announce(PIN_MOVE_REASON) : a.snapTo(key, kind, { tabTarget: keysOf(layout).find((k) => !group.includes(k) && !pinSet.has(k)) })),
+      snapTo: (kind) => applySnap(key, kind, { tabTarget: keysOf(layout).find((k) => !group.includes(k) && !pinSet.has(k)) }),
       snapKinds: snapKindsFor(compact),
       mergeInto: (t) => (pinned || pinSet.has(t) ? announce(PIN_TABS_REASON) : a.mergeTabs(key, t)),
       untab: () => (pinned ? announce(PIN_TABS_REASON) : a.untab(key)),
@@ -530,14 +562,114 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   };
   const toFractions = (m: PxMap, b: { w: number; h: number }): Record<string, FloatRect> =>
     Object.fromEntries(Object.entries(m).map(([k, r]) => [k, { x: r.x / b.w, y: r.y / b.h, w: r.w / b.w, h: r.h / b.h }]));
-  /** `key` を `target` に置き、ぶつかるものを押し出して、すべてを自由配置として保存する（FR-173・FR-184） */
-  const commitFree = (key: string, target: PxRect, m: NonNullable<ReturnType<typeof measureAll>>): boolean => {
+  /** `key` を `target` に置き、すべてを自由配置として保存する（FR-173・FR-184）。`push` のときは、ぶつかるものを押し出す。
+   * 自由な移動（`push` なし）は、Windows のウィンドウと同様に重なりを許し、掴んだものを手前に出す（Q-066 B 2026-10-27）。 */
+  const commitFree = (key: string, target: PxRect, m: NonNullable<ReturnType<typeof measureAll>>, push = true): boolean => {
+    if (!push) {
+      // ピン止めしたものには重ねない（FR-216 AC-496・AC-505）。置き場所がなければ、元の位置のまま理由を示す
+      const fixedRects = [...pinSet].filter((k) => k !== key && m.rects[k]).map((k) => m.rects[k]!);
+      const placed = fixedRects.length > 0 ? nearestFree(clampInto(target, m.bounds), fixedRects, m.bounds) : clampInto(target, m.bounds);
+      if (!placed) { announce(PIN_NO_ROOM_REASON); return false; }
+      actions().setFloats(toFractions({ ...m.rects, [key]: placed }, m.bounds));
+      actions().raise(key);
+      actions().markMoved(key);
+      snapMem.current.delete(key);
+      return true;
+    }
     // ピン止めしたものは動かさない。置き場所が残っていなければ、元の位置のまま理由を示す（FR-216 AC-496・AC-505）
     const next = resolveAround({ ...m.rects, [key]: target }, key, m.bounds, pinSet, manualSet());
     if (!next) { announce(PIN_NO_ROOM_REASON); return false; }
     actions().setFloats(toFractions(next, m.bounds));
     actions().markMoved(key);
     return true;
+  };
+
+  /** スナップ先の領域（px）へ `key` を置き、ほかを重ならない位置へ動かす（FR-152・FR-184）。置けなければ false */
+  const placeSnapped = (key: string, target: PxRect, m: NonNullable<ReturnType<typeof measureAll>>): boolean => {
+    const cur = m.rects[key];
+    if (!cur) return false;
+    const anchors = new Set([...snapMem.current.keys()].filter((k) => k !== key && k in m.rects));
+    const next = planSnap(m.rects, key, target, m.bounds, { fixed: pinSet, anchors, keep: manualSet() });
+    if (!next) { announce(PIN_NO_ROOM_REASON); return false; }
+    if (!snapMem.current.has(key)) snapMem.current.set(key, { w: cur.w / m.bounds.w, h: cur.h / m.bounds.h });
+    actions().setFloats(toFractions(next, m.bounds));
+    actions().markMoved(key);
+    markManual(key);
+    return true;
+  };
+
+  /** 候補（左半分・右半分・上半分・下半分・4 分割・3 分割・タブ化・最大化）の配置を行う。ドラッグ・メニュー・キーボード・コマンドで共通（FR-152 AC-265・AC-266） */
+  const applySnap = (key: string, kind: SnapKind, opts: SnapOpts, from?: NonNullable<ReturnType<typeof measureAll>> | null): void => {
+    if (pinSet.has(key)) { announce(PIN_MOVE_REASON); return; }
+    const st = actions();
+    setAssist(null);
+    // 最大化: ほかのコンポーネントは元の配置のまま背面へ回る（解除・引き離しで元の配置に戻る。A-75）
+    if (kind === 'maximize') {
+      // 最大化するものを自由配置の置き場に移し、作業領域いっぱいに最前面で示す。ほかは元の位置のまま背面に残る（解除すると元の配置で見える）
+      const m0 = compact ? null : (from ?? measureAll());
+      if (m0 && m0.rects[key] && !(floatMap && key in floatMap)) st.setFloats(toFractions(m0.rects, m0.bounds));
+      st.setMaximized(key);
+      return;
+    }
+    if (st.maximized) st.setMaximized(null);
+    const m = compact || kind === 'tabs' ? null : (from ?? measureAll());
+    if (!m || !m.rects[key]) { st.snapTo(key, kind, opts); return; }
+    const t = snapRect({ left: 0, top: 0, width: m.bounds.w, height: m.bounds.h }, kind, opts, null);
+    if (!placeSnapped(key, { x: t.left, y: t.top, w: t.width, h: t.height }, m)) return;
+    const rem = remainingRegion(kind, opts);
+    if (rem && Object.keys(m.rects).some((k) => k !== key && !pinSet.has(k))) setAssist({ key, rect: rem });
+  };
+  /** 残った領域を埋めるコンポーネントを選ぶ（Snap Assist）。その領域いっぱいに配置される（FR-152 AC-794） */
+  const fillRemaining = (key: string): void => {
+    const a = assist;
+    setAssist(null);
+    const m = measureAll();
+    if (!a || !m || !m.rects[key]) return;
+    placeSnapped(key, { x: a.rect.x * m.bounds.w, y: a.rect.y * m.bounds.h, w: a.rect.w * m.bounds.w, h: a.rect.h * m.bounds.h }, m);
+  };
+
+  /** 共有する境界のドラッグ・キーボードでの移動。境界の両側が同時に変わり、隙間も重なりも生じない（FR-152 AC-796） */
+  const shiftBorder = (bd: Border, base: Record<string, FloatRect>, deltaPx: number, bounds: { w: number; h: number }): void => {
+    const unit = bd.dir === 'v' ? bounds.w : bounds.h;
+    if (unit <= 0) return;
+    actions().setFloats(moveBorder(base, bd, deltaPx / unit, minBorderSize(bd.dir, bounds)));
+  };
+  const startBorder = (bd: Border, e: PointerEvent<HTMLDivElement>): void => {
+    if (e.button !== 0) return;
+    if ([...bd.before, ...bd.after].some((k) => pinSet.has(k))) { announce(PIN_RESIZE_REASON); return; }
+    const area = rootRef.current?.getBoundingClientRect();
+    const base: Record<string, FloatRect> = {};
+    for (const k of [...bd.before, ...bd.after]) { const r = pinnedMap?.[k] ?? floatMap?.[k]; if (r) base[k] = { ...r }; }
+    if (!area || Object.keys(base).length === 0) return;
+    const bounds = { w: area.width, h: area.height };
+    const sx = e.clientX;
+    const sy = e.clientY;
+    const el = e.currentTarget;
+    el.setPointerCapture(e.pointerId);
+    e.preventDefault();
+    for (const k of [...bd.before, ...bd.after]) markManual(k);
+    const move = (ev: globalThis.PointerEvent) => shiftBorder(bd, base, bd.dir === 'v' ? ev.clientX - sx : ev.clientY - sy, bounds);
+    const end = () => {
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', end);
+      el.removeEventListener('pointercancel', end);
+    };
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+  };
+  const keyBorder = (bd: Border, e: KeyboardEvent<HTMLDivElement>): void => {
+    const dec = bd.dir === 'v' ? 'ArrowLeft' : 'ArrowUp';
+    const inc = bd.dir === 'v' ? 'ArrowRight' : 'ArrowDown';
+    if (e.key !== dec && e.key !== inc) return;
+    e.preventDefault();
+    if ([...bd.before, ...bd.after].some((k) => pinSet.has(k))) { announce(PIN_RESIZE_REASON); return; }
+    const area = rootRef.current?.getBoundingClientRect();
+    if (!area) return;
+    const base: Record<string, FloatRect> = {};
+    for (const k of [...bd.before, ...bd.after]) { const r = pinnedMap?.[k] ?? floatMap?.[k]; if (r) base[k] = { ...r }; }
+    const unit = bd.dir === 'v' ? area.width : area.height;
+    shiftBorder(bd, base, (e.key === inc ? KEY_STEP : -KEY_STEP) * unit, { w: area.width, h: area.height });
   };
 
   /** 自動配置の実行（FR-243）。優先は ①ピン止め ②手で動かした・大きさを変えた配置 ③自動配置。自動配置はそれ以外だけを対象にする */
@@ -889,8 +1021,10 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     }
     let active = false;
     // 動かし始めの配置（画面上の座標）。置き場所の判定と、押し出しの計算の元にする（FR-173・FR-184）
-    const start = measureAll();
-    const hitRects = snapshotRects();
+    let start = measureAll();
+    let hitRects = snapshotRects();
+    // 最大化したコンポーネントを掴んだ: 動かし始めたときに最大化を解き、スナップ前の大きさでポインターに追従させる（FR-152 AC-795）
+    const wasMax = maximized === key;
     // ピン止めしたものは置き先の一覧に入らないので、その上にいるかの判定用に、位置を別に控える
     const pinRects: DOMRect[] = [...pinSet].filter((k) => k !== key).flatMap((k) => {
       const r = rootRef.current?.querySelector(`[data-testid="component-${k}"]`)?.getBoundingClientRect();
@@ -899,19 +1033,26 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     const skipEdges = new Set<Edge>(edgesAtPoint(sx, sy));
     // つかんだ位置（コンポーネントの左上からの差）。置いた位置の計算に使う（FR-173）
     const grabRect = rootRef.current?.querySelector(`[data-testid="component-${key}"]`)?.getBoundingClientRect() ?? null;
-    const offX = grabRect ? sx - grabRect.left : 0;
-    const offY = grabRect ? sy - grabRect.top : 0;
+    /** つかんだ位置の、コンポーネントの幅に対する割合。大きさが変わっても（最大化・スナップを引き離したとき）同じ相対位置を掴んだままにする */
+    const grabFx = grabRect && grabRect.width > 0 ? (sx - grabRect.left) / grabRect.width : 0;
+    const offY0 = grabRect ? sy - grabRect.top : 0;
     useLayout.getState().raise(key);
-    /** ポインターの位置に動かしているコンポーネントを置き、ぶつかるものを押し出した配置（作業領域に対する割合）を求める */
+    /** ポインターの位置に動かしているコンポーネントを置いた配置（作業領域に対する割合）を求める。自由な移動は、Windows のウィンドウと同様に重なりを許し、
+     * ほかを押し出さない（掴んだものが手前に出る。FR-173・Q-066 B）。スナップ・最大化したものは、スナップ前の大きさへ戻る（FR-152 AC-795） */
     const liveAt = (px: number, py: number): DragState['live'] => {
       const area = rootRef.current?.getBoundingClientRect();
-      const self = start?.rects[key];
-      if (compact || !start || !area || !self) return null;
-      const target: PxRect = { x: px - offX - area.left, y: py - offY - area.top, w: self.w, h: self.h };
-      // ピン止めしたものは動かさず、置いたものを重ならない最寄りの位置へ。置き場所がなければ動かし始めの配置のまま（FR-216）
-      const next = resolveAround({ ...start.rects, [key]: target }, key, start.bounds, pinSet, manualSet());
-      noRoom = next === null;
-      return toFractions(next ?? start.rects, start.bounds);
+      const st0 = start;
+      const self = st0?.rects[key];
+      if (compact || !st0 || !area || !self) return null;
+      const mem = snapMem.current.get(key);
+      const w = mem ? mem.w * st0.bounds.w : self.w;
+      const h = mem ? mem.h * st0.bounds.h : self.h;
+      const target = clampInto({ x: px - grabFx * w - area.left, y: py - Math.min(offY0, h / 2) - area.top, w, h }, st0.bounds);
+      // ピン止めしたものには重ねない（固定。FR-216）。重なるときは、重ならない最寄りの位置へ。置き場所がなければ動かし始めの配置のまま
+      const fixedRects = [...pinSet].filter((k) => k !== key && st0.rects[k]).map((k) => st0.rects[k]!);
+      const placed = fixedRects.length > 0 ? nearestFree(target, fixedRects, st0.bounds) : target;
+      noRoom = placed === null;
+      return toFractions(placed ? { ...st0.rects, [key]: placed } : st0.rects, st0.bounds);
     };
     let noRoom = false;
     let lastLive: DragState['live'] = null;
@@ -928,6 +1069,11 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
         if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < DRAG_THRESHOLD_PX) return;
         active = true;
         document.body.style.userSelect = 'none';
+        if (wasMax) {
+          flushSync(() => actions().setMaximized(null));
+          start = measureAll();
+          hitRects = snapshotRects();
+        }
       }
       const hitAny = hitTest(ev.clientX, ev.clientY, key, hitRects);
       // ピン止めしたコンポーネントの上は置き先にならない（置き先の表示も出さない。FR-216 AC-496）
@@ -935,9 +1081,9 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       const overPinned = hitPinned;
       const hit = overPinned ? null : hitAny;
       const snap = snapAt(ev.clientX, ev.clientY, key, hit?.key ?? null, skipEdges);
-      // 分割へ入れる置き場所（上下左右の辺）でも、端のスナップでもなければ、ポインターに追従して置く（自由配置。ぶつかるものは押し出す。FR-173・FR-184）
+      // 分割へ入れる置き場所（上下左右の辺）でなければ、ポインターに追従して置く（端のスナップの候補を示している間も追従する。自由配置は重なりを許す。FR-152・FR-173）
       const docking = !!snap || (hit !== null && (hit.zone !== 'tabs' || compact));
-      lastLive = docking ? null : liveAt(ev.clientX, ev.clientY);
+      lastLive = docking && !snap ? null : liveAt(ev.clientX, ev.clientY);
       lastDrag = { key, target: hit && !snap && docking ? { key: hit.key, zone: hit.zone, rect: hit.rect } : null, snap, live: lastLive, overPinned };
       setDrag(lastDrag);
     };
@@ -947,7 +1093,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       // 放した時点で、置いた位置を画面に反映する（flushSync）。動かしていたものは遅れなく最終の位置になり、押し出されたものだけが動き続ける
       flushSync(() => {
         setDrag(null);
-        if (active && d?.snap) useLayout.getState().snapTo(key, d.snap.kind, d.snap.opts);
+        if (active && d?.snap) applySnap(key, d.snap.kind, d.snap.opts, start);
         else if (active && d?.target) useLayout.getState().dropMove(key, d.target.key, d.target.zone);
         else if (active && lastLive && noRoom) {
           // 重ならない位置が作業領域に残っていない: ドラッグ前の位置に戻し、理由を示す（FR-216 AC-505）
@@ -956,11 +1102,12 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
         else if (active && lastLive) {
           useLayout.getState().setFloats(lastLive);
           useLayout.getState().markMoved(key);
+          snapMem.current.delete(key);
           // 押し出されたものが動き終わるまで、動きをつなぐ（FR-185）
           setSettling(key);
         }
       });
-      if (active && lastLive && !d?.snap && !d?.target) window.setTimeout(() => setSettling(null), 420);
+      if (active && lastLive && !d?.target) window.setTimeout(() => setSettling(null), 420);
     };
     const onCancel = () => { stop(); setDrag(null); };
     const onKey = (ev: globalThis.KeyboardEvent) => {
@@ -1125,8 +1272,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
           : { left: Math.min(Math.max(sn.px, area.left + 80), area.right - 80), transform: 'translateX(-50%)', ...(sn.edges[0] === 'top' ? { top: area.top + 40 } : { bottom: window.innerHeight - area.bottom + 40 }) };
         return (
           <>
-            <div data-testid="snap-preview" aria-hidden className={mergeClasses(s.snapPreview, snapMotion.follow)} style={{ left: pr.left, top: pr.top, width: pr.width, height: pr.height }} />
-            <div data-testid="snap-candidates" role="group" aria-label={t('配置の候補')} className={mergeClasses(s.snapPanel, snapMotion.appear)} style={panelPos}>
+            <div data-testid="snap-preview" aria-hidden className={s.snapPreview} style={{ left: pr.left, top: pr.top, width: pr.width, height: pr.height }} />
+            <div data-testid="snap-candidates" role="group" aria-label={t('配置の候補')} className={mergeClasses(s.snapPanel, h ? undefined : s.snapPanelRow, snapMotion.appear)} style={panelPos}>
               {snapKindsFor(compact).map((k) => (
                 <Button
                   key={k}
@@ -1163,12 +1310,46 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
             className={mergeClasses(s.floatBox, animated && !isMax && expandedOut !== k && settling !== k ? (dragged ? s.floatFollow : s.floatAnimated) : undefined)}
             data-float={k}
             data-pinned={pinSet.has(k) ? 'true' : undefined}
-            style={{ left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.w * 100}%`, height: `${r.h * 100}%`, zIndex: isMax ? 1000 : expandedOut === k ? 500 : dragged ? 600 : 2 + Math.max(rank, 0), ...(settling !== null ? { transition: 'none' } : {}) }}
+            style={{ left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.w * 100}%`, height: `${r.h * 100}%`, zIndex: isMax ? 1000 : expandedOut === k ? 500 : dragged ? 600 : rank >= 0 ? 3 + rank : 2, ...(settling !== null ? { transition: 'none' } : {}), ...(maximized !== null && !isMax && outKeys.includes(maximized) ? { display: 'none' } : {}) }}
           >
             <Slot host={hostOf(k)} />
           </div>
         );
       })}
+      {floatBorders.map((bd) => (
+        <div
+          key={`border-${bd.dir}-${bd.before.join('+')}|${bd.after.join('+')}`}
+          role="separator"
+          data-testid="float-border"
+          aria-orientation={bd.dir === 'v' ? 'vertical' : 'horizontal'}
+          aria-label={t('コンポーネントの境界（矢印キーで大きさを変える）')}
+          aria-valuemin={10}
+          aria-valuemax={90}
+          aria-valuenow={Math.round(bd.pos * 100)}
+          tabIndex={0}
+          className={mergeClasses(s.sep, s.floatSep, bd.dir === 'v' ? s.sepV : s.sepH)}
+          style={bd.dir === 'v'
+            ? { left: `calc(${bd.pos * 100}% - 4px)`, top: `calc(${bd.from * 100}%)`, height: `calc(${(bd.to - bd.from) * 100}%)` }
+            : { top: `calc(${bd.pos * 100}% - 4px)`, left: `calc(${bd.from * 100}%)`, width: `calc(${(bd.to - bd.from) * 100}%)` }}
+          onPointerDown={(e) => startBorder(bd, e)}
+          onKeyDown={(e) => keyBorder(bd, e)}
+        />
+      ))}
+      {assist && !drag ? (
+        <div
+          data-testid="snap-assist"
+          role="group"
+          aria-label={t('残った領域に置くコンポーネントを選ぶ')}
+          className={s.snapAssist}
+          style={{ left: `calc(${(assist.rect.x + assist.rect.w / 2) * 100}%)`, maxWidth: `calc(${assist.rect.w * 100}% - 16px)` }}
+        >
+          <Text size={200}>{t('残った領域に置く:')}</Text>
+          {[...baseKeys].filter((k) => k !== assist.key && !pinSet.has(k) && !!byKey(k)?.component).map((k) => (
+            <Button key={k} size="small" onClick={() => fillRemaining(k)}>{byKey(k)?.label ?? k}</Button>
+          ))}
+          <Button size="small" appearance="subtle" onClick={() => setAssist(null)}>{t('閉じる')}</Button>
+        </div>
+      ) : null}
       {[...groups.entries()].map(([key, g]) => {
         const Screen = byKey(key)?.component;
         if (!Screen) return null;

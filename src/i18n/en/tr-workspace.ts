@@ -79,6 +79,8 @@ export default {
   '3 分割': '3 panes',
   'タブ化': 'Tabs',
   '配置の候補': 'Placement options',
+  '残った領域に置くコンポーネントを選ぶ': 'Choose a component for the remaining area',
+  '残った領域に置く:': 'Place in the remaining area:',
   // ドロップゾーン
   '左': 'left',
   '右': 'right',

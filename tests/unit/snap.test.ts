@@ -23,7 +23,7 @@ function overlap(a: { x: number; y: number; w: number; h: number }, b: { x: numb
 
 const BASE: Layout = defaultLayout('事業部門'); // issue-solution / discussion-tree / gantt / table
 const KEY = 'issue-solution';
-const ALL: SnapKind[] = ['left', 'right', 'top', 'bottom', 'quad', 'third', 'tabs'];
+const ALL: SnapKind[] = ['left', 'right', 'top', 'bottom', 'quad', 'third', 'tabs', 'maximize'];
 
 describe('FR-152 スナップの配置', () => {
   // FR-152 AC-264
@@ -86,13 +86,13 @@ describe('FR-152 スナップの配置', () => {
 
 describe('FR-152 候補の選び方', () => {
   // FR-152 AC-266
-  it('FR-152 AC-266 ドラッグなしの手段も、同じ 7 つの候補（名前つき）から選べる', () => {
-    expect(snapKindsFor(false).map((k) => SNAP_LABEL[k])).toEqual(['左半分', '右半分', '上半分', '下半分', '4 分割', '3 分割', 'タブ化']);
+  it('FR-152 AC-266 ドラッグなしの手段も、同じ 8 つの候補（名前つき。最大化を含む）から選べる', () => {
+    expect(snapKindsFor(false).map((k) => SNAP_LABEL[k])).toEqual(['左半分', '右半分', '上半分', '下半分', '4 分割', '3 分割', 'タブ化', '最大化']);
   });
 
   // FR-152 AC-267
   it('FR-152 AC-267 狭い画面（縦積み）では、成り立つ候補（上半分・下半分・タブ化）だけを示す', () => {
-    expect(snapKindsFor(true)).toEqual(['top', 'bottom', 'tabs']);
+    expect(snapKindsFor(true)).toEqual(['top', 'bottom', 'tabs', 'maximize']);
     expect(defaultSnapKind(['left'], true)).toBe('tabs');
     expect(defaultSnapKind(['top'], true)).toBe('top');
     expect(defaultSnapKind(['bottom', 'left'], true)).toBe('bottom');
@@ -102,7 +102,8 @@ describe('FR-152 候補の選び方', () => {
   it('FR-152 AC-264 端に近づけたときの既定の候補: 辺なら半分、角なら 4 分割', () => {
     expect(defaultSnapKind(['left'], false)).toBe('left');
     expect(defaultSnapKind(['right'], false)).toBe('right');
-    expect(defaultSnapKind(['top'], false)).toBe('top');
+    // 上端のドラッグの結果は最大化に統一する（上半分はキーボード・メニューで選ぶ。AC-793）
+    expect(defaultSnapKind(['top'], false)).toBe('maximize');
     expect(defaultSnapKind(['bottom'], false)).toBe('bottom');
     expect(defaultSnapKind(['top', 'left'], false)).toBe('quad');
     expect(nearestCorner(0.1, 0.9)).toBe('bl');
@@ -120,6 +121,8 @@ describe('FR-152 候補の選び方', () => {
     expect(snapRect(a, 'third', { edge: 'right' })).toEqual({ left: 500, top: 50, width: 200, height: 300 });
     const tab = { left: 1, top: 2, width: 3, height: 4 };
     expect(snapRect(a, 'tabs', {}, tab)).toEqual(tab);
+    // 最大化は作業領域いっぱい（FR-152 AC-793）
+    expect(snapRect(a, 'maximize')).toEqual(a);
   });
 });
 
