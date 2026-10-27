@@ -1,6 +1,7 @@
 // 議論メモ（Markdown）からの復元と、全量エクスポートに足すデータの登録口（FR-051・FR-056）。
 // 課題・解決策などのデータを持つ項目は `registerSnapshotSource` で登録すると、エクスポートに含まれ、読み込みで復元される。
 import { packKeyOf } from './model';
+import { tr } from '../i18n/translate';
 import { buildDiscussionMemo, parseDiscussionMemo } from './memo';
 import { useDiscussionStore } from '../store/discussion';
 
@@ -63,7 +64,7 @@ export function restoreFromMemo(text: string, target: MemoTarget): RestoreResult
     const src = sources.get(key);
     if (!src) continue; // 読み込む処理を持つ項目がまだ登録されていないデータは、復元の対象外
     const problems = src.validate?.(value) ?? [];
-    for (const p of problems) errors.push(`データ「${key}」: ${p}`);
+    for (const p of problems) errors.push(tr('データ「{key}」: {p}', { key, p }));
     applicable.push(() => src.apply(value));
   }
   if (errors.length > 0) return { ok: false, errors };
@@ -74,7 +75,7 @@ export function restoreFromMemo(text: string, target: MemoTarget): RestoreResult
 
   const warnings: string[] = [];
   if (snapshot.customer.name !== target.customerName || snapshot.customer.projectName !== target.projectName) {
-    warnings.push(`このファイルは「${snapshot.customer.name} ${snapshot.customer.projectName}」のものです。現在の顧客パックに読み込みました。`);
+    warnings.push(tr('このファイルは「{name} {project}」のものです。現在の顧客パックに読み込みました。', { name: snapshot.customer.name, project: snapshot.customer.projectName }));
   }
   return { ok: true, themeCount: snapshot.discussion.themes.length, warnings };
 }

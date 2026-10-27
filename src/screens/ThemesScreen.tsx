@@ -82,7 +82,7 @@ function StatusBadge({ status }: { status: DecisionStatus }) {
       color={status === 'decided' ? 'success' : ai ? 'informative' : status === 'on-hold' ? 'warning' : 'brand'}
       shape="rounded"
     >
-      {STATUS_DISPLAY_LABEL[status]}
+      {useT()(STATUS_DISPLAY_LABEL[status])}
     </Badge>
   );
 }
@@ -207,12 +207,12 @@ function ThemeDetail({ packKey, theme }: { packKey: string; theme: Theme }) {
         </span>
         <Dropdown
           aria-label={t('決定ステータス')}
-          value={STATUS_OPTION_LABEL[status]}
+          value={t(STATUS_OPTION_LABEL[status])}
           selectedOptions={[status]}
           onOptionSelect={(_, d) => { if (d.optionValue) store.getState().setStatus(packKey, theme.id, d.optionValue as DecisionStatus); }}
           style={{ minWidth: 160 }}
         >
-          {DECISION_STATUSES.map((k) => <Option key={k} value={k}>{STATUS_OPTION_LABEL[k]}</Option>)}
+          {DECISION_STATUSES.map((k) => <Option key={k} value={k}>{t(STATUS_OPTION_LABEL[k])}</Option>)}
         </Dropdown>
       </div>
 
@@ -223,7 +223,7 @@ function ThemeDetail({ packKey, theme }: { packKey: string; theme: Theme }) {
           {theme.aiProposal.trim() !== '' ? (
             <>
               <Text className={s.proposalText}>{theme.aiProposal}</Text>
-              <Text size={200}>{theme.aiMode === 'connected' ? REAL_LABEL : MOCK_LABEL}</Text>
+              <Text size={200}>{theme.aiMode === 'connected' ? t(REAL_LABEL) : t(MOCK_LABEL)}</Text>
             </>
           ) : (
             <Text size={200}>{t('このテーマに AI の提案はありません。')}</Text>
@@ -232,7 +232,7 @@ function ThemeDetail({ packKey, theme }: { packKey: string; theme: Theme }) {
       </div>
 
       {RECORD_FIELDS.map((f) => (
-        <Field key={f.key} label={f.label}>
+        <Field key={f.key} label={t(f.label)}>
           <Textarea resize="vertical" rows={3} value={theme[f.key]} onChange={(_, d) => store.getState().update(packKey, theme.id, { [f.key]: d.value })} />
         </Field>
       ))}

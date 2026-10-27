@@ -126,7 +126,7 @@ export function SettingsScreen() {
       </Field>
       <Field label={t('拡大表示の位置')} hint={t('コンポーネントの見出しをダブルクリック（またはメニュー・Shift+E）したときに、作業領域の 75% を使って表示する位置です。')}>
         <RadioGroup layout="horizontal" value={expandPosition} onChange={(_, d) => setExpandPosition(d.value as ExpandPosition)}>
-          {EXPAND_POSITIONS.map((p) => <Radio key={p} value={p} label={EXPAND_LABEL[p]} />)}
+          {EXPAND_POSITIONS.map((p) => <Radio key={p} value={p} label={t(EXPAND_LABEL[p])} />)}
         </RadioGroup>
         <Button size="small" appearance="subtle" disabled={expandPosition === DEFAULT_EXPAND_POSITION} onClick={() => setExpandPosition(DEFAULT_EXPAND_POSITION)}>{t('拡大表示の位置を既定（上）に戻す')}</Button>
       </Field>
