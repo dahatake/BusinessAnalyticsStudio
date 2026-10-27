@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { MessageBar, MessageBarBody, MessageBarTitle, tokens } from '@fluentui/react-components';
-import { LanguageToggle } from '../i18n/LanguageToggle';
+import { FloatingLanguageToggle, LanguageToggle } from '../i18n/LanguageToggle';
 import { AiStatus } from '../ai/AiStatus';
 import { CopilotReviewButton } from '../review/CopilotReviewButton';
 import { ExplainButton, ExplainHost } from '../explain/ExplainPanel';
@@ -171,7 +171,7 @@ export function App() {
         <AudioDirector scene={scene} />
         <WelcomeAuto ready={opened} />
         <GuideHost />
-        <div style={{ position: 'fixed', top: 8, right: 12, zIndex: 10 }}><LanguageToggle /></div>
+        <FloatingLanguageToggle />
         <MainScreen />
       </>
     );
