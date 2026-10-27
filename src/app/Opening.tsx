@@ -9,6 +9,7 @@ import { useIntensity, useMotionProfile } from '../motion/useMotion';
 import { OPENING_TOTAL_MS, clampOpeningMs, openingPhaseAt, openingTitle } from '../show/model';
 import { useAnimation } from '../store/animation';
 import { useEffectiveBrand } from '../theme/useBrand';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   root: {
@@ -59,6 +60,7 @@ const useStyles = makeStyles({
 
 export function Opening({ customerName, projectName, onDone }: { customerName: string; projectName: string; onDone: () => void }) {
   const s = useStyles();
+  const t = useT();
   const playing = useAnimation((st) => st.playing);
   const { tempo } = useMotionProfile();
   const intensity = useIntensity();
@@ -97,12 +99,12 @@ export function Opening({ customerName, projectName, onDone }: { customerName: s
       data-phase={phase}
       data-motion={playing ? 'animated' : 'static'}
       role="dialog"
-      aria-label="オープニング"
+      aria-label={t('オープニング')}
     >
       <Text size={300} className={s.caption} data-testid="opening-caption">{customerName} ／ {projectName}</Text>
       <div className={s.stage}>
         {phase === 'countdown' ? (
-          <span key={count} className={mergeClasses(s.count, playing ? s.pop : undefined)} style={enterStyle} data-testid="opening-count" aria-label={`カウントダウン ${count}`}>
+          <span key={count} className={mergeClasses(s.count, playing ? s.pop : undefined)} style={enterStyle} data-testid="opening-count" aria-label={t('カウントダウン {count}', { count })}>
             {count}
           </span>
         ) : null}
@@ -117,7 +119,7 @@ export function Opening({ customerName, projectName, onDone }: { customerName: s
           </div>
         ) : null}
       </div>
-      <Button appearance="primary" onClick={onDone}>スキップ（Esc）</Button>
+      <Button appearance="primary" onClick={onDone}>{t('スキップ（Esc）')}</Button>
     </div>
   );
 }
