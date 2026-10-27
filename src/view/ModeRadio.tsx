@@ -3,6 +3,7 @@
 // 選べない選択肢（3D の表現がない・この環境では描画できない）は無効にし、理由を文字で示す。
 import { Field, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
+import { useT } from '../i18n';
 import { useComponentView } from './useView';
 import { modeOptions, type ViewMode } from './viewModel';
 
@@ -20,21 +21,22 @@ export interface ModeRadioProps {
 
 export function ModeRadio({ viewKey, labels }: ModeRadioProps) {
   const s = useStyles();
+  const t = useT();
   const v = useComponentView(viewKey);
   // Graph は、Graph の表現を持つ画面だけの選択肢（ほかの画面の「ビュー」のメニューでは理由つきで無効にして示す。FR-238）
   const opts = modeOptions(v.decl, v.can3D).filter((o) => o.value !== 'graph' || v.decl.hasGraph);
   const reasons = opts.filter((o) => !o.enabled && o.reason).map((o) => o.reason!);
   return (
-    <Field label="表示">
+    <Field label={t('表示')}>
       <span className={s.row}>
         <RadioGroup
           layout="horizontal"
           value={v.mode}
           onChange={(_, d) => { const o = opts.find((x) => x.value === d.value); if (o?.enabled) v.setMode(o.value); }}
         >
-          {opts.map((o) => <Radio key={o.value} value={o.value} label={labels?.[o.value] ?? o.label} disabled={!o.enabled} />)}
+          {opts.map((o) => <Radio key={o.value} value={o.value} label={labels?.[o.value] ?? t(o.label)} disabled={!o.enabled} />)}
         </RadioGroup>
-        {reasons.map((r) => <Text key={r} size={200} className={s.reason} data-testid="mode-reason">{r}</Text>)}
+        {reasons.map((r) => <Text key={r} size={200} className={s.reason} data-testid="mode-reason">{t(r)}</Text>)}
       </span>
     </Field>
   );

@@ -3,6 +3,7 @@
 import { Button, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { KIND_LABELS } from '../selection/graph';
 import { useSelection } from '../selection/hooks';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   root: {
@@ -16,24 +17,25 @@ const useStyles = makeStyles({
 
 export function RelatedMini({ origin }: { origin: string }) {
   const s = useStyles();
+  const t = useT();
   const { graph, primaryId, select } = useSelection();
   const node = graph && primaryId ? graph.node(primaryId) : undefined;
   const neighbors = graph && node ? [...graph.neighbors(node.id)].map((id) => graph.node(id)).filter((n) => n !== undefined) : [];
   return (
-    <section className={s.root} data-testid="related-mini" aria-label="関連を見る">
-      <Text weight="semibold">関連を見る</Text>
+    <section className={s.root} data-testid="related-mini" aria-label={t('関連を見る')}>
+      <Text weight="semibold">{t('関連を見る')}</Text>
       {!node ? (
-        <Text size={200}>項目を選ぶと、つながっている隣接の項目がここに表示されます。</Text>
+        <Text size={200}>{t('項目を選ぶと、つながっている隣接の項目がここに表示されます。')}</Text>
       ) : neighbors.length === 0 ? (
-        <Text size={200}>「{node.label}」に隣接する項目はありません。</Text>
+        <Text size={200}>{t('「{label}」に隣接する項目はありません。', { label: node.label })}</Text>
       ) : (
         <>
-          <Text size={200}>「{node.label}」の隣接（{neighbors.length} 件）</Text>
+          <Text size={200}>{t('「{label}」の隣接（{n} 件）', { label: node.label, n: neighbors.length })}</Text>
           <ul className={s.list}>
             {neighbors.map((n) => (
               <li key={n.id}>
-                <Button size="small" appearance="outline" onClick={() => select(n.id, { origin })} title={`${KIND_LABELS[n.kind]}を選ぶ`}>
-                  {n.label}（{KIND_LABELS[n.kind]}）
+                <Button size="small" appearance="outline" onClick={() => select(n.id, { origin })} title={t('{kind}を選ぶ', { kind: t(KIND_LABELS[n.kind]) })}>
+                  {n.label}（{t(KIND_LABELS[n.kind])}）
                 </Button>
               </li>
             ))}

@@ -6,6 +6,7 @@ import { Info16Regular } from '@fluentui/react-icons';
 import { fallbackLabel, type FallbackReason } from '../analysis/fallback';
 import { isComponentAvailable, useLayout } from '../store/layout';
 import { useFallbackStore } from '../store/fallback';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   root: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS, alignItems: 'flex-start' },
@@ -24,6 +25,7 @@ export interface UnrenderableNoteProps {
 
 export function UnrenderableNote({ source, reason, items }: UnrenderableNoteProps) {
   const s = useStyles();
+  const t = useT();
   const listId = useId();
   const [expanded, setExpanded] = useState(false);
   if (items.length === 0) return null;
@@ -48,7 +50,7 @@ export function UnrenderableNote({ source, reason, items }: UnrenderableNoteProp
         {text}
       </Button>
       {!hasTable && expanded ? (
-        <ul id={listId} className={s.list} aria-label={`${text}の項目`}>
+        <ul id={listId} className={s.list} aria-label={t('{text}の項目', { text })}>
           {items.map((i) => <li key={i.id} data-entity-id={i.id}><Text>{i.label}</Text></li>)}
         </ul>
       ) : null}

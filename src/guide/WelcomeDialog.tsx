@@ -6,6 +6,7 @@ import { Dialog, DialogSurface } from '../components/Dialog';
 import { useMotionAllowed } from '../motion/transitions';
 import { useGuide, type GuideVariant } from './guideStore';
 import { PackSection, StepsSection, TermsSection, WhatSection, FlowSection, WorkspaceSection } from './GuideParts';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   surface: { maxWidth: '720px', width: 'calc(100vw - 32px)', maxHeight: 'calc(100vh - 32px)' },
@@ -29,29 +30,30 @@ function cardsFor(variant: GuideVariant): Card[] {
 
 export function WelcomeDialogView({ variant, onClose }: { variant: GuideVariant; onClose: (dontShow: boolean) => void }) {
   const s = useStyles();
+  const t = useT();
   const motion = useMotionAllowed();
   const cards = cardsFor(variant);
   const [i, setI] = useState(0);
   const [dontShow, setDontShow] = useState(false);
   const card = cards[i]!;
   const last = i === cards.length - 1;
-  const name = variant === 'workspace' ? '使い方' : 'ウェルカム';
+  const name = t(variant === 'workspace' ? '使い方' : 'ウェルカム');
   return (
     <Dialog open modalType="modal" onOpenChange={(_, d) => { if (!d.open) onClose(dontShow); }}>
       <DialogSurface className={s.surface} aria-label={name}>
         <DialogBody>
-          <DialogTitle>{name}：{card.title}</DialogTitle>
+          <DialogTitle>{name}{t('：')}{t(card.title)}</DialogTitle>
           <DialogContent>
-            <Text className={s.pos} role="status" aria-live="polite" data-testid="guide-position">{`カード ${i + 1} / ${cards.length}`}</Text>
+            <Text className={s.pos} role="status" aria-live="polite" data-testid="guide-position">{t('カード {i} / {n}', { i: i + 1, n: cards.length })}</Text>
             <div key={card.id} className={`${s.card} ${motion ? s.fade : s.nofade}`} data-testid="guide-card" data-motion-ms={motion ? 150 : 0}>{card.body}</div>
-            {variant === 'main' ? <Checkbox label="次回から表示しない" checked={dontShow} onChange={(_, d) => setDontShow(d.checked === true)} /> : null}
+            {variant === 'main' ? <Checkbox label={t('次回から表示しない')} checked={dontShow} onChange={(_, d) => setDontShow(d.checked === true)} /> : null}
           </DialogContent>
           <DialogActions>
-            <Button appearance="secondary" onClick={() => onClose(dontShow)}>スキップ</Button>
-            <Button appearance="secondary" disabled={i === 0} onClick={() => setI(i - 1)}>戻る</Button>
+            <Button appearance="secondary" onClick={() => onClose(dontShow)}>{t('スキップ')}</Button>
+            <Button appearance="secondary" disabled={i === 0} onClick={() => setI(i - 1)}>{t('戻る')}</Button>
             {last
-              ? <Button appearance="primary" onClick={() => onClose(dontShow)}>閉じる</Button>
-              : <Button appearance="primary" autoFocus onClick={() => setI(i + 1)}>次へ</Button>}
+              ? <Button appearance="primary" onClick={() => onClose(dontShow)}>{t('閉じる')}</Button>
+              : <Button appearance="primary" autoFocus onClick={() => setI(i + 1)}>{t('次へ')}</Button>}
           </DialogActions>
         </DialogBody>
       </DialogSurface>
