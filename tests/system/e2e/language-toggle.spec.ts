@@ -3,7 +3,7 @@
 // トグルは文言（ボタン名 "English" / "日本語"）と aria-pressed で探す（実装のセレクターには依存しない）。
 import type { Page, Locator } from '@playwright/test';
 import { test, expect, openScreen, MAIN_SCREENS } from '../support/fixtures';
-import { examplePack } from '../support/packs';
+import { examplePack, PACK_FILES } from '../support/packs';
 
 const mono = examplePack('mono');
 const JA = /[\u3040-\u30ff\u4e00-\u9fff]/;
@@ -12,11 +12,26 @@ function toggle(page: Page, name: 'English' | '日本語'): Locator {
   return page.getByRole('banner').getByRole('button', { name, exact: true }).or(page.getByRole('button', { name, exact: true })).first();
 }
 
-/** 製品名・顧客パックの内容に含まれる日本語（走査から除く） */
+/** 顧客パック（お手本パック）の全 JSON の文字列値のうち日本語を含むもの（FR-294 の対象外＝データ。走査から除く）と、製品名・言語名 */
 function packTexts(): string[] {
-  return [mono.customerName, mono.projectName, ...mono.products().map((p) => p.name), ...mono.entities().map((e) => e.name)].map(String).filter((s) => JA.test(s));
+  const out = new Set<string>(['日本語']);
+  const walk = (v: unknown) => {
+    if (typeof v === 'string') { const s = v.trim(); if (s.length >= 2 && JA.test(s)) out.add(s); }
+    else if (Array.isArray(v)) v.forEach(walk);
+    else if (v && typeof v === 'object') Object.values(v).forEach(walk);
+  };
+  for (const f of PACK_FILES) { try { walk(mono.json(f)); } catch { /* 無いファイルは飛ばす */ } }
+  try { walk(mono.brand()); } catch { /* 任意 */ }
+  return [...out].sort((a, b) => b.length - a.length);
 }
 
+/** （データの断片＝パックの文字列の一部も許容）パック語を除いた残りに日本語が残らなければデータ由来（「ノード名 ／ 関連: …」などの複合文言）。区切りの「関連:」「／」だけは許容 */
+function onlyPackData(t: string, allow: string[]): boolean {
+  let r = t;
+  for (const a of allow) if (a) r = r.split(a).join(' ');
+  r = r.replace(/関連[:：]/g, ' ').replace(/課題-解決策分析[:：]/g, ' ').replace(/アーキテクチャ|なし|／/g, ' '); // 関係グラフのノード説明「<種別> ／ 関連: <ノード名…>」（データの複合文言）
+  return !JA.test(r);
+}
 /** 画面に見える文言（テキスト・aria-label・title・placeholder・ドキュメントのタイトル）のうち、日本語を含むものを返す */
 async function japaneseTexts(page: Page, allow: string[]): Promise<string[]> {
   const all = await page.evaluate(() => {
@@ -36,7 +51,7 @@ async function japaneseTexts(page: Page, allow: string[]): Promise<string[]> {
     }
     return out;
   });
-  return all.filter((t) => JA.test(t)).filter((t) => !allow.some((a) => a && t.includes(a)));
+  return all.filter((t) => JA.test(t)).filter((t) => !allow.some((a) => a && t.includes(a))).filter((t) => !onlyPackData(t, allow)).filter((t) => !(t.length >= 2 && allow.some((a) => a.includes(t))));
 }
 
 test.describe('FR-L10N 表示言語の切り替え', () => {
