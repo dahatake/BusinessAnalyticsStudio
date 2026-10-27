@@ -2,10 +2,11 @@
 // 期待値は要求定義書の受入基準（docs/requirements/app-core.md の AC-786〜AC-789）だけから決める。
 // トグルは文言（ボタン名 "English" / "日本語"）と aria-pressed で探す（実装のセレクターには依存しない）。
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, MAIN_SCREENS, component } from '../support/fixtures';
+import { test, expect, openScreen, MAIN_SCREENS, component, entity, tableRows } from '../support/fixtures';
 import { examplePack, PACK_FILES } from '../support/packs';
 
 const mono = examplePack('mono');
+const koto = examplePack('koto');
 const JA = /[\u3040-\u30ff\u4e00-\u9fff]/;
 
 function toggle(page: Page, name: 'English' | '日本語'): Locator {
@@ -125,6 +126,18 @@ test.describe('FR-L10N 表示言語の切り替え', () => {
     for (const t of await japaneseTexts(page, allow)) bad.push(`通知・空の状態: ${t}`);
     expect(bad, '通知・エラー・空の状態に日本語が残っている').toEqual([]);
 
+    // AC-788: 編集画面で新規作成した項目の初期名に日本語（データ以外）が現れない
+    const table = await openScreen(page, 'table');
+    const editSw = page.getByRole('switch', { name: /^(編集モード|Edit mode)$/i });
+    if (!(await editSw.isChecked())) await editSw.click();
+    await expect(editSw).toBeChecked();
+    const n0 = await tableRows(table).count();
+    await entity(table, mono.issues()[0].id).first().click();
+    await component(page, 'detail').getByRole('button', { name: /^(追加|Add)$/ }).click();
+    await expect(tableRows(table), '英語で項目を追加できない').toHaveCount(n0 + 1);
+    expect(await japaneseTexts(page, allow), '新規作成した項目の初期名に日本語が現れる').toEqual([]);
+    await editSw.click();
+
     // 日本語に戻すと、すべて日本語に戻る
     await toggle(page, '日本語').click();
     await expect(page.locator('html')).toHaveAttribute('lang', /^ja/);
@@ -133,6 +146,21 @@ test.describe('FR-L10N 表示言語の切り替え', () => {
       if (key === 'settings') continue;
       await openScreen(page, key);
       expect(await japaneseTexts(page, []), `${name}: 日本語に戻しても日本語の文言が現れない`).not.toEqual([]);
+    }
+  });
+
+  // AC-788（コトのパックは拠点を持つ）
+  test('AC-788 英語を選ぶと地図の拠点ボタンの aria-label が "Site {name} (lat {lat}, lng {lng})" になり、拠点名（データ）以外に日本語を含まない', async ({ page, start }) => {
+    await start({ pack: 'koto' });
+    await toggle(page, 'English').click();
+    await expect(page.locator('html')).toHaveAttribute('lang', /^en/);
+    await openScreen(page, 'map');
+    const allow = [...koto.entities().map((e) => e.name), '日本語'].filter((s) => s && JA.test(s));
+    const siteBtns = page.locator('[aria-label^="Site "]');
+    await expect(siteBtns.first(), '英語で地図の拠点ボタンの aria-label が "Site " で始まらない').toBeVisible();
+    for (const label of await siteBtns.evaluateAll((els) => els.map((e) => e.getAttribute('aria-label') ?? ''))) {
+      expect(label, `形式が "Site {name} (lat {lat}, lng {lng})" でない: ${label}`).toMatch(/^Site .+ \(lat -?[\d.]+, lng -?[\d.]+\)$/);
+      expect(onlyPackData(label, allow), `拠点ボタンの aria-label に日本語（データ以外）が残っている: ${label}`).toBe(true);
     }
   });
 });

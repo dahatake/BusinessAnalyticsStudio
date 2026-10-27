@@ -12,7 +12,9 @@ export type WorldView = World | 'both';
 export const VIEW_MODES: readonly ViewMode[] = ['2d', '3d', 'graph'];
 export const WORLD_VIEWS: readonly WorldView[] = ['real', 'digital', 'both'];
 export const MODE_LABELS: Record<ViewMode, string> = { '2d': '2D', '3d': '3D', graph: 'Graph' };
-export const WORLD_VIEW_LABELS: Record<WorldView, string> = { real: WORLD_LABELS.real, digital: WORLD_LABELS.digital, both: '両方' };
+export const WORLD_VIEW_LABELS: Record<WorldView, string> = {
+  get real() { return WORLD_LABELS.real; }, get digital() { return WORLD_LABELS.digital; }, get both() { return tr('両方'); },
+};
 /** 世界の表示の既定（FR-218: 既定は「両方」） */
 export const DEFAULT_WORLD_VIEW: WorldView = 'both';
 

@@ -237,13 +237,25 @@ export function renameRecord(d: PackData, id: string, raw: string): EditResult {
 
 // ---- 追加・複製・削除 ----
 
-const NEW_NAMES: Record<NodeKind, string> = {
-  entity: '新しいエンティティ', issue: '新しい課題', solution: '新しい解決策', product: '新しい製品', feature: '新しい機能',
-  task: '新しいタスク', architecture: '新しいノード', mock: '新しいモック', chapter: '新しい章', topic: '新しい論点', source: '新しい出典',
-};
+/** 新規項目の初期名。作成時の言語で生成する（作成済みのデータは変えない） */
+function newName(kind: NodeKind): string {
+  switch (kind) {
+    case 'entity': return tr('新しいエンティティ');
+    case 'issue': return tr('新しい課題');
+    case 'solution': return tr('新しい解決策');
+    case 'product': return tr('新しい製品');
+    case 'feature': return tr('新しい機能');
+    case 'task': return tr('新しいタスク');
+    case 'architecture': return tr('新しいノード');
+    case 'mock': return tr('新しいモック');
+    case 'chapter': return tr('新しい章');
+    case 'topic': return tr('新しい論点');
+    case 'source': return tr('新しい出典');
+  }
+}
 
 function templateFor(d: PackData, kind: NodeKind, sib: Rec | undefined): Rec | string {
-  const name = NEW_NAMES[kind];
+  const name = newName(kind);
   switch (kind) {
     case 'entity': return { type: isStr(sib?.type) ? sib.type : 'エンティティ', name };
     case 'issue': return { title: name, audience: sib?.audience === 'external' ? 'external' : 'internal', ...(isStr(sib?.parentId) ? { parentId: sib.parentId } : {}) };
@@ -298,7 +310,7 @@ export function duplicateRecord(d: PackData, id: string): EditResult {
   if (!loc) return { ok: false, message: tr('項目が見つかりません: {id}', { id }) };
   const copy = renewIds(loc.rec, allIds(d)) as Rec;
   const base = nameOf(loc.rec, loc.def.nameKey);
-  const name = `${base}（複製）`;
+  const name = tr('{base}（複製）', { base });
   copy[loc.def.nameKey] = name;
   copy.createdBy = 'human';
   const next = mapList(d, loc, (list) => [...list.slice(0, loc.index + 1), copy, ...list.slice(loc.index + 1)]);

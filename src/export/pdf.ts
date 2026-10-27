@@ -2,6 +2,7 @@
 // 手書き・図形・文字を PDF のベクター（パスとテキスト）として描き、1 ページ目に表紙・2 ページ目に目次を付け、日本語フォントを埋め込む。
 // 範囲（全体 / ボード / 選択範囲 / 表示範囲）・用紙（A4 / A3 / 16:9）・向きを選べる。出力できる範囲は `pdfSections` で決める純粋な関数。
 import { boardSvg } from './svg';
+import { tr } from '../i18n/translate';
 import { PdfDoc, parseColor, type PdfPage } from './pdfdoc';
 import { unionBounds, type Board, type BoardItem, type Bounds } from '../ink/model';
 
@@ -160,7 +161,7 @@ export function drawBoard(page: PdfPage, board: Board, rect: Rect, area: Rect): 
       }
     } else if (it.type === 'image') {
       page.rect(X(it.x), Y(it.y), it.w * k, it.h * k, { stroke: LINE, lineWidth: 0.6, dash: [3 * k, 3 * k] });
-      page.text('画像', X(it.x + 6), Y(it.y + 16), 12 * k, MUTED);
+      page.text(tr('画像'), X(it.x + 6), Y(it.y + 16), 12 * k, MUTED);
     }
   }
   for (const s of board.strokes) {
@@ -215,8 +216,8 @@ export async function assemblePdf(spec: PdfDocSpec): Promise<Uint8Array> {
   const firstBoardPage = 2 + tocPages + 1;
   for (let t = 0; t < tocPages; t++) {
     const p = doc.addPage(w, h);
-    p.text('目次', MARGIN, MARGIN + 24, 22, INK);
-    if (n === 0) p.text('（出力するボードがありません）', MARGIN, MARGIN + 70, 12, MUTED);
+    p.text(tr('目次'), MARGIN, MARGIN + 24, 22, INK);
+    if (n === 0) p.text(tr('（出力するボードがありません）'), MARGIN, MARGIN + 70, 12, MUTED);
     entries.slice(t * per, (t + 1) * per).forEach((s, i) => {
       const y = MARGIN + 70 + i * 24;
       const no = String(firstBoardPage + t * per + i);
@@ -241,7 +242,7 @@ let fontCache: Promise<Uint8Array> | null = null;
 export function loadJapaneseFont(): Promise<Uint8Array> {
   fontCache ??= (async () => {
     const res = await fetch(new URL('fonts/SawarabiGothic-Regular.ttf', document.baseURI).toString());
-    if (!res.ok) throw new Error('日本語フォントを読み込めませんでした');
+    if (!res.ok) throw new Error(tr('日本語フォントを読み込めませんでした'));
     return new Uint8Array(await res.arrayBuffer());
   })().catch((e) => { fontCache = null; throw e; });
   return fontCache;
@@ -267,7 +268,7 @@ export async function buildBoardPdf(boards: readonly Board[], activeId: string, 
   const active = boards.find((b) => b.id === activeId);
   return assemblePdf({
     page: pageSize(o.paper, o.orientation),
-    title: o.title ?? (o.range === 'all' ? 'ホワイトボード' : (active?.name ?? 'ホワイトボード')),
+    title: o.title ?? (o.range === 'all' ? tr('ホワイトボード') : (active?.name ?? tr('ホワイトボード'))),
     ...(o.subtitle ? { subtitle: o.subtitle } : {}),
     dateText: todayText(),
     sections,
