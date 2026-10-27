@@ -1,6 +1,7 @@
 // 企業の登録と、企業ごとの複数 Project の管理（FR-137）。
 // 保存は store/persist.ts（端末内 localStorage のみ。FR-137 AC-207・NFR-SEC-004）。識別子は自システムの採番だけ（FR-139 AC-211）。
 import { create } from 'zustand';
+import { tr } from '../i18n';
 import { useStepper } from './stepper';
 
 /** 企業ごとの Project 数の上限（PARAM-031）。アーカイブ済みも数える。 */
@@ -33,8 +34,8 @@ export const useProjects = create<ProjectsState>((set, get) => ({
   seq: 0,
   addCompany: (raw) => {
     const name = raw.trim();
-    if (!name) return { ok: false, reason: '企業名を入力してください。' };
-    if (get().companies.some((c) => c.name === name)) return { ok: false, reason: `企業「${name}」は登録済みです。` };
+    if (!name) return { ok: false, reason: tr('企業名を入力してください。') };
+    if (get().companies.some((c) => c.name === name)) return { ok: false, reason: tr('企業「{name}」は登録済みです。', { name }) };
     const id = `company-${get().seq + 1}`;
     set((s) => ({ seq: s.seq + 1, companies: [...s.companies, { id, name }] }));
     return { ok: true, id };
@@ -42,13 +43,13 @@ export const useProjects = create<ProjectsState>((set, get) => ({
   addProject: (companyId, raw) => {
     const name = raw.trim();
     const { projects, companies } = get();
-    if (!companies.some((c) => c.id === companyId)) return { ok: false, reason: '企業が登録されていません。' };
-    if (!name) return { ok: false, reason: 'Project 名を入力してください。' };
+    if (!companies.some((c) => c.id === companyId)) return { ok: false, reason: tr('企業が登録されていません。') };
+    if (!name) return { ok: false, reason: tr('Project 名を入力してください。') };
     const mine = projects.filter((p) => p.companyId === companyId);
     if (mine.length >= MAX_PROJECTS_PER_COMPANY) {
-      return { ok: false, reason: `1 企業の Project は ${MAX_PROJECTS_PER_COMPANY} 件までです。不要な Project は名称変更して再利用してください。` };
+      return { ok: false, reason: tr('1 企業の Project は {max} 件までです。不要な Project は名称変更して再利用してください。', { max: MAX_PROJECTS_PER_COMPANY }) };
     }
-    if (mine.some((p) => p.name === name)) return { ok: false, reason: `Project「${name}」は同じ企業に既にあります。` };
+    if (mine.some((p) => p.name === name)) return { ok: false, reason: tr('Project「{name}」は同じ企業に既にあります。', { name }) };
     const id = `project-${get().seq + 1}`;
     set((s) => ({ seq: s.seq + 1, projects: [...s.projects, { id, companyId, name, archived: false }] }));
     return { ok: true, id };
@@ -56,10 +57,10 @@ export const useProjects = create<ProjectsState>((set, get) => ({
   renameProject: (id, raw) => {
     const name = raw.trim();
     const target = get().projects.find((p) => p.id === id);
-    if (!target) return { ok: false, reason: 'Project が見つかりません。' };
-    if (!name) return { ok: false, reason: 'Project 名を入力してください。' };
+    if (!target) return { ok: false, reason: tr('Project が見つかりません。') };
+    if (!name) return { ok: false, reason: tr('Project 名を入力してください。') };
     if (get().projects.some((p) => p.companyId === target.companyId && p.id !== id && p.name === name)) {
-      return { ok: false, reason: `Project「${name}」は同じ企業に既にあります。` };
+      return { ok: false, reason: tr('Project「{name}」は同じ企業に既にあります。', { name }) };
     }
     set((s) => ({ projects: s.projects.map((p) => (p.id === id ? { ...p, name } : p)) }));
     return { ok: true, id };

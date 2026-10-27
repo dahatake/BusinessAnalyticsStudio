@@ -1,6 +1,7 @@
 // Project ごとのユースケースとアニメーション（FR-158・FR-155）。ほかの Project に混ざらない（FR-138）。
 // 保存は store/persist.ts（端末内 localStorage のみ。FR-137・NFR-SEC-004）。
 import { create } from 'zustand';
+import { tr } from '../i18n';
 import { useDataCatalog } from './datacatalog';
 import { createStoryboard, validateScenes, type Storyboard, type StoryScene } from '../usecase/storyboard';
 import type { StoryVideo, StoryVideoScene } from '../usecase/storyVideo';
@@ -37,7 +38,7 @@ export const useUseCases = create<UseCaseState>((set, get) => ({
     if (!v.ok) return v;
     const cur = get().byProject[projectId] ?? EMPTY;
     if (id !== undefined) {
-      if (!cur.items.some((u) => u.id === id)) return { ok: false, errors: ['ユースケースが見つかりません。'] };
+      if (!cur.items.some((u) => u.id === id)) return { ok: false, errors: [tr('ユースケースが見つかりません。')] };
       set((s) => ({ byProject: { ...s.byProject, [projectId]: { ...cur, items: cur.items.map((u) => (u.id === id ? { ...v.value, id, ...(u.source ? { source: u.source } : {}) } : u)) } } }));
       return { ok: true, id };
     }
@@ -60,7 +61,7 @@ export const useUseCases = create<UseCaseState>((set, get) => ({
   createAnimation: (projectId, id) => {
     const cur = get().byProject[projectId] ?? EMPTY;
     const uc = cur.items.find((u) => u.id === id);
-    if (!uc) return { ok: false, errors: ['ユースケースが見つかりません。'] };
+    if (!uc) return { ok: false, errors: [tr('ユースケースが見つかりません。')] };
     const a = createAnimation(toDraft(uc));
     if (!a.ok) return a;
     set((s) => ({ byProject: { ...s.byProject, [projectId]: { ...cur, animations: { ...cur.animations, [id]: a.value } } } }));
@@ -69,7 +70,7 @@ export const useUseCases = create<UseCaseState>((set, get) => ({
   createStoryboard: (projectId, id) => {
     const cur = get().byProject[projectId] ?? EMPTY;
     const uc = cur.items.find((u) => u.id === id);
-    if (!uc) return { ok: false, errors: ['ユースケースが見つかりません。'] };
+    if (!uc) return { ok: false, errors: [tr('ユースケースが見つかりません。')] };
     const a = createStoryboard(toDraft(uc));
     if (!a.ok) return a;
     set((s) => ({ byProject: { ...s.byProject, [projectId]: { ...cur, storyboards: { ...(cur.storyboards ?? {}), [id]: a.value } } } }));
@@ -78,7 +79,7 @@ export const useUseCases = create<UseCaseState>((set, get) => ({
   saveStoryboardScenes: (projectId, id, scenes) => {
     const cur = get().byProject[projectId] ?? EMPTY;
     const sb = cur.storyboards?.[id];
-    if (!sb) return { ok: false, errors: ['ストーリーボードが見つかりません。'] };
+    if (!sb) return { ok: false, errors: [tr('ストーリーボードが見つかりません。')] };
     const v = validateScenes(scenes);
     if (!v.ok) return v;
     set((s) => ({ byProject: { ...s.byProject, [projectId]: { ...cur, storyboards: { ...(cur.storyboards ?? {}), [id]: { ...sb, scenes: v.value } } } } }));
@@ -87,7 +88,7 @@ export const useUseCases = create<UseCaseState>((set, get) => ({
   saveStoryVideo: (projectId, id, v, now = new Date()) => {
     const cur = get().byProject[projectId] ?? EMPTY;
     const uc = cur.items.find((u) => u.id === id);
-    if (!uc) return { ok: false, errors: ['ユースケースが見つかりません。'] };
+    if (!uc) return { ok: false, errors: [tr('ユースケースが見つかりません。')] };
     const video: StoryVideo = { scenes: v.scenes, html: v.html, signature: signature(toDraft(uc)), createdAt: now.toISOString() };
     set((s) => ({ byProject: { ...s.byProject, [projectId]: { ...cur, storyVideos: { ...(cur.storyVideos ?? {}), [id]: video } } } }));
     return { ok: true };

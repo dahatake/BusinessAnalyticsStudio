@@ -3,6 +3,7 @@
 // discussion/restore.ts の登録口で含める（registerProjectIntegrationsSnapshot）。
 // 保管場所は「名前」だけを持ち、資格情報の形式の値は保存を拒否する。選択を解除しても設定は残す。
 import { create } from 'zustand';
+import { tr } from '../i18n';
 import { credentialShapes } from '../integrations/credentialShape';
 import { registerSnapshotSource } from '../discussion/restore';
 
@@ -48,8 +49,8 @@ const empty = (): ProjectIntegrations => ({ selected: [], settings: {}, names: {
 const isObj = (x: unknown): x is Record<string, unknown> => typeof x === 'object' && x !== null && !Array.isArray(x);
 
 function checkConfirmation(label: string, c: Confirmation): string | null {
-  if (c.status !== '確認済み' && c.status !== '未確認') return `${label}の確認状況は「確認済み」か「未確認」で指定してください。`;
-  if (c.date !== undefined && c.date !== '' && !DATE_RE.test(c.date)) return `${label}の確認日は YYYY-MM-DD で入力してください。`;
+  if (c.status !== '確認済み' && c.status !== '未確認') return tr('{label}の確認状況は「確認済み」か「未確認」で指定してください。', { label: tr(label) });
+  if (c.date !== undefined && c.date !== '' && !DATE_RE.test(c.date)) return tr('{label}の確認日は YYYY-MM-DD で入力してください。', { label: tr(label) });
   return null;
 }
 
@@ -62,7 +63,7 @@ export function validateSetting(s: IntegrationSetting): string[] {
   ];
   for (const [label, text] of texts) {
     const kinds = credentialShapes(text);
-    if (kinds.length) errors.push(`${label}に資格情報とみなす形式（${kinds.join('、')}）の値は保存できません。保管場所の名前だけを入力してください。`);
+    if (kinds.length) errors.push(tr('{label}に資格情報とみなす形式（{kinds}）の値は保存できません。保管場所の名前だけを入力してください。', { label: tr(label), kinds: kinds.join(tr('、')) }));
   }
   for (const [label, c] of [['利用規約・ライセンス', s.terms], ['費用', s.cost], ['SLA・量', s.sla]] as const) {
     const e = checkConfirmation(label, c);
@@ -84,9 +85,9 @@ export const useProjectIntegrations = create<IntegrationsState>((set, get) => ({
   select: (projectId, item) => {
     const cur = get().byProject[projectId] ?? empty();
     if (cur.selected.includes(item.id)) return { ok: true };
-    if (item.status === '廃止') return { ok: false, reason: `連携「${item.name}」は状態が「廃止」のため、新たに選択できません。` };
+    if (item.status === '廃止') return { ok: false, reason: tr('連携「{name}」は状態が「廃止」のため、新たに選択できません。', { name: item.name }) };
     if (cur.selected.length >= MAX_INTEGRATIONS_PER_PROJECT) {
-      return { ok: false, reason: `1 Project で選択できる連携は ${MAX_INTEGRATIONS_PER_PROJECT} 件までです。不要な連携の選択を解除してください。` };
+      return { ok: false, reason: tr('1 Project で選択できる連携は {max} 件までです。不要な連携の選択を解除してください。', { max: MAX_INTEGRATIONS_PER_PROJECT }) };
     }
     set((s) => ({ byProject: { ...s.byProject, [projectId]: { ...cur, selected: [...cur.selected, item.id], names: { ...cur.names, [item.id]: item.name } } } }));
     return { ok: true };
@@ -98,7 +99,7 @@ export const useProjectIntegrations = create<IntegrationsState>((set, get) => ({
   }),
   saveSetting: (projectId, setting) => {
     const cur = get().byProject[projectId] ?? empty();
-    if (!cur.selected.includes(setting.integrationId)) return { ok: false, reason: '選択していない連携の設定は記録できません。' };
+    if (!cur.selected.includes(setting.integrationId)) return { ok: false, reason: tr('選択していない連携の設定は記録できません。') };
     const errors = validateSetting(setting);
     if (errors.length) return { ok: false, reason: errors.join(' ') };
     set((s) => ({ byProject: { ...s.byProject, [projectId]: { ...cur, settings: { ...cur.settings, [setting.integrationId]: setting } } } }));
@@ -125,9 +126,9 @@ const str = (x: unknown) => (typeof x === 'string' ? x : '');
 export function sanitizeIntegrations(data: unknown): { value: Record<string, ProjectIntegrations>; problems: string[] } {
   const value: Record<string, ProjectIntegrations> = {};
   const problems: string[] = [];
-  if (!isObj(data)) return { value, problems: data === undefined ? [] : ['連携の選択と設定がオブジェクトではありません。'] };
+  if (!isObj(data)) return { value, problems: data === undefined ? [] : [tr('連携の選択と設定がオブジェクトではありません。')] };
   for (const [pid, v] of Object.entries(data)) {
-    if (!isObj(v)) { problems.push(`Project ${pid}: 形が正しくありません。`); continue; }
+    if (!isObj(v)) { problems.push(tr('Project {pid}: 形が正しくありません。', { pid })); continue; }
     const names: Record<string, string> = {};
     if (isObj(v.names)) for (const [k, n] of Object.entries(v.names)) if (typeof n === 'string') names[k] = n;
     const selected = Array.isArray(v.selected) ? [...new Set(v.selected.filter((x): x is string => typeof x === 'string'))].slice(0, MAX_INTEGRATIONS_PER_PROJECT) : [];
@@ -140,7 +141,7 @@ export function sanitizeIntegrations(data: unknown): { value: Record<string, Pro
           secretStoreName: str(raw.secretStoreName), terms: cleanConfirmation(raw.terms), cost: cleanConfirmation(raw.cost), sla: cleanConfirmation(raw.sla),
         };
         const errs = validateSetting(s);
-        if (errs.length) { problems.push(`Project ${pid} の連携 ${id}: ${errs[0]}`); continue; }
+        if (errs.length) { problems.push(tr('Project {pid} の連携 {id}: {err}', { pid, id, err: errs[0] ?? '' })); continue; }
         settings[id] = s;
       }
     }

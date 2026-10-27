@@ -2,6 +2,7 @@
 // 生成は非同期のジョブで、進行中も他の画面を操作でき、「取り消し」で止められる（NFR-UX-003）。元に戻す・やり直しは編集に効く。
 import { useEffect, useMemo } from 'react';
 import { create } from 'zustand';
+import { tr } from '../i18n';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import {
   addChild, buildMockTree, demoTreeDoc, moveNode, parseAiTree, redecompose, removeTreeNode, renameNode,
@@ -74,7 +75,7 @@ export const useTreeStore = create<TreeState>()(
 
       edit: (key, fn) => {
         const doc = get().docs[key];
-        if (!doc) return { ok: false, reason: 'ツリーがありません。' };
+        if (!doc) return { ok: false, reason: tr('ツリーがありません。') };
         const r = fn(doc.nodes);
         if (!r.ok) return r;
         set((s) => ({

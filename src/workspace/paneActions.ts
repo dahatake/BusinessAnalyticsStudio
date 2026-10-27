@@ -6,6 +6,7 @@ import {
   Pin20Filled, Pin20Regular, TabDesktop20Filled, TabDesktop20Regular, TabDesktopMultiple20Filled, TabDesktopMultiple20Regular,
   Table20Filled, Table20Regular, type FluentIcon,
 } from '@fluentui/react-icons';
+import { tr } from '../i18n';
 
 /** PARAM-073: 見出しに常に表示する操作のボタンの上限（「その他の操作」を開くボタンは数えない） */
 export const HEADER_ACTION_LIMIT = 6;
@@ -49,7 +50,7 @@ export interface PaneActionView {
 export function paneAction(id: PaneActionId, on = false): PaneActionView {
   const d = PANE_ACTIONS[id];
   const filled = on && d.onLabel !== undefined;
-  return { label: filled ? d.onLabel! : d.label, Icon: filled ? d.filled : d.regular, variant: filled ? 'filled' : 'regular', size: d.size };
+  return { label: tr(filled ? d.onLabel! : d.label), Icon: filled ? d.filled : d.regular, variant: filled ? 'filled' : 'regular', size: d.size };
 }
 
 /** ピン止め中は使えない操作の理由（FR-216） */

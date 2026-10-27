@@ -1,6 +1,7 @@
 // 3D の状態（シーン・品質・描画方式・FPS）。FR-065 / FR-066 / FR-069 / NFR-PERF-002
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { tr } from '../i18n';
 import { registerTestHook } from '../testing/hook';
 import { QUALITIES, QualityMonitor, QUALITY_PROFILES, type Quality } from '../three/quality';
 import { INDUSTRY_PRESETS, objectCount, resolvePreset, type IndustryPreset, type SceneKey } from '../three/presets';
@@ -100,7 +101,7 @@ export function startFpsMeter(): void {
       if (s.active && useAnimation.getState().playing && document.visibilityState === 'visible') {
         const next = monitor.feed(fps, dt / 1000, s.quality);
         if (next) {
-          useView3D.setState({ quality: next, autoNotice: `FPS が低いため、品質を ${s.quality} から ${next} に自動で下げました。` });
+          useView3D.setState({ quality: next, autoNotice: tr('FPS が低いため、品質を {from} から {to} に自動で下げました。', { from: s.quality, to: next }) });
         }
       } else {
         monitor.reset();
