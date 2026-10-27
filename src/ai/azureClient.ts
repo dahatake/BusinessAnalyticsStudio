@@ -1,6 +1,7 @@
 // 音声合成・手書き認識の実接続のクライアント（FR-182）。ブラウザーからの送信先は localhost の中継プロセスだけ（NFR-SEC-002）。
 // キーはブラウザーに渡らない（中継プロセスの .env だけ）。実接続が有効でなければ、中継プロセスも呼ばず、モックで動作する。
 import { isLoopbackUrl, type AiEnv } from './client';
+import { tr } from '../i18n';
 
 export type AzureFeature = 'speech' | 'vision';
 
@@ -18,17 +19,17 @@ export interface ConnectionResult {
 export async function setAzureConnection(
   relayUrl: string | undefined, feature: AzureFeature, packId: string, enable: boolean, consent: boolean, fetchFn: FetchFn = defaultFetch,
 ): Promise<ConnectionResult> {
-  if (!relayUrl || !isLoopbackUrl(relayUrl)) return { ok: false, mode: 'mock', reason: '中継プロセスの URL（localhost）が設定されていません。' };
+  if (!relayUrl || !isLoopbackUrl(relayUrl)) return { ok: false, mode: 'mock', reason: tr('中継プロセスの URL（localhost）が設定されていません。') };
   try {
     const res = await fetchFn(`${relayUrl}/azure/connection`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ feature, packId, enable, confirmed: enable, consent }),
     });
     const j = (await res.json().catch(() => ({}))) as { mode?: string; reason?: string; error?: string };
-    if (!res.ok) return { ok: false, mode: 'mock', reason: j.error ?? `中継プロセスがエラーを返しました（${res.status}）` };
+    if (!res.ok) return { ok: false, mode: 'mock', reason: j.error ?? tr('中継プロセスがエラーを返しました（{status}）', { status: res.status }) };
     return { ok: true, mode: j.mode === 'connected' ? 'connected' : 'mock', reason: j.reason };
   } catch {
-    return { ok: false, mode: 'mock', reason: '中継プロセスに接続できません（オフライン、または未起動）。' };
+    return { ok: false, mode: 'mock', reason: tr('中継プロセスに接続できません（オフライン、または未起動）。') };
   }
 }
 
@@ -47,11 +48,11 @@ export async function synthesizeSpeech(
   try {
     const res = await f(`${env.relayUrl}/azure/speech`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ packId: env.packId, text }) });
     const j = (await res.json().catch(() => ({}))) as { mode?: string; audioBase64?: string; contentType?: string; error?: string };
-    if (!res.ok) return { kind: 'error', message: j.error ?? `音声合成に失敗しました（${res.status}）` };
+    if (!res.ok) return { kind: 'error', message: j.error ?? tr('音声合成に失敗しました（{status}）', { status: res.status }) };
     if (j.mode === 'connected' && j.audioBase64) return { kind: 'audio', audioBase64: j.audioBase64, contentType: j.contentType ?? 'audio/mpeg' };
     return { kind: 'subtitle-only' };
   } catch {
-    return { kind: 'error', message: '音声合成に失敗しました（中継プロセスに接続できません）。' };
+    return { kind: 'error', message: tr('音声合成に失敗しました（中継プロセスに接続できません）。') };
   }
 }
 
@@ -61,15 +62,15 @@ export interface RelayRecognition { text: string; mock: boolean }
 export async function recognizeViaRelay(
   env: { relayUrl?: string; packId: string; fetchFn?: FetchFn }, imageBase64: string, strokeCount: number,
 ): Promise<RelayRecognition> {
-  if (!env.relayUrl || !isLoopbackUrl(env.relayUrl)) throw new Error('中継プロセスの URL（localhost）が設定されていません');
+  if (!env.relayUrl || !isLoopbackUrl(env.relayUrl)) throw new Error(tr('中継プロセスの URL（localhost）が設定されていません'));
   const f = env.fetchFn ?? defaultFetch;
   let res;
   try {
     res = await f(`${env.relayUrl}/azure/vision`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ packId: env.packId, image: imageBase64, strokeCount }) });
   } catch {
-    throw new Error('中継プロセスに接続できません');
+    throw new Error(tr('中継プロセスに接続できません'));
   }
   const j = (await res.json().catch(() => ({}))) as { mode?: string; text?: string; error?: string };
-  if (!res.ok) throw new Error(j.error ?? `手書き認識に失敗しました（${res.status}）`);
+  if (!res.ok) throw new Error(j.error ?? tr('手書き認識に失敗しました（{status}）', { status: res.status }));
   return { text: String(j.text ?? ''), mock: j.mode !== 'connected' };
 }

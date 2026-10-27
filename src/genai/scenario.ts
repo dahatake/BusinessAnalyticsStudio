@@ -1,6 +1,7 @@
 // 生成AIの効果的な活用シナリオの分析（FR-284）。解決策に生成AIを使うべきかを、適合性の判断基準でルールベースに判定する（既定のモック。外部送信なし）。
 // 生成AIを無理に使わない: 結論は「適する」「条件付きで適する」「不要／不向き」のいずれかで、「不要／不向き」も正当な結論として扱う。
 // Foundry 実接続（FR-285）の結果も同じ形（ScenarioResult）で受け取り、失敗時はこの判定を代替として使う。
+import { tr } from '../i18n';
 
 /** 入力の文字数の上限（PARAM-122） */
 export const GENAI_MAX_INPUT_CHARS = 8000;
@@ -11,23 +12,28 @@ export type Conclusion = 'suitable' | 'conditional' | 'unsuitable';
 /** yes = 生成AI向きの条件を満たす、partial = 条件付き、no = 満たさない（生成AIより他の手段が向く） */
 export type Verdict = 'yes' | 'partial' | 'no';
 
+// 画面に出る文言は、参照した時点の言語で返す（getter）
 export const CONCLUSION_LABELS: Record<Conclusion, string> = {
-  suitable: '生成AIが適する',
-  conditional: '条件付きで適する',
-  unsuitable: '生成AIは不要／不向き',
+  get suitable() { return tr('生成AIが適する'); },
+  get conditional() { return tr('条件付きで適する'); },
+  get unsuitable() { return tr('生成AIは不要／不向き'); },
 };
-export const VERDICT_LABELS: Record<Verdict, string> = { yes: '向く', partial: '条件付き', no: '向かない' };
+export const VERDICT_LABELS: Record<Verdict, string> = {
+  get yes() { return tr('向く'); },
+  get partial() { return tr('条件付き'); },
+  get no() { return tr('向かない'); },
+};
 
 export interface CriterionDef { id: string; label: string; question: string }
 /** 適合性の判断基準（AI提案。FR-284） */
 export const CRITERIA: readonly CriterionDef[] = [
-  { id: 'unstructured-input', label: '入力の性質', question: '入力が非定型の文章・画像・音声などか（定型の数値・項目なら従来の処理で足りる）' },
-  { id: 'open-output', label: '出力の性質', question: '出力が正解の一意でない生成（要約・文案・提案など）か' },
-  { id: 'hard-to-ruleify', label: '規則化の難しさ', question: '規則・条件分岐で書き切るのが難しいか（規則化できるならルール・既存ソフトが確実で安い）' },
-  { id: 'error-tolerance', label: '誤りの許容度', question: '誤りを人が確認・修正できるか（誤りが許されない処理には向かない）' },
-  { id: 'accountability', label: '説明責任', question: '判断の根拠を説明する責任が重くないか（監査・法令・審査では生成AIだけに任せない）' },
-  { id: 'confidentiality', label: 'データの機密性', question: '扱うデータを外部のサービスへ送れるか（個人情報・機密は匿名化や社内利用が条件）' },
-  { id: 'cost-benefit', label: '費用対効果', question: '件数・頻度が十分で、生成AIの費用に見合う効果が見込めるか' },
+  { id: 'unstructured-input', get label() { return tr('入力の性質'); }, get question() { return tr('入力が非定型の文章・画像・音声などか（定型の数値・項目なら従来の処理で足りる）'); } },
+  { id: 'open-output', get label() { return tr('出力の性質'); }, get question() { return tr('出力が正解の一意でない生成（要約・文案・提案など）か'); } },
+  { id: 'hard-to-ruleify', get label() { return tr('規則化の難しさ'); }, get question() { return tr('規則・条件分岐で書き切るのが難しいか（規則化できるならルール・既存ソフトが確実で安い）'); } },
+  { id: 'error-tolerance', get label() { return tr('誤りの許容度'); }, get question() { return tr('誤りを人が確認・修正できるか（誤りが許されない処理には向かない）'); } },
+  { id: 'accountability', get label() { return tr('説明責任'); }, get question() { return tr('判断の根拠を説明する責任が重くないか（監査・法令・審査では生成AIだけに任せない）'); } },
+  { id: 'confidentiality', get label() { return tr('データの機密性'); }, get question() { return tr('扱うデータを外部のサービスへ送れるか（個人情報・機密は匿名化や社内利用が条件）'); } },
+  { id: 'cost-benefit', get label() { return tr('費用対効果'); }, get question() { return tr('件数・頻度が十分で、生成AIの費用に見合う効果が見込めるか'); } },
 ];
 
 export interface CriterionResult { id: string; label: string; verdict: Verdict; reason: string }
@@ -46,9 +52,9 @@ export type InputCheck = { ok: true; text: string } | { ok: false; reason: strin
 /** 入力の検査（AC-736）。空・上限超過は実行せず、理由と対処を返す */
 export function validateInput(raw: string, max: number = GENAI_MAX_INPUT_CHARS): InputCheck {
   const text = raw.trim();
-  if (text === '') return { ok: false, reason: '解決策が入力されていないため、分析を実行しません。', action: '解決策を入力するか、本アプリの解決策を選んでください。' };
+  if (text === '') return { ok: false, reason: tr('解決策が入力されていないため、分析を実行しません。'), action: tr('解決策を入力するか、本アプリの解決策を選んでください。') };
   if (text.length > max) {
-    return { ok: false, reason: `入力が ${max} 文字を超えている（${text.length} 文字）ため、分析を実行しません。`, action: `${max} 文字以内に短くしてください。` };
+    return { ok: false, reason: tr('入力が {max} 文字を超えている（{len} 文字）ため、分析を実行しません。', { max, len: text.length }), action: tr('{max} 文字以内に短くしてください。', { max }) };
   }
   return { ok: true, text };
 }
@@ -122,21 +128,22 @@ export function alternativesFor(t: string): string[] {
   if (has(t, ['予測', '需要', '異常', '不正', '離反', '故障', '最適化', '在庫', '売上'])) out.push('統計／従来の機械学習（回帰・分類・異常検知）で、数値データから予測・検知する');
   if (has(t, ['分類', '振り分け', '検索', 'FAQ', '問い合わせ', '問合せ'])) out.push('ルールベースの振り分け、キーワード検索、既存の問い合わせ管理ソフトの機能を先に使う');
   out.push('業務改善（手順・様式・入力項目の見直し、不要な作業の廃止）で、そもそもの作業量を減らす');
-  return [...new Set(out)];
+  return [...new Set(out)].map((a) => tr(a));
 }
 
 function buildReason(conclusion: Conclusion, criteria: readonly CriterionResult[]): string {
   const yes = criteria.filter((c) => c.verdict === 'yes').map((c) => c.label);
   const no = criteria.filter((c) => c.verdict === 'no').map((c) => c.label);
   const partial = criteria.filter((c) => c.verdict === 'partial').map((c) => c.label);
+  const q = (xs: readonly string[]) => tr('「{items}」', { items: xs.join(tr('」「')) });
   if (conclusion === 'unsuitable') {
-    return `生成AIを使わない理由: ${no.length ? `「${no.join('」「')}」が生成AIに向きません。` : '判断基準の総合の得点が低いためです。'}生成AIを使うと、費用・誤り・説明の負担が増えるわりに得るものが少ないため、下の代替案を先に検討してください。`;
+    return tr('生成AIを使わない理由: ') + (no.length ? tr('{items}が生成AIに向きません。', { items: q(no) }) : tr('判断基準の総合の得点が低いためです。')) + tr('生成AIを使うと、費用・誤り・説明の負担が増えるわりに得るものが少ないため、下の代替案を先に検討してください。');
   }
   if (conclusion === 'suitable') {
-    return `生成AIを使う具体的な理由: 「${yes.join('」「')}」の条件がそろい、生成AIの強み（非定型の理解と文章の生成）が活きます。誤りは人が確認する前提で、小さく始めて効果を測ってください。`;
+    return tr('生成AIを使う具体的な理由: {items}の条件がそろい、生成AIの強み（非定型の理解と文章の生成）が活きます。誤りは人が確認する前提で、小さく始めて効果を測ってください。', { items: q(yes) });
   }
   const cond = [...no, ...partial];
-  return `生成AIを使う具体的な理由: ${yes.length ? `「${yes.join('」「')}」の点で生成AIの強みが活きます。` : ''}ただし ${cond.length ? `「${cond.join('」「')}」` : '一部の基準'}は条件付きです。条件（人の確認・匿名化・規則との分担）を満たす範囲に限って使い、満たせない部分は代替案にしてください。`;
+  return tr('生成AIを使う具体的な理由: ') + (yes.length ? tr('{items}の点で生成AIの強みが活きます。', { items: q(yes) }) : '') + tr('ただし {items}は条件付きです。条件（人の確認・匿名化・規則との分担）を満たす範囲に限って使い、満たせない部分は代替案にしてください。', { items: cond.length ? q(cond) : tr('一部の基準') });
 }
 
 /** 結論の判定。中核の基準（入力・規則化）が向かないものは不向き、全体の得点で適する／条件付きを分ける */
@@ -155,7 +162,7 @@ export function judge(criteria: readonly CriterionResult[]): Conclusion {
 /** ルールベースの分析（モック・代替）。外部へ送信しない。純粋関数 */
 export function analyzeRuleBased(text: string): ScenarioResult {
   const t = text.replace(/\s+/g, ' ');
-  const criteria: CriterionResult[] = CRITERIA.map((c) => ({ id: c.id, label: c.label, ...JUDGES[c.id]!(t) }));
+  const criteria: CriterionResult[] = CRITERIA.map((c) => { const j = JUDGES[c.id]!(t); return { id: c.id, label: c.label, verdict: j.verdict, reason: tr(j.reason) }; });
   const conclusion = judge(criteria);
   return { conclusion, criteria, reason: buildReason(conclusion, criteria), alternatives: alternativesFor(t) };
 }

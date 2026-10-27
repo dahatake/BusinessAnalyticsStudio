@@ -2,6 +2,7 @@
 // キー・エンドポイントの値は、入力した瞬間に中継へ送るだけで、ブラウザーには保存しない。取得できるのは「設定済みか」と伏せ字だけ。
 import { isLoopbackUrl } from './client';
 import { clearConfirmedSendKinds, recordConfirmedSendKinds } from './sendKinds';
+import { tr } from '../i18n';
 
 /** 設定画面の入力欄の既定（FR-275） */
 export const DEFAULT_FOUNDRY_ENDPOINT = 'https://GraphcRecordingPanel.services.ai.azure.com/openai/v1';
@@ -35,7 +36,7 @@ export function notifyFoundryChanged(): void {
 
 type F = typeof fetch;
 const dflt: F = (u, i) => fetch(u, i);
-const NO_RELAY = '中継プロセスに届きませんでした。`npm run relay` で起動しているか確認してください';
+const noRelay = () => tr('中継プロセスに届きませんでした。`npm run relay` で起動しているか確認してください');
 
 export async function fetchFoundryView(relayUrl: string | undefined, packId: string, f: F = dflt, withProvider = true): Promise<FoundryView | null> {
   if (!relayUrl || !isLoopbackUrl(relayUrl)) return null;
@@ -60,16 +61,16 @@ export async function fetchFoundryView(relayUrl: string | undefined, packId: str
 export async function putFoundryConfig(
   relayUrl: string, packId: string, input: { endpoint: string; deployment: string; key: string; authMethod?: AuthMethod }, f: F = dflt,
 ): Promise<{ ok: true; view: FoundryView } | { ok: false; message: string }> {
-  if (!isLoopbackUrl(relayUrl)) return { ok: false, message: NO_RELAY };
+  if (!isLoopbackUrl(relayUrl)) return { ok: false, message: noRelay() };
   try {
     const r = await f(`${relayUrl}/foundry/config?packId=${encodeURIComponent(packId)}`, {
       method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(input),
     });
     const j = (await r.json()) as FoundryView & { error?: string };
     if (r.ok) notifyFoundryChanged();
-    return r.ok ? { ok: true, view: j } : { ok: false, message: j.error ?? '保存できませんでした' };
+    return r.ok ? { ok: true, view: j } : { ok: false, message: j.error ?? tr('保存できませんでした') };
   } catch {
-    return { ok: false, message: NO_RELAY };
+    return { ok: false, message: noRelay() };
   }
 }
 
@@ -87,7 +88,7 @@ export async function deleteFoundryConfig(relayUrl: string, packId: string, f: F
 export async function setFoundryConnection(
   relayUrl: string, packId: string, enable: boolean, opt: { consent: boolean; confirmed: boolean }, f: F = dflt,
 ): Promise<{ ok: boolean; mode: 'connected' | 'mock'; message?: string }> {
-  if (!isLoopbackUrl(relayUrl)) return { ok: false, mode: 'mock', message: NO_RELAY };
+  if (!isLoopbackUrl(relayUrl)) return { ok: false, mode: 'mock', message: noRelay() };
   try {
     const r = await f(`${relayUrl}/foundry/connection`, {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ packId, enable, ...opt }),
@@ -99,7 +100,7 @@ export async function setFoundryConnection(
     if (r.ok && !enable) clearConfirmedSendKinds(packId);
     return { ok: r.ok, mode: j.mode ?? 'mock', message: j.error };
   } catch {
-    return { ok: false, mode: 'mock', message: NO_RELAY };
+    return { ok: false, mode: 'mock', message: noRelay() };
   }
 }
 
@@ -110,14 +111,14 @@ export async function askFoundry(
   f: F = dflt,
   signal?: AbortSignal,
 ): Promise<FoundryAskResult> {
-  if (!relayUrl || !isLoopbackUrl(relayUrl)) return { mode: 'unavailable', reason: 'relay', message: NO_RELAY };
+  if (!relayUrl || !isLoopbackUrl(relayUrl)) return { mode: 'unavailable', reason: 'relay', message: noRelay() };
   try {
     const r = await f(`${relayUrl}/foundry/ask`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(req), ...(signal ? { signal } : {}) });
     const j = (await r.json()) as FoundryAskResult & { error?: string };
-    if (!r.ok) return { mode: 'unavailable', reason: 'error', message: j.error ?? 'Foundry を呼べませんでした' };
+    if (!r.ok) return { mode: 'unavailable', reason: 'error', message: j.error ?? tr('Foundry を呼べませんでした') };
     return j;
   } catch {
-    return { mode: 'unavailable', reason: 'relay', message: NO_RELAY };
+    return { mode: 'unavailable', reason: 'relay', message: noRelay() };
   }
 }
 
@@ -128,11 +129,11 @@ const AZURE_HOST = /^[a-z0-9-]+(\.[a-z0-9-]+)*\.(services\.ai|openai|cognitivese
 /** 保存してよいエンドポイントか。よければ null、不正なら理由（入力値は含めない） */
 export function validateFoundryEndpoint(value: string): string | null {
   const v = value.trim();
-  if (!v) return 'エンドポイントを入力してください。例: https://<リソース名>.openai.azure.com/openai/v1';
+  if (!v) return tr('エンドポイントを入力してください。例: https://<リソース名>.openai.azure.com/openai/v1');
   let u: URL;
-  try { u = new URL(v); } catch { return 'URL の形式で入力してください。例: https://<リソース名>.openai.azure.com/openai/v1'; }
-  if (u.protocol !== 'https:') return 'https で始まる URL を入力してください。';
-  if (u.username || u.password || u.port || !AZURE_HOST.test(u.hostname)) return 'Azure の標準のドメイン（*.openai.azure.com・*.services.ai.azure.com・*.cognitiveservices.azure.com）の URL を入力してください。';
+  try { u = new URL(v); } catch { return tr('URL の形式で入力してください。例: https://<リソース名>.openai.azure.com/openai/v1'); }
+  if (u.protocol !== 'https:') return tr('https で始まる URL を入力してください。');
+  if (u.username || u.password || u.port || !AZURE_HOST.test(u.hostname)) return tr('Azure の標準のドメイン（*.openai.azure.com・*.services.ai.azure.com・*.cognitiveservices.azure.com）の URL を入力してください。');
   return null;
 }
 
@@ -141,13 +142,13 @@ export type FoundryTestCause = 'not-configured' | 'auth' | 'endpoint' | 'deploym
 export type FoundryTestResult = { ok: true; message: string } | { ok: false; cause: FoundryTestCause; message: string; retryAfterSeconds?: number };
 
 export async function testFoundry(relayUrl: string | undefined, f: F = dflt): Promise<FoundryTestResult> {
-  if (!relayUrl || !isLoopbackUrl(relayUrl)) return { ok: false, cause: 'relay', message: NO_RELAY };
+  if (!relayUrl || !isLoopbackUrl(relayUrl)) return { ok: false, cause: 'relay', message: noRelay() };
   try {
     const r = await f(`${relayUrl}/foundry/test`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: '{}' });
     const j = (await r.json()) as Partial<FoundryTestResult> & { ok?: boolean; cause?: FoundryTestCause; message?: string; retryAfterSeconds?: number };
-    if (j.ok === true) return { ok: true, message: '接続できました' };
-    return { ok: false, cause: j.cause ?? 'other', message: j.message ?? '接続を確認できませんでした', retryAfterSeconds: j.retryAfterSeconds };
+    if (j.ok === true) return { ok: true, message: tr('接続できました') };
+    return { ok: false, cause: j.cause ?? 'other', message: j.message ?? tr('接続を確認できませんでした'), retryAfterSeconds: j.retryAfterSeconds };
   } catch {
-    return { ok: false, cause: 'relay', message: NO_RELAY };
+    return { ok: false, cause: 'relay', message: noRelay() };
   }
 }
