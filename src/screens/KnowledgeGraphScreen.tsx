@@ -129,7 +129,7 @@ function Graph2D({ nodes, edges, pos, size, selected, related, matches, edgeSel,
             {editable ? (
               <path
                 d={d} stroke="transparent" strokeWidth={12} fill="none" style={{ cursor: 'pointer' }} role="button" tabIndex={0}
-                aria-label={`エッジ: ${e.from} → ${e.to}（${st.label}）`}
+                aria-label={t('エッジ: {from} → {to}（{state}）', { from: e.from, to: e.to, state: st.label })}
                 onClick={() => onEdge(e)} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onEdge(e); } }}
               />
             ) : null}

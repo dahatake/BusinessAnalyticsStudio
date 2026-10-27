@@ -92,7 +92,7 @@ function FlowRow({ flow, nameOf, ids }: { flow: TwinFlow; nameOf: (id: string) =
   return (
     <li
       data-testid="twin-flow" data-flow-id={flow.id} data-flow-kind={flow.kind} data-from={flow.from} data-to={flow.to} data-line-style={ft.lineStyle}
-      data-highlight={on ? 'related' : undefined} aria-label={`${ft.name}の流れ ${nameOf(flow.from)} から ${nameOf(flow.to)}（${flow.label}、${flow.count} 件）`}
+      data-highlight={on ? 'related' : undefined} aria-label={t('{name}の流れ {from} から {to}（{label}、{n} 件）', { name: t(ft.name), from: nameOf(flow.from), to: nameOf(flow.to), label: flow.label, n: flow.count })}
       className={mergeClasses(s.flow, ft.lineStyle === 'solid' ? s.solid : s.dashed, on && s.flowOn, ids.size > 0 && !on && s.flowDim)}
     >
       <Badge appearance="outline" size="large">{t(ft.name)} {ft.arrow}</Badge>
