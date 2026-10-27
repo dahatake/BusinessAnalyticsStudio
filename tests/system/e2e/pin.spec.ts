@@ -155,6 +155,18 @@ test.describe('FR-216 ピン止めしたコンポーネントの固定と比率�
     expect(kb.x + kb.width, '前提: KPI/OKR がガントチャートの左にない').toBeLessThanOrEqual(gb.x + 1);
     expect(kb.y - ws.y, '前提: KPI/OKR が上部にない').toBeLessThan(ws.height / 3);
     expect(gb.y - ws.y, '前提: ガントチャートが上部にない').toBeLessThan(ws.height / 3);
+    // 自由な移動は重なりを許す（Q-066 B）ので、ほかのコンポーネントが KPI/OKR・ガントチャートの上に重なったままに
+    // ならないよう、ピン止めの前に、ほかを 2 つの下側の空きへ自由な移動で逃がす（中央寄りに置き、端のスナップ範囲を避ける）。
+    for (const o of (await topKeys(page)).filter((k) => k !== 'kpi-okr' && k !== 'gantt')) {
+      const oc = component(page, o);
+      const pinnedBottom = Math.max((await box(kpi)).y + (await box(kpi)).height, (await box(gantt)).y + (await box(gantt)).height);
+      const ob = await box(oc);
+      const hb = await box(oc.getByRole('heading').first());
+      const wantTop = Math.min(pinnedBottom + 8, ws.y + ws.height - ob.height);
+      const wantLeft = Math.min(Math.max(ob.x, ws.x + 48), ws.x + ws.width - ob.width - 48);
+      await dragHeadingTo(page, oc, hb.x + hb.width / 2 + (wantLeft - ob.x), hb.y + hb.height / 2 + (wantTop - ob.y));
+    }
+    expect(await overlaps(page, ['kpi-okr', 'gantt']), '前提: ピン止め前にほかと重なっている').toEqual([]);
     await pin(kpi);
     await pin(gantt);
     await settle(page, ['kpi-okr', 'gantt']);
