@@ -273,7 +273,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
         </div>
                   {pane && showTier && !minimized ? <Text size={300} role="status" data-testid="tier-reason" className={s.worldNote}>{pane.tierReason}</Text> : null}
         {world.note && !minimized ? <Text size={300} className={s.worldNote} data-testid="view-world-note">{world.note}</Text> : null}
-        {world.hiddenNote && !minimized ? <Text size={300} role="status" className={s.worldNote} data-testid="view-hidden-selection">{HIDDEN_SELECTION_TEXT}</Text> : null}
+        {world.hiddenNote && !minimized ? <Text size={300} role="status" className={s.worldNote} data-testid="view-hidden-selection">{t(HIDDEN_SELECTION_TEXT)}</Text> : null}
       </div>
       {/* 1 つの世界の画面は、いつも同じ包みに入れて表示・非表示だけを変える（中身を作り直さない） */}
       {/* component-data: コンポーネントが保持している現在のデータの欄（「Copilot で分析実行」が読む。FR-278）。Copilot の案（FR-279）はその外に別の欄で出す */}
