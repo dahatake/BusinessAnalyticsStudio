@@ -5,9 +5,11 @@ import {
 } from '@fluentui/react-components';
 import { Dialog, DialogSurface } from '../components/Dialog';
 import type { Result } from '../store/projects';
+import { useT } from '../i18n';
 
 /** 1 項目の名前を入力する dialog（登録・作成・名称変更で共通）。不正な入力は原因を示し、入力済みの内容を残す（AC-397） */
 export function NameDialog(props: { title: string; label: string; submit: string; initial?: string; hint?: string; placeholder?: string; help?: string; onSubmit: (name: string) => Result; onClose: () => void }) {
+  const t = useT();
   const [name, setName] = useState(props.initial ?? '');
   const [error, setError] = useState<string | null>(null);
   const go = () => {
@@ -28,7 +30,7 @@ export function NameDialog(props: { title: string; label: string; submit: string
             {error ? <MessageBar intent="error" role="alert"><MessageBarBody>{error}</MessageBarBody></MessageBar> : null}
           </DialogContent>
           <DialogActions>
-            <Button appearance="secondary" onClick={props.onClose}>キャンセル</Button>
+            <Button appearance="secondary" onClick={props.onClose}>{t('キャンセル')}</Button>
             <Button appearance="primary" onClick={go}>{props.submit}</Button>
           </DialogActions>
         </DialogBody>
@@ -39,15 +41,16 @@ export function NameDialog(props: { title: string; label: string; submit: string
 
 /** 未保存の入力があるときの、移動前の確認（FR-138 AC-210・FR-144 AC-231・FR-187 AC-400） */
 export function UnsavedDialog(props: { message?: string; onCancel: () => void; onConfirm: () => void }) {
+  const t = useT();
   return (
     <Dialog open modalType="alert" onOpenChange={(_, d) => { if (!d.open) props.onCancel(); }}>
-      <DialogSurface role="alertdialog" aria-label="未保存の入力があります">
+      <DialogSurface role="alertdialog" aria-label={t('未保存の入力があります')}>
         <DialogBody>
-          <DialogTitle>未保存の入力があります</DialogTitle>
-          <DialogContent>{props.message ?? '確定していない入力は、この Project に残したまま切り替えます。切り替えますか？'}</DialogContent>
+          <DialogTitle>{t('未保存の入力があります')}</DialogTitle>
+          <DialogContent>{props.message ?? t('確定していない入力は、この Project に残したまま切り替えます。切り替えますか？')}</DialogContent>
           <DialogActions>
-            <Button appearance="secondary" onClick={props.onCancel}>キャンセル</Button>
-            <Button appearance="primary" onClick={props.onConfirm}>切り替える</Button>
+            <Button appearance="secondary" onClick={props.onCancel}>{t('キャンセル')}</Button>
+            <Button appearance="primary" onClick={props.onConfirm}>{t('切り替える')}</Button>
           </DialogActions>
         </DialogBody>
       </DialogSurface>
