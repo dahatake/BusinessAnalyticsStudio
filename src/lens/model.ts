@@ -40,7 +40,7 @@ export function buildLensItems(graph: EntityGraph | null): LensItem[] {
       id: n.id,
       kind: n.kind,
       label: n.label,
-      businessNote: tr('{kind} ／ 関連: {related}', { kind: KIND_LABELS[n.kind], related: join(names(n.id, BUSINESS_RELATED)) }),
-      itNote: tr('{id}（{kind}{type}） ／ 接続: {related}', { id: n.id, kind: KIND_LABELS[n.kind], type: n.type ? `／${n.type}` : '', related: join(names(n.id, IT_RELATED)) }),
+      businessNote: tr('{kind} ／ 関連: {related}', { kind: tr(KIND_LABELS[n.kind]), related: join(names(n.id, BUSINESS_RELATED)) }),
+      itNote: tr('{id}（{kind}{type}） ／ 接続: {related}', { id: n.id, kind: tr(KIND_LABELS[n.kind]), type: n.type ? `／${n.type}` : '', related: join(names(n.id, IT_RELATED)) }),
     }));
 }

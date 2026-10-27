@@ -60,7 +60,7 @@ export const NextActionSchema = z.object({
   text: z.string().default(''),
   owner: z.string().default(''),
   /** 期限。空、または `YYYY-MM-DD` の実在する日付 */
-  due: z.string().default('').refine((v) => v === '' || parseDueDate(v).ok, { message: '期限は日付で入力してください' }),
+  due: z.string().default('').refine((v) => v === '' || parseDueDate(v).ok, { error: () => tr('期限は日付で入力してください') }),
 });
 export type NextAction = z.infer<typeof NextActionSchema>;
 
