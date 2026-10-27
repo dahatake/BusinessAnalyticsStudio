@@ -5,6 +5,7 @@ import { Badge, makeStyles, tokens } from '@fluentui/react-components';
 import { useAi, useAiSync } from './useAi';
 import { useAzureSync } from './useAzure';
 import { genAiStatusLabel, useGenAiProviderStatus } from './genAiProviderStatus';
+import { tr, useT } from '../i18n';
 
 const useStyles = makeStyles({
   root: { display: 'inline-flex', alignItems: 'center', flexWrap: 'wrap', gap: tokens.spacingHorizontalXS, maxWidth: '100%' },
@@ -12,10 +13,11 @@ const useStyles = makeStyles({
 
 /** チャット（POST /ask。FR-132）の状態の文言。用途を明記する */
 export function chatStatusLabel(connected: boolean): string {
-  return connected ? 'AI: 接続済み（チャット・Copilot）' : 'AI: モック（チャット）';
+  return connected ? tr('AI: 接続済み（チャット・Copilot）') : tr('AI: モック（チャット）');
 }
 
 export function AiStatus() {
+  const t = useT();
   useAiSync();
   useAzureSync();
   const { mode } = useAi();
@@ -31,7 +33,7 @@ export function AiStatus() {
         appearance="tint"
         color={genai.enabled ? 'success' : 'warning'}
         shape="rounded"
-        title="生成AIの共通接続（設定の「生成AIの接続先」）"
+        title={t('生成AIの共通接続（設定の「生成AIの接続先」）')}
       >
         {genAiStatusLabel(genai)}
       </Badge>
@@ -41,7 +43,7 @@ export function AiStatus() {
         appearance="outline"
         color={chatConnected ? 'success' : 'informative'}
         shape="rounded"
-        title="チャットの実接続（設定の「AI・音声・手書きの接続」）"
+        title={t('チャットの実接続（設定の「AI・音声・手書きの接続」）')}
       >
         {chatStatusLabel(chatConnected)}
       </Badge>
