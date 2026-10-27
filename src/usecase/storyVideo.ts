@@ -6,6 +6,7 @@
 import { SETTINGS_GUIDE, BUDGET_STOP_PERCENT, BUDGET_YEN, type Usage } from '../ai/aiImportLogic';
 import type { FoundryView } from '../ai/foundryClient';
 import { signature, type UseCaseDraft } from './model';
+import { tr } from '../i18n';
 
 /** PARAM-128: 作成 1 回あたりの予算の上限（円） */
 export const STORY_VIDEO_BUDGET_YEN = 1000;
@@ -25,7 +26,7 @@ const MIN_OUT_TOKENS = 500;
 const PROMPT_OVERHEAD_CHARS = 800;
 const MAX_HTML_CHARS = 200_000;
 
-export const yen = (n: number): string => `${(Math.round(n * 100) / 100).toLocaleString('ja-JP', { maximumFractionDigits: 2 })} 円`;
+export const yen = (n: number): string => tr('{n} 円', { n: (Math.round(n * 100) / 100).toLocaleString('ja-JP', { maximumFractionDigits: 2 }) });
 
 // ---- 送信内容 ----
 export interface StoryVideoPayload { name: string; summary: string; persona: string; steps: { title: string; description: string }[]; effect: string }
@@ -47,16 +48,16 @@ export type StoryVideoMissing = '設定' | '有効化' | '了承' | '接続先';
 export interface StoryVideoAvailability { available: boolean; missing: StoryVideoMissing[]; guide: string }
 export function storyVideoAvailability(view: FoundryView | null, consentGranted: boolean): StoryVideoAvailability {
   if (view?.provider === 'copilot') {
-    return { available: false, missing: ['接続先'], guide: 'ストーリー動画は使えません（欠けている条件: 接続先）。GitHub Copilot SDK では費用を円で制御できないため、Foundry を選んだときだけ使えます。設定画面の「生成AIの接続先」で Microsoft Foundry を選択してください。' };
+    return { available: false, missing: ['接続先'], guide: tr('ストーリー動画は使えません（欠けている条件: 接続先）。GitHub Copilot SDK では費用を円で制御できないため、Foundry を選んだときだけ使えます。設定画面の「生成AIの接続先」で Microsoft Foundry を選択してください。') };
   }
   const missing: StoryVideoMissing[] = [];
   if (!view?.configured) missing.push('設定');
   if (!view?.enabled) missing.push('有効化');
   if (!consentGranted) missing.push('了承');
   if (missing.length === 0) return { available: true, missing, guide: '' };
-  const parts = missing.map((m) => (m === '設定' ? 'Foundry の接続情報が設定されていません' : m === '有効化' ? 'Foundry の実接続（送信）が有効になっていません' : 'この案件に顧客の了承の記録がありません'));
-  const where = missing.includes('了承') ? `${SETTINGS_GUIDE}顧客の了承は設定画面の「了承の記録」で入力します。` : SETTINGS_GUIDE;
-  return { available: false, missing, guide: `ストーリー動画は使えません（欠けている条件: ${missing.join('・')}）。${parts.join('。')}。${where}` };
+  const parts = missing.map((m) => (m === '設定' ? tr('Foundry の接続情報が設定されていません') : m === '有効化' ? tr('Foundry の実接続（送信）が有効になっていません') : tr('この案件に顧客の了承の記録がありません')));
+  const where = missing.includes('了承') ? `${SETTINGS_GUIDE}${tr('顧客の了承は設定画面の「了承の記録」で入力します。')}` : SETTINGS_GUIDE;
+  return { available: false, missing, guide: `${tr('ストーリー動画は使えません（欠けている条件: {missing}）。', { missing: missing.map((m) => tr(m)).join(tr('・')) })}${parts.join(tr('。'))}${tr('。')}${where}` };
 }
 
 // ---- 見積り（FR-292 (1)(2)） ----
@@ -103,7 +104,7 @@ export function planStoryVideo(uc: UseCaseDraft, prices: Prices, usage: Usage): 
   const fullEstimate = totalEstimateYen(full, { ...DEFAULT_OUT_LIMITS }, prices);
   const stopped = (usage.costYen / BUDGET_YEN) * 100 >= BUDGET_STOP_PERCENT;
   if (stopped || limitYen <= 0) {
-    return { ok: false, reason: 'month', estimateYen: fullEstimate, limitYen: 0, monthRemainingYen: remaining, message: `今月の概算費用が月の予算（${yen(BUDGET_YEN)}）に達しているため、ストーリー動画は作成しません（呼び出し 0 回）。来月（月初）に再開するか、月の予算の設定を確認してください。` };
+    return { ok: false, reason: 'month', estimateYen: fullEstimate, limitYen: 0, monthRemainingYen: remaining, message: tr('今月の概算費用が月の予算（{budget}）に達しているため、ストーリー動画は作成しません（呼び出し 0 回）。来月（月初）に再開するか、月の予算の設定を確認してください。', { budget: yen(BUDGET_YEN) }) };
   }
   for (let level = 0; level <= 3; level++) {
     if (level > 0 && full.steps.length <= 1 && level >= 2) break;
@@ -116,19 +117,19 @@ export function planStoryVideo(uc: UseCaseDraft, prices: Prices, usage: Usage): 
       const estimate = totalEstimateYen(payload, limits, prices);
       if (estimate <= limitYen) {
         const notes: string[] = [];
-        if (level === 1) notes.push('手順の説明を 80 文字までに切り詰めました');
-        if (level >= 2) notes.push(`手順を先頭の ${payload.steps.length} 件に切り詰めました`);
-        if (factor < 1) notes.push('出力の上限を下げました');
+        if (level === 1) notes.push(tr('手順の説明を 80 文字までに切り詰めました'));
+        if (level >= 2) notes.push(tr('手順を先頭の {n} 件に切り詰めました', { n: payload.steps.length }));
+        if (factor < 1) notes.push(tr('出力の上限を下げました'));
         return {
           ok: true, payload, limits, estimateYen: estimate, limitYen, monthRemainingYen: remaining,
-          truncated: notes.length > 0, truncatedNote: notes.length > 0 ? `見積りが上限を超えるため切り詰めました（${notes.join('・')}）。` : '',
+          truncated: notes.length > 0, truncatedNote: notes.length > 0 ? tr('見積りが上限を超えるため切り詰めました（{notes}）。', { notes: notes.join(tr('・')) }) : '',
         };
       }
     }
   }
   const message = reason === 'month'
-    ? `見積り（${yen(fullEstimate)}）が月の予算の残額（${yen(remaining)}）を超えるため、呼び出しません（呼び出し 0 回。理由: 月の予算）。月の予算の設定を確認するか、来月（月初）に再開してください。`
-    : `入力を切り詰めても見積り（${yen(fullEstimate)}）が 1 回の上限（${yen(STORY_VIDEO_BUDGET_YEN)}）を超えるため、呼び出しません（呼び出し 0 回）。手順の数や説明を減らすか、単価の設定（安い配備）を確認してください。`;
+    ? tr('見積り（{estimate}）が月の予算の残額（{remaining}）を超えるため、呼び出しません（呼び出し 0 回。理由: 月の予算）。月の予算の設定を確認するか、来月（月初）に再開してください。', { estimate: yen(fullEstimate), remaining: yen(remaining) })
+    : tr('入力を切り詰めても見積り（{estimate}）が 1 回の上限（{limit}）を超えるため、呼び出しません（呼び出し 0 回）。手順の数や説明を減らすか、単価の設定（安い配備）を確認してください。', { estimate: yen(fullEstimate), limit: yen(STORY_VIDEO_BUDGET_YEN) });
   return { ok: false, reason, message, estimateYen: fullEstimate, limitYen, monthRemainingYen: remaining };
 }
 
@@ -157,20 +158,20 @@ const SAFE_REF = /^(#|data:image\/(png|jpeg|svg\+xml|webp))/i;
 function badRefs(body: string): string[] {
   const out: string[] = [];
   for (const m of body.matchAll(/\b(?:src|href|xlink:href)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi)) {
-    if (!SAFE_REF.test((m[1] ?? m[2] ?? m[3] ?? '').trim())) { out.push('許可していない外部読み込み（src・href）'); break; }
+    if (!SAFE_REF.test((m[1] ?? m[2] ?? m[3] ?? '').trim())) { out.push(tr('許可していない外部読み込み（src・href）')); break; }
   }
   for (const m of body.matchAll(/url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s]*))\s*\)/gi)) {
-    if (!SAFE_REF.test((m[1] ?? m[2] ?? m[3] ?? '').trim())) { out.push('許可していない外部読み込み（url()）'); break; }
+    if (!SAFE_REF.test((m[1] ?? m[2] ?? m[3] ?? '').trim())) { out.push(tr('許可していない外部読み込み（url()）')); break; }
   }
   return out;
 }
 /** 採用してよい出力か。HTML・CSS・JS・SVG だけで、動画ファイル・外部 URL・fetch・XMLHttpRequest・eval などを含まないこと */
 export function validateAnimationHtml(html: unknown): HtmlCheck {
-  if (typeof html !== 'string' || !html.trim()) return { ok: false, reasons: ['アニメーションの HTML が空です'] };
-  if (html.length > MAX_HTML_CHARS) return { ok: false, reasons: [`HTML が大きすぎます（${MAX_HTML_CHARS.toLocaleString('ja-JP')} 文字まで）`] };
-  if (!/<\s*(html|svg|body|div|style)\b/i.test(html)) return { ok: false, reasons: ['HTML として読み取れません'] };
+  if (typeof html !== 'string' || !html.trim()) return { ok: false, reasons: [tr('アニメーションの HTML が空です')] };
+  if (html.length > MAX_HTML_CHARS) return { ok: false, reasons: [tr('HTML が大きすぎます（{max} 文字まで）', { max: MAX_HTML_CHARS.toLocaleString('ja-JP') })] };
+  if (!/<\s*(html|svg|body|div|style)\b/i.test(html)) return { ok: false, reasons: [tr('HTML として読み取れません')] };
   const body = html.replace(NS_ALLOWED, '');
-  const reasons = [...new Set([...RULES.filter(([re]) => re.test(body)).map(([, why]) => why), ...badRefs(body)])];
+  const reasons = [...new Set([...RULES.filter(([re]) => re.test(body)).map(([, why]) => tr(why)), ...badRefs(body)])];
   return reasons.length === 0 ? { ok: true } : { ok: false, reasons };
 }
 
@@ -210,9 +211,9 @@ export interface RunDeps {
 export interface RunPlan { payload: StoryVideoPayload; limits: OutLimits; limitYen: number; monthRemainingYen: number; prices: Prices }
 
 const ABORT_TEXT: Record<AbortReason, (cost: number, limit: number) => string> = {
-  limit: (c, l) => `概算の費用が上限（${yen(l)}）に達した（または次の呼び出しで超える見込みの）ため、作成を中止しました（累計 ${yen(c)}）。途中の生成物は採用していません。`,
-  month: (c) => `月の予算の残額が尽きる（または次の呼び出しで超える見込みの）ため、作成を中止しました（理由: 月の予算。累計 ${yen(c)}）。途中の生成物は採用していません。`,
-  user: (c) => `作成を中止しました（累計 ${yen(c)}）。途中の生成物は採用していません。`,
+  limit: (c, l) => tr('概算の費用が上限（{limit}）に達した（または次の呼び出しで超える見込みの）ため、作成を中止しました（累計 {cost}）。途中の生成物は採用していません。', { limit: yen(l), cost: yen(c) }),
+  month: (c) => tr('月の予算の残額が尽きる（または次の呼び出しで超える見込みの）ため、作成を中止しました（理由: 月の予算。累計 {cost}）。途中の生成物は採用していません。', { cost: yen(c) }),
+  user: (c) => tr('作成を中止しました（累計 {cost}）。途中の生成物は採用していません。', { cost: yen(c) }),
 };
 
 /** 作成の実行。呼び出しは最大 PARAM-131 回、1 回ごとに累計を更新し、上限に達する・超える見込みなら以後の呼び出しをただちに止める */
@@ -244,7 +245,7 @@ export async function runStoryVideo(plan: RunPlan, deps: RunDeps): Promise<RunOu
     if (deps.isCancelled()) return abort('user');
     if (!r.ok) return { status: 'failed', message: r.message, costYen: cum, calls };
     if (kind === 'storyboard') {
-      if (!Array.isArray(r.scenes) || r.scenes.length === 0) return { status: 'failed', message: '生成AIの応答からストーリーボードを読み取れませんでした。もう一度試してください。', costYen: cum, calls };
+      if (!Array.isArray(r.scenes) || r.scenes.length === 0) return { status: 'failed', message: tr('生成AIの応答からストーリーボードを読み取れませんでした。もう一度試してください。'), costYen: cum, calls };
       scenes = r.scenes;
       continue;
     }
@@ -252,7 +253,7 @@ export async function runStoryVideo(plan: RunPlan, deps: RunDeps): Promise<RunOu
     if (check.ok && scenes) return { status: 'done', scenes, html: r.html as string, costYen: cum, calls };
     lastReasons = check.ok ? [] : check.reasons;
   }
-  return { status: 'failed', message: `生成されたアニメーションは検査を通らなかったため採用しませんでした（${lastReasons.join('・') || '未生成'}）。もう一度作成してください。`, costYen: cum, calls };
+  return { status: 'failed', message: tr('生成されたアニメーションは検査を通らなかったため採用しませんでした（{reasons}）。もう一度作成してください。', { reasons: lastReasons.join(tr('・')) || tr('未生成') }), costYen: cum, calls };
 }
 
 // ---- 利用量の記録（端末内。日付・回数・トークン数・概算費用だけ。入力の文章・生成結果は記録しない） ----
@@ -288,7 +289,8 @@ export const PRICE_MISSING_GUIDE = 'ストーリー動画の生成AIの単価が
 // ---- 中継プロセスへの依頼（FR-275 の共通接続。新しい接続設定・キー保管なし） ----
 type F = typeof fetch;
 const dflt: F = (u, i) => fetch(u, i);
-const NO_RELAY = '中継プロセスに届きませんでした。`npm run relay` で起動しているか確認してください。';
+const NO_RELAY = (): string => tr('中継プロセスに届きませんでした。`npm run relay` で起動しているか確認してください。');
+/** 原因ごとの文（読むたびに翻訳する。キーは日本語の原文） */
 const CAUSE_TEXT: Record<string, string> = {
   consent: '顧客の了承の記録がないため送信できません。設定画面で了承の記録を確認してください。',
   disabled: 'Foundry の実接続が有効ではありません。設定画面で送信を有効にしてください。',
@@ -300,8 +302,9 @@ const CAUSE_TEXT: Record<string, string> = {
   format: 'Foundry の応答から内容を読み取れませんでした。もう一度試してください。',
 };
 export function describeStoryVideoFailure(cause: string | undefined, status?: number): string {
-  if (cause === 'upstream-status') return `Foundry がエラーを返しました（HTTP ${status ?? '不明'}）。設定画面で接続情報を確認してから、もう一度試してください。`;
-  return CAUSE_TEXT[cause ?? ''] ?? 'ストーリー動画の作成に失敗しました。設定画面で接続情報を確認してから、もう一度試してください。';
+  if (cause === 'upstream-status') return tr('Foundry がエラーを返しました（HTTP {status}）。設定画面で接続情報を確認してから、もう一度試してください。', { status: status ?? tr('不明') });
+  const known = CAUSE_TEXT[cause ?? ''];
+  return tr(known ?? 'ストーリー動画の作成に失敗しました。設定画面で接続情報を確認してから、もう一度試してください。');
 }
 
 export async function requestStoryVideo(
@@ -309,7 +312,7 @@ export async function requestStoryVideo(
   req: { packId: string; kind: CallKind; usecase: StoryVideoPayload; consent: boolean; includesPerson: boolean; personConfirmed: boolean; maxOutputTokens: number },
   f: F = dflt,
 ): Promise<CallResult> {
-  if (!relayUrl || !/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(relayUrl.replace(/\/$/, ''))) return { ok: false, cause: 'relay', message: NO_RELAY };
+  if (!relayUrl || !/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(relayUrl.replace(/\/$/, '')))   return { ok: false, cause: 'relay', message: NO_RELAY() };
   try {
     const r = await f(`${relayUrl}/foundry/story-video`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
@@ -330,6 +333,6 @@ export async function requestStoryVideo(
     }
     return typeof j.html === 'string' && j.html ? { ok: true, html: j.html, usage } : { ok: false, cause: 'format', message: describeStoryVideoFailure('format') };
   } catch {
-    return { ok: false, cause: 'relay', message: NO_RELAY };
+    return { ok: false, cause: 'relay', message: NO_RELAY() };
   }
 }

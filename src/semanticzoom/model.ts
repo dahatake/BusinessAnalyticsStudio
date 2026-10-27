@@ -1,10 +1,15 @@
 // 意味的ズームの共通モデル（FR-237）。全体 → 要素（D 段）→ 詳細 の D+2 階層を、画面に依存せずに扱う。
 // 倍率の連続的な変化の判定は three/lod.ts のヒステリシス（nextVisible）を再利用する。
 import { nextVisible } from '../three/lod';
+import { tr } from '../i18n';
 
 export type ZoomLevelKind = 'overview' | 'element' | 'detail';
 
-export const ZOOM_KIND_LABELS: Record<ZoomLevelKind, string> = { overview: '全体', element: '要素', detail: '詳細' };
+export const ZOOM_KIND_LABELS: Record<ZoomLevelKind, string> = {
+  get overview() { return tr('全体'); },
+  get element() { return tr('要素'); },
+  get detail() { return tr('詳細'); },
+};
 
 /** 要素の段の数 D（1 以上の整数）に直す */
 export const normalizeElementDepth = (d: number): number => (Number.isFinite(d) ? Math.max(1, Math.floor(d)) : 1);

@@ -1,6 +1,7 @@
 // 企業データカタログの取り込み（FR-161）と突合、未掲載エンティティの ToDo 化（FR-162）の純関数。
 // すべて端末内で完結し、ネットワークには接続しない（NFR-SEC-004）。URL は出典として文字列で持つだけで、アクセスしない。
 import { parseCsv } from '../edit/model';
+import { tr } from '../i18n';
 import { displayName, normalizeKey, toColumns, type DataColumn, type DataEntity } from './model';
 
 /** PARAM-050: 取り込めるファイルの大きさの上限（5 MB） */
@@ -32,7 +33,7 @@ function fromRecord(r: Record<string, unknown>): ItemResult {
 
 function finish(items: CatalogItem[]): ParseResult {
   if (items.length > MAX_CATALOG_ITEMS) {
-    return { ok: false, errors: [`項目が ${items.length} 件あり、上限の ${MAX_CATALOG_ITEMS} 件を超えています。ファイルを分割して取り込み直してください。`] };
+    return { ok: false, errors: [tr('項目が {n} 件あり、上限の {max} 件を超えています。ファイルを分割して取り込み直してください。', { n: items.length, max: MAX_CATALOG_ITEMS })] };
   }
   return { ok: true, items };
 }
@@ -40,19 +41,19 @@ function finish(items: CatalogItem[]): ParseResult {
 function parseJson(text: string): ParseResult {
   let data: unknown;
   try { data = JSON.parse(text.replace(/^\uFEFF/, '')); } catch (e) {
-    return { ok: false, errors: [`JSON として読み込めません（${e instanceof Error ? e.message : '形式が不正です'}）。ファイルが壊れていないか確認してください。`] };
+    return { ok: false, errors: [tr('JSON として読み込めません（{reason}）。ファイルが壊れていないか確認してください。', { reason: e instanceof Error ? e.message : tr('形式が不正です') })] };
   }
   const arr = Array.isArray(data) ? data
     : typeof data === 'object' && data !== null && Array.isArray((data as { entities?: unknown }).entities) ? (data as { entities: unknown[] }).entities
       : undefined;
-  if (!arr) return { ok: false, errors: ['JSON の形式が不正です。項目の配列、または entities の配列を持つオブジェクトにしてください。'] };
+  if (!arr) return { ok: false, errors: [tr('JSON の形式が不正です。項目の配列、または entities の配列を持つオブジェクトにしてください。')] };
   if (arr.length > MAX_CATALOG_ITEMS) return finish(arr.map(() => ({ name: '', description: '' })));
   const items: CatalogItem[] = [];
   for (let i = 0; i < arr.length; i++) {
     const r = arr[i];
     const res = typeof r === 'object' && r !== null && !Array.isArray(r) ? fromRecord(r as Record<string, unknown>) : undefined;
-    if (!res) return { ok: false, errors: [`${i + 1} 件目に名称（name）がありません。すべての項目に名称を入れてください。`] };
-    if ('error' in res) return { ok: false, errors: [`${i + 1} 件目: ${res.error}`] };
+    if (!res) return { ok: false, errors: [tr('{n} 件目に名称（name）がありません。すべての項目に名称を入れてください。', { n: i + 1 })] };
+    if ('error' in res) return { ok: false, errors: [tr('{n} 件目: {error}', { n: i + 1, error: res.error })] };
     items.push(res.item);
   }
   return finish(items);
@@ -60,12 +61,12 @@ function parseJson(text: string): ParseResult {
 
 function parseCsvCatalog(text: string): ParseResult {
   const { records, error } = parseCsv(text);
-  if (error) return { ok: false, errors: [`CSV の形式が不正です（${error.line} 行目: ${error.message}）。`] };
-  if (records.length === 0) return { ok: false, errors: ['CSV が空です。先頭行に見出し（名称、説明）を書いてください。'] };
+  if (error) return { ok: false, errors: [tr('CSV の形式が不正です（{line} 行目: {message}）。', { line: error.line, message: error.message })] };
+  if (records.length === 0) return { ok: false, errors: [tr('CSV が空です。先頭行に見出し（名称、説明）を書いてください。')] };
   const header = records[0]!.cells.map((h) => h.trim().toLowerCase());
   const col = (...names: string[]): number => header.findIndex((h) => names.includes(h));
   const iName = col('名称', 'name');
-  if (iName < 0) return { ok: false, errors: ['CSV の見出しに「名称」（または name）の列がありません。先頭行に名称の列を追加してください。'] };
+  if (iName < 0) return { ok: false, errors: [tr('CSV の見出しに「名称」（または name）の列がありません。先頭行に名称の列を追加してください。')] };
   const iDesc = col('説明', 'description'); const iId = col('id'); const iBas = col('basid');
   const iCols = col('columns', '列'); const iDom = col('domain', 'ドメイン');
   if (records.length - 1 > MAX_CATALOG_ITEMS) return finish(new Array<CatalogItem>(records.length - 1).fill({ name: '', description: '' }));
@@ -73,13 +74,13 @@ function parseCsvCatalog(text: string): ParseResult {
   for (const rec of records.slice(1)) {
     const cell = (i: number): string => (i >= 0 ? rec.cells[i] ?? '' : '');
     const name = displayName(cell(iName));
-    if (!name) return { ok: false, errors: [`CSV の ${rec.line} 行目に名称がありません。すべての行に名称を入れてください。`] };
+    if (!name) return { ok: false, errors: [tr('CSV の {line} 行目に名称がありません。すべての行に名称を入れてください。', { line: rec.line })] };
     const id = cell(iId).trim(); const basId = cell(iBas).trim();
     const domain = displayName(cell(iDom));
     // CSV の列の欄は「列名:型」を ; で区切る（型は省略可。例: 受注ID:文字列;金額:数値）
     const colText = cell(iCols).trim();
     const cols = toColumns(colText ? colText.split(';').map((seg) => { const k = seg.indexOf(':'); return k < 0 ? { name: seg } : { name: seg.slice(0, k), type: seg.slice(k + 1) }; }) : undefined);
-    if (!cols.ok) return { ok: false, errors: [`CSV の ${rec.line} 行目: ${cols.error}`] };
+    if (!cols.ok) return { ok: false, errors: [tr('CSV の {line} 行目: {error}', { line: rec.line, error: cols.error })] };
     items.push({ name, description: cell(iDesc).trim(), ...(id ? { id } : {}), ...(basId ? { basId } : {}), ...(cols.columns.length ? { columns: cols.columns } : {}), ...(domain ? { domain } : {}) });
   }
   return finish(items);
@@ -88,7 +89,7 @@ function parseCsvCatalog(text: string): ParseResult {
 /** ファイルの内容を企業データカタログとして読む。拒否のときは原因と直し方を返す（呼び出し側は既存の内容を変えない） */
 export function parseCatalog(text: string, fileName: string, sizeBytes: number): ParseResult {
   if (sizeBytes > MAX_CATALOG_BYTES) {
-    return { ok: false, errors: [`ファイルの大きさが上限の ${MAX_CATALOG_BYTES / 1024 / 1024} MB を超えています。ファイルを分割するか、不要な項目を減らしてください。`] };
+    return { ok: false, errors: [tr('ファイルの大きさが上限の {mb} MB を超えています。ファイルを分割するか、不要な項目を減らしてください。', { mb: MAX_CATALOG_BYTES / 1024 / 1024 })] };
   }
   const lower = fileName.toLowerCase();
   const head = text.replace(/^\uFEFF/, '').trimStart()[0];
@@ -170,5 +171,5 @@ export function checkSourceUrl(raw: string): { ok: true; url: string } | { ok: f
     const u = new URL(v);
     if (u.protocol !== 'http:' && u.protocol !== 'https:') throw new Error('scheme');
     return { ok: true, url: v };
-  } catch { return { ok: false, error: '出典の URL は http:// または https:// で始まる形式で入力してください。' }; }
+  } catch { return { ok: false, error: tr('出典の URL は http:// または https:// で始まる形式で入力してください。') }; }
 }

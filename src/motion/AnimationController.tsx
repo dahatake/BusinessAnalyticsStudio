@@ -5,6 +5,7 @@ import { Play24Regular, Pause24Regular } from '@fluentui/react-icons';
 import { useAnimation } from '../store/animation';
 import { installAnimationControl } from './control';
 import { useMotionProfile } from './useMotion';
+import { useT } from '../i18n';
 
 /** P キー・CSS の停止・動画の停止を有効にし、モーションのテンポを CSS の変数にも渡す */
 export function AnimationController() {
@@ -20,16 +21,17 @@ export function AnimationController() {
 export function AnimationStatus() {
   const playing = useAnimation((s) => s.playing);
   const toggle = useAnimation((s) => s.toggle);
+  const t = useT();
   return (
     <Button
       appearance="subtle"
       size="small"
       data-testid="animation-state"
       icon={playing ? <Pause24Regular aria-hidden /> : <Play24Regular aria-hidden />}
-      title="アニメーションの再生／停止（P キー）"
+      title={t('アニメーションの再生／停止（P キー）')}
       onClick={toggle}
     >
-      アニメーション: {playing ? '再生中' : '停止中'}
+      {t('アニメーション:')} {playing ? t('再生中') : t('停止中')}
     </Button>
   );
 }

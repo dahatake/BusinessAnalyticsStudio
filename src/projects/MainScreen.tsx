@@ -12,6 +12,7 @@ import { useAnalyses } from '../store/analyses';
 import { useMainScreen } from '../store/mainScreen';
 import { useSettings } from '../store/settings';
 import { GettingStarted } from '../guide/GettingStarted';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   root: {
@@ -44,6 +45,7 @@ const STEPS = [
 
 export function MainScreen() {
   const s = useStyles();
+  const t = useT();
   const st = useProjects();
   const showDemo = useSettings((x) => x.showDemoInPicker);
   const setDemoOnly = useWorkTargetUi((u) => u.setDemoOnly);
@@ -90,27 +92,27 @@ export function MainScreen() {
   ];
 
   return (
-    <main className={s.root} data-testid="main-screen" aria-label="メイン画面">
-      <Title2 as="h1">メイン画面</Title2>
-      <Text>企業を登録し、Project を作成して開き、分析を始めます（QuickStart の手順）。</Text>
-      <ol className={s.guide} data-testid="main-guide" aria-label="始め方の手順">
+    <main className={s.root} data-testid="main-screen" aria-label={t('メイン画面')}>
+      <Title2 as="h1">{t('メイン画面')}</Title2>
+      <Text>{t('企業を登録し、Project を作成して開き、分析を始めます（QuickStart の手順）。')}</Text>
+      <ol className={s.guide} data-testid="main-guide" aria-label={t('始め方の手順')}>
         {STEPS.map((step, i) => (
           <li key={step.name} className={`${s.step} ${i === current ? s.current : ''}`} aria-current={i === current ? 'step' : undefined}>
             <span className={s.no} aria-hidden>{i + 1}.</span>
-            <Button appearance={i === current ? 'primary' : 'secondary'} onClick={actions[i]}>{step.name}</Button>
-            <Text className={s.desc}>{step.desc}{i === current ? '（いまの手順）' : ''}</Text>
+            <Button appearance={i === current ? 'primary' : 'secondary'} onClick={actions[i]}>{t(step.name)}</Button>
+            <Text className={s.desc}>{t(step.desc)}{i === current ? t('（いまの手順）') : ''}</Text>
           </li>
         ))}
       </ol>
       <GettingStarted />
-      {notice ? <MessageBar intent="warning" role="alert" layout="multiline"><MessageBarBody>{notice}</MessageBarBody></MessageBar> : null}
+      {notice ? <MessageBar intent="warning" role="alert" layout="multiline"><MessageBarBody>{t(notice)}</MessageBarBody></MessageBar> : null}
       {st.companies.map((c) => (
-        <section key={c.id} role="region" aria-label={`企業 ${c.name}`} className={s.company}>
+        <section key={c.id} role="region" aria-label={t('企業 {name}', { name: c.name })} className={s.company}>
           <div className={s.row}>
             <Text weight="semibold">{c.name}</Text>
-            <Button size="small" onClick={() => setModal({ kind: 'project', company: c })}>Project を作成</Button>
+            <Button size="small" onClick={() => setModal({ kind: 'project', company: c })}>{t('Project を作成')}</Button>
           </div>
-          <ul className={s.plain} aria-label="進行中の Project">
+          <ul className={s.plain} aria-label={t('進行中の Project')}>
             {active.filter((p) => p.companyId === c.id).map((p) => (
               <li key={p.id}>
                 {/* 一覧から直接開ける（FR-201 の画面の入口。分析画面の一覧と同じ「Project の名前のリンク」） */}
@@ -123,10 +125,10 @@ export function MainScreen() {
       {pickerOpen ? <WorkTargetPicker projects={st.projects} companies={st.companies} showDemo={showDemo} currentId={st.openId} onChoose={choose} onClose={() => setPickerOpen(false)} /> : null}
       {pending ? <UnsavedDialog onCancel={() => setPending(null)} onConfirm={() => { go(pending.target, pending.demo); setPending(null); }} /> : null}
       {modal?.kind === 'company' ? (
-        <NameDialog title="企業を登録" label="企業名" submit="登録" placeholder="ミズホ精機株式会社" help="例: ミズホ精機株式会社。登録すると、その企業の下に Project を作成できます。" onSubmit={st.addCompany} onClose={() => setModal(null)} />
+        <NameDialog title={t('企業を登録')} label={t('企業名')} submit={t('登録')} placeholder="ミズホ精機株式会社" help={t('例: ミズホ精機株式会社。登録すると、その企業の下に Project を作成できます。')} onSubmit={st.addCompany} onClose={() => setModal(null)} />
       ) : null}
       {modal?.kind === 'project' ? (
-        <NameDialog title="Project を作成" label="Project 名" submit="作成" placeholder="2026 年度 DX 構想" help="例: 2026 年度 DX 構想。作成すると、その Project を開いて分析を開始できます。" hint={`企業「${modal.company.name}」に作成します。`} onSubmit={(n) => st.addProject(modal.company.id, n)} onClose={() => setModal(null)} />
+        <NameDialog title={t('Project を作成')} label={t('Project 名')} submit={t('作成')} placeholder={t('2026 年度 DX 構想')} help={t('例: 2026 年度 DX 構想。作成すると、その Project を開いて分析を開始できます。')} hint={t('企業「{name}」に作成します。', { name: modal.company.name })} onSubmit={(n) => st.addProject(modal.company.id, n)} onClose={() => setModal(null)} />
       ) : null}
     </main>
   );

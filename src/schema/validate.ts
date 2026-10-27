@@ -1,6 +1,7 @@
 // 顧客パックの検証（FR-114 ID の一意・参照、FR-115 出典、FR-116 作成者、FR-117 機密区分、FR-119 構成）。
 // 純粋な関数だけで書く（ブラウザーでも Node でも同じ結果になる）。画面の部品を参照しない（NFR-MAINT-001）。
 import type { ZodType } from 'zod';
+import { tr } from '../i18n';
 import { REFERENCE_KEYS } from './common';
 import { BrandProfileSchema, DATA_FILE_NAMES, DATA_SCHEMAS, type DataFileName } from './files';
 
@@ -44,7 +45,7 @@ export function validateLayout(paths: readonly string[]): PackError[] {
   const errors: PackError[] = [];
   for (const req of REQUIRED_PATHS) {
     const ok = req.endsWith('/') ? [...have].some((p) => p.startsWith(req)) : have.has(req);
-    if (!ok) errors.push({ code: 'missing-file', file: req, path: '', message: `必須のファイルがありません: ${req}` });
+    if (!ok) errors.push({ code: 'missing-file', file: req, path: '', message: tr('必須のファイルがありません: {file}', { file: req }) });
   }
   return errors;
 }
@@ -92,14 +93,14 @@ export function validatePack(files: PackFiles): PackValidation {
     const file = dataFilePath(name);
     const value = files[name];
     if (value === undefined) {
-      errors.push({ code: 'missing-file', file, path: '', message: `必須のファイルがありません: ${file}` });
+      errors.push({ code: 'missing-file', file, path: '', message: tr('必須のファイルがありません: {file}', { file }) });
       continue;
     }
     parseWith(DATA_SCHEMAS[name], value, file, errors);
     entries.push({ file, value });
   }
   if (files.brandProfile === undefined) {
-    errors.push({ code: 'missing-file', file: BRAND_PROFILE_PATH, path: '', message: `必須のファイルがありません: ${BRAND_PROFILE_PATH}` });
+    errors.push({ code: 'missing-file', file: BRAND_PROFILE_PATH, path: '', message: tr('必須のファイルがありません: {file}', { file: BRAND_PROFILE_PATH }) });
   } else {
     parseWith(BrandProfileSchema, files.brandProfile, BRAND_PROFILE_PATH, errors);
   }
@@ -123,7 +124,7 @@ export function validatePack(files: PackFiles): PackValidation {
         }
         errors.push({
           code: 'duplicate-id', file, path, id: o.id,
-          message: `ID が重複しています: ${o.id}（先に ${prev.file} の ${prev.path || '(root)'} で使われています）`,
+          message: tr('ID が重複しています: {id}（先に {file} の {path} で使われています）', { id: o.id, file: prev.file, path: prev.path || '(root)' }),
         });
       } else seen.set(o.id, { file, path, variants: new Set(variant ? [variant] : []) });
     });
@@ -141,7 +142,7 @@ export function validatePack(files: PackFiles): PackValidation {
           const at = Array.isArray(ref) ? `${key}[${i}]` : key;
           errors.push({
             code: 'dangling-reference', file, path: path ? `${path}.${at}` : at, id: owner,
-            message: `存在しない ID を参照しています: ${target}`,
+            message: tr('存在しない ID を参照しています: {target}', { target }),
           });
         });
       }
@@ -151,7 +152,7 @@ export function validatePack(files: PackFiles): PackValidation {
           unsourcedNumbers++;
           errors.push({
             code: 'missing-source', file, path, id: owner,
-            message: '数値の項目に sourceIds がありません（出典の付いていない数値項目）',
+            message: tr('数値の項目に sourceIds がありません（出典の付いていない数値項目）'),
           });
         }
       }

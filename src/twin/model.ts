@@ -4,22 +4,26 @@
 import { TWIN_LAYERS, isFlowKind, isTwinLayer, type FlowKind, type TwinLayer } from '../schema/graph';
 import type { EntityKind, World } from '../schema/world';
 import type { WorldView } from '../view/viewModel';
+import { tr } from '../i18n';
 
 export type RealGroup = 'devices' | 'people' | 'spaces' | 'others';
 export const REAL_GROUPS: readonly RealGroup[] = ['devices', 'people', 'spaces', 'others'];
 export const REAL_GROUP_LABELS: Record<RealGroup, string> = {
-  devices: 'Devices（設備）', people: 'People（人）', spaces: 'Spaces（拠点・空間）', others: 'その他の現実世界の項目',
+  get devices() { return tr('Devices（設備）'); },
+  get people() { return tr('People（人）'); },
+  get spaces() { return tr('Spaces（拠点・空間）'); },
+  get others() { return tr('その他の現実世界の項目'); },
 };
 export const LAYER_LABELS: Record<TwinLayer | 'none', string> = {
-  operations: 'Operations（設備の稼働・保守・自動化）',
-  experience: 'Experience（人と空間の体験）',
-  insights: 'Insights（分析・KPI・予測）',
-  none: '層なし',
+  get operations() { return tr('Operations（設備の稼働・保守・自動化）'); },
+  get experience() { return tr('Experience（人と空間の体験）'); },
+  get insights() { return tr('Insights（分析・KPI・予測）'); },
+  get none() { return tr('層なし'); },
 };
 /** 流れの文字と線種（色だけに頼らない。向きは矢印の文字でも示す） */
 export const FLOW_TEXT: Record<FlowKind, { name: string; arrow: string; lineStyle: 'solid' | 'dashed'; direction: string }> = {
-  data: { name: 'Data', arrow: '▶', lineStyle: 'solid', direction: '現実世界 → デジタル世界' },
-  control: { name: 'Control', arrow: '◀', lineStyle: 'dashed', direction: 'デジタル世界 → 現実世界' },
+  data: { name: 'Data', arrow: '▶', lineStyle: 'solid', get direction() { return tr('現実世界 → デジタル世界'); } },
+  control: { name: 'Control', arrow: '◀', lineStyle: 'dashed', get direction() { return tr('デジタル世界 → 現実世界'); } },
 };
 export const CONTROL_NOTE = '表示のみ（実機へは送信しません）';
 export const FRESHNESS_NOTE = 'パックの値（リアルタイムではありません）';
