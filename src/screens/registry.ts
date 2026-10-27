@@ -31,6 +31,7 @@ import { ChatScreen } from '../ai/ChatScreen';
 import { MemoScreen } from './MemoScreen';
 import { GenAiScenarioScreen } from './GenAiScenarioScreen';
 import '../analysis/commands';
+import { tr } from '../i18n';
 
 /** 2D の表現だけを持ち、世界区分を持つデータを表示しない画面の宣言（FR-217・FR-218） */
 const V2: ViewDecl = { has2D: true, has3D: false, world: false };
@@ -47,7 +48,7 @@ const V2: ViewDecl = { has2D: true, has3D: false, world: false };
  *    デジタル世界＝アーキテクチャ図（モデル）、議論ツリー（モデル）、KPI/OKR（センサー/指標）、出典・データカタログ・ホワイトボード（付箋）・議論テーマ（データ）
  *    世界区分を持つデータを表示しない＝サマリー（ほかの画面の数値の要約）・ミニ・モックアプリ・設定・チャット
  */
-export const SCREENS: readonly ScreenDefinition[] = [
+const SCREEN_DEFS: readonly ScreenDefinition[] = [
   { key: 'issue-solution', label: '課題-解決策分析', icon: TaskListSquareLtr24Regular, component: IssueSolutionScreen, view: { has2D: true, has3D: true, hasGraph: true, ...tableWorldDecl(['課題', '原因', '解決策', '効果']), kinds: ['issue', 'solution'] } },
   { key: 'priority', label: '優先順位分析', icon: Trophy24Regular, component: PriorityScreen, view: { has2D: true, has3D: false, ...tableWorldDecl(['課題', '解決策']), kinds: ['issue', 'solution'] } },
   { key: 'summary', label: 'サマリー', icon: DocumentBulletList24Regular, component: SummaryScreen, view: V2 },
@@ -74,6 +75,12 @@ export const SCREENS: readonly ScreenDefinition[] = [
   { key: 'memo', label: 'メモ', icon: Notepad24Regular, component: MemoScreen, view: V2 },
   { key: 'chat', label: 'チャット', icon: Chat24Regular, component: ChatScreen, view: V2 },
 ];
+
+/** 画面の表示名は、読んだ時点の言語で返す（FR-294。getter なので言語を切り替えると次の描画で変わる） */
+export const SCREENS: readonly ScreenDefinition[] = SCREEN_DEFS.map((d) => {
+  const ja = d.label;
+  return Object.defineProperty({ ...d }, 'label', { get: () => tr(ja), enumerable: true, configurable: true }) as ScreenDefinition;
+});
 
 /** 左メニュー（AppShell）に出す画面。`nav: false` の画面は除く（FR-220 AC-590）。除いた画面も、ドック・コマンドから開ける */
 export const NAV_SCREENS: readonly ScreenDefinition[] = SCREENS.filter((s) => s.nav !== false);

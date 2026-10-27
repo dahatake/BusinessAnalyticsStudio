@@ -3,6 +3,7 @@
 // FR-022: 2D と 2.5D（斜め上から見た奥行き付きの描画）を切り替えられる。切り替えても工程の件数・期間・選択は変わらない。
 // FR-035: 下位の工程を持つ工程は、展開すると下位の工程が出て、折りたたむと隠れる。
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useT } from '../i18n';
 import { useComponentView, usePublishViewItems } from '../view/useView';
 import { ModeRadio } from '../view/ModeRadio';
 import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
@@ -138,6 +139,7 @@ function drawGantt25D(canvas: HTMLCanvasElement, rows: ReadonlyArray<{ g: GanttT
 }
 
 function GanttScreen() {
+  const t = useT();
   const s = useStyles();
   const state = usePackStore((st) => st.state);
   const data = state.status === 'ready' ? state.pack.data : undefined;
@@ -190,7 +192,7 @@ function GanttScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, groupRows, orphanRows, selectedIds, related, featureId, data]);
 
-  if (!data) return <LoadingView label="工程を読み込み中" />;
+  if (!data) return <LoadingView label={t('工程を読み込み中')} />;
 
   const sites = data.entities.entities.filter((e) => e.type === 'site');
 
@@ -228,7 +230,7 @@ function GanttScreen() {
           {hasChildren ? (
             <Button
               size="small" appearance="subtle" icon={expanded ? <ChevronDown16Regular aria-hidden /> : <ChevronRight16Regular aria-hidden />}
-              aria-label={expanded ? `${g.task.title} を折りたたむ` : `${g.task.title} を展開`}
+              aria-label={expanded ? t('{title} を折りたたむ', { title: g.task.title }) : t('{title} を展開', { title: g.task.title })}
               onClick={(e) => { e.stopPropagation(); toggle(g.task.id); }}
             />
           ) : null}
@@ -236,7 +238,7 @@ function GanttScreen() {
         </div>
         <div role="gridcell" className={s.track}>
           {g.startDay === undefined ? (
-            <Text size={200}>日付なし</Text>
+            <Text size={200}>{t('日付なし')}</Text>
           ) : (
             <button
               type="button"
@@ -258,20 +260,20 @@ function GanttScreen() {
   return (
     <Panel
       testId="component-gantt"
-      title="ガントチャート"
-      description="Feature ごとの工程（いつ・誰が・何を）を時間軸で確かめます。Feature を選ぶと、その工程を強調します。"
+      title={t('ガントチャート')}
+      description={t('Feature ごとの工程（いつ・誰が・何を）を時間軸で確かめます。Feature を選ぶと、その工程を強調します。')}
       maxWidth="1200px"
     >
       <ExecutiveSummary scope="gantt" />
       {data.plan.tasks.length === 0 && data.plan.features.length === 0 ? (
-        <EmptyView message="工程がありません。" />
+        <EmptyView message={t('工程がありません。')} />
       ) : (
         <>
           {/* 見出しの「ビュー」と同じ 1 つの切替。2.5D は canvas 2D で描くので WebGL2 がなくても選べる（FR-022・FR-217 AC-507） */}
           <ModeRadio viewKey="gantt" labels={{ '3d': '2.5D' }} />
           {otherSelected.length > 0 ? (
-            <div className={s.chips} role="status" aria-label="選択中の項目">
-              <Text weight="semibold">選択中:</Text>
+            <div className={s.chips} role="status" aria-label={t('選択中の項目')}>
+              <Text weight="semibold">{t('選択中:')}</Text>
               {otherSelected.map((id) => {
                 const p = bind(id);
                 const on = (p['data-highlight'] ?? '').includes('selected');
@@ -280,12 +282,12 @@ function GanttScreen() {
             </div>
           ) : null}
           {view === '2.5d' ? (
-            <canvas ref={canvasRef} className={s.canvas} role="img" aria-label="ガントチャート（2.5D）。工程を奥行きのある棒で表します。" />
+            <canvas ref={canvasRef} className={s.canvas} role="img" aria-label={t('ガントチャート（2.5D）。工程を奥行きのある棒で表します。')} />
           ) : null}
-          <div className={s.scroll} role="region" aria-label="ガントチャートの時間軸" tabIndex={0}>
-            <div className={s.chart} role="treegrid" aria-label="ガントチャート（Feature・工程）">
+          <div className={s.scroll} role="region" aria-label={t('ガントチャートの時間軸')} tabIndex={0}>
+            <div className={s.chart} role="treegrid" aria-label={t('ガントチャート（Feature・工程）')}>
               <div className={s.row} role="row">
-                <div role="columnheader" style={{ display: 'contents' }}><Text size={200} weight="semibold">Feature・工程</Text></div>
+                <div role="columnheader" style={{ display: 'contents' }}><Text size={200} weight="semibold">{t('Feature・工程')}</Text></div>
                 <div className={s.months} aria-hidden>
                   {model.months.map((m) => <Text key={m.label} size={200} className={s.month} style={{ left: `${m.leftPct}%` }}>{m.label}</Text>)}
                 </div>
@@ -310,9 +312,9 @@ function GanttScreen() {
                       >
                         {g.feature.title}
                       </Button>
-                      <Text size={200}>{g.tasks.length} 件の工程</Text>
+                      <Text size={200}>{t('{n} 件の工程', { n: g.tasks.length })}</Text>
                       {(g.feature.issueIds ?? []).length > 0 ? (
-                        <Text size={200}>課題: {(g.feature.issueIds ?? []).map((id) => issueTitle.get(id) ?? id).join('、')}</Text>
+                        <Text size={200}>{t('課題:')} {(g.feature.issueIds ?? []).map((id) => issueTitle.get(id) ?? id).join('、')}</Text>
                       ) : null}
                       </div>
                     </div>
@@ -322,49 +324,49 @@ function GanttScreen() {
               })}
               {model.orphans.length > 0 ? (
                 <div>
-                  <div role="row" className={mergeClasses(s.row, s.featureRow)}><div role="gridcell" style={{ display: 'contents' }}><Text weight="semibold" className={s.taskLabel}>Feature に属さない工程</Text></div></div>
+                  <div role="row" className={mergeClasses(s.row, s.featureRow)}><div role="gridcell" style={{ display: 'contents' }}><Text weight="semibold" className={s.taskLabel}>{t('Feature に属さない工程')}</Text></div></div>
                   {orphanRows.map(taskRow)}
                 </div>
               ) : null}
             </div>
           </div>
 
-          <section className={s.info} data-testid="task-info" aria-live="polite" aria-label="工程の詳細">
+          <section className={s.info} data-testid="task-info" aria-live="polite" aria-label={t('工程の詳細')}>
             {active ? (
               <>
                 <Text as="h3" size={400} weight="semibold">{active.title}</Text>
-                <Text>Feature: {(active.featureId && featureTitle.get(active.featureId)) || 'なし'}</Text>
-                <Text>開始日: {active.start ?? '未設定'}　終了日: {active.end ?? '未設定'}</Text>
-                <Text>担当: {active.owner ?? '未設定'}</Text>
-                <Text>作業内容: {active.work ?? '未設定'}</Text>
+                <Text>Feature: {(active.featureId && featureTitle.get(active.featureId)) || t('なし')}</Text>
+                <Text>{t('開始日:')} {active.start ?? t('未設定')}　{t('終了日:')} {active.end ?? t('未設定')}</Text>
+                <Text>{t('担当:')} {active.owner ?? t('未設定')}</Text>
+                <Text>{t('作業内容:')} {active.work ?? t('未設定')}</Text>
               </>
             ) : (
-              <Text>Feature を選ぶか、工程にカーソルを合わせる（フォーカスする）と、開始日・終了日・担当・作業内容を表示します。</Text>
+              <Text>{t('Feature を選ぶか、工程にカーソルを合わせる（フォーカスする）と、開始日・終了日・担当・作業内容を表示します。')}</Text>
             )}
           </section>
 
           {featureId !== undefined ? (
-            <section className={s.section} data-testid="feature-tasks" aria-label="選んだ Feature の工程">
-              <Text as="h3" size={400} weight="semibold">{featureTitle.get(featureId) ?? featureId} の工程</Text>
-              {selectedTasks.length === 0 ? <Text>この Feature の工程はありません。</Text> : (
-                <Table aria-label="工程の一覧" size="small">
+            <section className={s.section} data-testid="feature-tasks" aria-label={t('選んだ Feature の工程')}>
+              <Text as="h3" size={400} weight="semibold">{t('{title} の工程', { title: featureTitle.get(featureId) ?? featureId })}</Text>
+              {selectedTasks.length === 0 ? <Text>{t('この Feature の工程はありません。')}</Text> : (
+                <Table aria-label={t('工程の一覧')} size="small">
                   <TableHeader>
                     <TableRow>
-                      <TableHeaderCell>工程</TableHeaderCell>
-                      <TableHeaderCell>開始日</TableHeaderCell>
-                      <TableHeaderCell>終了日</TableHeaderCell>
-                      <TableHeaderCell>担当</TableHeaderCell>
-                      <TableHeaderCell>作業内容</TableHeaderCell>
+                      <TableHeaderCell>{t('工程')}</TableHeaderCell>
+                      <TableHeaderCell>{t('開始日')}</TableHeaderCell>
+                      <TableHeaderCell>{t('終了日')}</TableHeaderCell>
+                      <TableHeaderCell>{t('担当')}</TableHeaderCell>
+                      <TableHeaderCell>{t('作業内容')}</TableHeaderCell>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {selectedTasks.map(({ task }) => (
                       <TableRow key={task.id}>
                         <TableCell>{task.title}</TableCell>
-                        <TableCell>{task.start ?? '未設定'}</TableCell>
-                        <TableCell>{task.end ?? '未設定'}</TableCell>
-                        <TableCell>{task.owner ?? '未設定'}</TableCell>
-                        <TableCell>{task.work ?? '未設定'}</TableCell>
+                        <TableCell>{task.start ?? t('未設定')}</TableCell>
+                        <TableCell>{task.end ?? t('未設定')}</TableCell>
+                        <TableCell>{task.owner ?? t('未設定')}</TableCell>
+                        <TableCell>{task.work ?? t('未設定')}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -375,8 +377,8 @@ function GanttScreen() {
         </>
       )}
       {sites.length > 0 ? (
-        <section className={s.section} data-testid="gantt-sites" aria-label="工程の実施拠点">
-          <Text as="h3" size={400} weight="semibold">実施拠点</Text>
+        <section className={s.section} data-testid="gantt-sites" aria-label={t('工程の実施拠点')}>
+          <Text as="h3" size={400} weight="semibold">{t('実施拠点')}</Text>
           <div className={s.siteList}>
             {sites.map((site) => {
               const p = bind(site.id);

@@ -6,6 +6,7 @@ import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
 import { onEntityKey, useEntityBinding, useEntityGraph } from '../selection/hooks';
 import { usePackStore } from '../store/pack';
+import { useT } from '../i18n';
 
 const ORIGIN = 'sources';
 
@@ -38,29 +39,30 @@ const useStyles = makeStyles({
 
 function SourcesScreen() {
   const s = useStyles();
+  const t = useT();
   const hl = useHighlightClass();
   const bind = useEntityBinding(ORIGIN);
   const graph = useEntityGraph();
   const state = usePackStore((st) => st.state);
   const data = state.status === 'ready' ? state.pack.data : undefined;
-  if (!data || !graph) return <LoadingView label="出典を読み込み中" />;
+  if (!data || !graph) return <LoadingView label={t('出典を読み込み中')} />;
   const sources = data.sources.sources;
 
   return (
-    <Panel testId="component-sources" title="出典" description="各出典と、それを根拠にしている項目です。どちらを選んでも、ほかのビューで同じ項目が強調されます。" maxWidth="1200px">
+    <Panel testId="component-sources" title={t('出典')} description={t('各出典と、それを根拠にしている項目です。どちらを選んでも、ほかのビューで同じ項目が強調されます。')} maxWidth="1200px">
       {sources.length === 0 ? (
-        <EmptyView message="出典がありません。" />
+        <EmptyView message={t('出典がありません。')} />
       ) : (
-        <ul className={s.list} aria-label="出典の一覧">
+        <ul className={s.list} aria-label={t('出典の一覧')}>
           {sources.map((src) => {
             const props = bind(src.id);
             const cited = [...graph.neighbors(src.id)].map((id) => graph.node(id)).filter((n) => n !== undefined && n.kind !== 'source');
             return (
               <li key={src.id} data-testid="source-entry" className={mergeClasses(s.card, hl(props['data-highlight']))} tabIndex={0} {...props} onKeyDown={(e) => onEntityKey(e, src.id, ORIGIN)}>
                 <Text weight="semibold">{src.title}</Text>
-                <Text size={200}>{[src.kind, src.retrievedAt ? `取得 ${src.retrievedAt}` : '', src.confidence ? `確度 ${src.confidence}` : ''].filter(Boolean).join(' ／ ')}</Text>
+                <Text size={200}>{[src.kind, src.retrievedAt ? t('取得 {v}', { v: src.retrievedAt }) : '', src.confidence ? t('確度 {v}', { v: src.confidence }) : ''].filter(Boolean).join(t(' ／ '))}</Text>
                 {cited.length > 0 ? (
-                  <ul className={s.cited} aria-label={`${src.title} を根拠にする項目`}>
+                  <ul className={s.cited} aria-label={t('{title} を根拠にする項目', { title: src.title })}>
                     {cited.map((n) => {
                       const cp = bind(n!.id);
                       return (

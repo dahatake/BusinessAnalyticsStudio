@@ -1,6 +1,7 @@
 // メモ画面（FR-280）。端末内に保存される文章のコンポーネント。「Copilot の案」の「反映」で、表示と保存したデータを案の内容に更新する。
 import { Field, Text, Textarea, makeStyles, tokens } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
+import { useT } from '../i18n';
 import { registerReflector } from '../review/reviewStore';
 import { useMemoStore } from '../store/memo';
 
@@ -19,15 +20,16 @@ registerReflector('memo', reflectMemo);
 
 export function MemoScreen() {
   const s = useStyles();
+  const t = useT();
   const text = useMemoStore((st) => st.text);
   const author = useMemoStore((st) => st.author);
   const setText = useMemoStore((st) => st.setText);
   return (
-    <Panel testId="component-memo" title="メモ" description="この端末にだけ保存される自由なメモです。Copilot の案を「反映」すると、この内容が案の内容に変わります。" maxWidth="900px">
+    <Panel testId="component-memo" title={t('メモ')} description={t('この端末にだけ保存される自由なメモです。Copilot の案を「反映」すると、この内容が案の内容に変わります。')} maxWidth="900px">
       <div className={s.body}>
-        <Text className={s.shown} data-testid="memo-text">{text === '' ? '（メモはまだありません）' : text}</Text>
-        {author === 'ai-adopted' && text !== '' && <Text size={200}>Copilot の案を採用した内容です。</Text>}
-        <Field label="メモを編集">
+        <Text className={s.shown} data-testid="memo-text">{text === '' ? t('（メモはまだありません）') : text}</Text>
+        {author === 'ai-adopted' && text !== '' && <Text size={200}>{t('Copilot の案を採用した内容です。')}</Text>}
+        <Field label={t('メモを編集')}>
           <Textarea value={text} resize="vertical" onChange={(_, d) => setText(d.value)} />
         </Field>
       </div>
