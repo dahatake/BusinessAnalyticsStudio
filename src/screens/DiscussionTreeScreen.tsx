@@ -265,7 +265,7 @@ function DiscussionTreeScreen() {
 
           <div className={s.status}>
             <Text weight="semibold">{t('議題:')} {shown.themeTitle}</Text>
-            <Badge appearance="tint" color="informative">{doc ? modeLabel : t('パックの章・議題から作成（未生成）')}</Badge>
+            <Badge appearance="tint" color="informative">{doc ? t(modeLabel) : t('パックの章・議題から作成（未生成）')}</Badge>
             <Text size={200}>{t('ノード {n} 件', { n: shown.nodes.length })}</Text>
           </div>
 
