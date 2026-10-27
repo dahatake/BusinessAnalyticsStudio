@@ -5,6 +5,7 @@ import { Button, DialogBody, DialogContent, DialogTitle, makeStyles, tokens } fr
 import { Dismiss24Regular } from '@fluentui/react-icons';
 import { Dialog, DialogSurface } from '../components/Dialog';
 import { useSettingsModal } from '../store/settingsModal';
+import { useT } from '../i18n';
 import { SettingsScreen } from './SettingsScreen';
 
 const useStyles = makeStyles({
@@ -23,17 +24,18 @@ const useStyles = makeStyles({
 
 export function SettingsDialog() {
   const s = useStyles();
+  const t = useT();
   const open = useSettingsModal((st) => st.open);
   const setOpen = useSettingsModal((st) => st.setOpen);
   return (
     <Dialog open={open} modalType="modal" onOpenChange={(_, d) => setOpen(d.open)}>
-      <DialogSurface aria-label="設定" className={s.surface} data-testid="settings-dialog" backdrop={{ 'data-testid': 'modal-backdrop' } as never}>
+      <DialogSurface aria-label={t('設定')} className={s.surface} data-testid="settings-dialog" backdrop={{ 'data-testid': 'modal-backdrop' } as never}>
         <DialogBody className={s.body}>
           <DialogTitle
             aria-level={1} // NFR-A11Y-009 AC-484: モーダルの最初の見出しは h1（以降の「表示と接続の設定」h2・「ブランド」h3 と段が続く）
-            action={<Button appearance="subtle" aria-label="閉じる" icon={<Dismiss24Regular aria-hidden />} onClick={() => setOpen(false)} />}
+            action={<Button appearance="subtle" aria-label={t('閉じる')} icon={<Dismiss24Regular aria-hidden />} onClick={() => setOpen(false)} />}
           >
-            設定
+            {t('設定')}
           </DialogTitle>
           <DialogContent className={s.content}>
             <SettingsScreen />
