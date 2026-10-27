@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準（docs/requirements/app-core.md の AC-786〜AC-789）だけから決める。
 // トグルは文言（ボタン名 "English" / "日本語"）と aria-pressed で探す（実装のセレクターには依存しない）。
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, MAIN_SCREENS } from '../support/fixtures';
+import { test, expect, openScreen, MAIN_SCREENS, component } from '../support/fixtures';
 import { examplePack, PACK_FILES } from '../support/packs';
 
 const mono = examplePack('mono');
@@ -118,9 +118,9 @@ test.describe('FR-L10N 表示言語の切り替え', () => {
     await openScreen(page, 'priority');
     await toggle(page, '日本語').click();
     await expect(page.locator('html')).toHaveAttribute('lang', /^ja/);
-    await expect(page.getByTestId('priority'), '言語の切り替えで開いている画面が変わった').toBeVisible();
+    await expect(component(page, 'priority'), '言語の切り替えで開いている画面が変わった').toBeVisible();
     await toggle(page, 'English').click();
-    await expect(page.getByTestId('priority')).toBeVisible();
+    await expect(component(page, 'priority')).toBeVisible();
     // 通知・空の状態・エラーの文言
     for (const t of await japaneseTexts(page, allow)) bad.push(`通知・空の状態: ${t}`);
     expect(bad, '通知・エラー・空の状態に日本語が残っている').toEqual([]);
