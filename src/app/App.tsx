@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { MessageBar, MessageBarBody, MessageBarTitle, tokens } from '@fluentui/react-components';
+import { LanguageToggle } from '../i18n/LanguageToggle';
 import { AiStatus } from '../ai/AiStatus';
 import { CopilotReviewButton } from '../review/CopilotReviewButton';
 import { ExplainButton, ExplainHost } from '../explain/ExplainPanel';
@@ -170,6 +171,7 @@ export function App() {
         <AudioDirector scene={scene} />
         <WelcomeAuto ready={opened} />
         <GuideHost />
+        <div style={{ position: 'fixed', top: 8, right: 12, zIndex: 10 }}><LanguageToggle /></div>
         <MainScreen />
       </>
     );
@@ -196,7 +198,7 @@ export function App() {
         screens={NAV_SCREENS /* FR-220 AC-590: 左メニューには nav: false の画面を出さない */}
         onSelect={onSelect}
         stepper={<Stepper onNavigate={onSelect} />}
-        headerExtra={<><CopilotReviewButton /><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><ExplainButton /><StatusAndSettings><AiStatus /><SettingsButton /></StatusAndSettings></>}
+        headerExtra={<><LanguageToggle /><CopilotReviewButton /><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><ExplainButton /><StatusAndSettings><AiStatus /><SettingsButton /></StatusAndSettings></>}
         actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><AutoSizeSwitch /><ScreenViewButton /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /><GuideButton /></>}
         dock={<Dock screens={COMPONENT_SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
