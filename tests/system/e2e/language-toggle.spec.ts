@@ -80,13 +80,20 @@ test.describe('FR-L10N 表示言語の切り替え', () => {
     const allow = packTexts();
     const bad: string[] = [];
     for (const [key, name] of MAIN_SCREENS) {
-      if (key === 'settings') continue; // 設定は別の入口（ツールバー）のため、英語では下で確認する
-      await openScreen(page, key);
+      await openScreen(page, key); // 設定はモーダル（ツールバーのボタン）。開いたまま走査する
       for (const t of await japaneseTexts(page, allow)) bad.push(`${name}: ${t}`);
-    }
+      if (key === 'settings') await page.keyboard.press('Escape'); // 英語ではモーダル名が違うので Esc で閉じる
+    }モーダルを閉じ、コマンドパレット（Ctrl+K）も走査する（AC-788: アプリの全画面）
+    await page.keyboard.press('Escape');
+    await page.keyboard.press('Control+k');
+    await expect(page.getByRole('dialog').first(), 'コマンドパレットが開かない').toBeVisible();
+    for (const t of await japaneseTexts(page, allow)) bad.push(`コマンドパレット: ${t}`);
+    await page.keyboard.press('Escape');
     expect(bad, '英語選択後に日本語が残っている').toEqual([]);
 
     // AC-789: 開いている画面の選択は、言語を切り替えても保たれる
+    await closeSettings(page).catch(() => {}); // 英語中は名前が違うため閉じられないことがある
+    await page.keyboard.press('Escape');
     await openScreen(page, 'priority');
     await toggle(page, '日本語').click();
     await expect(page.locator('html')).toHaveAttribute('lang', /^ja/);
