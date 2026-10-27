@@ -2012,9 +2012,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "dcc0359",
-      "last_run_at": "2026-10-27T17:59:56+09:00",
-      "evidence": "work/runs/202610271339/logs/system-test/E2E-162-202610271759.log",
+      "last_commit": "87d4a87",
+      "last_run_at": "2026-10-27T23:38:38+09:00",
+      "evidence": "work/runs/202610272231/logs/system-test/E2E-162-202610272337.log",
       "history": [
         {
           "at": "2026-10-12T14:07:28+09:00",
@@ -6523,9 +6523,9 @@
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat --workers=1",
       "canary": true,
       "status": "pass",
-      "last_commit": "dcc0359",
-      "last_run_at": "2026-10-27T17:59:56+09:00",
-      "evidence": "work/runs/202610271339/logs/system-test/E2E-345-202610271759.log",
+      "last_commit": "87d4a87",
+      "last_run_at": "2026-10-27T23:38:38+09:00",
+      "evidence": "work/runs/202610272231/logs/system-test/E2E-345-202610272337.log",
       "history": [
         {
           "at": "2026-10-21T17:19:59+09:00",
@@ -6561,9 +6561,9 @@
       "command": "node tests/system/run.mjs AC-593",
       "canary": true,
       "status": "pass",
-      "last_commit": "dcc0359",
-      "last_run_at": "2026-10-27T17:59:56+09:00",
-      "evidence": "work/runs/202610271339/logs/system-test/E2E-346-202610271759.log",
+      "last_commit": "87d4a87",
+      "last_run_at": "2026-10-27T23:38:38+09:00",
+      "evidence": "work/runs/202610272231/logs/system-test/E2E-346-202610272337.log",
       "history": [
         {
           "at": "2026-10-21T17:32:44+09:00",
@@ -6746,9 +6746,9 @@
       "command": "node tests/system/run.mjs AC-598",
       "canary": true,
       "status": "pass",
-      "last_commit": "dcc0359",
-      "last_run_at": "2026-10-27T17:59:56+09:00",
-      "evidence": "work/runs/202610271339/logs/system-test/E2E-351-202610271759.log",
+      "last_commit": "87d4a87",
+      "last_run_at": "2026-10-27T23:38:38+09:00",
+      "evidence": "work/runs/202610272231/logs/system-test/E2E-351-202610272337.log",
       "history": [
         {
           "at": "2026-10-21T17:33:47+09:00",
@@ -11328,9 +11328,9 @@
       "command": "node tests/system/run.mjs AC-788",
       "canary": false,
       "status": "pass",
-      "last_commit": "b031268",
-      "last_run_at": "2026-10-27T20:35:11+09:00",
-      "evidence": "work/runs/202610271339/logs/system-test/E2E-448-202610272034.log",
+      "last_commit": "87d4a87",
+      "last_run_at": "2026-10-27T23:38:38+09:00",
+      "evidence": "work/runs/202610272231/logs/system-test/E2E-448-202610272338.log",
       "history": [
         {
           "at": "2026-10-27T13:45:35+09:00",
