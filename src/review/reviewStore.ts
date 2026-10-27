@@ -29,6 +29,12 @@ interface ReviewState {
   done: Record<string, true>;
   /** 案を反映し終えた。そのコンポーネントの状態だけを変える（FR-280） */
   reflected: (key: string) => void;
+  /** 反映の失敗の案内（原因と次の行動）。案・編集内容・反映済みの状態は変えない（FR-281） */
+  failure: Record<string, string>;
+  reflectFailed: (key: string, text: string) => void;
+  /** 取り消せる反映（直前の内容を端末内に退避してある）のコンポーネント */
+  undoable: Record<string, true>;
+  undone: (key: string) => void;
   setConfirm: (c: { targets: ReviewTarget[] } | null) => void;
 }
 
@@ -39,7 +45,7 @@ export const useReviewStore = create<ReviewState>()((set) => ({
     const none: Record<string, true> = {};
     for (const k of all) if (!(k in proposals)) none[k] = true;
     set({
-      run: 'done', proposals, none, done: {}, notice: warning ?? null,
+      run: 'done', proposals, none, done: {}, failure: {}, undoable: {}, notice: warning ?? null,
       message: tr('Copilot の分析が完了しました。案は {n} 件です。', { n: Object.keys(proposals).length }),
     });
   },
@@ -56,7 +62,17 @@ export const useReviewStore = create<ReviewState>()((set) => ({
     const { [key]: _d, ...done } = s.done;
     return { proposals, none, done, message: tr('案を破棄しました。') };
   }),
-  reflected: (key) => set((s) => ({ done: { ...s.done, [key]: true }, message: tr('案を反映しました。') })),
+  reflected: (key) => set((s) => {
+    const { [key]: _f, ...failure } = s.failure;
+    return { done: { ...s.done, [key]: true }, failure, undoable: undos.has(key) ? { ...s.undoable, [key]: true } : s.undoable, message: tr('案を反映しました。') };
+  }),
+  failure: {}, undoable: {},
+  reflectFailed: (key, text) => set((s) => ({ failure: { ...s.failure, [key]: text }, message: text })),
+  undone: (key) => set((s) => {
+    const { [key]: _d, ...done } = s.done;
+    const { [key]: _u, ...undoable } = s.undoable;
+    return { done, undoable, message: tr('反映を取り消し、反映前の内容に戻しました。') };
+  }),
   setConfirm: (confirm) => set({ confirm }),
 }));
 
@@ -78,12 +94,19 @@ export function answerSend(ok: boolean): void {
   r?.(ok);
 }
 
-/** 反映（FR-280）の部品。反映に対応するコンポーネントが、コンポーネントの key で登録する。登録がなければ「反映」は押せない */
+/** 反映（FR-280）の部品。反映に対応するコンポーネントが、コンポーネントの key で登録する。登録がなければ「反映」は押せない。
+ *  反映の取り消し（FR-281）に対応するコンポーネントは、反映の直前の内容を返す snapshot と、その内容に戻す restore を併せて登録する */
+export interface ReflectUndo { snapshot: () => unknown; restore: (before: unknown) => void | Promise<void> }
 const reflectors = new Map<string, (text: string) => void | Promise<void>>();
-export function registerReflector(key: string, fn: (text: string) => void | Promise<void>): () => void {
+const undos = new Map<string, ReflectUndo>();
+export function registerReflector(key: string, fn: (text: string) => void | Promise<void>, undo?: ReflectUndo): () => void {
   reflectors.set(key, fn);
-  return () => { if (reflectors.get(key) === fn) reflectors.delete(key); };
+  if (undo) undos.set(key, undo); else undos.delete(key);
+  return () => { if (reflectors.get(key) === fn) { reflectors.delete(key); undos.delete(key); } };
 }
 export function reflectorOf(key: string): ((text: string) => void | Promise<void>) | undefined {
   return reflectors.get(key);
+}
+export function undoOf(key: string): ReflectUndo | undefined {
+  return undos.get(key);
 }

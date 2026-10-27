@@ -10,7 +10,7 @@ import type { UsageGate } from '../ai/foundryUsage';
 export interface ReviewTarget { id: string; label: string; data: string }
 
 export type ReviewReply =
-  | { ok: true; reviews: Array<{ id: string; proposal: string }> }
+  | { ok: true; reviews: Array<{ id: string; proposal: string }>; usage?: { inputTokens: number; outputTokens: number } }
   | { ok: false; reason: FoundryUnavailableReason };
 
 const PROMPT_OVERHEAD_CHARS = 2000;
@@ -36,14 +36,17 @@ export async function requestReview(
   if (!relayUrl || !isLoopbackUrl(relayUrl)) return { ok: false, reason: 'relay' };
   try {
     const r = await f(`${relayUrl}/foundry/review`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(req) });
-    const j = (await r.json()) as { reviews?: unknown; mode?: string; reason?: FoundryUnavailableReason };
+    const j = (await r.json()) as { reviews?: unknown; mode?: string; reason?: FoundryUnavailableReason; usage?: { inputTokens?: unknown; outputTokens?: unknown } };
     if (j.mode === 'unavailable') return { ok: false, reason: j.reason ?? 'error' };
     if (!r.ok || !Array.isArray(j.reviews)) return { ok: false, reason: 'error' };
     const reviews: Array<{ id: string; proposal: string }> = [];
     for (const x of j.reviews as Array<{ id?: unknown; proposal?: unknown }>) {
       if (typeof x?.id === 'string' && typeof x.proposal === 'string') reviews.push({ id: x.id, proposal: x.proposal });
     }
-    return { ok: true, reviews };
+    const u = j.usage;
+    const usage = u && Number.isFinite(u.inputTokens) && Number.isFinite(u.outputTokens) && (u.inputTokens as number) >= 0 && (u.outputTokens as number) >= 0
+      ? { inputTokens: u.inputTokens as number, outputTokens: u.outputTokens as number } : undefined;
+    return { ok: true, reviews, ...(usage ? { usage } : {}) };
   } catch {
     return { ok: false, reason: 'relay' };
   }
@@ -56,7 +59,7 @@ export interface ReviewDeps {
   includesPerson: boolean;
   /** 設定済み・実接続の有効を中継から読む。届かないときは null */
   view: () => Promise<FoundryView | null>;
-  usage: { check: () => UsageGate; count: (tokensIn: number) => void };
+  usage: { check: () => UsageGate; count: (tokensIn: number, tokensOut?: number) => void };
   /** 送信前の確認（送る情報の種類と対象の一覧を示す）。取り消しで false */
   confirmSend: (targets: readonly ReviewTarget[]) => Promise<boolean>;
   /** 種別「人」の確認（FR-219）。含まないときは呼ばれない */
@@ -93,7 +96,9 @@ export async function runReview(deps: ReviewDeps, all: readonly ReviewTarget[]):
     ...(deps.includesPerson ? { includesPerson: true, personConfirmed: true } : {}),
     components: targets.map((t) => ({ id: t.id, data: t.data })),
   });
-  deps.usage.count(reviewTokens(targets));
+  // 応答が利用量を示すときはそれを数える（NFR-COST-001）。示さない・失敗のときは送った量の見積り
+  if (r.ok && r.usage) deps.usage.count(r.usage.inputTokens, r.usage.outputTokens);
+  else deps.usage.count(reviewTokens(targets));
   if (!r.ok) return { kind: 'failed', reason: r.reason, text: foundryReasonText(r.reason) };
   // 結果は、依頼した id のコンポーネントの案としてだけ使う（AC-717）
   const sent = new Set(targets.map((t) => t.id));

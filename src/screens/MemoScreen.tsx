@@ -3,20 +3,30 @@ import { Field, Text, Textarea, makeStyles, tokens } from '@fluentui/react-compo
 import { Panel } from '../components/Panel';
 import { useT } from '../i18n';
 import { registerReflector } from '../review/reviewStore';
-import { useMemoStore } from '../store/memo';
+import { MEMO_STORAGE_KEY, useMemoStore, type MemoAuthor } from '../store/memo';
 
 const useStyles = makeStyles({
   body: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM },
   shown: { whiteSpace: 'pre-wrap', overflowWrap: 'anywhere' },
 });
 
-/** 案の「反映」の部品。メモのデータを案の内容で更新する（作成者の種別は AI 提案の採用） */
-export function reflectMemo(text: string): void {
-  useMemoStore.getState().setText(text, 'ai-adopted');
+/** メモの保存データを書く。保存先に書けなければ（容量・権限）例外にし、画面の状態は変えない（FR-281: 画面とデータのどちらか一方だけを更新しない） */
+function writeMemo(text: string, author: MemoAuthor): void {
+  localStorage.setItem(MEMO_STORAGE_KEY, JSON.stringify({ state: { text, author }, version: 1 }));
+  useMemoStore.setState({ text, author });
 }
 
-// 反映の部品は、画面を読み込んだ時点で登録する（案の「反映」の可否が、描画の順序に左右されないように）
-registerReflector('memo', reflectMemo);
+/** 案の「反映」の部品。メモのデータを案の内容で更新する（作成者の種別は AI 提案の採用） */
+export function reflectMemo(text: string): void {
+  writeMemo(text, 'ai-adopted');
+}
+
+// 反映の部品は、画面を読み込んだ時点で登録する（案の「反映」の可否が、描画の順序に左右されないように）。
+// 取り消し（FR-281）のため、反映の直前のメモを退避し、そこへ戻す
+registerReflector('memo', reflectMemo, {
+  snapshot: () => { const s = useMemoStore.getState(); return { text: s.text, author: s.author }; },
+  restore: (b) => { const p = b as { text: string; author: MemoAuthor }; writeMemo(p.text, p.author); },
+});
 
 export function MemoScreen() {
   const s = useStyles();
