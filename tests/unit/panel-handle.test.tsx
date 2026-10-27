@@ -89,7 +89,7 @@ describe('FR-183 ハンドル', () => {
   });
 
   // FR-183 AC-388 FR-185 AC-392 FR-184 AC-390
-  it('FR-183 AC-388 ハンドルのドラッグで追従して動き、ドロップで重ならない位置が保存される。本体のドラッグでは動かない', () => {
+  it('FR-183 AC-388 ハンドルのドラッグで追従して動き、ドロップで置いた位置が保存される（FR-173・Q-066 B: 重なりを許し、掴んだものが手前に出る）。本体のドラッグでは動かない', () => {
     render(wrap(<Workspace screens={screens} />));
     const ptr = (target: Element | Window, type: string, x: number, y: number) =>
       fireEvent(target, new MouseEvent(type, { bubbles: true, cancelable: true, button: 0, clientX: x, clientY: y }));
@@ -108,6 +108,10 @@ describe('FR-183 ハンドル', () => {
     expect(f.a).toBeDefined();
     expect(f.b).toBeDefined();
     const ov = Math.max(0, Math.min(f.a!.x + f.a!.w, f.b!.x + f.b!.w) - Math.max(f.a!.x, f.b!.x)) * Math.max(0, Math.min(f.a!.y + f.a!.h, f.b!.y + f.b!.h) - Math.max(f.a!.y, f.b!.y));
-    expect(ov).toBeLessThan(0.0001);
+    // Q-066 B（2026-10-27）: 自由な移動はほかを押し出さず、重なりを許す。掴んだ a が手前（z 順の最後）に出る（AC-348）
+    expect(ov).toBeGreaterThan(0.0001);
+    expect(f.b).toEqual({ x: 0.5, y: 0, w: 0.5, h: 1 }); // b は元の位置・大きさのまま（押し出されない）
+    const z = useLayout.getState().zOrder;
+    expect(z[z.length - 1]).toBe('a');
   });
 });

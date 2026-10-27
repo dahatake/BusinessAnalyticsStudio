@@ -37,7 +37,7 @@ export function paneCommands(current: () => PaneInfo | null, notify: (text: stri
     { id: 'pane.move.left', label: L('左へ移動'), keywords: [...kw, '移動', 'move'], run: moving((p) => p.move('left')) },
     { id: 'pane.move.right', label: L('右へ移動'), keywords: [...kw, '移動', 'move'], run: moving((p) => p.move('right')) },
     { id: 'pane.direction', label: L('並べる方向を変える（横/縦）'), keywords: [...kw, '方向', '横', '縦'], run: moving((p) => p.toggleDirection()) },
-    ...(['left', 'right', 'top', 'bottom', 'quad', 'third', 'tabs'] as const).map<Command>((k) => ({
+    ...(['left', 'right', 'top', 'bottom', 'quad', 'third', 'tabs', 'maximize'] as const).map<Command>((k) => ({
       id: `pane.snap.${k}`,
       label: `${tr('画面に配置: {kind}', { kind: tr(SNAP_LABEL[k]) })}${tr('（操作中のコンポーネント）')}`,
       keywords: [...kw, '画面に配置', 'スナップ', 'snap'],

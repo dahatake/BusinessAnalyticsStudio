@@ -2,7 +2,7 @@
 // 置ける配置は重ならない配置（分割・タブ）に限る。ドラッグなしでも、同じ候補（SnapKind）から配置先を選べる（NFR-A11Y-004）。
 import { hide, keysOf, leaf, mergeIntoTabs, split, type Dir, type Layout, type LayoutNode, type TabsNode } from './layoutModel';
 
-export type SnapKind = 'left' | 'right' | 'top' | 'bottom' | 'quad' | 'third' | 'tabs';
+export type SnapKind = 'left' | 'right' | 'top' | 'bottom' | 'quad' | 'third' | 'tabs' | 'maximize';
 export type Edge = 'left' | 'right' | 'top' | 'bottom';
 export type Corner = 'tl' | 'tr' | 'bl' | 'br';
 
@@ -17,12 +17,12 @@ export interface SnapOpts {
 
 /** 候補の表示名（ボタン・メニューの名前） */
 export const SNAP_LABEL: Record<SnapKind, string> = {
-  left: '左半分', right: '右半分', top: '上半分', bottom: '下半分', quad: '4 分割', third: '3 分割', tabs: 'タブ化',
+  left: '左半分', right: '右半分', top: '上半分', bottom: '下半分', quad: '4 分割', third: '3 分割', tabs: 'タブ化', maximize: '最大化',
 };
 
-const ALL_KINDS: readonly SnapKind[] = ['left', 'right', 'top', 'bottom', 'quad', 'third', 'tabs'];
+const ALL_KINDS: readonly SnapKind[] = ['left', 'right', 'top', 'bottom', 'quad', 'third', 'tabs', 'maximize'];
 /** 狭い画面（縦積み）で成り立つ候補（FR-152 AC-267） */
-const COMPACT_KINDS: readonly SnapKind[] = ['top', 'bottom', 'tabs'];
+const COMPACT_KINDS: readonly SnapKind[] = ['top', 'bottom', 'tabs', 'maximize'];
 
 export function snapKindsFor(compact: boolean): readonly SnapKind[] {
   return compact ? COMPACT_KINDS : ALL_KINDS;
@@ -34,6 +34,8 @@ export function defaultSnapKind(edges: readonly Edge[], compact: boolean): SnapK
   const v = edges.find((e) => e === 'top' || e === 'bottom');
   if (compact) return v === 'bottom' ? 'bottom' : v === 'top' ? 'top' : 'tabs';
   if (h && v) return 'quad';
+  // 上端のドラッグの結果は最大化に統一する（上半分はキーボード・メニューで選ぶ。FR-152 AC-793）
+  if (v === 'top') return 'maximize';
   return (h ?? v ?? 'left') as SnapKind;
 }
 
@@ -98,6 +100,8 @@ export function snapLayout(layout: Layout, key: string, kind: SnapKind, opts: Sn
       const target = opts.tabTarget && others.includes(opts.tabTarget) ? opts.tabTarget : others[0];
       return target ? mergeIntoTabs(layout, key, target) : layout;
     }
+    // 最大化は配置を変えない（ほかのコンポーネントは元の配置のまま背面へ回る。FR-152 AC-793・AC-795）
+    case 'maximize': return layout;
   }
 }
 
@@ -121,5 +125,6 @@ export function snapRect(area: RectLike, kind: SnapKind, opts: SnapOpts = {}, ta
       return { left: opts.edge === 'right' ? left + (w * 2) / 3 : left, top, width: w / 3, height: h };
     }
     case 'tabs': return tabRect ?? area;
+    case 'maximize': return { left, top, width: w, height: h };
   }
 }

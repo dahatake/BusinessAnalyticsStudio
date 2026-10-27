@@ -58,7 +58,7 @@ const useStyles = makeStyles({
     ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`, outlineOffset: '-2px' },
   },
   paneBody: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minHeight: 0, minWidth: 0, overflow: 'auto', boxSizing: 'border-box', rowGap: tokens.spacingVerticalS, padding: `0 ${tokens.spacingHorizontalL} ${tokens.spacingVerticalS}` },
-  maximized: { position: 'absolute', inset: 0, zIndex: 10, height: 'auto' },
+  maximized: { position: 'absolute', inset: 0, zIndex: 900, height: 'auto' },
   // 縁・角のつまみ（FR-224）。当たり判定は 8px 以上。ホバーで色の付いた線を見せる
   resize: { position: 'absolute', zIndex: 3, touchAction: 'none', ':hover': { backgroundColor: tokens.colorNeutralStrokeAccessible } },
   resizeE: { top: '16px', right: 0, bottom: '12px', width: '8px', cursor: 'ew-resize' },
@@ -232,10 +232,10 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
         // 掴み場所（ハンドル）: ドラッグで移動し、ダブルクリックで 75% 表示にする。本体では行わない（FR-183）
         <div
           data-testid="panel-handle"
-          className={mergeClasses(s.handle, !pane.maximized && !pane.expanded ? s.handleGrab : undefined)}
+          className={mergeClasses(s.handle, !pane.expanded ? s.handleGrab : undefined)}
           onDoubleClick={titleDoubleClick(pane)}
-          onMouseDown={!pane.maximized && !pane.expanded ? (e: MouseEvent<HTMLElement>) => { if (e.button === 0 && e.detail < 2) e.preventDefault(); } : undefined}
-          onPointerDown={!pane.maximized && !pane.expanded ? (e: PointerEvent<HTMLElement>) => { if (e.button === 0) { e.preventDefault(); pane.startDrag(e); } } : undefined}
+          onMouseDown={!pane.expanded ? (e: MouseEvent<HTMLElement>) => { if (e.button === 0 && e.detail < 2) e.preventDefault(); } : undefined}
+          onPointerDown={!pane.expanded ? (e: PointerEvent<HTMLElement>) => { if (e.button === 0) { e.preventDefault(); pane.startDrag(e); } } : undefined}
         >
           <span data-testid="panel-handle-grip" className={s.grip} aria-hidden />
         </div>
@@ -249,12 +249,12 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
               size={pane && compact ? 500 : 600}
               weight="semibold"
               block
-              className={mergeClasses(pane && !pane.maximized && !pane.expanded ? s.grab : undefined, pane && compact ? s.titleCompact : undefined)}
+              className={mergeClasses(pane && !pane.expanded ? s.grab : undefined, pane && compact ? s.titleCompact : undefined)}
               tabIndex={pane ? 0 : undefined}
               onContextMenu={pane ? (e: MouseEvent<HTMLElement>) => { e.preventDefault(); setMenuOpen(true); } : undefined}
               onDoubleClick={titleDoubleClick(pane)}
-              onMouseDown={pane && !pane.maximized && !pane.expanded ? (e: MouseEvent<HTMLElement>) => { if (e.button === 0 && e.detail < 2) e.preventDefault(); } : undefined}
-              onPointerDown={pane && !pane.maximized && !pane.expanded ? (e: PointerEvent<HTMLElement>) => { if (e.button === 0) { e.preventDefault(); pane.startDrag(e); } } : undefined}
+              onMouseDown={pane && !pane.expanded ? (e: MouseEvent<HTMLElement>) => { if (e.button === 0 && e.detail < 2) e.preventDefault(); } : undefined}
+              onPointerDown={pane && !pane.expanded ? (e: PointerEvent<HTMLElement>) => { if (e.button === 0) { e.preventDefault(); pane.startDrag(e); } } : undefined}
             >
               {title}
             </Text>
