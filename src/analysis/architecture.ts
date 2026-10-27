@@ -20,9 +20,9 @@ export type ArchView = 'asis' | 'tobe';
 
 export type DiffKind = 'added' | 'removed' | 'changed' | 'same';
 export const DIFF_LABEL: Record<Exclude<DiffKind, 'same'>, string> = {
-  get added() { return tr('追加'); },
-  get removed() { return tr('削除'); },
-  get changed() { return tr('変更'); },
+  get added() { return tr('追加', undefined, 'status'); },
+  get removed() { return tr('削除', undefined, 'status'); },
+  get changed() { return tr('変更', undefined, 'status'); },
 };
 
 export interface DiffElement { element: ArchElement; diff: DiffKind }
