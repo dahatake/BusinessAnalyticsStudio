@@ -106,7 +106,7 @@
     "AC-163": "sha256:2bf612a5a99a5cd7",
     "AC-165": "sha256:972a9d2203aa6e2a",
     "AC-167": "sha256:a0579d8ded28b12b",
-    "AC-168": "sha256:97981e80f214d572",
+    "AC-168": "sha256:3a8d69ec778024c6",
     "AC-169": "sha256:dd790c408f3b7413",
     "AC-170": "sha256:4148ad966010dbb7",
     "AC-172": "sha256:c4041eff2e77946f",
@@ -333,7 +333,10 @@
     "AC-774": "sha256:b022e1c73dde6367",
     "AC-775": "sha256:5027e48468b7da1a",
     "AC-778": "sha256:8350fd04a65308f1",
-    "AC-785": "sha256:46c7dcb2989d1069"
+    "AC-785": "sha256:46c7dcb2989d1069",
+    "AC-786": "sha256:3da2b81d12c38b20",
+    "AC-788": "sha256:dd03f200b32993a3",
+    "AC-789": "sha256:370eb98e94b0953e"
   },
   "cases": [
     {
@@ -11283,6 +11286,57 @@
           "by": "test-designer",
           "change": "ac_ids: ['AC-778', 'AC-784'] -> ['AC-778']",
           "reason": "AC-784 は検証レベル=integration のため System Test の対象外。E2E のシナリオは AC-778 の前提操作として残す"
+        }
+      ]
+    },
+    {
+      "id": "E2E-447",
+      "requirement_ids": [
+        "FR-293"
+      ],
+      "ac_ids": [
+        "AC-786"
+      ],
+      "title": "言語トグル: 初回 ja・英語切替で lang=en・aria-pressed・保存値不正は ja",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-786",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-27T13:45:31+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "AC-786 のケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-448",
+      "requirement_ids": [
+        "FR-294"
+      ],
+      "ac_ids": [
+        "AC-788",
+        "AC-789"
+      ],
+      "title": "英語選択で主要画面に日本語が現れず、画面の選択が保たれ、日本語に戻る",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-788",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-27T13:45:35+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "AC-788 AC-789 のケースを作成"
         }
       ]
     }
