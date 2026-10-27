@@ -7,6 +7,7 @@ import { useSettingsModal } from '../store/settingsModal';
 import { isLoopbackUrl } from './client';
 import { FOUNDRY_CHANGED_EVENT } from './foundryClient';
 import { confirmedSendKinds } from './sendKinds';
+import { tr } from '../i18n';
 
 export type GenAiProvider = 'foundry' | 'copilot';
 
@@ -23,7 +24,7 @@ export function providerDisplayName(p: GenAiProvider): string {
 
 /** 上部の状態表示の文言。実接続が無効なら「モック」、有効なら「有効」（「接続済み」は POST /ask の表示と区別するため使わない） */
 export function genAiStatusLabel(s: GenAiProviderState): string {
-  return `生成AI: ${providerDisplayName(s.provider)}（${s.enabled ? '有効' : 'モック'}）`;
+  return tr('生成AI: {name}（{state}）', { name: providerDisplayName(s.provider), state: s.enabled ? tr('有効') : tr('モック') });
 }
 
 /** 中継の応答を状態に直す。中継に届かない・旧中継は Microsoft Foundry・モックとして扱う */

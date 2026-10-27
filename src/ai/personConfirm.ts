@@ -6,6 +6,7 @@ import { create } from 'zustand';
 import { askAi, type AiEnv, type AiRequest, type AiResult } from './client';
 import { consentKeyOf, type ConsentRecord } from './consent';
 import { useConsentStore } from './useConsent';
+import { tr } from '../i18n';
 
 /** 外部へ出る先の種類 */
 export type PersonDestination = 'ai' | 'export';
@@ -81,12 +82,12 @@ export async function gatePersonConfirm(g: PersonGateInput): Promise<PersonGateR
   const req: PersonConfirmRequest = { destination: g.destination, scopeLabel: g.scopeLabel, personCount, confirmedOn: g.consent?.confirmedOn };
   if (!g.consent) {
     await g.confirm(req); // 続行できない確認。閉じるだけ
-    return { allowed: false, asked: true, reason: NO_CONSENT_REASON };
+    return { allowed: false, asked: true, reason: tr(NO_CONSENT_REASON) };
   }
   const sig = [g.destination, personCount, contentFingerprint(g.data), g.consent.confirmedOn, g.consent.note].join('|');
   if (memory.has(sig)) return { allowed: true, asked: false };
   const d = await g.confirm(req);
-  if (d !== 'proceed') return { allowed: false, asked: true, reason: CANCELLED_REASON };
+  if (d !== 'proceed') return { allowed: false, asked: true, reason: tr(CANCELLED_REASON) };
   memory.add(sig);
   return { allowed: true, asked: true };
 }
