@@ -19,6 +19,7 @@ import { useView3D } from '../store/view3d';
 import { QUALITIES } from '../three/quality';
 import { cycleIntensity } from './IntensityIndicator';
 import { readNarration } from './extras';
+import { tr, useT } from '../i18n';
 
 /** 全画面の表示を切り替える（対応していない環境では何もしない） */
 export function toggleFullscreen(): void {
@@ -76,6 +77,7 @@ export function ShowControlActions() {
   const laser = useShowUi((s) => s.laser);
   const setLaser = useShowUi((s) => s.setLaser);
   const replay = useOpening((s) => s.replay);
+  const t = useT();
   const btn = (label: string, icon: ReactElement, onClick: () => void, extra?: { pressed?: boolean; title?: string }) => (
     <Button
       size="small"
@@ -89,14 +91,14 @@ export function ShowControlActions() {
   );
   return (
     <>
-      {btn(playing ? 'アニメーションを停止' : 'アニメーションを再生', playing ? <Pause20Regular aria-hidden /> : <Play20Regular aria-hidden />, toggleAnimation, { title: 'アニメーションの再生／停止（P キー）' })}
-      {btn(`演出強度: ${intensity}`, <Sparkle20Regular aria-hidden />, () => cycleIntensity(intensity), { title: `演出強度の切替（E キー）: ${intensity}` })}
-      {btn(`3D 品質: ${quality}`, <Cube20Regular aria-hidden />, cycleQuality, { title: `3D の品質の切替: ${quality}` })}
-      {btn(dark ? 'テーマ: Dark（Light に切替）' : 'テーマ: Light（Dark に切替）', dark ? <WeatherMoon20Regular aria-hidden /> : <WeatherSunny20Regular aria-hidden />, toggleTheme)}
-      {btn(fullscreen ? '全画面を終了' : '全画面', fullscreen ? <ArrowMinimize20Regular aria-hidden /> : <ArrowMaximize20Regular aria-hidden />, toggleFullscreen, { title: '全画面の切替（F キー）' })}
-      {btn('プレゼンタービュー', <Presenter20Regular aria-hidden />, () => setPresenterView(!presenterView), { pressed: presenterView })}
-      {btn('レーザーポインター', <CursorHover20Regular aria-hidden />, () => setLaser(!laser), { pressed: laser })}
-      {btn('オープニングを再生', <MoviesAndTv20Regular aria-hidden />, replay)}
+      {btn(playing ? t('アニメーションを停止') : t('アニメーションを再生'), playing ? <Pause20Regular aria-hidden /> : <Play20Regular aria-hidden />, toggleAnimation, { title: t('アニメーションの再生／停止（P キー）') })}
+      {btn(t('演出強度: {value}', { value: intensity }), <Sparkle20Regular aria-hidden />, () => cycleIntensity(intensity), { title: t('演出強度の切替（E キー）: {value}', { value: intensity }) })}
+      {btn(t('3D 品質: {value}', { value: quality }), <Cube20Regular aria-hidden />, cycleQuality, { title: t('3D の品質の切替: {value}', { value: quality }) })}
+      {btn(dark ? t('テーマ: Dark（Light に切替）') : t('テーマ: Light（Dark に切替）'), dark ? <WeatherMoon20Regular aria-hidden /> : <WeatherSunny20Regular aria-hidden />, toggleTheme)}
+      {btn(fullscreen ? t('全画面を終了') : t('全画面'), fullscreen ? <ArrowMinimize20Regular aria-hidden /> : <ArrowMaximize20Regular aria-hidden />, toggleFullscreen, { title: t('全画面の切替（F キー）') })}
+      {btn(t('プレゼンタービュー'), <Presenter20Regular aria-hidden />, () => setPresenterView(!presenterView), { pressed: presenterView })}
+      {btn(t('レーザーポインター'), <CursorHover20Regular aria-hidden />, () => setLaser(!laser), { pressed: laser })}
+      {btn(t('オープニングを再生'), <MoviesAndTv20Regular aria-hidden />, replay)}
     </>
   );
 }
@@ -147,6 +149,7 @@ export function PresenterView() {
   const pres = usePresentationStore();
   const state = usePackStore((p) => p.state);
   const [sec, setSec] = useState(0);
+  const t = useT();
   useEffect(() => {
     if (!on) return undefined;
     setSec(0);
@@ -156,21 +159,21 @@ export function PresenterView() {
   if (!on) return null;
   const cur = currentTopic(pres);
   const next = pres.active ? pres.topics[pres.index + 1] : undefined;
-  const topic = cur && state.status === 'ready' ? state.pack.data.show.chapters.flatMap((c) => c.topics).find((t) => t.id === cur.id) : undefined;
+  const topic = cur && state.status === 'ready' ? state.pack.data.show.chapters.flatMap((c) => c.topics).find((tp) => tp.id === cur.id) : undefined;
   const notes = readNarration(topic);
   return (
-    <section className={s.presenter} data-testid="presenter-view" aria-label="プレゼンタービュー">
-      <Text weight="semibold">プレゼンタービュー</Text>
+    <section className={s.presenter} data-testid="presenter-view" aria-label={t('プレゼンタービュー')}>
+      <Text weight="semibold">{t('プレゼンタービュー')}</Text>
       {cur ? (
         <>
-          <Text size={200}>{cur.chapterTitle} ・ 論点 {pres.index + 1} / {pres.topics.length}</Text>
-          <Text data-testid="presenter-current">いま: {cur.title}</Text>
-          <Text data-testid="presenter-next">次: {next ? next.title : 'なし（最後の論点）'}</Text>
-          {notes ? <Text size={200} data-testid="presenter-notes">台本: {notes}</Text> : null}
+          <Text size={200}>{cur.chapterTitle} ・ {t('論点 {i} / {n}', { i: pres.index + 1, n: pres.topics.length })}</Text>
+          <Text data-testid="presenter-current">{t('いま: {title}', { title: cur.title })}</Text>
+          <Text data-testid="presenter-next">{t('次: {title}', { title: next ? next.title : t('なし（最後の論点）') })}</Text>
+          {notes ? <Text size={200} data-testid="presenter-notes">{t('台本: {notes}', { notes })}</Text> : null}
         </>
-      ) : <Text size={200}>プレゼンテーションを開始すると、いまの論点・次の論点・台本のメモが出ます。</Text>}
-      <Text size={200} data-testid="presenter-elapsed">経過時間: {formatElapsed(sec)}</Text>
-      <div><Button size="small" onClick={() => close(false)}>プレゼンタービューを閉じる</Button></div>
+      ) : <Text size={200}>{t('プレゼンテーションを開始すると、いまの論点・次の論点・台本のメモが出ます。')}</Text>}
+      <Text size={200} data-testid="presenter-elapsed">{t('経過時間: {time}', { time: formatElapsed(sec) })}</Text>
+      <div><Button size="small" onClick={() => close(false)}>{t('プレゼンタービューを閉じる')}</Button></div>
     </section>
   );
 }
@@ -206,14 +209,14 @@ export function ShowShortcuts() {
   useEffect(() => registerCommands(() => {
     const ui = useShowUi.getState();
     return [
-      { id: 'show.fullscreen', label: '全画面を切り替える', keywords: ['全画面', 'フルスクリーン', 'fullscreen'], shortcut: 'F', run: toggleFullscreen },
-      { id: 'show.intensity', label: '演出強度を切り替える', keywords: ['演出', '強度', 'intensity', 'Executive', 'Showcase', 'Entertainment'], shortcut: 'E', run: () => cycleIntensity(intensityRef.current) },
-      { id: 'show.theme', label: 'Light と Dark を切り替える', keywords: ['テーマ', 'ダーク', 'ライト', 'theme'], run: toggleTheme },
-      { id: 'show.quality', label: '3D の品質を切り替える', keywords: ['品質', '3D', 'quality'], run: cycleQuality },
-      { id: 'show.presenter', label: 'プレゼンタービューを切り替える', keywords: ['発表者', 'プレゼンタービュー', 'presenter'], run: () => ui.setPresenterView(!useShowUi.getState().presenterView) },
-      { id: 'show.laser', label: 'レーザーポインターを切り替える', keywords: ['レーザー', 'ポインター', 'laser'], run: () => ui.setLaser(!useShowUi.getState().laser) },
-      { id: 'show.opening', label: 'オープニングを再生する', keywords: ['オープニング', 'opening'], run: () => useOpening.getState().replay() },
-      { id: 'show.short-video', label: 'ショート動画を書き出す', keywords: ['ショート動画', '動画', 'webm', 'video'], run: () => ui.setShortVideoOpen(true) },
+      { id: 'show.fullscreen', label: tr('全画面を切り替える'), keywords: ['全画面', 'フルスクリーン', 'fullscreen'], shortcut: 'F', run: toggleFullscreen },
+      { id: 'show.intensity', label: tr('演出強度を切り替える'), keywords: ['演出', '強度', 'intensity', 'Executive', 'Showcase', 'Entertainment'], shortcut: 'E', run: () => cycleIntensity(intensityRef.current) },
+      { id: 'show.theme', label: tr('Light と Dark を切り替える'), keywords: ['テーマ', 'ダーク', 'ライト', 'theme'], run: toggleTheme },
+      { id: 'show.quality', label: tr('3D の品質を切り替える'), keywords: ['品質', '3D', 'quality'], run: cycleQuality },
+      { id: 'show.presenter', label: tr('プレゼンタービューを切り替える'), keywords: ['発表者', 'プレゼンタービュー', 'presenter'], run: () => ui.setPresenterView(!useShowUi.getState().presenterView) },
+      { id: 'show.laser', label: tr('レーザーポインターを切り替える'), keywords: ['レーザー', 'ポインター', 'laser'], run: () => ui.setLaser(!useShowUi.getState().laser) },
+      { id: 'show.opening', label: tr('オープニングを再生する'), keywords: ['オープニング', 'opening'], run: () => useOpening.getState().replay() },
+      { id: 'show.short-video', label: tr('ショート動画を書き出す'), keywords: ['ショート動画', '動画', 'webm', 'video'], run: () => ui.setShortVideoOpen(true) },
     ];
   }), []);
   return null;

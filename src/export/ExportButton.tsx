@@ -14,6 +14,7 @@ import { ExportDialog, type ExportScreenRef } from './ExportDialog';
 import { PersonConfirmDialog } from '../ai/PersonConfirmDialog';
 import { confirmViaUi, consentOf, gatePersonConfirm } from '../ai/personConfirm';
 import { useExportUi } from './ui';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   notice: {
@@ -26,31 +27,32 @@ const useStyles = makeStyles({
 export function ExportButton() {
   const open = useExportUi((u) => u.openDialog);
   const setNotice = useExportUi((u) => u.setNotice);
+  const t = useT();
   const [busy, setBusy] = useState(false);
   const pack = async () => {
     const input = collectInput();
-    if (!input) { setNotice({ kind: 'error', title: 'サマリーパックを作れません', lines: ['データの読み込みが終わってから、もう一度押してください。'] }); return; }
+    if (!input) { setNotice({ kind: 'error', title: t('サマリーパックを作れません'), lines: [t('データの読み込みが終わってから、もう一度押してください。')] }); return; }
     setBusy(true);
     try {
       // FR-219: 種別「人」を含むときは出力の前に確認を通す（了承の記録がなければ出力しない）
-      const gate = await gatePersonConfirm({ destination: 'export', scopeLabel: 'Engagement サマリーパック（PDF と Markdown）', data: input.data, consent: consentOf(input.data), confirm: confirmViaUi });
+      const gate = await gatePersonConfirm({ destination: 'export', scopeLabel: t('Engagement サマリーパック（PDF と Markdown）'), data: input.data, consent: consentOf(input.data), confirm: confirmViaUi });
       if (!gate.allowed) {
-        if (gate.reason) setNotice({ kind: 'error', title: 'サマリーパックを出力しませんでした', lines: [gate.reason] });
+        if (gate.reason) setNotice({ kind: 'error', title: t('サマリーパックを出力しませんでした'), lines: [gate.reason] });
         return;
       }
       const r = await buildSummaryPack(input, await loadJapaneseFont());
       downloadBlob(r.fileName, new Blob([r.bytes.slice().buffer], { type: 'application/zip' }));
-      setNotice({ kind: 'success', title: 'Engagement サマリーパックを出力しました', lines: [r.fileName, 'PDF と Markdown を 1 つの ZIP にまとめました。'] });
+      setNotice({ kind: 'success', title: t('Engagement サマリーパックを出力しました'), lines: [r.fileName, t('PDF と Markdown を 1 つの ZIP にまとめました。')] });
     } catch (e) {
-      setNotice({ kind: 'error', title: 'サマリーパックを作れませんでした', lines: [e instanceof Error ? e.message : String(e)] });
+      setNotice({ kind: 'error', title: t('サマリーパックを作れませんでした'), lines: [e instanceof Error ? e.message : String(e)] });
     } finally {
       setBusy(false);
     }
   };
   return (
     <>
-      <Button size="small" icon={<ArrowExport24Regular aria-hidden />} onClick={open}>エクスポート</Button>
-      <Button size="small" icon={<DocumentPdf24Regular aria-hidden />} disabled={busy} onClick={() => { void pack(); }}>Engagement サマリーパック</Button>
+      <Button size="small" icon={<ArrowExport24Regular aria-hidden />} onClick={open}>{t('エクスポート')}</Button>
+      <Button size="small" icon={<DocumentPdf24Regular aria-hidden />} disabled={busy} onClick={() => { void pack(); }}>{t('Engagement サマリーパック')}</Button>
     </>
   );
 }
@@ -60,6 +62,7 @@ export function ExportHost({ screens }: { screens: readonly ExportScreenRef[] })
   const s = useStyles();
   const notice = useExportUi((u) => u.notice);
   const setNotice = useExportUi((u) => u.setNotice);
+  const t = useT();
   useExportShortcuts();
   useEffect(() => installDiscussionChangeLog(), []);
   useEffect(() => registerPackSnapshot(), []);
@@ -77,7 +80,7 @@ export function ExportHost({ screens }: { screens: readonly ExportScreenRef[] })
               {notice.lines.map((l, i) => <div key={i}>{l}</div>)}
             </MessageBarBody>
             <MessageBarActions
-              containerAction={<Button aria-label="閉じる" appearance="transparent" icon={<Dismiss24Regular aria-hidden />} onClick={() => setNotice(null)} />}
+              containerAction={<Button aria-label={t('閉じる')} appearance="transparent" icon={<Dismiss24Regular aria-hidden />} onClick={() => setNotice(null)} />}
             />
           </MessageBar>
         </div>

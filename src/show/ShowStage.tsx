@@ -15,6 +15,7 @@ import { useCountUp } from '../motion/CountUp';
 import { useIntensity, useMotionProfile, usePlaying } from '../motion/useMotion';
 import { usePackStore } from '../store/pack';
 import { Navigator } from './Navigator';
+import { useT } from '../i18n';
 import { QuizView, Reactions } from './Quiz';
 import { readNarration, readQuiz } from './extras';
 import { currentTopic, usePresentationStore } from '../store/presentation';
@@ -176,6 +177,7 @@ function Confetti() {
 /** Before/After スライダー。つまみより左が Before、右が After。キーボード（矢印）とポインター（クリック・ドラッグ）で動かせる */
 function BeforeAfterView({ data }: { data: BeforeAfter }) {
   const s = useStyles();
+  const t = useT();
   const [pos, setPos] = useState(50);
   return (
     <div className={s.ba} data-testid="before-after">
@@ -193,7 +195,7 @@ function BeforeAfterView({ data }: { data: BeforeAfter }) {
       <input
         type="range"
         className={s.baRange}
-        aria-label="Before/After スライダー"
+        aria-label={t('Before/After スライダー')}
         min={0}
         max={100}
         step={1}
@@ -201,7 +203,7 @@ function BeforeAfterView({ data }: { data: BeforeAfter }) {
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={pos}
-        aria-valuetext={`${data.before.label} ${pos}%・${data.after.label} ${100 - pos}%`}
+        aria-valuetext={t('{before} {pos}%・{after} {rest}%', { before: data.before.label, pos, after: data.after.label, rest: 100 - pos })}
         onChange={(e) => setPos(clampSlider(Number(e.target.value)))}
       />
     </div>
@@ -211,13 +213,14 @@ function BeforeAfterView({ data }: { data: BeforeAfter }) {
 /** TOP5 ランキング。優先順位分析のランキングの上位 5 件を、順位どおりに出す */
 function Top5View({ animate }: { animate: boolean }) {
   const s = useStyles();
+  const t = useT();
   const { ready, rows } = usePriority();
   const { tempo } = useMotionProfile();
   const top = useMemo(() => topFive(rows), [rows]);
   if (!ready) return null;
-  if (top.length === 0) return <Text>ランキングの対象の課題がありません。</Text>;
+  if (top.length === 0) return <Text>{t('ランキングの対象の課題がありません。')}</Text>;
   return (
-    <ol className={s.top5} data-testid="top5-ranking" aria-label="優先順位 TOP5">
+    <ol className={s.top5} data-testid="top5-ranking" aria-label={t('優先順位 TOP5')}>
       {top.map((r, i) => (
         <li
           key={r.id}
@@ -228,9 +231,9 @@ function Top5View({ animate }: { animate: boolean }) {
             animationTimingFunction: EASING.decelerateMid,
           } : undefined}
         >
-          <span className={s.top5Rank}>{i + 1}位</span>
+          <span className={s.top5Rank}>{t('{n}位', { n: i + 1 })}</span>
           <Text className={s.top5Title}>{r.title}</Text>
-          <Text size={200}>スコア <KpiValue>{r.score.toFixed(1)}</KpiValue></Text>
+          <Text size={200}>{t('スコア')} <KpiValue>{r.score.toFixed(1)}</KpiValue></Text>
         </li>
       ))}
     </ol>
@@ -240,10 +243,11 @@ function Top5View({ animate }: { animate: boolean }) {
 /** ROI 発表。数値はカウントアップし、出典を示す（FR-009）。紙吹雪は別（Confetti） */
 function RoiView({ data }: { data: RoiAnnouncement }) {
   const s = useStyles();
+  const t = useT();
   const v = useCountUp(data.value);
   const text = Number.isInteger(data.value) ? Math.round(v).toLocaleString('ja-JP') : v.toFixed(1);
   return (
-    <div className={s.roi} data-testid="roi-announcement" role="group" aria-label="ROI 発表">
+    <div className={s.roi} data-testid="roi-announcement" role="group" aria-label={t('ROI 発表')}>
       <Text size={500} weight="semibold">{data.label}</Text>
       <Text className={s.roiValue}>
         <KpiValue><NumericValue sourceIds={data.sourceIds}>{text}</NumericValue></KpiValue>{data.unit}
@@ -256,6 +260,7 @@ function RoiView({ data }: { data: RoiAnnouncement }) {
 /** テロップ/ローワーサード。本文に出典リンクを併記し、リンクを選ぶと出典カードが開く（Esc で閉じる） */
 function TelopView({ text, sourceIds, topicId }: { text: string; sourceIds: readonly string[]; topicId: string }) {
   const s = useStyles();
+  const t = useT();
   const { captionStyle } = useMotionProfile();
   const state = usePackStore((st) => st.state);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -273,11 +278,11 @@ function TelopView({ text, sourceIds, topicId }: { text: string; sourceIds: read
   return (
     <>
       {open ? <div className={s.sourceCard}><SourceCard source={open} onClose={() => setOpenId(null)} /></div> : null}
-      <section className={s.telop} data-testid="telop" data-caption-style={captionStyle} aria-label="テロップ">
+      <section className={s.telop} data-testid="telop" data-caption-style={captionStyle} aria-label={t('テロップ')}>
         <Text className={captionStyle === 'concise' ? s.telopConcise : undefined}>{text}</Text>
         <div className={s.sources}>
-          <Text size={200}>出典:</Text>
-          {found.length === 0 ? <Text size={200}>出典の情報がありません</Text> : found.map((src) => (
+          <Text size={200}>{t('出典:')}</Text>
+          {found.length === 0 ? <Text size={200}>{t('出典の情報がありません')}</Text> : found.map((src) => (
             <Link key={src.id} href={`#source-${src.id}`} onClick={(e) => { e.preventDefault(); setOpenId(src.id); }}>
               {src.title}
             </Link>
@@ -291,6 +296,7 @@ function TelopView({ text, sourceIds, topicId }: { text: string; sourceIds: read
 /** プレゼンテーション中だけ表示する。現在の論点に合わせて、予告カード・テロップ・演出を出す */
 export function ShowStage() {
   const s = useStyles();
+  const t = useT();
   const st = usePresentationStore();
   const intensity = useIntensity();
   const playing = usePlaying();
@@ -299,7 +305,7 @@ export function ShowStage() {
   const cur = currentTopic(st);
   const topic = useMemo(() => {
     if (!cur || packState.status !== 'ready') return undefined;
-    return packState.pack.data.show.chapters.flatMap((c) => c.topics).find((t) => t.id === cur.id);
+    return packState.pack.data.show.chapters.flatMap((c) => c.topics).find((tp) => tp.id === cur.id);
   }, [cur, packState]);
   if (!st.active || !cur) return null;
 
@@ -319,10 +325,10 @@ export function ShowStage() {
   return (
     <>
       {hasFlow ? (
-    <section className={s.stage} data-testid="show-stage" data-intensity={intensity} aria-label="番組の表示">
+    <section className={s.stage} data-testid="show-stage" data-intensity={intensity} aria-label={t('番組の表示')}>
       {next ? (
-        <Card className={s.next} size="small" data-testid="next-chapter-card" aria-label={`次のチャプター: ${next.chapterTitle}`}>
-          <Text size={200}>次のチャプター</Text>
+        <Card className={s.next} size="small" data-testid="next-chapter-card" aria-label={t('次のチャプター: {title}', { title: next.chapterTitle })}>
+          <Text size={200}>{t('次のチャプター')}</Text>
           <ArrowRight20Regular aria-hidden />
           <Text weight="semibold">{next.chapterTitle}</Text>
         </Card>

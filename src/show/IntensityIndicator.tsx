@@ -7,6 +7,7 @@ import { isShortcutTarget } from '../motion/control';
 import { useIntensity } from '../motion/useMotion';
 import { useSettings } from '../store/settings';
 import { nextIntensity } from './model';
+import { useT } from '../i18n';
 
 /** 演出強度を 1 つ進める（ボタン・`E` キー・コマンドから使う） */
 export function cycleIntensity(current: ReturnType<typeof useIntensity>): void {
@@ -29,6 +30,7 @@ function useIntensityKey(): void {
 /** 「演出強度: Executive」の表示と切替ボタン（E キーと同じ）。常に見える場所（ヘッダー）に置く */
 export function IntensityIndicator() {
   const current = useIntensity();
+  const t = useT();
   useIntensityKey();
   return (
     <Button
@@ -36,10 +38,10 @@ export function IntensityIndicator() {
       size="small"
       data-testid="intensity"
       icon={<Sparkle24Regular aria-hidden />}
-      title="演出強度の切替（E キー）: Executive → Showcase → Entertainment"
+      title={t('演出強度の切替（E キー）: Executive → Showcase → Entertainment')}
       onClick={() => cycleIntensity(current)}
     >
-      演出強度: {current}
+      {t('演出強度: {value}', { value: current })}
     </Button>
   );
 }
