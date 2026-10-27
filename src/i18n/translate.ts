@@ -9,12 +9,18 @@ function interpolate(s: string, vars?: Vars): string {
 }
 
 /** 指定した言語での翻訳（日本語原文がキー。辞書にない文言は日本語のまま）。 */
-export function translate(lang: Lang, ja: string, vars?: Vars): string {
-  const base = lang === 'en' && Object.prototype.hasOwnProperty.call(EN, ja) ? EN[ja]! : ja;
+export function translate(lang: Lang, ja: string, vars?: Vars, ctx?: string): string {
+  let base = ja;
+  if (lang === 'en') {
+    const has = (k: string) => Object.prototype.hasOwnProperty.call(EN, k);
+    // 文脈つきキー `${ctx}|${ja}` を先に引き、なければ ja、なければ日本語のまま。
+    if (ctx && has(`${ctx}|${ja}`)) base = EN[`${ctx}|${ja}`]!;
+    else if (has(ja)) base = EN[ja]!;
+  }
   return interpolate(base, vars);
 }
 
 /** React の外で使う翻訳（現在の言語で即時に返す）。 */
-export function tr(ja: string, vars?: Vars): string {
-  return translate(useLang.getState().lang, ja, vars);
+export function tr(ja: string, vars?: Vars, ctx?: string): string {
+  return translate(useLang.getState().lang, ja, vars, ctx);
 }

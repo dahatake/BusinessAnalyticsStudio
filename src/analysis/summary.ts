@@ -89,7 +89,7 @@ export function buildSummary(scope: SummaryScope, data: PackData, ctx: SummaryCo
       const v = archVariants(data.architecture);
       const d = diffArchitecture(v.asis, v.tobe);
       const c = (k: string) => d.elements.filter((e) => e.diff === k).length;
-      const kinds: Array<[string, number]> = [[tr('追加'), c('added')], [tr('削除'), c('removed')], [tr('変更'), c('changed')]];
+      const kinds: Array<[string, number]> = [[tr('追加', undefined, 'status'), c('added')], [tr('削除', undefined, 'status'), c('removed')], [tr('変更', undefined, 'status'), c('changed')]];
       return {
         conclusion: tr('ToBe では、AsIs から要素の追加・削除・変更を伴う構成へ変わります。'),
         evidence: [tr('根拠: AsIs から ToBe で、{diffs}（要素 {n} 件）です。', {

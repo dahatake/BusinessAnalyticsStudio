@@ -3,9 +3,17 @@
 # 依存パッケージが未導入なら npm install、dist がなければ npm run build を行い、npm start で起動する。
 cd "$(dirname "$0")" || exit 1
 
+# 失敗時はダブルクリック起動でも内容が読めるよう、Enter 待ちしてから終了する。
+fail_exit() {
+  echo
+  echo "起動に失敗しました。Enter キーで閉じます。"
+  read _
+  exit "${1:-1}"
+}
+
 if ! command -v npm >/dev/null 2>&1; then
   echo "[start] npm が見つかりません。Node.js を導入してください。" >&2
-  exit 1
+  fail_exit 1
 fi
 
 step() {
@@ -13,7 +21,7 @@ step() {
   echo "[start] $label"
   if ! npm "$@"; then
     echo "[start] 失敗: $label。上の npm の出力で原因を確認してください。起動しません。" >&2
-    exit 1
+    fail_exit 1
   fi
 }
 
@@ -21,4 +29,7 @@ step() {
 [ -d dist ] || step "npm run build（dist がありません）" run build
 
 echo "[start] npm start で起動します（URL は次に表示されます。終了は Ctrl+C）"
-exec npm start
+npm start
+status=$?
+[ "$status" -ne 0 ] && fail_exit "$status"
+exit "$status"

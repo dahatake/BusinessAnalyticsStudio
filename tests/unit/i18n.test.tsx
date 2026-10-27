@@ -43,6 +43,17 @@ describe('FR-294 翻訳', () => {
   it('辞書にない文言は日本語のまま返る', () => {
     expect(translate('en', '辞書にない文言')).toBe('辞書にない文言');
   });
+  it('文脈つきキー: 日本語は原文のまま、英語は status|追加 を優先、文脈なしは Add', () => {
+    expect(translate('ja', '追加', undefined, 'status')).toBe('追加');
+    expect(translate('en', '追加', undefined, 'status')).toBe('Added');
+    expect(translate('en', '追加')).toBe('Add');
+    expect(translate('en', '削除', undefined, 'status')).toBe('Removed');
+    expect(translate('en', '削除')).toBe('Delete');
+  });
+  it('文脈つきキーが辞書にないときは文脈なしのキー、さらに無ければ日本語', () => {
+    expect(translate('en', '表示言語', undefined, 'status')).toBe('Display language');
+    expect(translate('en', '辞書にない文言', undefined, 'status')).toBe('辞書にない文言');
+  });
   it('{name} 形式の補間（未指定の名前はそのまま）', () => {
     expect(translate('ja', '{n} 件の {what}', { n: 3, what: '要求' })).toBe('3 件の 要求');
     expect(translate('en', '{n} 件 {x}', { n: 2 })).toBe('{n} 件 {x}'.replace('{n}', '2'));
@@ -95,5 +106,15 @@ describe('FR-293 AC-790 英語辞書の健全性', () => {
       }
     }
     expect(problems).toEqual([]);
+  });
+});
+
+describe('FR-294 AC-788/789 作成時の言語で初期名・検証メッセージを作る', () => {
+  it('AC-788 追加・複製の初期名と期限の検証メッセージは、言語に追従する', () => {
+    expect(tr('新しい課題')).toBe('新しい課題');
+    act(() => useLang.getState().setLang('en'));
+    expect(tr('新しい課題')).toBe('New issue');
+    expect(tr('{base}（複製）', { base: 'A' })).toBe('A (copy)');
+    expect(tr('拠点 {name}（緯度 {lat}、経度 {lng}）', { name: 'X', lat: 1, lng: 2 })).toBe('Site X (lat 1, lng 2)');
   });
 });
