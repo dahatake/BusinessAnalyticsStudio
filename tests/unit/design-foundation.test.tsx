@@ -191,6 +191,6 @@ describe('NFR-A11Y-009 AC-483 拡大・縮小できる面の印と、面の中�
   it('NFR-A11Y-009 AC-483 地図の拠点は省略記号を使い、全文をボタンの名前に持つ', () => {
     const map = readFileSync('src/screens/MapScreen.tsx', 'utf8');
     expect(map).toMatch(/marker: \{[\s\S]*?textOverflow: 'ellipsis'/);
-    expect(map).toMatch(/aria-label=\{`拠点 \$\{site\.name\}/);
+    expect(map).toMatch(/t\('拠点 \{name\}（緯度 \{lat\}、経度 \{lng\}）', \{ name: site\.name/);
   });
 });

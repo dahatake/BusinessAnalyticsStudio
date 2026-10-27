@@ -97,3 +97,13 @@ describe('FR-293 AC-790 英語辞書の健全性', () => {
     expect(problems).toEqual([]);
   });
 });
+
+describe('FR-294 AC-788/789 作成時の言語で初期名・検証メッセージを作る', () => {
+  it('AC-788 追加・複製の初期名と期限の検証メッセージは、言語に追従する', () => {
+    expect(tr('新しい課題')).toBe('新しい課題');
+    act(() => useLang.getState().setLang('en'));
+    expect(tr('新しい課題')).toBe('New issue');
+    expect(tr('{base}（複製）', { base: 'A' })).toBe('A (copy)');
+    expect(tr('拠点 {name}（緯度 {lat}、経度 {lng}）', { name: 'X', lat: 1, lng: 2 })).toBe('Site X (lat 1, lng 2)');
+  });
+});
