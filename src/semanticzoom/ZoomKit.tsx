@@ -7,6 +7,7 @@ import { useEffect, type RefObject } from 'react';
 import { Badge, Button, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { MIN_TARGET_PX } from '../theme/tokens';
 import { ZoomBreadcrumb } from './ZoomBreadcrumb';
+import { useT } from '../i18n';
 import { ZOOM_KIND_LABELS, canZoomIn, canZoomOut, kindOfDepth, stepDepth, zoomAttrs, zoomDepthCount } from './model';
 
 const useStyles = makeStyles({
@@ -33,14 +34,15 @@ export interface ZoomBarProps {
 
 export function ZoomBar({ depth, elementDepth, onGo, elementLabels, detailLabel, label }: ZoomBarProps) {
   const s = useStyles();
+  const t = useT();
   const kind = kindOfDepth(depth, elementDepth);
   return (
     <>
-      <div className={s.bar} role="toolbar" aria-label={`${label}のズーム`}>
-        <Button size="small" disabled={!canZoomIn(depth, elementDepth)} onClick={() => onGo(stepDepth(depth, 1, elementDepth))}>拡大</Button>
-        <Button size="small" disabled={!canZoomOut(depth)} onClick={() => onGo(stepDepth(depth, -1, elementDepth))}>縮小</Button>
-        <Button size="small" onClick={() => onGo(0)}>全体表示に戻す</Button>
-        <Button size="small" disabled={depth === 0} onClick={() => onGo(depth - 1)}>一つ上の階層へ</Button>
+      <div className={s.bar} role="toolbar" aria-label={t('{label}のズーム', { label })}>
+        <Button size="small" disabled={!canZoomIn(depth, elementDepth)} onClick={() => onGo(stepDepth(depth, 1, elementDepth))}>{t('拡大')}</Button>
+        <Button size="small" disabled={!canZoomOut(depth)} onClick={() => onGo(stepDepth(depth, -1, elementDepth))}>{t('縮小')}</Button>
+        <Button size="small" onClick={() => onGo(0)}>{t('全体表示に戻す')}</Button>
+        <Button size="small" disabled={depth === 0} onClick={() => onGo(depth - 1)}>{t('一つ上の階層へ')}</Button>
         <span data-testid="zoom-level" data-depth={depth} data-depth-count={zoomDepthCount(elementDepth)}>
           <Badge appearance="tint">{ZOOM_KIND_LABELS[kind]}</Badge>
         </span>
@@ -64,17 +66,18 @@ export interface ZoomClusterIn { name: string; count: number }
 
 export function ZoomClusters({ clusters, onOpen }: { clusters: readonly ZoomClusterIn[]; onOpen: (name: string) => void }) {
   const s = useStyles();
+  const t = useT();
   return (
-    <div className={s.clusters} role="group" aria-label="塊">
+    <div className={s.clusters} role="group" aria-label={t('塊')}>
       {clusters.map((c) => (
         <div
           key={c.name} role="button" tabIndex={0} className={s.cluster} data-zoom-cluster={c.name}
-          aria-label={`${c.name} ${c.count} 件。ダブルクリックか Enter で要素へ`}
+          aria-label={t('{name} {count} 件。ダブルクリックか Enter で要素へ', { name: c.name, count: c.count })}
           onDoubleClick={() => onOpen(c.name)}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); onOpen(c.name); } }}
         >
           <Text weight="semibold">{c.name}</Text>
-          <Text>{c.count} 件</Text>
+          <Text>{t('{count} 件', { count: c.count })}</Text>
         </div>
       ))}
     </div>
@@ -91,15 +94,16 @@ export interface ZoomDetailIn {
 
 export function ZoomDetail({ item }: { item: ZoomDetailIn }) {
   const s = useStyles();
+  const t = useT();
   return (
-    <section className={s.detail} data-testid="zoom-detail" aria-label="詳細">
+    <section className={s.detail} data-testid="zoom-detail" aria-label={t('詳細')}>
       <Text as="h2" size={500} weight="semibold" data-entity-id={item.id}>{item.name}</Text>
-      <Text as="h3" weight="semibold">属性</Text>
+      <Text as="h3" weight="semibold">{t('属性')}</Text>
       <dl style={{ margin: 0 }}>{item.attributes.map(([k, v]) => (<div key={k}><dt>{k}</dt><dd>{v}</dd></div>))}</dl>
-      <Text as="h3" weight="semibold">出典</Text>
-      <ul style={{ margin: 0 }}>{item.sources.length ? item.sources.map((x) => <li key={x}>{x}</li>) : <li>出典なし</li>}</ul>
-      <Text as="h3" weight="semibold">関係</Text>
-      <ul style={{ margin: 0 }}>{item.relations.length ? item.relations.map((x, i) => <li key={i}>{x}</li>) : <li>関係なし</li>}</ul>
+      <Text as="h3" weight="semibold">{t('出典')}</Text>
+      <ul style={{ margin: 0 }}>{item.sources.length ? item.sources.map((x) => <li key={x}>{x}</li>) : <li>{t('出典なし')}</li>}</ul>
+      <Text as="h3" weight="semibold">{t('関係')}</Text>
+      <ul style={{ margin: 0 }}>{item.relations.length ? item.relations.map((x, i) => <li key={i}>{x}</li>) : <li>{t('関係なし')}</li>}</ul>
     </section>
   );
 }
