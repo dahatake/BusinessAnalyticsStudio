@@ -2,13 +2,16 @@
 // 世界区分・種別・ツイン関係はいずれも任意の項目で、ないエンティティは「区分なし」として扱う（既存の顧客パックを壊さない）。
 // このモジュールは画面の部品を参照しない（NFR-MAINT-001）。
 import { z } from 'zod';
+import { tr } from '../i18n';
 
 /** 世界区分（FR-213）。real＝現実世界（ビジネス）、digital＝デジタル世界（Digital Twin） */
 export const WORLDS = ['real', 'digital'] as const;
 export type World = (typeof WORLDS)[number];
 export const WorldSchema = z.enum(WORLDS);
 
-export const WORLD_LABELS: Record<World, string> = { real: '現実世界', digital: 'デジタル世界' };
+export const WORLD_LABELS: Record<World, string> = {
+  get real() { return tr('現実世界'); }, get digital() { return tr('デジタル世界'); },
+};
 /** 世界区分のないエンティティの表示名 */
 export const UNCLASSIFIED_LABEL = '区分なし';
 
@@ -21,21 +24,22 @@ export const EntityKindSchema = z.enum(ENTITY_KINDS);
 
 export const KINDS_BY_WORLD: Record<World, readonly EntityKind[]> = { real: REAL_KINDS, digital: DIGITAL_KINDS };
 
+// 表示のたびに言語に合わせて読めるよう、getter で持つ（言語切替で更新される）
 export const ENTITY_KIND_LABELS: Record<EntityKind, string> = {
-  site: '拠点',
-  equipment: '設備',
-  person: '人',
-  organization: '組織',
-  operation: '業務',
-  thing: 'モノ',
-  event: 'コト',
-  floor: 'フロア',
-  room: '部屋',
-  data: 'データ',
-  model: 'モデル',
-  system: 'システム',
-  'ui-component': '画面コンポーネント',
-  metric: 'センサー/指標',
+  get site() { return tr('拠点'); },
+  get equipment() { return tr('設備'); },
+  get person() { return tr('人'); },
+  get organization() { return tr('組織'); },
+  get operation() { return tr('業務'); },
+  get thing() { return tr('モノ'); },
+  get event() { return tr('コト'); },
+  get floor() { return tr('フロア'); },
+  get room() { return tr('部屋'); },
+  get data() { return tr('データ'); },
+  get model() { return tr('モデル'); },
+  get system() { return tr('システム'); },
+  get 'ui-component'() { return tr('画面コンポーネント'); },
+  get metric() { return tr('センサー/指標'); },
 };
 
 /** 種別が属する世界区分 */
@@ -94,19 +98,19 @@ export const TWIN_RELATIONS = ['represents', 'measures', 'records', 'displays'] 
 export type TwinRelation = (typeof TWIN_RELATIONS)[number];
 export const TwinRelationSchema = z.enum(TWIN_RELATIONS);
 export const TWIN_RELATION_LABELS: Record<TwinRelation, string> = {
-  represents: '表す',
-  measures: '計測する',
-  records: '記録する',
-  displays: '表示する',
+  get represents() { return tr('表す'); },
+  get measures() { return tr('計測する'); },
+  get records() { return tr('記録する'); },
+  get displays() { return tr('表示する'); },
 };
 
 /** ツイン関係の 1 件（entities.json の twins[]） */
 export const TwinSchema = z.looseObject({
-  realId: z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'ID は小文字英数字とハイフンだけで書く'),
-  digitalId: z.string().regex(/^[a-z0-9][a-z0-9-]*$/, 'ID は小文字英数字とハイフンだけで書く'),
+  realId: z.string().regex(/^[a-z0-9][a-z0-9-]*$/, { error: () => tr('ID は小文字英数字とハイフンだけで書く') }),
+  digitalId: z.string().regex(/^[a-z0-9][a-z0-9-]*$/, { error: () => tr('ID は小文字英数字とハイフンだけで書く') }),
   relation: TwinRelationSchema,
   /** 出典（必須。FR-115 と同じく、対応付けの根拠を示す） */
-  sourceIds: z.array(z.string().regex(/^[a-z0-9][a-z0-9-]*$/)).min(1, 'ツイン関係には出典（sourceIds）が 1 件以上必要です'),
+  sourceIds: z.array(z.string().regex(/^[a-z0-9][a-z0-9-]*$/)).min(1, { error: () => tr('ツイン関係には出典（sourceIds）が 1 件以上必要です') }),
 });
 export type Twin = z.infer<typeof TwinSchema>;
 
@@ -131,11 +135,11 @@ export function checkWorldStructure(entities: readonly EntityLike[], twins: read
     if (!e || typeof e !== 'object') return;
     if (isKind(e.kind)) {
       if (e.world === undefined) {
-        issues.push({ path: ['entities', i, 'world'], message: `種別「${ENTITY_KIND_LABELS[e.kind]}」には世界区分（world）が必要です` });
+        issues.push({ path: ['entities', i, 'world'], message: tr('種別「{kind}」には世界区分（world）が必要です', { kind: ENTITY_KIND_LABELS[e.kind] }) });
       } else if (isWorld(e.world) && worldOfKind(e.kind) !== e.world) {
         issues.push({
           path: ['entities', i, 'kind'],
-          message: `種別「${ENTITY_KIND_LABELS[e.kind]}」は${WORLD_LABELS[worldOfKind(e.kind)]}の種別で、世界区分「${WORLD_LABELS[e.world]}」とは組み合わせられません`,
+          message: tr('種別「{kind}」は{kindWorld}の種別で、世界区分「{world}」とは組み合わせられません', { kind: ENTITY_KIND_LABELS[e.kind], kindWorld: WORLD_LABELS[worldOfKind(e.kind)], world: WORLD_LABELS[e.world] }),
         });
       }
     }
@@ -144,7 +148,7 @@ export function checkWorldStructure(entities: readonly EntityLike[], twins: read
       if (parent && isWorld(e.world) && isWorld(parent.e.world) && parent.e.world !== e.world) {
         issues.push({
           path: ['entities', i, 'parentId'],
-          message: `上位 ${e.parentId} の世界区分（${WORLD_LABELS[parent.e.world]}）が、この項目の世界区分（${WORLD_LABELS[e.world]}）と異なります。上位は同じ世界区分の中だけで指します`,
+          message: tr('上位 {parentId} の世界区分（{parentWorld}）が、この項目の世界区分（{world}）と異なります。上位は同じ世界区分の中だけで指します', { parentId: e.parentId, parentWorld: WORLD_LABELS[parent.e.world], world: WORLD_LABELS[e.world] }),
         });
       }
     }
@@ -166,7 +170,7 @@ export function checkWorldStructure(entities: readonly EntityLike[], twins: read
   }
   for (const id of inCycle) {
     const { i } = byId.get(id)!;
-    issues.push({ path: ['entities', i, 'parentId'], message: `上位が循環しています（${id} の上位をたどると ${id} に戻ります）` });
+    issues.push({ path: ['entities', i, 'parentId'], message: tr('上位が循環しています（{id} の上位をたどると {id} に戻ります）', { id }) });
   }
 
   (twins ?? []).forEach((t, i) => {
@@ -178,10 +182,10 @@ export function checkWorldStructure(entities: readonly EntityLike[], twins: read
       if (typeof id !== 'string') continue;
       const hit = byId.get(id);
       if (!hit) {
-        issues.push({ path: ['twins', i, key], message: `ツイン関係の ${key} が、entities にない ID を指しています: ${id}` });
+        issues.push({ path: ['twins', i, key], message: tr('ツイン関係の {key} が、entities にない ID を指しています: {id}', { key, id }) });
       } else if (hit.e.world !== expected) {
-        const actual = isWorld(hit.e.world) ? WORLD_LABELS[hit.e.world] : UNCLASSIFIED_LABEL;
-        issues.push({ path: ['twins', i, key], message: `ツイン関係の ${key}（${id}）は${WORLD_LABELS[expected]}のエンティティを指します（実際は ${actual}）` });
+        const actual = isWorld(hit.e.world) ? WORLD_LABELS[hit.e.world] : tr(UNCLASSIFIED_LABEL);
+        issues.push({ path: ['twins', i, key], message: tr('ツイン関係の {key}（{id}）は{world}のエンティティを指します（実際は {actual}）', { key, id, world: WORLD_LABELS[expected], actual }) });
       }
     }
   });
@@ -208,10 +212,10 @@ export function listUnclassified(entitiesJson: unknown): Array<Issue & { id?: st
     const o = (e && typeof e === 'object' ? e : {}) as EntityLike;
     const id = typeof o.id === 'string' ? { id: o.id } : {};
     if (o.world === undefined) {
-      out.push({ path: ['entities', i, 'world'], message: `世界区分（world）がありません（${WORLDS.join('／')} のどれかを付けてください）`, ...id });
+      out.push({ path: ['entities', i, 'world'], message: tr('世界区分（world）がありません（{values} のどれかを付けてください）', { values: WORLDS.join('／') }), ...id });
     }
     if (o.kind === undefined) {
-      out.push({ path: ['entities', i, 'kind'], message: `種別（kind）がありません（${ENTITY_KINDS.join('／')} のどれかを付けてください）`, ...id });
+      out.push({ path: ['entities', i, 'kind'], message: tr('種別（kind）がありません（{values} のどれかを付けてください）', { values: ENTITY_KINDS.join('／') }), ...id });
     }
   });
   return out;

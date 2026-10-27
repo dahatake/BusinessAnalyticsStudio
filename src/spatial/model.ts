@@ -2,10 +2,16 @@
 // 空間の階層（拠点 → フロア → 部屋・設備。FR-030）と、KPI（ツイン関係「計測する」＝measures。FR-214・FR-235）を、パックの entities から作る。
 // 上位（フロア・拠点）の KPI は顧客パックが値を与えたものだけを使い、下位の値から計算しない（AC-574）。
 import { KPI_STAGE_LABELS, kpiStageOf, type KpiStage, type KpiStages } from '../graphmodel';
+import { tr } from '../i18n';
 
 export type SpatialKind = 'site' | 'floor' | 'room' | 'equipment';
 
-export const SPATIAL_KIND_LABELS: Record<SpatialKind, string> = { site: '拠点', floor: 'フロア', room: '部屋', equipment: '設備' };
+export const SPATIAL_KIND_LABELS: Record<SpatialKind, string> = {
+  get site() { return tr('拠点'); },
+  get floor() { return tr('フロア'); },
+  get room() { return tr('部屋'); },
+  get equipment() { return tr('設備'); },
+};
 
 /** 意味的ズームの要素の段の数 D（拠点・フロア・部屋/設備）。階層は 全体 → 拠点 → フロア → 部屋/設備 → 詳細 の 5 つ（FR-237） */
 export const SPATIAL_ELEMENT_DEPTH = 3;
@@ -118,7 +124,7 @@ export function kpiCell(m: SpatialModel, id: string, kpi: string | undefined): K
   const r = readingOf(m, id, kpi);
   if (!r) {
     const kind = m.nodes.get(id)?.kind;
-    return { state: 'none', text: kind === 'floor' || kind === 'site' ? 'データなし（集計なし）' : 'データなし' };
+    return { state: 'none', text: kind === 'floor' || kind === 'site' ? tr('データなし（集計なし）') : tr('データなし') };
   }
   const value = `${r.value}${r.unit ? ` ${r.unit}` : ''}`;
   if (!r.stage) return { state: 'value', text: value };

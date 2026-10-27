@@ -1,6 +1,8 @@
 // 「現状の説明」の入力の組み立て・AI の出力の検証・AI が使えないときの決定的な代替説明（FR-274・FR-277）。純粋な関数だけ（データを書き換えない）。
 import type { PackData } from '../schema';
 import { estimateTokens } from './usage';
+import { tr } from '../i18n';
+import { trRecord } from '../schema/trRecord';
 
 export interface ExplainIssue { id: string; title: string }
 export interface ExplainSolution { id: string; title: string; issueIds: string[] }
@@ -106,13 +108,16 @@ export function parseAiExplanation(answer: string, s: ExplainSnapshot): ParsedEx
   }
   if (out.solutions.length === 0) return { ok: false, why: '解決策がありません' };
   const title = (id: string): string => s.issues.find((i) => i.id === id)?.title ?? id;
-  const lines: string[] = ['【課題】', ...out.issues.map((i) => `・${i.id} ${title(i.id)}: ${i.summary}`), '【解決策と KPI/OKR への寄与の見込み】'];
+  const lines: string[] = [tr('【課題】'), ...out.issues.map((i) => `・${i.id} ${title(i.id)}: ${i.summary}`), tr('【解決策と KPI/OKR への寄与の見込み】')];
   for (const x of out.solutions) {
     const sol = s.solutions.find((y) => y.id === x.id);
-    lines.push(`・${x.id} ${sol?.title ?? ''}（対応する課題: ${x.issueIds.map((id) => `${id} ${title(id)}`).join('、')}）`);
+    lines.push(tr('・{id} {title}（対応する課題: {issues}）', { id: x.id, title: sol?.title ?? '', issues: x.issueIds.map((id) => `${id} ${title(id)}`).join(tr('、')) }));
     for (const c of x.contributions) {
       const kr = krMap.get(c.krId);
-      lines.push(`　→ ${c.krId} ${kr?.name ?? ''}: 寄与 ${c.size}${c.range ? `（目安 ${c.range}）` : ''}${c.estimate ? '［推定］' : ''} 根拠: ${c.basis}`);
+      lines.push(tr('　→ {krId} {name}: 寄与 {size}{range}{estimate} 根拠: {basis}', {
+        krId: c.krId, name: kr?.name ?? '', size: c.size,
+        range: c.range ? tr('（目安 {range}）', { range: c.range }) : '', estimate: c.estimate ? tr('［推定］') : '', basis: c.basis,
+      }));
     }
   }
   return { ok: true, text: lines.join('\n') };
@@ -122,7 +127,7 @@ export function parseAiExplanation(answer: string, s: ExplainSnapshot): ParsedEx
 export type UnavailableReason =
   | 'not-configured' | 'disabled' | 'consent' | 'daily-limit' | 'budget' | 'error' | 'timeout' | 'relay' | 'person-unconfirmed' | 'invalid';
 
-export const REASON_TEXT: Record<UnavailableReason, string> = {
+export const REASON_TEXT: Readonly<Record<UnavailableReason, string>> = trRecord<UnavailableReason>({
   'not-configured': 'Foundry の接続情報（エンドポイント・デプロイ名・API キー）が未設定です',
   disabled: 'Foundry の実接続が有効になっていません（設定画面で有効にできます）',
   consent: '顧客の了承の記録がないため、外部へ送信できません',
@@ -133,29 +138,31 @@ export const REASON_TEXT: Record<UnavailableReason, string> = {
   relay: '中継プロセスに届きません（`npm run relay` で起動しているか確認してください）',
   'person-unconfirmed': '種別「人」を含む顧客パックは、送信前の確認が必要です',
   invalid: 'AI の出力が表示中の項目と一致しなかったため採用しませんでした',
-};
+});
 
 /** AI を使わず、同じ入力から同じ文を作る（外部への呼び出しなし。表示にない情報は補わない） */
 export function buildFallback(s: ExplainSnapshot): string {
   const title = (id: string): string => s.issues.find((i) => i.id === id)?.title ?? id;
   const lines: string[] = [
-    `画面「${s.screenLabel}」に表示している情報から作った説明です（AI 生成ではない）。`,
-    '【課題】',
-    ...(s.issues.length ? s.issues.map((i) => `・${i.id} ${i.title}`) : ['・表示中の課題はありません']),
-    '【解決策】',
+    tr('画面「{screen}」に表示している情報から作った説明です（AI 生成ではない）。', { screen: s.screenLabel }),
+    tr('【課題】'),
+    ...(s.issues.length ? s.issues.map((i) => `・${i.id} ${i.title}`) : [tr('・表示中の課題はありません')]),
+    tr('【解決策】'),
     ...(s.solutions.length
-      ? s.solutions.map((x) => `・${x.id} ${x.title}（対応する課題: ${x.issueIds.map((id) => `${id} ${title(id)}`).join('、') || 'なし'}）`)
-      : ['・表示中の解決策はありません']),
-    '【KPI/OKR への寄与】',
+      ? s.solutions.map((x) => tr('・{id} {title}（対応する課題: {issues}）', { id: x.id, title: x.title, issues: x.issueIds.map((id) => `${id} ${title(id)}`).join(tr('、')) || tr('なし') }))
+      : [tr('・表示中の解決策はありません')]),
+    tr('【KPI/OKR への寄与】'),
   ];
-  if (s.krs.length === 0) lines.push('・表示中の KPI/OKR はありません');
+  if (s.krs.length === 0) lines.push(tr('・表示中の KPI/OKR はありません'));
   for (const k of s.krs) {
     const sols = k.solutionIds.map((id) => s.solutions.find((x) => x.id === id)).filter((x): x is ExplainSolution => !!x);
-    lines.push(`・${k.id} ${k.name}（目標: ${k.objective} / KPI: ${k.kpi}、基準 ${k.baseline} → 現在 ${k.current} → 目標 ${k.target} ${k.unit}）`);
+    lines.push(tr('・{id} {name}（目標: {objective} / KPI: {kpi}、基準 {baseline} → 現在 {current} → 目標 {target} {unit}）', {
+      id: k.id, name: k.name, objective: k.objective, kpi: k.kpi, baseline: k.baseline, current: k.current, target: k.target, unit: k.unit,
+    }));
     lines.push(sols.length
-      ? `　寄与する解決策: ${sols.map((x) => `${x.id} ${x.title}`).join('、')}`
-      : '　寄与する解決策: 表示中の情報にはつながりがありません');
+      ? tr('　寄与する解決策: {solutions}', { solutions: sols.map((x) => `${x.id} ${x.title}`).join(tr('、')) })
+      : tr('　寄与する解決策: 表示中の情報にはつながりがありません'));
   }
-  lines.push('寄与の大きさ・範囲は、表示にない数値を補わないため示していません。');
+  lines.push(tr('寄与の大きさ・範囲は、表示にない数値を補わないため示していません。'));
   return lines.join('\n');
 }

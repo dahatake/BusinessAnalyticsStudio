@@ -1,5 +1,6 @@
 // Project ごとの分析（手法・パラメーター・ビュアー・選択・絞り込み・状態）の保持（FR-133〜135）。保存は store/persist.ts（FR-137 AC-207）。
 import { create } from 'zustand';
+import { tr } from '../i18n';
 import { compute, defaultParams, getMethod, parseField, type AnalysisResult, type Field, type MethodId, type Params, type ViewerId } from '../methods/model';
 
 export type AnalysisStatus = '編集中' | '結果確認済み';
@@ -66,7 +67,7 @@ export const useAnalyses = create<AnalysesState>((set, get) => ({
   setParam: (projectId, factorId, field, raw) => {
     const a = get().byProject[projectId];
     const cur = a?.params[factorId];
-    if (!a || !cur) return { ok: false, reason: '分析または項目が見つかりません。' };
+    if (!a || !cur) return { ok: false, reason: tr('分析または項目が見つかりません。') };
     const r = parseField(field, raw);
     if (!r.ok) return r;
     set((s) => patch(s, projectId, { params: { ...a.params, [factorId]: { ...cur, [field]: r.value } }, status: '編集中' }));

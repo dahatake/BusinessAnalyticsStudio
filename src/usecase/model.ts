@@ -1,4 +1,5 @@
 // ユースケースの登録（FR-158）とプレゼン用アニメーションの生成（FR-155）の純関数。端末内だけで完結し、AI には接続しない。
+import { tr } from '../i18n';
 
 /** 1 ユースケースの手順の上限（PARAM-046） */
 export const MAX_STEPS = 20;
@@ -27,7 +28,7 @@ export type Checked<T> = { ok: true; value: T } | { ok: false; errors: string[] 
 /** 手順を 1 件足す。上限（PARAM-046）に達していれば拒否し、既存の手順は変えない（FR-158 AC-287） */
 export function addStep(steps: readonly UseCaseStep[]): Checked<UseCaseStep[]> {
   if (steps.length >= MAX_STEPS) {
-    return { ok: false, errors: [`手順は 1 ユースケースにつき ${MAX_STEPS} 件までです。不要な手順を削除するか、手順をまとめてください。`] };
+    return { ok: false, errors: [tr('手順は 1 ユースケースにつき {max} 件までです。不要な手順を削除するか、手順をまとめてください。', { max: MAX_STEPS })] };
   }
   return { ok: true, value: [...steps.map((s) => ({ ...s })), { title: '', description: '' }] };
 }
@@ -35,9 +36,9 @@ export function addStep(steps: readonly UseCaseStep[]): Checked<UseCaseStep[]> {
 /** 登録内容の検証（FR-158 AC-286）。名称と各手順の見出しは必須。値は前後の空白を除いて保存する */
 export function validateDraft(d: UseCaseDraft): Checked<UseCaseDraft> {
   const errors: string[] = [];
-  if (!d.name.trim()) errors.push('名称を入力してください。');
-  d.steps.forEach((s, i) => { if (!s.title.trim()) errors.push(`手順 ${i + 1} の見出しを入力してください。`); });
-  if (d.steps.length > MAX_STEPS) errors.push(`手順は ${MAX_STEPS} 件までです。`);
+  if (!d.name.trim()) errors.push(tr('名称を入力してください。'));
+  d.steps.forEach((s, i) => { if (!s.title.trim()) errors.push(tr('手順 {n} の見出しを入力してください。', { n: i + 1 })); });
+  if (d.steps.length > MAX_STEPS) errors.push(tr('手順は {max} 件までです。', { max: MAX_STEPS }));
   if (errors.length > 0) return { ok: false, errors };
   return {
     ok: true,
@@ -58,17 +59,17 @@ export function buildScenes(uc: UseCaseDraft): Scene[] {
   const intro: Scene = {
     kind: 'intro',
     title: uc.name,
-    body: [`対象ペルソナ: ${uc.persona || '（未入力）'}`, uc.summary].filter(Boolean).join('\n'),
+    body: [tr('対象ペルソナ: {persona}', { persona: uc.persona || tr('（未入力）') }), uc.summary].filter(Boolean).join('\n'),
   };
   const steps: Scene[] = uc.steps.map((s) => ({ kind: 'step', title: s.title, body: s.description }));
-  const effect: Scene[] = uc.effect.trim() ? [{ kind: 'effect', title: '期待する効果', body: uc.effect }] : [];
+  const effect: Scene[] = uc.effect.trim() ? [{ kind: 'effect', title: tr('期待する効果'), body: uc.effect }] : [];
   return [intro, ...steps, ...effect];
 }
 
 /** アニメーションを作る。手順が 0 件なら拒否する（FR-155 AC-277）。 */
 export function createAnimation(uc: UseCaseDraft, now: Date = new Date()): Checked<Animation> {
   if (uc.steps.length === 0) {
-    return { ok: false, errors: ['手順がないため、アニメーションを作成できません。手順を 1 つ以上追加する（「編集」から手順を追加して保存する）と作成できます。'] };
+    return { ok: false, errors: [tr('手順がないため、アニメーションを作成できません。手順を 1 つ以上追加する（「編集」から手順を追加して保存する）と作成できます。')] };
   }
   return { ok: true, value: { scenes: buildScenes(uc), signature: signature(uc), createdAt: now.toISOString() } };
 }

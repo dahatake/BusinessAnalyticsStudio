@@ -9,6 +9,7 @@ import type { GraphEdge, GraphNode } from '../selection/graph';
 import { useAnimation } from '../store/animation';
 import { DiagramCanvas } from './DiagramCanvas';
 import { sceneLabelStyle } from './labelStyles';
+import { useT } from '../i18n';
 
 const labelStyle = sceneLabelStyle;
 
@@ -40,13 +41,14 @@ export interface Graph3DProps {
 }
 
 export function Graph3D({ nodes, edges, pos, size, selected, onSelect }: Graph3DProps) {
+  const t3 = useT();
   const byId = useMemo(() => new Map(nodes.map((n) => [n.id, n])), [nodes]);
   const p3 = (id: string): [number, number, number] => {
     const n = byId.get(id);
     return n ? to3D(pos(id), n.kind, size) : [0, 0, 0];
   };
   return (
-    <DiagramCanvas label="ナレッジグラフ（3D）。ドラッグで回転、ホイールで拡大縮小">
+    <DiagramCanvas label={t3('ナレッジグラフ（3D）。ドラッグで回転、ホイールで拡大縮小')}>
       {edges.map((e) => {
         const st = EDGE_STYLE[e.kind];
         const a = p3(e.from);

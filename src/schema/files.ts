@@ -1,6 +1,7 @@
 // 顧客パックの JSON ファイルごとの zod スキーマ（FR-119 の構成）。
 // 未知の項目は通す（looseObject）。以後の項目が、既存のファイルを壊さずに項目を足せるようにするため。
 import { z } from 'zod';
+import { tr } from '../i18n';
 import {
   ClassificationSchema, ConfidenceSchema, CreatedBySchema, IdSchema, entityShape,
 } from './common';
@@ -135,7 +136,7 @@ export const LevelSchema = z.looseObject({
   lodThreshold: z.number().positive(),
   description: z.string().min(1),
   /** 色（#rgb または #rrggbb） */
-  color: z.string().regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, '色は #rgb または #rrggbb で書く'),
+  color: z.string().regex(/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/, { error: () => tr('色は #rgb または #rrggbb で書く') }),
   /** そのレベルで見る KPI の名前 */
   kpi: z.string().min(1),
   sourceIds: z.array(IdSchema).min(1),
@@ -147,7 +148,7 @@ export const EntitiesSchema = z.looseObject({
   levels: z.array(LevelSchema).optional().superRefine((levels, ctx) => {
     const seen = new Set<number>();
     (levels ?? []).forEach((l, i) => {
-      if (seen.has(l.depth)) ctx.addIssue({ code: 'custom', path: [i, 'depth'], message: `階層の深さ ${l.depth} が重複しています` });
+      if (seen.has(l.depth)) ctx.addIssue({ code: 'custom', path: [i, 'depth'], message: tr('階層の深さ {depth} が重複しています', { depth: l.depth }) });
       seen.add(l.depth);
     });
   }),
@@ -401,7 +402,7 @@ export const SourcesSchema = z.looseObject({
     confidence: ConfidenceSchema,
     classification: ClassificationSchema.optional(),
   }).refine((s) => s.kind !== 'workiq' || s.classification !== undefined, {
-    message: 'WorkIQ 由来の出典には機密区分（internal / shareable）が必要',
+    error: () => tr('WorkIQ 由来の出典には機密区分（internal / shareable）が必要'),
     path: ['classification'],
   })),
 });

@@ -7,6 +7,7 @@ import {
   effectsOf, FLOW_COLUMNS, FLOW_LABELS, relatedFlowNodes,
   type FlowModel, type FlowNode, type MatrixModel, type Solution, type Source,
 } from './model';
+import { useT } from '../i18n';
 
 export interface FlowSelection { kind: 'issue' | 'solution'; id: string }
 
@@ -81,8 +82,9 @@ export function SourceLinks({ solution, sources, onOpen }: {
   solution: Solution; sources: ReadonlyMap<string, Source>; onOpen: (solutionId: string, sourceId: string) => void;
 }) {
   const s = useStyles();
+  const t = useT();
   const ids = solution.sourceIds ?? [];
-  if (ids.length === 0) return <Text size={200}>出典なし</Text>;
+  if (ids.length === 0) return <Text size={200}>{t('出典なし')}</Text>;
   return (
     <span className={s.links}>
       {ids.map((id) => (
@@ -109,6 +111,7 @@ export interface FlowViewProps {
 
 export function SankeyView({ flow, selection, solutions, sources, onSelectIssue, onSelectSolution, onOpenSource }: FlowViewProps & { flow: FlowModel }) {
   const s = useStyles();
+  const t = useT();
   const height = flow.rows * (NODE_H + GAP) - GAP;
   const byId = new Map(flow.nodes.map((n) => [n.id, n]));
   const selectedId = selection && byId.has(selection.id) ? selection.id : undefined;
@@ -116,7 +119,7 @@ export function SankeyView({ flow, selection, solutions, sources, onSelectIssue,
   const top = (n: FlowNode) => n.row * (NODE_H + GAP);
 
   return (
-    <div className={s.scroll} role="region" aria-label="サンキー図" tabIndex={0}>
+    <div className={s.scroll} role="region" aria-label={t('サンキー図')} tabIndex={0}>
       <div className={s.sankey} data-testid="sankey">
         <div className={s.heads} aria-hidden>
           {FLOW_COLUMNS.map((k) => <Text key={k} size={200} weight="semibold" className={s.head}>{FLOW_LABELS[k]}</Text>)}
@@ -178,13 +181,14 @@ export function SankeyView({ flow, selection, solutions, sources, onSelectIssue,
 
 export function MatrixView({ matrix, selection, sources, onSelectIssue, onSelectSolution, onOpenSource }: FlowViewProps & { matrix: MatrixModel }) {
   const s = useStyles();
+  const t = useT();
   return (
-    <div className={s.scroll} role="region" aria-label="マトリクス" tabIndex={0}>
-      <Table aria-label="課題と Microsoft 製品のマトリクス" size="small" data-testid="matrix">
+    <div className={s.scroll} role="region" aria-label={t('マトリクス')} tabIndex={0}>
+      <Table aria-label={t('課題と Microsoft 製品のマトリクス')} size="small" data-testid="matrix">
         <TableHeader>
           <TableRow>
-            <TableHeaderCell>課題と原因</TableHeaderCell>
-            {matrix.columns.map((p) => <TableHeaderCell key={p?.id ?? 'none'}>{p ? p.name : '製品の関連付けなし'}</TableHeaderCell>)}
+            <TableHeaderCell>{t('課題と原因')}</TableHeaderCell>
+            {matrix.columns.map((p) => <TableHeaderCell key={p?.id ?? 'none'}>{p ? p.name : t('製品の関連付けなし')}</TableHeaderCell>)}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -204,10 +208,10 @@ export function MatrixView({ matrix, selection, sources, onSelectIssue, onSelect
                       {row.issue.title}
                     </Button>
                     {row.causes.length > 0 ? (
-                      <ul className={s.causes} aria-label="原因">
+                      <ul className={s.causes} aria-label={t('原因')}>
                         {row.causes.map((c) => <li key={c.id}><Text size={200}>{c.title}</Text></li>)}
                       </ul>
-                    ) : <Text size={200}>原因は未設定です</Text>}
+                    ) : <Text size={200}>{t('原因は未設定です')}</Text>}
                   </div>
                 </TableCell>
                 {row.cells.map((cell) => (
@@ -225,7 +229,7 @@ export function MatrixView({ matrix, selection, sources, onSelectIssue, onSelect
                           <Button appearance="transparent" size="small" className={s.mainButton} aria-pressed={on} onClick={(e) => { e.stopPropagation(); onSelectSolution(sol.id); }}>
                             {sol.title}
                           </Button>
-                          <Text size={200}>効果: {effectsOf(sol).map((e) => e.title).join('、') || '未設定'}</Text>
+                          <Text size={200}>{t('効果: {v}', { v: effectsOf(sol).map((e) => e.title).join('、') || t('未設定') })}</Text>
                           <SourceLinks solution={sol} sources={sources} onOpen={onOpenSource} />
                         </div>
                       );

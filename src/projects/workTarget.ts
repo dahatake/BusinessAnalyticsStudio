@@ -1,5 +1,6 @@
 // 作業先（デモ／実際の Project）の選択に使う、画面に依存しない規則（FR-144）。
 import type { Company, Project } from '../store/projects';
+import { tr } from '../i18n';
 
 export const DEMO_VALUE = 'demo';
 export const REGISTER_VALUE = 'register';
@@ -21,7 +22,7 @@ export function shouldShowStartupPicker(_projects?: readonly Project[]): boolean
 export function workTargetLabel(openId: string | null, projects: readonly Project[], companies: readonly Company[]): string {
   const project = openId ? projects.find((p) => p.id === openId) : undefined;
   const company = project ? companies.find((c) => c.id === project.companyId) : undefined;
-  return project && company ? `${company.name} - ${project.name}` : 'デモ';
+  return project && company ? `${company.name} - ${project.name}` : tr('デモ');
 }
 
 /** 選択画面の候補: デモ、各 Project（企業名 / Project 名）、実際の Project を登録 */
@@ -40,12 +41,12 @@ export function targetOptions(
   const lastId = opts.currentId ?? (real.length === 1 ? real[0]?.value.slice(PROJECT_PREFIX.length) : undefined);
   const first = real.filter((o) => o.value === PROJECT_PREFIX + (lastId ?? ''));
   const rest = real.filter((o) => !first.includes(o));
-  const demo: TargetOption[] = opts.showDemo === false ? [] : [{ value: DEMO_VALUE, label: 'デモ（架空企業のお手本パック）', kind: 'demo' }];
+  const demo: TargetOption[] = opts.showDemo === false ? [] : [{ value: DEMO_VALUE, label: tr('デモ（架空企業のお手本パック）'), kind: 'demo' }];
   return [
     ...first,
     ...demo,
     ...rest,
-    { value: REGISTER_VALUE, label: '実際の Project を登録', kind: 'register' },
+    { value: REGISTER_VALUE, label: tr('実際の Project を登録'), kind: 'register' },
   ];
 }
 
@@ -59,9 +60,9 @@ export function menuGroups(projects: readonly Project[], companies: readonly Com
 
 /** 作業先の候補に添える一行の説明（60 字以内。FR-270 AC-687） */
 export function optionDescription(kind: TargetOption['kind']): string {
-  if (kind === 'demo') return '架空企業のお手本データで、顧客パックがなくても画面を試せる';
-  if (kind === 'project') return '登録した企業・Project のデータで作業する';
-  return '新しく企業と Project を登録して作業を始める';
+  if (kind === 'demo') return tr('架空企業のお手本データで、顧客パックがなくても画面を試せる');
+  if (kind === 'project') return tr('登録した企業・Project のデータで作業する');
+  return tr('新しく企業と Project を登録して作業を始める');
 }
 export const MENU_DEMO_LABEL = 'デモ（架空企業のお手本パック）';
 
