@@ -260,7 +260,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
             </Text>
             {pane ? (
               // 階層は、色だけでなく文字と形（塗り・薄い塗り・枠線）でも示す（FR-244 AC-589）
-              <Badge data-testid="tier-label" appearance={TIER_APPEARANCE[pane.tier]} color={pane.tier === 'primary' ? 'brand' : 'informative'} shape={pane.tier === 'primary' ? 'rounded' : pane.tier === 'supporting' ? 'circular' : 'square'} size="medium">{TIER_LABEL[pane.tier]}</Badge>
+              <Badge data-testid="tier-label" appearance={TIER_APPEARANCE[pane.tier]} color={pane.tier === 'primary' ? 'brand' : 'informative'} shape={pane.tier === 'primary' ? 'rounded' : pane.tier === 'supporting' ? 'circular' : 'square'} size="medium">{t(TIER_LABEL[pane.tier])}</Badge>
             ) : null}
             {sample ? (
               <span className={s.sample} data-testid="sample-badge">

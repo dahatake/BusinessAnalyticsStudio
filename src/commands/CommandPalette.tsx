@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type Keyboa
 import {
   Button, DialogActions, DialogBody, DialogContent, DialogTitle, DialogTrigger, Input, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
-import { useT } from '../i18n';
+import { useLang, useT } from '../i18n';
 import { Dialog, DialogSurface } from '../components/Dialog';
 import { isEditableTarget } from '../components/panelKeys';
 import type { ScreenDefinition } from '../screens/types';
@@ -39,8 +39,10 @@ const useStyles = makeStyles({
 
 function useCommands(): Command[] {
   const version = useSyncExternalStore(onCommandsChanged, commandsVersion);
+  // 操作名は表示時の言語で作るので、言語の切り替えでも作り直す（FR-294）
+  const lang = useLang((st) => st.lang);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => getCommands(), [version]);
+  return useMemo(() => getCommands(), [version, lang]);
 }
 
 export function CommandPalette() {

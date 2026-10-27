@@ -93,7 +93,7 @@ export function buildSummary(scope: SummaryScope, data: PackData, ctx: SummaryCo
       return {
         conclusion: tr('ToBe では、AsIs から要素の追加・削除・変更を伴う構成へ変わります。'),
         evidence: [tr('根拠: AsIs から ToBe で、{diffs}（要素 {n} 件）です。', {
-          diffs: kinds.map(([k, count]) => (count === 0 ? tr('{k}なし', { k }) : tr('{k} {n} 件', { k, n: count }))).join('・'),
+          diffs: kinds.map(([k, count]) => (count === 0 ? tr('{k}なし', { k }) : tr('{k} {n} 件', { k, n: count }))).join(tr('・')),
           n: v.tobe.elements.length,
         })],
         action: tr('追加される要素の製品適合と、削除される要素の移行手順を確認してください。'),

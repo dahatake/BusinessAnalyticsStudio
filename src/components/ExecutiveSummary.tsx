@@ -17,7 +17,7 @@ import { activeEdited, useSummaryStore } from '../store/summary';
 import { useTreeDoc } from '../store/tree';
 import { NumericValue } from './NumericValue';
 import { elevationStyles } from '../theme/tokens';
-import { useT } from '../i18n';
+import { useLang, useT } from '../i18n';
 
 const useStyles = makeStyles({
   root: {
@@ -52,9 +52,11 @@ export function ExecutiveSummary({ scope }: ExecutiveSummaryProps) {
   const tree = useTreeDoc(key, data);
   const stored = useSummaryStore((st) => st.byPack[key]?.[scope]);
 
+  const lang = useLang((st) => st.lang); // 要約の文は表示時の言語で作るので、言語の切り替えで作り直す（FR-294）
   const generated: SummaryContent | undefined = useMemo(
     () => (data ? buildSummary(scope, data, { weights, tree }) : undefined),
-    [data, scope, weights, tree],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [data, scope, weights, tree, lang],
   );
   const fp = generated ? fingerprint(generated) : '';
 
