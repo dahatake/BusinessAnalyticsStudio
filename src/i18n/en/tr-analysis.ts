@@ -38,7 +38,6 @@ export default {
   '課題と原因': 'Issues and causes',
   '追加': 'Added',
   '削除': 'Removed',
-  '変更': 'Changed',
   'ビジネス: Capability Map': 'Business: Capability Map',
   'ビジネス: バリューストリーム': 'Business: Value stream',
   'その他': 'Other',
@@ -70,11 +69,8 @@ export default {
   '3D 形状なし': 'No 3D shape',
   '日付なし': 'No date',
   '{label}: {count} 件': '{label}: {count}',
-  '課題': 'Issues',
-  '解決策': 'Solutions',
   '製品': 'Products',
   '機能': 'Features',
-  'エンティティ': 'Entities',
 
   // --- analysis: graphEdit ---
   '名前を入力してください。': 'Enter a name.',
