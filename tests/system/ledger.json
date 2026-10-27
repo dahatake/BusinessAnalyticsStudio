@@ -179,7 +179,7 @@
     "AC-321": "sha256:07cfd09cab21d341",
     "AC-323": "sha256:3a1ae62f5e7aa98b",
     "AC-334": "sha256:28e9f4a26b6d23b5",
-    "AC-348": "sha256:9111ef231aa302c6",
+    "AC-348": "sha256:a5cc0501af6d10f5",
     "AC-350": "sha256:371e1ada1ddd799e",
     "AC-352": "sha256:97c669125802611b",
     "AC-354": "sha256:995801e0e4b7e0af",
@@ -197,7 +197,7 @@
     "AC-387": "sha256:2a376715517e1a52",
     "AC-388": "sha256:d1a9b2b81006dfac",
     "AC-389": "sha256:1e257df1c002c95a",
-    "AC-390": "sha256:8b8790f5c3b06ebe",
+    "AC-390": "sha256:e1c87ae0174da411",
     "AC-392": "sha256:6ff7679b71fb268f",
     "AC-393": "sha256:611765fba1082411",
     "AC-395": "sha256:a96a37b2530be908",
@@ -335,8 +335,10 @@
     "AC-778": "sha256:8350fd04a65308f1",
     "AC-785": "sha256:46c7dcb2989d1069",
     "AC-786": "sha256:3da2b81d12c38b20",
-    "AC-788": "sha256:8bee3a450c654a88",
-    "AC-789": "sha256:370eb98e94b0953e"
+    "AC-788": "sha256:8aa8721c94878ace",
+    "AC-789": "sha256:f72da02fb23e4074",
+    "AC-793": "sha256:600d5f10e2a101ff",
+    "AC-796": "sha256:de40dbe6ed01a69c"
   },
   "cases": [
     {
@@ -4313,11 +4315,11 @@
       "ac_ids": [
         "AC-348"
       ],
-      "title": "コンポーネントのヘッダードラッグでの自由移動・押し出しで重ならない・キャンバス外不可・再読込後の維持（AC-348）",
+      "title": "コンポーネントのヘッダードラッグでの自由移動・重なり許容と手前表示（Q-066 B）・キャンバス外不可・再読込後の維持（AC-348）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-348",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "4d79fad",
       "last_run_at": "2026-10-27T17:32:59+09:00",
       "evidence": "work/runs/202610271339/logs/system-test/E2E-268-202610271710.log",
@@ -4333,6 +4335,18 @@
           "by": "test-designer",
           "change": "title: 'コンポーネントのヘッダードラッグでの自由移動・重なり・手前表示・再読込後の維持（異常系: キャンバス外・本文ドラッグ）' -> 'コンポーネントのヘッダードラッグでの自由移動・押し出しで重ならない・キャンバス外不可・再読込後の維持（AC-348）'",
           "reason": "Q-025 改訂（重なる自由配置の廃止、FR-184 の押し出し）に合わせテストを更新"
+        },
+        {
+          "at": "2026-10-27T23:31:40+09:00",
+          "by": "test-designer",
+          "change": "title: 'コンポーネントのヘッダードラッグでの自由移動・押し出しで重ならない・キャンバス外不可・再読込後の維持（AC-348）' -> 'コンポーネントのヘッダードラッグでの自由移動・重なり許容と手前表示（Q-066 B）・キャンバス外不可・再読込後の維持（AC-348）'",
+          "reason": "AC-348 改訂（Q-066 B）: 押し出しから重なり許容・手前表示へ。テスト本文を更新"
+        },
+        {
+          "at": "2026-10-27T23:31:41+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC 改訂で再実行が必要"
         }
       ]
     },
@@ -4860,11 +4874,11 @@
       "ac_ids": [
         "AC-390"
       ],
-      "title": "A を B の位置へドロップすると B が押し出され全コンポーネントが重ならない（異常系: 連続ドロップ）",
+      "title": "スナップ・分割で B が押し出され全コンポーネントが重ならない（異常系: 連続スナップ、自由な移動では押し出さず手前表示）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-390",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "4d79fad",
       "last_run_at": "2026-10-27T17:32:59+09:00",
       "evidence": "work/runs/202610271339/logs/system-test/E2E-287-202610271710.log",
@@ -4874,6 +4888,18 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-27T23:31:40+09:00",
+          "by": "test-designer",
+          "change": "title: 'A を B の位置へドロップすると B が押し出され全コンポーネントが重ならない（異常系: 連続ドロップ）' -> 'スナップ・分割で B が押し出され全コンポーネントが重ならない（異常系: 連続スナップ、自由な移動では押し出さず手前表示）'",
+          "reason": "AC-390 改訂（Q-066 B）: 押し出しはスナップ・分割のみ、自由移動は押し出さない。テスト本文を更新"
+        },
+        {
+          "at": "2026-10-27T23:31:41+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC 改訂で再実行が必要"
         }
       ]
     },
@@ -11337,6 +11363,56 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "AC-788 AC-789 のケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-449",
+      "requirement_ids": [
+        "FR-152"
+      ],
+      "ac_ids": [
+        "AC-793"
+      ],
+      "title": "Windows 風スナップ: 上端=最大化・左右端=半分・角=1/4 のプレビューと配置、範囲外で消える、最大化で他は重ならない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-793",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-27T23:31:36+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-450",
+      "requirement_ids": [
+        "FR-152"
+      ],
+      "ac_ids": [
+        "AC-796"
+      ],
+      "title": "共有境界のドラッグで両側が同時にリサイズされ隙間・重なりが生じない",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-796",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-27T23:31:40+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
         }
       ]
     }
