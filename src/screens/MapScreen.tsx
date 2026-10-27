@@ -126,7 +126,7 @@ export function MapScreen() {
         ref={refOn ? (el) => { if (el) markerRefs.current.set(site.id, el); else markerRefs.current.delete(site.id); } : undefined}
         {...props}
         className={mergeClasses(s.marker, hl(props['data-highlight']))}
-        aria-label={t('拠点 {name}（緯度 {lat}、経度 {lng}）', { name: site.name, lat: site.lat, lng: site.lng })}
+        aria-label={`拠点 ${site.name}（緯度 ${site.lat}、経度 ${site.lng}）`}
         onKeyDown={(e) => { onEntityKey(e, site.id, ORIGIN); }}
         style={style}
       >

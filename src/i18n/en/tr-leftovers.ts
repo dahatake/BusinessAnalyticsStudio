@@ -123,7 +123,6 @@ export default {
   'HTML として読み取れません': 'Cannot be read as HTML',
 
   // ガイド（src/guide）
-  '拠点 {name}（緯度 {lat}、経度 {lng}）': 'Site {name} (latitude {lat}, longitude {lng})',
   'このアプリは、顧客との商談で使う分析ボードです。': 'This app is an analysis board for customer meetings.',
   '企業と Project を登録して、課題や計画を画面で整理できます。': 'Register a company and a Project, then organize issues and plans on screen.',
   '企業': 'Company',
