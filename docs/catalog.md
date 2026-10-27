@@ -299,10 +299,10 @@
 | FR-279 | コンポーネントごとの「Copilot の案」の表示・編集・破棄 | 承認済み | src/review/CopilotProposal.tsx, src/review/reviewStore.ts, src/components/Panel.tsx | tests/unit/copilot-review.test.tsx (AC-718, AC-719, AC-720), tests/system/e2e/copilot-review.spec.ts (E2E-411, E2E-412) | Copilot の案, デザイン基盤 |
 | NFR-SEC-012 | Foundry の API キーをリポジトリ・ログ・テストデータに出さない | 承認済み | scripts/relay/foundry-vault.ts (暗号化・Entra ID ではキー非保存), scripts/relay/relay.ts | tests/unit/foundry-secret-hygiene.test.ts (AC-729, AC-730), tests/unit/foundry-connection.test.ts | Foundry 接続部品 |
 | FR-280 | 「反映」による画面コンポーネントと管理データの更新 | 承認済み | src/screens/MemoScreen.tsx, src/store/memo.ts, src/screens/registry.ts, src/review/reviewStore.ts | tests/unit/copilot-reflect.test.tsx (AC-721, AC-722), tests/system/e2e/copilot-review.spec.ts (E2E-413) | Copilot の案 |
-| FR-281 | 反映の失敗時の扱いと反映の取り消し | 承認待ち | 未実装 | 未実装 | なし |
+| FR-281 | 反映の失敗時の扱いと反映の取り消し | 承認済み | 未実装 | 未実装 | なし |
 | FR-282 | Microsoft Foundry の接続設定（設定画面） | 承認済み | scripts/relay/foundry-vault.ts, scripts/relay/relay.ts, src/ai/foundryClient.ts, src/ai/FoundrySettings.tsx | tests/unit/foundry-connection.test.ts (AC-726), tests/system/e2e/copilot-review.spec.ts (AC-725) | Foundry 接続部品 |
 | FR-283 | 接続設定がないとき・接続に失敗したときの分析実行 | 承認済み | src/ai/foundryGate.ts | tests/unit/foundry-connection.test.ts (AC-727, AC-728), tests/system/e2e/copilot-review.spec.ts (AC-727) | Foundry 接続部品 |
-| NFR-COST-001 | 分析実行の利用量と月の予算の上限 | 承認待ち | 未実装 | 未実装 | なし |
+| NFR-COST-001 | 分析実行の利用量と月の予算の上限 | 承認済み | 未実装 | 未実装 | なし |
 | FR-284 | 画面「生成AIの効果的な活用シナリオの分析」と [分析実行] | 承認済み | src/genai/scenario.ts, src/screens/GenAiScenarioScreen.tsx | tests/system/CONTRACT.md, tests/system/e2e/genai-scenario.spec.ts, tests/system/support/relay-stub.ts, tests/unit/genai-scenario.test.ts, tests/unit/genai-screen.test.tsx, tests/unit/view-switch.test.tsx | - |
 | FR-285 | 生成AIの活用分析の Foundry 実接続の切替（共通接続 FR-275 を使う） | 承認済み | .env.example, src/genai/foundryClient.ts, src/genai/scenario.ts, src/genai/useGenAi.ts, src/screens/GenAiScenarioScreen.tsx | tests/system/CONTRACT.md, tests/system/e2e/genai-scenario.spec.ts, tests/system/e2e/quality.spec.ts, tests/system/support/relay-stub.ts, tests/unit/genai-scenario.test.ts, tests/unit/genai-screen.test.tsx | - |
 | FR-286 | チャットの Microsoft Foundry 送信（Copilot 風チャットの動作を Foundry でも保つ） | 承認済み | src/ai/AiUsagePanel.tsx, src/ai/ChatScreen.tsx, src/ai/foundryChat.ts, src/ai/foundryChatFlow.ts, src/ai/foundryUsage.ts | tests/system/CONTRACT.md, tests/system/e2e/chat-foundry.spec.ts, tests/system/support/relay-stub.ts, tests/unit/foundry-chat.test.ts | - |

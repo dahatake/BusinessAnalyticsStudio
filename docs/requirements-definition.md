@@ -933,7 +933,7 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 | FR-278 | 「Copilot で分析実行」ボタンと全コンポーネントのデータのレビュー | 承認済み | MUST | AC-715〜AC-717 | [app-core.md](requirements/app-core.md) |
 | FR-279 | コンポーネントごとの「Copilot の案」の表示・編集・破棄 | 承認済み | MUST | AC-718〜AC-720 | [app-core.md](requirements/app-core.md) |
 | FR-280 | 「反映」による画面コンポーネントと管理データの更新 | 承認済み | MUST | AC-721〜AC-722 | [app-core.md](requirements/app-core.md) |
-| FR-281 | 反映の失敗時の扱いと反映の取り消し | 承認待ち | SHOULD | AC-723〜AC-724（BLOCKED: Q-052） | [app-core.md](requirements/app-core.md) |
+| FR-281 | 反映の失敗時の扱いと反映の取り消し | 承認済み | SHOULD | AC-723〜AC-724（BLOCKED: Q-052） | [app-core.md](requirements/app-core.md) |
 | FR-282 | Microsoft Foundry の接続設定（設定画面） | 承認済み | MUST | AC-725〜AC-726 | [app-core.md](requirements/app-core.md) |
 | FR-283 | 接続設定がないとき・接続に失敗したときの分析実行 | 承認済み | MUST | AC-727〜AC-728 | [app-core.md](requirements/app-core.md) |
 | FR-288 | 外部ファイルの取り込み・書き出しの対応形式のガイド（users-guide の新規文書と README の索引） | 承認済み | SHOULD | AC-754〜AC-756 | [app-core.md](requirements/app-core.md) |
@@ -941,7 +941,7 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 | FR-292 | ストーリー動画の作成 1 回あたりの予算上限（見積り・制御・超過時の中止） | 承認済み | MUST | AC-782〜AC-784 | [app-experience.md](requirements/app-experience.md) |
 | FR-289 | 生成 AI（Microsoft Foundry）による AI 取り込み（Foundry 設定済みのときだけ選べる） | 承認済み | SHOULD | AC-757〜AC-760 | [app-core.md](requirements/app-core.md) |
 | NFR-SEC-012 | Foundry の API キーをリポジトリ・ログ・テストデータに出さない | 承認済み | MUST | AC-729〜AC-730 | [app-core.md](requirements/app-core.md) |
-| NFR-COST-001 | 分析実行の利用量と月の予算の上限 | 承認待ち | SHOULD | AC-731〜AC-732（BLOCKED: Q-053） | [app-core.md](requirements/app-core.md) |
+| NFR-COST-001 | 分析実行の利用量と月の予算の上限 | 承認済み | SHOULD | AC-731〜AC-732（BLOCKED: Q-053） | [app-core.md](requirements/app-core.md) |
 
 ## 7. ワークスペースとペルソナ別の情報表現
 
@@ -1022,6 +1022,7 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 | 2026-10-21 | AC-726（FR-282） | 監査 S1（直接矛盾: AC-726 の「末尾を除く伏せ字」↔ NFR-SEC-005 ③ の再表示禁止）を、より安全な側に揃えて解消: 保存後はキー値（末尾を含む）を表示せず、「設定済み」と値に由来しない固定の伏せ字だけを示す。NFR-SEC-005・NFR-SEC-012 の文面は変えない | 包括承認 2026-10-21・202610212148（approval_policy。既存の承認済み要求 NFR-SEC-005 に合わせる側で、表示を減らすだけ） | 202610212148 |
 | 2026-10-21 | FR-283・AC-727〜AC-728 | 工程 6 の転記: 包括承認（未設定・失敗時は送信せずデータを変えない）を確定として記録。利用者は次の Prompt の answers で却下・修正できる | 包括承認 2026-10-21・202610212148 | 202610212148 |
 | 2026-10-21 | FR-281・NFR-COST-001 | AI提案／承認待ち（利用者データの上書き・課金に関わるため包括承認しない）。AC-723・AC-724 は BLOCKED: Q-052、AC-731・AC-732 は BLOCKED: Q-053 | approval_policy の除外分野 | 202610212148 |
+| 2026-10-28 | FR-281・NFR-COST-001 | 利用者が 2026-10-28 に承認（決定状態を承認待ち→承認済みに変更。要求・AC の本文は変えない。Q-052・Q-053 は未回答のため AC-723・AC-724・AC-731・AC-732 は BLOCKED のまま） | 承認依頼 2026-10-28（利用者が承認） | 202610280602 |
 | 2026-10-21 | FR-220・AC-590・A-60 | 左メニューから「3D ビューと 2D 図面」と「2D 図面」の 2 項目を削除する。画面（FR-020）は廃止せず、レイアウト・ペルソナ・ステッパー・ドック・コマンドから引き続き開ける（進行役の前提。入口は次の行と 2026-10-21 の監査 C-01 の行で訂正）。AC-515 は文面を変えず、2 項目の不在と別経路での到達は AC-590（unit。項目の一覧と開く経路の判定で足り、実ブラウザーの観察を要しないため）で確かめる | 依頼 2026-10-21（A-60 の覆す条件に該当） | 202610211705 |
 | 2026-10-21 | FR-220・AC-590・A-60 | 画面の入口の記述を既存アプリの事実に合わせて改めた: 「3D ビューと 2D 図面」（view3d）はペルソナ（現場）・既定のレイアウト・ステッパー・ドック・コマンドから、「2D 図面」（drawing2d）はステッパー・ドック・コマンドから開ける（drawing2d はペルソナ・既定のレイアウトに含まれない）。依頼は左メニューの項目の削除だけで、入口の追加は範囲外のため要求側を直す。AC-590 の検証レベルは unit のまま | implementer の競合の報告（run 202610211705） | 202610211705 |
 | 2026-10-21 | FR-220・AC-590・A-60・FR-151 | 差分監査（run 202610211705・run1）の反映。C-01: 「ステッパーから開ける」を FR-136 AC-204 との食い違いとして改め、入口はドック・コマンド（view3d はペルソナ〈現場〉・既定のレイアウトでも表示）とし、両画面はステップ「現状分析」の関連画面（FR-228）に含まれるだけと書いた（AC-590 は unit のまま）。C-02: FR-151 の本文で「各画面」を左メニューに項目を持つ画面と読む旨を明記（AC-261 は system で台帳の digest に関わるため文面不変）。Q-01: FR-220 の題名を実際の項目名に改めた（主題の分割はしない）。Q-02: 決定状態の書式を保つため決定状態は変えず、改訂は出典とこの行で示す。Q-03: 1 行目に訂正の注記。T-01: カタログ「画面の登録」に左メニューに出さない画面の注記、「デザイン基盤」に FR-220 を追加。G-01: 現場の代替手段「2D 図面」の見つけやすさの改善は入口の追加になり依頼範囲外のため AUD-91 に記録。T-02 は実装の merge 時 | 監査 run 202610211705 run1 | 202610211705 |
