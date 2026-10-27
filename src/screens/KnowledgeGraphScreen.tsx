@@ -203,9 +203,9 @@ function NodeDialog({ open, nodes, defaultLink, onClose, onAdd }: {
                 {ADDABLE_KINDS.map((k) => <Option key={k.kind} value={k.kind}>{k.label}</Option>)}
               </Dropdown>
             </Field>
-            {kind === 'solution' ? <Text size={200}>解決策は、選択中の課題（なければ最初の課題）に紐づきます。{defaultLink ? '' : ''}</Text> : null}
+            {kind === 'solution' ? <Text size={200}>{t('解決策は、選択中の課題（なければ最初の課題）に紐づきます。')}{defaultLink ? '' : ''}</Text> : null}
             {error ? <Text role="alert" style={{ color: tokens.colorPaletteRedForeground1 }}>{error}</Text> : null}
-            <Text size={200} aria-hidden>追加先のパック内の項目数: {nodes.length}</Text>
+            <Text size={200} aria-hidden>{t('追加先のパック内の項目数:')} {nodes.length}</Text>
           </DialogContent>
           <DialogActions>
             <Button appearance="secondary" onClick={onClose}>{t('キャンセル')}</Button>
@@ -331,10 +331,10 @@ function KnowledgeGraphScreen() {
   const doAddEdge = (from: string, to: string) => apply(addEdge(data, from, to));
   const askDelete = () => {
     if (edgeSel) {
-      setConfirm({ title: `エッジ「${edgeSel.from} → ${edgeSel.to}」`, run: () => { const r = apply(removeEdge(data, edgeSel)); if (!r) setEdgeSelId(undefined); return r; } });
+      setConfirm({ title: t('エッジ「{from} → {to}」', { from: edgeSel.from, to: edgeSel.to }), run: () => { const r = apply(removeEdge(data, edgeSel)); if (!r) setEdgeSelId(undefined); return r; } });
     } else if (primaryId) {
       const label = graph.node(primaryId)?.label ?? primaryId;
-      setConfirm({ title: `ノード「${label}」`, run: () => apply(removeNode(data, primaryId)) });
+      setConfirm({ title: t('ノード「{label}」', { label }), run: () => apply(removeNode(data, primaryId)) });
     }
   };
   const canDelete = editEnabled && (edgeSel !== undefined || primaryId !== undefined);
@@ -351,11 +351,11 @@ function KnowledgeGraphScreen() {
       <div className={s.toolbar} role="toolbar" aria-label={t('ナレッジグラフの操作')}>
         {/* 見出しの「ビュー」と同じ 1 つの切替（3D を描画できない環境では無効にし理由を示す。FR-217 AC-500・AC-507） */}
         <ModeRadio viewKey={ORIGIN} />
-        <Field label={`ホップ数（${HOP_MIN}〜${HOP_MAX}）`}>
+        <Field label={t('ホップ数（{min}〜{max}）', { min: HOP_MIN, max: HOP_MAX })}>
           <span className={s.hop}>
             <input
               type="range" className={s.range} aria-label={t('ホップ数')} min={HOP_MIN} max={HOP_MAX} step={1} value={hop}
-              aria-valuemin={HOP_MIN} aria-valuemax={HOP_MAX} aria-valuenow={hop} aria-valuetext={`${hop} ホップ`}
+              aria-valuemin={HOP_MIN} aria-valuemax={HOP_MAX} aria-valuenow={hop} aria-valuetext={t('{hop} ホップ', { hop })}
               onChange={(e) => setHop(clampHop(Number(e.target.value)))}
             />
             <Text>{hop}</Text>
@@ -367,7 +367,7 @@ function KnowledgeGraphScreen() {
             onKeyDown={(e) => { if (e.key === 'Enter') { const first = [...matches][0]; if (first) select(first, { origin: ORIGIN }); } }}
           />
         </Field>
-        {query.trim() !== '' ? <Badge appearance="tint" color="warning" role="status">{matches.size} 件一致</Badge> : null}
+        {query.trim() !== '' ? <Badge appearance="tint" color="warning" role="status">{t('{n} 件一致', { n: matches.size })}</Badge> : null}
         <ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} />
       </div>
 
@@ -424,7 +424,7 @@ function KnowledgeGraphScreen() {
         <DialogSurface>
           <DialogBody>
             <DialogTitle>{t('削除の確認')}</DialogTitle>
-            <DialogContent>{confirm?.title} を削除します。ほかのビュー（表・課題-解決策分析など）からも消えます。</DialogContent>
+            <DialogContent>{t('{title} を削除します。ほかのビュー（表・課題-解決策分析など）からも消えます。', { title: confirm?.title ?? '' })}</DialogContent>
             <DialogActions>
               <Button appearance="secondary" onClick={() => setConfirm(null)}>{t('キャンセル')}</Button>
               <Button appearance="primary" onClick={() => { const r = confirm?.run(); setMessage(r ?? null); setConfirm(null); }}>{t('削除する')}</Button>

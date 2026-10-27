@@ -103,7 +103,7 @@ export function GenAiScenarioScreen() {
             <Text weight="semibold">{t('適合性の判断基準')}</Text>
             <ul className={s.list}>
               {r.criteria.map((c) => (
-                <li key={c.id}><b>{c.label}: {VERDICT_LABELS[c.verdict]}</b>（{t('根拠')}）{c.reason}</li>
+                <li key={c.id}><b>{c.label}: {t(VERDICT_LABELS[c.verdict])}</b>（{t('根拠')}）{c.reason}</li>
               ))}
             </ul>
             <Text weight="semibold">{t('生成AI以外の代替案')}</Text>

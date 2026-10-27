@@ -2,7 +2,7 @@
 // 選択はすべてのビューと共通の状態（src/store/selection.ts）で、この表の行のクリック・ホバーも同じ状態を使う（FR-024〜FR-027）。
 // 件数バッジ・AND/OR の切替・「非表示/減光」の選択・フィルター解除を備える。
 import { useEffect, useMemo, useState } from 'react';
-import { useT } from '../i18n';
+import { tr, useT } from '../i18n';
 import {
   Badge, Button, Field, Input, MessageBar, MessageBarActions, MessageBarBody, MessageBarTitle, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
   makeStyles, mergeClasses, tokens,
@@ -53,6 +53,7 @@ const idOf = (n: GraphNode): string => n.id;
  * role="gridcell" は、操作できるセルであることを伝える。
  */
 function NameCell({ node, className, indent = 0 }: { node: GraphNode; className: string; indent?: number }) {
+  const t = useT();
   const editMode = useEditStore((st) => st.editMode);
   const rename = useEditStore((st) => st.rename);
   const [editing, setEditing] = useState(false);
@@ -78,7 +79,7 @@ function NameCell({ node, className, indent = 0 }: { node: GraphNode; className:
           <span hidden aria-hidden="true">{node.label}</span>
           <InlineInput
             initial={node.label}
-            label={`${KIND_LABELS[node.kind]}の名称`}
+            label={t('{kind}の名称', { kind: t(KIND_LABELS[node.kind]) })}
             onClose={() => setEditing(false)}
             onSubmit={(t) => { const r = rename(node.id, t); return r.ok ? undefined : r.message; }}
           />
@@ -168,8 +169,8 @@ function TableScreen() {
       {fallback ? (
         <MessageBar intent="info" layout="multiline" data-testid="fallback-notice">
           <MessageBarBody>
-            <MessageBarTitle>{fallback.reason}の項目を表示しています</MessageBarTitle>
-            {fallback.source} の表現に必要な属性がないため、地図などには表示できない項目です（{fallbackNodes?.length ?? 0} 件）。
+            <MessageBarTitle>{t('{reason}の項目を表示しています', { reason: fallback.reason })}</MessageBarTitle>
+            {t('{source} の表現に必要な属性がないため、地図などには表示できない項目です（{n} 件）。', { source: fallback.source, n: fallbackNodes?.length ?? 0 })}
           </MessageBarBody>
           <MessageBarActions>
             <Button size="small" onClick={clearFallback}>{t('すべての項目に戻す')}</Button>
@@ -192,8 +193,8 @@ function TableScreen() {
         <Field label={t('絞り込み')}>
           <Input value={text} onChange={(_, d) => setText(d.value)} placeholder={t('名称・ID・種別')} />
         </Field>
-        <Badge appearance="filled" color="brand" size="large" data-testid="count-badge" aria-label={`該当 ${count} 件`}>
-          {count} 件
+        <Badge appearance="filled" color="brand" size="large" data-testid="count-badge" aria-label={t('該当 {n} 件', { n: count })}>
+          {t('{n} 件', { n: count })}
         </Badge>
         <Button icon={<FilterDismiss24Regular aria-hidden />} disabled={selectedIds.length === 0} onClick={() => clear({ origin: ORIGIN })}>
           {t('フィルター解除')}
@@ -251,18 +252,18 @@ function TableScreen() {
                   <TableCell className={s.cell}>{hasChildren ? (
                     <Button
                       size="small" appearance="subtle" icon={expanded ? <ChevronDown16Regular aria-hidden /> : <ChevronRight16Regular aria-hidden />}
-                      aria-label={expanded ? `${n.label} を折りたたむ` : `${n.label} を展開`}
+                      aria-label={expanded ? t('{title} を折りたたむ', { title: n.label }) : t('{title} を展開', { title: n.label })}
                       onClick={(e) => { e.stopPropagation(); toggle(n.id); }}
                     />
-                  ) : null}{state ? <Badge appearance="outline" color={state === '選択中' ? 'brand' : 'informative'}>{state}</Badge> : null}</TableCell>
-                  <TableCell className={s.cell}>{KIND_LABELS[n.kind]}{n.type ? `（${n.type}）` : ''}</TableCell>
+                  ) : null}{state ? <Badge appearance="outline" color={state === '選択中' ? 'brand' : 'informative'}>{t(state)}</Badge> : null}</TableCell>
+                  <TableCell className={s.cell}>{t(KIND_LABELS[n.kind])}{n.type ? `（${n.type}）` : ''}</TableCell>
                   {/* 世界区分（FR-218）。区分なしは「両方」でだけ出る。ツイン関係は相手の名前の印で示す */}
                   <TableCell className={s.cell}>
                     {n.world ? WORLD_VIEW_LABELS[n.world] : UNCLASSIFIED_LABEL}
                     {(twinPartners.get(n.id) ?? []).map((t) => {
                       const rel = graph.twinsOf(n.id).find((x) => x.id === t)?.relationLabel;
                       // 文字を拡大しても重ならないよう、折り返す 1 行の文字で示す（NFR-A11Y-009）
-                      return <span key={t} className={s.twin} data-twin-of={t}>{`⇄ ツイン: ${graph.node(t)?.label ?? t}${rel ? `（${rel}）` : ''}`}</span>;
+                      return <span key={t} className={s.twin} data-twin-of={t}>{`${tr('⇄ ツイン:')} ${graph.node(t)?.label ?? t}${rel ? `（${rel}）` : ''}`}</span>;
                     })}
                   </TableCell>
                   <NameCell node={n} className={s.cell} indent={depth} />

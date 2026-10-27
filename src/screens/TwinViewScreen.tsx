@@ -72,7 +72,7 @@ function ItemButton({ item, selectedFlag, onOpen }: { item: TwinItem; selectedFl
   return (
     <button
       type="button" {...props} className={mergeClasses(s.item, hl(props['data-highlight']))} aria-pressed={selectedFlag}
-      aria-label={`${item.name}（${item.world === 'real' ? '現実世界' : t('デジタル世界')}）`}
+      aria-label={`${item.name}（${item.world === 'real' ? t('現実世界') : t('デジタル世界')}）`}
       onDoubleClick={() => onOpen(item.id)}
       onKeyDown={(e) => {
         if (e.key === 'Enter' && e.target === e.currentTarget) { e.preventDefault(); onOpen(item.id); return; }
@@ -95,10 +95,10 @@ function FlowRow({ flow, nameOf, ids }: { flow: TwinFlow; nameOf: (id: string) =
       data-highlight={on ? 'related' : undefined} aria-label={`${ft.name}の流れ ${nameOf(flow.from)} から ${nameOf(flow.to)}（${flow.label}、${flow.count} 件）`}
       className={mergeClasses(s.flow, ft.lineStyle === 'solid' ? s.solid : s.dashed, on && s.flowOn, ids.size > 0 && !on && s.flowDim)}
     >
-      <Badge appearance="outline" size="large">{ft.name} {ft.arrow}</Badge>
+      <Badge appearance="outline" size="large">{t(ft.name)} {ft.arrow}</Badge>
       <Text weight="semibold">{flow.label || t('（ラベルなし）')}</Text>
-      <Text>{flow.count} 件</Text>
-      <Text size={200}>{nameOf(flow.from)} → {nameOf(flow.to)}（{ft.direction}）</Text>
+      <Text>{t('{n} 件', { n: flow.count })}</Text>
+      <Text size={200}>{nameOf(flow.from)} → {nameOf(flow.to)}（{t(ft.direction)}）</Text>
     </li>
   );
 }
@@ -178,7 +178,7 @@ export function TwinViewScreen() {
     return { id: i.id, name: i.name, kind: c, kindLabel: c.split(t('（'))[0], cluster: i.world };
   }), [allItems]);
   const graphEdges = useMemo<GraphEdgeIn[]>(() => [
-    ...model.flows.map((f) => ({ id: f.id, from: f.from, to: f.to, label: `${FLOW_TEXT[f.kind].name} ${f.label || ''} ${f.count} 件`.replace(/\s+/g, ' ').trim(), meaning: f.kind, dash: FLOW_TEXT[f.kind].lineStyle === 'dashed' ? '6 4' : undefined })),
+    ...model.flows.map((f) => ({ id: f.id, from: f.from, to: f.to, label: `${t(FLOW_TEXT[f.kind].name)} ${f.label || ''} ${t('{n} 件', { n: f.count })}`.replace(/\s+/g, ' ').trim(), meaning: f.kind, dash: FLOW_TEXT[f.kind].lineStyle === 'dashed' ? '6 4' : undefined })),
     ...twinLinks.map(([a, b]) => ({ id: `twin:${a}>${b}`, from: a, to: b, label: t('ツイン'), meaning: 'twin', dash: '2 3' })),
   ], [model, twinLinks]);
 
@@ -246,8 +246,8 @@ export function TwinViewScreen() {
   const surf3d = is3d && !asTable;
   const detailRel = detailItem
     ? [
-      ...model.flows.filter((f) => f.from === detailItem.id || f.to === detailItem.id).map((f) => `${FLOW_TEXT[f.kind].name}: ${nameOf(f.from)} から ${nameOf(f.to)} へ ${f.label || t('（ラベルなし）')}（${f.count} 件）`),
-      ...twinLinks.filter(([a, b]) => a === detailItem.id || b === detailItem.id).map(([a, b]) => `ツイン: ${nameOf(a)} と ${nameOf(b)}`),
+      ...model.flows.filter((f) => f.from === detailItem.id || f.to === detailItem.id).map((f) => `${t(FLOW_TEXT[f.kind].name)}: ${t('{from} から {to} へ {label}', { from: nameOf(f.from), to: nameOf(f.to), label: f.label || t('（ラベルなし）') })}（${t('{n} 件', { n: f.count })}）`),
+      ...twinLinks.filter(([a, b]) => a === detailItem.id || b === detailItem.id).map(([a, b]) => t('ツイン: {a} と {b}', { a: nameOf(a), b: nameOf(b) })),
     ]
     : [];
   const detailSources = detailItem
@@ -263,7 +263,7 @@ export function TwinViewScreen() {
     >
       <div ref={rootRef} style={{ position: 'relative', display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM }}>
         <div className={s.notes}>
-          <Badge appearance="tint" color="informative" data-testid="twin-freshness">{FRESHNESS_NOTE}{fresh ? ` 出典の取得日: ${fresh}` : t(' 取得日の記載なし')}</Badge>
+          <Badge appearance="tint" color="informative" data-testid="twin-freshness">{FRESHNESS_NOTE}{fresh ? ` ${t('出典の取得日:')} ${fresh}` : t(' 取得日の記載なし')}</Badge>
           {hasControl || view.world === 'both' ? <Badge appearance="tint" color="warning" data-testid="twin-control-note">Control: {CONTROL_NOTE}</Badge> : null}
           {!isGraph ? <ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} /> : null}
         </div>
@@ -272,7 +272,7 @@ export function TwinViewScreen() {
         ) : (
           <>
             <ZoomBar label={t('Twin ビュー')} depth={depth} elementDepth={ELEMENT_DEPTH} onGo={goDepth} elementLabels={focusCluster ? [focusCluster] : []} detailLabel={detailItem?.name} />
-            <TwinMinimap items={items3d} inView={minimapIds} status={`現在の表示範囲: ${depth === 2 && detailItem ? detailItem.name : depth === 1 && focusCluster ? focusCluster : t('全体')}`} />
+            <TwinMinimap items={items3d} inView={minimapIds} status={`${t('現在の表示範囲:')} ${depth === 2 && detailItem ? detailItem.name : depth === 1 && focusCluster ? focusCluster : t('全体')}`} />
             {surf3d ? (
               <>
                 <div ref={surf3dRef} style={{ position: 'relative' }}>
@@ -296,7 +296,7 @@ export function TwinViewScreen() {
                 <ZoomDetail
                   item={{
                     id: detailItem.id, name: detailItem.name,
-                    attributes: [[t('種別'), clusterOfItem(detailItem)], [t('世界'), detailItem.world === 'real' ? '現実世界' : t('デジタル世界')], ['ID', detailItem.id]],
+                    attributes: [[t('種別'), clusterOfItem(detailItem)], [t('世界'), detailItem.world === 'real' ? t('現実世界') : t('デジタル世界')], ['ID', detailItem.id]],
                     sources: detailSources, relations: detailRel,
                   }}
                 />
@@ -306,9 +306,9 @@ export function TwinViewScreen() {
             {surf3d || isGraph || asTable ? (
               <GraphAlt
                 origin={ORIGIN} label={t('Twin ビュー')} columns={[t('世界')]} showTableButton={isGraph}
-                nodes={allItems.map((i) => ({ id: i.id, name: i.name, kind: clusterOfItem(i), values: [i.world === 'real' ? '現実世界' : t('デジタル世界')] }))}
+                nodes={allItems.map((i) => ({ id: i.id, name: i.name, kind: clusterOfItem(i), values: [i.world === 'real' ? t('現実世界') : t('デジタル世界')] }))}
                 relations={graphEdges.map((e) => ({ id: e.id, from: e.from, to: e.to, label: e.label }))}
-                summary={`現実世界 ${model.real.length} 件、デジタル世界 ${model.digital.length} 件（${model.layers.filter((l) => l.layer !== 'none').map((l) => `${l.layer} ${l.items.length}`).join('、')}）`}
+                summary={t('現実世界 {r} 件、デジタル世界 {d} 件（{layers}）', { r: model.real.length, d: model.digital.length, layers: model.layers.filter((l) => l.layer !== 'none').map((l) => `${l.layer} ${l.items.length}`).join(t('、')) })}
               />
             ) : null}
           </>

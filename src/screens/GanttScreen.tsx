@@ -230,7 +230,7 @@ function GanttScreen() {
           {hasChildren ? (
             <Button
               size="small" appearance="subtle" icon={expanded ? <ChevronDown16Regular aria-hidden /> : <ChevronRight16Regular aria-hidden />}
-              aria-label={expanded ? `${g.task.title} を折りたたむ` : `${g.task.title} を展開`}
+              aria-label={expanded ? t('{title} を折りたたむ', { title: g.task.title }) : t('{title} を展開', { title: g.task.title })}
               onClick={(e) => { e.stopPropagation(); toggle(g.task.id); }}
             />
           ) : null}
@@ -312,9 +312,9 @@ function GanttScreen() {
                       >
                         {g.feature.title}
                       </Button>
-                      <Text size={200}>{g.tasks.length} 件の工程</Text>
+                      <Text size={200}>{t('{n} 件の工程', { n: g.tasks.length })}</Text>
                       {(g.feature.issueIds ?? []).length > 0 ? (
-                        <Text size={200}>課題: {(g.feature.issueIds ?? []).map((id) => issueTitle.get(id) ?? id).join('、')}</Text>
+                        <Text size={200}>{t('課題:')} {(g.feature.issueIds ?? []).map((id) => issueTitle.get(id) ?? id).join('、')}</Text>
                       ) : null}
                       </div>
                     </div>
@@ -336,9 +336,9 @@ function GanttScreen() {
               <>
                 <Text as="h3" size={400} weight="semibold">{active.title}</Text>
                 <Text>Feature: {(active.featureId && featureTitle.get(active.featureId)) || t('なし')}</Text>
-                <Text>開始日: {active.start ?? t('未設定')}　終了日: {active.end ?? t('未設定')}</Text>
-                <Text>担当: {active.owner ?? t('未設定')}</Text>
-                <Text>作業内容: {active.work ?? t('未設定')}</Text>
+                <Text>{t('開始日:')} {active.start ?? t('未設定')}　{t('終了日:')} {active.end ?? t('未設定')}</Text>
+                <Text>{t('担当:')} {active.owner ?? t('未設定')}</Text>
+                <Text>{t('作業内容:')} {active.work ?? t('未設定')}</Text>
               </>
             ) : (
               <Text>{t('Feature を選ぶか、工程にカーソルを合わせる（フォーカスする）と、開始日・終了日・担当・作業内容を表示します。')}</Text>
@@ -347,7 +347,7 @@ function GanttScreen() {
 
           {featureId !== undefined ? (
             <section className={s.section} data-testid="feature-tasks" aria-label={t('選んだ Feature の工程')}>
-              <Text as="h3" size={400} weight="semibold">{featureTitle.get(featureId) ?? featureId} の工程</Text>
+              <Text as="h3" size={400} weight="semibold">{t('{title} の工程', { title: featureTitle.get(featureId) ?? featureId })}</Text>
               {selectedTasks.length === 0 ? <Text>{t('この Feature の工程はありません。')}</Text> : (
                 <Table aria-label={t('工程の一覧')} size="small">
                   <TableHeader>

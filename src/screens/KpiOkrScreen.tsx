@@ -156,7 +156,7 @@ function KpiOkrScreen() {
       <div className={s.actions}>
         <Button appearance="primary" className={s.define} disabled={!editMode} onClick={() => useOkrDialog.getState().show(toDraft(okr?.objectives[0]))}>{t('OKR を定義')}</Button>
         {!editMode ? <Text size={200}>{t('定義と現在値の更新は、編集モードを ON にして行います。')}</Text> : null}
-        <Text size={200} data-testid="okr-updated">最終更新日時: {okr ? formatUpdated(okr.updatedAt) : t('未更新')}</Text>
+        <Text size={200} data-testid="okr-updated">{t('最終更新日時:')} {okr ? formatUpdated(okr.updatedAt) : t('未更新')}</Text>
       </div>
       {!okr ? (
         <div data-testid="okr-unset" role="status">
@@ -187,7 +187,7 @@ function KpiOkrScreen() {
                   <TableRow key={k.id} data-kr-id={k.id}>
                     <TableCell>{k.objective}</TableCell><TableCell>{k.r.name}</TableCell><TableCell>{k.r.kpi.name}</TableCell>
                     <TableCell>{num(k.r.kpi.current)} {k.r.kpi.unit}</TableCell><TableCell>{num(k.r.kpi.target)} {k.r.kpi.unit}</TableCell>
-                    <TableCell>{achievementText(k.r.kpi)}（{achievementState(k.r.kpi)}）</TableCell>
+                    <TableCell>{achievementText(k.r.kpi)}（{t(achievementState(k.r.kpi))}）</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

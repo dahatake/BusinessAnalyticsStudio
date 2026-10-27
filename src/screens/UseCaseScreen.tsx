@@ -104,15 +104,15 @@ function UseCaseDialog({ projectId }: { projectId: string }) {
             <Field label={t('対象ペルソナ')}><Input value={draft.persona} onChange={(_, d) => patch({ persona: d.value })} /></Field>
             <Field label={t('期待する効果')}><Textarea value={draft.effect} onChange={(_, d) => patch({ effect: d.value })} /></Field>
             {draft.steps.map((st, i) => (
-              <div key={i} className={s.stepForm} role="group" aria-label={`手順 ${i + 1}`}>
-                <Field label={`手順 ${i + 1} の見出し`} required><Input value={st.title} onChange={(_, d) => setStep(i, { title: d.value })} /></Field>
-                <Field label={`手順 ${i + 1} の説明`}><Textarea value={st.description} onChange={(_, d) => setStep(i, { description: d.value })} /></Field>
-                <div><Button size="small" onClick={() => patch({ steps: draft.steps.filter((_x, j) => j !== i) })}>{`手順 ${i + 1} を削除`}</Button></div>
+              <div key={i} className={s.stepForm} role="group" aria-label={t('手順 {n}', { n: i + 1 })}>
+                <Field label={t('手順 {n} の見出し', { n: i + 1 })} required><Input value={st.title} onChange={(_, d) => setStep(i, { title: d.value })} /></Field>
+                <Field label={t('手順 {n} の説明', { n: i + 1 })}><Textarea value={st.description} onChange={(_, d) => setStep(i, { description: d.value })} /></Field>
+                <div><Button size="small" onClick={() => patch({ steps: draft.steps.filter((_x, j) => j !== i) })}>{t('手順 {n} を削除', { n: i + 1 })}</Button></div>
               </div>
             ))}
             <div className={s.row}>
               <Button icon={<Add24Regular />} onClick={onAdd}>{t('手順を追加')}</Button>
-              <Text size={200}>{`${draft.steps.length} / ${MAX_STEPS} 件`}</Text>
+              <Text size={200}>{t('{n} / {max} 件', { n: draft.steps.length, max: MAX_STEPS })}</Text>
             </div>
             {errors.length > 0 ? (
               <MessageBar intent="error" layout="multiline" role="alert">
@@ -167,21 +167,21 @@ function AnimationPlayer({ uc, anim, onClose }: { uc: UseCase; anim: Animation; 
   });
 
   const scene = anim.scenes[Math.min(index, total - 1)]!;
-  const stateText = state === 'playing' ? (motionRunning ? '再生中' : t('再生中（動きは停止中）')) : state === 'paused' ? '一時停止中' : t('終了');
+  const stateText = state === 'playing' ? (motionRunning ? t('再生中') : t('再生中（動きは停止中）')) : state === 'paused' ? t('一時停止中') : t('終了');
   return (
-    <section className={s.player} data-testid="animation-player" aria-label={`アニメーション: ${uc.name}`} data-animation-state={state} data-motion={motionRunning ? 'running' : 'stopped'}>
+    <section className={s.player} data-testid="animation-player" aria-label={t('アニメーション: {name}', { name: uc.name })} data-animation-state={state} data-motion={motionRunning ? 'running' : 'stopped'}>
       {stale ? (
         <div role="status"><MessageBar intent="warning"><MessageBarBody>{t('このアニメーションは古い内容です。ユースケースを編集した後に再作成していません。「アニメーションを作成」で最新にできます。')}</MessageBarBody></MessageBar></div>
       ) : null}
       <div className={s.row}>
         <Text data-testid="animation-position" aria-live="polite">{`${index + 1} / ${total}`}</Text>
-        <Text size={200} data-testid="animation-state-text">{`状態: ${stateText}`}</Text>
+        <Text size={200} data-testid="animation-state-text">{t('状態: {state}', { state: stateText })}</Text>
       </div>
       <div className={s.scene} data-testid="animation-scene" data-scene-kind={scene.kind}>
         <Text as="h3" size={600} weight="semibold">{scene.title}</Text>
         {scene.body ? <Text>{scene.body}</Text> : null}
       </div>
-      <div className={s.sr} aria-live="polite" aria-atomic="true" data-testid="animation-announce">{`シーン ${index + 1} / ${total}: ${scene.title}`}</div>
+      <div className={s.sr} aria-live="polite" aria-atomic="true" data-testid="animation-announce">{t('シーン {n} / {total}: {title}', { n: index + 1, total, title: scene.title })}</div>
       <div className={s.row} role="group" aria-label={t('再生の操作')}>
         {state === 'playing'
           ? <Button className={s.forced} onClick={() => setState('paused')}>{t('一時停止')}</Button>
@@ -195,7 +195,7 @@ function AnimationPlayer({ uc, anim, onClose }: { uc: UseCase; anim: Animation; 
         <ol className={s.outline}>
           {anim.scenes.map((sc, i) => (
             <li key={i} aria-current={i === index ? 'step' : undefined}>
-              <Text weight={i === index ? 'semibold' : 'regular'}>{`${i === index ? '【現在】' : ''}${sc.title}`}</Text>
+              <Text weight={i === index ? 'semibold' : 'regular'}>{`${i === index ? t('【現在】') : ''}${sc.title}`}</Text>
               {sc.body ? <Text as="p" size={200} className={s.outlineBody}>{sc.body}</Text> : null}
             </li>
           ))}
@@ -257,7 +257,7 @@ function UseCaseScreen() {
                 <li key={uc.id} className={s.item} data-persona={uc.persona} data-usecase-id={uc.id}>
                   <div className={s.row}>
                     <Text weight="semibold" data-testid="usecase-name">{uc.name}</Text>
-                    <Badge appearance="outline" color="informative">{`対象: ${uc.persona}`}</Badge>
+                    <Badge appearance="outline" color="informative">{t('対象: {persona}', { persona: uc.persona })}</Badge>
                   </div>
                   <Text size={200} data-testid="usecase-summary">{uc.summary}</Text>
                   <Text size={200} data-testid="usecase-steps">{uc.steps.map((st, i) => `${i + 1}. ${st.title}${st.description ? `: ${st.description}` : ''}`).join(' → ')}</Text>
@@ -292,7 +292,7 @@ function UseCaseScreen() {
                       <Text weight="semibold" data-testid="usecase-name">{uc.name}</Text>
                       <Badge appearance="outline" color={st === 'stale' ? 'warning' : st === 'latest' ? 'success' : 'subtle'}>{`${t('アニメーション:')} ${t(STATE_LABEL[st])}`}</Badge>
                     </div>
-                    <Text size={200}>{`手順 ${uc.steps.length} 件${uc.persona ? ` ／ 対象: ${uc.persona}` : ''}`}</Text>
+                    <Text size={200}>{`${t('手順 {n} 件', { n: uc.steps.length })}${uc.persona ? ` ／ ${t('対象: {persona}', { persona: uc.persona })}` : ''}`}</Text>
                     <div className={s.row}>
                       <Button size="small" onClick={() => setDlg({ editId: uc.id, draft: toDraft(uc), errors: [] })}>{t('編集')}</Button>
                       <Button size="small" onClick={() => setConfirmId(uc.id)}>{t('削除')}</Button>
@@ -343,7 +343,7 @@ function UseCaseScreen() {
               ) : null}
               {derivation.emptyReason ? <Text>{derivation.emptyReason}</Text> : null}
               {derivation.issuesWithoutSolution > 0 && !derivation.emptyReason ? (
-                <Text size={200}>{`解決策のない課題 ${derivation.issuesWithoutSolution} 件は、候補に出していません（導出の元になる解決策がないため）。`}</Text>
+                <Text size={200}>{t('解決策のない課題 {n} 件は、候補に出していません（導出の元になる解決策がないため）。', { n: derivation.issuesWithoutSolution })}</Text>
               ) : null}
               {!derivation.emptyReason && derivation.candidates.length === 0 ? <Text size={200}>{t('未登録の候補はありません（すべて登録済みです）。')}</Text> : null}
               <ul className={s.list}>
@@ -351,17 +351,17 @@ function UseCaseScreen() {
                   <li key={`${c.source.solutionId}:${c.source.issueId}`} className={s.item}>
                     <div className={s.row}>
                       <Badge appearance="outline" color="informative">{t('導出（未登録）')}</Badge>
-                      <Text size={200}>{`導出元: 解決策 ${c.source.solutionId} ／ 課題 ${c.source.issueId}`}</Text>
+                      <Text size={200}>{t('導出元: 解決策 {s} ／ 課題 {i}', { s: c.source.solutionId, i: c.source.issueId })}</Text>
                     </div>
                     <Text><b>{t('名称:')}</b> {c.draft.name}</Text>
                     <Text><b>{t('概要:')}</b> {c.draft.summary}</Text>
                     <Text><b>{t('対象ペルソナ:')}</b> {c.draft.persona || t('（なし）')}</Text>
                     <div>
-                      <Text><b>{t('手順:')}</b> {c.draft.steps.length === 0 ? '（なし）' : null}</Text>
+                      <Text><b>{t('手順:')}</b> {c.draft.steps.length === 0 ? t('（なし）') : null}</Text>
                       <div className={s.outline}>
                         {c.draft.steps.map((st, i) => <Text key={i} size={200}>{`${i + 1}. ${st.description ? `${st.title}: ${st.description}` : st.title}`}</Text>)}
                       </div>
-                      {c.truncatedFrom ? <Text size={200}>{`手順が ${c.truncatedFrom} 件あるため、先頭の ${MAX_STEPS} 件に切り詰めています。`}</Text> : null}
+                      {c.truncatedFrom ? <Text size={200}>{t('手順が {n} 件あるため、先頭の {max} 件に切り詰めています。', { n: c.truncatedFrom, max: MAX_STEPS })}</Text> : null}
                     </div>
                     <Text><b>{t('期待する効果:')}</b> {c.draft.effect || t('（なし）')}</Text>
                     <div className={s.row}>
@@ -378,7 +378,7 @@ function UseCaseScreen() {
                 <DialogSurface role="alertdialog" aria-label={t('ユースケースの削除')}>
                   <DialogBody>
                     <DialogTitle>{t('ユースケースを削除しますか')}</DialogTitle>
-                    <DialogContent>{`「${set.items.find((u) => u.id === confirmId)?.name ?? ''}」とそのアニメーションを削除します。元に戻せません。`}</DialogContent>
+                    <DialogContent>{t('「{name}」とそのアニメーションを削除します。元に戻せません。', { name: set.items.find((u) => u.id === confirmId)?.name ?? '' })}</DialogContent>
                     <DialogActions>
                       <Button appearance="primary" onClick={() => { if (playingId === confirmId) setPlaying(null); if (sbPlayId === confirmId) setSbPlayId(null); if (sbEditId === confirmId) setSbEditId(null); remove(projectId, confirmId); setConfirmId(null); }}>{t('削除する')}</Button>
                       <Button onClick={() => setConfirmId(null)}>{t('キャンセル')}</Button>

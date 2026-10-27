@@ -203,7 +203,7 @@ function ThemeDetail({ packKey, theme }: { packKey: string; theme: Theme }) {
         <Text>{t('決定ステータス:')}</Text>
         <span data-testid="decision-status" style={{ display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS }}>
           <StatusBadge status={status} />
-          <Text size={200}>{statusOrigin(status) === 'ai' ? 'AI の提案' : t('顧客の選択')}</Text>
+          <Text size={200}>{statusOrigin(status) === 'ai' ? t('AI の提案') : t('顧客の選択')}</Text>
         </span>
         <Dropdown
           aria-label={t('決定ステータス')}
@@ -285,11 +285,11 @@ export function ThemesScreen() {
     try {
       const issue = target.issues.find((i) => !hasThemeFor(themes, i.id));
       const prompt = issue
-        ? `次の課題を ToBe に向けた議論テーマとして、論点と進め方を提案してください。課題: ${issue.title}`
+        ? t('次の課題を ToBe に向けた議論テーマとして、論点と進め方を提案してください。課題: {title}', { title: issue.title })
         : t('顧客の ToBe に向けた議論テーマを 1 つ提案してください。');
       const r = await ask('recommend', prompt);
       useDiscussionStore.getState().addTheme(target.key, {
-        title: issue ? issue.title : `AI 提案のテーマ ${themes.length + 1}`,
+        title: issue ? issue.title : t('AI 提案のテーマ {n}', { n: themes.length + 1 }),
         issueId: issue?.id,
         createdBy: 'ai',
         status: 'ai-proposed',
@@ -320,7 +320,7 @@ export function ThemesScreen() {
               {target.issues.length === 0 ? <MenuItem disabled>{t('課題がありません')}</MenuItem> : null}
               {target.issues.map((i) => (
                 <MenuItem key={i.id} onClick={() => st.createFromIssue(target.key, i)}>
-                  {i.title}{hasThemeFor(themes, i.id) ? '（作成済み）' : ''}
+                  {i.title}{hasThemeFor(themes, i.id) ? t('（作成済み）') : ''}
                 </MenuItem>
               ))}
             </MenuList>
@@ -357,7 +357,7 @@ export function ThemesScreen() {
         <DialogSurface>
           <DialogBody>
             <DialogTitle>{t('テーマを削除しますか')}</DialogTitle>
-            <DialogContent>「{toDelete?.title}」を削除します。削除したあとも「元に戻す」で復元できます。</DialogContent>
+            <DialogContent>{t('「{title}」を削除します。削除したあとも「元に戻す」で復元できます。', { title: toDelete?.title ?? '' })}</DialogContent>
             <DialogActions>
               <Button appearance="secondary" onClick={() => setToDelete(null)}>{t('キャンセル')}</Button>
               <Button appearance="primary" onClick={() => { if (toDelete) st.remove(target.key, toDelete.id); setToDelete(null); }}>{t('削除する')}</Button>

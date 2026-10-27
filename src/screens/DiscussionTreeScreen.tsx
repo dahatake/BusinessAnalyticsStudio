@@ -2,7 +2,7 @@
 // ノードの展開/折りたたみ、階層ごとの色・記号、ズーム/パン、共通の選択との連動、手動の編集（追加・移動・削除・分解のやり直し）、
 // AI 生成と人が編集したノードの区別、根拠のリンク、PNG・SVG・Mermaid・JSON の出力を備える。
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent as RPointerEvent } from 'react';
-import { useT } from '../i18n';
+import { tr, useT } from '../i18n';
 import {
   Badge, Button, Input, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, Spinner, Text, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
@@ -64,6 +64,7 @@ const useStyles = makeStyles({
 });
 
 function RationaleLink({ r }: { r: Rationale }) {
+  const t = useT();
   const { select } = useSelection();
   const target = usePackStore((st) => st.state);
   const open = (e: { preventDefault(): void; stopPropagation(): void }) => {
@@ -75,7 +76,7 @@ function RationaleLink({ r }: { r: Rationale }) {
       useLayout.getState().showComponent('themes');
     }
   };
-  return <a href="#rationale" onClick={open} style={{ color: tokens.colorBrandForegroundLink }}>根拠: {r.label}</a>;
+  return <a href="#rationale" onClick={open} style={{ color: tokens.colorBrandForegroundLink }}>{t('根拠:')} {r.label}</a>;
 }
 
 function DiscussionTreeScreen() {
@@ -205,11 +206,11 @@ function DiscussionTreeScreen() {
       {job ? (
         <div className={s.status} role="status" aria-live="polite" aria-busy="true">
           <Spinner size="tiny" aria-hidden />
-          <Text>議題「{job.themeTitle}」のツリーを生成中…</Text>
+          <Text>{t('議題「{title}」のツリーを生成中…', { title: job.themeTitle })}</Text>
           <Button size="small" onClick={() => useTreeStore.getState().cancel()}>{t('取り消し')}</Button>
         </div>
       ) : null}
-      {error ? <Text role="alert" style={{ color: tokens.colorPaletteRedForeground1 }}>ツリーを生成できませんでした: {error}</Text> : null}
+      {error ? <Text role="alert" style={{ color: tokens.colorPaletteRedForeground1 }}>{t('ツリーを生成できませんでした:')} {error}</Text> : null}
 
       {shown ? (
         <>
@@ -223,7 +224,7 @@ function DiscussionTreeScreen() {
               <MenuPopover>
                 <MenuList>
                   {targets.map((t) => (
-                    <MenuItem key={t.id} onClick={() => node && report(store.move(key, node.id, t.id))}>{t.kind}: {t.title} の下へ</MenuItem>
+                    <MenuItem key={t.id} onClick={() => node && report(store.move(key, node.id, t.id))}>{tr('{kind}: {title} の下へ', { kind: t.kind, title: t.title })}</MenuItem>
                   ))}
                 </MenuList>
               </MenuPopover>
@@ -251,7 +252,7 @@ function DiscussionTreeScreen() {
           {adding || renaming ? (
             <div className={s.toolbar}>
               <Input
-                autoFocus aria-label={renaming ? 'ノードの新しい名前' : t('追加するノードの名前')} value={draft} onChange={(_, d) => setDraft(d.value)}
+                autoFocus aria-label={renaming ? t('ノードの新しい名前') : t('追加するノードの名前')} value={draft} onChange={(_, d) => setDraft(d.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') { e.preventDefault(); if (renaming) commitRename(); else commitAdd(); }
                   if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setAdding(null); setRenaming(false); }
@@ -263,9 +264,9 @@ function DiscussionTreeScreen() {
           {message ? <Text role="alert" style={{ color: tokens.colorPaletteRedForeground1 }}>{message}</Text> : null}
 
           <div className={s.status}>
-            <Text weight="semibold">議題: {shown.themeTitle}</Text>
+            <Text weight="semibold">{t('議題:')} {shown.themeTitle}</Text>
             <Badge appearance="tint" color="informative">{doc ? modeLabel : t('パックの章・議題から作成（未生成）')}</Badge>
-            <Text size={200}>ノード {shown.nodes.length} 件</Text>
+            <Text size={200}>{t('ノード {n} 件', { n: shown.nodes.length })}</Text>
           </div>
 
           {viewMode === '3d' ? (
@@ -320,7 +321,7 @@ function DiscussionTreeScreen() {
                     <Badge appearance="outline" style={{ borderColor: KIND_TOKEN[n.kind] }}>{KIND_MARK[n.kind]} {n.kind}</Badge>
                     <Text weight={n.parentId === null ? 'semibold' : 'regular'} className={s.title}>{n.title}</Text>
                     <Badge appearance={n.origin === 'human' ? 'filled' : 'tint'} color={n.origin === 'human' ? 'brand' : 'informative'} size="medium">
-                      {n.origin === 'ai' ? 'AI 生成' : n.origin === 'human' ? '人が編集' : t('パックの議題')}
+                      {n.origin === 'ai' ? t('AI 生成') : n.origin === 'human' ? t('人が編集') : t('パックの議題')}
                     </Badge>
                     {n.rationale ? <RationaleLink r={n.rationale} /> : null}
                   </div>

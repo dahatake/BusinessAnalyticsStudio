@@ -141,7 +141,7 @@ function ArchitectureScreen() {
   if (state.status !== 'ready' || !model || !variants) return <LoadingView label={t('アーキテクチャ図を読み込み中')} />;
   const { customer } = state.pack.data;
 
-  const title = `${customer.name} ${customer.projectName} アーキテクチャ（${view === 'asis' ? 'AsIs' : 'ToBe'}）`;
+  const title = t('{name} {project} アーキテクチャ（{view}）', { name: customer.name, project: customer.projectName, view: view === 'asis' ? 'AsIs' : 'ToBe' });
   const base = (ext: string) => exportFileName(customer.name, customer.projectName, `architecture-${view}`, ext);
   const doExport = async (fmt: 'Mermaid' | 'SVG' | 'PNG') => {
     setExportError(null);
@@ -162,7 +162,7 @@ function ArchitectureScreen() {
     // パック全体の検証（ID の一意・参照先・スキーマ）を通してから適用する。既存の ID（課題など）と衝突する要素は適用しない
     const problems = validateArchitectureChange(state.pack.data, r.value);
     if (problems.length > 0) {
-      setJsonError(`パック全体の検証に通りません（適用しませんでした）:\n${problems.slice(0, 5).join('\n')}${problems.length > 5 ? `\nほか ${problems.length - 5} 件` : ''}`);
+      setJsonError(`${t('パック全体の検証に通りません（適用しませんでした）:')}\n${problems.slice(0, 5).join('\n')}${problems.length > 5 ? `\n${t('ほか {n} 件', { n: problems.length - 5 })}` : ''}`);
       return;
     }
     const next = {
@@ -172,7 +172,7 @@ function ArchitectureScreen() {
     const c = useEditStore.getState().commit({
       ok: true,
       data: next,
-      changes: [{ op: 'update', entityLabel: t('アーキテクチャ図'), fieldLabel: t('JSON（asis・tobe）'), before: `AsIs ${variants.asis.elements.length} 要素・ToBe ${variants.tobe.elements.length} 要素`, after: `AsIs ${r.value.asis.elements.length} 要素・ToBe ${r.value.tobe.elements.length} 要素` }],
+      changes: [{ op: 'update', entityLabel: t('アーキテクチャ図'), fieldLabel: t('JSON（asis・tobe）'), before: t('AsIs {a} 要素・ToBe {b} 要素', { a: variants.asis.elements.length, b: variants.tobe.elements.length }), after: t('AsIs {a} 要素・ToBe {b} 要素', { a: r.value.asis.elements.length, b: r.value.tobe.elements.length }) }],
     });
     if (!c.ok) { setJsonError(c.message); return; }
     setJsonOpen(false);
@@ -221,7 +221,7 @@ function ArchitectureScreen() {
       {exportError ? <Text role="alert" style={{ color: tokens.colorPaletteRedForeground1 }}>{exportError}</Text> : null}
 
       <div role="group" aria-label={t('差分の凡例')} style={{ display: 'flex', columnGap: tokens.spacingHorizontalM, flexWrap: 'wrap' }}>
-        <Text size={200}>{view === 'tobe' ? 'AsIs との差分:' : t('AsIs（現状）の図です。ToBe に切り替えると差分を示します。')}</Text>
+        <Text size={200}>{view === 'tobe' ? t('AsIs との差分:') : t('AsIs（現状）の図です。ToBe に切り替えると差分を示します。')}</Text>
         {view === 'tobe' ? (['added', 'removed', 'changed'] as const).map((k) => <DiffBadge key={k} diff={k} />) : null}
       </div>
 
@@ -239,7 +239,7 @@ function ArchitectureScreen() {
           <ul className={s.links}>
             {model.links.map((l, i) => (
               <li key={i}>
-                <Text size={200}>{names.get(l.from) ?? l.from} → {names.get(l.to) ?? l.to}{l.label ? `（${l.label}）` : ''}{l.diff !== 'same' ? `［${DIFF_LABEL[l.diff]}］` : ''}</Text>
+                <Text size={200}>{names.get(l.from) ?? l.from} → {names.get(l.to) ?? l.to}{l.label ? `（${l.label}）` : ''}{l.diff !== 'same' ? `［${t(DIFF_LABEL[l.diff])}］` : ''}</Text>
               </li>
             ))}
           </ul>

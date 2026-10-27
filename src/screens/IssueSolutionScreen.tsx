@@ -70,11 +70,12 @@ const useStyles = makeStyles({
 });
 
 function IssueSummary({ issue }: { issue: Issue }) {
+  const t = useT();
   const s = useStyles();
   return (
     <div className={s.rowBody}>
       <Text weight="semibold">{issue.title}</Text>
-      {issue.hypothesis ? <Text size={300}>仮説: {issue.hypothesis}</Text> : null}
+      {issue.hypothesis ? <Text size={300}>{t('仮説:')} {issue.hypothesis}</Text> : null}
       <div className={s.badges}>
         <Badge appearance="tint" color={issue.audience === 'external' ? 'brand' : 'informative'}>{AUDIENCE_LABELS[issue.audience]}</Badge>
         {(issue.personas ?? []).map((p) => <Badge key={p} appearance="outline">{p}</Badge>)}
@@ -215,8 +216,8 @@ function IssueSolutionScreen() {
             <Radio value="external" label={AUDIENCE_LABELS.external} />
           </RadioGroup>
         </Field>
-        <Badge appearance="filled" color="brand" size="large" data-testid="count-badge" aria-label={`課題 ${visible.length} 件`}>
-          {visible.length} 件
+        <Badge appearance="filled" color="brand" size="large" data-testid="count-badge" aria-label={t('課題 {n} 件', { n: visible.length })}>
+          {t('{n} 件', { n: visible.length })}
         </Badge>
         <Button
           icon={<CommentMultiple24Regular aria-hidden />}
@@ -298,7 +299,7 @@ function IssueSolutionScreen() {
           ) : (
             <div className={s.group}>
               {groups.map((g) => (
-                <Table key={g.root.id} aria-label={`分類: ${g.root.title}`} size="small">
+                <Table key={g.root.id} aria-label={t('分類: {title}', { title: g.root.title })} size="small">
                   <TableHeader>
                     <TableRow>
                       <TableHeaderCell>{g.root.title}</TableHeaderCell>

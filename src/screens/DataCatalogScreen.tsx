@@ -136,7 +136,7 @@ function DataCatalogScreen() {
       let text = '';
       try { text = file.size > 5 * 1024 * 1024 ? '' : await file.text(); } catch { setImportErrors([t('ファイルを読み込めませんでした。ファイルを確認して、選び直してください。')]); setImportedMsg(''); return; }
       const r = importCatalog(projectId, text, file.name, file.size);
-      if (r.ok) { setImportErrors([]); setImportedMsg(`${file.name} から ${r.count} 件の項目を取り込みました。`); setTodoResult(''); } else { setImportErrors(r.errors); setImportedMsg(''); }
+      if (r.ok) { setImportErrors([]); setImportedMsg(t('{file} から {n} 件の項目を取り込みました。', { file: file.name, n: r.count })); setTodoResult(''); } else { setImportErrors(r.errors); setImportedMsg(''); }
     } finally {
       setImporting(false);
     }
@@ -154,7 +154,7 @@ function DataCatalogScreen() {
     if (counts['BASのみ'] === 0) { setTodoResult(NO_BAS_ONLY_REASON); return; }
     const todos = buildTodos(rows, (e) => relatedUseCases(e, useCases, model.derived, links).map((u) => u.name));
     const n = addTodos(projectId, todos);
-    setTodoResult(n > 0 ? `${n} 件の ToDo を plan の tasks に追加しました。` : t('追加済みのため、新しく追加した ToDo は 0 件です。'));
+    setTodoResult(n > 0 ? t('{n} 件の ToDo を plan の tasks に追加しました。', { n }) : t('追加済みのため、新しく追加した ToDo は 0 件です。'));
   };
   // 取り込み中に押された「未掲載を ToDo に追加」を、取り込みの完了後に 1 回だけ実行する
   useEffect(() => {
@@ -201,7 +201,7 @@ function DataCatalogScreen() {
                     onClick={() => selectShared(e.key)}
                     onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); selectShared(e.key); } }}
                   >
-                    <Text weight="semibold">{e.name}{on ? '（選択中）' : ''}</Text>
+                    <Text weight="semibold">{e.name}{on ? t('（選択中）') : ''}</Text>
                     <Text size={200}>{e.description}</Text>
                   </li>
                 );
@@ -232,7 +232,7 @@ function DataCatalogScreen() {
                     const rel = relatedUseCases(selected, useCases, model.derived, links);
                     return rel.length === 0
                       ? t('（なし）')
-                      : <ul className={s.plain}>{rel.map((r) => <li key={r.id}>{`${r.name}（${KIND_LABELS[r.kind]}）`}</li>)}</ul>;
+                      : <ul className={s.plain}>{rel.map((r) => <li key={r.id}>{`${r.name}（${t(KIND_LABELS[r.kind])}）`}</li>)}</ul>;
                   })()}
                 </dd>
               </dl>
@@ -265,11 +265,11 @@ function DataCatalogScreen() {
                               {c.kind === 'explicit' ? (
                                 <>
                                   <Text>{t('明示')}</Text>{' '}
-                                  <Button className={s.forced} size="small" aria-label={`削除: ${row.entity.name} × ${uc.name} の明示の紐づけ`} onClick={() => onRemove(row.entity.name, c.useCaseId)}>{t('削除')}</Button>
+                                  <Button className={s.forced} size="small" aria-label={t('削除: {entity} × {uc} の明示の紐づけ', { entity: row.entity.name, uc: uc.name })} onClick={() => onRemove(row.entity.name, c.useCaseId)}>{t('削除')}</Button>
                                 </>
                               ) : null}
                               {c.kind === 'none' ? (
-                                <Button className={s.forced} size="small" aria-label={`紐づけを追加: ${row.entity.name} × ${uc.name}`} onClick={() => onAdd(row.entity.name, c.useCaseId)}>{t('紐づけを追加')}</Button>
+                                <Button className={s.forced} size="small" aria-label={t('紐づけを追加: {entity} × {uc}', { entity: row.entity.name, uc: uc.name })} onClick={() => onAdd(row.entity.name, c.useCaseId)}>{t('紐づけを追加')}</Button>
                               ) : null}
                             </td>
                           );
@@ -300,11 +300,11 @@ function DataCatalogScreen() {
               <Input id="dc-url" value={urlDraft} onChange={(_, d) => setUrlDraft(d.value)} />{' '}
               <Button size="small" onClick={onSaveUrl}>{t('出典を保存')}</Button>
               {urlError ? <Text role="alert">{urlError}</Text> : null}
-              {savedUrl ? <Text data-testid="catalog-source-url" as="p">出典: {savedUrl}</Text> : null}
+              {savedUrl ? <Text data-testid="catalog-source-url" as="p">{t('出典:')} {savedUrl}</Text> : null}
             </div>
             {hasCatalog ? (
               <>
-                <Text data-testid="reconcile-counts" role="status">{CATEGORIES.map((c) => `${c} ${counts[c]} 件`).join('、')}</Text>
+                <Text data-testid="reconcile-counts" role="status">{CATEGORIES.map((c) => `${t(c)} ${t('{n} 件', { n: counts[c] })}`).join('、')}</Text>
                 <div className={s.scroll}>
                   <table className={s.table} data-testid="reconcile-table" aria-label={t('突合の結果')}>
                     <thead><tr><th scope="col" className={s.cell}>{t('区分')}</th><th scope="col" className={s.cell}>{t('名称')}</th><th scope="col" className={s.cell}>{t('BAS の説明')}</th><th scope="col" className={s.cell}>{t('カタログの説明')}</th></tr></thead>
@@ -314,7 +314,7 @@ function DataCatalogScreen() {
                           <td className={s.cell}>{r.category}</td>
                           <td className={s.cell}>{r.name}</td>
                           <td className={s.cell}>{r.entity?.description ?? '—'}</td>
-                          <td className={s.cell}>{r.item ? r.item.description || '（説明なし）' : '—'}</td>
+                          <td className={s.cell}>{r.item ? r.item.description || t('（説明なし）') : '—'}</td>
                         </tr>
                       ))}
                     </tbody>

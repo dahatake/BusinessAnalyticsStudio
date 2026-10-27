@@ -56,7 +56,7 @@ function WeightRow({ criterion, label }: { criterion: CriterionKey; label: strin
     if (r.ok) { usePriorityStore.getState().setWeight(criterion, r.value); setError(null); }
     else if (reportError) setError(r.reason);
   };
-  const name = `${label}の重み`;
+  const name = t('{label}の重み', { label });
   const decided = weight !== AI_WEIGHTS[criterion];
   return (
     <div className={s.weightRow}>
@@ -78,7 +78,7 @@ function WeightRow({ criterion, label }: { criterion: CriterionKey; label: strin
         onBlur={() => commit(draft, false)}
       />
       <Badge appearance={decided ? 'filled' : 'tint'} color={decided ? 'brand' : 'informative'}>
-        {decided ? `顧客決定（AI 提案は ${AI_WEIGHTS[criterion]}）` : t('AI 提案')}
+        {decided ? t('顧客決定（AI 提案は {v}）', { v: AI_WEIGHTS[criterion] }) : t('AI 提案')}
       </Badge>
       {error ? <Text role="alert" size={200} className={s.error}>{error}</Text> : null}
     </div>
@@ -126,7 +126,7 @@ function PriorityScreen() {
         <div className={s.kpi}>
           <Text size={200}>{t('コストの合計')}</Text>
           <Text size={600} weight="semibold">
-            <KpiValue><NumericValue sourceIds={uniq(costs as never)}>{totalCost.toLocaleString('ja-JP')}</NumericValue></KpiValue> 万円
+            <KpiValue><NumericValue sourceIds={uniq(costs as never)}>{totalCost.toLocaleString('ja-JP')}</NumericValue></KpiValue> {t('万円')}
           </Text>
         </div>
         <div className={s.kpi}>
@@ -163,7 +163,7 @@ function PriorityScreen() {
       </section>
 
       <fieldset className={s.weights} aria-label={t('観点の重み')}>
-        <legend><Text as="h3" size={500} weight="semibold">観点の重み（{WEIGHT_MIN}〜{WEIGHT_MAX}）</Text></legend>
+        <legend><Text as="h3" size={500} weight="semibold">{t('観点の重み（{min}〜{max}）', { min: WEIGHT_MIN, max: WEIGHT_MAX })}</Text></legend>
         {CRITERIA.map((c) => <WeightRow key={c.key} criterion={c.key} label={c.label} />)}
         <div>
           <Button icon={<ArrowReset24Regular aria-hidden />} onClick={reset}>{t('AI 提案の重みに戻す')}</Button>
@@ -189,7 +189,7 @@ function PriorityScreen() {
                     const r = sens.find((x) => x.criterion === c.key && x.delta === d);
                     return (
                       <TableCell key={d}>
-                        {!r || r.changes.length === 0 ? '順位の変化なし' : r.changes.map((x) => `${x.title}: ${x.from}位→${x.to}位`).join('、')}
+                        {!r || r.changes.length === 0 ? t('順位の変化なし') : r.changes.map((x) => t('{title}: {from}位→{to}位', { title: x.title, from: x.from, to: x.to })).join(t('、'))}
                         {r?.topChanged ? <Badge appearance="filled" color="warning" style={{ marginInlineStart: tokens.spacingHorizontalS }}>{t('1 位が入れ替わる')}</Badge> : null}
                       </TableCell>
                     );

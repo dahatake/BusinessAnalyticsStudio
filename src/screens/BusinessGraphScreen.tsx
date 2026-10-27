@@ -273,7 +273,7 @@ function BusinessGraphScreen() {
             <Badge appearance="tint">{ZOOM_KIND_LABELS[kind]}</Badge>
           </span>
           <label className={s.check}>
-            <Text>ホップ数（{HOP_MIN}〜{HOP_MAX}）</Text>
+            <Text>{t('ホップ数（{min}〜{max}）', { min: HOP_MIN, max: HOP_MAX })}</Text>
             <input type="range" aria-label={t('ホップ数')} min={HOP_MIN} max={HOP_MAX} step={1} value={hop} onChange={(e) => setHop(clampHop(Number(e.target.value)))} />
             <Text>{hop}</Text>
           </label>
@@ -309,12 +309,12 @@ function BusinessGraphScreen() {
             {[...clusterCounts].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([name, n]) => (
               <div
                 key={name} role="button" tabIndex={0} className={s.cluster} data-zoom-cluster={name}
-                aria-label={`${name} ${n} 件。ダブルクリックか Enter で要素へ`}
+                aria-label={t('{name} {n} 件。ダブルクリックか Enter で要素へ', { name, n })}
                 onDoubleClick={() => openCluster(name)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); openCluster(name); } }}
               >
                 <Text weight="semibold">{name}</Text>
-                <Text>{n} 件</Text>
+                <Text>{t('{n} 件', { n })}</Text>
               </div>
             ))}
           </div>
@@ -374,7 +374,7 @@ function BusinessGraphScreen() {
                     const p1 = edgePoint(a, b, 2); const p2 = edgePoint(b, a, 6);
                     const text = labelIds.has(`e:${e.id}`) ? e.label : undefined;
                     return (
-                      <g key={e.id} data-testid="graph-edge" data-from={e.from} data-to={e.to} data-meaning={e.meaning} data-direction="forward" role="img" aria-label={`${nodeById.get(e.from)?.name ?? e.from} から ${nodeById.get(e.to)?.name ?? e.to} へ ${e.label ?? t('（ラベルなし）')}`}>
+                      <g key={e.id} data-testid="graph-edge" data-from={e.from} data-to={e.to} data-meaning={e.meaning} data-direction="forward" role="img" aria-label={t('{from} から {to} へ {label}', { from: nodeById.get(e.from)?.name ?? e.from, to: nodeById.get(e.to)?.name ?? e.to, label: e.label ?? t('（ラベルなし）') })}>
                         {e.label ? <title>{`${e.label}（${readMeaning(e.meaning, nodeById.get(e.from)?.name ?? e.from, nodeById.get(e.to)?.name ?? e.to)}）`}</title> : null}
                         <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="currentColor" strokeWidth={1.5} strokeDasharray={MEANING_DASH[e.meaning]} markerEnd="url(#bg-arrow)" />
                         {text ? <text className={s.edgeText} x={(a.x + b.x) / 2} y={(a.y + b.y) / 2} textAnchor="middle">{text}</text> : null}
@@ -386,11 +386,11 @@ function BusinessGraphScreen() {
                     if (!a || !b) return null;
                     return (
                       <g key={g.key} data-testid="graph-bundle" data-count={g.edges.length} role="button" tabIndex={0} style={{ cursor: 'pointer' }}
-                        aria-label={`${g.fromCluster} と ${g.toCluster} の間の ${g.edges.length} 本をまとめた線。押すと個別に展開`}
+                        aria-label={t('{a} と {b} の間の {n} 本をまとめた線。押すと個別に展開', { a: g.fromCluster, b: g.toCluster, n: g.edges.length })}
                         onClick={() => setExpandedBundles((x) => new Set(x).add(g.key))}
                         onKeyDown={(e) => { if (e.key === 'Enter') setExpandedBundles((x) => new Set(x).add(g.key)); }}>
                         <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="currentColor" strokeWidth={4} markerEnd="url(#bg-arrow)" />
-                        <text className={s.edgeText} x={(a.x + b.x) / 2} y={(a.y + b.y) / 2} textAnchor="middle">{g.edges.length} 本</text>
+                        <text className={s.edgeText} x={(a.x + b.x) / 2} y={(a.y + b.y) / 2} textAnchor="middle">{t('{n} 本', { n: g.edges.length })}</text>
                       </g>
                     );
                   })}
@@ -400,7 +400,7 @@ function BusinessGraphScreen() {
                     return (
                       <g key={`${l.from}>${l.to}`} data-testid="graph-bundle" data-count={l.n}>
                         <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="currentColor" strokeWidth={3} markerEnd="url(#bg-arrow)" />
-                        <text className={s.edgeText} x={(a.x + b.x) / 2} y={(a.y + b.y) / 2} textAnchor="middle">{l.n} 本</text>
+                        <text className={s.edgeText} x={(a.x + b.x) / 2} y={(a.y + b.y) / 2} textAnchor="middle">{t('{n} 本', { n: l.n })}</text>
                       </g>
                     );
                   })}
@@ -432,10 +432,10 @@ function BusinessGraphScreen() {
                   <button
                     key={c} type="button" className={s.node} data-testid="graph-cluster" data-cluster={c} data-count={ids.length}
                     style={{ left: p.x - NODE_W / 2, top: p.y - NODE_H / 2, width: NODE_W, height: NODE_H }}
-                    aria-label={`${c} に集約した ${ids.length} 件。押すと個別に展開`}
+                    aria-label={t('{c} に集約した {n} 件。押すと個別に展開', { c, n: ids.length })}
                     onClick={() => setExpandedClusters((x) => new Set(x).add(c))}
                   >
-                    <span>{c}</span><span>{ids.length} 件</span>
+                    <span>{c}</span><span>{t('{n} 件', { n: ids.length })}</span>
                   </button>
                 );
               })}
@@ -445,7 +445,7 @@ function BusinessGraphScreen() {
 
         {depth === 1 && agg.collapsed.size > 0 ? (
           <Text role="status" data-testid="graph-aggregate-note">
-            ノードが {MAX_NODES} 件を超えるため、{[...agg.collapsed.values()].reduce((a, v) => a + v.length, 0)} 件を {agg.collapsed.size} 個の塊に集約しています（全 {visibleNodes.length} 件）。
+            {t('ノードが {max} 件を超えるため、{n} 件を {m} 個の塊に集約しています（全 {total} 件）。', { max: MAX_NODES, n: [...agg.collapsed.values()].reduce((a, v) => a + v.length, 0), m: agg.collapsed.size, total: visibleNodes.length })}
           </Text>
         ) : null}
 
@@ -457,7 +457,7 @@ function BusinessGraphScreen() {
               <dt>{t('種別')}</dt><dd>{detailNode.type}</dd>
               <dt>ID</dt><dd>{detailNode.id}</dd>
               <dt>{t('塊')}</dt><dd>{detailNode.cluster}</dd>
-              <dt>{t('世界区分')}</dt><dd>{detailNode.world === 'real' ? '現実世界' : detailNode.world === 'digital' ? 'デジタル世界' : t('区分なし')}</dd>
+              <dt>{t('世界区分')}</dt><dd>{detailNode.world === 'real' ? t('現実世界') : detailNode.world === 'digital' ? t('デジタル世界') : t('区分なし')}</dd>
             </dl>
             <Text as="h3" weight="semibold">{t('出典')}</Text>
             <ul style={{ margin: 0 }}>{detailNode.sourceIds.length ? detailNode.sourceIds.map((x) => <li key={x}>{x}</li>) : <li>{t('出典なし')}</li>}</ul>
@@ -476,7 +476,7 @@ function BusinessGraphScreen() {
             origin={ORIGIN} label={t('ビジネス関係グラフ')} showTableButton={false}
             nodes={shownNodes.map((n) => ({ id: n.id, name: n.name, kind: n.type }))}
             relations={shownEdges.map((e) => ({ id: e.id, from: e.from, to: e.to, label: e.label, kind: meaningName(e.meaning) }))}
-            summary={`階層は ${ZOOM_KIND_LABELS[kind]}（全体・要素・詳細の 3 階層）`}
+            summary={t('階層は {kind}（全体・要素・詳細の 3 階層）', { kind: t(ZOOM_KIND_LABELS[kind]) })}
           />
         ) : null}
       </div>
