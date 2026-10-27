@@ -340,7 +340,8 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
               : await callFoundry(secret!, prompt, opts.foundryFetch, opts.foundryTimeoutMs);
             const reviews = parseReviewReply(text, comps.map((c) => c.id));
             if (!reviews) return unavailable('error', 'Foundry の応答の形式が想定と異なります');
-            return json(200, { reviews, mode: 'connected' });
+            // NFR-COST-001: 利用量（トークン数）を応答に添える。画面は端末内の記録（概算額）に数える
+            return json(200, { reviews, mode: 'connected', usage: { inputTokens: approxTokens(prompt.length), outputTokens: approxTokens(text.length) } });
           } catch (e) {
             const kind = e instanceof FoundryError || e instanceof CopilotError ? e.kind : 'network';
             const msg = (e instanceof CopilotError || e instanceof FoundryError ? e.message : '生成AI に接続できませんでした').split(secret?.key || '\u0000').join('•••');

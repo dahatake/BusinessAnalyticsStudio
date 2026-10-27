@@ -62,7 +62,7 @@ export function checkUsage(r0: UsageRecord, l: UsageLimits, now: Date, provider:
   if (provider === 'copilot') return { allowed: true };
   const pct = l.monthlyBudget > 0 ? (r.monthCost / l.monthlyBudget) * 100 : 100;
   if (pct >= l.stopPercent) {
-    return { allowed: false, reason: tr('今月の概算費用が予算（{budget} 円）の {stop}% に達したため、停止しています。月初に再開します。', { budget: l.monthlyBudget, stop: l.stopPercent }) };
+    return { allowed: false, reason: tr('今月の概算費用が予算（{budget} 円）の上限（{stop}%）に達したため、停止しています。設定画面で予算を引き上げるか、月初に再開します。', { budget: l.monthlyBudget, stop: l.stopPercent }) };
   }
   if (pct >= l.warnPercent) return { allowed: true, warning: tr('今月の概算費用が予算の {pct}% に達しています（警告は {warn}%、停止は {stop}%）。', { pct: Math.floor(pct), warn: l.warnPercent, stop: l.stopPercent }) };
   return { allowed: true };
@@ -88,7 +88,7 @@ interface UsageState {
   /** 呼ぶ前の判定 */
   check: (now?: Date, provider?: 'foundry' | 'copilot') => UsageGate;
   /** 呼んだ後に数える */
-  count: (tokensIn: number, now?: Date, provider?: 'foundry' | 'copilot') => void;
+  count: (tokensIn: number, now?: Date, provider?: 'foundry' | 'copilot', tokensOut?: number) => void;
 }
 
 export const useUsageStore = create<UsageState>()(
@@ -98,7 +98,7 @@ export const useUsageStore = create<UsageState>()(
       record: emptyRecord(new Date()),
       setLimits: (limits) => set({ limits }),
       check: (now = new Date(), provider) => checkUsage(get().record, get().limits, now, provider),
-      count: (tokensIn, now = new Date(), provider) => set((s) => ({ record: addUsage(s.record, s.limits, now, tokensIn, MAX_OUTPUT_TOKENS, provider) })),
+      count: (tokensIn, now = new Date(), provider, tokensOut = MAX_OUTPUT_TOKENS) => set((s) => ({ record: addUsage(s.record, s.limits, now, tokensIn, tokensOut, provider) })),
     }),
     { name: 'edb.foundryUsage', version: 1, partialize: (s) => ({ limits: s.limits, record: s.record }) },
   ),
