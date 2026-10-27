@@ -1,18 +1,25 @@
 // 優先順位分析のスコア計算（FR-039）。画面・ストアを参照しない純粋なモジュール。
 // 重み付きスコアは「Σ（重み × 評価値）」。評価値は 1〜5。AI の提案値と顧客の決定値は別の値として持つ（AC-048）。
 import type { Issue } from './model';
+import { tr } from '../i18n';
 
 /** 評価の観点。axis は 2×2 マトリクスでの軸（y=インパクト側、x=実現性側、size=バブルの大きさに使うコスト） */
 export const CRITERIA = [
-  { key: 'impact', label: 'インパクト', axis: 'y' },
+  { key: 'impact', get label() { return tr('インパクト'); }, axis: 'y' },
   { key: 'roi', label: 'ROI', axis: 'y' },
-  { key: 'feasibility', label: '実現性', axis: 'x' },
-  { key: 'risk', label: 'リスク低減', axis: 'x' },
-  { key: 'costEff', label: 'コスト効率', axis: 'size' },
+  { key: 'feasibility', get label() { return tr('実現性'); }, axis: 'x' },
+  { key: 'risk', get label() { return tr('リスク低減'); }, axis: 'x' },
+  { key: 'costEff', get label() { return tr('コスト効率'); }, axis: 'size' },
 ] as const;
 export type CriterionKey = (typeof CRITERIA)[number]['key'];
 export const CRITERION_KEYS: readonly CriterionKey[] = CRITERIA.map((c) => c.key);
-export const CRITERION_LABEL: Record<CriterionKey, string> = Object.fromEntries(CRITERIA.map((c) => [c.key, c.label])) as Record<CriterionKey, string>;
+export const CRITERION_LABEL: Record<CriterionKey, string> = {
+  get impact() { return tr('インパクト'); },
+  roi: 'ROI',
+  get feasibility() { return tr('実現性'); },
+  get risk() { return tr('リスク低減'); },
+  get costEff() { return tr('コスト効率'); },
+};
 
 export type Weights = Record<CriterionKey, number>;
 export const WEIGHT_MIN = 0;
@@ -25,11 +32,11 @@ export type WeightParse = { ok: true; value: number } | { ok: false; reason: str
 /** 重みの入力を検証する（0〜10 の整数）。範囲外や数値でない入力は反映せず、原因を返す。 */
 export function parseWeight(input: string | number): WeightParse {
   const text = typeof input === 'number' ? String(input) : input.trim();
-  if (text === '') return { ok: false, reason: '重みを入力してください（0〜10 の整数）。' };
-  if (!/^-?\d+(\.\d+)?$/.test(text)) return { ok: false, reason: `「${text}」は数値ではありません。0〜10 の整数を入力してください。` };
+  if (text === '') return { ok: false, reason: tr('重みを入力してください（0〜10 の整数）。') };
+  if (!/^-?\d+(\.\d+)?$/.test(text)) return { ok: false, reason: tr('「{text}」は数値ではありません。0〜10 の整数を入力してください。', { text }) };
   const n = Number(text);
-  if (!Number.isInteger(n)) return { ok: false, reason: `${text} は整数ではありません。0〜10 の整数を入力してください。` };
-  if (n < WEIGHT_MIN || n > WEIGHT_MAX) return { ok: false, reason: `${text} は範囲外です。重みは ${WEIGHT_MIN}〜${WEIGHT_MAX} の整数です。` };
+  if (!Number.isInteger(n)) return { ok: false, reason: tr('{text} は整数ではありません。0〜10 の整数を入力してください。', { text }) };
+  if (n < WEIGHT_MIN || n > WEIGHT_MAX) return { ok: false, reason: tr('{text} は範囲外です。重みは {min}〜{max} の整数です。', { text, min: WEIGHT_MIN, max: WEIGHT_MAX }) };
   return { ok: true, value: n };
 }
 
@@ -174,10 +181,10 @@ export interface MatrixPoint {
 
 export type Quadrant = 'now' | 'plan' | 'quick' | 'hold';
 export const QUADRANT_LABEL: Record<Quadrant, string> = {
-  now: '今すぐ実行（高インパクト・高実現性）',
-  plan: '計画して実行（高インパクト・低実現性）',
-  quick: '手早く実行（低インパクト・高実現性）',
-  hold: '保留（低インパクト・低実現性）',
+  get now() { return tr('今すぐ実行（高インパクト・高実現性）'); },
+  get plan() { return tr('計画して実行（高インパクト・低実現性）'); },
+  get quick() { return tr('手早く実行（低インパクト・高実現性）'); },
+  get hold() { return tr('保留（低インパクト・低実現性）'); },
 };
 
 export function quadrantOf(x: number, y: number): Quadrant {

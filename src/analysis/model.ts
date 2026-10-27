@@ -1,6 +1,7 @@
 // 課題-解決策分析の純粋なロジック（FR-001〜FR-005）。画面の部品を参照しない。
 // 課題の絞り込み（区分）、イシューツリーの行への展開、評価属性・製品の適合の取り出しを行う。
 import { EVALUATION_KEYS, GENAI_VALUE_KEYS, type Audience, type EvaluationKey, type GenAiValueKey, type PackData } from '../schema';
+import { tr } from '../i18n';
 
 export type Issue = PackData['issues']['issues'][number];
 export type Solution = PackData['issues']['solutions'][number];
@@ -9,14 +10,17 @@ export type Source = PackData['sources']['sources'][number];
 
 export type AudienceFilter = 'all' | Audience;
 
-export const AUDIENCE_LABELS: Record<Audience, string> = { internal: '社内向け', external: '社外向け' };
+export const AUDIENCE_LABELS: Record<Audience, string> = {
+  get internal() { return tr('社内向け'); },
+  get external() { return tr('社外向け'); },
+};
 
 export const EVALUATION_LABELS: Record<EvaluationKey, string> = {
-  priority: '優先順位',
-  cost: 'コスト',
+  get priority() { return tr('優先順位'); },
+  get cost() { return tr('コスト'); },
   roi: 'ROI',
-  feasibility: '実現性',
-  risk: 'リスク',
+  get feasibility() { return tr('実現性'); },
+  get risk() { return tr('リスク'); },
 };
 
 /** 区分（社内向け／社外向け）で課題を絞り込む（FR-002） */
@@ -55,20 +59,20 @@ export function effectsOf(solution: Solution): NamedItem[] {
 /** 生成 AI の価値 4 種類の表示名と説明文（FR-006）。解決策が指定したものだけを表示する */
 export const GENAI_VALUE_INFO: Record<GenAiValueKey, { label: string; description: string }> = {
   parameter: {
-    label: 'パラメーターを変えて試せる',
-    description: '条件（数値や設定）を変えて、結果の違いをその場で確かめられます。',
+    get label() { return tr('パラメーターを変えて試せる'); },
+    get description() { return tr('条件（数値や設定）を変えて、結果の違いをその場で確かめられます。'); },
   },
   fusion: {
-    label: '構造化／非構造化データの融合分析',
-    description: '表のデータと、文書や会話の文章を組み合わせて分析し、見落としを減らします。',
+    get label() { return tr('構造化／非構造化データの融合分析'); },
+    get description() { return tr('表のデータと、文書や会話の文章を組み合わせて分析し、見落としを減らします。'); },
   },
   chatRag: {
-    label: 'チャット＋RAG による品質と物量',
-    description: '顧客パックの資料を根拠に回答し、回答の質と、さばける件数を高めます。',
+    get label() { return tr('チャット＋RAG による品質と物量'); },
+    get description() { return tr('顧客パックの資料を根拠に回答し、回答の質と、さばける件数を高めます。'); },
   },
   workflow: {
-    label: '業務フローへの組み込み',
-    description: '日々の仕事の手順に生成 AI を組み込み、人の手作業を減らします。',
+    get label() { return tr('業務フローへの組み込み'); },
+    get description() { return tr('日々の仕事の手順に生成 AI を組み込み、人の手作業を減らします。'); },
   },
 };
 
@@ -83,9 +87,9 @@ export function sourceKindLabel(kind: Source['kind']): string {
   switch (kind) {
     case 'workiq': return 'WorkIQ';
     case 'web': return 'Web';
-    case 'document': return '推定（資料）';
-    case 'interview': return '推定（ヒアリング）';
-    default: return '推定（サンプル）';
+    case 'document': return tr('推定（資料）');
+    case 'interview': return tr('推定（ヒアリング）');
+    default: return tr('推定（サンプル）');
   }
 }
 
@@ -93,7 +97,7 @@ export function sourceKindLabel(kind: Source['kind']): string {
 export type FlowKind = 'issue' | 'cause' | 'solution' | 'effect' | 'product';
 export const FLOW_COLUMNS: readonly FlowKind[] = ['issue', 'cause', 'solution', 'effect', 'product'];
 export const FLOW_LABELS: Record<FlowKind, string> = {
-  issue: '課題', cause: '原因', solution: '解決策', effect: '効果', product: 'Microsoft 製品',
+  get issue() { return tr('課題'); }, get cause() { return tr('原因'); }, get solution() { return tr('解決策'); }, get effect() { return tr('効果'); }, get product() { return tr('Microsoft 製品'); },
 };
 export interface FlowNode { id: string; kind: FlowKind; label: string; column: number; row: number }
 export interface FlowLink { from: string; to: string }

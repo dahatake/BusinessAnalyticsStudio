@@ -3,6 +3,7 @@
 // どの失敗でも別の送信先へは切り替えない。呼んだ分（失敗も）は利用量に数える。
 import { isLoopbackUrl } from '../ai/client';
 import { estimateTokens, foundryReasonText, MAX_INPUT_TOKENS } from '../ai/foundryChat';
+import { tr } from '../i18n';
 import type { FoundryUnavailableReason, FoundryView } from '../ai/foundryClient';
 import type { UsageGate } from '../ai/foundryUsage';
 
@@ -69,17 +70,17 @@ export type ReviewOutcome =
   | { kind: 'cancelled' }
   | { kind: 'failed'; reason: FoundryUnavailableReason; text: string };
 
-export const NOT_CONFIGURED_TEXT = 'Microsoft Foundry が未設定のため、送信しませんでした。設定画面で、接続（エンドポイント・デプロイ名・API キー）を設定してください。';
+export const notConfiguredText = (): string => tr('Microsoft Foundry が未設定のため、送信しませんでした。設定画面で、接続（エンドポイント・デプロイ名・API キー）を設定してください。');
 
 export async function runReview(deps: ReviewDeps, all: readonly ReviewTarget[]): Promise<ReviewOutcome> {
   // データを持たないコンポーネントは送らない（「案なし」になる）
   const targets = fitTargets(all.filter((t) => t.data.trim() !== ''));
-  if (targets.length === 0) return { kind: 'blocked', text: 'レビューの対象になるデータを持つコンポーネントがありません。' };
+  if (targets.length === 0) return { kind: 'blocked', text: tr('レビューの対象になるデータを持つコンポーネントがありません。') };
   if (!deps.consent) return { kind: 'blocked', text: foundryReasonText('consent') };
   const v = await deps.view();
   if (!v) return { kind: 'blocked', text: foundryReasonText('relay') };
-  if (!v.configured) return { kind: 'blocked', text: NOT_CONFIGURED_TEXT };
-  if (!v.enabled) return { kind: 'blocked', text: `${foundryReasonText('disabled')}設定画面で「実接続を有効にする」をオンにしてください。` };
+  if (!v.configured) return { kind: 'blocked', text: notConfiguredText() };
+  if (!v.enabled) return { kind: 'blocked', text: `${foundryReasonText('disabled')}${tr('設定画面で「実接続を有効にする」をオンにしてください。')}` };
   const gate = deps.usage.check();
   if (!gate.allowed) return { kind: 'blocked', text: gate.reason };
   if (!(await deps.confirmSend(targets))) return { kind: 'cancelled' };
