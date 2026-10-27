@@ -13,5 +13,9 @@ export default {
   '新しい章': 'New chapter',
   '新しい論点': 'New topic',
   '新しい出典': 'New source',
+  // 同音異義: ボタン（動詞）は文脈なし、変更の状態語は文脈 'status'（tr-analysis.ts の 'status|追加' など）
+  '追加': 'Add',
+  '削除': 'Delete',
+  'status|変更': 'Changed',
   '{base}（複製）': '{base} (copy)',
 } as Record<string, string>;
