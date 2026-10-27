@@ -1,6 +1,7 @@
 // 画面上部の「Copilot で分析実行」ボタン（FR-278）。押すと、画面のすべてのコンポーネントが保持しているデータを Foundry に送って案を得る。
 // 送信前の確認（送る情報の種類と対象の一覧。取り消しで 0 回）、進行中の表示（その間もほかを操作できる）、状態のメッセージ（role=status）を受け持つ。
 import { useRef } from 'react';
+import { tr, useT } from '../i18n';
 import { Button, DialogActions, DialogBody, DialogContent, DialogTitle, Spinner, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Dialog, DialogSurface } from '../components/Dialog';
 import { useAi } from '../ai/useAi';
@@ -15,7 +16,7 @@ import { answerSend, askSend, useReviewStore } from './reviewStore';
 import { runReview } from './reviewFlow';
 import { collectTargetsFor } from './reviewTargets';
 
-const REVIEW_SCOPE_LABEL = '画面の各コンポーネントのデータの Microsoft Foundry への送信（中継プロセス経由。Copilot の案を得るため）';
+const reviewScopeLabel = () => tr('画面の各コンポーネントのデータの Microsoft Foundry への送信（中継プロセス経由。Copilot の案を得るため）');
 
 /** 対象のコンポーネント: 画面にあるもの（表示中の文字）と、まだ出ていない画面のもの（顧客パックの項目。A-70） */
 export const collectTargets = () => collectTargetsFor(COMPONENT_SCREENS, getEntityGraph());
@@ -27,6 +28,7 @@ const useStyles = makeStyles({
 });
 
 export function CopilotReviewButton() {
+  const t = useT();
   const s = useStyles();
   const { relayUrl, packId } = useAi();
   const { granted, record } = useConsent();
@@ -51,7 +53,7 @@ export function CopilotReviewButton() {
         view: () => fetchFoundryView(relayUrl, packId),
         usage: { check: () => usage.check(), count: (n) => usage.count(n) },
         confirmSend: async (targets) => { const ok = await askSend(targets); if (ok) useReviewStore.getState().start(); return ok; },
-        confirmPerson: () => gatePersonConfirm({ destination: 'ai', scopeLabel: REVIEW_SCOPE_LABEL, data: data!, consent: record, confirm: confirmViaUi }),
+        confirmPerson: () => gatePersonConfirm({ destination: 'ai', scopeLabel: reviewScopeLabel(), data: data!, consent: record, confirm: confirmViaUi }),
       }, collectTargets());
       const store = useReviewStore.getState();
       if (out.kind === 'done') store.finish(out.targets, out.proposals, out.warning);
@@ -68,28 +70,28 @@ export function CopilotReviewButton() {
   return (
     <span className={s.wrap}>
       <Button appearance="primary" data-testid="copilot-run" disabledFocusable={run === 'running'} aria-busy={run === 'running'} onClick={() => void start()}>
-        Copilot で分析実行
+        {t('Copilot で分析実行')}
       </Button>
       {/* 実行の開始・完了・失敗を支援技術へ伝える状態のメッセージ（WCAG 2.2 の 4.1.3）。常に存在させ、中身だけが変わる */}
       <span role="status" aria-live="polite" className={s.wrap}>
-        {run === 'running' ? <span data-testid="copilot-running" className={s.wrap}><Spinner size="tiny" aria-hidden />Copilot が分析中です…</span> : null}
+        {run === 'running' ? <span data-testid="copilot-running" className={s.wrap}><Spinner size="tiny" aria-hidden />{t('Copilot が分析中です…')}</span> : null}
         {run !== 'running' && notice ? <Text size={200} className={s.note} data-testid="copilot-notice">{notice}</Text> : null}
         {run !== 'running' && !notice && message ? <Text size={200} className={s.note}>{message}</Text> : null}
       </span>
       <Dialog open={!!confirm} modalType="alert" onOpenChange={(_, d) => { if (!d.open) answerSend(false); }}>
-        <DialogSurface aria-label="Copilot への送信の確認">
+        <DialogSurface aria-label={t('Copilot への送信の確認')}>
           <DialogBody>
-            <DialogTitle>Copilot（Microsoft Foundry）へ送信します</DialogTitle>
+            <DialogTitle>{t('Copilot（Microsoft Foundry）へ送信します')}</DialogTitle>
             <DialogContent>
-              <Text block>送る情報の種類: 次のコンポーネントに表示されているデータ（文字）。中継プロセス経由で、設定した Microsoft Foundry へ送ります。呼び出しには費用がかかります。</Text>
-              <Text block weight="semibold">対象のコンポーネント（{confirm?.targets.length ?? 0} 件）</Text>
+              <Text block>{t('送る情報の種類: 次のコンポーネントに表示されているデータ（文字）。中継プロセス経由で、設定した Microsoft Foundry へ送ります。呼び出しには費用がかかります。')}</Text>
+              <Text block weight="semibold">{t('対象のコンポーネント（{n} 件）', { n: confirm?.targets.length ?? 0 })}</Text>
               <ul className={s.list} data-testid="copilot-targets">
                 {(confirm?.targets ?? []).map((t) => <li key={t.id}>{t.label}</li>)}
               </ul>
             </DialogContent>
             <DialogActions>
-              <Button appearance="secondary" onClick={() => answerSend(false)}>取り消し</Button>
-              <Button appearance="primary" onClick={() => answerSend(true)}>送信する</Button>
+              <Button appearance="secondary" onClick={() => answerSend(false)}>{t('取り消し')}</Button>
+              <Button appearance="primary" onClick={() => answerSend(true)}>{t('送信する')}</Button>
             </DialogActions>
           </DialogBody>
         </DialogSurface>
