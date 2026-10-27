@@ -180,7 +180,6 @@ export default {
   '接続情報は手元の中継プロセスが暗号化して保管し、設定したエンドポイント以外へは送りません。既定は無効です。': 'Connection details are stored encrypted by the local relay process and are never sent anywhere except the configured endpoint. It is disabled by default.',
   '接続情報の状態:': 'Connection details status:',
   '設定済み': 'Configured',
-  '未設定': 'Not configured',
   '（送信先: {host}）': ' (destination: {host})',
   'API キー: 設定済み（{mask}）': 'API key: configured ({mask})',
   'エンドポイント': 'Endpoint',
@@ -193,7 +192,6 @@ export default {
   'Foundry の接続情報を保存': 'Save Foundry connection details',
   'Foundry の接続情報を削除': 'Delete Foundry connection details',
   'Foundry の接続テスト': 'Foundry connection test',
-  '削除': 'Delete',
   '接続テスト': 'Connection test',
   '接続テストは、保存済みの接続情報で、接続の確認だけの少額の呼び出しを 1 回行います（費用は小さい。顧客のデータは送りません）。': 'The connection test makes one small call with the saved connection details, only to check the connection (low cost; no customer data is sent).',
   '実接続を有効にする': 'Enable the real connection',
@@ -265,7 +263,6 @@ export default {
   '顧客の了承の記録なし': 'No customer consent record',
   '種別「人」の値は機密区分を持たないため、匿名化の対象ではありません。そのまま出力されます。': 'Values of the "Person" type have no confidentiality class, so they are not anonymized. They are output as they are.',
   '了承の記録がないため、続行できません。送信も出力もしません。設定画面で了承の記録を入力してください。': 'Cannot continue because there is no consent record. Nothing will be sent or output. Enter a consent record in Settings.',
-  '中止': 'Stop',
   '続行': 'Continue',
   // --- ai/ConsentSettings.tsx
   '顧客の了承の記録': 'Customer consent record',
