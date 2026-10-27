@@ -57,7 +57,7 @@
 - 作業先メニュー（FR-148）: 最上段に常時 `data-testid="work-target-menu"`（button。表示は現在の作業先）。押すと menu「作業先」。項目は menuitemradio（「デモ」「<企業名> … <Project 名>」。現在の作業先は checked）。Esc で閉じる。
 - 操作アイコン（FR-150）: フォーカス中のコンポーネントの見出しに `data-testid="component-actions"`。その中の button（名前: 最大化・通常表示・最小化・元に戻す・タブにまとめる・非表示・その他の操作）。最小化中は `data-minimized="true"`。非表示の一覧は button「非表示のコンポーネント」→ menuitem。常時見える操作部品: ミュート・アニメーションの停止/再生・編集モード・レイアウトを既定に戻す（FR-149）。
 - 左メニューの最小化（FR-151）: button「メニューを最小化」／「メニューを元の幅に戻す」。最小化中も `nav-<key>` は名前つきで表示され、ホバーで tooltip に画面名。
-- スナップ（FR-152）: 端から 32 CSS px 以内で `data-testid="snap-candidates"`（候補は button「左半分」「右半分」「上半分」「下半分」「4 分割」「3 分割」「タブ化」）と `snap-preview`。候補の上で離すと配置。
+- スナップ（FR-152）: 端から 32 CSS px 以内で `data-testid="snap-candidates"`（候補は button「左半分」「右半分」「上半分」「下半分」「4 分割」「3 分割」「タブ化」）と `snap-preview`（半透明。上端=最大化〔離すと `data-maximized="true"`〕・左右端=半分・角=4 分の 1。範囲外へ戻すと消える。FR-152 AC-793）。候補の上で離すと配置。
 - KPI/OKR（FR-153・154）: component key `kpi-okr`。button「OKR を定義」→ dialog「OKR の定義」（textbox「Objective」、button「Key Result を追加」、`key-result` ごとに textbox「Key Result 名」「KPI 名」「単位」、spinbutton「基準値」「目標値」「現在値」、button「保存」、検証エラーは role=alert）。達成度は `data-testid="kpi-achievement"`（「25%」または「算出できない」）。未定義は「未設定」。
 - モーション（NFR-UX-008）: `document.getAnimations()` と計算済み transition/animation の所要時間で判定。停止は P と `animation-state`。
 
@@ -68,7 +68,7 @@
 - 音声: `t.audio.isAudible()`（既存フック）。
 
 ## 12. 自由配置・拡大表示・ストーリー（FR-173〜180。workspace-free-layout.spec.ts・story.spec.ts が前提にする画面の探し方）
-- 自由配置・拡大（FR-173〜175）: 移動は見出し（heading）のドラッグ。置いた位置は再読込後も維持され、`workspace` の外へ出ない。重なったときは、ぶつかられたものが押し出されて重ならない（§15。Q-025 で改訂。「手前に出す」は廃止）。ダブルクリックで拡大中のコンポーネントは `data-expanded="true"`（最大化は `data-maximized="true"` で別。拡大では付かない）。拡大の寸法は `workspace` の境界に対する割合（PARAM-058=75%）。
+- 自由配置・拡大（FR-173〜175）: 移動は見出し（heading）のドラッグ。置いた位置は再読込後も維持され、`workspace` の外へ出ない。自由な移動で重なったときは、押し出さず重なりを許し、掴んだものが手前に出る（Q-066 B 2026-10-27。`elementFromPoint` で重なり領域の中心が掴んだものに属する）。押し出し（FR-184）はスナップ・分割・タブ・最大化・共有境界リサイズのときだけ。ダブルクリックで拡大中のコンポーネントは `data-expanded="true"`（最大化は `data-maximized="true"` で別。拡大では付かない）。拡大の寸法は `workspace` の境界に対する割合（PARAM-058=75%）。
 - 設定（FR-175）: 設定画面（上部の `settings-button`）の radiogroup「拡大表示の位置」に radio「上」「左」「右」「下」（既定: 上）。
 - 作業先メニュー（FR-176）: `work-target-menu` とボタン「企業を登録」が最上段（ほかの `nav-*`・ペルソナ・編集モード・`stepper` より上端が上か同じ）。
 - ストーリー（FR-177〜179）: ボタン「プレゼンテーションを開始」→ dialog「ペルソナの選択」（button 経営層・事業部門・IT・現場。Esc で閉じるとストーリーは始まらない）→ `data-testid="story"`。現在のシーン `story-scene`（見出し heading は 1 つ。`data-story-part`=1〜4（①解決策②理由③KPI/OKR④ユースケース）、①は `data-solution-id`、不足データのシーンは `data-no-data="true"` で本文に「データなし」・理由・補う入口）。`story-position`（「n / 全体」）。`→`/`←`/`Esc` で操作。配置（FR-178 AC-740。story-layout.spec.ts）: `story-scene` 内の各要素に `data-story-el="kicker|big|big-label|heading|body-line|cta"`（本文は 1 行＝1 要素ではなく、折り返し前の 1 段落でもよい。表示していない要素は付けないか、矩形が 0）。テストは各要素の外接矩形（文字の描画矩形を含む）で交差・ビューポート外を判定する。

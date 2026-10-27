@@ -166,45 +166,73 @@ test.describe('FR-183 コンポーネント上部の掴み場所（ハンドル�
   });
 });
 
-test.describe('FR-184 移動中の他のコンポーネントの自動の押し出し・再配置', () => {
-  // FR-184 AC-390
-  test('FR-184 AC-390 A を B の位置へドラッグすると B が重ならない位置へ移り、ドロップ後もすべてのコンポーネントが重ならない', async ({ page, start }) => {
+test.describe('FR-184 移動中の他のコンポーネントの自動の押し出し・再配置（重ならない配置に限る）', () => {
+  /** ハンドルを掴んで端へ運び、候補（label）の上で離す（FR-152。候補は重ならない配置）。 */
+  async function snapTo(page: Page, c: Locator, edge: 'left' | 'right', label: string): Promise<void> {
+    const ws = await box(workspace(page));
+    const h = await box(handle(c));
+    const x = h.x + h.width / 2;
+    const y = h.y + h.height / 2;
+    const tx = edge === 'left' ? ws.x + 8 : ws.x + ws.width - 8;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move((x + tx) / 2, (y + ws.y + ws.height / 2) / 2, { steps: 6 });
+    await page.mouse.move(tx, ws.y + ws.height / 2, { steps: 6 });
+    const cand = page.getByTestId('snap-candidates');
+    await expect(cand).toBeVisible();
+    await cand.getByRole('button', { name: label }).hover();
+    await page.mouse.up();
+  }
+  async function expectNoOverlap(page: Page): Promise<void> {
+    const boxes: Record<string, Box> = {};
+    for (const k of await topKeys(page)) boxes[k] = await box(component(page, k));
+    const names = Object.keys(boxes);
+    for (let i = 0; i < names.length; i++) for (let j = i + 1; j < names.length; j++) {
+      expect(overlap(boxes[names[i]], boxes[names[j]]), `${names[i]} と ${names[j]} が重なる`).toBeLessThanOrEqual(4);
+    }
+  }
+
+  // FR-184 AC-390（Q-066 B 2026-10-27: スナップ・分割のときだけ押し出す）
+  test('FR-184 AC-390 A を左半分へスナップすると、そこにあった B が重ならない位置へ移り、すべてのコンポーネントが重ならない', async ({ page, start }) => {
     await start();
     await selectPersona(page, '事業部門');
     const ks = await topKeys(page);
     expect(ks.length, 'コンポーネントが 2 つ以上必要').toBeGreaterThanOrEqual(2);
     const [a, b] = ks;
-    const bBefore = await box(component(page, b));
-    await dragHandle(page, component(page, a), bBefore.x + bBefore.width / 2, bBefore.y + bBefore.height / 2);
+    await snapTo(page, component(page, a), 'left', '左半分');
     await expect.poll(async () => overlap(await box(component(page, a)), await box(component(page, b))), { timeout: 5_000, message: 'B が押し出されない' }).toBeLessThanOrEqual(4);
-    const bAfter = await box(component(page, b));
-    expect(Math.abs(bAfter.x - bBefore.x) + Math.abs(bAfter.y - bBefore.y), 'B の位置が変わっていない').toBeGreaterThan(2);
-    const boxes: Record<string, Box> = {};
-    for (const k of await topKeys(page)) boxes[k] = await box(component(page, k));
-    const names = Object.keys(boxes);
-    for (let i = 0; i < names.length; i++) for (let j = i + 1; j < names.length; j++) {
-      expect(overlap(boxes[names[i]], boxes[names[j]]), `${names[i]} と ${names[j]} が重なる`).toBeLessThanOrEqual(4);
-    }
+    await expectNoOverlap(page);
   });
 
-  // FR-184 AC-390（異常系: 連続して別のものへ重ねても、重なりが残らない）
-  test('FR-184 AC-390 異常系: 続けて別のコンポーネントの位置へ何度ドロップしても、重なって表示されるものが 0 件', async ({ page, start }) => {
+  // FR-184 AC-390（異常系: 続けてスナップしても重なりが残らない）
+  test('FR-184 AC-390 異常系: 続けて左半分・右半分へスナップしても、重なって表示されるものが 0 件', async ({ page, start }) => {
     await start();
     await selectPersona(page, '事業部門');
     const ks = await topKeys(page);
     expect(ks.length).toBeGreaterThanOrEqual(3);
-    for (let i = 0; i < 3; i++) {
-      const a = ks[i % ks.length];
-      const t = await box(component(page, ks[(i + 1) % ks.length]));
-      await dragHandle(page, component(page, a), t.x + t.width / 2, t.y + t.height / 2);
-      await page.waitForTimeout(600);
-    }
-    const boxes: Record<string, Box> = {};
-    for (const k of await topKeys(page)) boxes[k] = await box(component(page, k));
-    const names = Object.keys(boxes);
-    for (let i = 0; i < names.length; i++) for (let j = i + 1; j < names.length; j++) {
-      expect(overlap(boxes[names[i]], boxes[names[j]]), `${names[i]} と ${names[j]} が重なる`).toBeLessThanOrEqual(4);
-    }
+    await snapTo(page, component(page, ks[0]), 'left', '左半分');
+    await page.waitForTimeout(600);
+    await snapTo(page, component(page, ks[1]), 'right', '右半分');
+    await page.waitForTimeout(600);
+    await expectNoOverlap(page);
+  });
+
+  // FR-184 AC-390（異常系: 自由な移動では押し出さず、掴んだものが手前。AC-348）
+  test('FR-184 AC-390 異常系: 自由な移動（スナップ候補なし）で B の上へ置いても B は押し出されず、A が手前に表示される', async ({ page, start }) => {
+    await start();
+    await selectPersona(page, '事業部門');
+    const [a, b] = await topKeys(page);
+    const bBefore = await box(component(page, b));
+    await dragHandle(page, component(page, a), bBefore.x + bBefore.width / 2, bBefore.y + bBefore.height / 2);
+    await page.waitForTimeout(700);
+    const bAfter = await box(component(page, b));
+    expect(Math.abs(bAfter.x - bBefore.x) + Math.abs(bAfter.y - bBefore.y), '自由な移動で B が押し出された').toBeLessThanOrEqual(4);
+    const aBox = await box(component(page, a));
+    expect(overlap(aBox, bAfter), '重なりが許されていない').toBeGreaterThan(100);
+    const cx = (Math.max(aBox.x, bAfter.x) + Math.min(aBox.x + aBox.width, bAfter.x + bAfter.width)) / 2;
+    const cy = (Math.max(aBox.y, bAfter.y) + Math.min(aBox.y + aBox.height, bAfter.y + bAfter.height)) / 2;
+    const frontKey = await page.evaluate(([x, y]) => document.elementFromPoint(x, y)?.closest('[data-testid^="component-"]:not([data-testid="component-menu"]):not([data-testid="component-actions"])')?.getAttribute('data-testid') ?? null, [cx, cy]);
+    expect(frontKey, 'A が手前に出ていない').toBe(`component-${a}`);
   });
 });
 
