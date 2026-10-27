@@ -7,6 +7,7 @@ import { useLayout } from '../store/layout';
 import { useFoldClass } from '../motion/useFoldMotion';
 import type { ScreenDefinition } from '../screens/types';
 import { rovingTarget } from './roving';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   root: {
@@ -88,6 +89,7 @@ export interface AppShellProps {
 
 export function AppShell({ title, screens, activeKey, onSelect, headerExtra, actions, dock, children, brand, stepper }: AppShellProps) {
   const s = useStyles();
+  const t = useT();
   const navMin = useLayout((st) => st.navMin);
   const rootRef = useRef<HTMLDivElement>(null);
   // モーダルのダイアログが開いている間は、背景（アプリ本体）を操作・支援技術の対象から外す（WAI-ARIA のモーダルの作法）。
@@ -148,8 +150,8 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
         </div>
         {stepper}
       </header>
-      <nav className={mergeClasses(s.nav, navMin ? s.navMin : undefined, navMotion)} aria-label="画面">
-        <Tooltip content={navMin ? 'メニューを元の幅に戻す' : 'メニューを最小化'} relationship="label" withArrow visible={toggleTip && !toggleHold} onVisibleChange={(_, d) => setToggleTip(d.visible)}>
+      <nav className={mergeClasses(s.nav, navMin ? s.navMin : undefined, navMotion)}       aria-label={t('画面')}>
+              <Tooltip content={navMin ? t('メニューを元の幅に戻す') : t('メニューを最小化')} relationship="label" withArrow visible={toggleTip && !toggleHold} onVisibleChange={(_, d) => setToggleTip(d.visible)}>
           <Button
             data-testid="nav-toggle"
             className={s.navToggle}
@@ -160,7 +162,7 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
             onBlur={() => setToggleHold(false)}
             onMouseLeave={() => setToggleHold(false)}
           >
-            {navMin ? null : 'メニューを最小化'}
+            {navMin ? null : t('メニューを最小化')}
           </Button>
         </Tooltip>
         {screens.map((sc) => {

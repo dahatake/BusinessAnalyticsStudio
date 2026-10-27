@@ -1,13 +1,16 @@
 // 読み込み中・0 件・エラーの表示（ui-design の状態表示）。
 import { MessageBar, MessageBarBody, MessageBarTitle, Skeleton, SkeletonItem, Text, makeStyles, tokens } from '@fluentui/react-components';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   box: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM, padding: tokens.spacingHorizontalXXL },
   list: { margin: 0, paddingLeft: tokens.spacingHorizontalXL },
 });
 
-export function LoadingView({ label = '読み込み中' }: { label?: string }) {
+export function LoadingView({ label }: { label?: string }) {
   const s = useStyles();
+  const t = useT();
+  label = label ?? t('読み込み中');
   return (
     <div className={s.box} role="status" aria-label={label} data-testid="state-loading">
       <Skeleton aria-label={label}>

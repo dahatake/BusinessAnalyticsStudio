@@ -4,6 +4,7 @@ import { useMemo, useRef } from 'react';
 import { makeStyles, tokens } from '@fluentui/react-components';
 import { useSelection } from './hooks';
 import { selectionAnnouncement } from './announce';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   hidden: {
@@ -21,23 +22,25 @@ const useStyles = makeStyles({
 
 // FR-015 AC-018: 選択中の対象を示す表示（ペルソナ切替などの画面の切替をまたいで保たれる）。ヘッダーに常に置く。
 export function SelectionIndicator() {
+  const t = useT();
   const { graph, selectedIds } = useSelection();
   if (selectedIds.length === 0) return <span data-testid="selection-indicator" hidden />;
   const names = selectedIds.map((id) => graph?.node(id)?.label ?? id);
-  const text = names.length > 1 ? `${names[0]} ほか ${names.length - 1} 件` : names[0];
+  const text = names.length > 1 ? t('{name} ほか {n} 件', { name: names[0] ?? '', n: names.length - 1 }) : names[0];
   return (
     <span
       data-testid="selection-indicator"
       title={names.join('、')}
       style={{ maxWidth: '16em', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: tokens.fontSizeBase200, lineHeight: tokens.lineHeightBase200 }}
     >
-      選択中: {text}
+      {t('選択中: {text}', { text: text ?? '' })}
     </span>
   );
 }
 
 export function SelectionAnnouncer() {
   const s = useStyles();
+  const t = useT();
   const { graph, selectedIds, related } = useSelection();
   const everSelected = useRef(false);
   if (selectedIds.length > 0) everSelected.current = true;
@@ -47,7 +50,7 @@ export function SelectionAnnouncer() {
     const count = related ? [...related].filter((id) => !selectedIds.includes(id)).length : 0;
     return selectionAnnouncement(names, count);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [graph, selectedIds, related]);
+  }, [graph, selectedIds, related, t]);
   return (
     <div className={s.hidden} data-testid="selection-announcer" aria-live="polite" aria-atomic="true" role="status">
       {text}

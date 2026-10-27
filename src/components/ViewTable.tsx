@@ -8,6 +8,7 @@ import { paneAction } from '../workspace/paneActions';
 import { onEntityKey, useEntityBinding } from '../selection/hooks';
 import { useHighlightClass } from './highlight';
 import { isSelectedHighlight } from './roving';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   scroll: { overflowX: 'auto', flexShrink: 0 },
@@ -49,10 +50,11 @@ export interface ViewTableProps {
 
 export function ViewTable({ label, origin, columns, rows }: ViewTableProps) {
   const s = useStyles();
+  const t = useT();
   const hl = useHighlightClass();
   const bind = useEntityBinding(origin);
   return (
-    <div className={s.scroll} tabIndex={0} role="region" aria-label={`${label}（横にスクロールできます）`}>
+    <div className={s.scroll} tabIndex={0} role="region" aria-label={t('{label}（横にスクロールできます）', { label })}>
       <Table aria-label={label} size="small">
         <TableHeader>
           <TableRow>{columns.map((c) => <TableHeaderCell key={c}>{c}</TableHeaderCell>)}</TableRow>
