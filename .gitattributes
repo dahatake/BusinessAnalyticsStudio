@@ -7,4 +7,3 @@ docs/run-history.md merge=union
 # Enterprise App Build Kit: append-only records
 scripts/*.sh text eol=lf
 EABK-Studio/*.sh text eol=lf
-*.command text eol=lf
