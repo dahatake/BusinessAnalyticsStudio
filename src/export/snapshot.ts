@@ -21,8 +21,8 @@ const OP_LABEL: Record<HistoryEntry['op'], string> = {
 /** 編集の変更履歴の 1 行を、エクスポートの変更履歴（FR-053）の形にする。 */
 export function editToChange(e: Pick<HistoryEntry, 'op' | 'entityId' | 'entityLabel' | 'fieldLabel' | 'before' | 'after' | 'at' | 'actor'>): ChangeEntry {
   const detail = e.op === 'update' || e.op === 'undo' || e.op === 'redo'
-    ? `${tr(OP_LABEL[e.op])}: ${e.fieldLabel}「${e.before}」→「${e.after}」`
-    : `${tr(OP_LABEL[e.op])}${e.fieldLabel ? `（${e.fieldLabel}）` : ''}`;
+    ? `${tr(OP_LABEL[e.op], undefined, 'export')}: ${e.fieldLabel}「${e.before}」→「${e.after}」`
+    : `${tr(OP_LABEL[e.op], undefined, 'export')}${e.fieldLabel ? `（${e.fieldLabel}）` : ''}`;
   return { at: e.at, kind: OP_KIND[e.op], targetId: e.entityId ?? '', target: e.entityLabel, detail, by: e.actor };
 }
 

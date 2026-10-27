@@ -42,7 +42,7 @@ function perTheme(themes: readonly Theme[], pick: (t: Theme) => string): string[
 
 export function buildFollowUps(input: FollowUpInput): FollowUpDoc[] {
   const { themes } = input;
-  const NA = tr('該当なし');
+  const NA = tr('該当なし', undefined, 'export');
   const unset = tr('未定');
   const noText = tr('（内容なし）');
   const who = `${input.customerName} ${input.projectName}`;
@@ -61,7 +61,7 @@ export function buildFollowUps(input: FollowUpInput): FollowUpDoc[] {
     `## 3. ${tr('継続して検討するテーマ')}`, '',
     ...(pending.length > 0 ? pending.map((t) => `- ${oneLine(t.title)}（${tr(STATUS_DISPLAY_LABEL[t.status])}）`) : [NA]), '',
     `## 4. ${tr('次のアクションの進捗')}`, '',
-    ...(actions.length > 0 ? actions.map(({ t, a }) => `- ${oneLine(a.text) || noText}（${tr('テーマ')}: ${oneLine(t.title)}／${tr('担当')}: ${a.owner || unset}／${tr('期限')}: ${a.due || unset}）`) : [NA]), '',
+    ...(actions.length > 0 ? actions.map(({ t, a }) => `- ${oneLine(a.text) || noText}（${tr('テーマ')}: ${oneLine(t.title)}／${tr('担当')}: ${a.owner || unset}／${tr('期限', undefined, 'export')}: ${a.due || unset}）`) : [NA]), '',
   ].join('\n');
 
   const requests = [
@@ -75,7 +75,7 @@ export function buildFollowUps(input: FollowUpInput): FollowUpDoc[] {
     tr('お世話になっております。本日の議論で合意した事項を、次のとおりまとめました。内容に相違があればお知らせください。'), '',
     ...(decisions.length > 0 ? decisions : [NA, '']),
     `${tr('次のアクション')}:`, '',
-    ...(actions.length > 0 ? actions.map(({ a }) => `- ${oneLine(a.text) || noText}（${tr('担当')}: ${a.owner || unset}／${tr('期限')}: ${a.due || unset}）`) : [NA]), '',
+    ...(actions.length > 0 ? actions.map(({ a }) => `- ${oneLine(a.text) || noText}（${tr('担当')}: ${a.owner || unset}／${tr('期限', undefined, 'export')}: ${a.due || unset}）`) : [NA]), '',
     tr('どうぞよろしくお願いいたします。'), '',
   ].join('\n');
 

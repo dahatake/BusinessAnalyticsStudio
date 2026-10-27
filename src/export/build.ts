@@ -236,7 +236,7 @@ function sectionSummary(c: Ctx): string[] {
 function sectionResearch(c: Ctx): string[] {
   const lines: string[] = [];
   const srcs = c.data.sources.sources;
-  lines.push(...(srcs.length > 0 ? table(['ID', tr('種別'), tr('題名'), tr('取得日'), tr('確度'), tr('機密区分')], srcs.map((s) => [s.id, s.kind, s.title, s.retrievedAt, s.confidence, s.classification ?? ''])) : [`${tr('出典')}: ${tr(NOT_APPLICABLE)}`]));
+  lines.push(...(srcs.length > 0 ? table(['ID', tr('種別', undefined, 'export'), tr('題名'), tr('取得日'), tr('確度'), tr('機密区分')], srcs.map((s) => [s.id, s.kind, s.title, s.retrievedAt, s.confidence, s.classification ?? ''])) : [`${tr('出典')}: ${tr(NOT_APPLICABLE, undefined, 'export')}`]));
   const metrics: unknown[][] = [];
   for (const e of [...c.data.entities.entities, ...c.data.products.products]) {
     for (const m of e.metrics ?? []) metrics.push([c.label(e.id), m.label, m.value, m.unit ?? '', sourceIdsText(m.sourceIds)]);
@@ -272,7 +272,7 @@ function themeBlock(t: Theme, level: number): string[] {
   for (const f of RECORD_FIELDS) lines.push('', `${h2} ${tr(f.label)}`, '', quote(t[f.key]));
   lines.push('', `${h2} ${tr('次のアクション')}`, '');
   if (t.actions.length === 0) lines.push(tr('（なし）'));
-  for (const a of t.actions) lines.push(`- ${oneLine(a.text) || tr('（内容なし）')}（${tr('担当')}: ${a.owner || tr('未定')}／${tr('期限')}: ${a.due || tr('未定')}）`);
+  for (const a of t.actions) lines.push(`- ${oneLine(a.text) || tr('（内容なし）')}（${tr('担当')}: ${a.owner || tr('未定')}／${tr('期限', undefined, 'export')}: ${a.due || tr('未定')}）`);
   return lines;
 }
 
@@ -284,7 +284,7 @@ function sectionDecisions(c: Ctx): string[] {
   if (c.themes.length === 0) return [];
   const lines = table([tr('テーマ'), tr('決定ステータス'), tr('決定事項'), tr('未決事項')], c.themes.map((t) => [t.title, tr(STATUS_DISPLAY_LABEL[t.status]), t.decisions, t.openIssues]));
   const actions = c.themes.flatMap((t) => t.actions.map((a) => [t.title, a.text, a.owner || tr('未定'), a.due || tr('未定')]));
-  if (actions.length > 0) lines.push('', `### ${tr('次のアクション')}`, '', ...table([tr('テーマ'), tr('内容'), tr('担当'), tr('期限')], actions));
+  if (actions.length > 0) lines.push('', `### ${tr('次のアクション')}`, '', ...table([tr('テーマ'), tr('内容', undefined, 'export'), tr('担当'), tr('期限', undefined, 'export')], actions));
   return lines;
 }
 
@@ -323,7 +323,7 @@ function sectionArchitecture(c: Ctx): string[] {
 function sectionProducts(c: Ctx): string[] {
   const { products } = c.data.products;
   const { solutions } = c.data.issues;
-  return table([tr('製品'), tr('提供元'), tr('概要'), tr('適合する解決策と理由')], products.map((p) => {
+  return table([tr('製品', undefined, 'export'), tr('提供元'), tr('概要'), tr('適合する解決策と理由')], products.map((p) => {
     const fits = solutions.flatMap((s) => (s.productFits ?? []).filter((f) => f.productId === p.id).map((f) => `${s.title}: ${f.reason}`));
     return [p.name, p.vendor ?? '', p.summary ?? '', fits.join(' ／ ')];
   }));
@@ -334,7 +334,7 @@ const mermaidId = (s: string): string => s.replace(/[^A-Za-z0-9_]/g, '_');
 function sectionGantt(c: Ctx): string[] {
   const { tasks, features } = c.data.plan;
   if (tasks.length === 0) return [];
-  const lines = table([tr('タスク'), tr('機能'), tr('担当'), tr('作業内容'), tr('開始'), tr('終了'), tr('先行')], tasks.map((t) => [
+  const lines = table([tr('タスク'), tr('機能', undefined, 'export'), tr('担当'), tr('作業内容'), tr('開始'), tr('終了', undefined, 'export'), tr('先行')], tasks.map((t) => [
     t.title, t.featureId ? c.label(t.featureId) : '', t.owner ?? '', t.work ?? '', t.start ?? '', t.end ?? '', (t.dependsOn ?? []).map((d) => c.label(d)).join(tr('、')),
   ]));
   const dated = tasks.filter((t) => t.start && t.end);
@@ -403,15 +403,15 @@ function sectionAttribution(c: Ctx): string[] {
   const lines: string[] = [];
   const rows = [...counts.entries()].map(([k, r]) => [k, r.ai ?? 0, r.human ?? 0, r.sample ?? 0]);
   lines.push(tr('値の作成者（`createdBy`）の件数です。AI が作った値と、人が作った・編集した値を区別します。'), '');
-  lines.push(...table([tr('データ'), 'AI', tr('人'), tr('サンプル')], rows));
+  lines.push(...table([tr('データ'), 'AI', tr('人', undefined, 'export'), tr('サンプル')], rows));
   const ai = c.themes.filter((t) => statusOrigin(t.status) === 'ai').length;
   lines.push('', `- ${tr('議論テーマ: AI の提案 {a} 件、顧客の選択 {b} 件', { a: ai, b: c.themes.length - ai })}`);
   return lines;
 }
 
 function sectionChanges(c: Ctx): string[] {
-  return table([tr('日時'), tr('変更'), tr('対象'), tr('内容'), tr('変更した者')], c.changes.map((e) => [
-    e.at, e.kind === 'added' ? tr('追加') : e.kind === 'removed' ? tr('削除') : tr('変更'), e.target, e.detail, e.by === 'ai' ? 'AI' : tr('人'),
+  return table([tr('日時'), tr('変更', undefined, 'export'), tr('対象'), tr('内容', undefined, 'export'), tr('変更した者')], c.changes.map((e) => [
+    e.at, e.kind === 'added' ? tr('追加', undefined, 'export') : e.kind === 'removed' ? tr('削除', undefined, 'export') : tr('変更', undefined, 'export'), e.target, e.detail, e.by === 'ai' ? 'AI' : tr('人', undefined, 'export'),
   ]));
 }
 
@@ -426,7 +426,7 @@ function renderSections(c: Ctx, ids: readonly SectionId[]): string {
   for (const id of ids) {
     const s = SECTIONS.find((x) => x.id === id)!;
     const body = BUILDERS[id](c);
-    out.push(`## ${tr(s.title)}`, '', ...(body.length > 0 ? body : [tr(NOT_APPLICABLE)]), '');
+    out.push(`## ${tr(s.title)}`, '', ...(body.length > 0 ? body : [tr(NOT_APPLICABLE, undefined, 'export')]), '');
   }
   return out.join('\n');
 }
@@ -434,7 +434,7 @@ function renderSections(c: Ctx, ids: readonly SectionId[]): string {
 /** 決定事項のみの範囲: テーマごとの決定事項だけを書く。 */
 function decisionsOnly(themes: readonly Theme[]): string {
   const withDecisions = themes.filter((t) => t.decisions.trim() !== '');
-  if (withDecisions.length === 0) return tr(NOT_APPLICABLE);
+  if (withDecisions.length === 0) return tr(NOT_APPLICABLE, undefined, 'export');
   return withDecisions.flatMap((t) => [`## ${tr('テーマ')}: ${oneLine(t.title)}`, '', `- ${tr('決定ステータス')}: ${tr(STATUS_DISPLAY_LABEL[t.status])}`, ...bullets(t.decisions), '']).join('\n');
 }
 
