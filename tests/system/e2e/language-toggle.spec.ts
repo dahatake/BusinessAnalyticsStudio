@@ -83,7 +83,8 @@ test.describe('FR-L10N 表示言語の切り替え', () => {
       await openScreen(page, key); // 設定はモーダル（ツールバーのボタン）。開いたまま走査する
       for (const t of await japaneseTexts(page, allow)) bad.push(`${name}: ${t}`);
       if (key === 'settings') await page.keyboard.press('Escape'); // 英語ではモーダル名が違うので Esc で閉じる
-    }モーダルを閉じ、コマンドパレット（Ctrl+K）も走査する（AC-788: アプリの全画面）
+    }
+    // 設定モーダルを閉じ、コマンドパレット（Ctrl+K）も走査する（AC-788: アプリの全画面）
     await page.keyboard.press('Escape');
     await page.keyboard.press('Control+k');
     await expect(page.getByRole('dialog').first(), 'コマンドパレットが開かない').toBeVisible();
