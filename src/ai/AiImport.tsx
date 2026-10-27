@@ -14,10 +14,12 @@ import {
   type ImportEntity, type UsageStore,
 } from './aiImportLogic';
 import { tokens } from '../theme/tokens';
+import { tr, useT } from '../i18n';
 
 const ACCEPT = '.pdf,.png,.jpg,.jpeg,.gif,.webp,.docx,.xlsx,.pptx,.doc,.xls,.ppt,.txt,.md,.log,application/pdf,image/*,text/*';
 
 export function AiImport({ projectId, store = browserUsageStore, onApplied }: { projectId: string | null; store?: UsageStore; onApplied?: (msg: string) => void }) {
+  const t = useT();
   const relayUrl = usePackStore((s) => s.runtime.relayUrl);
   const pack = usePackStore((s) => s.state);
   const packId = pack.status === 'ready' ? pack.pack.data.customer.name : '';
@@ -68,10 +70,10 @@ export function AiImport({ projectId, store = browserUsageStore, onApplied }: { 
     if (pack.status !== 'ready') return;
     const personCount = countPersons(pack.pack.data);
     const gate = await gatePersonConfirm({
-      destination: 'ai', scopeLabel: `${AI_SCOPE_LABEL}（AI 取り込みのファイル「${file.name}」の内容。個人情報が含まれうる）`,
+      destination: 'ai', scopeLabel: tr('{scope}（AI 取り込みのファイル「{name}」の内容。個人情報が含まれうる）', { scope: AI_SCOPE_LABEL, name: file.name }),
       data: pack.pack.data, consent: consentOf(pack.pack.data), confirm: confirmViaUi,
     });
-    if (!gate.allowed) { setError(gate.reason ?? '送信しませんでした。'); return; }
+    if (!gate.allowed) { setError(gate.reason ?? t('送信しませんでした。')); return; }
     setBusy(true);
     try {
       recordCall(store, new Date(), estimateCostYen(file.size)); // 失敗した呼び出しも概算に算入する（FR-276・安全側）
@@ -86,50 +88,48 @@ export function AiImport({ projectId, store = browserUsageStore, onApplied }: { 
     if (!preview || !projectId) return;
     const text = JSON.stringify({ entities: preview.entities });
     const r = importCatalog(projectId, text, `${preview.file.name}.json`, text.length);
-    if (r.ok) { setPreview(null); setError(''); onApplied?.(`${preview.file.name} から AI 取り込みで ${r.count} 件の項目を反映しました。`); } else setError(r.errors.join(' '));
+    if (r.ok) { setPreview(null); setError(''); onApplied?.(t('{name} から AI 取り込みで {n} 件の項目を反映しました。', { name: preview.file.name, n: r.count })); } else setError(r.errors.join(' '));
   };
 
   return (
-    <section data-testid="ai-import" aria-label="AI 取り込み" style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS }}>
-      <Text as="h3" weight="semibold">AI 取り込み（Microsoft Foundry）</Text>
+    <section data-testid="ai-import" aria-label={t('AI 取り込み')} style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS }}>
+      <Text as="h3" weight="semibold">{t('AI 取り込み（Microsoft Foundry）')}</Text>
       <Text size={200}>
-        PDF・画像・Office 文書・非定型テキストを、生成 AI で読み取って取り込みます。Foundry は有料サービスで費用が発生し、選んだファイルの内容が、
-        ローカルの中継プロセスを通じて Foundry に送信されます（1 件 {AI_IMPORT_MAX_MB} MB まで）。取り込んだ内容はプレビューで確認してから反映します。
+        {t('PDF・画像・Office 文書・非定型テキストを、生成 AI で読み取って取り込みます。Foundry は有料サービスで費用が発生し、選んだファイルの内容が、 ローカルの中継プロセスを通じて Foundry に送信されます（1 件 {max} MB まで）。取り込んだ内容はプレビューで確認してから反映します。', { max: AI_IMPORT_MAX_MB })}
       </Text>
       <div>
-        <Button appearance="secondary" disabled={!avail.available || busy} aria-disabled={!avail.available} onClick={() => setChoosing(true)}>AI 取り込み</Button>
+        <Button appearance="secondary" disabled={!avail.available || busy} aria-disabled={!avail.available} onClick={() => setChoosing(true)}>{t('AI 取り込み')}</Button>
       </div>
       {!avail.available ? <Text size={200} data-testid="ai-import-guide" role="note">{avail.guide}</Text> : null}
       {avail.available && choosing ? (
         <div>
-          <label htmlFor="ai-import-file">AI 取り込みのファイル</label>{' '}
+          <label htmlFor="ai-import-file">{t('AI 取り込みのファイル')}</label>{' '}
           <input id="ai-import-file" type="file" accept={ACCEPT} disabled={busy} onChange={(ev) => { onPick(ev.target.files?.[0]); ev.target.value = ''; }} />
         </div>
       ) : null}
       {notice ? <Text role="status">{notice}</Text> : null}
-      {busy ? <Text role="status">Foundry に送信して読み取っています…</Text> : null}
+      {busy ? <Text role="status">{t('Foundry に送信して読み取っています…')}</Text> : null}
       {error ? <MessageBar intent="error" layout="multiline" role="alert"><MessageBarBody>{error}</MessageBarBody></MessageBar> : null}
       {preview ? (
-        <section role="region" aria-label="取り込みのプレビュー" style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXS }}>
-          <Text weight="semibold">{preview.file.name} から {preview.entities.length} 件を読み取りました。反映するまで、既存のデータは変わりません。</Text>
+        <section role="region" aria-label={t('取り込みのプレビュー')} style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalXS }}>
+          <Text weight="semibold">{t('{name} から {n} 件を読み取りました。反映するまで、既存のデータは変わりません。', { name: preview.file.name, n: preview.entities.length })}</Text>
           <ul>{preview.entities.map((e, i) => <li key={i}><b>{e.name}</b>{e.description ? `: ${e.description}` : ''}</li>)}</ul>
           <div style={{ display: 'flex', gap: tokens.spacingHorizontalS }}>
-            <Button appearance="primary" onClick={apply}>反映</Button>
-            <Button appearance="secondary" onClick={() => setPreview(null)}>破棄</Button>
+            <Button appearance="primary" onClick={apply}>{t('反映')}</Button>
+            <Button appearance="secondary" onClick={() => setPreview(null)}>{t('破棄')}</Button>
           </div>
         </section>
       ) : null}
       <Dialog open={!!pending} modalType="alert" onOpenChange={(_, d) => { if (!d.open) setPending(null); }}>
-        <DialogSurface aria-label="AI 取り込みの送信前の確認">
+        <DialogSurface aria-label={t('AI 取り込みの送信前の確認')}>
           <DialogBody>
-            <DialogTitle>ファイルを Foundry に送信しますか</DialogTitle>
+            <DialogTitle>{t('ファイルを Foundry に送信しますか')}</DialogTitle>
             <DialogContent>
-              Microsoft Foundry は有料サービスで、費用が発生します（概算は今月の予算に算入します）。
-              送信されるのは、選んだファイル「{pending?.name}」の内容です。ファイルに個人情報が含まれうる場合は、顧客の了承の範囲で送ってください。
+              {t('Microsoft Foundry は有料サービスで、費用が発生します（概算は今月の予算に算入します）。 送信されるのは、選んだファイル「{name}」の内容です。ファイルに個人情報が含まれうる場合は、顧客の了承の範囲で送ってください。', { name: pending?.name ?? '' })}
             </DialogContent>
             <DialogActions>
-              <Button appearance="secondary" onClick={() => setPending(null)}>キャンセル</Button>
-              <Button appearance="primary" onClick={() => { if (pending) void send(pending); }}>送信する</Button>
+              <Button appearance="secondary" onClick={() => setPending(null)}>{t('キャンセル')}</Button>
+              <Button appearance="primary" onClick={() => { if (pending) void send(pending); }}>{t('送信する')}</Button>
             </DialogActions>
           </DialogBody>
         </DialogSurface>

@@ -3,6 +3,7 @@
 import { askFoundry, type FoundryUnavailableReason } from './foundryClient';
 import { foundryReasonText, type FoundryPrompt } from './foundryChat';
 import type { UsageGate } from './foundryUsage';
+import { tr } from '../i18n';
 
 export interface FoundryChatDeps {
   relayUrl: string | undefined;
@@ -27,7 +28,7 @@ export async function sendFoundryChat(deps: FoundryChatDeps, built: FoundryPromp
   if (!gate.allowed) return { kind: 'blocked', text: gate.reason };
   if (deps.includesPerson) {
     const g = await deps.confirmPerson();
-    if (!g.allowed) return { kind: 'blocked', text: g.reason ?? '種別「人」の確認が済んでいないため、送信しませんでした。' };
+    if (!g.allowed) return { kind: 'blocked', text: g.reason ?? tr('種別「人」の確認が済んでいないため、送信しませんでした。') };
   }
   const r = await (deps.ask ?? askFoundry)(deps.relayUrl, {
     packId: deps.packId, prompt: built.prompt, consent: deps.consent,

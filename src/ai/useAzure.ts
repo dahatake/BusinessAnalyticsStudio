@@ -6,6 +6,7 @@ import { persist } from 'zustand/middleware';
 import { usePackStore } from '../store/pack';
 import { useConsent } from './useConsent';
 import { setAzureConnection, type AzureFeature } from './azureClient';
+import { tr } from '../i18n';
 
 interface AzureState {
   /** 機能ごとに、実接続を確認つきで有効にした顧客パック */
@@ -48,11 +49,11 @@ export function useAzure(feature: AzureFeature) {
 
   const enable = useCallback(async (): Promise<boolean> => {
     const st = useAzureStore.getState();
-    if (!granted) { st.setNotice(feature, '顧客の了承の記録がないため、実接続を有効にできません。モックのまま動作します。'); return false; }
+    if (!granted) { st.setNotice(feature, tr('顧客の了承の記録がないため、実接続を有効にできません。モックのまま動作します。')); return false; }
     const r = await setAzureConnection(runtime.relayUrl, feature, packId, true, true);
     st.set(feature, packId);
     st.setConnected(feature, r.ok && r.mode === 'connected');
-    st.setNotice(feature, r.ok && r.mode === 'connected' ? null : `${r.reason ?? 'モックのまま動作します。'}`);
+    st.setNotice(feature, r.ok && r.mode === 'connected' ? null : `${r.reason ?? tr('モックのまま動作します。')}`);
     return r.ok && r.mode === 'connected';
   }, [feature, granted, packId, runtime.relayUrl]);
 

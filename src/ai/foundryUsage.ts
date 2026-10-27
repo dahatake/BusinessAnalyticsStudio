@@ -3,6 +3,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { MAX_OUTPUT_TOKENS } from './foundryChat';
+import { tr } from '../i18n';
 
 export interface UsageLimits {
   /** PARAM-113: 1 日の回数の上限 */
@@ -56,14 +57,14 @@ export type UsageGate = { allowed: true; warning?: string } | { allowed: false; 
 export function checkUsage(r0: UsageRecord, l: UsageLimits, now: Date, provider: 'foundry' | 'copilot' = 'foundry'): UsageGate {
   const r = rollover(r0, now);
   if (r.dayCount >= l.dailyLimit) {
-    return { allowed: false, reason: `1 日の回数の上限（${l.dailyLimit} 回）に達したため、Microsoft Foundry へは送信しません。明日 0 時以降に再開します。` };
+    return { allowed: false, reason: tr('1 日の回数の上限（{n} 回）に達したため、Microsoft Foundry へは送信しません。明日 0 時以降に再開します。', { n: l.dailyLimit }) };
   }
   if (provider === 'copilot') return { allowed: true };
   const pct = l.monthlyBudget > 0 ? (r.monthCost / l.monthlyBudget) * 100 : 100;
   if (pct >= l.stopPercent) {
-    return { allowed: false, reason: `今月の概算費用が予算（${l.monthlyBudget} 円）の ${l.stopPercent}% に達したため、停止しています。月初に再開します。` };
+    return { allowed: false, reason: tr('今月の概算費用が予算（{budget} 円）の {stop}% に達したため、停止しています。月初に再開します。', { budget: l.monthlyBudget, stop: l.stopPercent }) };
   }
-  if (pct >= l.warnPercent) return { allowed: true, warning: `今月の概算費用が予算の ${Math.floor(pct)}% に達しています（警告は ${l.warnPercent}%、停止は ${l.stopPercent}%）。` };
+  if (pct >= l.warnPercent) return { allowed: true, warning: tr('今月の概算費用が予算の {pct}% に達しています（警告は {warn}%、停止は {stop}%）。', { pct: Math.floor(pct), warn: l.warnPercent, stop: l.stopPercent }) };
   return { allowed: true };
 }
 

@@ -2,6 +2,7 @@
 // 履歴は直近 HISTORY_PAIRS 組（PARAM-123）。入力が MAX_INPUT_TOKENS（PARAM-114）を超えるときは古い履歴から落とす（FR-276 の (2)）。
 // 送る内容にキーは含めない（キーは中継プロセスの外へ出ない。NFR-SEC-005）。
 import type { FoundryUnavailableReason } from './foundryClient';
+import { tr } from '../i18n';
 
 /** PARAM-123: 渡す直近の会話の組数 */
 export const HISTORY_PAIRS = 5;
@@ -85,12 +86,12 @@ export const TRIM_NOTICE = '入力が大きいため、古い会話の履歴を�
 /** Foundry を呼べなかった原因ごとの理由（画面に出す。キーの値・中継のメッセージは含めない） */
 export function foundryReasonText(reason: FoundryUnavailableReason): string {
   switch (reason) {
-    case 'timeout': return 'Microsoft Foundry の応答がタイムアウトしました。しばらくしてから送信し直してください。';
-    case 'error': return 'Microsoft Foundry がエラーを返しました。設定（エンドポイント・デプロイ名・キー）を確認して送信し直してください。';
-    case 'person-unconfirmed': return '種別「人」を含む顧客パックの送信の確認が済んでいないため、送信しませんでした。';
+    case 'timeout': return tr('Microsoft Foundry の応答がタイムアウトしました。しばらくしてから送信し直してください。');
+    case 'error': return tr('Microsoft Foundry がエラーを返しました。設定（エンドポイント・デプロイ名・キー）を確認して送信し直してください。');
+    case 'person-unconfirmed': return tr('種別「人」を含む顧客パックの送信の確認が済んでいないため、送信しませんでした。');
     case 'consent': return '顧客の了承の記録がないため、送信しませんでした。設定画面で了承の記録を入力してください。';
-    case 'disabled': return 'Microsoft Foundry の実接続が無効のため、送信しませんでした。';
-    case 'not-configured': return 'Microsoft Foundry が未設定のため、送信しませんでした。';
-    case 'relay': return '中継プロセスに届きませんでした。`npm run relay` で起動しているか確認して、送信し直してください。';
+    case 'disabled': return tr('Microsoft Foundry の実接続が無効のため、送信しませんでした。');
+    case 'not-configured': return tr('Microsoft Foundry が未設定のため、送信しませんでした。');
+    case 'relay': return tr('中継プロセスに届きませんでした。`npm run relay` で起動しているか確認して、送信し直してください。');
   }
 }

@@ -1,6 +1,7 @@
 // 実接続の有効化で利用者が確認した「送信される情報の種類」の記録（FR-275 AC-703・FR-290 AC-777）。端末内（localStorage）に案件ごとに残す。
 // 種類が増えた（例: FR-290 のプレゼンテーションの材料）のに、有効化の確認がそれより前なら、増えた種類を示して再確認するまで送らない。
 // 残すのは種類の ID だけで、送る内容・キーは持たない。
+import { tr } from '../i18n';
 
 export const KIND_PRESENTATION = 'presentation-story';
 
@@ -48,5 +49,5 @@ export function clearConfirmedSendKinds(packId: string): void {
 
 /** 確認済みの種類に含まれない種類（確認が必要なもの） */
 export function missingSendKinds(confirmed: readonly string[], needed: readonly string[]): Array<{ id: string; label: string }> {
-  return SEND_KINDS.filter((k) => needed.includes(k.id) && !confirmed.includes(k.id));
+  return SEND_KINDS.filter((k) => needed.includes(k.id) && !confirmed.includes(k.id)).map((k) => ({ id: k.id, label: tr(k.label) }));
 }

@@ -15,6 +15,7 @@ import { buildFoundryPrompt, TRIM_NOTICE, type FoundryPrompt } from './foundryCh
 import { sendFoundryChat } from './foundryChatFlow';
 import { useUsageStore } from './foundryUsage';
 import { confirmViaUi, countPersons, gatePersonConfirm } from './personConfirm';
+import { useT } from '../i18n';
 
 const FOUNDRY_LABEL = 'AI 生成（Microsoft Foundry）';
 const FOUNDRY_SCOPE_LABEL = 'チャットの質問・直近の履歴・根拠の Microsoft Foundry への送信（中継プロセス経由）';
@@ -46,18 +47,20 @@ interface Entry { question: string; result: AiResult; sources: Source[]; basis: 
 
 /** 出典カード（FR-017）。タイトル・種別・取得日・確度。URL があれば新しいタブで開く。 */
 function ChatSourceCard({ source }: { source: Source }) {
+  const t = useT();
   const s = useStyles();
   const href = safeHttpUrl(source.url);
   return (
-    <section className={s.card} data-testid="source-card" aria-label={`出典: ${source.title}`}>
+    <section className={s.card} data-testid="source-card" aria-label={t('出典: {title}', { title: source.title })}>
       <Text weight="semibold">{source.title}</Text>
-      <Text size={200}>取得日: {source.retrievedAt} ／ 確度: {source.confidence}</Text>
+      <Text size={200}>{t('取得日: {date} ／ 確度: {confidence}', { date: source.retrievedAt, confidence: source.confidence })}</Text>
       {href ? <Link href={href} target="_blank" rel="noopener noreferrer">{href}</Link> : null}
     </section>
   );
 }
 
 export function ChatScreen() {
+  const t = useT();
   const s = useStyles();
   const { ask, mode, relayUrl, packId } = useAi();
   const { granted: consentGranted, record: consentRecord } = useConsent();
@@ -168,22 +171,22 @@ export function ChatScreen() {
   };
 
   return (
-    <Panel testId="component-chat" title="チャット" description="顧客パックについて質問できます。回答には「AI 生成」のラベルが付きます。">
+    <Panel testId="component-chat" title={t('チャット')} description={t('顧客パックについて質問できます。回答には「AI 生成」のラベルが付きます。')}>
       <div className={s.row}>
-        <Input aria-label="質問" placeholder="質問を入力" value={text} onChange={(_, d) => setText(d.value)}
+        <Input aria-label={t('質問')} placeholder={t('質問を入力')} value={text} onChange={(_, d) => setText(d.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') void send(); }} style={{ flexGrow: 1 }} />
-        <Button appearance="primary" className={s.osColors} onClick={() => void send()} disabled={!!pending || text.trim() === ''}>送信</Button>
-        {pending ? null : <Button onClick={() => void openPreview()}>送信内容を確認</Button>}
-        <Button onClick={newConversation} disabled={!!pending}>新しい会話</Button>
+        <Button appearance="primary" className={s.osColors} onClick={() => void send()} disabled={!!pending || text.trim() === ''}>{t('送信')}</Button>
+        {pending ? null : <Button onClick={() => void openPreview()}>{t('送信内容を確認')}</Button>}
+        <Button onClick={newConversation} disabled={!!pending}>{t('新しい会話')}</Button>
       </div>
-      {preview !== null ? <pre data-testid="chat-preview" role="region" aria-label="送信内容" className={s.pre}>{preview}</pre> : null}
+      {preview !== null ? <pre data-testid="chat-preview" role="region" aria-label={t('送信内容')} className={s.pre}>{preview}</pre> : null}
       {pending ? (
         <div data-testid="chat-sending">
         <div data-testid="sending-indicator" role="status" className={s.answer}>
           <div className={s.row}>
             <Spinner size="tiny" />
-            <Text>{pending.foundry ? '送信中…（localhost の中継プロセス経由で Microsoft Foundry へ）' : mode === 'connected' ? '送信中…（localhost の中継プロセス経由で GitHub Copilot へ）' : '送信中…（モック。外部へは送信しません）'}</Text>
-            <Button size="small" onClick={() => setShowSent((v) => !v)}>送信内容を確認</Button>
+            <Text>{pending.foundry ? t('送信中…（localhost の中継プロセス経由で Microsoft Foundry へ）') : mode === 'connected' ? t('送信中…（localhost の中継プロセス経由で GitHub Copilot へ）') : t('送信中…（モック。外部へは送信しません）')}</Text>
+            <Button size="small" onClick={() => setShowSent((v) => !v)}>{t('送信内容を確認')}</Button>
           </div>
           {showSent ? <pre data-testid="sent-content" className={s.pre}>{pending.preview}</pre> : null}
         </div>
@@ -191,18 +194,18 @@ export function ChatScreen() {
       ) : null}
       {error ? <MessageBar intent="error"><MessageBarBody data-testid="chat-error">{error}</MessageBarBody></MessageBar> : null}
       {warning ? <MessageBar intent="warning"><MessageBarBody data-testid="chat-warning">{warning}</MessageBarBody></MessageBar> : null}
-      {trimmed ? <MessageBar intent="info"><MessageBarBody data-testid="chat-trim-notice">{TRIM_NOTICE}</MessageBarBody></MessageBar> : null}
+      {trimmed ? <MessageBar intent="info"><MessageBarBody data-testid="chat-trim-notice">{t(TRIM_NOTICE)}</MessageBarBody></MessageBar> : null}
       <div className={s.list}>
         {entries.map((e, i) => (
           <div key={i} data-testid="chat-answer" className={s.answer}>
             <Text weight="semibold">{e.question}</Text>
             <Text>{e.result.answer}</Text>
             {e.result.mode === 'mock' || e.foundry ? (
-              e.basis.length > 0 ? <Text size={200}>根拠にした項目（顧客パック）: {e.basis.join('、')}</Text> : null
+              e.basis.length > 0 ? <Text size={200}>{t('根拠にした項目（顧客パック）: {items}', { items: e.basis.join(t('、')) })}</Text> : null
             ) : null}
-            <Text size={200}>{e.foundry ? FOUNDRY_LABEL : e.result.mode === 'mock' ? MOCK_LABEL : REAL_LABEL}</Text>
+            <Text size={200}>{t(e.foundry ? FOUNDRY_LABEL : e.result.mode === 'mock' ? MOCK_LABEL : REAL_LABEL)}</Text>
             {e.sources.length > 0 ? (
-              <div className={s.cards} role="group" aria-label="出典">
+              <div className={s.cards} role="group" aria-label={t('出典')}>
                 {e.sources.map((src) => <ChatSourceCard key={src.id} source={src} />)}
               </div>
             ) : null}
