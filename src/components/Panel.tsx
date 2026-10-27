@@ -14,6 +14,7 @@ import { useComponentView } from '../view/useView';
 import { HIDDEN_SELECTION_TEXT, selectionHiddenIn, singleWorldNote } from '../view/viewModel';
 import { isEditableTarget, panelKeyAction, runPanelKeyAction, titleDoubleClick, type KeyLike } from './panelKeys';
 import { CopilotProposal } from '../review/CopilotProposal';
+import { useT } from '../i18n';
 import { TIER_APPEARANCE, TIER_LABEL } from '../workspace/tiers';
 
 /** これより狭いコンポーネントは、見出しの操作アイコンを出さず「…」メニューに任せる（FR-150 AC-259）。
@@ -151,6 +152,7 @@ function toKeyLike(e: KeyboardEvent<HTMLElement>): KeyLike {
 
 export function Panel({ testId, title, description, maxWidth, children }: PanelProps) {
   const s = useStyles();
+  const t = useT();
   const pane = usePane();
   const state = usePackStore((st) => st.state);
   const sample = state.status === 'ready' && hasSampleData(state.pack.data);
@@ -258,12 +260,12 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
             </Text>
             {pane ? (
               // 階層は、色だけでなく文字と形（塗り・薄い塗り・枠線）でも示す（FR-244 AC-589）
-              <Badge data-testid="tier-label" appearance={TIER_APPEARANCE[pane.tier]} color={pane.tier === 'primary' ? 'brand' : 'informative'} shape={pane.tier === 'primary' ? 'rounded' : pane.tier === 'supporting' ? 'circular' : 'square'} size="medium">{TIER_LABEL[pane.tier]}</Badge>
+              <Badge data-testid="tier-label" appearance={TIER_APPEARANCE[pane.tier]} color={pane.tier === 'primary' ? 'brand' : 'informative'} shape={pane.tier === 'primary' ? 'rounded' : pane.tier === 'supporting' ? 'circular' : 'square'} size="medium">{t(TIER_LABEL[pane.tier])}</Badge>
             ) : null}
             {sample ? (
               <span className={s.sample} data-testid="sample-badge">
-                <Badge className={s.sampleBadge} appearance="filled" color="warning" size="large">サンプル</Badge>
-                <Text size={200}>架空のサンプルデータを表示しています</Text>
+                <Badge className={s.sampleBadge} appearance="filled" color="warning" size="large">{t('サンプル')}</Badge>
+                <Text size={200}>{t('架空のサンプルデータを表示しています')}</Text>
               </span>
             ) : null}
           </div>
@@ -271,7 +273,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
         </div>
                   {pane && showTier && !minimized ? <Text size={300} role="status" data-testid="tier-reason" className={s.worldNote}>{pane.tierReason}</Text> : null}
         {world.note && !minimized ? <Text size={300} className={s.worldNote} data-testid="view-world-note">{world.note}</Text> : null}
-        {world.hiddenNote && !minimized ? <Text size={300} role="status" className={s.worldNote} data-testid="view-hidden-selection">{HIDDEN_SELECTION_TEXT}</Text> : null}
+        {world.hiddenNote && !minimized ? <Text size={300} role="status" className={s.worldNote} data-testid="view-hidden-selection">{t(HIDDEN_SELECTION_TEXT)}</Text> : null}
       </div>
       {/* 1 つの世界の画面は、いつも同じ包みに入れて表示・非表示だけを変える（中身を作り直さない） */}
       {/* component-data: コンポーネントが保持している現在のデータの欄（「Copilot で分析実行」が読む。FR-278）。Copilot の案（FR-279）はその外に別の欄で出す */}

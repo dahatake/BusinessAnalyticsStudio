@@ -2,6 +2,7 @@
 // 形式: front matter（YAML）＋ 人が読む節 ＋ 機械可読の JSON ブロック（最初の ```json フェンス）。
 // 復元は JSON ブロックだけを正とする。人が読む節は引用（`> `）で書くので、本文中のフェンスが JSON ブロックと取り違えられない。
 import { z } from 'zod';
+import { tr } from '../i18n/translate';
 import {
   RECORD_FIELDS, STATUS_DISPLAY_LABEL, ThemeSchema, statusOrigin, type Theme,
 } from './model';
@@ -110,21 +111,21 @@ const FENCE = /^```json[ \t]*\r?\n([\s\S]*?)\r?\n```[ \t]*$/m;
 export function parseDiscussionMemo(text: string): ParseMemoResult {
   const src = text.replace(/^\uFEFF/, '');
   if (!/^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(\r?\n|$)/.test(src)) {
-    return { ok: false, errors: ['先頭に front matter（--- で囲んだ見出し情報）がないため、議論メモとして読み込めません。'] };
+    return { ok: false, errors: [tr('先頭に front matter（--- で囲んだ見出し情報）がないため、議論メモとして読み込めません。')] };
   }
   const m = FENCE.exec(src);
-  if (!m) return { ok: false, errors: ['JSON ブロック（```json で始まる機械可読データ）が見つかりません。'] };
+  if (!m) return { ok: false, errors: [tr('JSON ブロック（```json で始まる機械可読データ）が見つかりません。')] };
   let raw: unknown;
   try {
     raw = JSON.parse(m[1] ?? '');
   } catch (e) {
-    return { ok: false, errors: [`JSON ブロックを読み取れません（${e instanceof Error ? e.message : String(e)}）。ファイルが壊れている可能性があります。`] };
+    return { ok: false, errors: [tr('JSON ブロックを読み取れません（{msg}）。ファイルが壊れている可能性があります。', { msg: e instanceof Error ? e.message : String(e) })] };
   }
   const r = MemoSnapshotSchema.safeParse(raw);
   if (!r.success) {
     return {
       ok: false,
-      errors: r.error.issues.slice(0, 10).map((i) => `JSON ブロックの ${i.path.join('.') || '(最上位)'}: ${i.message}`),
+      errors: r.error.issues.slice(0, 10).map((i) => tr('JSON ブロックの {path}: {msg}', { path: i.path.join('.') || tr('(最上位)'), msg: i.message })),
     };
   }
   return { ok: true, snapshot: r.data };

@@ -1,6 +1,7 @@
 // ブランドの表示部品（FR-061、FR-062）。ロゴは利用条件が「確認済み」のローカルファイルだけを、変形・再着色・トリミングせずに表示する。
 import { Text, makeStyles, tokens } from '@fluentui/react-components';
 import type { BrandProfile } from '../schema';
+import { useT } from '../i18n';
 
 /** ロゴの利用条件が不明なときに出す文言（FR-061） */
 export const LOGO_PLACEHOLDER_TEXT = 'LOGO（要許諾確認）';
@@ -28,12 +29,13 @@ const useStyles = makeStyles({
 
 export function BrandLockup({ brand, customerName }: { brand: BrandProfile; customerName: string }) {
   const s = useStyles();
+  const t = useT();
   return (
     <div className={s.root} data-testid="brand-lockup">
       <span className={s.accent} data-testid="accent" aria-hidden />
       {canShowLogo(brand.logo)
-        ? <img className={s.logo} data-testid="customer-logo" src={brand.logo.path} alt={`${customerName} のロゴ`} />
-        : <Text className={s.placeholder} size={200} data-testid="logo-placeholder">{LOGO_PLACEHOLDER_TEXT}</Text>}
+        ? <img className={s.logo} data-testid="customer-logo" src={brand.logo.path} alt={t('{name} のロゴ', { name: customerName })} />
+        : <Text className={s.placeholder} size={200} data-testid="logo-placeholder">{t(LOGO_PLACEHOLDER_TEXT)}</Text>}
       <Text size={300} weight="semibold">{coCreationLabel(customerName)}</Text>
     </div>
   );

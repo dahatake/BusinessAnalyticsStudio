@@ -7,6 +7,7 @@ import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { usePlaying } from '../motion/useMotion';
 import { useShowUi } from '../store/show';
 import { REACTIONS, scoreQuiz, type Quiz, type ReactionId } from './extras';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   quiz: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM, maxWidth: '760px' },
@@ -46,6 +47,7 @@ const useStyles = makeStyles({
 /** クイズ。全問に答えるまで「結果を見る」は押せない */
 export function QuizView({ quiz }: { quiz: Quiz }) {
   const s = useStyles();
+  const t = useT();
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [shown, setShown] = useState(false);
   const result = useMemo(() => scoreQuiz(quiz, answers), [quiz, answers]);
@@ -65,13 +67,13 @@ export function QuizView({ quiz }: { quiz: Quiz }) {
         </Field>
       ))}
       <div>
-        <Button appearance="primary" disabled={result === null} onClick={() => setShown(true)}>結果を見る</Button>
+        <Button appearance="primary" disabled={result === null} onClick={() => setShown(true)}>{t('結果を見る')}</Button>
       </div>
       {shown && result ? (
         <Card className={s.result} data-testid="quiz-result" role="status" aria-live="polite">
-          <Text size={400} weight="semibold">AI 成熟度の結果</Text>
+          <Text size={400} weight="semibold">{t('AI 成熟度の結果')}</Text>
           <Text className={s.level} size={500}>{result.level.label}</Text>
-          <Text>成熟度スコア: {result.score} / {result.max}</Text>
+          <Text>{t('成熟度スコア: {score} / {max}', { score: result.score, max: result.max })}</Text>
           {result.level.description ? <Text>{result.level.description}</Text> : null}
         </Card>
       ) : null}
@@ -84,6 +86,7 @@ interface Burst { key: number; emoji: string; top: number }
 /** リアクションのボタン。押すと反応（絵文字）が浮かび、件数が増える */
 export function Reactions() {
   const s = useStyles();
+  const t = useT();
   const playing = usePlaying();
   const counts = useShowUi((st) => st.reactions);
   const react = useShowUi((st) => st.react);
@@ -99,9 +102,9 @@ export function Reactions() {
   };
   return (
     <>
-      <div className={s.reactions} data-testid="reactions" role="group" aria-label="リアクション">
+      <div className={s.reactions} data-testid="reactions" role="group" aria-label={t('リアクション')}>
         {REACTIONS.map((r) => (
-          <Button key={r.id} size="small" appearance="subtle" onClick={() => press(r.id, r.emoji)} aria-label={`${r.label} ${counts[r.id]} 件`}>
+          <Button key={r.id} size="small" appearance="subtle" onClick={() => press(r.id, r.emoji)} aria-label={t('{label} {n} 件', { label: r.label, n: counts[r.id] })}>
             <span aria-hidden>{r.emoji}</span>
             <Text className={s.count} size={200} data-testid="reaction-count">{counts[r.id]}</Text>
           </Button>

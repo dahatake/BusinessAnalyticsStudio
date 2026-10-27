@@ -7,6 +7,7 @@ import {
 import { Dialog, DialogSurface } from '../components/Dialog';
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { useInk, selectBoard } from '../ink/store';
+import { useT } from '../i18n';
 import { usePackStore } from '../store/pack';
 import { downloadBlob } from './deliver';
 import {
@@ -44,6 +45,7 @@ export interface BoardPdfDialogProps {
 
 export function BoardPdfDialog({ boardId, open, onOpenChange, onResult }: BoardPdfDialogProps) {
   const s = useStyles();
+  const t = useT();
   const board = useInk((st) => selectBoard(boardId)(st));
   const boards = useInk((st) => st.boards);
   const selection = useInk((st) => st.selection);
@@ -70,13 +72,13 @@ export function BoardPdfDialog({ boardId, open, onOpenChange, onResult }: BoardP
         paper, orientation, range, selectedIds,
         ...(cu ? { subtitle: `${cu.name} ${cu.projectName}` } : {}),
       });
-      if (!bytes) { setError('出力する範囲に何もありません。範囲を変えるか、ボードに書き込んでください。'); return; }
+      if (!bytes) { setError(t('出力する範囲に何もありません。範囲を変えるか、ボードに書き込んでください。')); return; }
       const name = `${safeName(range === 'all' ? 'ホワイトボード' : board.name)}.pdf`;
       downloadBlob(name, new Blob([bytes.slice().buffer], { type: 'application/pdf' }));
-      onResult?.(`${name} を出力しました（${paper}・${orientation === 'landscape' ? '横' : '縦'}）。`);
+      onResult?.(t('{name} を出力しました（{paper}・{dir}）。', { name, paper, dir: orientation === 'landscape' ? t('横') : t('縦') }));
       onOpenChange(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'PDF を出力できませんでした。');
+      setError(e instanceof Error ? e.message : t('PDF を出力できませんでした。'));
     } finally {
       setBusy(false);
     }
@@ -84,30 +86,30 @@ export function BoardPdfDialog({ boardId, open, onOpenChange, onResult }: BoardP
 
   return (
     <Dialog open={open} onOpenChange={(_, d) => onOpenChange(d.open)} modalType="modal">
-      <DialogSurface aria-label="PDF 出力">
+      <DialogSurface aria-label={t('PDF 出力')}>
         <DialogBody>
-          <DialogTitle>PDF 出力</DialogTitle>
+          <DialogTitle>{t('PDF 出力')}</DialogTitle>
           <DialogContent className={s.body}>
             <div className={s.options}>
-              <Field label="範囲">
+              <Field label={t('範囲')}>
                 <RadioGroup layout="horizontal" value={range} onChange={(_, d) => setRange(d.value as PdfRange)}>
-                  <Radio value="all" label="全体" />
-                  <Radio value="board" label="ボード" />
-                  <Radio value="selection" label="選択範囲" disabled={selectedIds.length === 0} />
-                  <Radio value="view" label="表示中の範囲" />
+                  <Radio value="all" label={t('全体')} />
+                  <Radio value="board" label={t('ボード')} />
+                  <Radio value="selection" label={t('選択範囲')} disabled={selectedIds.length === 0} />
+                  <Radio value="view" label={t('表示中の範囲')} />
                 </RadioGroup>
               </Field>
-              <Field label="用紙">
+              <Field label={t('用紙')}>
                 <RadioGroup layout="horizontal" value={paper} onChange={(_, d) => setPaper(d.value as PaperSize)}>
                   <Radio value="A4" label="A4" />
                   <Radio value="A3" label="A3" />
                   <Radio value="16:9" label="16:9" />
                 </RadioGroup>
               </Field>
-              <Field label="向き">
+              <Field label={t('向き')}>
                 <RadioGroup layout="horizontal" value={orientation} onChange={(_, d) => setOrientation(d.value as Orientation)}>
-                  <Radio value="landscape" label="横" />
-                  <Radio value="portrait" label="縦" />
+                  <Radio value="landscape" label={t('横')} />
+                  <Radio value="portrait" label={t('縦')} />
                 </RadioGroup>
               </Field>
             </div>
@@ -115,21 +117,21 @@ export function BoardPdfDialog({ boardId, open, onOpenChange, onResult }: BoardP
               className={s.frame}
               data-testid="pdf-preview"
               role="img"
-              aria-label={`出力のプレビュー（${paper}・${orientation === 'landscape' ? '横' : '縦'}）。${board?.name ?? ''}`}
+              aria-label={t('出力のプレビュー（{paper}・{dir}）。{name}', { paper, dir: orientation === 'landscape' ? t('横') : t('縦'), name: board?.name ?? '' })}
               style={{ aspectRatio: `${page.w} / ${page.h}`, width: orientation === 'landscape' ? '100%' : 'auto', height: orientation === 'landscape' ? 'auto' : '320px' }}
             >
-              {svg ? <div style={{ width: '100%', height: '100%' }} dangerouslySetInnerHTML={{ __html: svg }} /> : <Text className={s.empty}>この範囲には、出力するものがありません。</Text>}
+              {svg ? <div style={{ width: '100%', height: '100%' }} dangerouslySetInnerHTML={{ __html: svg }} /> : <Text className={s.empty}>{t('この範囲には、出力するものがありません。')}</Text>}
             </div>
             {counts && (
               <Text size={200} role="status">
-                出力に入るもの: 付箋 {counts.stickies}・テキスト {counts.texts}・図形 {counts.shapes}・手書き {counts.strokes} 本
+                {t('出力に入るもの: 付箋 {a}・テキスト {b}・図形 {c}・手書き {d} 本', { a: counts.stickies, b: counts.texts, c: counts.shapes, d: counts.strokes })}
               </Text>
             )}
             {error && <Text role="alert" size={200}>{error}</Text>}
           </DialogContent>
           <DialogActions>
-            <Button className={s.forcedAuto} appearance="primary" disabled={busy || !hasOutput} onClick={() => { void run(); }}>出力</Button>
-            <Button onClick={() => onOpenChange(false)}>閉じる</Button>
+            <Button className={s.forcedAuto} appearance="primary" disabled={busy || !hasOutput} onClick={() => { void run(); }}>{t('出力')}</Button>
+            <Button onClick={() => onOpenChange(false)}>{t('閉じる')}</Button>
           </DialogActions>
         </DialogBody>
       </DialogSurface>

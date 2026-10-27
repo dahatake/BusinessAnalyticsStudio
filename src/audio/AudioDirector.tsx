@@ -1,6 +1,7 @@
 // 音声を、設定・シーン・操作・ブランドのトーンにつなぐ部品（FR-073・FR-074）。アプリに 1 つだけ置く。表示はしない。
 import { useEffect } from 'react';
 import { registerCommands } from '../commands/registry';
+import { tr } from '../i18n';
 import { useMotionProfile } from '../motion/useMotion';
 import { usePresentationStore } from '../store/presentation';
 import { useSelectionStore } from '../store/selection';
@@ -65,7 +66,7 @@ export function AudioDirector({ scene }: { scene: string }) {
   }, []);
   useEffect(() => registerCommands(() => [{
     id: 'audio.toggle-mute',
-    label: 'ミュートを切り替える',
+    label: tr('ミュートを切り替える'),
     keywords: ['音', 'ミュート', '消音', 'mute', 'sound'],
     shortcut: 'M',
     run: toggleMute,

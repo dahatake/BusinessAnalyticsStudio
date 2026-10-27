@@ -174,7 +174,7 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 
 ### 3.2 対象の利用者・環境
 
-- 利用者: §4 のペルソナ。言語は日本語（NFR-L10N-001）。地域・タイムゾーン: 日本（Asia/Tokyo）。時刻の記録はタイムゾーン付きで行う。
+- 利用者: §4 のペルソナ。言語は既定で日本語、画面の固定文言は英語に切り替えられる（NFR-L10N-001、FR-293、FR-294。データと出力ファイルは対象外）。地域・タイムゾーン: 日本（Asia/Tokyo）。時刻の記録はタイムゾーン付きで行う。
 - 端末: Windows / macOS の最新の Microsoft Edge・Chrome。iPad の Safari ではインクとタッチの主要機能（NFR-ENV-001）。開発・生成には Node.js LTS。
 - 利用者は GitHub Copilot のライセンスを持ち、Copilot CLI にサインインできる（SDK の実行に必要）。GitHub Copilot（CLI/VS Code）で Skill を実行できる。WorkIQ は使えない場合がある（SRC-001 §2.3）。
 

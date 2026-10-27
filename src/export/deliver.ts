@@ -1,6 +1,7 @@
 // 書き出したファイルの渡し先（FR-052、NFR-UX-004）。
 // File System Access API があれば、利用者が保存先を指定して書き込む。なければ（または利用者が選べば）ブラウザーのダウンロードにする。
 // 失敗は原因（書き込み・権限・キャンセル）を返し、呼び出し側が「ZIP でダウンロード」への切替を案内する。
+import { tr } from '../i18n';
 export type DeliverResult =
   | { ok: true; method: 'file-system' | 'download'; name: string }
   | { ok: false; cancelled: true }
@@ -40,11 +41,11 @@ async function writeWithPicker(name: string, blob: Blob): Promise<DeliverResult>
   try {
     handle = await picker({
       suggestedName: name,
-      types: [{ description: ext === '.zip' ? 'ZIP ファイル' : 'Markdown', accept: { [mimeOf(name).split(';')[0] ?? 'text/markdown']: [ext] } }],
+      types: [{ description: ext === '.zip' ? tr('ZIP ファイル') : 'Markdown', accept: { [mimeOf(name).split(';')[0] ?? 'text/markdown']: [ext] } }],
     });
   } catch (e) {
     if (e instanceof DOMException && e.name === 'AbortError') return { ok: false, cancelled: true };
-    return { ok: false, cancelled: false, reason: `保存先を選べませんでした（${errMessage(e)}）。権限を確認してください。` };
+    return { ok: false, cancelled: false, reason: tr('保存先を選べませんでした（{msg}）。権限を確認してください。', { msg: errMessage(e) }) };
   }
   let writable: WritableLike | undefined;
   try {
@@ -54,7 +55,7 @@ async function writeWithPicker(name: string, blob: Blob): Promise<DeliverResult>
     return { ok: true, method: 'file-system', name: handle.name ?? name };
   } catch (e) {
     try { await writable?.abort?.(); } catch { /* 書き込みの失敗を優先して返す */ }
-    return { ok: false, cancelled: false, reason: `保存先に書き込めませんでした（${errMessage(e)}）。保存先の権限や空き容量を確認してください。` };
+    return { ok: false, cancelled: false, reason: tr('保存先に書き込めませんでした（{msg}）。保存先の権限や空き容量を確認してください。', { msg: errMessage(e) }) };
   }
 }
 
@@ -66,6 +67,6 @@ export async function deliver(name: string, bytes: Uint8Array | string, useFileS
     downloadBlob(name, blob);
     return { ok: true, method: 'download', name };
   } catch (e) {
-    return { ok: false, cancelled: false, reason: `ダウンロードを開始できませんでした（${errMessage(e)}）。` };
+    return { ok: false, cancelled: false, reason: tr('ダウンロードを開始できませんでした（{msg}）。', { msg: errMessage(e) }) };
   }
 }

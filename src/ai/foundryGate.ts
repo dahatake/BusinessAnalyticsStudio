@@ -2,6 +2,7 @@
 // 未設定（エンドポイント・デプロイ名、または選んだ認証方式の資格情報がない）のときは Foundry へ送信しない（呼び出し 0 回）。
 // 失敗（認証エラー・タイムアウト・サーバーエラー）では、原因と次の行動を文字で示す。表示にキー・トークンの値を含めない。
 import type { FoundryView } from './foundryClient';
+import { tr } from '../i18n';
 
 export type FoundryRunGate = { ok: true } | { ok: false; kind: 'not-configured'; message: string };
 
@@ -11,7 +12,7 @@ export const NOT_CONFIGURED_NOTICE =
 /** 接続設定から送信してよいかを決める。view が null（中継に届かない・未取得）も未設定として扱い、送信しない */
 export function foundryRunGate(view: FoundryView | null): FoundryRunGate {
   const ok = !!view && view.configured && (view.provider === 'copilot' || (!!view.endpoint && !!view.deployment));
-  return ok ? { ok: true } : { ok: false, kind: 'not-configured', message: NOT_CONFIGURED_NOTICE };
+  return ok ? { ok: true } : { ok: false, kind: 'not-configured', message: tr(NOT_CONFIGURED_NOTICE) };
 }
 
 export type FoundryFailureCause = 'auth' | 'timeout' | 'server' | 'unreachable';
@@ -53,5 +54,7 @@ export function redactSecrets(text: string, secrets: readonly string[] = []): st
 /** 失敗の案内。サーバーの文言は使わず（キー・トークンが紛れないよう）、原因ごとの固定文だけを示す */
 export function foundryFailureNotice(cause: FoundryFailureCause): FoundryFailureNotice {
   const n = NOTICES[cause];
-  return { cause, reason: n.reason, action: n.action, text: `${n.reason}${n.action}` };
+  const reason = tr(n.reason);
+  const action = tr(n.action);
+  return { cause, reason, action, text: `${reason}${action}` };
 }

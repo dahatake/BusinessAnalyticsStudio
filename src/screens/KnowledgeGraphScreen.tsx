@@ -1,6 +1,7 @@
 // ナレッジグラフ（2D/3D。FR-037）。ノードの種別を色・形・アイコンで、エッジの関係種別を線種・太さ・粒子で区別する。
 // ホップ数（PARAM-014: 1〜3）・種別フィルター・検索・ノード/エッジの編集ができる。選択は共通のストア（useEntityBinding）で他のビューと連動する。
 import { useEffect, useMemo, useRef, useState, type RefObject, type SVGProps } from 'react';
+import { useT } from '../i18n';
 import {
   Badge, Button, Checkbox, DialogActions, DialogBody, DialogContent, DialogTitle, Dropdown, Field, Input, Option, Text, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
@@ -101,6 +102,7 @@ interface ViewProps {
 }
 
 function Graph2D({ nodes, edges, pos, size, selected, related, matches, edgeSel, onEdge, onMove, editable }: ViewProps) {
+  const t = useT();
   const s = useStyles();
   const bind = useEntityBinding(ORIGIN);
   const playing = useAnimation((st) => st.playing);
@@ -109,7 +111,7 @@ function Graph2D({ nodes, edges, pos, size, selected, related, matches, edgeSel,
   const svgRef = useRef<SVGSVGElement>(null);
   const hit = useNodeHitSize(svgRef, size);
   return (
-    <svg ref={svgRef} data-zoom-surface="graph" viewBox={`0 0 ${size.width} ${size.height}`} className={s.svg} role="group" aria-label="ナレッジグラフ（2D）">
+    <svg ref={svgRef} data-zoom-surface="graph" viewBox={`0 0 ${size.width} ${size.height}`} className={s.svg} role="group" aria-label={t('ナレッジグラフ（2D）')}>
       {edges.map((e) => {
         const a = pos(e.from);
         const b = pos(e.to);
@@ -127,7 +129,7 @@ function Graph2D({ nodes, edges, pos, size, selected, related, matches, edgeSel,
             {editable ? (
               <path
                 d={d} stroke="transparent" strokeWidth={12} fill="none" style={{ cursor: 'pointer' }} role="button" tabIndex={0}
-                aria-label={`エッジ: ${e.from} → ${e.to}（${st.label}）`}
+                aria-label={t('エッジ: {from} → {to}（{state}）', { from: e.from, to: e.to, state: st.label })}
                 onClick={() => onEdge(e)} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onEdge(e); } }}
               />
             ) : null}
@@ -183,6 +185,7 @@ function Graph2D({ nodes, edges, pos, size, selected, related, matches, edgeSel,
 function NodeDialog({ open, nodes, defaultLink, onClose, onAdd }: {
   open: boolean; nodes: readonly GraphNode[]; defaultLink?: string; onClose: () => void; onAdd: (kind: AddableKind, name: string, linkTo?: string) => string | null;
 }) {
+  const t = useT();
   const [name, setName] = useState('');
   const [kind, setKind] = useState<AddableKind>('issue');
   const [error, setError] = useState<string | null>(null);
@@ -192,21 +195,21 @@ function NodeDialog({ open, nodes, defaultLink, onClose, onAdd }: {
     <Dialog open={open} onOpenChange={(_, d) => { if (!d.open) onClose(); }}>
       <DialogSurface>
         <DialogBody>
-          <DialogTitle>ノードを追加</DialogTitle>
+          <DialogTitle>{t('ノードを追加')}</DialogTitle>
           <DialogContent style={{ display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM }}>
-            <Field label="名前" required><Input value={name} onChange={(_, d) => setName(d.value)} /></Field>
-            <Field label="種別">
+            <Field label={t('名前')} required><Input value={name} onChange={(_, d) => setName(d.value)} /></Field>
+            <Field label={t('種別')}>
               <Dropdown value={kindLabel} selectedOptions={[kind]} onOptionSelect={(_, d) => { if (d.optionValue) setKind(d.optionValue as AddableKind); }}>
                 {ADDABLE_KINDS.map((k) => <Option key={k.kind} value={k.kind}>{k.label}</Option>)}
               </Dropdown>
             </Field>
-            {kind === 'solution' ? <Text size={200}>解決策は、選択中の課題（なければ最初の課題）に紐づきます。{defaultLink ? '' : ''}</Text> : null}
+            {kind === 'solution' ? <Text size={200}>{t('解決策は、選択中の課題（なければ最初の課題）に紐づきます。')}{defaultLink ? '' : ''}</Text> : null}
             {error ? <Text role="alert" style={{ color: tokens.colorPaletteRedForeground1 }}>{error}</Text> : null}
-            <Text size={200} aria-hidden>追加先のパック内の項目数: {nodes.length}</Text>
+            <Text size={200} aria-hidden>{t('追加先のパック内の項目数:')} {nodes.length}</Text>
           </DialogContent>
           <DialogActions>
-            <Button appearance="secondary" onClick={onClose}>キャンセル</Button>
-            <Button appearance="primary" onClick={() => { const r = onAdd(kind, name, defaultLink); if (r) setError(r); else onClose(); }}>追加</Button>
+            <Button appearance="secondary" onClick={onClose}>{t('キャンセル')}</Button>
+            <Button appearance="primary" onClick={() => { const r = onAdd(kind, name, defaultLink); if (r) setError(r); else onClose(); }}>{t('追加')}</Button>
           </DialogActions>
         </DialogBody>
       </DialogSurface>
@@ -217,6 +220,7 @@ function NodeDialog({ open, nodes, defaultLink, onClose, onAdd }: {
 function EdgeDialog({ open, nodes, onClose, onAdd }: {
   open: boolean; nodes: readonly GraphNode[]; onClose: () => void; onAdd: (from: string, to: string) => string | null;
 }) {
+  const t = useT();
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -226,23 +230,23 @@ function EdgeDialog({ open, nodes, onClose, onAdd }: {
     <Dialog open={open} onOpenChange={(_, d) => { if (!d.open) onClose(); }}>
       <DialogSurface>
         <DialogBody>
-          <DialogTitle>エッジを追加</DialogTitle>
+          <DialogTitle>{t('エッジを追加')}</DialogTitle>
           <DialogContent style={{ display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM }}>
-            <Field label="始点">
-              <Dropdown value={labelOf(from)} selectedOptions={from ? [from] : []} onOptionSelect={(_, d) => setFrom(d.optionValue ?? '')} placeholder="始点のノードを選ぶ">
+            <Field label={t('始点')}>
+              <Dropdown value={labelOf(from)} selectedOptions={from ? [from] : []} onOptionSelect={(_, d) => setFrom(d.optionValue ?? '')} placeholder={t('始点のノードを選ぶ')}>
                 {nodes.map((n) => <Option key={n.id} value={n.id} text={n.label}>{n.label}</Option>)}
               </Dropdown>
             </Field>
-            <Field label="終点">
-              <Dropdown value={labelOf(to)} selectedOptions={to ? [to] : []} onOptionSelect={(_, d) => setTo(d.optionValue ?? '')} placeholder="終点のノードを選ぶ">
+            <Field label={t('終点')}>
+              <Dropdown value={labelOf(to)} selectedOptions={to ? [to] : []} onOptionSelect={(_, d) => setTo(d.optionValue ?? '')} placeholder={t('終点のノードを選ぶ')}>
                 {nodes.map((n) => <Option key={n.id} value={n.id} text={n.label}>{n.label}</Option>)}
               </Dropdown>
             </Field>
             {error ? <Text role="alert" style={{ color: tokens.colorPaletteRedForeground1 }}>{error}</Text> : null}
           </DialogContent>
           <DialogActions>
-            <Button appearance="secondary" onClick={onClose}>キャンセル</Button>
-            <Button appearance="primary" onClick={() => { const r = onAdd(from, to); if (r) setError(r); else onClose(); }}>追加</Button>
+            <Button appearance="secondary" onClick={onClose}>{t('キャンセル')}</Button>
+            <Button appearance="primary" onClick={() => { const r = onAdd(from, to); if (r) setError(r); else onClose(); }}>{t('追加')}</Button>
           </DialogActions>
         </DialogBody>
       </DialogSurface>
@@ -251,6 +255,7 @@ function EdgeDialog({ open, nodes, onClose, onAdd }: {
 }
 
 function KnowledgeGraphScreen() {
+  const t = useT();
   const s = useStyles();
   const bind = useEntityBinding(ORIGIN);
   const state = usePackStore((st) => st.state);
@@ -311,7 +316,7 @@ function KnowledgeGraphScreen() {
     }),
   }), []);
 
-  if (state.status !== 'ready' || !graph) return <LoadingView label="ナレッジグラフを読み込み中" />;
+  if (state.status !== 'ready' || !graph) return <LoadingView label={t('ナレッジグラフを読み込み中')} />;
 
   const onMove = (id: string, dx: number, dy: number) => setOffsets((o) => ({ ...o, [id]: { x: (o[id]?.x ?? 0) + dx, y: (o[id]?.y ?? 0) + dy } }));
   const apply = (r: ReturnType<typeof addNode>): string | null => {
@@ -326,10 +331,10 @@ function KnowledgeGraphScreen() {
   const doAddEdge = (from: string, to: string) => apply(addEdge(data, from, to));
   const askDelete = () => {
     if (edgeSel) {
-      setConfirm({ title: `エッジ「${edgeSel.from} → ${edgeSel.to}」`, run: () => { const r = apply(removeEdge(data, edgeSel)); if (!r) setEdgeSelId(undefined); return r; } });
+      setConfirm({ title: t('エッジ「{from} → {to}」', { from: edgeSel.from, to: edgeSel.to }), run: () => { const r = apply(removeEdge(data, edgeSel)); if (!r) setEdgeSelId(undefined); return r; } });
     } else if (primaryId) {
       const label = graph.node(primaryId)?.label ?? primaryId;
-      setConfirm({ title: `ノード「${label}」`, run: () => apply(removeNode(data, primaryId)) });
+      setConfirm({ title: t('ノード「{label}」', { label }), run: () => apply(removeNode(data, primaryId)) });
     }
   };
   const canDelete = editEnabled && (edgeSel !== undefined || primaryId !== undefined);
@@ -337,36 +342,36 @@ function KnowledgeGraphScreen() {
   return (
     <Panel
       testId="component-knowledge-graph"
-      title="ナレッジグラフ"
-      description="課題・解決策・製品・工程などのつながりを、2D と 3D で見ます。ノードを選ぶと、そのホップ数以内だけを表示します。"
+      title={t('ナレッジグラフ')}
+      description={t('課題・解決策・製品・工程などのつながりを、2D と 3D で見ます。ノードを選ぶと、そのホップ数以内だけを表示します。')}
       maxWidth="1200px"
     >
       <ExecutiveSummary scope="knowledge-graph" />
 
-      <div className={s.toolbar} role="toolbar" aria-label="ナレッジグラフの操作">
+      <div className={s.toolbar} role="toolbar" aria-label={t('ナレッジグラフの操作')}>
         {/* 見出しの「ビュー」と同じ 1 つの切替（3D を描画できない環境では無効にし理由を示す。FR-217 AC-500・AC-507） */}
         <ModeRadio viewKey={ORIGIN} />
-        <Field label={`ホップ数（${HOP_MIN}〜${HOP_MAX}）`}>
+        <Field label={t('ホップ数（{min}〜{max}）', { min: HOP_MIN, max: HOP_MAX })}>
           <span className={s.hop}>
             <input
-              type="range" className={s.range} aria-label="ホップ数" min={HOP_MIN} max={HOP_MAX} step={1} value={hop}
-              aria-valuemin={HOP_MIN} aria-valuemax={HOP_MAX} aria-valuenow={hop} aria-valuetext={`${hop} ホップ`}
+              type="range" className={s.range} aria-label={t('ホップ数')} min={HOP_MIN} max={HOP_MAX} step={1} value={hop}
+              aria-valuemin={HOP_MIN} aria-valuemax={HOP_MAX} aria-valuenow={hop} aria-valuetext={t('{hop} ホップ', { hop })}
               onChange={(e) => setHop(clampHop(Number(e.target.value)))}
             />
             <Text>{hop}</Text>
           </span>
         </Field>
-        <Field label="検索">
+        <Field label={t('検索')}>
           <Input
-            aria-label="ノードを検索" placeholder="名前・ID" value={query} onChange={(_, d) => setQuery(d.value)}
+            aria-label={t('ノードを検索')} placeholder={t('名前・ID')} value={query} onChange={(_, d) => setQuery(d.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') { const first = [...matches][0]; if (first) select(first, { origin: ORIGIN }); } }}
           />
         </Field>
-        {query.trim() !== '' ? <Badge appearance="tint" color="warning" role="status">{matches.size} 件一致</Badge> : null}
+        {query.trim() !== '' ? <Badge appearance="tint" color="warning" role="status">{t('{n} 件一致', { n: matches.size })}</Badge> : null}
         <ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} />
       </div>
 
-      <div className={s.filters} role="group" aria-label="種別フィルター">
+      <div className={s.filters} role="group" aria-label={t('種別フィルター')}>
         {kindsPresent.map((k) => (
           <Checkbox
             key={k} label={KIND_FILTER_LABEL[k]} checked={!hidden.has(k)}
@@ -375,21 +380,21 @@ function KnowledgeGraphScreen() {
         ))}
       </div>
 
-      <div className={s.toolbar} role="toolbar" aria-label="ノード・エッジの編集">
-        <Button icon={<Add24Regular aria-hidden />} disabled={!editEnabled} onClick={() => setNodeDialog(true)}>ノードを追加</Button>
-        <Button icon={<Link24Regular aria-hidden />} disabled={!editEnabled} onClick={() => setEdgeDialog(true)}>エッジを追加</Button>
-        <Button icon={<Delete24Regular aria-hidden />} disabled={!canDelete} onClick={askDelete}>削除</Button>
-        {!editEnabled ? <Text size={200}>編集モードを ON にすると、ノード・エッジを追加・削除できます。</Text> : null}
+      <div className={s.toolbar} role="toolbar" aria-label={t('ノード・エッジの編集')}>
+        <Button icon={<Add24Regular aria-hidden />} disabled={!editEnabled} onClick={() => setNodeDialog(true)}>{t('ノードを追加')}</Button>
+        <Button icon={<Link24Regular aria-hidden />} disabled={!editEnabled} onClick={() => setEdgeDialog(true)}>{t('エッジを追加')}</Button>
+        <Button icon={<Delete24Regular aria-hidden />} disabled={!canDelete} onClick={askDelete}>{t('削除')}</Button>
+        {!editEnabled ? <Text size={200}>{t('編集モードを ON にすると、ノード・エッジを追加・削除できます。')}</Text> : null}
         {message ? <Text role="alert" size={200} style={{ color: tokens.colorPaletteRedForeground1 }}>{message}</Text> : null}
       </div>
 
       {nodes.length === 0 ? (
-        <EmptyView message="表示するノードがありません。種別フィルターやホップ数を見直してください。" />
+        <EmptyView message={t('表示するノードがありません。種別フィルターやホップ数を見直してください。')} />
       ) : asTable ? (
         <ViewTable
-          label="ナレッジグラフのノード"
+          label={t('ナレッジグラフのノード')}
           origin={ORIGIN}
-          columns={['種別', '名称', 'ID']}
+          columns={[t('種別'), t('名称'), 'ID']}
           rows={nodes.map((n) => ({ id: n.id, cells: [KIND_LABELS[n.kind], n.label, n.id] }))}
         />
       ) : view === '2d' ? (
@@ -404,10 +409,10 @@ function KnowledgeGraphScreen() {
         />
       )}
 
-      <div className={s.legend} aria-label="凡例">
-        <Text size={200} weight="semibold">線: </Text>
+      <div className={s.legend} aria-label={t('凡例')}>
+        <Text size={200} weight="semibold">{t('線:')} </Text>
         {(['ref', 'relation', 'contain', ...(twinLinks.length > 0 ? ['twin' as const] : [])] as const).map((k) => <Text key={k} size={200}>{EDGE_STYLE[k].label}</Text>)}
-        <Text size={200}>／ ノードの種別は色・形・アイコンで区別します。</Text>
+        <Text size={200}>{t('／ ノードの種別は色・形・アイコンで区別します。')}</Text>
       </div>
 
       <RelatedMini origin={ORIGIN} />
@@ -418,11 +423,11 @@ function KnowledgeGraphScreen() {
       <Dialog modalType="alert" open={confirm !== null} onOpenChange={(_, d) => { if (!d.open) setConfirm(null); }}>
         <DialogSurface>
           <DialogBody>
-            <DialogTitle>削除の確認</DialogTitle>
-            <DialogContent>{confirm?.title} を削除します。ほかのビュー（表・課題-解決策分析など）からも消えます。</DialogContent>
+            <DialogTitle>{t('削除の確認')}</DialogTitle>
+            <DialogContent>{t('{title} を削除します。ほかのビュー（表・課題-解決策分析など）からも消えます。', { title: confirm?.title ?? '' })}</DialogContent>
             <DialogActions>
-              <Button appearance="secondary" onClick={() => setConfirm(null)}>キャンセル</Button>
-              <Button appearance="primary" onClick={() => { const r = confirm?.run(); setMessage(r ?? null); setConfirm(null); }}>削除する</Button>
+              <Button appearance="secondary" onClick={() => setConfirm(null)}>{t('キャンセル')}</Button>
+              <Button appearance="primary" onClick={() => { const r = confirm?.run(); setMessage(r ?? null); setConfirm(null); }}>{t('削除する')}</Button>
             </DialogActions>
           </DialogBody>
         </DialogSurface>

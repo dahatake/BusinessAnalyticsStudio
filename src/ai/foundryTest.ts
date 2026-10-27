@@ -3,6 +3,7 @@
 import { budgetLevel, formatAt, intervalWait, nextMonthStart, recordCall, rollover, type UsageState } from '../explain/usage';
 import type { ExplainLimits } from '../explain/params';
 import type { FoundryTestResult } from './foundryClient';
+import { tr } from '../i18n';
 
 /** 接続テストの出力トークンの上限（中継の最小値と同じ）と入力の概算 */
 export const FOUNDRY_TEST_OUTPUT_TOKENS = 16;
@@ -27,12 +28,12 @@ export type FoundryTestOutcome =
 export async function runFoundryTest(deps: FoundryTestDeps, session: FoundryTestSession): Promise<FoundryTestOutcome> {
   const limits = deps.limits();
   const now = deps.now();
-  if (session.inFlight) return { kind: 'busy', message: '接続テストの実行中です。結果が出るまでお待ちください' };
+  if (session.inFlight) return { kind: 'busy',   message: tr('接続テストの実行中です。結果が出るまでお待ちください') };
   const wait = intervalWait(session.lastStartMs, now.getTime(), limits);
-  if (wait > 0) return { kind: 'wait', waitSec: wait, message: `前回の呼び出しから ${limits.minIntervalSec} 秒たっていません。あと ${wait} 秒待ってから押してください` };
+    if (wait > 0) return { kind: 'wait', waitSec: wait, message: tr('前回の呼び出しから {sec} 秒たっていません。あと {wait} 秒待ってから押してください', { sec: limits.minIntervalSec, wait }) };
   const rolled = rollover(deps.usage.get(), now);
   if (budgetLevel(rolled, limits) === 'stop') {
-    return { kind: 'blocked', message: `今月の概算費用が予算（${limits.budgetYen} 円）の ${limits.stopPercent}% に達したため、接続テストは呼び出しません。再開の時刻: ${formatAt(nextMonthStart(now))}` };
+    return { kind: 'blocked', message: tr('今月の概算費用が予算（{budget} 円）の {pct}% に達したため、接続テストは呼び出しません。再開の時刻: {at}', { budget: limits.budgetYen, pct: limits.stopPercent, at: formatAt(nextMonthStart(now)) }) };
   }
   deps.usage.set(recordCall(deps.usage.get(), FOUNDRY_TEST_INPUT_TOKENS, { ...limits, outputMaxTokens: FOUNDRY_TEST_OUTPUT_TOKENS }, now));
   session.lastStartMs = now.getTime();

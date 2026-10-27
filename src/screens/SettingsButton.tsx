@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { Button, makeStyles, tokens } from '@fluentui/react-components';
 import { Settings24Regular } from '@fluentui/react-icons';
 import { useSettingsModal } from '../store/settingsModal';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   // AI の状態表示と「設定」を同じ上部の段に並べ、折り返しで離れないようにする（FR-223 AC-774）。狭い画面では中で折り返して横にはみ出さない
@@ -18,6 +19,7 @@ export function StatusAndSettings({ children }: { children: ReactNode }) {
 
 export function SettingsButton() {
   const setOpen = useSettingsModal((s) => s.setOpen);
+  const t = useT();
   return (
     <Button
       data-testid="settings-button"
@@ -25,7 +27,7 @@ export function SettingsButton() {
       icon={<Settings24Regular aria-hidden />}
       onClick={() => setOpen(true)}
     >
-      設定
+      {t('設定')}
     </Button>
   );
 }

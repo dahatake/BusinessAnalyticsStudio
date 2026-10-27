@@ -23,6 +23,7 @@ import { formatHour, useTimeline } from '../store/timeline';
 import { useView3D } from '../store/view3d';
 import { RenderCanvas } from '../three/SceneCanvas';
 import { usePane } from '../workspace/PaneContext';
+import { useT } from '../i18n';
 
 const ORIGIN = 'map';
 
@@ -85,6 +86,7 @@ function flatPos(b: ReturnType<typeof flatBounds>, lat: number, lng: number): { 
 
 export function MapScreen() {
   const s = useStyles();
+  const t = useT();
   const hl = useHighlightClass();
   const data = useMapData();
   const bind = useEntityBinding(ORIGIN);
@@ -111,7 +113,7 @@ export function MapScreen() {
   const pane = usePane();
   const visible = pane ? pane.visible : true;
 
-  if (!data || !shownData) return <LoadingView label="地図を読み込み中" />;
+  if (!data || !shownData) return <LoadingView label={t('地図を読み込み中')} />;
 
   const hasSites = shownData.sites.length > 0;
   const bounds = flatBounds(shownData);
@@ -135,18 +137,18 @@ export function MapScreen() {
   return (
     <Panel
       testId="component-map"
-      title="地図"
-      description="拠点を地球儀・3D マップ上の位置に表示し、物流やデータの流れを粒子で示します。時間軸（画面上部）で時刻を動かすと、流れの量が変わります。"
+      title={t('地図')}
+      description={t('拠点を地球儀・3D マップ上の位置に表示し、物流やデータの流れを粒子で示します。時間軸（画面上部）で時刻を動かすと、流れの量が変わります。')}
       maxWidth="1200px"
     >
       <div className={s.toolbar}>
-        <Field label="3D の表示">
+        <Field label={t('3D の表示')}>
           <RadioGroup layout="horizontal" value={mode} disabled={view.mode !== '3d'} onChange={(_, d) => setMode(d.value as MapMode)}>
-            <Radio value="globe" label="地球儀" />
-            <Radio value="flat" label="平面マップ" />
+            <Radio value="globe" label={t('地球儀')} />
+            <Radio value="flat" label={t('平面マップ')} />
           </RadioGroup>
         </Field>
-        <Text weight="semibold" data-testid="map-time" aria-live="polite">時刻: {formatHour(hour)}</Text>
+        <Text weight="semibold" data-testid="map-time" aria-live="polite">{t('時刻:')} {formatHour(hour)}</Text>
         <ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} />
         <UnrenderableNote
           source="map"
@@ -156,17 +158,17 @@ export function MapScreen() {
       </div>
 
       {!hasSites ? (
-        <EmptyView message="位置を持つ拠点がありません。拠点（type が site）に location（lat・lng）を入れると、地図に表示されます。" />
+        <EmptyView message={t('位置を持つ拠点がありません。拠点（type が site）に location（lat・lng）を入れると、地図に表示されます。')} />
       ) : asTable ? (
         <ViewTable
-          label="地図の拠点"
+          label={t('地図の拠点')}
           origin={ORIGIN}
-          columns={['名称', '種別', '緯度', '経度']}
+          columns={[t('名称'), t('種別'), t('緯度'), t('経度')]}
           rows={siteTableRows(shownData.sites)}
         />
       ) : view.mode === '2d' ? (
         <div className={s.stage} data-zoom-surface="map" data-map-mode="2d">
-          <svg className={s.flat} role="img" aria-label="地図（2D）。経度を横、緯度を縦にした平面図です。" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <svg className={s.flat} role="img" aria-label={t('地図（2D）。経度を横、緯度を縦にした平面図です。')} viewBox="0 0 100 100" preserveAspectRatio="none">
             {[25, 50, 75].map((g) => (
               <g key={g} aria-hidden="true">
                 <line x1={g} y1={0} x2={g} y2={100} className={s.flatGrid} />
@@ -203,7 +205,7 @@ export function MapScreen() {
       )}
 
       {shownData.flows.length > 0 ? (
-        <ul className={s.legend} aria-label="流れの量（現在の時刻）" data-testid="flow-legend">
+        <ul className={s.legend} aria-label={t('流れの量（現在の時刻）')} data-testid="flow-legend">
           {shownData.flows.map((f) => (
             <li key={f.id} className={s.legendItem}>
               <span className={s.swatch} style={{ backgroundColor: flowColor(f.kind) }} aria-hidden="true" />
@@ -212,7 +214,7 @@ export function MapScreen() {
           ))}
         </ul>
       ) : hasSites ? (
-        <Text size={200}>流れ（entities.json の flows）のデータがないため、流れの粒子は表示していません。</Text>
+        <Text size={200}>{t('流れ（entities.json の flows）のデータがないため、流れの粒子は表示していません。')}</Text>
       ) : null}
     </Panel>
   );

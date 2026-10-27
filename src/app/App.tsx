@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { flushSync } from 'react-dom';
 import { MessageBar, MessageBarBody, MessageBarTitle, tokens } from '@fluentui/react-components';
+import { FloatingLanguageToggle, LanguageToggle } from '../i18n/LanguageToggle';
+import { useT } from '../i18n';
 import { AiStatus } from '../ai/AiStatus';
 import { CopilotReviewButton } from '../review/CopilotReviewButton';
 import { ExplainButton, ExplainHost } from '../explain/ExplainPanel';
@@ -92,6 +94,7 @@ function selectComponent(key: string, ctx: { presenting: boolean; intensity: Int
 }
 
 export function App() {
+  const t = useT();
   const state = usePackStore((s) => s.state);
   const load = usePackStore((s) => s.load);
   const brand = useEffectiveBrand();
@@ -146,14 +149,14 @@ export function App() {
     for (const m of messages ?? []) console.warn(`[顧客パック] ${m}`);
   }, [messages]);
 
-  if (state.status === 'loading') return <LoadingView label="顧客パックを読み込み中" />;
+  if (state.status === 'loading') return <LoadingView label={t('顧客パックを読み込み中')} />;
   if (state.status === 'error') {
     return (
       <div data-testid="pack-errors">
         <ErrorView
-          title="顧客パックを読み込めませんでした"
+          title={t('顧客パックを読み込めませんでした')}
           messages={state.messages}
-          action="public/data の JSON を、schema/ のスキーマに合わせて直してください。"
+          action={t('public/data の JSON を、schema/ のスキーマに合わせて直してください。')}
         />
       </div>
     );
@@ -170,6 +173,7 @@ export function App() {
         <AudioDirector scene={scene} />
         <WelcomeAuto ready={opened} />
         <GuideHost />
+        <FloatingLanguageToggle />
         <MainScreen />
       </>
     );
@@ -196,7 +200,7 @@ export function App() {
         screens={NAV_SCREENS /* FR-220 AC-590: 左メニューには nav: false の画面を出さない */}
         onSelect={onSelect}
         stepper={<Stepper onNavigate={onSelect} />}
-        headerExtra={<><CopilotReviewButton /><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><ExplainButton /><StatusAndSettings><AiStatus /><SettingsButton /></StatusAndSettings></>}
+        headerExtra={<><LanguageToggle /><CopilotReviewButton /><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><ExplainButton /><StatusAndSettings><AiStatus /><SettingsButton /></StatusAndSettings></>}
         actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><AutoSizeSwitch /><ScreenViewButton /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /><GuideButton /></>}
         dock={<Dock screens={COMPONENT_SCREENS} />}
         brand={brand ? <BrandLockup brand={brand} customerName={name} /> : null}
@@ -205,8 +209,8 @@ export function App() {
           <div data-testid="example-pack-notice">
             <MessageBar intent="info" layout="multiline">
               <MessageBarBody>
-                <MessageBarTitle>お手本パックで起動しています。</MessageBarTitle>
-                架空企業のデモ用データです。顧客のデータは public/data/ と public/brand/ に置くと切り替わります。
+                <MessageBarTitle>{t('お手本パックで起動しています。')}</MessageBarTitle>
+                {t('架空企業のデモ用データです。顧客のデータは public/data/ と public/brand/ に置くと切り替わります。')}
               </MessageBarBody>
             </MessageBar>
           </div>
@@ -215,7 +219,7 @@ export function App() {
           <div data-testid="version-warning">
             <MessageBar intent="warning" layout="multiline">
               <MessageBarBody>
-                <MessageBarTitle>雛形のバージョンが合っていません。</MessageBarTitle>
+                <MessageBarTitle>{t('雛形のバージョンが合っていません。')}</MessageBarTitle>
                 {versionWarning(version)}
               </MessageBarBody>
             </MessageBar>
@@ -225,7 +229,7 @@ export function App() {
           <div data-testid="pack-errors">
             <MessageBar intent="warning" layout="multiline">
               <MessageBarBody>
-                <MessageBarTitle>顧客パックに問題があります。問題のある項目だけを無効にして起動しました。</MessageBarTitle>
+                <MessageBarTitle>{t('顧客パックに問題があります。問題のある項目だけを無効にして起動しました。')}</MessageBarTitle>
                 <ul>{state.warnings.map((m, i) => <li key={i}>{m}</li>)}</ul>
               </MessageBarBody>
             </MessageBar>

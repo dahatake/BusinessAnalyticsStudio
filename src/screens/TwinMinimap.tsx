@@ -1,6 +1,7 @@
 // Twin ビューのミニマップ（FR-033 AC-040）。項目の配置を真上から見た小さな図にし、今の階層で見ている範囲（全体・塊・項目）を枠で示す。
 import { tokens } from '@fluentui/react-components';
 import type { Item3D } from '../view/items3d';
+import { useT } from '../i18n';
 
 const W = 140;
 const H = 80;
@@ -15,6 +16,7 @@ export interface TwinMinimapProps {
 }
 
 export function TwinMinimap({ items, inView, status }: TwinMinimapProps) {
+  const t = useT();
   const px = (v: number): number => PAD + v * (W - PAD * 2);
   const py = (v: number): number => PAD + v * (H - PAD * 2);
   const picked = inView.size > 0 ? items.filter((i) => inView.has(i.id)) : items;
@@ -29,7 +31,7 @@ export function TwinMinimap({ items, inView, status }: TwinMinimapProps) {
     <div
       data-testid="minimap"
       role="group"
-      aria-label={`ミニマップ。${status}`}
+      aria-label={t('ミニマップ。{status}', { status })}
       style={{ position: 'absolute', top: 0, right: 0, zIndex: 3, padding: tokens.spacingHorizontalXS, borderRadius: tokens.borderRadiusMedium, backgroundColor: tokens.colorNeutralBackground1, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}` }}
     >
       <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden="true" style={{ display: 'block' }}>

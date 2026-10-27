@@ -1,6 +1,7 @@
 // ミュートボタンと音量スライダー（FR-074）。ショーコントロールバー（src/show/ShowControlBar.tsx）に置く。
 import { Button, makeStyles, tokens } from '@fluentui/react-components';
 import { Speaker220Regular, SpeakerMute20Regular } from '@fluentui/react-icons';
+import { useT } from '../i18n';
 import { useSettings } from '../store/settings';
 
 const useStyles = makeStyles({
@@ -22,17 +23,18 @@ const useStyles = makeStyles({
 export function MuteButton() {
   const muted = useSettings((s) => s.muted);
   const setMuted = useSettings((s) => s.setMuted);
+  const t = useT();
   return (
     <Button
       size="small"
       appearance="subtle"
       aria-pressed={muted}
-      aria-label={muted ? 'ミュートを解除する（現在: ミュート中）' : 'ミュートにする（現在: ミュート解除中）'}
-      title="ミュートの切替（M キー）"
+      aria-label={muted ? t('ミュートを解除する（現在: ミュート中）') : t('ミュートにする（現在: ミュート解除中）')}
+      title={t('ミュートの切替（M キー）')}
       icon={muted ? <SpeakerMute20Regular aria-hidden /> : <Speaker220Regular aria-hidden />}
       onClick={() => setMuted(!muted)}
     >
-      {muted ? 'ミュート中' : 'ミュート解除中'}
+      {muted ? t('ミュート中') : t('ミュート解除中')}
     </Button>
   );
 }
@@ -43,6 +45,7 @@ export function VolumeSlider() {
   const volume = useSettings((st) => st.volume);
   const setVolume = useSettings((st) => st.setVolume);
   const percent = Math.round(volume * 100);
+  const t = useT();
   return (
     <input
       className={s.slider}
@@ -51,7 +54,7 @@ export function VolumeSlider() {
       max={100}
       step={5}
       value={percent}
-      aria-label="音量"
+      aria-label={t('音量')}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={percent}
@@ -63,8 +66,9 @@ export function VolumeSlider() {
 
 export function AudioControls() {
   const s = useStyles();
+  const t = useT();
   return (
-    <span className={s.group} role="group" aria-label="音声">
+    <span className={s.group} role="group" aria-label={t('音声')}>
       <MuteButton />
       <VolumeSlider />
     </span>

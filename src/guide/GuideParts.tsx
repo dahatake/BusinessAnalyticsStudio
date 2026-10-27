@@ -5,6 +5,7 @@ import {
   FLOW_ALT, GUIDE_STEPS, GUIDE_TERMS, GUIDE_WHAT, GUIDE_WORKSPACE,
   PACK_COMMANDS, PACK_PROMPT_FILE, PACK_PROMPT_POINTS, PACK_SAMPLE, PACK_URL,
 } from './guideContent';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   block: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS },
@@ -34,27 +35,30 @@ const Text = ({ children, className, ...rest }: { children?: React.ReactNode; cl
 
 export function GuideH({ children, level = 3 }: { children: string; level?: 2 | 3 | 4 }) {
   const s = useStyles();
+  const t = useT();
   const H = `h${level}` as 'h3';
-  return <H className={level === 2 ? s.h2 : s.h3}>{children}</H>;
+  return <H className={level === 2 ? s.h2 : s.h3}>{t(children)}</H>;
 }
 
 export function WhatSection() {
   const s = useStyles();
+  const t = useT();
   return (
     <div className={s.block}>
       <GuideH>このアプリでできること</GuideH>
-      {GUIDE_WHAT.map((t) => <Text key={t}>{t}</Text>)}
+      {GUIDE_WHAT.map((w) => <Text key={w}>{t(w)}</Text>)}
     </div>
   );
 }
 
 export function TermsSection() {
   const s = useStyles();
+  const t = useT();
   return (
     <div className={s.block}>
       <GuideH>用語の説明</GuideH>
       <ul className={s.list}>
-        {GUIDE_TERMS.map((t) => <li key={t.term}><Text weight="semibold">{t.term}</Text>：<Text>{t.text}</Text></li>)}
+        {GUIDE_TERMS.map((m) => <li key={m.term}><Text weight="semibold">{t(m.term)}</Text>{t('：')}<Text>{t(m.text)}</Text></li>)}
       </ul>
     </div>
   );
@@ -62,16 +66,17 @@ export function TermsSection() {
 
 export function StepsSection() {
   const s = useStyles();
+  const t = useT();
   return (
     <div className={s.block}>
       <GuideH>4 つの手順</GuideH>
-      <ol className={s.plain} aria-label="4 つの手順の説明">
+      <ol className={s.plain} aria-label={t('4 つの手順の説明')}>
         {GUIDE_STEPS.map((st, i) => (
           <li key={st.name} className={s.step}>
-            <Text weight="semibold">{i + 1}. {st.name}</Text>
-            <Text>{st.what}</Text>
-            <Text>例：{st.example}</Text>
-            <Text className={s.note}>次に：{st.next}</Text>
+            <Text weight="semibold">{i + 1}. {t(st.name)}</Text>
+            <Text>{t(st.what)}</Text>
+            <Text>{t('例：')}{t(st.example)}</Text>
+            <Text className={s.note}>{t('次に：')}{t(st.next)}</Text>
           </li>
         ))}
       </ol>
@@ -82,6 +87,7 @@ export function StepsSection() {
 /** 全体の流れの図（FR-266 AC-676）。番号・文字・形で段を区別し、色だけに頼らない。代替テキストは title と desc で伝える */
 export function FlowDiagram() {
   const s = useStyles();
+  const t = useT();
   const ink = tokens.colorNeutralForeground1;
   const fill = tokens.colorNeutralBackground2;
   const W = 150, H = 64, GAP = 30;
@@ -95,15 +101,15 @@ export function FlowDiagram() {
   const width = 4 * W + 3 * GAP + 4;
   return (
     <svg className={s.svg} viewBox={`0 0 ${width} ${H + 16}`} width={width} role="img" aria-labelledby="guide-flow-title guide-flow-desc" data-testid="guide-flow">
-      <title id="guide-flow-title">全体の流れ</title>
-      <desc id="guide-flow-desc">{FLOW_ALT}</desc>
+      <title id="guide-flow-title">{t('全体の流れ')}</title>
+      <desc id="guide-flow-desc">{t(FLOW_ALT)}</desc>
       {GUIDE_STEPS.map((st, i) => {
         const x = 2 + i * (W + GAP);
         return (
           <g key={st.name}>
             {shape(i, x)}
             <text x={x + W / 2} y={8 + 26} textAnchor="middle" fontSize="16" fontWeight="700" fill={ink}>{i + 1}</text>
-            <text x={x + W / 2} y={8 + 48} textAnchor="middle" fontSize="14" fill={ink}>{st.name}</text>
+            <text x={x + W / 2} y={8 + 48} textAnchor="middle" fontSize="14" fill={ink}>{t(st.name)}</text>
             {i < 3 ? <path d={`M ${x + W + 4} ${8 + H / 2} L ${x + W + GAP - 4} ${8 + H / 2}`} stroke={ink} strokeWidth={2} markerEnd="url(#guide-arrow)" fill="none" /> : null}
           </g>
         );
@@ -127,6 +133,7 @@ export function FlowSection() {
 
 /** コピーのボタン（FR-268 AC-683）。結果は role=status で支援技術にも伝える。クリップボードが使えないときは、選択できる状態で原因と次の行動を示す */
 export function CopyButton({ text, label, codeRef }: { text: string; label: string; codeRef?: React.RefObject<HTMLElement | null> }) {
+  const t = useT();
   const [state, setState] = useState<'idle' | 'ok' | 'ng'>('idle');
   const copy = async () => {
     try {
@@ -141,9 +148,9 @@ export function CopyButton({ text, label, codeRef }: { text: string; label: stri
   };
   return (
     <>
-      <Button size="small" aria-label={`${label}をコピー`} onClick={() => { void copy(); }}>コピー</Button>
+      <Button size="small" aria-label={t('{label}をコピー', { label: t(label) })} onClick={() => { void copy(); }}>{t('コピー')}</Button>
       <span role="status" aria-live="polite">
-        {state === 'ok' ? 'コピーしました' : state === 'ng' ? 'コピーできませんでした（この環境では、クリップボードを使えません）。文字列を選んだ状態にしたので、Ctrl+C でコピーしてください。' : ''}
+        {state === 'ok' ? t('コピーしました') : state === 'ng' ? t('コピーできませんでした（この環境では、クリップボードを使えません）。文字列を選んだ状態にしたので、Ctrl+C でコピーしてください。') : ''}
       </span>
     </>
   );
@@ -151,10 +158,11 @@ export function CopyButton({ text, label, codeRef }: { text: string; label: stri
 
 export function CommandRow({ label, command }: { label: string; command: string }) {
   const s = useStyles();
+  const t = useT();
   const ref = useRef<HTMLElement>(null);
   return (
     <div className={s.cmd}>
-      <Text>{label}</Text>
+      <Text>{t(label)}</Text>
       <code ref={ref} className={s.code}>{command}</code>
       <CopyButton text={command} label={label} codeRef={ref} />
     </div>
@@ -164,23 +172,24 @@ export function CommandRow({ label, command }: { label: string; command: string 
 /** 顧客パックの説明（FR-268）。メイン画面の「顧客パック」region とウェルカムのカードで共有する */
 export function PackSection({ withHeading = true }: { withHeading?: boolean }) {
   const s = useStyles();
+  const t = useT();
   const promptRef = useRef<HTMLElement>(null);
   return (
     <div className={s.block}>
       {withHeading ? <GuideH>顧客パックとは</GuideH> : null}
-      <Text>顧客パックは、顧客ごとの課題・解決策・計画・ブランド（色・ロゴ）などをまとめたデータのフォルダーです（public/data/ と public/brand/ ほか）。</Text>
-      <Text weight="semibold">顧客パックがなくても、デモ（お手本パック {PACK_SAMPLE}/）で試せます。</Text>
+      <Text>{t('顧客パックは、顧客ごとの課題・解決策・計画・ブランド（色・ロゴ）などをまとめたデータのフォルダーです（public/data/ と public/brand/ ほか）。')}</Text>
+      <Text weight="semibold">{t('顧客パックがなくても、デモ（お手本パック {sample}/）で試せます。', { sample: PACK_SAMPLE })}</Text>
       <GuideH level={4}>作り方は 3 通り</GuideH>
       <ol className={s.list}>
         <li>
-          <Text>M365 Copilot で作る。{PACK_PROMPT_FILE} の Prompt を貼ります。</Text>
+          <Text>{t('M365 Copilot で作る。{file} の Prompt を貼ります。', { file: PACK_PROMPT_FILE })}</Text>
           <div className={s.cmd}>
             <pre ref={promptRef as React.RefObject<HTMLPreElement>} className={`${s.code} ${s.pre}`}>{PACK_PROMPT_POINTS}</pre>
             <CopyButton text={PACK_PROMPT_POINTS} label="Prompt の要点" codeRef={promptRef} />
           </div>
         </li>
-        <li><Text>生成パイプラインで作る。</Text><CommandRow label="パイプライン" command={PACK_COMMANDS.pipeline} /></li>
-        <li><Text>お手本 {PACK_SAMPLE} を複製して、手で書き換えます。</Text></li>
+        <li><Text>{t('生成パイプラインで作る。')}</Text><CommandRow label="パイプライン" command={PACK_COMMANDS.pipeline} /></li>
+        <li><Text>{t('お手本 {sample} を複製して、手で書き換えます。', { sample: PACK_SAMPLE })}</Text></li>
       </ol>
       <GuideH level={4}>作ったあとの確認</GuideH>
       <CommandRow label="形式の検査" command={PACK_COMMANDS.check} />
@@ -188,7 +197,7 @@ export function PackSection({ withHeading = true }: { withHeading?: boolean }) {
       <GuideH level={4}>画面を起動する</GuideH>
       <CommandRow label="ビルド" command={PACK_COMMANDS.build} />
       <CommandRow label="起動" command={PACK_COMMANDS.start} />
-      <Text>起動したら、ブラウザーで {PACK_URL} を開きます。</Text>
+      <Text>{t('起動したら、ブラウザーで {url} を開きます。', { url: PACK_URL })}</Text>
     </div>
   );
 }
@@ -196,14 +205,15 @@ export function PackSection({ withHeading = true }: { withHeading?: boolean }) {
 /** 分析画面の「使い方」の最初のカード（FR-272） */
 export function WorkspaceSection() {
   const s = useStyles();
+  const t = useT();
   return (
     <div className={s.block}>
       <GuideH>画面の見方</GuideH>
-      <ul className={s.list}>{GUIDE_WORKSPACE.view.map((t) => <li key={t}>{t}</li>)}</ul>
+      <ul className={s.list}>{GUIDE_WORKSPACE.view.map((v) => <li key={v}>{t(v)}</li>)}</ul>
       <GuideH>よく使う操作</GuideH>
-      <ul className={s.list}>{GUIDE_WORKSPACE.ops.map((t) => <li key={t}>{t}</li>)}</ul>
+      <ul className={s.list}>{GUIDE_WORKSPACE.ops.map((v) => <li key={v}>{t(v)}</li>)}</ul>
       <GuideH>顧客パック</GuideH>
-      <Text>{GUIDE_WORKSPACE.pack}</Text>
+      <Text>{t(GUIDE_WORKSPACE.pack)}</Text>
     </div>
   );
 }

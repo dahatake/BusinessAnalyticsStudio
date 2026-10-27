@@ -12,6 +12,7 @@ import {
 import { recognizeShape } from './recognize';
 import { TEXT_FONT_SIZE, drawBoard, drawItem, drawLiveStroke, fontFor, setImageLoadListener, STICKY_COLOR, STICKY_TEXT, textHeight } from './render';
 import { selectBoard, useInk } from './store';
+import { useT } from '../i18n';
 import { centerOn, panView, screenToWorld, worldToScreen, zoomView } from './viewport';
 import { connect, expandGroups, voteItem } from '../whiteboard/ops';
 
@@ -82,6 +83,7 @@ export interface BoardSurfaceProps {
 
 export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, overlay = false, active = true, temporary = false, minimap = false, onEntityDrop, onItemActivate, children }: BoardSurfaceProps) {
   const s = useStyles();
+  const t = useT();
   const board = useInk(useMemo(() => selectBoard(boardId), [boardId]));
   const selection = useInk((st) => st.selection);
   const connectFrom = useInk((st) => st.connectFrom);
@@ -650,7 +652,7 @@ export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, ove
       tabIndex={overlay && !active ? -1 : 0}
       role="application"
       aria-label={ariaLabel}
-      aria-roledescription="描画面"
+      aria-roledescription={t('描画面')}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={(e) => finish(e, false)}
@@ -670,7 +672,7 @@ export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, ove
       {editItem && (
         <textarea
           className={s.editor}
-          aria-label={editItem.type === 'sticky' ? '付箋の文字' : 'テキストの文字'}
+          aria-label={editItem.type === 'sticky' ? t('付箋の文字') : t('テキストの文字')}
           autoFocus
           ref={(el) => { if (el && document.activeElement !== el) el.focus({ preventScroll: true }); }}
           value={editItem.text ?? ''}
@@ -716,6 +718,7 @@ const MM_W = 168;
 const MM_H = 108;
 
 function Minimap({ board, onCenter }: { board: Board; onCenter: (wx: number, wy: number) => void }) {
+  const t = useT();
   const ref = useRef<HTMLCanvasElement>(null);
   const mapRef = useRef({ x: 0, y: 0, k: 1 });
   const dragging = useRef(false);
@@ -771,7 +774,7 @@ function Minimap({ board, onCenter }: { board: Board; onCenter: (wx: number, wy:
       ref={ref}
       data-testid="board-minimap"
       role="img"
-      aria-label="ミニマップ（クリックで表示位置を移動）"
+      aria-label={t('ミニマップ（クリックで表示位置を移動）')}
       style={{
         position: 'absolute', right: 8, bottom: 8, width: MM_W, height: MM_H, cursor: 'pointer',
         backgroundColor: tokens.colorNeutralBackground2, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusSmall,

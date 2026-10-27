@@ -1,6 +1,8 @@
 // KPI と OKR の定義・達成度・検証（FR-153・FR-154）。純粋な関数だけで書く（画面・ストアを参照しない）。
 // 達成度 =（現在値 − 基準値）÷（目標値 − 基準値）。目標値と基準値が同じなら「算出できない」。
 
+import { tr } from '../i18n';
+
 export interface Kpi {
   name: string;
   unit: string;
@@ -27,7 +29,7 @@ export function achievement(k: Pick<Kpi, 'baseline' | 'current' | 'target'>): nu
 /** 「25%」または「算出できない」 */
 export function achievementText(k: Pick<Kpi, 'baseline' | 'current' | 'target'>): string {
   const r = achievement(k);
-  return r === null ? '算出できない' : `${Math.round(r * 100)}%`;
+  return r === null ? tr('算出できない') : `${Math.round(r * 100)}%`;
 }
 
 export function achievementState(k: Pick<Kpi, 'baseline' | 'current' | 'target'>): AchievementState {
@@ -64,20 +66,20 @@ export type ValidateResult = { ok: true; objective: Objective } | { ok: false; e
 /** 入力を検証して Objective にする。1 つでも誤りがあれば保存せず、理由を返す（AC-272） */
 export function validateDraft(d: OkrDraft): ValidateResult {
   const errors: string[] = [];
-  if (d.objective.trim() === '') errors.push('Objective を入力してください。');
-  if (d.keyResults.length === 0) errors.push('Key Result を 1 つ以上追加してください。');
+  if (d.objective.trim() === '') errors.push(tr('Objective を入力してください。'));
+  if (d.keyResults.length === 0) errors.push(tr('Key Result を 1 つ以上追加してください。'));
   const krs: KeyResult[] = [];
   d.keyResults.forEach((r, i) => {
     const at = `Key Result ${i + 1}`;
-    if (r.name.trim() === '') errors.push(`${at}: Key Result 名を入力してください。`);
-    if (r.kpiName.trim() === '') errors.push(`${at}: KPI 名を入力してください。`);
-    if (r.unit.trim() === '') errors.push(`${at}: 単位を入力してください。`);
+    if (r.name.trim() === '') errors.push(tr('{at}: Key Result 名を入力してください。', { at }));
+    if (r.kpiName.trim() === '') errors.push(tr('{at}: KPI 名を入力してください。', { at }));
+    if (r.unit.trim() === '') errors.push(tr('{at}: 単位を入力してください。', { at }));
     const baseline = parseNumber(r.baseline);
     const target = parseNumber(r.target);
     const current = parseNumber(r.current);
-    if (baseline === null) errors.push(`${at}: 基準値は数値で入力してください。`);
-    if (target === null) errors.push(`${at}: 目標値は数値で入力してください。`);
-    if (current === null) errors.push(`${at}: 現在値は数値で入力してください。`);
+    if (baseline === null) errors.push(tr('{at}: 基準値は数値で入力してください。', { at }));
+    if (target === null) errors.push(tr('{at}: 目標値は数値で入力してください。', { at }));
+    if (current === null) errors.push(tr('{at}: 現在値は数値で入力してください。', { at }));
     krs.push({
       name: r.name.trim(),
       kpi: { name: r.kpiName.trim(), unit: r.unit.trim(), baseline: baseline ?? 0, target: target ?? 0, current: current ?? 0, ...(r.due ? { due: r.due } : {}) },
@@ -105,7 +107,7 @@ export function diffObjectives(before: readonly Objective[], after: readonly Obj
     });
     const fa = f(a);
     const fb = f(b);
-    for (const k of Object.keys(fb)) if (fa[k] !== fb[k]) out.push({ label, field: k, before: fa[k]!, after: fb[k]! });
+    for (const k of Object.keys(fb)) if (fa[k] !== fb[k]) out.push({ label, field: tr(k), before: fa[k]!, after: fb[k]! });
   }
   return out;
 }

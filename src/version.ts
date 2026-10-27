@@ -1,6 +1,7 @@
 // 雛形のバージョンと、顧客パックの対応する雛形のバージョンとの互換の判定（FR-106）。
 // 雛形のバージョンは package.json の version を正とする（ビルド時に取り込む）。
 import pkg from '../package.json';
+import { tr } from './i18n';
 
 export const TEMPLATE_VERSION: string = pkg.version;
 
@@ -32,5 +33,5 @@ export function checkTemplateVersion(packVersion: string, templateVersion: strin
 }
 
 export function versionWarning(c: VersionCheck): string {
-  return `この顧客パックの対応する雛形のバージョンは ${c.packVersion} で、雛形のバージョン ${c.templateVersion} と互換ではありません。表示が崩れたり、項目が読めなかったりすることがあります。`;
+  return tr('この顧客パックの対応する雛形のバージョンは {packVersion} で、雛形のバージョン {templateVersion} と互換ではありません。表示が崩れたり、項目が読めなかったりすることがあります。', { packVersion: c.packVersion, templateVersion: c.templateVersion });
 }

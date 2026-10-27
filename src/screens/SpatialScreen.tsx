@@ -3,6 +3,7 @@
 // 3D は canvas ではなく SVG の等角投影で描くので、WebGL がなくても選べる（ガントチャートと同じ扱い）。選択はすべてのビューと共通（FR-024）。
 // Graph の表現は、表示形式の共通の機構（FR-238）が担当する。
 import { useEffect, useMemo, useRef, type KeyboardEvent, type SVGProps } from 'react';
+import { tr, useT } from '../i18n';
 import { Button, Field, Select, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
@@ -24,7 +25,7 @@ import { useComponentView, usePublishViewItems } from '../view/useView';
 
 const ORIGIN = 'spatial-view';
 /** 件数の表示。0 は「なし」と書く（0 件の表示にしない。FR-287 AC-750） */
-const n0 = (n: number): string => (n === 0 ? 'なし' : `${n} 件`);
+const n0 = (n: number): string => (n === 0 ? tr('なし') : tr('{n} 件', { n }));
 const D = SPATIAL_ELEMENT_DEPTH;
 const DEPTH_OF_KIND = { site: 1, floor: 2, room: 3, equipment: 3 } as const;
 
@@ -64,6 +65,7 @@ function KpiBadge({ cell, className }: { cell: KpiCell; className: string }) {
 }
 
 export function SpatialScreen() {
+  const t = useT();
   const s = useStyles();
   const hl = useHighlightClass();
   const bind = useEntityBinding(ORIGIN);
@@ -125,7 +127,7 @@ export function SpatialScreen() {
   }, [model, building, floors, twinItems]);
   usePublishViewItems(ORIGIN, shownIds);
 
-  if (!model) return <LoadingView label="空間ビューを読み込み中" />;
+  if (!model) return <LoadingView label={t('空間ビューを読み込み中')} />;
 
   const zoomTo = (n: number) => setDepth(n);
   // ダブルクリック・Enter: その項目を選び、一つ下の階層へ
@@ -157,7 +159,7 @@ export function SpatialScreen() {
           role="button"
           tabIndex={0}
           aria-pressed={isSel}
-          aria-label={`${SPATIAL_KIND_LABELS[n.kind]} ${n.name}、${kpi ? `${kpi} ${cell.text}` : 'KPI なし'}`}
+          aria-label={`${SPATIAL_KIND_LABELS[n.kind]} ${n.name}、${kpi ? `${kpi} ${cell.text}` : t('KPI なし')}`}
           className={mergeClasses(s.card, isSel ? s.cardSelected : undefined, hl(props['data-highlight']))}
           onClick={(e) => select(n.id, { origin: ORIGIN, additive: e.ctrlKey || e.metaKey || e.shiftKey })}
           onDoubleClick={() => zoomInto(n)}
@@ -191,7 +193,7 @@ export function SpatialScreen() {
     return {
       ...(props as unknown as SVGProps<SVGGElement>),
       role: 'button', tabIndex: 0, 'aria-pressed': selectedIds.includes(n.id),
-      'aria-label': `${SPATIAL_KIND_LABELS[n.kind]} ${n.name}、${kpi ? `${kpi} ${cell.text}` : 'KPI なし'}${extra}`,
+      'aria-label': `${SPATIAL_KIND_LABELS[n.kind]} ${n.name}、${kpi ? `${kpi} ${cell.text}` : t('KPI なし')}${extra}`,
       className: s.svgItem,
       onClick: (e) => select(n.id, { origin: ORIGIN, additive: e.ctrlKey || e.metaKey || e.shiftKey }),
       onDoubleClick: () => zoomInto(n),
@@ -201,7 +203,7 @@ export function SpatialScreen() {
   const stageFill = (id: string) => { const c = kpiCell(model, id, kpi); return c.stage ? STAGE_FILL[c.stage] : tokens.colorNeutralBackground1; };
 
   const stack = (
-    <svg className={s.stage} viewBox={viewBox} preserveAspectRatio="xMidYMid meet" role="group" aria-label="空間の 3D（等角投影）。建物の各階を積み重ねて表示します。" data-zoom-surface="3d" data-projection="orthographic">
+    <svg className={s.stage} viewBox={viewBox} preserveAspectRatio="xMidYMid meet" role="group" aria-label={t('空間の 3D（等角投影）。建物の各階を積み重ねて表示します。')} data-zoom-surface="3d" data-projection="orthographic">
       {floors.map((f, i) => {
         const z = i * GAP;
         const cell = kpiCell(model, f.id, kpi);
@@ -239,7 +241,7 @@ export function SpatialScreen() {
         const cell = kpiCell(model, siteNode.id, kpi);
         return (
           <g {...svgProps(siteNode, '')} data-kind="site">
-            <text x={c.sx} y={c.sy - 70} textAnchor="middle" fontSize={13} fontWeight={600} fill={tokens.colorNeutralForeground1}>{`拠点 ${siteNode.name}`}</text>
+            <text x={c.sx} y={c.sy - 70} textAnchor="middle" fontSize={13} fontWeight={600} fill={tokens.colorNeutralForeground1}>{t('拠点 {name}', { name: siteNode.name })}</text>
             <text x={c.sx} y={c.sy - 54} textAnchor="middle" fontSize={11} fill={tokens.colorNeutralForeground1}>{kpi ? cell.text : ''}</text>
           </g>
         );
@@ -258,8 +260,8 @@ export function SpatialScreen() {
     };
     add(siteNode, 1);
     for (const f of floors) {
-      add(f, 2); graphEdges.push({ id: `${siteNode.id}>${f.id}`, from: siteNode.id, to: f.id, label: '含む', meaning: 'contains' });
-      for (const r of roomsOf(f)) { add(r, 3); graphEdges.push({ id: `${f.id}>${r.id}`, from: f.id, to: r.id, label: '含む', meaning: 'contains' }); }
+      add(f, 2); graphEdges.push({ id: `${siteNode.id}>${f.id}`, from: siteNode.id, to: f.id, label: t('含む'), meaning: 'contains' });
+      for (const r of roomsOf(f)) { add(r, 3); graphEdges.push({ id: `${f.id}>${r.id}`, from: f.id, to: r.id, label: t('含む'), meaning: 'contains' }); }
     }
   }
 
@@ -267,21 +269,21 @@ export function SpatialScreen() {
     const parent = detail.parentId ? model.nodes.get(detail.parentId) : undefined;
     return (
       <div className={s.detail} data-testid="zoom-detail">
-        <section data-testid="room-detail" data-entity-id={detail.id} aria-label={`${detail.name} の詳細`}>
+        <section data-testid="room-detail" data-entity-id={detail.id} aria-label={t('{name} の詳細', { name: detail.name })}>
           <Text as="h3" weight="semibold">{SPATIAL_KIND_LABELS[detail.kind]} {detail.name}</Text>
-          <Text as="h4" weight="semibold">属性</Text>
+          <Text as="h4" weight="semibold">{t('属性')}</Text>
           <dl className={s.dl}>
-            <dt>種別</dt><dd>{SPATIAL_KIND_LABELS[detail.kind]}</dd>
-            <dt>所属</dt><dd>{parent ? `${SPATIAL_KIND_LABELS[parent.kind]} ${parent.name}` : '—'}</dd>
+            <dt>{t('種別')}</dt><dd>{SPATIAL_KIND_LABELS[detail.kind]}</dd>
+            <dt>{t('所属')}</dt><dd>{parent ? `${SPATIAL_KIND_LABELS[parent.kind]} ${parent.name}` : '—'}</dd>
             {model.kpiNames.map((k) => { const c = kpiCell(model, detail.id, k); return (<><dt key={`${k}-t`}>{k}</dt><dd key={`${k}-d`}><KpiBadge cell={c} className={s.kpi} /></dd></>); })}
           </dl>
-          <Text as="h4" weight="semibold">出典</Text>
-          <Text as="p">{detail.sourceIds.length ? detail.sourceIds.join('、') : '出典なし'}</Text>
-          <Text as="h4" weight="semibold">関係</Text>
+          <Text as="h4" weight="semibold">{t('出典')}</Text>
+          <Text as="p">{detail.sourceIds.length ? detail.sourceIds.join('、') : t('出典なし')}</Text>
+          <Text as="h4" weight="semibold">{t('関係')}</Text>
           <ul>
-            {parent ? <li>{`${SPATIAL_KIND_LABELS[parent.kind]} ${parent.name} に含まれる（配置）`}</li> : null}
-            {(model.measuredBy.get(detail.id) ?? []).map((m) => <li key={m}>{`${model.names.get(m) ?? m} が計測する`}</li>)}
-            {detail.children.map((c) => <li key={c}>{`${model.names.get(c) ?? c} を含む`}</li>)}
+            {parent ? <li>{t('{kind} {name} に含まれる（配置）', { kind: t(SPATIAL_KIND_LABELS[parent.kind]), name: parent.name })}</li> : null}
+            {(model.measuredBy.get(detail.id) ?? []).map((m) => <li key={m}>{t('{name} が計測する', { name: model.names.get(m) ?? m })}</li>)}
+            {detail.children.map((c) => <li key={c}>{t('{name} を含む', { name: model.names.get(c) ?? c })}</li>)}
           </ul>
         </section>
       </div>
@@ -289,40 +291,40 @@ export function SpatialScreen() {
   })() : null;
 
   return (
-    <Panel testId="component-spatial-view" title="空間ビュー" description="拠点・フロア・部屋/設備の空間階層に KPI を重ねて見ます。拡大すると 全体 → 拠点 → フロア → 部屋/設備 → 詳細 と進みます。値は顧客パックが与えたものだけを表示します。">
+    <Panel testId="component-spatial-view" title={t('空間ビュー')} description={t('拠点・フロア・部屋/設備の空間階層に KPI を重ねて見ます。拡大すると 全体 → 拠点 → フロア → 部屋/設備 → 詳細 と進みます。値は顧客パックが与えたものだけを表示します。')}>
       {!hasSpace ? (
-        <EmptyView message="空間の階層（種別が拠点・フロア・部屋のエンティティ）がありません。" />
+        <EmptyView message={t('空間の階層（種別が拠点・フロア・部屋のエンティティ）がありません。')} />
       ) : (
         <div ref={rootRef} className={s.root} data-testid="spatial-surface" {...zoomAttrs(d, D)}>
           <div className={s.toolbar}>
             <Field label="KPI">
               <Select value={kpi ?? ''} disabled={model.kpiNames.length === 0} onChange={(_, v) => setKpi(v.value)} aria-label="KPI">
-                {model.kpiNames.length === 0 ? <option value="">KPI なし</option> : model.kpiNames.map((k) => <option key={k} value={k}>{k}</option>)}
+                {model.kpiNames.length === 0 ? <option value="">{t('KPI なし')}</option> : model.kpiNames.map((k) => <option key={k} value={k}>{k}</option>)}
               </Select>
             </Field>
-            <div className={s.zoomBar} role="group" aria-label="ズーム">
-              <Button size="small" disabled={!canZoomIn(d, D)} onClick={() => zoomTo(stepDepth(d, 1, D))}>拡大</Button>
-              <Button size="small" disabled={!canZoomOut(d)} onClick={() => zoomTo(stepDepth(d, -1, D))}>縮小</Button>
-              <Button size="small" onClick={() => zoomTo(0)}>全体表示に戻す</Button>
-              <Button size="small" disabled={!canZoomOut(d)} onClick={() => zoomTo(stepDepth(d, -1, D))}>一つ上の階層へ</Button>
+            <div className={s.zoomBar} role="group" aria-label={t('ズーム')}>
+              <Button size="small" disabled={!canZoomIn(d, D)} onClick={() => zoomTo(stepDepth(d, 1, D))}>{t('拡大')}</Button>
+              <Button size="small" disabled={!canZoomOut(d)} onClick={() => zoomTo(stepDepth(d, -1, D))}>{t('縮小')}</Button>
+              <Button size="small" onClick={() => zoomTo(0)}>{t('全体表示に戻す')}</Button>
+              <Button size="small" disabled={!canZoomOut(d)} onClick={() => zoomTo(stepDepth(d, -1, D))}>{t('一つ上の階層へ')}</Button>
             </div>
-            <span data-testid="zoom-level" data-depth={d} data-depth-count={D + 2}>階層 {d}</span>
+            <span data-testid="zoom-level" data-depth={d} data-depth-count={D + 2}>{t('階層 {d}', { d })}</span>
           </div>
           <ZoomBreadcrumb depth={d} elementDepth={D} elementLabels={elementLabels} detailLabel={detail?.name} onGo={zoomTo} />
-          {!kpi ? <Text size={200}>顧客パックに、空間を計測する KPI（ツイン関係「計測する」）がありません。値は「データなし」と表示します。</Text> : null}
+          {!kpi ? <Text size={200}>{t('顧客パックに、空間を計測する KPI（ツイン関係「計測する」）がありません。値は「データなし」と表示します。')}</Text> : null}
 
           {mode === '3d' ? stack : null}
 
           {mode === 'graph' && d >= 1 && d <= D ? (
-            <GraphSurface origin={ORIGIN} label="空間ビュー" nodes={graphNodes.filter((n) => n.rank <= d)} edges={graphEdges.filter((e) => graphRank.get(e.from)! <= d && graphRank.get(e.to)! <= d)} onOpen={(id) => { const n = model.nodes.get(id); if (n) zoomInto(n); }} zoomControls="external" />
+            <GraphSurface origin={ORIGIN} label={t('空間ビュー')} nodes={graphNodes.filter((n) => n.rank <= d)} edges={graphEdges.filter((e) => graphRank.get(e.from)! <= d && graphRank.get(e.to)! <= d)} onOpen={(id) => { const n = model.nodes.get(id); if (n) zoomInto(n); }} zoomControls="external" />
           ) : null}
 
           {mode !== '3d' && d === 0 ? (
-            <GraphScope active={mode === 'graph'} origin={ORIGIN} label="空間ビュー"><div role="group" aria-label="全体" data-testid="spatial-overview">
+            <GraphScope active={mode === 'graph'} origin={ORIGIN} label={t('空間ビュー')}><div role="group" aria-label={t('全体')} data-testid="spatial-overview">
               {(['site', 'floor', 'room'] as const).map((k) => (
                 <span key={k} className={s.cluster} data-zoom-cluster={SPATIAL_KIND_LABELS[k]} role="button" tabIndex={0}
                   onClick={() => zoomTo(DEPTH_OF_KIND[k])} onKeyDown={(e) => { if (e.key === 'Enter') zoomTo(DEPTH_OF_KIND[k]); }}>
-                  <Text weight="semibold">{k === 'room' ? '部屋・設備' : SPATIAL_KIND_LABELS[k]}</Text>
+                  <Text weight="semibold">{k === 'room' ? t('部屋・設備') : t(SPATIAL_KIND_LABELS[k])}</Text>
                   <Text size={200}>{n0(counts[k])}</Text>
                 </span>
               ))}
@@ -330,25 +332,25 @@ export function SpatialScreen() {
           ) : null}
 
           {mode === '2d' && d >= 1 && d <= D ? (
-            <ul className={s.list} aria-label={`${d === 1 ? '拠点' : d === 2 ? 'フロア' : '部屋・設備'}の一覧（2D）`} data-zoom-surface="2d">
+            <ul className={s.list} aria-label={t('{kind}の一覧（2D）', { kind: d === 1 ? t('拠点') : d === 2 ? t('フロア') : t('部屋・設備') })} data-zoom-surface="2d">
               {items.map(card)}
             </ul>
           ) : null}
 
-          {detailView ? <GraphScope active={mode === 'graph'} origin={ORIGIN} label="空間ビュー">{detailView}</GraphScope> : null}
+          {detailView ? <GraphScope active={mode === 'graph'} origin={ORIGIN} label={t('空間ビュー')}>{detailView}</GraphScope> : null}
           {mode !== '2d' ? (
             <GraphAlt
-              origin={ORIGIN} label="空間ビュー" columns={kpi ? [kpi] : []}
+              origin={ORIGIN} label={t('空間ビュー')} columns={kpi ? [kpi] : []}
               nodes={graphNodes.map((n) => ({ id: n.id, name: n.name, kind: n.kindLabel ?? n.kind, values: kpi ? [kpiCell(model, n.id, kpi).text] : [] }))}
               relations={graphEdges.map((e) => ({ id: e.id, from: e.from, to: e.to, label: e.label }))}
-              summary={`拠点 ${n0(counts.site)}・フロア ${n0(counts.floor)}・部屋/設備 ${n0(counts.room)}（階層: 全体・拠点・フロア・部屋/設備・詳細の 5 階層。現在 ${d}）`}
+              summary={t('拠点 {site}・フロア {floor}・部屋/設備 {room}（階層: 全体・拠点・フロア・部屋/設備・詳細の 5 階層。現在 {d}）', { site: n0(counts.site), floor: n0(counts.floor), room: n0(counts.room), d })}
             />
           ) : null}
-          {d === D + 1 && !detail ? <EmptyView message="詳細を見る部屋・設備がありません。" /> : null}
+          {d === D + 1 && !detail ? <EmptyView message={t('詳細を見る部屋・設備がありません。')} /> : null}
 
           {twinItems.length > 0 ? (
-            <section aria-label="ツイン関係" data-testid="spatial-twins">
-              <Text weight="semibold" size={200} block>ツイン関係（空間の項目に結ばれたデジタル世界の項目）</Text>
+            <section aria-label={t('ツイン関係')} data-testid="spatial-twins">
+              <Text weight="semibold" size={200} block>{t('ツイン関係（空間の項目に結ばれたデジタル世界の項目）')}</Text>
               <ul className={s.legend}>
                 {twinItems.map((t) => {
                   const props = bind(t.id, { interactive: false });
@@ -360,7 +362,7 @@ export function SpatialScreen() {
                         onClick={(ev) => select(t.id, { origin: ORIGIN, additive: ev.ctrlKey || ev.metaKey || ev.shiftKey })}
                       >
                         <Text weight="semibold">{t.name}</Text>
-                        <Text size={200}>{`${t.of} を${t.relation}（デジタル世界）`}</Text>
+                        <Text size={200}>{tr('{of} を{relation}（デジタル世界）', { of: t.of, relation: t.relation })}</Text>
                       </button>
                     </li>
                   );
@@ -369,11 +371,11 @@ export function SpatialScreen() {
             </section>
           ) : null}
 
-          <ul className={s.legend} aria-label="KPI の凡例" data-testid="kpi-legend">
+          <ul className={s.legend} aria-label={t('KPI の凡例')} data-testid="kpi-legend">
             {KPI_STAGES.map((st) => (
               <li key={st}><span className={s.kpi} style={{ backgroundColor: STAGE_FILL[st] }}>{STAGE_GLYPHS[st]} {KPI_STAGE_LABELS[st]}</span></li>
             ))}
-            <li><span className={s.kpi}>○ 値なし（パックに値がない項目）</span></li>
+            <li><span className={s.kpi}>{t('○ 値なし（パックに値がない項目）')}</span></li>
           </ul>
         </div>
       )}

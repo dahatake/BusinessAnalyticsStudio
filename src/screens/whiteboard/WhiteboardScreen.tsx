@@ -35,6 +35,7 @@ import {
   parseClusterJson, resetVotes, totalVotes, ungroupSelection, type AlignMode, type Cluster,
 } from '../../whiteboard/ops';
 import { MAX_TIMER_SEC, formatClock, isRunning, remainingMs, useTimer } from '../../whiteboard/timer';
+import { tr, useT } from '../../i18n';
 
 const useStyles = makeStyles({
   controls: { display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalS },
@@ -70,8 +71,9 @@ function TimerReadout({ className }: { className?: string }) {
   const running = endsAt !== null;
   const now = useNow(running);
   const left = remainingMs({ endsAt, pausedMs }, now);
+  const tx = useT();
   return (
-    <span className={className} data-testid="timer-remaining" role="timer" aria-label="タイマーの残り時間">
+    <span className={className} data-testid="timer-remaining" role="timer" aria-label={tx('タイマーの残り時間')}>
       {formatClock(left)}
     </span>
   );
@@ -80,6 +82,7 @@ function TimerReadout({ className }: { className?: string }) {
 function TimerDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: boolean) => void }) {
   const s = useStyles();
   const t = useTimer();
+  const tx = useT();
   const now = useNow(t.endsAt !== null);
   const running = isRunning(t, now);
   const finished = t.endsAt !== null && !running;
@@ -95,15 +98,15 @@ function TimerDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: 
   return (
     <Dialog open={open} onOpenChange={(_, d) => onOpenChange(d.open)}>
       <DialogTrigger disableButtonEnhancement>
-        <Button icon={<Timer20Regular aria-hidden />}>タイマー</Button>
+        <Button icon={<Timer20Regular aria-hidden />}>{tx('タイマー')}</Button>
       </DialogTrigger>
-      <DialogSurface aria-label="タイマー">
+      <DialogSurface aria-label={tx('タイマー')}>
         <DialogBody>
-          <DialogTitle>タイマー</DialogTitle>
+          <DialogTitle>{tx('タイマー')}</DialogTitle>
           <DialogContent className={s.timerBody}>
             <TimerReadout className={s.clock} />
-            {finished ? <Text role="status">時間になりました。</Text> : null}
-            <Field label="長さ（分）">
+            {finished ? <Text role="status">{tx('時間になりました。')}</Text> : null}
+            <Field label={tx('長さ（分）')}>
               <SpinButton
                 min={1}
                 max={Math.floor(MAX_TIMER_SEC / 60)}
@@ -115,10 +118,10 @@ function TimerDialog({ open, onOpenChange }: { open: boolean; onOpenChange: (o: 
             </Field>
           </DialogContent>
           <DialogActions>
-            {running ? <Button appearance="primary" onClick={() => t.pause()}>一時停止</Button> : <Button appearance="primary" onClick={() => t.start()}>開始</Button>}
-            <Button onClick={() => t.reset()}>リセット</Button>
+            {running ? <Button appearance="primary" onClick={() => t.pause()}>{tx('一時停止')}</Button> : <Button appearance="primary" onClick={() => t.start()}>{tx('開始')}</Button>}
+            <Button onClick={() => t.reset()}>{tx('リセット')}</Button>
             <DialogTrigger disableButtonEnhancement>
-              <Button appearance="secondary">閉じる</Button>
+              <Button appearance="secondary">{tx('閉じる')}</Button>
             </DialogTrigger>
           </DialogActions>
         </DialogBody>
@@ -155,6 +158,8 @@ export function WhiteboardScreen() {
   const timerEndsAt = useTimer((st) => st.endsAt);
   const timerPaused = useTimer((st) => st.pausedMs);
   const timerDuration = useTimer((st) => st.durationSec);
+  const tx = useT();
+  const boardName = (name: string): string => { const m = /^ボード (\d+)$/.exec(name); return m ? tx('ボード {n}', { n: m[1]! }) : tx(name); };
 
   // 論点が変わったら、その論点のボードに切り替える（なければ 1 枚作る）。描画の前に済ませる
   useLayoutEffect(() => { ensureTopicBoard(topicId); }, [topicId, ensureTopicBoard]);
@@ -191,10 +196,10 @@ export function WhiteboardScreen() {
   const reflect = async (kind: RecognizedKind) => {
     if (!active || selStrokes.length === 0 || recBusy) return;
     setRecBusy(true);
-    setStatus('手書きを認識しています…');
+    setStatus(tr('手書きを認識しています…'));
     try {
       const r = await recognizeHandwriting(selStrokes);
-      if (!r) { setStatus('認識できる手書きがありません。'); return; }
+      if (!r) { setStatus(tr('認識できる手書きがありません。')); return; }
       useRecognized.getState().add({ kind, text: r.text, boardId: active.id, strokeIds: selStrokes.map((k) => k.id), mock: r.mock });
       // 議論の記録（論点）があれば、そこにもラベルつきで書き足す
       if (target && topicId) {
@@ -204,9 +209,9 @@ export function WhiteboardScreen() {
         if (theme && kind === 'decision') store.update(target.key, topicId, { decisions: theme.decisions.trim() === '' ? line : `${theme.decisions}\n${line}` });
         else if (theme) { const act = store.addAction(target.key, topicId); store.patchAction(target.key, topicId, act.id, { text: line }); }
       }
-      setStatus(`${KIND_LABEL[kind]}に反映しました（${RECOGNIZED_LABEL}${r.mock ? '・モック' : ''}）。元の手書きはボードに残っています。`);
+      setStatus(tr('{kind}に反映しました（{label}{mock}）。元の手書きはボードに残っています。', { kind: tr(KIND_LABEL[kind]), label: tr(RECOGNIZED_LABEL), mock: r.mock ? tr('・モック') : '' }));
     } catch (err) {
-      setStatus(err instanceof Error ? `手書きを認識できませんでした（${err.message}）` : '手書きを認識できませんでした。');
+      setStatus(err instanceof Error ? tr('手書きを認識できませんでした（{msg}）', { msg: err.message }) : tr('手書きを認識できませんでした。'));
     } finally {
       setRecBusy(false);
     }
@@ -226,28 +231,28 @@ export function WhiteboardScreen() {
       return r.items;
     });
     if (frameId) ink.setSelection(active.id, [...selIds, frameId]);
-    setStatus('選んだものをフレームで囲みました。');
+    setStatus(tr('選んだものをフレームで囲みました。'));
   };
   const groupIt = () => {
     if (!active) return;
     let done = false;
     useInk.getState().updateItems(active.id, (items) => { const r = groupSelection(items, selSet); if (!r) return items; done = true; return r.items; });
-    setStatus(done ? '選んだものをグループにしました。グループは一緒に選び、一緒に動かせます。' : 'グループにするには、2 つ以上を選んでください。');
+    setStatus(done ? tr('選んだものをグループにしました。グループは一緒に選び、一緒に動かせます。') : tr('グループにするには、2 つ以上を選んでください。'));
   };
   const ungroupIt = () => {
     if (!active) return;
     useInk.getState().updateItems(active.id, (items) => ungroupSelection(items, selSet));
-    setStatus('グループを解除しました。');
+    setStatus(tr('グループを解除しました。'));
   };
   const alignIt = (mode: AlignMode, label: string) => {
     if (!active) return;
     useInk.getState().updateItems(active.id, (items) => alignItems(items, selSet, mode));
-    setStatus(`${label}にしました。`);
+    setStatus(tr('{label}にしました。', { label }));
   };
   const connectIt = () => {
     if (!active || nodes.length !== 2) return;
     useInk.getState().updateItems(active.id, (items) => connect(items, nodes[0]!.id, nodes[1]!.id).items);
-    setStatus('選んだ 2 つをコネクターでつなぎました。');
+    setStatus(tr('選んだ 2 つをコネクターでつなぎました。'));
   };
 
   // Ctrl+A（⌘+A）: ボードのすべての項目を選ぶ（文字の入力欄の中では、ふつうの全選択）
@@ -264,10 +269,10 @@ export function WhiteboardScreen() {
     if (!active || busy) return;
     const chosen = selItems.filter((i) => i.type === 'sticky');
     const stickies = chosen.length >= 2 ? chosen : active.items.filter((i) => i.type === 'sticky');
-    if (stickies.length < 2) { setStatus('クラスタリングするには、付箋が 2 枚以上必要です。'); return; }
+    if (stickies.length < 2) { setStatus(tr('クラスタリングするには、付箋が 2 枚以上必要です。')); return; }
     const texts = stickies.map((i) => i.text ?? '');
     setBusy(true);
-    setStatus('AI が付箋を分けています…');
+    setStatus(tr('AI が付箋を分けています…'));
     let clusters: Cluster[] | null = null;
     let mock = true;
     try {
@@ -275,20 +280,20 @@ export function WhiteboardScreen() {
       mock = res.mode === 'mock';
       if (!mock) clusters = parseClusterJson(res.answer, texts.length);
     } catch (err) {
-      setStatus(err instanceof Error ? `AI を呼び出せなかったため、文字の重なりで分けます（${err.message}）` : 'AI を呼び出せなかったため、文字の重なりで分けます。');
+      setStatus(err instanceof Error ? tr('AI を呼び出せなかったため、文字の重なりで分けます（{msg}）', { msg: err.message }) : tr('AI を呼び出せなかったため、文字の重なりで分けます。'));
     }
     const result = clusters ?? clusterTexts(texts);
     useInk.getState().updateItems(active.id, (items) => applyClusters(items, stickies.map((i) => i.id), result));
     // 並べ替えた結果が全部見えるように、全体表示にする
     useInk.getState().fitBoard(active.id);
     setBusy(false);
-    setStatus(`付箋を ${result.length} つのグループに分けました（AI 生成${mock ? '・モック' : ''}）。「元に戻す」で取り消せます。`);
+    setStatus(tr('付箋を {n} つのグループに分けました（AI 生成{mock}）。「元に戻す」で取り消せます。', { n: result.length, mock: mock ? tr('・モック') : '' }));
   };
 
   const toggleVote = () => {
     const next = !voteMode;
     useInk.getState().setVoteMode(next);
-    setStatus(next ? 'ドット投票: 付箋をクリックすると 1 票入ります（Shift を押しながらで 1 票戻します）。' : 'ドット投票を終えました。');
+    setStatus(next ? tr('ドット投票: 付箋をクリックすると 1 票入ります（Shift を押しながらで 1 票戻します）。') : tr('ドット投票を終えました。'));
   };
   const votes = active ? totalVotes(active.items) : 0;
 
@@ -303,45 +308,45 @@ export function WhiteboardScreen() {
   return (
     <Panel
       testId="component-whiteboard"
-      title="ホワイトボード"
-      description={pane ? undefined : '論点ごとに複数のボードを持てる無限キャンバスです。ペンで描き、2 本指またはホイールでパン、Ctrl+ホイールで拡大縮小します。'}
+      title={tx('ホワイトボード')}
+      description={pane ? undefined : tx('論点ごとに複数のボードを持てる無限キャンバスです。ペンで描き、2 本指またはホイールでパン、Ctrl+ホイールで拡大縮小します。')}
       maxWidth="1280px"
     >
       <div className={s.controls}>
-        <Button className={s.forcedAuto} appearance="primary" icon={<Add20Regular aria-hidden />} onClick={() => addBoard(topicId)}>ボードを追加</Button>
-        <Field label="背景" size="small">
+        <Button className={s.forcedAuto} appearance="primary" icon={<Add20Regular aria-hidden />} onClick={() => addBoard(topicId)}>{tx('ボードを追加')}</Button>
+        <Field label={tx('背景')} size="small">
           <Dropdown
             style={{ minWidth: '112px', width: '112px' }}
             button={{ style: { minHeight: '24px' } }}
-            value={bg.label}
+            value={tx(bg.label)}
             selectedOptions={[bg.value]}
             onOptionSelect={(_, d) => { if (active && d.optionValue) setBackground(active.id, d.optionValue as Background); }}
           >
-            {BACKGROUNDS.map((b) => <Option key={b.value} value={b.value}>{b.label}</Option>)}
+            {BACKGROUNDS.map((b) => <Option key={b.value} value={b.value}>{tx(b.label)}</Option>)}
           </Dropdown>
         </Field>
-        <Button icon={<ZoomFit20Regular aria-hidden />} aria-label="全体表示" title="全体表示" onClick={() => active && fitBoard(active.id)} />
-        <Button icon={<ZoomOut20Regular aria-hidden />} aria-label="縮小" onClick={() => zoomBy(1 / 1.25)} />
-        <Button icon={<ZoomIn20Regular aria-hidden />} aria-label="拡大" onClick={() => zoomBy(1.25)} />
-        <Button icon={<DocumentPdf20Regular aria-hidden />} disabled={!active} aria-label="PDF 出力" title="PDF 出力" onClick={() => setPdfOpen(true)} />
-        <Button icon={<DocumentMarkdown20Regular aria-hidden />} disabled={!active} aria-label="Markdown 出力" title="Markdown 出力" onClick={() => setMdOpen(true)} />
+        <Button icon={<ZoomFit20Regular aria-hidden />} aria-label={tx('全体表示')} title={tx('全体表示')} onClick={() => active && fitBoard(active.id)} />
+        <Button icon={<ZoomOut20Regular aria-hidden />} aria-label={tx('縮小')} onClick={() => zoomBy(1 / 1.25)} />
+        <Button icon={<ZoomIn20Regular aria-hidden />} aria-label={tx('拡大')} onClick={() => zoomBy(1.25)} />
+        <Button icon={<DocumentPdf20Regular aria-hidden />} disabled={!active} aria-label={tx('PDF 出力')} title={tx('PDF 出力')} onClick={() => setPdfOpen(true)} />
+        <Button icon={<DocumentMarkdown20Regular aria-hidden />} disabled={!active} aria-label={tx('Markdown 出力')} title={tx('Markdown 出力')} onClick={() => setMdOpen(true)} />
       </div>
       <TabList
         size="small"
-        aria-label="ボードの一覧"
+        aria-label={tx('ボードの一覧')}
         selectedValue={active?.id ?? ''}
         onTabSelect={(_, d) => setActive(String(d.value))}
       >
-        {mine.map((b) => <Tab key={b.id} value={b.id}>{b.name}</Tab>)}
+        {mine.map((b) => <Tab key={b.id} value={b.id}>{boardName(b.name)}</Tab>)}
       </TabList>
       <div onKeyDown={onKeyDown} style={{ display: 'contents' }}>
-        <div className={s.organize} role="group" aria-label="付箋の整理">
-          <Button size="small" icon={<Frame20Regular aria-hidden />} disabled={framable === 0} onClick={frameIt}>フレームで囲む</Button>
-          <Button size="small" icon={<Group20Regular aria-hidden />} disabled={groupable < 2} onClick={groupIt}>グループにする</Button>
-          <Button size="small" icon={<GroupDismiss20Regular aria-hidden />} disabled={!grouped} onClick={ungroupIt}>グループを解除</Button>
+        <div className={s.organize} role="group" aria-label={tx('付箋の整理')}>
+          <Button size="small" icon={<Frame20Regular aria-hidden />} disabled={framable === 0} onClick={frameIt}>{tx('フレームで囲む')}</Button>
+          <Button size="small" icon={<Group20Regular aria-hidden />} disabled={groupable < 2} onClick={groupIt}>{tx('グループにする')}</Button>
+          <Button size="small" icon={<GroupDismiss20Regular aria-hidden />} disabled={!grouped} onClick={ungroupIt}>{tx('グループを解除')}</Button>
           <Menu>
             <MenuTrigger disableButtonEnhancement>
-              <Button size="small" icon={<AlignTop20Regular aria-hidden />} disabled={alignable < 2}>整列</Button>
+              <Button size="small" icon={<AlignTop20Regular aria-hidden />} disabled={alignable < 2}>{tx('整列')}</Button>
             </MenuTrigger>
             <MenuPopover>
               <MenuList>
@@ -351,29 +356,29 @@ export function WhiteboardScreen() {
               </MenuList>
             </MenuPopover>
           </Menu>
-          <Button size="small" icon={<Link20Regular aria-hidden />} disabled={nodes.length !== 2} onClick={connectIt}>つなぐ</Button>
-          <Button size="small" icon={<Sparkle20Regular aria-hidden />} disabled={busy} onClick={() => { void runCluster(); }}>クラスタリング</Button>
-          <Button size="small" icon={<Sparkle20Regular aria-hidden />} disabled={selStrokes.length === 0 || recBusy} onClick={() => { void reflect('decision'); }}>決定事項に反映</Button>
-          <Button size="small" icon={<TaskListSquareLtr20Regular aria-hidden />} disabled={selStrokes.length === 0 || recBusy} onClick={() => { void reflect('action'); }}>次のアクションに反映</Button>
-          <Button size="small" icon={<Vote20Regular aria-hidden />} appearance={voteMode ? 'primary' : 'secondary'} className={s.forcedAuto} aria-pressed={voteMode} onClick={toggleVote}>ドット投票</Button>
-          {voteMode && votes > 0 ? <Button size="small" onClick={() => { if (active) useInk.getState().updateItems(active.id, resetVotes); }}>票をリセット</Button> : null}
+          <Button size="small" icon={<Link20Regular aria-hidden />} disabled={nodes.length !== 2} onClick={connectIt}>{tx('つなぐ')}</Button>
+          <Button size="small" icon={<Sparkle20Regular aria-hidden />} disabled={busy} onClick={() => { void runCluster(); }}>{tx('クラスタリング')}</Button>
+          <Button size="small" icon={<Sparkle20Regular aria-hidden />} disabled={selStrokes.length === 0 || recBusy} onClick={() => { void reflect('decision'); }}>{tx('決定事項に反映')}</Button>
+          <Button size="small" icon={<TaskListSquareLtr20Regular aria-hidden />} disabled={selStrokes.length === 0 || recBusy} onClick={() => { void reflect('action'); }}>{tx('次のアクションに反映')}</Button>
+          <Button size="small" icon={<Vote20Regular aria-hidden />} appearance={voteMode ? 'primary' : 'secondary'} className={s.forcedAuto} aria-pressed={voteMode} onClick={toggleVote}>{tx('ドット投票')}</Button>
+          {voteMode && votes > 0 ? <Button size="small" onClick={() => { if (active) useInk.getState().updateItems(active.id, resetVotes); }}>{tx('票をリセット')}</Button> : null}
           <TimerDialog open={timerOpen} onOpenChange={setTimerOpen} />
           {!timerOpen && timerShown ? <TimerReadout /> : null}
         </div>
         {!active ? (
           <Text role="status" className={s.status} size={200}>
-            {status}{connectFrom ? ' 接続元を選びました。つなぐ相手の項目をクリックしてください（Esc で取り消し）。' : ''}
-            {voteMode ? ` 投票数: ${votes} 票` : ''}
+            {status}{connectFrom ? tx(' 接続元を選びました。つなぐ相手の項目をクリックしてください（Esc で取り消し）。') : ''}
+            {voteMode ? tx(' 投票数: {n} 票', { n: votes }) : ''}
           </Text>
         ) : null}
         {active && (
           <div ref={stageRef} className={s.stage}>
             {/* 状態の表示は描画面の上端に重ねる（場所を取らず、描画面をできるだけ上に置く。ショーコントロールバーに隠れにくくする） */}
             <Text role="status" className={s.statusOverlay} size={200}>
-              {status}{connectFrom ? ' 接続元を選びました。つなぐ相手の項目をクリックしてください（Esc で取り消し）。' : ''}
-              {voteMode ? ` 投票数: ${votes} 票` : ''}
+              {status}{connectFrom ? tx(' 接続元を選びました。つなぐ相手の項目をクリックしてください（Esc で取り消し）。') : ''}
+              {voteMode ? tx(' 投票数: {n} 票', { n: votes }) : ''}
             </Text>
-            <BoardSurface key={active.id} boardId={active.id} ariaLabel={`${active.name}の描画面`} minimap onEntityDrop={onEntityDrop} onItemActivate={onItemActivate}>
+            <BoardSurface key={active.id} boardId={active.id} ariaLabel={tx('{name}の描画面', { name: boardName(active.name) })} minimap onEntityDrop={onEntityDrop} onItemActivate={onItemActivate}>
               <ItemOverlay boardId={active.id} />
             </BoardSurface>
           </div>
@@ -382,14 +387,14 @@ export function WhiteboardScreen() {
           const list = shownRecognized.filter((i) => i.kind === kind);
           if (list.length === 0) return null;
           return (
-            <section key={kind} aria-label={`手書きから反映した${KIND_LABEL[kind]}`}>
-              <Text as="h3" size={300} weight="semibold">手書きから反映した{KIND_LABEL[kind]}</Text>
+            <section key={kind} aria-label={tx('手書きから反映した{kind}', { kind: tx(KIND_LABEL[kind]) })}>
+              <Text as="h3" size={300} weight="semibold">{tx('手書きから反映した{kind}', { kind: tx(KIND_LABEL[kind]) })}</Text>
               <ul className={s.recognized} data-testid={kind === 'decision' ? 'decisions' : 'next-actions'}>
                 {list.map((i) => (
                   <li key={i.id} className={s.recognizedItem}>
                     <Text>{i.text}</Text>
-                    <Badge appearance="tint" color="informative" size="medium">{i.label}</Badge>
-                    <Button size="small" appearance="subtle" onClick={() => useRecognized.getState().remove(i.id)}>一覧から外す</Button>
+                    <Badge appearance="tint" color="informative" size="medium">{tx(i.label)}</Badge>
+                    <Button size="small" appearance="subtle" onClick={() => useRecognized.getState().remove(i.id)}>{tx('一覧から外す')}</Button>
                   </li>
                 ))}
               </ul>

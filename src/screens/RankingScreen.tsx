@@ -15,6 +15,7 @@ import { onEntityKey, useEntityBinding } from '../selection/hooks';
 import { Items3DSurface } from '../three/Items3DSurface';
 import { norm, spread, type Item3D } from '../view/items3d';
 import { useComponentView, usePublishViewItems } from '../view/useView';
+import { useT } from '../i18n';
 
 const ORIGIN = 'ranking';
 
@@ -32,6 +33,7 @@ const useStyles = makeStyles({
 
 function RankingScreen() {
   const s = useStyles();
+  const t = useT();
   const hl = useHighlightClass();
   const bind = useEntityBinding(ORIGIN);
   const { ready, rows } = usePriority();
@@ -45,28 +47,28 @@ function RankingScreen() {
     return rows.map((r, i) => ({ id: r.id, label: `${r.rank}. ${r.title}`, x: spread(i, rows.length), y: norm(r.score, Math.min(0, min), max), z: 0.5, size: max > 0 ? r.score / max : 0 }));
   }, [rows]);
   usePublishViewItems(ORIGIN, useMemo(() => rows.map((r) => r.id), [rows]));
-  if (!ready) return <LoadingView label="ランキングを読み込み中" />;
+  if (!ready) return <LoadingView label={t('ランキングを読み込み中')} />;
 
   const decidedNotes = rows.flatMap((r) => CRITERIA
     .filter((c) => r.values[c.key].decided !== undefined)
-    .map((c) => `「${r.title}」の${c.label}: AI 提案 ${r.values[c.key].ai} → 顧客決定 ${r.values[c.key].decided}`));
+    .map((c) => t('「{title}」の{label}: AI 提案 {ai} → 顧客決定 {decided}', { title: r.title, label: t(c.label), ai: r.values[c.key].ai, decided: r.values[c.key].decided ?? '' })));
 
   return (
-    <Panel testId="component-ranking" title="ランキング表" description="重み付きスコア（Σ 重み × 評価値）の高い順です。評価値は 1〜5。重みは「優先順位分析」で変えます。" maxWidth="1200px">
+    <Panel testId="component-ranking" title={t('ランキング表')} description={t('重み付きスコア（Σ 重み × 評価値）の高い順です。評価値は 1〜5。重みは「優先順位分析」で変えます。')} maxWidth="1200px">
       {mode === '3d' && rows.length > 0 ? <div><ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} /></div> : null}
       {rows.length === 0 ? (
-        <EmptyView message="ランキングする課題がありません。" />
+        <EmptyView message={t('ランキングする課題がありません。')} />
       ) : mode === '3d' && !asTable ? (
-        <Items3DSurface viewKey={ORIGIN} origin={ORIGIN} label="課題のランキング" items={items3d} axes={{ x: '順位', y: '重み付きスコア' }} />
+        <Items3DSurface viewKey={ORIGIN} origin={ORIGIN} label={t('課題のランキング')} items={items3d} axes={{ x: t('順位'), y: t('重み付きスコア') }} />
       ) : (
         <div className={s.scroll}>
-          <Table aria-label="優先順位のランキング" size="small" className={s.table}>
+          <Table aria-label={t('優先順位のランキング')} size="small" className={s.table}>
             <TableHeader>
               <TableRow>
-                <TableHeaderCell>順位</TableHeaderCell>
-                <TableHeaderCell>課題</TableHeaderCell>
-                {CRITERIA.map((c) => <TableHeaderCell key={c.key}>{c.label}</TableHeaderCell>)}
-                <TableHeaderCell>重み付きスコア</TableHeaderCell>
+                <TableHeaderCell>{t('順位')}</TableHeaderCell>
+                <TableHeaderCell>{t('課題')}</TableHeaderCell>
+                {CRITERIA.map((c) => <TableHeaderCell key={c.key}>{t(c.label)}</TableHeaderCell>)}
+                <TableHeaderCell>{t('重み付きスコア')}</TableHeaderCell>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -84,9 +86,9 @@ function RankingScreen() {
                     {CRITERIA.map((c) => {
                       const v = r.values[c.key];
                       return (
-                        <TableCell key={c.key} className={s.num} title={v.decided !== undefined ? `AI 提案 ${v.ai} / 顧客決定 ${v.decided}` : 'AI 提案'}>
+                        <TableCell key={c.key} className={s.num} title={v.decided !== undefined ? t('AI 提案 {ai} / 顧客決定 {decided}', { ai: v.ai, decided: v.decided }) : t('AI 提案')}>
                           <NumericValue sourceIds={v.sourceIds}>{v.value}</NumericValue>
-                          {v.origin === 'customer' ? <Badge size="medium" appearance="outline" color="brand" style={{ marginInlineStart: tokens.spacingHorizontalXS }}>顧客決定</Badge> : null}
+                          {v.origin === 'customer' ? <Badge size="medium" appearance="outline" color="brand" style={{ marginInlineStart: tokens.spacingHorizontalXS }}>{t('顧客決定')}</Badge> : null}
                         </TableCell>
                       );
                     })}
@@ -99,12 +101,12 @@ function RankingScreen() {
         </div>
       )}
       {decidedNotes.length > 0 ? (
-        <div className={s.note} aria-label="AI 提案と顧客決定の違い">
-          <Text weight="semibold" size={200}>AI 提案と顧客決定の違い（評価値は顧客決定を採用）</Text>
-          {decidedNotes.map((t) => <Text key={t} size={200}>{t}</Text>)}
+        <div className={s.note} aria-label={t('AI 提案と顧客決定の違い')}>
+          <Text weight="semibold" size={200}>{t('AI 提案と顧客決定の違い（評価値は顧客決定を採用）')}</Text>
+          {decidedNotes.map((n) => <Text key={n} size={200}>{n}</Text>)}
         </div>
       ) : (
-        <Text size={200}>評価値はすべて AI の提案値です。顧客が決めた値があると「顧客決定」と表示します。</Text>
+        <Text size={200}>{t('評価値はすべて AI の提案値です。顧客が決めた値があると「顧客決定」と表示します。')}</Text>
       )}
     </Panel>
   );

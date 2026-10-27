@@ -1,6 +1,7 @@
 // AI 呼び出しの唯一の入口（FR-010・FR-011・FR-132・NFR-SEC-002）。
 // LLM を使う 5 種類の処理（構造化・要約・提言・チャット・サマリー更新）は、すべて askAi を通る。
 // ブラウザーからの送信先は、設定された localhost の中継プロセス（relayUrl）だけ。実接続を明示的に有効にするまではモックで、何も送信しない。
+import { tr } from '../i18n';
 
 export const AI_KINDS = ['structure', 'summary', 'recommend', 'chat', 'exec-summary'] as const;
 export type AiKind = (typeof AI_KINDS)[number];
@@ -45,7 +46,7 @@ export function isLoopbackUrl(url: string): boolean {
 
 export function mockAnswer(kind: AiKind, prompt: string): string {
   const head = prompt.replace(/\s+/g, ' ').slice(0, 60);
-  return `（モックの回答）${kind} 「${head}」への回答の例です。実際の AI には送信していません。`;
+  return tr('（モックの回答）{kind} 「{head}」への回答の例です。実際の AI には送信していません。', { kind, head });
 }
 
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -59,7 +60,7 @@ export async function askAi(req: AiRequest, env: AiEnv): Promise<AiResult> {
   }
   const f = env.fetchFn ?? ((u, i) => fetch(u, i));
   const res = await f(`${env.relayUrl}/ask`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: sent });
-  if (!res.ok) throw new Error(`中継プロセスがエラーを返しました（${res.status}）`);
+  if (!res.ok) throw new Error(tr('中継プロセスがエラーを返しました（{status}）', { status: res.status }));
   const j = (await res.json()) as { answer?: string; sourceIds?: string[]; mode?: AiMode };
   const mode: AiMode = j.mode === 'mock' ? 'mock' : 'connected';
   return { answer: String(j.answer ?? ''), sourceIds: j.sourceIds ?? [], mode, sent, transmitted: true };

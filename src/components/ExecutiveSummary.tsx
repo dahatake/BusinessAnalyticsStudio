@@ -17,6 +17,7 @@ import { activeEdited, useSummaryStore } from '../store/summary';
 import { useTreeDoc } from '../store/tree';
 import { NumericValue } from './NumericValue';
 import { elevationStyles } from '../theme/tokens';
+import { useLang, useT } from '../i18n';
 
 const useStyles = makeStyles({
   root: {
@@ -41,6 +42,7 @@ export interface ExecutiveSummaryProps {
 
 export function ExecutiveSummary({ scope }: ExecutiveSummaryProps) {
   const s = useStyles();
+  const t = useT();
   const state = usePackStore((st) => st.state);
   const weights = usePriorityStore((st) => st.weights);
   const editEnabled = useEditStore((st) => st.editMode);
@@ -50,9 +52,11 @@ export function ExecutiveSummary({ scope }: ExecutiveSummaryProps) {
   const tree = useTreeDoc(key, data);
   const stored = useSummaryStore((st) => st.byPack[key]?.[scope]);
 
+  const lang = useLang((st) => st.lang); // 要約の文は表示時の言語で作るので、言語の切り替えで作り直す（FR-294）
   const generated: SummaryContent | undefined = useMemo(
     () => (data ? buildSummary(scope, data, { weights, tree }) : undefined),
-    [data, scope, weights, tree],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [data, scope, weights, tree, lang],
   );
   const fp = generated ? fingerprint(generated) : '';
 
@@ -77,7 +81,7 @@ export function ExecutiveSummary({ scope }: ExecutiveSummaryProps) {
 
   const aiText = contentText(generated);
   const shown: SummaryText = edited ? edited.text : aiConclusion?.fp === fp ? { ...aiText, conclusion: aiConclusion.text } : aiText;
-  const label = edited?.human ? '編集版' : mode === 'connected' ? REAL_LABEL : MOCK_LABEL;
+  const label = t(edited?.human ? '編集版' : mode === 'connected' ? REAL_LABEL : MOCK_LABEL);
 
   const startEdit = () => { setDraft(shown); setEditing(true); };
   const save = (pinned: boolean) => {
@@ -86,47 +90,47 @@ export function ExecutiveSummary({ scope }: ExecutiveSummaryProps) {
   };
 
   return (
-    <section className={s.root} data-surface="card" data-testid="executive-summary" aria-label="エグゼクティブサマリー">
+    <section className={s.root} data-surface="card" data-testid="executive-summary" aria-label={t('エグゼクティブサマリー')}>
       <div className={s.head}>
-        <Text as="h3" weight="semibold" size={400}>エグゼクティブサマリー</Text>
+        <Text as="h3" weight="semibold" size={400}>{t('エグゼクティブサマリー')}</Text>
         <Badge appearance={edited?.human ? 'filled' : 'tint'} color={edited?.human ? 'brand' : 'informative'} data-testid="summary-origin">{label}</Badge>
-        {edited?.pinned ? <Badge appearance="outline" color="success" icon={<Pin16Regular aria-hidden />}>固定済み</Badge> : null}
+        {edited?.pinned ? <Badge appearance="outline" color="success" icon={<Pin16Regular aria-hidden />}>{t('固定済み')}</Badge> : null}
         <span className={s.grow} />
         {editing ? null : (
           <span className={s.actions}>
-            <Button size="small" icon={<Edit16Regular aria-hidden />} disabled={!editEnabled} title={editEnabled ? undefined : '編集モードを ON にすると編集できます'} onClick={startEdit}>編集</Button>
+            <Button size="small" icon={<Edit16Regular aria-hidden />} disabled={!editEnabled} title={editEnabled ? undefined : t('編集モードを ON にすると編集できます')} onClick={startEdit}>{t('編集')}</Button>
             {edited?.pinned ? (
-              <Button size="small" icon={<PinOff16Regular aria-hidden />} disabled={!editEnabled} onClick={() => (edited.human ? useSummaryStore.getState().setPinned(key, scope, false) : useSummaryStore.getState().discard(key, scope))}>固定を解除</Button>
+              <Button size="small" icon={<PinOff16Regular aria-hidden />} disabled={!editEnabled} onClick={() => (edited.human ? useSummaryStore.getState().setPinned(key, scope, false) : useSummaryStore.getState().discard(key, scope))}>{t('固定を解除')}</Button>
             ) : (
               <Button
                 size="small" icon={<Pin16Regular aria-hidden />} disabled={!editEnabled}
                 onClick={() => { useSummaryStore.getState().save(key, scope, shown, true, fp, false); }}
-              >固定</Button>
+              >{t('固定')}</Button>
             )}
-            {edited?.human ? <Button size="small" appearance="subtle" disabled={!editEnabled} onClick={() => useSummaryStore.getState().discard(key, scope)}>AI 版に戻す</Button> : null}
+            {edited?.human ? <Button size="small" appearance="subtle" disabled={!editEnabled} onClick={() => useSummaryStore.getState().discard(key, scope)}>{t('AI 版に戻す')}</Button> : null}
           </span>
         )}
       </div>
 
       {editing ? (
         <>
-          <Field label="結論"><Textarea resize="vertical" rows={2} value={draft.conclusion} onChange={(_, d) => setDraft({ ...draft, conclusion: d.value })} /></Field>
-          <Field label="根拠の数値"><Textarea resize="vertical" rows={2} value={draft.evidence} onChange={(_, d) => setDraft({ ...draft, evidence: d.value })} /></Field>
-          <Field label="推奨アクション"><Textarea resize="vertical" rows={2} value={draft.action} onChange={(_, d) => setDraft({ ...draft, action: d.value })} /></Field>
+          <Field label={t('結論')}><Textarea resize="vertical" rows={2} value={draft.conclusion} onChange={(_, d) => setDraft({ ...draft, conclusion: d.value })} /></Field>
+          <Field label={t('根拠の数値')}><Textarea resize="vertical" rows={2} value={draft.evidence} onChange={(_, d) => setDraft({ ...draft, evidence: d.value })} /></Field>
+          <Field label={t('推奨アクション')}><Textarea resize="vertical" rows={2} value={draft.action} onChange={(_, d) => setDraft({ ...draft, action: d.value })} /></Field>
           <div className={s.actions}>
-            <Button appearance="primary" icon={<Pin16Regular aria-hidden />} onClick={() => save(true)}>固定</Button>
-            <Button onClick={() => save(false)}>保存のみ</Button>
-            <Button appearance="subtle" onClick={() => setEditing(false)}>キャンセル</Button>
+            <Button appearance="primary" icon={<Pin16Regular aria-hidden />} onClick={() => save(true)}>{t('固定')}</Button>
+            <Button onClick={() => save(false)}>{t('保存のみ')}</Button>
+            <Button appearance="subtle" onClick={() => setEditing(false)}>{t('キャンセル')}</Button>
           </div>
         </>
       ) : (
         <>
           <div className={s.row}>
-            <Text weight="semibold" className={s.label}>結論</Text>
+            <Text weight="semibold" className={s.label}>{t('結論')}</Text>
             <Text className={s.body} data-testid="summary-conclusion">{shown.conclusion}</Text>
           </div>
           <div className={s.row}>
-            <Text weight="semibold" className={s.label}>根拠の数値</Text>
+            <Text weight="semibold" className={s.label}>{t('根拠の数値')}</Text>
             <Text className={s.body} data-testid="summary-evidence">
               {edited ? shown.evidence : generated.evidence.map((p, i) => (
                 typeof p === 'string' ? <Fragment key={i}>{p}</Fragment> : <NumericValue key={i} sourceIds={p.sourceIds}>{partText(p)}</NumericValue>
@@ -134,7 +138,7 @@ export function ExecutiveSummary({ scope }: ExecutiveSummaryProps) {
             </Text>
           </div>
           <div className={s.row}>
-            <Text weight="semibold" className={s.label}>推奨アクション</Text>
+            <Text weight="semibold" className={s.label}>{t('推奨アクション')}</Text>
             <Text className={s.body} data-testid="summary-action">{shown.action}</Text>
           </div>
         </>

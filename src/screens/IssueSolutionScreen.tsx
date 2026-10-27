@@ -1,6 +1,7 @@
 // 課題-解決策分析（FR-001 構造化表示、FR-002 区分、FR-003〜FR-005 の詳細、FR-006 生成 AI の価値、FR-038 サンキー図・マトリクス）。
 // 左に課題（イシューツリー／MECE 表）と解決策、右に詳細パネルを置く。サンキー図・マトリクスは広く使うため詳細を下に置く。狭い画面では縦に積む。
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useT } from '../i18n';
 import {
   Badge, Button, Field, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
   makeStyles, mergeClasses, tokens,
@@ -69,11 +70,12 @@ const useStyles = makeStyles({
 });
 
 function IssueSummary({ issue }: { issue: Issue }) {
+  const t = useT();
   const s = useStyles();
   return (
     <div className={s.rowBody}>
       <Text weight="semibold">{issue.title}</Text>
-      {issue.hypothesis ? <Text size={300}>仮説: {issue.hypothesis}</Text> : null}
+      {issue.hypothesis ? <Text size={300}>{t('仮説:')} {issue.hypothesis}</Text> : null}
       <div className={s.badges}>
         <Badge appearance="tint" color={issue.audience === 'external' ? 'brand' : 'informative'}>{AUDIENCE_LABELS[issue.audience]}</Badge>
         {(issue.personas ?? []).map((p) => <Badge key={p} appearance="outline">{p}</Badge>)}
@@ -83,6 +85,7 @@ function IssueSummary({ issue }: { issue: Issue }) {
 }
 
 function IssueSolutionScreen() {
+  const t = useT();
   const s = useStyles();
   const state = usePackStore((st) => st.state);
   const [mode, setMode] = useState<ViewMode>('tree');
@@ -118,7 +121,7 @@ function IssueSolutionScreen() {
       const rowsN = Math.max(1, Math.ceil(list.length / cols));
       return list.map((it, i) => ({ id: it.id, label: it.title, group, y, x: spread(i % cols, cols), z: spread(Math.floor(i / cols), rowsN), size: 0.4 }));
     };
-    return [...layer(visible, 0.1, '課題'), ...layer(solutions, 0.9, '解決策')];
+    return [...layer(visible, 0.1, t('課題')), ...layer(solutions, 0.9, t('解決策'))];
   }, [visible, solutions]);
   const links3d = useMemo<Link3D[]>(() => {
     const ids = new Set(visible.map((i) => i.id));
@@ -126,10 +129,10 @@ function IssueSolutionScreen() {
   }, [visible, solutions]);
 
   // Graph（FR-238）: 課題と解決策をノードに、解決策→課題を「解決する」の向き付きのエッジにする（2D・3D と同じ項目・同じ件数）
-  const graphNodes: GraphNodeIn[] = [...visible.map((i) => ({ id: i.id, name: i.title, kind: '課題' })), ...solutions.map((x) => ({ id: x.id, name: x.title, kind: '解決策' }))];
-  const graphEdges: GraphEdgeIn[] = links3d.map((l) => ({ id: `${l.from}>${l.to}`, from: l.from, to: l.to, label: '解決する', meaning: 'solves' }));
+  const graphNodes: GraphNodeIn[] = [...visible.map((i) => ({ id: i.id, name: i.title, kind: t('課題') })), ...solutions.map((x) => ({ id: x.id, name: x.title, kind: t('解決策') }))];
+  const graphEdges: GraphEdgeIn[] = links3d.map((l) => ({ id: `${l.from}>${l.to}`, from: l.from, to: l.to, label: t('解決する'), meaning: 'solves' }));
 
-  if (!data) return <LoadingView label="課題を読み込み中" />
+  if (!data) return <LoadingView label={t('課題を読み込み中')} />
 
   const issueById = new Map(allIssues.map((i) => [i.id, i]));
   // 詳細は、共通の選択のうち最後に選んだ項目（課題または解決策のとき）を表示する
@@ -192,29 +195,29 @@ function IssueSolutionScreen() {
   return (
     <Panel
       testId="component-issue-solution"
-      title="課題-解決策分析"
-      description="課題をイシューツリー・MECE 表・サンキー図・マトリクスで整理し、原因・仮説・評価属性・解決策・効果・出典・Microsoft 製品を確かめます。"
+      title={t('課題-解決策分析')}
+      description={t('課題をイシューツリー・MECE 表・サンキー図・マトリクスで整理し、原因・仮説・評価属性・解決策・効果・出典・Microsoft 製品を確かめます。')}
       maxWidth="1200px"
     >
       <ExecutiveSummary scope="issue-solution" />
       <div className={s.toolbar}>
-        <Field label="表示の形">
+        <Field label={t('表示の形')}>
           <RadioGroup layout="horizontal" value={mode} onChange={(_, d) => setMode(d.value as ViewMode)}>
-            <Radio value="tree" label="イシューツリー" />
-            <Radio value="mece" label="MECE 表" />
-            <Radio value="sankey" label="サンキー図" />
-            <Radio value="matrix" label="マトリクス" />
+            <Radio value="tree" label={t('イシューツリー')} />
+            <Radio value="mece" label={t('MECE 表')} />
+            <Radio value="sankey" label={t('サンキー図')} />
+            <Radio value="matrix" label={t('マトリクス')} />
           </RadioGroup>
         </Field>
-        <Field label="区分">
+        <Field label={t('区分')}>
           <RadioGroup layout="horizontal" value={filter} onChange={(_, d) => setFilter(d.value as AudienceFilter)}>
-            <Radio value="all" label="すべて" />
+            <Radio value="all" label={t('すべて')} />
             <Radio value="internal" label={AUDIENCE_LABELS.internal} />
             <Radio value="external" label={AUDIENCE_LABELS.external} />
           </RadioGroup>
         </Field>
-        <Badge appearance="filled" color="brand" size="large" data-testid="count-badge" aria-label={`課題 ${visible.length} 件`}>
-          {visible.length} 件
+        <Badge appearance="filled" color="brand" size="large" data-testid="count-badge" aria-label={t('課題 {n} 件', { n: visible.length })}>
+          {t('{n} 件', { n: visible.length })}
         </Badge>
         <Button
           icon={<CommentMultiple24Regular aria-hidden />}
@@ -225,41 +228,41 @@ function IssueSolutionScreen() {
             useDiscussionStore.getState().createFromIssue(packKeyOf(data.customer.name, data.customer.projectName), { id: issue.id, title: issue.title });
             useLayout.getState().showComponent('themes');
           }}
-        >議論テーマにする</Button>
+        >{t('議論テーマにする')}</Button>
       </div>
 
       <div className={mergeClasses(s.layout, stacked && s.layoutStacked)}>
         <div className={s.column}>
           {visible.length === 0 ? (
-            <EmptyView message="該当する課題はありません。" />
+            <EmptyView message={t('該当する課題はありません。')} />
           ) : viewMode === '3d' ? (
             <>
               <div><ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} /></div>
               {asTable ? (
                 <ViewTable
-                  label="課題と解決策"
+                  label={t('課題と解決策')}
                   origin={ORIGIN}
-                  columns={['種類', '名称', 'つながり']}
+                  columns={[t('種類'), t('名称'), t('つながり')]}
                   rows={[
-                    ...visible.map((i) => ({ id: i.id, cells: ['課題', i.title, solutions.filter((x) => solutionIssueIds(x).includes(i.id)).map((x) => x.title).join('、') || '—'] })),
-                    ...solutions.map((x) => ({ id: x.id, cells: ['解決策', x.title, solutionIssueIds(x).map((id) => issueById.get(id)?.title ?? id).join('、')] })),
+                    ...visible.map((i) => ({ id: i.id, cells: [t('課題'), i.title, solutions.filter((x) => solutionIssueIds(x).includes(i.id)).map((x) => x.title).join('、') || '—'] })),
+                    ...solutions.map((x) => ({ id: x.id, cells: [t('解決策'), x.title, solutionIssueIds(x).map((id) => issueById.get(id)?.title ?? id).join('、')] })),
                   ]}
                 />
               ) : (
-                <Items3DSurface viewKey={ORIGIN} origin={ORIGIN} label="課題と解決策" items={items3d} links={links3d} axes={{ y: '課題（下）→解決策（上）' }} />
+                <Items3DSurface viewKey={ORIGIN} origin={ORIGIN} label={t('課題と解決策')} items={items3d} links={links3d} axes={{ y: t('課題（下）→解決策（上）') }} />
               )}
             </>
           ) : viewMode === 'graph' ? (
             <>
-              <GraphSurface origin={ORIGIN} label="課題と解決策" nodes={graphNodes} edges={graphEdges} />
-              <GraphAlt origin={ORIGIN} label="課題と解決策" nodes={graphNodes} relations={graphEdges.map((e) => ({ ...e }))} />
+              <GraphSurface origin={ORIGIN} label={t('課題と解決策')} nodes={graphNodes} edges={graphEdges} />
+              <GraphAlt origin={ORIGIN} label={t('課題と解決策')} nodes={graphNodes} relations={graphEdges.map((e) => ({ ...e }))} />
             </>
           ) : mode === 'sankey' ? (
             <SankeyView flow={flow} {...flowProps} />
           ) : mode === 'matrix' ? (
             <MatrixView matrix={matrix} {...flowProps} />
           ) : mode === 'tree' ? (
-            <div role="tree" aria-label="イシューツリー" className={s.tree} ref={treeRef}>
+            <div role="tree" aria-label={t('イシューツリー')} className={s.tree} ref={treeRef}>
               {rows.map((row) => {
                 const id = row.issue.id;
                 const props = bind(id);
@@ -296,7 +299,7 @@ function IssueSolutionScreen() {
           ) : (
             <div className={s.group}>
               {groups.map((g) => (
-                <Table key={g.root.id} aria-label={`分類: ${g.root.title}`} size="small">
+                <Table key={g.root.id} aria-label={t('分類: {title}', { title: g.root.title })} size="small">
                   <TableHeader>
                     <TableRow>
                       <TableHeaderCell>{g.root.title}</TableHeaderCell>
@@ -329,9 +332,9 @@ function IssueSolutionScreen() {
           )}
 
           {stacked || viewMode === '3d' ? null : (
-          <section aria-label="解決策" className={s.group}>
-            <Text as="h3" size={500} weight="semibold">解決策</Text>
-            {solutions.length === 0 ? <Text>該当する解決策はありません。</Text> : (
+          <section aria-label={t('解決策')} className={s.group}>
+            <Text as="h3" size={500} weight="semibold">{t('解決策')}</Text>
+            {solutions.length === 0 ? <Text>{t('該当する解決策はありません。')}</Text> : (
               <ul className={s.solutions}>
                 {solutions.map((sol) => {
                   const props = bind(sol.id);

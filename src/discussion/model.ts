@@ -1,5 +1,6 @@
 // 議論テーマのデータモデル（FR-048〜FR-051）。画面の部品を参照しない純粋なモジュール（NFR-MAINT-001）。
 import { z } from 'zod';
+import { tr } from '../i18n/translate';
 import { CreatedBySchema, IdSchema } from '../schema/common';
 
 /** 決定ステータス（FR-050）。`ai-proposed` だけが AI の提案で、それ以外は顧客が選んだ状態。 */
@@ -45,11 +46,11 @@ export function parseDueDate(input: string): DueResult {
   const s = input.trim();
   if (s === '') return { ok: true, value: '' };
   const m = /^(\d{4})[-/](\d{1,2})[-/](\d{1,2})$/.exec(s);
-  if (!m) return { ok: false, reason: '期限は日付（例: 2026-11-30）で入力してください。日付として読み取れません。' };
+  if (!m) return { ok: false, reason: tr('期限は日付（例: 2026-11-30）で入力してください。日付として読み取れません。') };
   const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
   const dt = new Date(Date.UTC(y, mo - 1, d));
   if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== mo - 1 || dt.getUTCDate() !== d) {
-    return { ok: false, reason: `${s} は存在しない日付です。期限は実在する日付で入力してください。` };
+    return { ok: false, reason: tr('{s} は存在しない日付です。期限は実在する日付で入力してください。', { s }) };
   }
   return { ok: true, value: `${m[1]}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}` };
 }

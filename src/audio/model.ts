@@ -1,5 +1,6 @@
 // 音声の純粋なモデル（FR-073・FR-074・FR-075）。Web Audio にも React にも依存しない。
 // 音源は外部から取得せず、BGM・効果音とも Web Audio API で手続き生成する（権利: CREDITS.md、NFR-LEGAL-001）。
+import { tr } from '../i18n/translate';
 import type { BgmMood } from '../motion/tone';
 
 /** シーンを切り替えるときのクロスフェードの長さ（秒） */
@@ -26,7 +27,7 @@ const clamp01 = (v: number): number => (Number.isFinite(v) ? Math.min(1, Math.ma
 
 /** ミュートの切替の通知の文言（スクリーンリーダー向け。NFR-A11Y-002） */
 export function muteAnnouncement(muted: boolean): string {
-  return muted ? 'ミュートにしました' : 'ミュートを解除しました';
+  return muted ? tr('ミュートにしました') : tr('ミュートを解除しました');
 }
 
 /** 全体の音量（ミュートなら 0） */
