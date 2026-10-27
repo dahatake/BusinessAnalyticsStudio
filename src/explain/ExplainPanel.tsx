@@ -15,6 +15,7 @@ import { newSession, runExplain } from './run';
 import { explainLimitsNow, explainUsageNow, setExplainUsage, toExplainLimits, toExplainUsage, useCurrentScreen, useExplainPanel } from './store';
 import { useUsageStore } from '../ai/foundryUsage';
 import { budgetLevel, rollover } from './usage';
+import { tr, useT } from '../i18n';
 
 const useStyles = makeStyles({
   row: { display: 'flex', flex: '1 1 auto', minHeight: 0, minWidth: 0 },
@@ -40,7 +41,7 @@ const useStyles = makeStyles({
 const session = newSession();
 let controller: AbortController | null = null;
 
-const labelOf = (key: string): string => SCREENS.find((s) => s.key === key)?.label ?? 'ワークスペース';
+const labelOf = (key: string): string => SCREENS.find((s) => s.key === key)?.label ?? tr('ワークスペース');
 
 /** 「現状の説明」を作る。読み取り専用（顧客パック・保存データには書かない）。書くのは利用量の記録だけ */
 export async function triggerExplain(): Promise<void> {
@@ -62,7 +63,7 @@ export async function triggerExplain(): Promise<void> {
     usage: { get: explainUsageNow, set: setExplainUsage },
     consent,
     includesPerson: countPersons(pack.pack.data) > 0,
-    confirmPerson: () => gatePersonConfirm({ destination: 'ai', scopeLabel: '現状の説明の生成（選択した生成AI接続先へ課題・解決策・KPI/OKR の文章を送信）', data: pack.pack.data, consent: consentRecord, confirm: confirmViaUi }),
+    confirmPerson: () => gatePersonConfirm({ destination: 'ai', scopeLabel: tr('現状の説明の生成（選択した生成AI接続先へ課題・解決策・KPI/OKR の文章を送信）'), data: pack.pack.data, consent: consentRecord, confirm: confirmViaUi }),
     fetchView: () => fetchFoundryView(relayUrl, packId),
     ask: (req) => askFoundry(relayUrl, { packId, ...req }),
   }, session, snapshot, controller.signal);
@@ -76,6 +77,7 @@ export async function triggerExplain(): Promise<void> {
 }
 
 export function ExplainButton() {
+  const t = useT();
   const open = useExplainPanel((s) => s.open);
   return (
     <Button
@@ -85,7 +87,7 @@ export function ExplainButton() {
       aria-expanded={open}
       aria-controls={open ? 'explain-panel' : undefined}
       onClick={() => void triggerExplain()}
-    >現状の説明</Button>
+    >{t('現状の説明')}</Button>
   );
 }
 
@@ -98,6 +100,7 @@ function closePanel(): void {
 
 function Panel() {
   const s = useStyles();
+  const t = useT();
   const result = useExplainPanel((st) => st.result);
   const running = useExplainPanel((st) => st.running);
   const screenKey = useCurrentScreen((st) => st.key) || 'workspace';
@@ -111,26 +114,26 @@ function Panel() {
   const stale = !!result && result.screenKey !== screenKey;
   const o = result?.outcome;
   const level = budgetLevel(rollover(usage, new Date()), limits);
-  const warn = o && 'warning' in o ? o.warning : level !== 'ok' ? '概算の費用が予算の警告の割合に達しています（設定画面で確認できます）。' : undefined;
+  const warn = o && 'warning' in o ? o.warning : level !== 'ok' ? t('概算の費用が予算の警告の割合に達しています（設定画面で確認できます）。') : undefined;
   let body: ReactNode;
-  if (running) body = <Text role="status">生成しています…（「中止」で止められます）</Text>;
-  else if (!result) body = <Text>「現状の説明」ボタンで説明を作ります。</Text>;
-  else if (stale) body = <Text data-testid="explain-body">画面が切り替わりました。この画面（{labelOf(screenKey)}）の情報で説明を作り直すには「作り直す」を押してください。前の画面の説明は表示しません。</Text>;
+  if (running) body = <Text role="status">{t('生成しています…（「中止」で止められます）')}</Text>;
+  else if (!result) body = <Text>{t('「現状の説明」ボタンで説明を作ります。')}</Text>;
+  else if (stale) body = <Text data-testid="explain-body">{t('画面が切り替わりました。この画面（{screen}）の情報で説明を作り直すには「作り直す」を押してください。前の画面の説明は表示しません。', { screen: labelOf(screenKey) })}</Text>;
   else if (o?.kind === 'ai') {
     body = (
       <>
-        <Badge data-testid="ai-generated-label" appearance="tint" color="brand">AI 生成</Badge>
+        <Badge data-testid="ai-generated-label" appearance="tint" color="brand">{t('AI 生成')}</Badge>
         <pre data-testid="explain-body" className={s.text}>{o.text}</pre>
       </>
     );
   } else if (o?.kind === 'fallback') {
     body = (
       <>
-        <Text data-testid="explain-reason" weight="semibold">AI は使えません: {o.reasonText}</Text>
+        <Text data-testid="explain-reason" weight="semibold">{t('AI は使えません: {reason}', { reason: o.reasonText })}</Text>
         <pre data-testid="explain-body" className={s.text}>{o.text}</pre>
       </>
     );
-  } else if (o?.kind === 'cancelled') body = <Text data-testid="explain-body">生成を中止しました。</Text>;
+  } else if (o?.kind === 'cancelled') body = <Text data-testid="explain-body">{t('生成を中止しました。')}</Text>;
   else body = <Text data-testid="explain-body">{result?.notice ?? ''}</Text>;
   const truncated = !stale && !running && o && 'truncated' in o && o.truncated;
   return (
@@ -139,21 +142,21 @@ function Panel() {
       id="explain-panel"
       data-testid="explain-panel"
       data-screen={screenKey}
-      aria-label="現状の説明（サイドパネル）"
+      aria-label={t('現状の説明（サイドパネル）')}
       tabIndex={-1}
       className={s.panel}
       onKeyDown={onKey}
     >
       <div className={s.head}>
-        <Text as="h2" size={400} weight="semibold" className={s.grow}>現状の説明 — {labelOf(screenKey)}</Text>
-        {running ? <Button size="small" onClick={() => controller?.abort()}>中止</Button> : null}
-        <Button size="small" icon={<Dismiss16Regular />} onClick={closePanel}>閉じる</Button>
+        <Text as="h2" size={400} weight="semibold" className={s.grow}>{t('現状の説明 — {screen}', { screen: labelOf(screenKey) })}</Text>
+        {running ? <Button size="small" onClick={() => controller?.abort()}>{t('中止')}</Button> : null}
+        <Button size="small" icon={<Dismiss16Regular />} onClick={closePanel}>{t('閉じる')}</Button>
       </div>
       {result?.notice && !running ? <Text role="status" data-testid="explain-notice">{result.notice}</Text> : null}
-      {warn ? <Text role="alert" data-testid="explain-warning">警告: {warn}</Text> : null}
-      {truncated ? <Text role="status" data-testid="explain-truncated">入力が上限（{limits.inputMaxTokens} トークン）を超えるため、表示中の情報を切り詰めて送りました。</Text> : null}
+      {warn ? <Text role="alert" data-testid="explain-warning">{t('警告: {warning}', { warning: warn })}</Text> : null}
+      {truncated ? <Text role="status" data-testid="explain-truncated">{t('入力が上限（{max} トークン）を超えるため、表示中の情報を切り詰めて送りました。', { max: limits.inputMaxTokens })}</Text> : null}
       {body}
-      {stale && !running ? <div><Button appearance="primary" size="small" onClick={() => void triggerExplain()}>作り直す</Button></div> : null}
+      {stale && !running ? <div><Button appearance="primary" size="small" onClick={() => void triggerExplain()}>{t('作り直す')}</Button></div> : null}
     </aside>
   );
 }

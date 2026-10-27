@@ -1,6 +1,7 @@
 // 「現状の説明」の実行（FR-274・FR-276・FR-277）。部品はすべて差し替えられる（テストでは Foundry へ実接続せず、スタブで確かめる）。
 // 読み取り専用: 企業・Project・顧客パック・保存データには書かない。書くのは利用量の記録（日付・回数・トークン数・概算費用）だけ。
 import type { FoundryAskResult, FoundryView } from '../ai/foundryClient';
+import { tr } from '../i18n';
 import {
   buildFallback, buildPrompt, fitToTokens, parseAiExplanation, REASON_TEXT, type ExplainSnapshot, type UnavailableReason,
 } from './model';
@@ -31,10 +32,10 @@ export type ExplainOutcome =
   | { kind: 'cancelled' };
 
 const NOTICE_WARN = (cost: number, l: ExplainLimits): string =>
-  `概算の費用が予算（${l.budgetYen} 円）の ${l.warnPercent}% に達しました（今月の概算 ${Math.round(cost)} 円）。${l.stopPercent}% に達すると呼び出しを停止します。`;
+  tr('概算の費用が予算（{budget} 円）の {warn}% に達しました（今月の概算 {cost} 円）。{stop}% に達すると呼び出しを停止します。', { budget: l.budgetYen, warn: l.warnPercent, cost: Math.round(cost), stop: l.stopPercent });
 
 function fallback(snapshot: ExplainSnapshot, reason: UnavailableReason, extra: { resumeAt?: Date; truncated?: boolean; warning?: string } = {}): ExplainOutcome {
-  const reasonText = `${REASON_TEXT[reason]}${extra.resumeAt ? `。再開の時刻: ${formatAt(extra.resumeAt)}` : ''}`;
+  const reasonText = `${REASON_TEXT[reason]}${extra.resumeAt ? tr('。再開の時刻: {at}', { at: formatAt(extra.resumeAt) }) : ''}`;
   return { kind: 'fallback', reason, reasonText, text: buildFallback(snapshot), truncated: extra.truncated, warning: extra.warning };
 }
 
@@ -44,9 +45,9 @@ export async function runExplain(
   const limits = deps.limits();
   const now = deps.now();
   // (4) 生成中の二重の呼び出しと、最小の間隔に満たない再押下は呼び出さない
-  if (session.inFlight) return { kind: 'busy', message: '生成中です。完了か中止を待ってください' };
+  if (session.inFlight) return { kind: 'busy', message: tr('生成中です。完了か中止を待ってください') };
   const wait = intervalWait(session.lastStartMs, now.getTime(), limits);
-  if (wait > 0) return { kind: 'wait', waitSec: wait, message: `前回の呼び出しから ${limits.minIntervalSec} 秒たっていません。あと ${wait} 秒待ってから押してください` };
+  if (wait > 0) return { kind: 'wait', waitSec: wait, message: tr('前回の呼び出しから {min} 秒たっていません。あと {wait} 秒待ってから押してください', { min: limits.minIntervalSec, wait }) };
 
   // FR-277: AI が使えない条件（外部へは何も呼ばない）
   if (!deps.consent) return fallback(snapshot, 'consent');

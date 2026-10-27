@@ -5,6 +5,7 @@ import { Input, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Search20Regular } from '@fluentui/react-icons';
 import { useEntityGraph, useSelection } from '../selection/hooks';
 import { countHits, searchGraph } from './model';
+import { useT } from '../i18n';
 
 const ORIGIN = 'search';
 
@@ -44,6 +45,7 @@ const useStyles = makeStyles({
 
 export function GlobalSearch() {
   const s = useStyles();
+  const t = useT();
   const graph = useEntityGraph();
   const { select } = useSelection();
   const [query, setQuery] = useState('');
@@ -83,8 +85,8 @@ export function GlobalSearch() {
       <Input
         ref={input}
         type="search"
-        aria-label="検索"
-        placeholder="課題・解決策・製品を検索"
+        aria-label={t('検索')}
+        placeholder={t('課題・解決策・製品を検索')}
         contentBefore={<Search20Regular aria-hidden />}
         value={query}
         aria-controls={show ? resultsId : undefined}
@@ -99,12 +101,12 @@ export function GlobalSearch() {
           className={s.popup}
           data-testid="search-results"
           role={total > 0 ? 'listbox' : 'region'}
-          aria-label="検索結果"
+          aria-label={t('検索結果')}
         >
-          {total === 0 ? <Text role="status">該当なし</Text> : null}
+          {total === 0 ? <Text role="status">{t('該当なし')}</Text> : null}
           {groups.map((g) => (
-            <div key={g.kind} role="group" aria-label={`${g.label}（${g.hits.length} 件）`} className={s.group}>
-              <Text size={200} weight="semibold" aria-hidden>{g.label}</Text>
+            <div key={g.kind} role="group" aria-label={t('{label}（{n} 件）', { label: t(g.label), n: g.hits.length })} className={s.group}>
+              <Text size={200} weight="semibold" aria-hidden>{t(g.label)}</Text>
               {g.hits.map((n) => (
                 <div
                   key={n.id}
