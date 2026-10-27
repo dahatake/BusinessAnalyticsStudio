@@ -2,6 +2,7 @@
 // 各画面は、2D・3D の表現の有無と、世界区分を持つデータを表示するかを宣言する（ScreenDefinition.view）。
 // 切替の状態はレイアウトとして保存する（src/store/layout.ts の views。FR-014・FR-110）。
 import { WORLD_LABELS, tableWorldOfAll, type World } from '../schema/world';
+import { tr } from '../i18n';
 
 /** 表示形式（FR-217 の表示モード 2D／3D に、FR-238 の Graph を足したもの。同じ画面に二つの状態を持たない） */
 export type ViewMode = '2d' | '3d' | 'graph';
@@ -117,7 +118,7 @@ export function worldOptions(decl: ViewDecl): ViewOption<WorldView>[] {
 
 /** 「ビュー」ボタンに見せる文字（現在の表示モードと世界の表示。NFR-UX-018・D-01） */
 export function viewText(mode: ViewMode, world: WorldView): string {
-  return `${MODE_LABELS[mode]}・${WORLD_VIEW_LABELS[world]}`;
+  return `${tr(MODE_LABELS[mode])}・${tr(WORLD_VIEW_LABELS[world])}`;
 }
 
 /**
@@ -182,9 +183,9 @@ export function selectionHiddenIn(
 /** 1 つの世界の画面で、別の世界を選んだときに示す理由（§3.7 の分類） */
 export function singleWorldNote(decl: ViewDecl): string | null {
   if (decl.world !== 'real' && decl.world !== 'digital') return null;
-  const w = WORLD_VIEW_LABELS[decl.world];
-  const what = decl.basis ? `この画面の項目（${decl.basis}）` : 'この画面の項目';
-  return `${what}は §3.7 の分類で${w}の項目です。「ビュー」で「${w}」か「両方」を選ぶと表示します。`;
+  const w = tr(WORLD_VIEW_LABELS[decl.world]);
+  const what = decl.basis ? tr('この画面の項目（{basis}）', { basis: decl.basis }) : tr('この画面の項目');
+  return tr('{what}は §3.7 の分類で{w}の項目です。「ビュー」で「{w}」か「両方」を選ぶと表示します。', { what, w });
 }
 
 /** 画面の見出しの切替（全コンポーネントにまとめて効く）で、このコンポーネントに入れる値。対象外・表現のないものは変えない（undefined） */

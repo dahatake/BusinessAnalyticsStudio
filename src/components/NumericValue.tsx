@@ -3,6 +3,7 @@
 import { Text, Tooltip, makeStyles, tokens } from '@fluentui/react-components';
 import { sourceKindLabel } from '../analysis/model';
 import { usePackStore } from '../store/pack';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   value: {
@@ -26,18 +27,19 @@ export interface NumericValueProps {
 
 export function NumericValue({ children, sourceIds }: NumericValueProps) {
   const s = useStyles();
+  const t = useT();
   const state = usePackStore((st) => st.state);
   const sources = state.status === 'ready' ? state.pack.data.sources.sources : [];
   const found = sourceIds.map((id) => sources.find((x) => x.id === id)).filter((x): x is (typeof sources)[number] => x !== undefined);
 
   const content = (
     <div className={s.tip}>
-      {found.length === 0 ? <Text size={200}>出典の情報がありません</Text> : found.map((src) => (
+      {found.length === 0 ? <Text size={200}>{t('出典の情報がありません')}</Text> : found.map((src) => (
         <div key={src.id}>
-          <Text size={200} block weight="semibold">出典の種別: {sourceKindLabel(src.kind)}</Text>
+          <Text size={200} block weight="semibold">{t('出典の種別:')} {t(sourceKindLabel(src.kind))}</Text>
           <Text size={200} block>{src.title}</Text>
-          <Text size={200} block>取得日: {src.retrievedAt}</Text>
-          <Text size={200} block>確度: {src.confidence}</Text>
+          <Text size={200} block>{t('取得日:')} {src.retrievedAt}</Text>
+          <Text size={200} block>{t('確度:')} {src.confidence}</Text>
         </div>
       ))}
     </div>
