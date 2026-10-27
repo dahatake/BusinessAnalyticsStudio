@@ -2,6 +2,7 @@
 // キーは入力した瞬間に localhost の中継プロセスへ送るだけで、ブラウザーには保存しない（store にも持たない）。
 // 取得できるのは「設定済みか」と伏せ字だけ。
 import { create } from 'zustand';
+import { tr } from '../i18n';
 import { buildSsml, explainFailure, SPEECH_TIMEOUT_MS, type SpeechResult } from './speech';
 
 export interface RelaySpeechView {
@@ -40,9 +41,9 @@ export async function putSpeechConfig(
   try {
     const r = await f(`${relayUrl}/speech/config`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(input) });
     const j = (await r.json()) as RelaySpeechView & { error?: string };
-    return r.ok ? { ok: true, view: j } : { ok: false, message: j.error ?? '保存できませんでした' };
+    return r.ok ? { ok: true, view: j } : { ok: false, message: j.error ?? tr('保存できませんでした') };
   } catch {
-    return { ok: false, message: '中継プロセスに届きませんでした。`npm run relay` で起動しているか確認してください' };
+    return { ok: false, message: tr('中継プロセスに届きませんでした。`npm run relay` で起動しているか確認してください') };
   }
 }
 
