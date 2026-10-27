@@ -7,6 +7,7 @@ import { currentTopic, usePresentationStore } from '../store/presentation';
 import { CoreObjectPanel } from '../coreobject/CoreObjectPanel';
 import { LensView } from '../lens/LensView';
 import { useCoreObject } from '../store/coreObject';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   root: {
@@ -31,25 +32,26 @@ const useStyles = makeStyles({
 /** 常設の論点の一覧。プレゼンテーション中は現在の論点を選択中で示し、選ぶとその論点へ移る */
 function TopicList() {
   const s = useStyles();
+  const t = useT();
   const topics = usePackTopics();
   const current = usePresentationStore((st) => currentTopic(st));
   if (topics.length === 0) return null;
   return (
-    <div role="listbox" aria-label="論点" className={s.topics}>
-      {topics.map((t) => {
-        const selected = current?.id === t.id;
+    <div role="listbox" aria-label={t('論点')} className={s.topics}>
+      {topics.map((tp) => {
+        const selected = current?.id === tp.id;
         return (
           <div
-            key={t.id}
+            key={tp.id}
             role="option"
             aria-selected={selected}
             tabIndex={0}
-            title={t.title}
+            title={tp.title}
             className={mergeClasses(s.topic, selected ? s.topicOn : undefined)}
-            onClick={() => { const st = usePresentationStore.getState(); const i = st.topics.findIndex((x) => x.id === t.id); if (st.active && i >= 0) usePresentationStore.setState({ index: i }); }}
+            onClick={() => { const st = usePresentationStore.getState(); const i = st.topics.findIndex((x) => x.id === tp.id); if (st.active && i >= 0) usePresentationStore.setState({ index: i }); }}
             onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.currentTarget.click(); } }}
           >
-            <Text size={200}>{selected ? `現在: ${t.title}` : t.title}</Text>
+            <Text size={200}>{selected ? t('現在: {title}', { title: tp.title }) : tp.title}</Text>
           </div>
         );
       })}
@@ -59,18 +61,19 @@ function TopicList() {
 
 export function WorkspaceOverview() {
   const s = useStyles();
+  const t = useT();
   const { selected: core } = useCoreObject();
   const [showReason, setShowReason] = useState(false);
   return (
-    <section className={s.root} aria-label="中核オブジェクトとレンズ">
+    <section className={s.root} aria-label={t('中核オブジェクトとレンズ')}>
       <div className={s.row}>
         {core ? (
-          <div data-testid="core-object" data-entity-id={core.id} className={s.core} role="group" aria-label={`中核オブジェクト: ${core.name}`}>
-            <Text size={200}>中核オブジェクト</Text>
+          <div data-testid="core-object" data-entity-id={core.id} className={s.core} role="group" aria-label={t('中核オブジェクト: {name}', { name: core.name })}>
+            <Text size={200}>{t('中核オブジェクト')}</Text>
             <Text weight="semibold" size={400}>{core.name}</Text>
           </div>
-        ) : <Text size={200}>中核オブジェクト: 未設定</Text>}
-        <Button aria-expanded={showReason} aria-controls="core-object-reason" onClick={() => setShowReason((v) => !v)}>選定理由</Button>
+        ) : <Text size={200}>{t('中核オブジェクト: 未設定')}</Text>}
+        <Button aria-expanded={showReason} aria-controls="core-object-reason" onClick={() => setShowReason((v) => !v)}>{t('選定理由')}</Button>
       </div>
       <div id="core-object-reason">{showReason ? <CoreObjectPanel /> : null}</div>
       <TopicList />

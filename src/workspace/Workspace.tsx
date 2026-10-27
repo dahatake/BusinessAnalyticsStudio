@@ -28,6 +28,7 @@ import { registerCommands } from '../commands/registry';
 import { useStepper } from '../store/stepper';
 import { useStepFlow } from '../store/stepFlow';
 import { planStepFlow, stepRelevance } from '../stepper/flow';
+import { tr, useLang, useT } from '../i18n';
 
 const useStyles = makeStyles({
   // ドラッグ中に、置ける場所をドロップの前に示す（FR-142）。Fluent 2 のブランドの色トークンと 4px グリッド
@@ -233,6 +234,7 @@ const PanePortalBody = memo(function PanePortalBody({ Screen, info }: { Screen: 
 /** 境界の両側のコンポーネント（それぞれの先頭のキー）で、動かす分割を決める。自動の調整・最小の幅でタブにまとめた見た目でも、保存した木の正しい境界を動かす。 */
 function Separator({ a, b, dir, size, onActive }: { a: string; b: string; dir: 'row' | 'col'; size: number; onActive: (on: boolean) => void }) {
   const s = useStyles();
+  const t = useT();
   const resizeAt = useLayout((st) => st.resizeByKeys);
   const start = useRef<{ pos: number; total: number; last: number } | null>(null);
   const vertical = dir === 'row';
@@ -270,7 +272,7 @@ function Separator({ a, b, dir, size, onActive }: { a: string; b: string; dir: '
     <div
       role="separator"
       aria-orientation={vertical ? 'vertical' : 'horizontal'}
-      aria-label="コンポーネントの境界（矢印キーで大きさを変える）"
+      aria-label={t('コンポーネントの境界（矢印キーで大きさを変える）')}
       aria-valuemin={10}
       aria-valuemax={90}
       aria-valuenow={Math.round(size * 100)}
@@ -287,6 +289,8 @@ function Separator({ a, b, dir, size, onActive }: { a: string; b: string; dir: '
 
 export function Workspace({ screens }: { screens: readonly ScreenDefinition[] }) {
   const s = useStyles();
+  const t = useT();
+  const lang = useLang((st) => st.lang);
   const persona = useLayout((st) => st.persona);
   const stored = useLayout((st) => st.layouts);
   const tierOverrides = useLayout((st) => st.tiers[st.persona]);
@@ -311,7 +315,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   const [notice, setNotice] = useState<{ text: string; n: number } | null>(null);
   const noticeTimer = useRef<number | null>(null);
   const announce = useCallback((text: string) => {
-    setNotice((cur) => ({ text, n: (cur?.n ?? 0) + 1 }));
+    setNotice((cur) => ({ text: tr(text), n: (cur?.n ?? 0) + 1 }));
     if (noticeTimer.current !== null) window.clearTimeout(noticeTimer.current);
     noticeTimer.current = window.setTimeout(() => setNotice(null), 4000);
   }, []);
@@ -351,7 +355,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   // 狭い画面（縦積み）では自由配置を使わない。
   const baseKeys = useMemo(() => new Set(keysOf(base)), [base]);
   // コンポーネントの役割による分類と階層（主役→補助→詳細。FR-244）。ペルソナの構成と、いま表示中のものを対象にする
-  const tierInfo = useMemo(() => classify(persona, [...new Set([...personaKeys(persona), ...baseKeys])], tierOverrides), [persona, baseKeys, tierOverrides]);
+  const tierInfo = useMemo(() => classify(persona, [...new Set([...personaKeys(persona), ...baseKeys])], tierOverrides), [persona, baseKeys, tierOverrides, lang]);
   // 縮退: 幅が狭いとき、または、ピン止めの比率から求めた幅が最小の幅（PARAM-034）を下回るときは、縦積みにする（FR-216 AC-497）
   const pinTooNarrow = width > 0 && Object.entries(pinnedMap ?? {}).some(([k, r]) => baseKeys.has(k) && r.w * width < MIN_COMPONENT_WIDTH);
   const compact = narrowWs || pinTooNarrow;
@@ -402,7 +406,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     const zRank = zOrder.indexOf(key);
     const pinned = pinSet.has(key);
     const label = byKey(key)?.label ?? key;
-    const ti = tierInfo[key] ?? { tier: 'supporting' as const, reason: '補助: 役割が決まっていない（未分類の）ため、補助として扱い、主役の近く（右）に置きます。', overridden: false };
+    const ti = tierInfo[key] ?? { tier: 'supporting' as const, reason: tr('補助: 役割が決まっていない（未分類の）ため、補助として扱い、主役の近く（右）に置きます。'), overridden: false };
     return {
       key,
       pinned,
@@ -411,7 +415,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       tierOverridden: ti.overridden,
       ...(ti.role ? { role: ti.role } : {}),
       ...(ti.group ? { group: ti.group } : {}),
-      setTier: (t) => { actions().setTier(key, t); announce(t ? `${label}の階層を変更しました` : `${label}の階層を既定に戻しました`); },
+      setTier: (t) => { actions().setTier(key, t); announce(t ? tr('{label}の階層を変更しました', { label }) : tr('{label}の階層を既定に戻しました', { label })); },
       autoOn: !autoOffMap[persona],
       canUndoAuto: autoUndoState?.persona === persona,
       autoRun: () => autoRef.current.run(),
@@ -420,7 +424,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       step: stepRelevance(stepIdx, key, screens.map((sc) => sc.key)),
       togglePin: () => {
         // ピン止めを外す: すぐに動かせる（FR-216。一時的な固定）
-        if (isPinned(actions(), key)) { actions().setPinned(key, null); announce(`${label}のピン止めを外しました`); return; }
+        if (isPinned(actions(), key)) { actions().setPinned(key, null); announce(tr('{label}のピン止めを外しました', { label })); return; }
         // ピン止めする: いまの位置と大きさを、作業領域に対する比率で保持する。ほかは自由配置にして、重ならない位置に置く（FR-216）
         // 操作中のコンポーネントを大きくする自動の調整（FR-143）は、利用者が置いた配置ではないので、外した配置で測る（ピン止め中は大きさを変えない。FR-143 の例外）
         if (focusKey !== null && !compact) flushSync(() => setFocusKey(null));
@@ -433,7 +437,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
         } else {
           actions().setPinned(key, floatMap?.[key] ?? { x: 0, y: 0, w: 0.5, h: 0.5 });
         }
-        announce(`${label}をピン止めしました`);
+        announce(tr('{label}をピン止めしました', { label }));
       },
       maximized: isMax,
       expanded: expandedOut === key,
@@ -1092,7 +1096,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
           style={dropRect(drag.target.rect, drag.target.zone)}
         >
           <Text size={200} weight="semibold" className={s.dropLabel}>
-            {`${byKey(drag.key)?.label ?? drag.key}を${byKey(drag.target.key)?.label ?? drag.target.key}の${ZONE_LABEL[drag.target.zone]}`}
+            {t('{a}を{b}の{zone}', { a: byKey(drag.key)?.label ?? drag.key, b: byKey(drag.target.key)?.label ?? drag.target.key, zone: t(ZONE_LABEL[drag.target.zone]) })}
           </Text>
         </div>
       ) : null}
@@ -1122,7 +1126,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
         return (
           <>
             <div data-testid="snap-preview" aria-hidden className={mergeClasses(s.snapPreview, snapMotion.follow)} style={{ left: pr.left, top: pr.top, width: pr.width, height: pr.height }} />
-            <div data-testid="snap-candidates" role="group" aria-label="配置の候補" className={mergeClasses(s.snapPanel, snapMotion.appear)} style={panelPos}>
+            <div data-testid="snap-candidates" role="group" aria-label={t('配置の候補')} className={mergeClasses(s.snapPanel, snapMotion.appear)} style={panelPos}>
               {snapKindsFor(compact).map((k) => (
                 <Button
                   key={k}
@@ -1132,7 +1136,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
                   appearance={k === sn.kind ? 'primary' : 'secondary'}
                   aria-pressed={k === sn.kind}
                 >
-                  {SNAP_LABEL[k]}
+                  {t(SNAP_LABEL[k])}
                 </Button>
               ))}
             </div>
@@ -1142,7 +1146,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       <div data-testid="workspace-notice" role="status" aria-live="polite" className={notice ? s.notice : s.noticeIdle}>{notice?.text ?? ''}</div>
       <div ref={treeRef} className={s.treeBox} style={inset ? { ...inset, minHeight: 0 } : undefined}>
         {layout ? (compact ? renderStack(layout) : render(layout, [])) : (
-          <Text className={s.empty} size={400}>{outKeys.length > 0 ? '' : '表示中のコンポーネントがありません。左のドックから再表示してください。'}</Text>
+          <Text className={s.empty} size={400}>{outKeys.length > 0 ? '' : t('表示中のコンポーネントがありません。左のドックから再表示してください。')}</Text>
         )}
       </div>
       {outKeys.map((k) => {
