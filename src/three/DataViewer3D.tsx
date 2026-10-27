@@ -10,6 +10,7 @@ import { TEXT, tokens } from '../theme/tokens';
 import { DETAIL_LABELS, fitDistance, type DetailLevel, type ViewerCluster, type ViewerLayout } from '../datacatalog/viewer';
 import { highlightOf, lineStyleOf, type relatedOf, type ViewerRelation } from '../datacatalog/relations';
 import { NO_COLUMNS_LABEL } from '../datacatalog/model';
+import { useT } from '../i18n';
 
 const card = sceneCardStyle;
 const cardOn = sceneCardSelectedStyle;
@@ -45,13 +46,14 @@ export interface DataViewer3DProps {
 }
 
 export function DataViewer3D({ clusters, layout, level, zoom, selectedKey, activeCluster, onSelect, onCluster, relations = [], related = null, detailKeys = null }: DataViewer3DProps) {
+  const t = useT();
   const pos = useMemo(() => new Map(layout.entities.map((p) => [p.key, p])), [layout]);
   const sel = selectedKey ? pos.get(selectedKey) : undefined;
   const focus: [number, number, number] = sel ? [sel.x, 0, sel.z] : [0, 0, 0];
   // ①の線（エンティティ間）。簡略表示では選択に関わるものだけ描く。線の種類は線種（実線）とラベルで示す（色だけに頼らない）
   const lines = useMemo(() => relations.filter((r) => r.kind === 'entity' && (!detailKeys || (related?.relations.includes(r) ?? false))), [relations, detailKeys, related]);
   return (
-    <DiagramCanvas label={`データビュアー（3D）。詳細度は ${DETAIL_LABELS[level]}。ホイール・ピンチ・ボタン・キーで拡大縮小できます`} cameraPosition={[6, 12, 10]}>
+    <DiagramCanvas label={t('データビュアー（3D）。詳細度は {level}。ホイール・ピンチ・ボタン・キーで拡大縮小できます', { level: t(DETAIL_LABELS[level]) })} cameraPosition={[6, 12, 10]}>
       <CameraDriver zoom={zoom} focus={focus} extent={layout.extent} />
       {lines.map((r) => {
         const a = pos.get(r.entityKeys[0]!); const b = pos.get(r.entityKeys[1]!);
@@ -62,7 +64,7 @@ export function DataViewer3D({ clusters, layout, level, zoom, selectedKey, activ
             <Line points={[[a.x, 0.3, a.z], [b.x, 0.3, b.z]]} color={hot ? '#0f6cbd' : '#8a8a8a'} lineWidth={hot ? 3 : 1} transparent opacity={hot ? 1 : 0.3} />
             {hot && level !== 'bird' ? (
               <Html center position={[(a.x + b.x) / 2, 0.5, (a.z + b.z) / 2]} zIndexRange={[4, 0]}>
-                <div style={sceneRelationLabelStyle} data-relation-label={r.label}>{lineStyleOf(r).label}: {r.label}</div>
+                <div style={sceneRelationLabelStyle} data-relation-label={r.label}>{t(lineStyleOf(r).label)}: {r.label}</div>
               </Html>
             ) : null}
           </group>
@@ -80,7 +82,7 @@ export function DataViewer3D({ clusters, layout, level, zoom, selectedKey, activ
                 role="option" aria-selected={activeCluster === c.name} tabIndex={-1} data-viewer-cluster={c.name} style={activeCluster === c.name ? cardOn : card}
                 onClick={() => onCluster(c.name)}
               >
-                <strong>{c.name}</strong><div>{clusters.find((k) => k.name === c.name)?.entities.length ?? 0} 件</div>
+                <strong>{c.name}</strong><div>{t('{n} 件', { n: clusters.find((k) => k.name === c.name)?.entities.length ?? 0 })}</div>
               </div>
             </Html>
           ) : null}
@@ -105,12 +107,12 @@ export function DataViewer3D({ clusters, layout, level, zoom, selectedKey, activ
                   role="option" aria-selected={on} tabIndex={-1} data-viewer-entity={e.name} data-highlight={h} style={{ ...(on ? cardOn : card), ...(dim ? { opacity: 0.4 } : {}), ...(h === 'related' ? { borderStyle: 'dashed' } : {}) }}
                   onClick={() => onSelect(e.key)}
                 >
-                  <strong>{on ? `${e.name}（選択中）` : h === 'related' ? `${e.name}（関連）` : e.name}</strong>
+                  <strong>{on ? t('{name}（選択中）', { name: e.name }) : h === 'related' ? t('{name}（関連）', { name: e.name }) : e.name}</strong>
                   <div style={TEXT.caption1}>{e.description}</div>
                   {level === 'column' ? (
                     e.columns.length === 0
-                      ? <div data-viewer-nocolumns>{NO_COLUMNS_LABEL}</div>
-                      : <ul style={{ margin: `${tokens.spacingVerticalXXS} 0 0`, paddingLeft: tokens.spacingHorizontalM }}>{e.columns.map((col, i) => <li key={i} data-viewer-column={col.name}>{col.name}{col.type ? `（${col.type}）` : ''}</li>)}</ul>
+                      ? <div data-viewer-nocolumns>{t(NO_COLUMNS_LABEL)}</div>
+                      : <ul style={{ margin: `${tokens.spacingVerticalXXS} 0 0`, paddingLeft: tokens.spacingHorizontalM }}>{e.columns.map((col, i) => <li key={i} data-viewer-column={col.name}>{col.name}{col.type ? t('（{type}）', { type: col.type }) : ''}</li>)}</ul>
                   ) : null}
                 </div>
               </Html>

@@ -19,6 +19,7 @@ import { getChangeLog } from './changelog';
 import { deliver, hasFileSystemAccess } from './deliver';
 import { MarkdownPreview } from './MarkdownPreview';
 import { useExportUi } from './ui';
+import { tr, useT } from '../i18n';
 import { createZip } from './zip';
 
 const useStyles = makeStyles({
@@ -69,22 +70,23 @@ export async function quickSaveAll(): Promise<void> {
   try {
     const anonymize = countInternal(input.data) > 0;
     // FR-219: 種別「人」を含むときは、出力の前に確認を通す（了承の記録がなければ出力しない）
-    const gate = await gatePersonConfirm({ destination: 'export', scopeLabel: SCOPE_LABELS.all, data: input.data, consent: consentOf(input.data), confirm: confirmViaUi });
+    const gate = await gatePersonConfirm({ destination: 'export', scopeLabel: tr(SCOPE_LABELS.all), data: input.data, consent: consentOf(input.data), confirm: confirmViaUi });
     if (!gate.allowed) {
-      if (gate.reason) setNotice({ kind: 'error', title: 'エクスポートしませんでした', lines: [gate.reason] });
+      if (gate.reason) setNotice({ kind: 'error', title: tr('エクスポートしませんでした'), lines: [gate.reason] });
       return;
     }
     const r = buildExport(input, { scope: 'all', screenKey: '', themeId: '', anonymize, format: 'md', followUp: false });
     const res = await deliver(r.fileName, r.markdown, false);
-    if (res.ok) setNotice({ kind: 'success', title: 'エクスポートしました', lines: [res.name, 'ブラウザーのダウンロードとして保存しました。'] });
-    else if (!res.cancelled) setNotice({ kind: 'error', title: 'エクスポートできませんでした', lines: [res.reason] });
+    if (res.ok) setNotice({ kind: 'success', title: tr('エクスポートしました'), lines: [res.name, tr('ブラウザーのダウンロードとして保存しました。')] });
+    else if (!res.cancelled) setNotice({ kind: 'error', title: tr('エクスポートできませんでした'), lines: [res.reason] });
   } catch (e) {
-    setNotice({ kind: 'error', title: 'エクスポートできませんでした', lines: [e instanceof Error ? e.message : String(e)] });
+    setNotice({ kind: 'error', title: tr('エクスポートできませんでした'), lines: [e instanceof Error ? e.message : String(e)] });
   }
 }
 
 export function ExportDialog({ screens }: { screens: readonly ExportScreenRef[] }) {
   const s = useStyles();
+  const t = useT();
   const open = useExportUi((u) => u.open);
   const close = useExportUi((u) => u.closeDialog);
   const setNotice = useExportUi((u) => u.setNotice);
@@ -127,7 +129,7 @@ export function ExportDialog({ screens }: { screens: readonly ExportScreenRef[] 
     setError(null);
     try {
       // FR-219: 種別「人」を含むときは、プレビューの後・出力の前に確認を通す。了承の記録がなければ出力しない
-      const gate = await gatePersonConfirm({ destination: 'export', scopeLabel: SCOPE_LABELS[scope], data: input.data, consent: consentOf(input.data), confirm: confirmViaUi });
+      const gate = await gatePersonConfirm({ destination: 'export', scopeLabel: t(SCOPE_LABELS[scope]), data: input.data, consent: consentOf(input.data), confirm: confirmViaUi });
       if (!gate.allowed) { setBusy(false); return; }
       const r = buildExport(input, { ...options, format: asZip ? 'zip' : format });
       const bytes = asZip || format === 'zip' ? createZip(r.files, input.now) : r.markdown;
@@ -135,15 +137,15 @@ export function ExportDialog({ screens }: { screens: readonly ExportScreenRef[] 
       const res = await deliver(fileName, bytes, useFileSystem);
       if (res.ok) {
         setNotice({
-          kind: 'success', title: 'エクスポートしました',
-          lines: [res.name, ...(res.method === 'download' ? ['ブラウザーのダウンロードとして保存しました。'] : [])],
+          kind: 'success', title: t('エクスポートしました'),
+          lines: [res.name, ...(res.method === 'download' ? [t('ブラウザーのダウンロードとして保存しました。')] : [])],
         });
         close();
       } else if (!res.cancelled) {
         setError(res.reason);
       }
     } catch (e) {
-      setError(`書き出しに失敗しました（${e instanceof Error ? e.message : String(e)}）。`);
+      setError(t('書き出しに失敗しました（{msg}）。', { msg: e instanceof Error ? e.message : String(e) }));
     } finally {
       setBusy(false);
     }
@@ -151,87 +153,87 @@ export function ExportDialog({ screens }: { screens: readonly ExportScreenRef[] 
 
   return (
     <Dialog open={open} onOpenChange={(_, d) => { if (!d.open) close(); }}>
-      <DialogSurface aria-label="エクスポート" className={s.surface}>
+      <DialogSurface aria-label={t('エクスポート')} className={s.surface}>
         <DialogBody>
-          <DialogTitle>エクスポート</DialogTitle>
+          <DialogTitle>{t('エクスポート')}</DialogTitle>
           <DialogContent>
-            {!input ? <Spinner label="データを読み込み中" /> : (
+            {!input ? <Spinner label={t('データを読み込み中')} /> : (
               <div className={s.content}>
                 <div className={s.options}>
-                  <Field label="出力範囲">
+                  <Field label={t('出力範囲')}>
                     <RadioGroup value={scope} onChange={(_, d) => setScope(d.value as ExportScope)}>
-                      {SCOPES.map((k) => <Radio key={k} value={k} label={SCOPE_LABELS[k]} />)}
+                      {SCOPES.map((k) => <Radio key={k} value={k} label={t(SCOPE_LABELS[k])} />)}
                     </RadioGroup>
                   </Field>
                   {scope === 'screen' ? (
-                    <Field label="画面">
+                    <Field label={t('画面')}>
                       <Select value={effScreen} onChange={(_, d) => setScreenKey(d.value)}>
                         {screens.map((x) => <option key={x.key} value={x.key}>{x.label}</option>)}
                       </Select>
                     </Field>
                   ) : null}
                   {scope === 'theme' ? (
-                    <Field label="テーマ" hint={themes.length === 0 ? '議論テーマがまだありません。' : undefined}>
+                    <Field label={t('テーマ')} hint={themes.length === 0 ? t('議論テーマがまだありません。') : undefined}>
                       <Select value={effTheme} onChange={(_, d) => setThemeId(d.value)} disabled={themes.length === 0}>
-                        {themes.map((t) => <option key={t.id} value={t.id}>{t.title}</option>)}
+                        {themes.map((th) => <option key={th.id} value={th.id}>{th.title}</option>)}
                       </Select>
                     </Field>
                   ) : null}
-                  <Field label="形式" hint={fsa ? '保存先は、保存のダイアログで指定します。' : 'このブラウザーは保存先の指定に対応していないため、ダウンロードで保存します。'}>
+                  <Field label={t('形式')} hint={fsa ? t('保存先は、保存のダイアログで指定します。') : t('このブラウザーは保存先の指定に対応していないため、ダウンロードで保存します。')}>
                     <RadioGroup layout="horizontal" value={format} onChange={(_, d) => setFormat(d.value as ExportFormat)}>
                       <Radio value="md" label=".md" />
                       <Radio value="zip" label=".zip" />
                     </RadioGroup>
                   </Field>
-                  <Text size={200} className={s.hint}>.zip は Markdown と、図の画像（assets/）をまとめます。.md は 1 ファイルです。</Text>
+                  <Text size={200} className={s.hint}>{t('.zip は Markdown と、図の画像（assets/）をまとめます。.md は 1 ファイルです。')}</Text>
                   <Checkbox
                     checked={anonymize}
                     onChange={(_, d) => { setAnonymize(!!d.checked); setRawConfirmed(false); }}
-                    label="WorkIQ 由来の社内情報を匿名化する"
+                    label={t('WorkIQ 由来の社内情報を匿名化する')}
                   />
                   {internalCount > 0 && anonymize ? (
-                    <Text size={200} className={s.hint}>機密区分 internal の項目 {internalCount} 件を「{ANONYMIZED_LABEL}」に置き換えます。</Text>
+                    <Text size={200} className={s.hint}>{t('機密区分 internal の項目 {n} 件を「{label}」に置き換えます。', { n: internalCount, label: ANONYMIZED_LABEL })}</Text>
                   ) : null}
                   {needsRawConfirm ? (
                     <MessageBar intent="warning" layout="multiline">
                       <MessageBarBody>
-                        <MessageBarTitle>社内限定の情報を含みます</MessageBarTitle>
-                        機密区分 internal の項目が {internalCount} 件あります。そのまま出力すると、社外に渡す資料に社内限定の情報が入ります。
-                        <Checkbox checked={rawConfirmed} onChange={(_, d) => setRawConfirmed(!!d.checked)} label="社内限定の情報をそのまま出力することを確認しました" />
+                        <MessageBarTitle>{t('社内限定の情報を含みます')}</MessageBarTitle>
+                        {t('機密区分 internal の項目が {n} 件あります。そのまま出力すると、社外に渡す資料に社内限定の情報が入ります。', { n: internalCount })}
+                        <Checkbox checked={rawConfirmed} onChange={(_, d) => setRawConfirmed(!!d.checked)} label={t('社内限定の情報をそのまま出力することを確認しました')} />
                       </MessageBarBody>
                     </MessageBar>
                   ) : null}
-                  <Checkbox checked={followUp} onChange={(_, d) => setFollowUp(!!d.checked)} label="フォローアップ文書も生成する（次回アジェンダ・確認依頼事項・合意事項サマリー）" />
+                  <Checkbox checked={followUp} onChange={(_, d) => setFollowUp(!!d.checked)} label={t('フォローアップ文書も生成する（次回アジェンダ・確認依頼事項・合意事項サマリー）')} />
                 </div>
                 <div className={s.previewPane}>
-                  <Text weight="semibold">プレビュー</Text>
-                  <div className={s.preview} data-testid="export-preview" tabIndex={0} role="region" aria-label="エクスポートのプレビュー">
+                  <Text weight="semibold">{t('プレビュー')}</Text>
+                  <div className={s.preview} data-testid="export-preview" tabIndex={0} role="region" aria-label={t('エクスポートのプレビュー')}>
                     {built ? <MarkdownPreview source={built.preview} /> : null}
                   </div>
-                  {built ? <Text size={200} className={s.hint}>出力ファイル: {built.fileName}</Text> : null}
+                  {built ? <Text size={200} className={s.hint}>{t('出力ファイル: {name}', { name: built.fileName })}</Text> : null}
                 </div>
               </div>
             )}
             {busy ? (
               <div role="status" aria-live="polite" aria-busy="true" data-testid="export-progress">
-                <Spinner size="tiny" label="書き出し中…（保存先の指定を取り消すこともできます）" />
+                <Spinner size="tiny" label={t('書き出し中…（保存先の指定を取り消すこともできます）')} />
               </div>
             ) : null}
             {error ? (
               <div role="alert" data-testid="export-error">
                 <MessageBar intent="error" layout="multiline">
                   <MessageBarBody>
-                    <MessageBarTitle>エクスポートに失敗しました</MessageBarTitle>
-                    {error} 設定と編集中のデータは変わっていません。ZIP でダウンロードすると、保存先を使わずに書き出せます。
+                    <MessageBarTitle>{t('エクスポートに失敗しました')}</MessageBarTitle>
+                    {error} {t('設定と編集中のデータは変わっていません。ZIP でダウンロードすると、保存先を使わずに書き出せます。')}
                   </MessageBarBody>
                 </MessageBar>
-                <Button icon={<ArrowDownload24Regular aria-hidden />} onClick={() => void run(true, false)} disabled={busy}>ZIP でダウンロード</Button>
+                <Button icon={<ArrowDownload24Regular aria-hidden />} onClick={() => void run(true, false)} disabled={busy}>{t('ZIP でダウンロード')}</Button>
               </div>
             ) : null}
           </DialogContent>
           <DialogActions>
-            <Button appearance="secondary" icon={<Dismiss24Regular aria-hidden />} onClick={close}>閉じる</Button>
-            <Button appearance="primary" icon={<ArrowExport24Regular aria-hidden />} disabled={!canExport} onClick={() => void run(false, true)}>エクスポート</Button>
+            <Button appearance="secondary" icon={<Dismiss24Regular aria-hidden />} onClick={close}>{t('閉じる')}</Button>
+            <Button appearance="primary" icon={<ArrowExport24Regular aria-hidden />} disabled={!canExport} onClick={() => void run(false, true)}>{t('エクスポート')}</Button>
           </DialogActions>
         </DialogBody>
       </DialogSurface>
