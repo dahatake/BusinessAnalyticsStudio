@@ -5,8 +5,10 @@ import { BoardSurface } from '../ink/BoardSurface';
 import { PRESENTATION_BOARD_ID, PRESENTATION_VIEW_KEY, usePresentationInk } from '../ink/presentationInk';
 import { useInk } from '../ink/store';
 import { currentTopic, usePresentationStore } from '../store/presentation';
+import { useT } from '../i18n';
 
 export function PresentationInkLayer() {
+  const t = useT();
   const presenting = usePresentationStore((st) => currentTopic(st) !== null);
   const mode = usePresentationInk((st) => st.mode);
   const ensureAnnotationBoard = useInk((st) => st.ensureAnnotationBoard);
@@ -16,7 +18,7 @@ export function PresentationInkLayer() {
     <BoardSurface
       boardId={PRESENTATION_BOARD_ID}
       testId="presentation-ink"
-      ariaLabel="プレゼン中の注釈"
+      ariaLabel={t('プレゼン中の注釈')}
       overlay
       active={mode !== 'off'}
       temporary={mode === 'temporary'}

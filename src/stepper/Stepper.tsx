@@ -4,6 +4,7 @@ import { Checkmark16Regular, ChevronRight20Regular } from '@fluentui/react-icons
 import { STEPS, STEP_STATE_LABEL, stepState } from './model';
 import { useStepper } from '../store/stepper';
 import { useStepFlow } from '../store/stepFlow';
+import { useT } from '../i18n';
 
 /** 操作の大きさの下限（px。FR-228 AC-528・WCAG 2.2 の目標サイズ） */
 const TARGET = 44;
@@ -52,11 +53,12 @@ export interface StepperProps {
 
 export function Stepper({ onNavigate }: StepperProps) {
   const s = useStyles();
+  const t = useT();
   const current = useStepper((st) => st.current);
   const setCurrent = useStepper((st) => st.setCurrent);
   const tracked = useStepper((st) => st.projectId !== null); // FR-136 AC-372: Project を開いていないデモは完了済みを持たない
   return (
-    <nav aria-label="業務改善ステップ" data-testid="stepper" className={s.root}>
+    <nav aria-label={t('業務改善ステップ')} data-testid="stepper" className={s.root}>
       <ol className={s.list}>
         {STEPS.map((step, i) => {
           const state = stepState(i, current, tracked);
@@ -67,7 +69,7 @@ export function Stepper({ onNavigate }: StepperProps) {
                 appearance={state === 'current' ? 'primary' : 'secondary'}
                 className={mergeClasses(s.step, state === 'done' && s.done, state === 'not-started' && s.pending)}
                 aria-current={state === 'current' ? 'step' : undefined}
-                title={STEP_STATE_LABEL[state]}
+                title={t(STEP_STATE_LABEL[state])}
                 onClick={() => {
                   setCurrent(i);
                   onNavigate(step.screen);
@@ -76,7 +78,7 @@ export function Stepper({ onNavigate }: StepperProps) {
                 }}
               >
                 <span data-step-number aria-hidden className={s.badge}>{i + 1}</span>
-                {step.label}
+                {t(step.label)}
                 {state === 'done' ? <Checkmark16Regular aria-hidden /> : null}
               </Button>
               {i < STEPS.length - 1 ? (

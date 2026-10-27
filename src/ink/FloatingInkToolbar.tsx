@@ -13,6 +13,7 @@ import { effectiveLayout, useLayout } from '../store/layout';
 import { currentTopic, usePresentationStore } from '../store/presentation';
 import { useSettings } from '../store/settings';
 import { isVisible } from '../workspace/layoutModel';
+import { useT } from '../i18n';
 
 /** 操作がなければ畳むまでの時間（ミリ秒）。 */
 export const AUTO_STOW_MS = 30_000;
@@ -39,6 +40,7 @@ export interface FloatingInkToolbarProps {
 
 export function FloatingInkToolbar({ boardId, label = 'インクの道具', whiteboard = false }: FloatingInkToolbarProps) {
   const s = useStyles();
+  const t = useT();
   const handedness = useSettings((st) => st.handedness);
   const [stowed, setStowed] = useState(false);
   const [dim, setDim] = useState(false);
@@ -89,11 +91,11 @@ export function FloatingInkToolbar({ boardId, label = 'インクの道具', whit
       onKeyDownCapture={() => { if (!stowed) armIdle(); }}
     >
       {stowed ? (
-        <Button className={s.forcedAuto} appearance="primary" icon={<PenSparkle24Regular aria-hidden />} aria-label="ツールバーを開く" onClick={() => setStowed(false)} />
+        <Button className={s.forcedAuto} appearance="primary" icon={<PenSparkle24Regular aria-hidden />} aria-label={t('ツールバーを開く')} onClick={() => setStowed(false)} />
       ) : (
         <div className={`${s.panel} ${dim ? s.dim : ''}`}>
           <InkToolbar boardId={boardId} label={label} whiteboard={whiteboard} compact />
-          <Button size="small" appearance="subtle" icon={<Dismiss16Regular aria-hidden />} aria-label="ツールバーを格納" onClick={() => setStowed(true)} />
+          <Button size="small" appearance="subtle" icon={<Dismiss16Regular aria-hidden />} aria-label={t('ツールバーを格納')} onClick={() => setStowed(true)} />
         </div>
       )}
     </div>

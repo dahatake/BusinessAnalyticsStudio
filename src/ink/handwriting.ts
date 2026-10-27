@@ -1,6 +1,7 @@
 // 手書き文字の認識（FR-090）。認識の接続先（外部サービス）は Q-002 の推奨案 A に従い、初回はモックだけにして、
 // 接続部品の差し替え口（setHandwritingRecognizer）だけを用意する。外部サービスには接続しない。
 import type { Stroke } from './model';
+import { tr } from '../i18n';
 
 /** 認識結果として反映した項目に付けるラベル（AC-109）。 */
 export const RECOGNIZED_LABEL = 'AI 生成（認識結果）';
@@ -21,7 +22,7 @@ export const mockRecognizer: HandwritingRecognizer = {
   id: 'mock',
   recognize: async (strokes) => {
     const n = strokes.length;
-    return { text: `手書きメモ（${n} 画。モックの認識結果）`, mock: true };
+    return { text: tr('手書きメモ（{n} 画。モックの認識結果）', { n }), mock: true };
   },
 };
 

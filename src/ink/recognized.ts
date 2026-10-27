@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { newId } from './model';
 import { RECOGNIZED_LABEL } from './handwriting';
+import { tr } from '../i18n';
 
 export type RecognizedKind = 'decision' | 'action';
 
@@ -51,4 +52,7 @@ export const useRecognized = create<RecognizedState>()(
   ),
 );
 
-export const KIND_LABEL: Record<RecognizedKind, string> = { decision: '決定事項', action: '次のアクション' };
+export const KIND_LABEL: Record<RecognizedKind, string> = {
+  get decision() { return tr('決定事項'); },
+  get action() { return tr('次のアクション'); },
+};

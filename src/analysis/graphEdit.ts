@@ -1,15 +1,16 @@
 // ナレッジグラフの編集（FR-037 AC-045）。ノード・エッジの追加と削除を、顧客パックのデータの書き換えとして行う。
 // 結果は新しいパックのデータで、表・課題-解決策分析など他のビューがそのまま読む。画面・ストアを参照しない純粋なモジュール。
 import type { DataChange } from '../edit/model';
+import { tr } from '../i18n';
 import { REFERENCE_KEYS, type PackData } from '../schema';
 import type { GraphEdge, NodeKind } from '../selection/graph';
 
 export const ADDABLE_KINDS: ReadonlyArray<{ kind: Extract<NodeKind, 'issue' | 'solution' | 'product' | 'feature' | 'entity'>; label: string }> = [
-  { kind: 'issue', label: '課題' },
-  { kind: 'solution', label: '解決策' },
-  { kind: 'product', label: '製品' },
-  { kind: 'feature', label: '機能' },
-  { kind: 'entity', label: 'エンティティ' },
+  { kind: 'issue', get label() { return tr('課題'); } },
+  { kind: 'solution', get label() { return tr('解決策'); } },
+  { kind: 'product', get label() { return tr('製品'); } },
+  { kind: 'feature', get label() { return tr('機能'); } },
+  { kind: 'entity', get label() { return tr('エンティティ'); } },
 ];
 export type AddableKind = (typeof ADDABLE_KINDS)[number]['kind'];
 
@@ -50,7 +51,7 @@ const trim = (s: string): string => s.trim();
 /** ノードを追加する。解決策は課題（`linkTo` の課題、なければ最初の課題）に紐づく。 */
 export function addNode(data: PackData, kind: AddableKind, name: string, linkTo?: string): EditResult {
   const label = trim(name);
-  if (label === '') return { ok: false, reason: '名前を入力してください。' };
+  if (label === '') return { ok: false, reason: tr('名前を入力してください。') };
   const next = clone(data);
   const id = newRecordId(kind);
   switch (kind) {
@@ -59,7 +60,7 @@ export function addNode(data: PackData, kind: AddableKind, name: string, linkTo?
       break;
     case 'solution': {
       const target = linkTo && next.issues.issues.some((i) => i.id === linkTo) ? linkTo : next.issues.issues[0]?.id;
-      if (!target) return { ok: false, reason: '解決策を紐づける課題がありません。先に課題を追加してください。' };
+      if (!target) return { ok: false, reason: tr('解決策を紐づける課題がありません。先に課題を追加してください。') };
       next.issues.solutions.push({ id, createdBy: 'human', issueId: target, issueIds: [target], title: label });
       break;
     }
@@ -73,21 +74,21 @@ export function addNode(data: PackData, kind: AddableKind, name: string, linkTo?
       next.entities.entities.push({ id, createdBy: 'human', type: 'other', name: label });
       break;
   }
-  return { ok: true, data: next, id, changes: [{ op: 'add', entityId: id, entityLabel: label, fieldLabel: 'ノード', before: '', after: label }] };
+  return { ok: true, data: next, id, changes: [{ op: 'add', entityId: id, entityLabel: label, fieldLabel: tr('ノード'), before: '', after: label }] };
 }
 
 /** エッジを追加する。始点のレコードの `relatedIds` に終点を足す（グラフの辺は ID の参照から作られる）。 */
 export function addEdge(data: PackData, from: string, to: string): EditResult {
-  if (!from || !to) return { ok: false, reason: '始点と終点を選んでください。' };
-  if (from === to) return { ok: false, reason: '始点と終点が同じです。別のノードを選んでください。' };
+  if (!from || !to) return { ok: false, reason: tr('始点と終点を選んでください。') };
+  if (from === to) return { ok: false, reason: tr('始点と終点が同じです。別のノードを選んでください。') };
   const next = clone(data);
   const rec = findRecord(next, from);
-  if (!rec || !findRecord(next, to)) return { ok: false, reason: '選んだノードが見つかりません。' };
+  if (!rec || !findRecord(next, to)) return { ok: false, reason: tr('選んだノードが見つかりません。') };
   const cur = Array.isArray(rec.relatedIds) ? (rec.relatedIds as string[]) : [];
-  if (cur.includes(to)) return { ok: false, reason: 'そのエッジはすでにあります。' };
+  if (cur.includes(to)) return { ok: false, reason: tr('そのエッジはすでにあります。') };
   rec.relatedIds = [...cur, to];
   const nameOf = (id: string): string => String(findRecord(next, id)?.title ?? findRecord(next, id)?.name ?? findRecord(next, id)?.label ?? id);
-  return { ok: true, data: next, changes: [{ op: 'update', entityId: from, entityLabel: nameOf(from), fieldLabel: 'エッジ（関連）', before: '', after: `→ ${nameOf(to)}` }] };
+  return { ok: true, data: next, changes: [{ op: 'update', entityId: from, entityLabel: nameOf(from), fieldLabel: tr('エッジ（関連）'), before: '', after: `→ ${nameOf(to)}` }] };
 }
 
 /** 削除すると壊れる必須の参照（解決策の issueId など） */
@@ -96,7 +97,7 @@ const REQUIRED_SCALAR = new Set(['issueId']);
 /** ノードを削除する。ほかのレコードからの参照（配列の要素・任意の参照・アーキテクチャの接続）も取り除く。必須の参照が残るときは削除しない。 */
 export function removeNode(data: PackData, id: string): EditResult {
   const next = clone(data);
-  if (!findRecord(next, id)) return { ok: false, reason: '選んだノードが見つかりません。' };
+  if (!findRecord(next, id)) return { ok: false, reason: tr('選んだノードが見つかりません。') };
   const blockers: string[] = [];
   const scan = (v: unknown): void => {
     if (Array.isArray(v)) { v.forEach(scan); return; }
@@ -106,7 +107,7 @@ export function removeNode(data: PackData, id: string): EditResult {
   };
   scan(next);
   if (blockers.length > 0) {
-    return { ok: false, reason: `「${blockers.join('」「')}」がこのノードに必須で紐づいているため削除できません。先に削除してください。` };
+    return { ok: false, reason: tr('「{names}」がこのノードに必須で紐づいているため削除できません。先に削除してください。', { names: blockers.join('」「') }) };
   }
   const refKeys = new Set<string>(REFERENCE_KEYS);
   const strip = (v: unknown): unknown => {
@@ -128,15 +129,15 @@ export function removeNode(data: PackData, id: string): EditResult {
   };
   const label0 = String(findRecord(next, id)?.title ?? findRecord(next, id)?.name ?? findRecord(next, id)?.label ?? id);
   const stripped = strip(next) as PackData;
-  return { ok: true, data: stripped, changes: [{ op: 'delete', entityId: id, entityLabel: label0, fieldLabel: 'ノード', before: label0, after: '' }] };
+  return { ok: true, data: stripped, changes: [{ op: 'delete', entityId: id, entityLabel: label0, fieldLabel: tr('ノード'), before: label0, after: '' }] };
 }
 
 /** エッジを削除する。参照の辺はその参照を取り除き、アーキテクチャの接続は接続を取り除く。包含や必須の参照は削除できない。 */
 export function removeEdge(data: PackData, edge: Pick<GraphEdge, 'from' | 'to' | 'kind' | 'label'>): EditResult {
   const next = clone(data);
   const nameOf = (id: string): string => String(findRecord(next, id)?.title ?? findRecord(next, id)?.name ?? findRecord(next, id)?.label ?? id);
-  const changes: DataChange[] = [{ op: 'delete', entityId: edge.from, entityLabel: nameOf(edge.from), fieldLabel: 'エッジ（関連）', before: `→ ${nameOf(edge.to)}`, after: '' }];
-  if (edge.kind === 'contain') return { ok: false, reason: '章と論点の包含は、エッジとしては削除できません。論点のノードを削除してください。' };
+  const changes: DataChange[] = [{ op: 'delete', entityId: edge.from, entityLabel: nameOf(edge.from), fieldLabel: tr('エッジ（関連）'), before: `→ ${nameOf(edge.to)}`, after: '' }];
+  if (edge.kind === 'contain') return { ok: false, reason: tr('章と論点の包含は、エッジとしては削除できません。論点のノードを削除してください。') };
   if (edge.kind === 'relation') {
     const keep = <T extends { from: string; to: string }>(l: T[] | undefined): T[] | undefined =>
       l?.filter((e) => !(e.from === edge.from && e.to === edge.to));
@@ -145,9 +146,9 @@ export function removeEdge(data: PackData, edge: Pick<GraphEdge, 'from' | 'to' |
     return { ok: true, data: next, changes };
   }
   const key = edge.label ?? '';
-  if (REQUIRED_SCALAR.has(key)) return { ok: false, reason: `「${key}」は必須の参照のため、エッジだけを削除できません。ノードを削除してください。` };
+  if (REQUIRED_SCALAR.has(key)) return { ok: false, reason: tr('「{key}」は必須の参照のため、エッジだけを削除できません。ノードを削除してください。', { key }) };
   const rec = findRecord(next, edge.from);
-  if (!rec) return { ok: false, reason: '選んだエッジが見つかりません。' };
+  if (!rec) return { ok: false, reason: tr('選んだエッジが見つかりません。') };
   const v = rec[key];
   if (Array.isArray(v)) rec[key] = v.filter((t) => t !== edge.to);
   else if (v === edge.to) { if (key === 'parentId') rec[key] = null; else delete rec[key]; }
@@ -163,7 +164,7 @@ export function removeEdge(data: PackData, edge: Pick<GraphEdge, 'from' | 'to' |
       Object.values(x).forEach(walk);
     };
     walk(rec);
-    if (!removed) return { ok: false, reason: '選んだエッジが見つかりません。' };
+    if (!removed) return { ok: false, reason: tr('選んだエッジが見つかりません。') };
   }
   return { ok: true, data: next, changes };
 }
