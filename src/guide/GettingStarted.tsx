@@ -2,6 +2,7 @@
 import { Button, Text, Title3, makeStyles, tokens } from '@fluentui/react-components';
 import { FlowSection, PackSection, StepsSection, TermsSection, WhatSection } from './GuideParts';
 import { useGuide } from './guideStore';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   region: {
@@ -14,22 +15,23 @@ const useStyles = makeStyles({
 
 export function GettingStarted() {
   const s = useStyles();
+  const t = useT();
   const openGuide = useGuide((g) => g.openGuide);
   return (
     <>
-      <section role="region" aria-label="はじめての方へ" className={s.region} data-testid="getting-started">
+      <section role="region" aria-label={t('はじめての方へ')} className={s.region} data-testid="getting-started">
         <div className={s.head}>
-          <Title3 as="h2">はじめての方へ</Title3>
-          <Button onClick={() => openGuide('main')}>使い方を見る</Button>
+          <Title3 as="h2">{t('はじめての方へ')}</Title3>
+          <Button onClick={() => openGuide('main')}>{t('使い方を見る')}</Button>
         </div>
         <WhatSection />
         <TermsSection />
         <StepsSection />
         <FlowSection />
-        <Text size={200}>この説明は、いつでもここで読めます。</Text>
+        <Text size={200}>{t('この説明は、いつでもここで読めます。')}</Text>
       </section>
-      <section role="region" aria-label="顧客パック" className={s.region} data-testid="pack-guide">
-        <Title3 as="h2">顧客パックとは</Title3>
+      <section role="region" aria-label={t('顧客パック')} className={s.region} data-testid="pack-guide">
+        <Title3 as="h2">{t('顧客パックとは')}</Title3>
         <PackSection withHeading={false} />
       </section>
     </>

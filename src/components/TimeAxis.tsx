@@ -7,6 +7,7 @@ import { Pause16Regular, Play16Regular } from '@fluentui/react-icons';
 import { HOURS } from '../map/flows';
 import { useAnimation } from '../store/animation';
 import { formatHour, useTimeline } from '../store/timeline';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   root: { display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalS, minWidth: 0, maxWidth: '100%' },
@@ -39,6 +40,7 @@ const useStyles = makeStyles({
 
 export function TimeAxis() {
   const s = useStyles();
+  const tt = useT();
   const hour = useTimeline((t) => t.hour);
   const auto = useTimeline((t) => t.auto);
   const setHour = useTimeline((t) => t.setHour);
@@ -82,13 +84,13 @@ export function TimeAxis() {
 
   return (
     <div className={s.root} data-testid="time-axis">
-      <Text size={200} className={s.label}>時間軸</Text>
+      <Text size={200} className={s.label}>{tt('時間軸')}</Text>
       <div
         ref={track}
         className={s.track}
         role="slider"
         tabIndex={0}
-        aria-label="時間軸"
+        aria-label={tt('時間軸')}
         aria-orientation="horizontal"
         aria-valuemin={0}
         aria-valuemax={HOURS - 1}
@@ -108,8 +110,8 @@ export function TimeAxis() {
         appearance="subtle"
         icon={auto ? <Pause16Regular aria-hidden /> : <Play16Regular aria-hidden />}
         aria-pressed={auto}
-        aria-label="時間軸を自動で進める"
-        title={playing ? '時間軸を自動で進める' : '自動で進めるのは、アニメーションの再生中だけです'}
+        aria-label={tt('時間軸を自動で進める')}
+        title={playing ? tt('時間軸を自動で進める') : tt('自動で進めるのは、アニメーションの再生中だけです')}
         onClick={() => setAuto(!auto)}
       />
     </div>

@@ -16,6 +16,7 @@ import { MIN_TARGET_PX } from '../theme/tokens';
 import { clipOf } from './graphShape';
 import { GraphViewport, useGraphViewport } from './GraphViewport';
 import { GRAPH_CARD_RELATIONS_MAX } from './graphViewStore';
+import { useT } from '../i18n';
 
 export interface GraphNodeIn {
   id: string;
@@ -93,6 +94,7 @@ type Card = { kind: 'node' | 'edge'; id: string };
 
 function GraphBody({ origin, label, nodes, edges, onOpen }: GraphSurfaceProps) {
   const s = useStyles();
+  const t = useT();
   const vp = useGraphViewport()!;
   const bind = useEntityBinding(origin);
   const { selectedIds, select } = useSelection();
@@ -134,7 +136,7 @@ function GraphBody({ origin, label, nodes, edges, onOpen }: GraphSurfaceProps) {
   }, [okEdges]);
   // 図の項目（KPI/OKR の Objective など、エンティティ関係グラフにないもの）も、この図が出ている間は選べる
   useEffect(() => registerLocalIds(nodes.map((n) => n.id)), [nodes]);
-  const edgeText = (e: GraphEdgeIn): string => `${nameOf.get(e.from)} から ${nameOf.get(e.to)} へ ${e.label ?? '（ラベルなし）'}`;
+  const edgeText = (e: GraphEdgeIn): string => `${t('{from} から {to} へ', { from: String(nameOf.get(e.from)), to: String(nameOf.get(e.to)) })} ${e.label ?? t('（ラベルなし）')}`;
 
   // 詳細カード: 同じ項目の再クリック（Enter）で閉じ、別の項目で内容が替わる。Esc は GraphViewport が、カードを先に閉じる
   const toggle = (c: Card): void => setCard((cur) => (cur && cur.kind === c.kind && cur.id === c.id ? null : c));
@@ -179,45 +181,45 @@ function GraphBody({ origin, label, nodes, edges, onOpen }: GraphSurfaceProps) {
 
   const renderCard = (): JSX.Element | null => {
     if (!card) return null;
-    const close = <Button size="small" appearance="subtle" icon={<Dismiss20Regular />} aria-label="詳細カードを閉じる" onClick={() => setCard(null)} />;
+    const close = <Button size="small" appearance="subtle" icon={<Dismiss20Regular />} aria-label={t('詳細カードを閉じる')} onClick={() => setCard(null)} />;
     if (card.kind === 'node') {
       const n = nodeOf.get(card.id);
       if (!n) return null;
       const rel = okEdges.filter((e) => e.from === n.id || e.to === n.id);
       const shown = rel.slice(0, GRAPH_CARD_RELATIONS_MAX);
-      const attrs: Array<readonly [string, string]> = [['ID', n.id], ...(n.note ? [['補足', n.note] as const] : []), ...(n.attributes ?? [])];
+      const attrs: Array<readonly [string, string]> = [['ID', n.id], ...(n.note ? [[t('補足'), n.note] as const] : []), ...(n.attributes ?? [])];
       return (
-        <aside className={s.card} data-testid="detail-card" data-entity-id={n.id} aria-label={`${n.name}の詳細`}>
+        <aside className={s.card} data-testid="detail-card" data-entity-id={n.id} aria-label={t('{name}の詳細', { name: n.name })}>
           <div className={s.cardHead}><Text weight="semibold" size={400}>{n.name}</Text>{close}</div>
-          <Text as="h4" weight="semibold">種別</Text>
+          <Text as="h4" weight="semibold">{t('種別')}</Text>
           <Text>{n.kindLabel ?? n.kind}</Text>
-          <Text as="h4" weight="semibold">属性</Text>
+          <Text as="h4" weight="semibold">{t('属性')}</Text>
           <dl className={s.dl}>{attrs.map(([k, v]) => (<div key={k} style={{ display: 'contents' }}><dt>{k}</dt><dd className={s.dd}>{v}</dd></div>))}</dl>
-          <Text as="h4" weight="semibold">主要な関係</Text>
-          {rel.length === 0 ? <Text>関係なし</Text> : <ul className={s.list}>{shown.map((e) => <li key={e.id} data-testid="card-relation">{edgeText(e)}</li>)}</ul>}
-          {rel.length > shown.length ? <Text>ほか {rel.length - shown.length} 件</Text> : null}
+          <Text as="h4" weight="semibold">{t('主要な関係')}</Text>
+          {rel.length === 0 ? <Text>{t('関係なし')}</Text> : <ul className={s.list}>{shown.map((e) => <li key={e.id} data-testid="card-relation">{edgeText(e)}</li>)}</ul>}
+          {rel.length > shown.length ? <Text>{t('ほか {n} 件', { n: rel.length - shown.length })}</Text> : null}
         </aside>
       );
     }
     const e = okEdges.find((x) => x.id === card.id);
     if (!e) return null;
     return (
-      <aside className={s.card} data-testid="detail-card" data-edge-id={e.id} aria-label="関係の詳細">
+      <aside className={s.card} data-testid="detail-card" data-edge-id={e.id} aria-label={t('関係の詳細')}>
         <div className={s.cardHead}><Text weight="semibold" size={400}>{edgeText(e)}</Text>{close}</div>
-        <Text as="h4" weight="semibold">種別</Text>
+        <Text as="h4" weight="semibold">{t('種別')}</Text>
         <Text>{e.meaning ?? 'link'}</Text>
-        <Text as="h4" weight="semibold">属性</Text>
+        <Text as="h4" weight="semibold">{t('属性')}</Text>
         <dl className={s.dl}>
-          <dt>意味ラベル</dt><dd className={s.dd}>{e.label ?? '（ラベルなし）'}</dd>
-          <dt>線種</dt><dd className={s.dd}>{e.dash ? '破線・点線' : '実線'}</dd>
-          <dt>起点</dt><dd className={s.dd}>{nameOf.get(e.from)}</dd>
-          <dt>終点</dt><dd className={s.dd}>{nameOf.get(e.to)}</dd>
+          <dt>{t('意味ラベル')}</dt><dd className={s.dd}>{e.label ?? t('（ラベルなし）')}</dd>
+          <dt>{t('線種')}</dt><dd className={s.dd}>{e.dash ? t('破線・点線') : t('実線')}</dd>
+          <dt>{t('起点')}</dt><dd className={s.dd}>{nameOf.get(e.from)}</dd>
+          <dt>{t('終点')}</dt><dd className={s.dd}>{nameOf.get(e.to)}</dd>
         </dl>
       </aside>
     );
   };
 
-  if (nodes.length === 0) return <Text role="status">Graph に表示する項目がありません。</Text>;
+  if (nodes.length === 0) return <Text role="status">{t('Graph に表示する項目がありません。')}</Text>;
   // 自分でズームを持つ面の「全体」の階層は、塊（種別ごとの件数）で示す（FR-237 と同じ。ダブルクリックか Enter で要素へ）
   // 全体の階層では塊を示し、ノードの面は隠す（DOM には残す。表の行からの移動で、要素の階層へ切り替えてから動かせる）
   const showClusters = vp.standalone && vp.depth === 0;
@@ -229,7 +231,7 @@ function GraphBody({ origin, label, nodes, edges, onOpen }: GraphSurfaceProps) {
       </div>
     ) : null}
     <div ref={wrap} className={s.canvas} style={{ width: size.w, height: size.h, display: showClusters ? 'none' : undefined }} data-testid="graph-canvas" data-graph-nodes={nodes.length} data-graph-edges={okEdges.length}>
-      <svg width={size.w} height={size.h} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} role="group" aria-label={`${label}（Graph）の関係の線`}>
+      <svg width={size.w} height={size.h} style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }} role="group" aria-label={t('{label}（Graph）の関係の線', { label })}>
         <defs>
           <marker id={`gs-arrow-${origin}`} viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
             <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
@@ -268,7 +270,7 @@ function GraphBody({ origin, label, nodes, edges, onOpen }: GraphSurfaceProps) {
           <div
             key={n.id} {...b} role="button" tabIndex={0} className={`${s.node} ${on ? s.nodeOn : ''} ${rowHl ? s.nodeRow : ''}`} style={st}
             data-testid="graph-node" data-zoom-node="" data-kind={n.kind} data-node-type={n.kind} data-shape={shape} data-entity-name={n.name} data-row-highlight={rowHl ? 'true' : undefined}
-            aria-pressed={on} aria-label={`${n.name}（${n.kindLabel ?? n.kind}）${n.note ? `、${n.note}` : ''}`}
+            aria-pressed={on} aria-label={`${t('{name}（{kind}）', { name: n.name, kind: n.kindLabel ?? n.kind })}${n.note ? `${t('、')}${n.note}` : ''}`}
             onClick={(e) => { b.onClick?.(e); if (e.detail > 1) return; prevCard.current = card; toggle({ kind: 'node', id: n.id }); }}
             onDoubleClick={() => {
               // ダブルクリックはカードを開閉せずズームインする（最初のクリックで変えたカードを元に戻す）

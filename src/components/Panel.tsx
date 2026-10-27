@@ -14,6 +14,7 @@ import { useComponentView } from '../view/useView';
 import { HIDDEN_SELECTION_TEXT, selectionHiddenIn, singleWorldNote } from '../view/viewModel';
 import { isEditableTarget, panelKeyAction, runPanelKeyAction, titleDoubleClick, type KeyLike } from './panelKeys';
 import { CopilotProposal } from '../review/CopilotProposal';
+import { useT } from '../i18n';
 import { TIER_APPEARANCE, TIER_LABEL } from '../workspace/tiers';
 
 /** これより狭いコンポーネントは、見出しの操作アイコンを出さず「…」メニューに任せる（FR-150 AC-259）。
@@ -151,6 +152,7 @@ function toKeyLike(e: KeyboardEvent<HTMLElement>): KeyLike {
 
 export function Panel({ testId, title, description, maxWidth, children }: PanelProps) {
   const s = useStyles();
+  const t = useT();
   const pane = usePane();
   const state = usePackStore((st) => st.state);
   const sample = state.status === 'ready' && hasSampleData(state.pack.data);
@@ -262,8 +264,8 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
             ) : null}
             {sample ? (
               <span className={s.sample} data-testid="sample-badge">
-                <Badge className={s.sampleBadge} appearance="filled" color="warning" size="large">サンプル</Badge>
-                <Text size={200}>架空のサンプルデータを表示しています</Text>
+                <Badge className={s.sampleBadge} appearance="filled" color="warning" size="large">{t('サンプル')}</Badge>
+                <Text size={200}>{t('架空のサンプルデータを表示しています')}</Text>
               </span>
             ) : null}
           </div>
