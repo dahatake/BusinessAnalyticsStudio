@@ -15,6 +15,7 @@ import { usePackStore } from '../store/pack';
 import { currentTopic, usePresentationStore } from '../store/presentation';
 import { useStoryStore } from '../store/story';
 import { flattenTopics, presentationKeyAction, type PresentationTopic } from './model';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   bar: {
@@ -64,6 +65,7 @@ function useInternalCount(): number {
 
 /** ヘッダーの開始/終了ボタン。`internal` の項目を含むパックでは、開始の前に機密の確認（件数と確認の画面）を行う（NFR-SEC-003）。 */
 export function PresentationButton() {
+  const t = useT();
   const topics = usePackTopics();
   const internalCount = useInternalCount();
   const active = usePresentationStore((s) => s.active);
@@ -73,7 +75,7 @@ export function PresentationButton() {
   const [confirming, setConfirming] = useState(false);
   // 開始: 論点を巡るプレゼンテーション（FR-016）を始め、ペルソナを選ぶとその上でストーリーを再生する（FR-177）。選ばずに閉じれば論点を巡るまま続く
   const begin = () => { if (start(topics)) openPicker(); };
-  if (active) return <Button icon={<Stop20Regular aria-hidden />} onClick={() => { useStoryStore.getState().reset(); end(); }}>プレゼンテーションを終了</Button>;
+  if (active) return <Button icon={<Stop20Regular aria-hidden />} onClick={() => { useStoryStore.getState().reset(); end(); }}>{t('プレゼンテーションを終了')}</Button>;
   return (
     <>
       <Button
@@ -81,25 +83,25 @@ export function PresentationButton() {
         disabled={topics.length === 0}
         onClick={() => (internalCount > 0 ? setConfirming(true) : begin())}
       >
-        プレゼンテーションを開始
+        {t('プレゼンテーションを開始')}
       </Button>
       <Dialog open={confirming} modalType="alert" onOpenChange={(_, d) => setConfirming(d.open)}>
-        <DialogSurface aria-label="機密情報の確認">
+        <DialogSurface aria-label={t('機密情報の確認')}>
           <DialogBody>
-            <DialogTitle>機密情報の確認</DialogTitle>
+            <DialogTitle>{t('機密情報の確認')}</DialogTitle>
             <DialogContent>
               <Text as="p" block data-testid="confidential-count">
-                このデータには、機密区分が「社内向け（internal）」の項目が {internalCount} 件含まれています。
+                {t('このデータには、機密区分が「社内向け（internal）」の項目が {n} 件含まれています。', { n: internalCount })}
               </Text>
-              <Text as="p" block>顧客に見せてよい内容かを確認してから、プレゼンテーションを開始してください。</Text>
+              <Text as="p" block>{t('顧客に見せてよい内容かを確認してから、プレゼンテーションを開始してください。')}</Text>
             </DialogContent>
             <DialogActions>
-              <Button appearance="secondary" onClick={() => setConfirming(false)}>キャンセル</Button>
+              <Button appearance="secondary" onClick={() => setConfirming(false)}>{t('キャンセル')}</Button>
               <Button
                 appearance="primary"
                 onClick={() => { setConfirming(false); begin(); }}
               >
-                確認して開始
+                {t('確認して開始')}
               </Button>
             </DialogActions>
           </DialogBody>
@@ -137,11 +139,12 @@ export function PresentationBar() {
   const st = usePresentationStore();
   const annotateMode = usePresentationInk((s2) => s2.mode);
   const setAnnotateMode = usePresentationInk((s2) => s2.setMode);
+  const t = useT();
   const cur = currentTopic(st);
   if (!st.active || !cur) return null;
-  const chapters = [...new Map(st.topics.map((t) => [t.chapterId, t] as const)).values()];
+  const chapters = [...new Map(st.topics.map((tp) => [tp.chapterId, tp] as const)).values()];
   return (
-    <section className={s.bar} data-testid="progress-bar" aria-label="プレゼンテーションの進行">
+    <section className={s.bar} data-testid="progress-bar" aria-label={t('プレゼンテーションの進行')}>
       <ol className={s.chapters}>
         {chapters.map((c) => {
           const isCur = c.chapterId === cur.chapterId;
@@ -153,23 +156,23 @@ export function PresentationBar() {
               className={mergeClasses(s.chapter, isCur && s.chapterCurrent, c.chapterIndex < cur.chapterIndex && s.chapterDone)}
             >
               <span>{c.chapterTitle}</span>
-              {isCur ? <span className={s.now}>（現在）</span> : null}
+              {isCur ? <span className={s.now}>{t('（現在）')}</span> : null}
             </li>
           );
         })}
       </ol>
-      <div className={s.annotate} role="group" aria-label="プレゼン中の書き込み（FR-091）">
-        <RadioGroup layout="horizontal" aria-label="注釈の扱い" value={annotateMode} onChange={(_, d) => setAnnotateMode(d.value as AnnotationMode)}>
-          <Radio value="off" label="書かない" />
-          <Radio value="temporary" label="一時的な注釈" />
-          <Radio value="saved" label="保存" />
+      <div className={s.annotate} role="group" aria-label={t('プレゼン中の書き込み（FR-091）')}>
+        <RadioGroup layout="horizontal" aria-label={t('注釈の扱い')} value={annotateMode} onChange={(_, d) => setAnnotateMode(d.value as AnnotationMode)}>
+          <Radio value="off" label={t('書かない')} />
+          <Radio value="temporary" label={t('一時的な注釈')} />
+          <Radio value="saved" label={t('保存')} />
         </RadioGroup>
       </div>
       <div className={s.topic}>
-        <Button size="small" icon={<ChevronLeft20Regular aria-hidden />} aria-label="前の論点" disabled={st.index === 0} onClick={st.prev} />
-        <Text size={200}>論点 {st.index + 1} / {st.topics.length}</Text>
+        <Button size="small" icon={<ChevronLeft20Regular aria-hidden />} aria-label={t('前の論点')} disabled={st.index === 0} onClick={st.prev} />
+        <Text size={200}>{t('論点 {i} / {n}', { i: st.index + 1, n: st.topics.length })}</Text>
         <Text weight="semibold" className={s.topicTitle} data-testid="current-topic" role="status" aria-live="polite">{cur.title}</Text>
-        <Button size="small" icon={<ChevronRight20Regular aria-hidden />} aria-label="次の論点" disabled={st.index >= st.topics.length - 1} onClick={st.next} />
+        <Button size="small" icon={<ChevronRight20Regular aria-hidden />} aria-label={t('次の論点')} disabled={st.index >= st.topics.length - 1} onClick={st.next} />
       </div>
     </section>
   );

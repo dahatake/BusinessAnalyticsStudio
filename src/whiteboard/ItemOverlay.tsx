@@ -11,6 +11,7 @@ import { onEntityKey, useEntityBinding, useEntityGraph } from '../selection/hook
 import { useEditStore } from '../store/edit';
 import { useCardEdit } from './cardEdit';
 import { FRAME_TITLE } from './ops';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   layer: { position: 'absolute', left: 0, top: 0, width: 0, height: 0, transformOrigin: '0 0', pointerEvents: 'none' },
@@ -45,6 +46,7 @@ const ORIGIN = 'whiteboard';
 
 export function ItemOverlay({ boardId }: { boardId: string }) {
   const s = useStyles();
+  const t = useT();
   const board = useInk(useMemo(() => selectBoard(boardId), [boardId]));
   const graph = useEntityGraph();
   const bind = useEntityBinding(ORIGIN);
@@ -90,8 +92,8 @@ export function ItemOverlay({ boardId }: { boardId: string }) {
   const nodes = board.items.filter((i) => i.type === 'sticky' || i.type === 'card');
 
   const startEdit = (it: BoardItem) => {
-    if (!it.sourceEntityId || !graph?.has(it.sourceEntityId)) { setNotice('元のデータが削除されているため、名前は変えられません。'); return; }
-    if (!editMode) { setNotice('編集モードが OFF です。ヘッダーの「編集モード」を ON にしてください。'); return; }
+    if (!it.sourceEntityId || !graph?.has(it.sourceEntityId)) { setNotice(t('元のデータが削除されているため、名前は変えられません。')); return; }
+    if (!editMode) { setNotice(t('編集モードが OFF です。ヘッダーの「編集モード」を ON にしてください。')); return; }
     setNotice(null);
     setEditing({ id: it.id, text: graph.node(it.sourceEntityId)?.label ?? it.label ?? '' });
   };
@@ -111,7 +113,7 @@ export function ItemOverlay({ boardId }: { boardId: string }) {
     <div
       className={s.layer}
       role="list"
-      aria-label="ボードの付箋・カード・フレーム"
+      aria-label={t('ボードの付箋・カード・フレーム')}
       style={{ transform: `translate(${-v.x * v.zoom}px, ${-v.y * v.zoom}px) scale(${v.zoom})` }}
     >
       {frames.map((f) => (
@@ -123,7 +125,7 @@ export function ItemOverlay({ boardId }: { boardId: string }) {
           data-wb-id={f.id}
           style={{ left: f.x, top: f.y, width: f.w, height: FRAME_TITLE, pointerEvents: 'none' }}
         >
-          フレーム: {f.label}{f.author === 'ai' ? '（AI 生成）' : ''}
+          {t('フレーム: ')}{f.label}{f.author === 'ai' ? t('（AI 生成）') : ''}
         </div>
       ))}
       {nodes.map((it) => {
@@ -132,7 +134,7 @@ export function ItemOverlay({ boardId }: { boardId: string }) {
           return (
             <div key={it.id} role="listitem" className={s.item} data-wb-type="sticky" data-wb-id={it.id} style={base}>
               {it.text}
-              {it.votes ? <span className={s.vote} data-testid="vote-count">{it.votes} 票</span> : null}
+              {it.votes ? <span className={s.vote} data-testid="vote-count">{t('{n} 票', { n: it.votes })}</span> : null}
             </div>
           );
         }
@@ -146,7 +148,7 @@ export function ItemOverlay({ boardId }: { boardId: string }) {
             data-wb-type="card"
             data-wb-id={it.id}
             tabIndex={0}
-            aria-label={`${it.sub ?? 'データ'}のカード: ${it.label ?? ''}${linked ? '' : '（元のデータは削除されました）'}。Enter で名前を編集`}
+            aria-label={t('{kind}のカード: {name}{deleted}。Enter で名前を編集', { kind: t(it.sub ?? 'データ'), name: it.label ?? '', deleted: linked ? '' : t('（元のデータは削除されました）') })}
             style={base}
             {...props}
             onKeyDown={(e) => {
@@ -155,7 +157,7 @@ export function ItemOverlay({ boardId }: { boardId: string }) {
               else if (it.sourceEntityId && linked) onEntityKey(e, it.sourceEntityId, ORIGIN);
             }}
           >
-            {it.sub}: {it.label}{linked ? '' : '（元のデータは削除されました）'}
+            {t(it.sub ?? '')}: {it.label}{linked ? '' : t('（元のデータは削除されました）')}
           </div>
         );
       })}
@@ -163,7 +165,7 @@ export function ItemOverlay({ boardId }: { boardId: string }) {
         <>
           <textarea
             className={s.editor}
-            aria-label={`${editingItem.sub ?? 'データ'}の名前`}
+            aria-label={t('{kind}の名前', { kind: t(editingItem.sub ?? 'データ') })}
             autoFocus
             ref={(el) => { if (el && document.activeElement !== el) { el.focus({ preventScroll: true }); el.select(); } }}
             value={editing.text}

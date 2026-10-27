@@ -2,11 +2,14 @@
 // 画面・描画から切り離して単体で検査できるようにする。表示だけの規則で、データは変えない。
 import { entityColumns, type DataColumn, type DataEntity } from './model';
 import type { CatalogItem } from './reconcile';
+import { tr } from '../i18n';
 
 /** 詳細度: 鳥観図（塊）→ エンティティ（名称・説明）→ 列（列名・型）。この順にだけ変わる */
 export type DetailLevel = 'bird' | 'entity' | 'column';
 export const DETAIL_LEVELS: readonly DetailLevel[] = ['bird', 'entity', 'column'];
-export const DETAIL_LABELS: Record<DetailLevel, string> = { bird: '鳥観図（塊）', entity: 'エンティティ', column: '列' };
+export const DETAIL_LABELS: Record<DetailLevel, string> = {
+  get bird() { return tr('鳥観図（塊）'); }, get entity() { return tr('エンティティ'); }, get column() { return tr('列'); },
+};
 
 /** 倍率の下限・上限（これを超える値は丸める）。全体表示の倍率は 1 */
 export const ZOOM_MIN = 0.5;

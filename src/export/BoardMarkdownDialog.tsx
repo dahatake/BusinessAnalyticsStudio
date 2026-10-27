@@ -4,6 +4,7 @@ import { Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, T
 import { Dialog, DialogSurface } from '../components/Dialog';
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { useInk } from '../ink/store';
+import { useT } from '../i18n';
 import { downloadBlob } from './deliver';
 import { inkMarkdownEntries, inkMarkdownZipName } from './inkMarkdown';
 import { createZip } from './zip';
@@ -24,6 +25,7 @@ export interface BoardMarkdownDialogProps {
 
 export function BoardMarkdownDialog({ boardId, open, onOpenChange, onResult }: BoardMarkdownDialogProps) {
   const s = useStyles();
+  const t = useT();
   const boards = useInk((st) => st.boards);
   const [target, setTarget] = useState<Target>('all');
   const [error, setError] = useState<string | null>(null);
@@ -31,37 +33,37 @@ export function BoardMarkdownDialog({ boardId, open, onOpenChange, onResult }: B
   const chosen = boards.filter((b) => b.kind === 'board' && (target === 'all' || b.id === boardId));
 
   const run = () => {
-    if (chosen.length === 0) { setError('出力するボードがありません。'); return; }
+    if (chosen.length === 0) { setError(t('出力するボードがありません。')); return; }
     const now = new Date();
     try {
       const name = inkMarkdownZipName(now);
       downloadBlob(name, new Blob([createZip(inkMarkdownEntries(chosen, now), now).slice().buffer], { type: 'application/zip' }));
-      onResult?.(`${name} を出力しました（${chosen.length} 枚）。`);
+      onResult?.(t('{name} を出力しました（{n} 枚）。', { name, n: chosen.length }));
       setError(null);
       onOpenChange(false);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Markdown を出力できませんでした。');
+      setError(e instanceof Error ? e.message : t('Markdown を出力できませんでした。'));
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={(_, d) => onOpenChange(d.open)} modalType="modal">
-      <DialogSurface aria-label="Markdown 出力">
+      <DialogSurface aria-label={t('Markdown 出力')}>
         <DialogBody>
-          <DialogTitle>Markdown 出力</DialogTitle>
+          <DialogTitle>{t('Markdown 出力')}</DialogTitle>
           <DialogContent className={s.body}>
-            <Field label="範囲">
+            <Field label={t('範囲')}>
               <RadioGroup layout="horizontal" value={target} onChange={(_, d) => setTarget(d.value as Target)}>
-                <Radio value="this" label="このボードだけ" />
-                <Radio value="all" label="すべてのボード" />
+                <Radio value="this" label={t('このボードだけ')} />
+                <Radio value="all" label={t('すべてのボード')} />
               </RadioGroup>
             </Field>
-            <Text size={200}>ボードごとに .md（front matter とチェックリスト）を作り、画像は assets/ に置いて相対リンクで参照する ZIP にします（{chosen.length} 枚）。</Text>
+            <Text size={200}>{t('ボードごとに .md（front matter とチェックリスト）を作り、画像は assets/ に置いて相対リンクで参照する ZIP にします（{n} 枚）。', { n: chosen.length })}</Text>
             {error && <Text role="alert" size={200}>{error}</Text>}
           </DialogContent>
           <DialogActions>
-            <Button className={s.forcedAuto} appearance="primary" disabled={chosen.length === 0} onClick={run}>出力</Button>
-            <Button onClick={() => onOpenChange(false)}>閉じる</Button>
+            <Button className={s.forcedAuto} appearance="primary" disabled={chosen.length === 0} onClick={run}>{t('出力')}</Button>
+            <Button onClick={() => onOpenChange(false)}>{t('閉じる')}</Button>
           </DialogActions>
         </DialogBody>
       </DialogSurface>

@@ -4,6 +4,7 @@ import { Html, Line } from '@react-three/drei';
 import { DIFF_LABEL, type ArchSection, type DiffKind, type DiffModel } from '../analysis/architecture';
 import { DiagramCanvas } from './DiagramCanvas';
 import { sceneLabelStyle } from './labelStyles';
+import { useT } from '../i18n';
 
 const DIFF_COLOR_3D: Record<DiffKind, string> = { same: '#8a8a8a', added: '#2ea043', removed: '#d1242f', changed: '#d4a72c' };
 const labelStyle = sceneLabelStyle;
@@ -15,10 +16,11 @@ export interface ArchitectureStackProps {
 }
 
 export function ArchitectureStack({ sections, model, onSelect }: ArchitectureStackProps) {
+  const t = useT();
   const pos = new Map<string, [number, number, number]>();
   sections.forEach((sec, i) => sec.items.forEach((it, j) => pos.set(it.element.id, [(j - (sec.items.length - 1) / 2) * 1.7, i * 1.5, 0])));
   return (
-    <DiagramCanvas label="アーキテクチャのレイヤー積層図（3D）。ドラッグで回転、ホイールで拡大縮小" cameraPosition={[0, sections.length * 0.8 + 2, 11]}>
+    <DiagramCanvas label={t('アーキテクチャのレイヤー積層図（3D）。ドラッグで回転、ホイールで拡大縮小')} cameraPosition={[0, sections.length * 0.8 + 2, 11]}>
       {sections.map((sec, i) => (
         <mesh key={sec.title} position={[0, i * 1.5 - 0.35, 0]}>
           <boxGeometry args={[Math.max(4, sec.items.length * 1.7 + 0.8), 0.12, 2]} />
@@ -32,7 +34,7 @@ export function ArchitectureStack({ sections, model, onSelect }: ArchitectureSta
             <meshStandardMaterial color={DIFF_COLOR_3D[it.diff]} />
           </mesh>
           <Html center position={[0, 0.55, 0]} zIndexRange={[5, 0]}>
-            <span style={labelStyle} title={`${it.diff === 'same' ? '' : `【${DIFF_LABEL[it.diff]}】`}${it.element.name}`}>{it.diff === 'same' ? '' : `【${DIFF_LABEL[it.diff]}】`}{it.element.name}</span>
+            <span style={labelStyle} title={`${it.diff === 'same' ? '' : t('【{label}】', { label: t(DIFF_LABEL[it.diff]) })}${it.element.name}`}>{it.diff === 'same' ? '' : t('【{label}】', { label: t(DIFF_LABEL[it.diff]) })}{it.element.name}</span>
           </Html>
         </group>
       )))}

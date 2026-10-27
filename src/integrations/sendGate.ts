@@ -2,6 +2,7 @@
 // 了承を要する送信（AI・音声合成・手書き認識・パイプラインの実調査）の可否は、既存の了承ゲート（ai/useConsent・useAi・useAzure）が決める。
 // ここは、その結果（granted）を Project の選択に重ねて、画面に出す状態（了承を求める表示・未確認の識別）を決める純粋な関数。
 import type { ProjectIntegrations } from '../store/projectIntegrations';
+import { tr } from '../i18n';
 
 export interface IntegrationNotice {
   /** 了承を要する送信が実行できるか（了承の記録が無ければ false。選択の有無で変わらない） */
@@ -19,7 +20,7 @@ export function integrationNotice(consentGranted: boolean, cur: ProjectIntegrati
     return !s || s.terms.status !== '確認済み' || s.cost.status !== '確認済み' || s.sla.status !== '確認済み';
   }).map((id) => cur?.names[id] ?? id);
   const consentNotice = selected.length > 0 && !consentGranted
-    ? '顧客の了承の記録がありません。連携を選択しても、AI・音声合成・手書き認識・実調査など了承を要する外部送信は、了承を記録するまで実行されません（設定の「顧客の了承」）。'
+    ? tr('顧客の了承の記録がありません。連携を選択しても、AI・音声合成・手書き認識・実調査など了承を要する外部送信は、了承を記録するまで実行されません（設定の「顧客の了承」）。')
     : undefined;
   return { sendAllowed: consentGranted, consentNotice, unconfirmed };
 }

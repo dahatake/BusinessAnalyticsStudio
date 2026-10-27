@@ -7,12 +7,13 @@ import { useAnimation } from '../store/animation';
 import { countFrame, useIndustryPreset, useView3D } from '../store/view3d';
 import { QUALITY_PROFILES } from './quality';
 import { tokens } from '../theme/tokens';
+import { tr } from '../i18n';
 
 class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   override state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
   override render() {
-    if (this.state.failed) return <span role="alert">3D を表示できませんでした。2D の表示に切り替えてください。</span>;
+    if (this.state.failed) return <span role="alert">{tr('3D を表示できませんでした。2D の表示に切り替えてください。')}</span>;
     return this.props.children;
   }
 }
