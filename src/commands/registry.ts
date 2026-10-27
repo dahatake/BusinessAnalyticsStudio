@@ -1,5 +1,7 @@
 // コマンドパレットとショートカット一覧の共通の登録簿（FR-111・FR-029）。
 // 機能を持つ項目（エクスポート・音のミュートなど）は、自分の操作を registerCommands で足す。パレットと一覧はここから作る。
+import { tr } from '../i18n';
+
 export interface Command {
   /** 一意の ID（登録の重複を避ける） */
   id: string;
@@ -66,15 +68,20 @@ export function filterCommands(commands: readonly Command[], query: string): Com
 }
 
 /** ショートカットの一覧（操作名とキー）。コマンドのうち、ショートカットを持つものと、操作のキー（コマンドにならないもの）を合わせる。 */
+// 表示のたびに現在の言語で引けるよう、文言は getter で返す（配列の形は変えない）。
+const sc = (label: string, shortcut: string, translateKey = false): { label: string; shortcut: string } => ({
+  get label() { return tr(label); },
+  get shortcut() { return translateKey ? tr(shortcut) : shortcut; },
+});
 export const STATIC_SHORTCUTS: ReadonlyArray<{ label: string; shortcut: string }> = [
-  { label: 'コマンドパレットを開く', shortcut: 'Ctrl+K' },
-  { label: 'ショートカット一覧を開く', shortcut: '?' },
-  { label: '前の論点へ（プレゼンテーション中）', shortcut: '←' },
-  { label: '次の論点へ（プレゼンテーション中）', shortcut: '→' },
-  { label: '項目を選ぶ（フォーカスした項目）', shortcut: 'Enter / Space' },
-  { label: '複数の項目を選ぶ・解除する', shortcut: 'Ctrl / Shift + クリック（または Enter）' },
-  { label: 'ダイアログを閉じる・最大化を戻す・選択を解除する', shortcut: 'Esc' },
-  { label: 'コンポーネントを最大化／通常に戻す（フォーカス中）', shortcut: 'Shift+F' },
-  { label: 'コンポーネントを非表示にする（フォーカス中）', shortcut: 'H' },
-  { label: 'キャンバスを動かす・拡大縮小する', shortcut: '矢印キー / + / -' },
+  sc('コマンドパレットを開く', 'Ctrl+K'),
+  sc('ショートカット一覧を開く', '?'),
+  sc('前の論点へ（プレゼンテーション中）', '←'),
+  sc('次の論点へ（プレゼンテーション中）', '→'),
+  sc('項目を選ぶ（フォーカスした項目）', 'Enter / Space'),
+  sc('複数の項目を選ぶ・解除する', 'Ctrl / Shift + クリック（または Enter）', true),
+  sc('ダイアログを閉じる・最大化を戻す・選択を解除する', 'Esc'),
+  sc('コンポーネントを最大化／通常に戻す（フォーカス中）', 'Shift+F'),
+  sc('コンポーネントを非表示にする（フォーカス中）', 'H'),
+  sc('キャンバスを動かす・拡大縮小する', '矢印キー / + / -', true),
 ];
