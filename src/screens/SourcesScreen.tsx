@@ -60,7 +60,7 @@ function SourcesScreen() {
             return (
               <li key={src.id} data-testid="source-entry" className={mergeClasses(s.card, hl(props['data-highlight']))} tabIndex={0} {...props} onKeyDown={(e) => onEntityKey(e, src.id, ORIGIN)}>
                 <Text weight="semibold">{src.title}</Text>
-                <Text size={200}>{[src.kind, src.retrievedAt ? t('取得 {v}', { v: src.retrievedAt }) : '', src.confidence ? t('確度 {v}', { v: src.confidence }) : ''].filter(Boolean).join(' ／ ')}</Text>
+                <Text size={200}>{[src.kind, src.retrievedAt ? t('取得 {v}', { v: src.retrievedAt }) : '', src.confidence ? t('確度 {v}', { v: src.confidence }) : ''].filter(Boolean).join(t(' ／ '))}</Text>
                 {cited.length > 0 ? (
                   <ul className={s.cited} aria-label={t('{title} を根拠にする項目', { title: src.title })}>
                     {cited.map((n) => {

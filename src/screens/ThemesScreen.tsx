@@ -1,6 +1,7 @@
 // 議論テーマの画面（FR-048〜FR-050）。テーマの一覧と、選んだテーマの議論の記録・決定ステータス・次のアクション。
 // 顧客の決定と AI の提案は、文字のラベル（「顧客決定」「AI 提案」）と別の欄で区別する（色だけに頼らない）。
 import { useEffect, useRef, useState } from 'react';
+import { useT } from '../i18n';
 import {
   Badge, Button, DialogActions, DialogBody, DialogContent, DialogTitle, Dropdown, Field, Input, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, Option, Spinner, Text, Textarea, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
@@ -93,6 +94,7 @@ function ThemeListItem({ theme, selected, onSelect, onDelete, rename }: {
   onDelete: () => void;
   rename: (title: string) => boolean;
 }) {
+  const t = useT();
   const s = useStyles();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(theme.title);
@@ -101,7 +103,7 @@ function ThemeListItem({ theme, selected, onSelect, onDelete, rename }: {
   useEffect(() => { if (editing) ref.current?.focus(); }, [editing]);
 
   const commit = () => {
-    if (rename(draft)) { setEditing(false); setError(null); } else setError('テーマの名前を入力してください。');
+    if (rename(draft)) { setEditing(false); setError(null); } else setError(t('テーマの名前を入力してください。'));
   };
   const cancel = () => { setEditing(false); setError(null); setDraft(theme.title); };
 
@@ -118,7 +120,7 @@ function ThemeListItem({ theme, selected, onSelect, onDelete, rename }: {
           <Field validationState={error ? 'error' : 'none'} validationMessage={error ?? undefined} className={s.title}>
             <Input
               ref={ref}
-              aria-label="テーマの名前"
+              aria-label={t('テーマの名前')}
               value={draft}
               onChange={(_, d) => setDraft(d.value)}
               onClick={(e) => e.stopPropagation()}
@@ -133,9 +135,9 @@ function ThemeListItem({ theme, selected, onSelect, onDelete, rename }: {
         )}
         <StatusBadge status={theme.status} />
         <div className={s.itemActions} onClick={(e) => e.stopPropagation()}>
-          <Button size="small" appearance="subtle" icon={<Edit24Regular aria-hidden />} aria-label="名前を編集" title="名前を編集"
+          <Button size="small" appearance="subtle" icon={<Edit24Regular aria-hidden />} aria-label={t('名前を編集')} title={t('名前を編集')}
             onClick={() => { setDraft(theme.title); setEditing(true); onSelect(); }} />
-          <Button size="small" appearance="subtle" icon={<Delete24Regular aria-hidden />} aria-label="削除" title="削除" onClick={onDelete} />
+          <Button size="small" appearance="subtle" icon={<Delete24Regular aria-hidden />} aria-label={t('削除')} title={t('削除')} onClick={onDelete} />
         </div>
       </div>
     </li>
@@ -147,6 +149,7 @@ function NextActionRow({ action, onChange, onRemove }: {
   onChange: (patch: Partial<Omit<NextAction, 'id'>>) => void;
   onRemove: () => void;
 }) {
+  const t = useT();
   const s = useStyles();
   const [dueDraft, setDueDraft] = useState(action.due);
   const [dueError, setDueError] = useState<string | null>(null);
@@ -160,9 +163,9 @@ function NextActionRow({ action, onChange, onRemove }: {
 
   return (
     <div className={s.action} data-testid="next-action">
-      <Field label="内容"><Input value={action.text} onChange={(_, d) => onChange({ text: d.value })} /></Field>
-      <Field label="担当"><Input value={action.owner} onChange={(_, d) => onChange({ owner: d.value })} /></Field>
-      <Field label="期限" validationState={dueError ? 'error' : 'none'} validationMessage={dueError ?? undefined}>
+      <Field label={t('内容')}><Input value={action.text} onChange={(_, d) => onChange({ text: d.value })} /></Field>
+      <Field label={t('担当')}><Input value={action.owner} onChange={(_, d) => onChange({ owner: d.value })} /></Field>
+      <Field label={t('期限')} validationState={dueError ? 'error' : 'none'} validationMessage={dueError ?? undefined}>
         <Input
           type="date"
           value={dueDraft}
@@ -171,12 +174,13 @@ function NextActionRow({ action, onChange, onRemove }: {
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commitDue(dueDraft); } }}
         />
       </Field>
-      <Button appearance="subtle" icon={<Delete24Regular aria-hidden />} aria-label="このアクションを削除" onClick={onRemove} />
+      <Button appearance="subtle" icon={<Delete24Regular aria-hidden />} aria-label={t('このアクションを削除')} onClick={onRemove} />
     </div>
   );
 }
 
 function ThemeDetail({ packKey, theme }: { packKey: string; theme: Theme }) {
+  const t = useT();
   const s = useStyles();
   const store = useDiscussionStore;
   const status = theme.status;
@@ -192,17 +196,17 @@ function ThemeDetail({ packKey, theme }: { packKey: string; theme: Theme }) {
     <div className={s.detail} data-testid="theme-detail" data-entity-id={theme.id}>
       <Text as="h3" size={500} weight="semibold">{theme.title}</Text>
       <div>
-        <Button icon={<Sparkle24Regular aria-hidden />} onClick={generateTree}>ツリーを生成</Button>
+        <Button icon={<Sparkle24Regular aria-hidden />} onClick={generateTree}>{t('ツリーを生成')}</Button>
       </div>
 
       <div className={s.statusRow}>
-        <Text>決定ステータス:</Text>
+        <Text>{t('決定ステータス:')}</Text>
         <span data-testid="decision-status" style={{ display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS }}>
           <StatusBadge status={status} />
-          <Text size={200}>{statusOrigin(status) === 'ai' ? 'AI の提案' : '顧客の選択'}</Text>
+          <Text size={200}>{statusOrigin(status) === 'ai' ? 'AI の提案' : t('顧客の選択')}</Text>
         </span>
         <Dropdown
-          aria-label="決定ステータス"
+          aria-label={t('決定ステータス')}
           value={STATUS_OPTION_LABEL[status]}
           selectedOptions={[status]}
           onOptionSelect={(_, d) => { if (d.optionValue) store.getState().setStatus(packKey, theme.id, d.optionValue as DecisionStatus); }}
@@ -214,7 +218,7 @@ function ThemeDetail({ packKey, theme }: { packKey: string; theme: Theme }) {
 
       <div className={s.proposal}>
         {/* 見出しの文字のラベルは欄の外に置き、欄（ai-proposal）には AI の提案の本文だけを入れる */}
-        <Text weight="semibold">AI の提案（決定しても残ります）</Text>
+        <Text weight="semibold">{t('AI の提案（決定しても残ります）')}</Text>
         <div className={s.proposalBody} data-testid="ai-proposal">
           {theme.aiProposal.trim() !== '' ? (
             <>
@@ -222,7 +226,7 @@ function ThemeDetail({ packKey, theme }: { packKey: string; theme: Theme }) {
               <Text size={200}>{theme.aiMode === 'connected' ? REAL_LABEL : MOCK_LABEL}</Text>
             </>
           ) : (
-            <Text size={200}>このテーマに AI の提案はありません。</Text>
+            <Text size={200}>{t('このテーマに AI の提案はありません。')}</Text>
           )}
         </div>
       </div>
@@ -234,8 +238,8 @@ function ThemeDetail({ packKey, theme }: { packKey: string; theme: Theme }) {
       ))}
 
       <div className={s.actions}>
-        <Text weight="semibold">次のアクション（担当・期限）</Text>
-        {theme.actions.length === 0 ? <Text size={200}>次のアクションはまだありません。</Text> : null}
+        <Text weight="semibold">{t('次のアクション（担当・期限）')}</Text>
+        {theme.actions.length === 0 ? <Text size={200}>{t('次のアクションはまだありません。')}</Text> : null}
         {theme.actions.map((a) => (
           <NextActionRow
             key={a.id}
@@ -245,7 +249,7 @@ function ThemeDetail({ packKey, theme }: { packKey: string; theme: Theme }) {
           />
         ))}
         <div>
-          <Button icon={<Add24Regular aria-hidden />} onClick={() => store.getState().addAction(packKey, theme.id)}>次のアクションを追加</Button>
+          <Button icon={<Add24Regular aria-hidden />} onClick={() => store.getState().addAction(packKey, theme.id)}>{t('次のアクションを追加')}</Button>
         </div>
       </div>
     </div>
@@ -253,6 +257,7 @@ function ThemeDetail({ packKey, theme }: { packKey: string; theme: Theme }) {
 }
 
 export function ThemesScreen() {
+  const t = useT();
   const s = useStyles();
   const packState = usePackStore((st) => st.state);
   const target = usePackTarget();
@@ -266,8 +271,8 @@ export function ThemesScreen() {
   const [proposing, setProposing] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
 
-  if (packState.status === 'loading') return <LoadingView label="議論テーマを読み込み中" />;
-  if (!target) return <ErrorView title="議論テーマを表示できません" messages={['顧客パックを読み込めていません。']} />;
+  if (packState.status === 'loading') return <LoadingView label={t('議論テーマを読み込み中')} />;
+  if (!target) return <ErrorView title={t('議論テーマを表示できません')} messages={[t('顧客パックを読み込めていません。')]} />;
 
   const st = useDiscussionStore.getState();
   const selected = themes.find((t) => t.id === selectedId) ?? null;
@@ -281,7 +286,7 @@ export function ThemesScreen() {
       const issue = target.issues.find((i) => !hasThemeFor(themes, i.id));
       const prompt = issue
         ? `次の課題を ToBe に向けた議論テーマとして、論点と進め方を提案してください。課題: ${issue.title}`
-        : '顧客の ToBe に向けた議論テーマを 1 つ提案してください。';
+        : t('顧客の ToBe に向けた議論テーマを 1 つ提案してください。');
       const r = await ask('recommend', prompt);
       useDiscussionStore.getState().addTheme(target.key, {
         title: issue ? issue.title : `AI 提案のテーマ ${themes.length + 1}`,
@@ -301,18 +306,18 @@ export function ThemesScreen() {
   return (
     <Panel
       testId="component-themes"
-      title="議論テーマ"
-      description="ToBe に向けた課題を議論テーマにして、選択肢・提言・根拠・決定事項などを記録します。決定は顧客の選択として、AI の提案と区別して残ります。"
+      title={t('議論テーマ')}
+      description={t('ToBe に向けた課題を議論テーマにして、選択肢・提言・根拠・決定事項などを記録します。決定は顧客の選択として、AI の提案と区別して残ります。')}
     >
-      <div className={s.toolbar} role="toolbar" aria-label="議論テーマの操作">
-        <Button icon={<Add24Regular aria-hidden />} onClick={() => st.addTheme(target.key, { title: '新しいテーマ' })}>テーマを追加</Button>
+      <div className={s.toolbar} role="toolbar" aria-label={t('議論テーマの操作')}>
+        <Button icon={<Add24Regular aria-hidden />} onClick={() => st.addTheme(target.key, { title: t('新しいテーマ') })}>{t('テーマを追加')}</Button>
         <Menu>
           <MenuTrigger disableButtonEnhancement>
-            <Button>課題からテーマを作る</Button>
+            <Button>{t('課題からテーマを作る')}</Button>
           </MenuTrigger>
           <MenuPopover>
             <MenuList>
-              {target.issues.length === 0 ? <MenuItem disabled>課題がありません</MenuItem> : null}
+              {target.issues.length === 0 ? <MenuItem disabled>{t('課題がありません')}</MenuItem> : null}
               {target.issues.map((i) => (
                 <MenuItem key={i.id} onClick={() => st.createFromIssue(target.key, i)}>
                   {i.title}{hasThemeFor(themes, i.id) ? '（作成済み）' : ''}
@@ -321,18 +326,18 @@ export function ThemesScreen() {
             </MenuList>
           </MenuPopover>
         </Menu>
-        <Button icon={<Sparkle24Regular aria-hidden />} disabled={proposing} onClick={() => void propose()}>テーマを提案</Button>
-        <Button icon={<ArrowUndo24Regular aria-hidden />} disabled={!canUndo} onClick={() => st.undo(target.key)}>元に戻す</Button>
-        <Button icon={<ArrowRedo24Regular aria-hidden />} disabled={!canRedo} onClick={() => st.redo(target.key)}>やり直し</Button>
-        {proposing ? <span role="status" style={{ display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS }}><Spinner size="tiny" /><Text>提案を生成中…</Text></span> : null}
+        <Button icon={<Sparkle24Regular aria-hidden />} disabled={proposing} onClick={() => void propose()}>{t('テーマを提案')}</Button>
+        <Button icon={<ArrowUndo24Regular aria-hidden />} disabled={!canUndo} onClick={() => st.undo(target.key)}>{t('元に戻す')}</Button>
+        <Button icon={<ArrowRedo24Regular aria-hidden />} disabled={!canRedo} onClick={() => st.redo(target.key)}>{t('やり直し')}</Button>
+        {proposing ? <span role="status" style={{ display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS }}><Spinner size="tiny" /><Text>{t('提案を生成中…')}</Text></span> : null}
       </div>
-      {aiError ? <ErrorView title="テーマを提案できませんでした" messages={[aiError]} action="接続の設定を確認して、もう一度お試しください。" /> : null}
+      {aiError ? <ErrorView title={t('テーマを提案できませんでした')} messages={[aiError]} action={t('接続の設定を確認して、もう一度お試しください。')} /> : null}
 
       {themes.length === 0 ? (
-        <EmptyView message="議論テーマはまだありません。「テーマを追加」「課題からテーマを作る」「テーマを提案」から始められます。" />
+        <EmptyView message={t('議論テーマはまだありません。「テーマを追加」「課題からテーマを作る」「テーマを提案」から始められます。')} />
       ) : (
         <div className={s.layout}>
-          <ul className={s.list} aria-label="議論テーマの一覧">
+          <ul className={s.list} aria-label={t('議論テーマの一覧')}>
             {themes.map((t) => (
               <ThemeListItem
                 key={t.id}
@@ -344,18 +349,18 @@ export function ThemesScreen() {
               />
             ))}
           </ul>
-          {selected ? <ThemeDetail packKey={target.key} theme={selected} /> : <EmptyView message="左の一覧からテーマを選ぶと、議論の記録を入力できます。" />}
+          {selected ? <ThemeDetail packKey={target.key} theme={selected} /> : <EmptyView message={t('左の一覧からテーマを選ぶと、議論の記録を入力できます。')} />}
         </div>
       )}
 
       <Dialog modalType="alert" open={toDelete !== null} onOpenChange={(_, d) => { if (!d.open) setToDelete(null); }}>
         <DialogSurface>
           <DialogBody>
-            <DialogTitle>テーマを削除しますか</DialogTitle>
+            <DialogTitle>{t('テーマを削除しますか')}</DialogTitle>
             <DialogContent>「{toDelete?.title}」を削除します。削除したあとも「元に戻す」で復元できます。</DialogContent>
             <DialogActions>
-              <Button appearance="secondary" onClick={() => setToDelete(null)}>キャンセル</Button>
-              <Button appearance="primary" onClick={() => { if (toDelete) st.remove(target.key, toDelete.id); setToDelete(null); }}>削除する</Button>
+              <Button appearance="secondary" onClick={() => setToDelete(null)}>{t('キャンセル')}</Button>
+              <Button appearance="primary" onClick={() => { if (toDelete) st.remove(target.key, toDelete.id); setToDelete(null); }}>{t('削除する')}</Button>
             </DialogActions>
           </DialogBody>
         </DialogSurface>

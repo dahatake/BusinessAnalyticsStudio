@@ -4,6 +4,7 @@
 // Control は図に示すだけで、このアプリは実機・外部システムへ何も送信しない（C-01。AC-569）。値は顧客パックの静的な値（鮮度を示す）。
 // Graph の表現（FR-238）は、表示形式の共通の仕組み（FR-238）の担当。
 import { useMemo, useRef, useState } from 'react';
+import { useT } from '../i18n';
 import { Badge, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { useHighlightClass } from '../components/highlight';
 import { Panel } from '../components/Panel';
@@ -63,6 +64,7 @@ const useStyles = makeStyles({
 });
 
 function ItemButton({ item, selectedFlag, onOpen }: { item: TwinItem; selectedFlag: boolean; onOpen: (id: string) => void }) {
+  const t = useT();
   const s = useStyles();
   const hl = useHighlightClass();
   const bind = useEntityBinding(ORIGIN);
@@ -70,7 +72,7 @@ function ItemButton({ item, selectedFlag, onOpen }: { item: TwinItem; selectedFl
   return (
     <button
       type="button" {...props} className={mergeClasses(s.item, hl(props['data-highlight']))} aria-pressed={selectedFlag}
-      aria-label={`${item.name}（${item.world === 'real' ? '現実世界' : 'デジタル世界'}）`}
+      aria-label={`${item.name}（${item.world === 'real' ? '現実世界' : t('デジタル世界')}）`}
       onDoubleClick={() => onOpen(item.id)}
       onKeyDown={(e) => {
         if (e.key === 'Enter' && e.target === e.currentTarget) { e.preventDefault(); onOpen(item.id); return; }
@@ -84,18 +86,19 @@ function ItemButton({ item, selectedFlag, onOpen }: { item: TwinItem; selectedFl
 
 function FlowRow({ flow, nameOf, ids }: { flow: TwinFlow; nameOf: (id: string) => string; ids: ReadonlySet<string> }) {
   const s = useStyles();
-  const t = FLOW_TEXT[flow.kind];
+  const t = useT();
+  const ft = FLOW_TEXT[flow.kind];
   const on = ids.size > 0 && flowTouches(flow, ids);
   return (
     <li
-      data-testid="twin-flow" data-flow-id={flow.id} data-flow-kind={flow.kind} data-from={flow.from} data-to={flow.to} data-line-style={t.lineStyle}
-      data-highlight={on ? 'related' : undefined} aria-label={`${t.name}の流れ ${nameOf(flow.from)} から ${nameOf(flow.to)}（${flow.label}、${flow.count} 件）`}
-      className={mergeClasses(s.flow, t.lineStyle === 'solid' ? s.solid : s.dashed, on && s.flowOn, ids.size > 0 && !on && s.flowDim)}
+      data-testid="twin-flow" data-flow-id={flow.id} data-flow-kind={flow.kind} data-from={flow.from} data-to={flow.to} data-line-style={ft.lineStyle}
+      data-highlight={on ? 'related' : undefined} aria-label={`${ft.name}の流れ ${nameOf(flow.from)} から ${nameOf(flow.to)}（${flow.label}、${flow.count} 件）`}
+      className={mergeClasses(s.flow, ft.lineStyle === 'solid' ? s.solid : s.dashed, on && s.flowOn, ids.size > 0 && !on && s.flowDim)}
     >
-      <Badge appearance="outline" size="large">{t.name} {t.arrow}</Badge>
-      <Text weight="semibold">{flow.label || '（ラベルなし）'}</Text>
+      <Badge appearance="outline" size="large">{ft.name} {ft.arrow}</Badge>
+      <Text weight="semibold">{flow.label || t('（ラベルなし）')}</Text>
       <Text>{flow.count} 件</Text>
-      <Text size={200}>{nameOf(flow.from)} → {nameOf(flow.to)}（{t.direction}）</Text>
+      <Text size={200}>{nameOf(flow.from)} → {nameOf(flow.to)}（{ft.direction}）</Text>
     </li>
   );
 }
@@ -121,6 +124,7 @@ function freshnessOf(entities: ReadonlyArray<{ id: string; world?: string; sourc
 }
 
 export function TwinViewScreen() {
+  const t = useT();
   const s = useStyles();
   const state = usePackStore((st) => st.state);
   const view = useComponentView(ORIGIN);
@@ -171,14 +175,14 @@ export function TwinViewScreen() {
   // Graph（FR-238）: 項目をノードに、Data・Control の流れとツイン関係を意味ラベル付きの向き付きのエッジにする（2D・3D と同じ項目・同じ流れ）
   const graphNodes = useMemo<GraphNodeIn[]>(() => allItems.map((i) => {
     const c = clusterOfItem(i);
-    return { id: i.id, name: i.name, kind: c, kindLabel: c.split('（')[0], cluster: i.world };
+    return { id: i.id, name: i.name, kind: c, kindLabel: c.split(t('（'))[0], cluster: i.world };
   }), [allItems]);
   const graphEdges = useMemo<GraphEdgeIn[]>(() => [
     ...model.flows.map((f) => ({ id: f.id, from: f.from, to: f.to, label: `${FLOW_TEXT[f.kind].name} ${f.label || ''} ${f.count} 件`.replace(/\s+/g, ' ').trim(), meaning: f.kind, dash: FLOW_TEXT[f.kind].lineStyle === 'dashed' ? '6 4' : undefined })),
-    ...twinLinks.map(([a, b]) => ({ id: `twin:${a}>${b}`, from: a, to: b, label: 'ツイン', meaning: 'twin', dash: '2 3' })),
+    ...twinLinks.map(([a, b]) => ({ id: `twin:${a}>${b}`, from: a, to: b, label: t('ツイン'), meaning: 'twin', dash: '2 3' })),
   ], [model, twinLinks]);
 
-  if (!data) return <LoadingView label="Twin ビューを読み込み中" />;
+  if (!data) return <LoadingView label={t('Twin ビューを読み込み中')} />;
   const hasControl = model.flows.some((f) => f.kind === 'control');
   const showReal = view.world !== 'digital';
   const showDigital = view.world !== 'real';
@@ -204,9 +208,9 @@ export function TwinViewScreen() {
   const nameOf = (id: string): string => names.get(id) ?? id;
 
   const realColumn = showReal ? (
-    <section className={s.world} data-testid="twin-world-real" aria-label="現実世界">
-      <Text weight="semibold">現実世界</Text>
-      {model.realByGroup.length === 0 ? <Text size={200}>現実世界の項目はありません。</Text> : null}
+    <section className={s.world} data-testid="twin-world-real" aria-label={t('現実世界')}>
+      <Text weight="semibold">{t('現実世界')}</Text>
+      {model.realByGroup.length === 0 ? <Text size={200}>{t('現実世界の項目はありません。')}</Text> : null}
       {model.realByGroup.map((g) => (
         <div key={g.group} className={s.group} data-testid={`twin-group-${g.group}`}>
           <Text size={200} weight="semibold">{REAL_GROUP_LABELS[g.group]}</Text>
@@ -217,12 +221,12 @@ export function TwinViewScreen() {
   ) : null;
 
   const digitalColumn = showDigital ? (
-    <section className={s.world} data-testid="twin-world-digital" aria-label="デジタル世界">
-      <Text weight="semibold">デジタル世界</Text>
+    <section className={s.world} data-testid="twin-world-digital" aria-label={t('デジタル世界')}>
+      <Text weight="semibold">{t('デジタル世界')}</Text>
       {model.layers.map((l) => (
         <div key={l.layer} className={s.layer} data-testid={`twin-layer-${l.layer}`}>
           <Text size={200} weight="semibold">{LAYER_LABELS[l.layer]}</Text>
-          {l.items.length === 0 ? <Text size={200}>この層の項目はありません。</Text> : (
+          {l.items.length === 0 ? <Text size={200}>{t('この層の項目はありません。')}</Text> : (
             <ul className={s.list}>{l.items.map((i) => <li key={i.id}><ItemButton item={i} selectedFlag={selected.has(i.id)} onOpen={openItem} /></li>)}</ul>
           )}
         </div>
@@ -231,9 +235,9 @@ export function TwinViewScreen() {
   ) : null;
 
   const flowList = view.world === 'both' ? (
-    <section aria-label="流れ" data-testid="twin-flows">
-      <Text block weight="semibold">流れ（Data: 現実世界→デジタル世界、Control: デジタル世界→現実世界）</Text>
-      {model.flows.length === 0 ? <Text size={200} block>この顧客パックには、現実世界とデジタル世界を結ぶ流れがありません。</Text> : (
+    <section aria-label={t('流れ')} data-testid="twin-flows">
+      <Text block weight="semibold">{t('流れ（Data: 現実世界→デジタル世界、Control: デジタル世界→現実世界）')}</Text>
+      {model.flows.length === 0 ? <Text size={200} block>{t('この顧客パックには、現実世界とデジタル世界を結ぶ流れがありません。')}</Text> : (
         <ul className={s.flows}>{model.flows.map((f) => <FlowRow key={`${f.kind}:${f.from}:${f.to}`} flow={f} nameOf={nameOf} ids={highlighted} />)}</ul>
       )}
     </section>
@@ -242,7 +246,7 @@ export function TwinViewScreen() {
   const surf3d = is3d && !asTable;
   const detailRel = detailItem
     ? [
-      ...model.flows.filter((f) => f.from === detailItem.id || f.to === detailItem.id).map((f) => `${FLOW_TEXT[f.kind].name}: ${nameOf(f.from)} から ${nameOf(f.to)} へ ${f.label || '（ラベルなし）'}（${f.count} 件）`),
+      ...model.flows.filter((f) => f.from === detailItem.id || f.to === detailItem.id).map((f) => `${FLOW_TEXT[f.kind].name}: ${nameOf(f.from)} から ${nameOf(f.to)} へ ${f.label || t('（ラベルなし）')}（${f.count} 件）`),
       ...twinLinks.filter(([a, b]) => a === detailItem.id || b === detailItem.id).map(([a, b]) => `ツイン: ${nameOf(a)} と ${nameOf(b)}`),
     ]
     : [];
@@ -253,34 +257,34 @@ export function TwinViewScreen() {
   return (
     <Panel
       testId="component-twin-view"
-      title="Twin ビュー"
-      description="現実世界の設備・人・拠点と、デジタル世界の三つの層（Operations・Experience・Insights）を、Data と Control の流れで結んで見ます。"
+      title={t('Twin ビュー')}
+      description={t('現実世界の設備・人・拠点と、デジタル世界の三つの層（Operations・Experience・Insights）を、Data と Control の流れで結んで見ます。')}
       maxWidth="1200px"
     >
       <div ref={rootRef} style={{ position: 'relative', display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM }}>
         <div className={s.notes}>
-          <Badge appearance="tint" color="informative" data-testid="twin-freshness">{FRESHNESS_NOTE}{fresh ? ` 出典の取得日: ${fresh}` : ' 取得日の記載なし'}</Badge>
+          <Badge appearance="tint" color="informative" data-testid="twin-freshness">{FRESHNESS_NOTE}{fresh ? ` 出典の取得日: ${fresh}` : t(' 取得日の記載なし')}</Badge>
           {hasControl || view.world === 'both' ? <Badge appearance="tint" color="warning" data-testid="twin-control-note">Control: {CONTROL_NOTE}</Badge> : null}
           {!isGraph ? <ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} /> : null}
         </div>
         {model.itemIds.length === 0 ? (
-          <EmptyView message="Twin ビューに表示する項目がありません（エンティティに世界区分（現実世界・デジタル世界）が必要です）。" />
+          <EmptyView message={t('Twin ビューに表示する項目がありません（エンティティに世界区分（現実世界・デジタル世界）が必要です）。')} />
         ) : (
           <>
-            <ZoomBar label="Twin ビュー" depth={depth} elementDepth={ELEMENT_DEPTH} onGo={goDepth} elementLabels={focusCluster ? [focusCluster] : []} detailLabel={detailItem?.name} />
-            <TwinMinimap items={items3d} inView={minimapIds} status={`現在の表示範囲: ${depth === 2 && detailItem ? detailItem.name : depth === 1 && focusCluster ? focusCluster : '全体'}`} />
+            <ZoomBar label={t('Twin ビュー')} depth={depth} elementDepth={ELEMENT_DEPTH} onGo={goDepth} elementLabels={focusCluster ? [focusCluster] : []} detailLabel={detailItem?.name} />
+            <TwinMinimap items={items3d} inView={minimapIds} status={`現在の表示範囲: ${depth === 2 && detailItem ? detailItem.name : depth === 1 && focusCluster ? focusCluster : t('全体')}`} />
             {surf3d ? (
               <>
                 <div ref={surf3dRef} style={{ position: 'relative' }}>
-                  <Items3DSurface viewKey={ORIGIN} origin={ORIGIN} label="Twin ビュー（現実世界の面とデジタル世界の面）" items={items3d} links={links3d} axes={{ y: '下: 現実世界／上: デジタル世界', z: '層' }} />
-                  <AnnotationLayer viewKey={ORIGIN} label="Twin ビュー" active={annotating} />
+                  <Items3DSurface viewKey={ORIGIN} origin={ORIGIN} label={t('Twin ビュー（現実世界の面とデジタル世界の面）')} items={items3d} links={links3d} axes={{ y: t('下: 現実世界／上: デジタル世界'), z: t('層') }} />
+                  <AnnotationLayer viewKey={ORIGIN} label={t('Twin ビュー')} active={annotating} />
                 </div>
                 <AnnotationControls viewKey={ORIGIN} active={annotating} onToggle={setAnnotating} />
               </>
             ) : null}
-            <GraphScope active={isGraph} origin={ORIGIN} label="Twin ビュー">
+            <GraphScope active={isGraph} origin={ORIGIN} label={t('Twin ビュー')}>
               {depth === 0 ? <ZoomClusters clusters={clusters} onOpen={openCluster} /> : null}
-              {depth === 1 && isGraph ? <GraphSurface origin={ORIGIN} label="Twin ビュー" nodes={graphNodes} edges={graphEdges} onOpen={openItem} zoomControls="external" /> : null}
+              {depth === 1 && isGraph ? <GraphSurface origin={ORIGIN} label={t('Twin ビュー')} nodes={graphNodes} edges={graphEdges} onOpen={openItem} zoomControls="external" /> : null}
               {depth === 1 && !surf3d && !isGraph && !asTable ? (
                 <div className={mergeClasses(s.board, !(showReal && showDigital) && s.boardOne)} data-testid="twin-board">
                   {realColumn}
@@ -292,7 +296,7 @@ export function TwinViewScreen() {
                 <ZoomDetail
                   item={{
                     id: detailItem.id, name: detailItem.name,
-                    attributes: [['種別', clusterOfItem(detailItem)], ['世界', detailItem.world === 'real' ? '現実世界' : 'デジタル世界'], ['ID', detailItem.id]],
+                    attributes: [[t('種別'), clusterOfItem(detailItem)], [t('世界'), detailItem.world === 'real' ? '現実世界' : t('デジタル世界')], ['ID', detailItem.id]],
                     sources: detailSources, relations: detailRel,
                   }}
                 />
@@ -301,8 +305,8 @@ export function TwinViewScreen() {
             {depth === 1 && (surf3d || isGraph) ? flowList : null}
             {surf3d || isGraph || asTable ? (
               <GraphAlt
-                origin={ORIGIN} label="Twin ビュー" columns={['世界']} showTableButton={isGraph}
-                nodes={allItems.map((i) => ({ id: i.id, name: i.name, kind: clusterOfItem(i), values: [i.world === 'real' ? '現実世界' : 'デジタル世界'] }))}
+                origin={ORIGIN} label={t('Twin ビュー')} columns={[t('世界')]} showTableButton={isGraph}
+                nodes={allItems.map((i) => ({ id: i.id, name: i.name, kind: clusterOfItem(i), values: [i.world === 'real' ? '現実世界' : t('デジタル世界')] }))}
                 relations={graphEdges.map((e) => ({ id: e.id, from: e.from, to: e.to, label: e.label }))}
                 summary={`現実世界 ${model.real.length} 件、デジタル世界 ${model.digital.length} 件（${model.layers.filter((l) => l.layer !== 'none').map((l) => `${l.layer} ${l.items.length}`).join('、')}）`}
               />

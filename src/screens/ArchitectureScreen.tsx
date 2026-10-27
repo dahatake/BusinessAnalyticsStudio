@@ -1,6 +1,7 @@
 // アーキテクチャ図（2D/3D。FR-040）。ビジネスアーキテクチャ（Capability Map・バリューストリーム）と、アプリ/システムの層（2D のブロック図、3D のレイヤー積層図）。
 // AsIs/ToBe を切り替えると差分（追加・削除・変更）を色とラベルでハイライトする。図は Mermaid・SVG・PNG で出力でき、JSON で編集できる。
 import { useEffect, useMemo, useState } from 'react';
+import { useT } from '../i18n';
 import {
   Badge, Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, Text, Textarea, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
@@ -92,6 +93,7 @@ function Diagram2D({ sections }: { sections: ArchSection[] }) {
 }
 
 function ArchitectureScreen() {
+  const t = useT();
   const s = useStyles();
   const { select } = useSelection();
   const state = usePackStore((st) => st.state);
@@ -136,7 +138,7 @@ function ArchitectureScreen() {
     return () => cancelAnimationFrame(id);
   }, [jsonOpen]);
 
-  if (state.status !== 'ready' || !model || !variants) return <LoadingView label="アーキテクチャ図を読み込み中" />;
+  if (state.status !== 'ready' || !model || !variants) return <LoadingView label={t('アーキテクチャ図を読み込み中')} />;
   const { customer } = state.pack.data;
 
   const title = `${customer.name} ${customer.projectName} アーキテクチャ（${view === 'asis' ? 'AsIs' : 'ToBe'}）`;
@@ -170,7 +172,7 @@ function ArchitectureScreen() {
     const c = useEditStore.getState().commit({
       ok: true,
       data: next,
-      changes: [{ op: 'update', entityLabel: 'アーキテクチャ図', fieldLabel: 'JSON（asis・tobe）', before: `AsIs ${variants.asis.elements.length} 要素・ToBe ${variants.tobe.elements.length} 要素`, after: `AsIs ${r.value.asis.elements.length} 要素・ToBe ${r.value.tobe.elements.length} 要素` }],
+      changes: [{ op: 'update', entityLabel: t('アーキテクチャ図'), fieldLabel: t('JSON（asis・tobe）'), before: `AsIs ${variants.asis.elements.length} 要素・ToBe ${variants.tobe.elements.length} 要素`, after: `AsIs ${r.value.asis.elements.length} 要素・ToBe ${r.value.tobe.elements.length} 要素` }],
     });
     if (!c.ok) { setJsonError(c.message); return; }
     setJsonOpen(false);
@@ -179,14 +181,14 @@ function ArchitectureScreen() {
   return (
     <Panel
       testId="component-architecture"
-      title="アーキテクチャ図"
-      description="ビジネスアーキテクチャ（Capability Map・バリューストリーム）と、アプリ/システムの層を見ます。AsIs と ToBe を切り替えると、差分を色とラベルで示します。"
+      title={t('アーキテクチャ図')}
+      description={t('ビジネスアーキテクチャ（Capability Map・バリューストリーム）と、アプリ/システムの層を見ます。AsIs と ToBe を切り替えると、差分を色とラベルで示します。')}
       maxWidth="1200px"
     >
       <ExecutiveSummary scope="architecture" />
 
-      <div className={s.toolbar} role="toolbar" aria-label="アーキテクチャ図の操作">
-        <Field label="版">
+      <div className={s.toolbar} role="toolbar" aria-label={t('アーキテクチャ図の操作')}>
+        <Field label={t('版')}>
           <RadioGroup layout="horizontal" value={view} onChange={(_, d) => setView(d.value as ArchView)}>
             <Radio value="asis" label="AsIs" />
             <Radio value="tobe" label="ToBe" />
@@ -194,16 +196,16 @@ function ArchitectureScreen() {
         </Field>
         {/* 見出しの「ビュー」と同じ 1 つの切替（FR-217 AC-500・AC-507） */}
         <ModeRadio viewKey={ORIGIN} />
-        <Field label="範囲">
+        <Field label={t('範囲')}>
           <RadioGroup layout="horizontal" value={scope} onChange={(_, d) => setScope(d.value as typeof scope)}>
-            <Radio value="all" label="すべて" />
-            <Radio value="business" label="ビジネス" />
-            <Radio value="app" label="アプリ/システム" />
+            <Radio value="all" label={t('すべて')} />
+            <Radio value="business" label={t('ビジネス')} />
+            <Radio value="app" label={t('アプリ/システム')} />
           </RadioGroup>
         </Field>
         <Menu>
           <MenuTrigger disableButtonEnhancement>
-            <Button icon={<ArrowDownload24Regular aria-hidden />}>図を出力</Button>
+            <Button icon={<ArrowDownload24Regular aria-hidden />}>{t('図を出力')}</Button>
           </MenuTrigger>
           <MenuPopover>
             <MenuList>
@@ -213,27 +215,27 @@ function ArchitectureScreen() {
             </MenuList>
           </MenuPopover>
         </Menu>
-        <Button icon={<Code24Regular aria-hidden />} disabled={!editEnabled} onClick={() => setJsonOpen(true)}>JSON 編集</Button>
-        {!editEnabled ? <Text size={200}>編集モードを ON にすると、JSON で要素を編集できます。</Text> : null}
+        <Button icon={<Code24Regular aria-hidden />} disabled={!editEnabled} onClick={() => setJsonOpen(true)}>{t('JSON 編集')}</Button>
+        {!editEnabled ? <Text size={200}>{t('編集モードを ON にすると、JSON で要素を編集できます。')}</Text> : null}
       </div>
       {exportError ? <Text role="alert" style={{ color: tokens.colorPaletteRedForeground1 }}>{exportError}</Text> : null}
 
-      <div role="group" aria-label="差分の凡例" style={{ display: 'flex', columnGap: tokens.spacingHorizontalM, flexWrap: 'wrap' }}>
-        <Text size={200}>{view === 'tobe' ? 'AsIs との差分:' : 'AsIs（現状）の図です。ToBe に切り替えると差分を示します。'}</Text>
+      <div role="group" aria-label={t('差分の凡例')} style={{ display: 'flex', columnGap: tokens.spacingHorizontalM, flexWrap: 'wrap' }}>
+        <Text size={200}>{view === 'tobe' ? 'AsIs との差分:' : t('AsIs（現状）の図です。ToBe に切り替えると差分を示します。')}</Text>
         {view === 'tobe' ? (['added', 'removed', 'changed'] as const).map((k) => <DiffBadge key={k} diff={k} />) : null}
       </div>
 
       {sections.length === 0 ? (
-        <EmptyView message="表示する要素がありません。" />
+        <EmptyView message={t('表示する要素がありません。')} />
       ) : dim === '2d' ? (
         <Diagram2D sections={sections} />
       ) : (
         <ArchitectureStack sections={sections} model={model} onSelect={(id) => select(id, { origin: ORIGIN })} />
       )}
 
-      <section aria-label="接続">
-        <Text as="h3" size={400} weight="semibold" block>接続</Text>
-        {model.links.length === 0 ? <Text size={200}>接続はありません。</Text> : (
+      <section aria-label={t('接続')}>
+        <Text as="h3" size={400} weight="semibold" block>{t('接続')}</Text>
+        {model.links.length === 0 ? <Text size={200}>{t('接続はありません。')}</Text> : (
           <ul className={s.links}>
             {model.links.map((l, i) => (
               <li key={i}>
@@ -249,15 +251,15 @@ function ArchitectureScreen() {
       <Dialog open={jsonOpen} onOpenChange={(_, d) => { if (!d.open) setJsonOpen(false); }}>
         <DialogSurface style={{ maxWidth: '720px' }}>
           <DialogBody>
-            <DialogTitle>アーキテクチャの JSON 編集</DialogTitle>
+            <DialogTitle>{t('アーキテクチャの JSON 編集')}</DialogTitle>
             <DialogContent style={{ display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS }}>
-              <Text size={200}>asis・tobe の elements（id・name・kind・layer など）と links（from・to・label）を編集できます。同じ ID を両方に置くと同じ要素の変更になります。</Text>
-              {dlgReady ? <Textarea className={s.json} resize="vertical" aria-label="アーキテクチャの JSON" value={jsonText} onChange={(_, d) => setJsonText(d.value)} rows={16} /> : null}
+              <Text size={200}>{t('asis・tobe の elements（id・name・kind・layer など）と links（from・to・label）を編集できます。同じ ID を両方に置くと同じ要素の変更になります。')}</Text>
+              {dlgReady ? <Textarea className={s.json} resize="vertical" aria-label={t('アーキテクチャの JSON')} value={jsonText} onChange={(_, d) => setJsonText(d.value)} rows={16} /> : null}
               {jsonError ? <Text role="alert" style={{ color: tokens.colorPaletteRedForeground1, whiteSpace: 'pre-wrap' }}>{jsonError}</Text> : null}
             </DialogContent>
             <DialogActions>
-              <Button appearance="secondary" onClick={() => setJsonOpen(false)}>キャンセル</Button>
-              {dlgReady ? <Button appearance="primary" onClick={applyJson}>適用</Button> : null}
+              <Button appearance="secondary" onClick={() => setJsonOpen(false)}>{t('キャンセル')}</Button>
+              {dlgReady ? <Button appearance="primary" onClick={applyJson}>{t('適用')}</Button> : null}
             </DialogActions>
           </DialogBody>
         </DialogSurface>
