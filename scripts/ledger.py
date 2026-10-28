@@ -9,7 +9,6 @@ Usage:
   python scripts/ledger.py block ID --reason "..."          # never delete a case; block it with a reason
   python scripts/ledger.py set ID pass|fail|blocked|not_run [--evidence PATH] [--reason ...]
   python scripts/ledger.py digests [--update]               # ac_digests (PARAM expanded AC text)
-  python scripts/ledger.py restore --from-ref main --cases IT-082,IT-083,IT-084,E2E-440
   python scripts/ledger.py repair [--apply]                 # align with the requirements definition (rdfix.py)
   python scripts/ledger.py preflight [--cases ID,..] [--all]  # pytest 'collect-only': syntax errors / 0 tests selected (test-designer, before implementation)
   python scripts/ledger.py run [--cases E2E-001,IT-002 | --select changed|failed|all] [--base REF]
@@ -109,124 +108,6 @@ def cmd_add(args, root, cfg) -> int:
         data["ac_digests"][a] = h.ac_digest(doc.acs[a], doc.params)
     h.save_ledger(root, cfg, data)
     print(cid)
-    return 0
-
-
-
-def _restore_json(text: str) -> dict:
-    """Reject ambiguous JSON and validate the v1 ledger before any write."""
-    def pairs(items):
-        result = {}
-        for key, value in items:
-            if key in result:
-                raise ValueError(f"duplicate JSON key: {key}")
-            result[key] = value
-        return result
-
-    def invalid_constant(value):
-        raise ValueError(f"invalid JSON constant: {value}")
-
-    data = json.loads(text, object_pairs_hook=pairs, parse_constant=invalid_constant)
-    if not isinstance(data, dict) or type(data.get("version")) is not int or data["version"] != 1:
-        raise ValueError("ledger version must be 1")
-    if not isinstance(data.get("ac_digests"), dict) or not all(
-            isinstance(k, str) and isinstance(v, str) for k, v in data["ac_digests"].items()):
-        raise ValueError("ac_digests must be a string mapping")
-    if not isinstance(data.get("cases"), list):
-        raise ValueError("cases must be a list")
-    seen = set()
-    for case in data["cases"]:
-        if not isinstance(case, dict):
-            raise ValueError("case must be an object")
-        cid = case.get("id")
-        if not isinstance(cid, str) or not re.fullmatch(r"(?:IT|E2E)-[0-9]{3,}", cid):
-            raise ValueError("invalid case id")
-        if cid in seen:
-            raise ValueError(f"duplicate case id: {cid}")
-        seen.add(cid)
-        for key in ("title", "command", "layer", "status"):
-            if not isinstance(case.get(key), str) or not case[key].strip():
-                raise ValueError(f"{cid}: invalid {key}")
-        if case["layer"] not in LAYERS or case["status"] not in STATUSES:
-            raise ValueError(f"{cid}: invalid layer/status")
-        for key in ("requirement_ids", "ac_ids"):
-            values = case.get(key)
-            if (not isinstance(values, list) or not values
-                    or not all(isinstance(v, str) and v.strip() for v in values)
-                    or len(set(values)) != len(values)):
-                raise ValueError(f"{cid}: invalid {key}")
-        if type(case.get("canary")) is not bool or ("serial" in case and type(case["serial"]) is not bool):
-            raise ValueError(f"{cid}: invalid canary/serial")
-        for key in ("last_commit", "last_run_at", "evidence"):
-            if case.get(key) is not None and not isinstance(case[key], str):
-                raise ValueError(f"{cid}: invalid {key}")
-        entries = case.get("history")
-        if not isinstance(entries, list) or not all(
-                isinstance(e, dict) and all(isinstance(e.get(k), str) for k in ("at", "by", "change", "reason"))
-                for e in entries):
-            raise ValueError(f"{cid}: invalid history")
-    return data
-
-
-def cmd_restore(args, root, cfg) -> int:
-    """Restore missing cases verbatim; do not allocate IDs or rewrite run history."""
-    ids = split_ids(args.cases)
-    if (not ids or len(set(ids)) != len(ids)
-            or any(not re.fullmatch(r"(?:IT|E2E)-[0-9]{3,}", cid) for cid in ids)):
-        raise SystemExit("ERROR ledger restore: --cases must contain unique IT/E2E case IDs")
-    ref = args.from_ref
-    if not ref or ref.startswith("-") or any(ord(c) < 32 or ord(c) == 127 for c in ref):
-        raise SystemExit("ERROR ledger restore: invalid Git ref")
-    rel = Path(h.mf(cfg, "ledger"))
-    if rel.is_absolute() or rel.drive or ".." in rel.parts or ":" in str(rel):
-        raise SystemExit("ERROR ledger restore: ledger path must be repository-relative")
-    try:
-        def git_output(*argv):
-            proc = subprocess.run(["git", *argv], cwd=root, capture_output=True, timeout=30)
-            if proc.returncode:
-                raise ValueError(f"Git {argv[0]} failed (exit {proc.returncode})")
-            return proc.stdout.decode("utf-8")
-
-        # Resolve once, then use the immutable commit ID (never interpolate a ref into a shell).
-        commit = git_output("rev-parse", "--verify", "--end-of-options", ref + "^{commit}").strip()
-        if not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", commit):
-            raise ValueError("invalid resolved commit")
-        source = _restore_json(git_output("show", f"{commit}:{rel.as_posix()}"))
-        path = root / rel
-        if not path.resolve().is_relative_to(root.resolve()):
-            raise ValueError("ledger path escapes repository")
-        data = _restore_json(path.read_text(encoding="utf-8"))
-        by_id = {c["id"]: c for c in source["cases"]}
-        current = {c["id"]: c for c in data["cases"]}
-        doc = h.parse_requirements(root, cfg)
-        selected = []
-        digests = {}
-        for cid in ids:
-            if cid not in by_id:
-                raise ValueError(f"source case missing: {cid}")
-            case = by_id[cid]
-            if cid in current and current[cid] != case:
-                raise ValueError(f"conflicting existing case: {cid}")
-            if any(c["id"] != cid and c["title"] == case["title"] for c in data["cases"] + selected):
-                raise ValueError(f"conflicting case title: {cid}")
-            for req in case["requirement_ids"]:
-                if req not in doc.requirements:
-                    raise ValueError(f"{cid}: unknown requirement {req}")
-            for ac in case["ac_ids"]:
-                if ac not in doc.acs or doc.acs[ac].requirement not in case["requirement_ids"]:
-                    raise ValueError(f"{cid}: unknown or mismatched AC {ac}")
-                digests[ac] = h.ac_digest(doc.acs[ac], doc.params)
-            if cid not in current:
-                selected.append(case)
-        # All selected cases must pass validation before anything is saved.
-        changed = bool(selected) or any(data["ac_digests"].get(a) != d for a, d in digests.items())
-        if changed:
-            data["cases"].extend(selected)
-            data["ac_digests"].update(digests)
-            h.save_ledger(root, cfg, data)
-    except (OSError, ValueError, subprocess.TimeoutExpired) as exc:
-        raise SystemExit(f"ERROR ledger restore: {exc}") from exc
-    print(f"restored {len(selected)} case(s) from {commit}; existing identical cases preserved")
     return 0
 
 
@@ -537,7 +418,7 @@ def _kmatcher(names):
     return lambda ident, **kw: any(ident.lower() in n for n in low)
 
 
-def plan_batches(reps, groups, is_serial, is_canary):
+def plan_batches(reps, groups, is_serial, is_canary, jobs=1, durs=None):
     """Group the System Test commands that run the same pytest file into one process each (>= 2 distinct commands).
     Every case pays for the process start, the imports and the browser tool's start-up once per command; one
     process per file pays it once. Returns (units, batched_reps) where each unit is a virtual case with "_batch" members."""
@@ -545,7 +426,7 @@ def plan_batches(reps, groups, is_serial, is_canary):
         from _pytest.mark.expression import Expression  # the same -k grammar as pytest
     except Exception:
         return [], set()
-    by_file: dict = {}
+    members = []
     for c in reps:
         if is_serial(c) or is_canary(c):
             continue
@@ -557,23 +438,102 @@ def plan_batches(reps, groups, is_serial, is_canary):
                 Expression.compile(p[2])
         except Exception:
             continue
-        by_file.setdefault(p[0], []).append((c, p))
-    units, used = [], set()
-    for f, members in by_file.items():
-        if len(members) < 2:
-            continue
-        if any(not p[1] and not p[2] for _, p in members):
-            sel = ""
-        elif all(p[1] for _, p in members):
-            sel = " ".join(f'"{f}::{p[1]}"' for _, p in members)
-        else:
-            exprs = [f"({p[2]})" if p[2] else p[1].split("::")[-1].split("[")[0] for _, p in members]
-            sel = '-k "' + " or ".join(exprs) + '"'
-        target = f if (sel == "" or sel.startswith("-k")) else ""
-        units.append({"id": "BATCH:" + f, "command": f"BATCH {f} {sel}", "_batch": {"file": f, "target": target, "sel": sel,
-                                                                           "members": members}})
-        used.update(c["command"] for c, _ in members)
+        members.append((c, (re.sub(r"^\./", "", p[0]), p[1], p[2])))
+    if len(members) < 2:
+        return [], set()
+    used = {c["command"] for c, _ in members}
+    parts = split_members(members, jobs, durs)
+    units = [_make_unit(ms, i if len(parts) > 1 else None) for i, ms in enumerate(parts)]
     return units, used
+
+
+def split_members(members, jobs=1, durs=None):
+    """Split compatible members into at most `jobs` balanced parts (jobs <= 1: one part). Known durations (longest
+    first) balance the parts, else the case count does; members of one file stay together as far as possible."""
+    n = min(max(1, int(jobs or 1)), len(members))
+    if n <= 1:
+        return [list(members)]
+    durs = durs or {}
+    known = all(float(durs.get(c["command"], 0) or 0) > 0 for c, _ in members)
+    w = (lambda m: float(durs[m[0]["command"]])) if known else (lambda m: 1.0)
+    byfile: dict = {}
+    for m in members:
+        byfile.setdefault(m[1][0], []).append(m)
+    items = list(byfile.values())
+    while len(items) < n:  # fewer files than processes: split the heaviest multi-case file
+        cand = [it for it in items if len(it) > 1]
+        if not cand:
+            break
+        big = max(cand, key=lambda it: sum(w(m) for m in it))
+        items.remove(big)
+        big = sorted(big, key=lambda m: -w(m))
+        half = [big[i] for i in range(0, len(big), 2)], [big[i] for i in range(1, len(big), 2)]
+        items += [list(half[0]), list(half[1])]
+    items.sort(key=lambda it: -sum(w(m) for m in it))
+    bins = [[] for _ in range(min(n, len(items)))]
+    load = [0.0] * len(bins)
+    for it in items:
+        i = load.index(min(load))
+        bins[i].extend(it)
+        load[i] += sum(w(m) for m in it)
+    return [b for b in bins if b]
+
+
+def _make_unit(members, idx=None):
+    # One process for the compatible cases of any test files (no project-specific path is assumed).
+    files = list(dict.fromkeys(p[0] for _, p in members))
+    if not any(p[2] for _, p in members):
+        whole = {p[0] for _, p in members if not p[1]}
+        tg = [f for f in files if f in whole]
+        tg += list(dict.fromkeys(f"{p[0]}::{p[1]}" for _, p in members if p[1] and p[0] not in whole))
+        target, sel = " ".join(f'"{t}"' for t in tg), ""
+    else:
+        exprs = []
+        for _, p in members:
+            e = f"({p[2]})" if p[2] else (p[1].split("::")[-1].split("[")[0] if p[1] else Path(p[0]).stem)
+            if e not in exprs:
+                exprs.append(e)
+        target, sel = " ".join(f'"{f}"' for f in files), '-k "' + " or ".join(exprs) + '"'
+    label = files[0] if len(files) == 1 else f"{files[0]}+{len(files) - 1}files"
+    sfx = "" if idx is None else f"#{idx + 1}"
+    return {"id": "BATCH:" + label + sfx, "command": f"BATCH {label}{sfx} {sel}",
+            "_batch": {"file": label + sfx, "target": target, "sel": sel, "members": members}}
+
+
+def kill_tree(proc):
+    """Kill a process and every descendant (Popen.kill() alone leaves browser/pytest children behind)."""
+    try:
+        if os.name == "nt":
+            subprocess.run(["taskkill", "/F", "/T", "/PID", str(proc.pid)], capture_output=True)
+        else:
+            import signal
+            os.killpg(proc.pid, signal.SIGKILL)
+    except Exception:
+        pass
+    try:
+        proc.kill()
+    except Exception:
+        pass
+
+
+def run_shell(cmd, cwd, timeout):
+    """Run a shell command; on timeout, error or interrupt the whole process tree is killed. Returns (rc, output); rc 124 = timeout."""
+    kw = {"start_new_session": True} if os.name != "nt" else {}
+    proc = subprocess.Popen(cmd, cwd=cwd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True,
+                            encoding="utf-8", errors="replace", **kw)
+    try:
+        out, _ = proc.communicate(timeout=timeout)
+        return proc.returncode, out or ""
+    except subprocess.TimeoutExpired:
+        kill_tree(proc)
+        try:
+            proc.communicate(timeout=10)
+        except Exception:
+            pass
+        return 124, f"TIMEOUT after {timeout}s"
+    except BaseException:
+        kill_tree(proc)
+        raise
 
 
 def run_batch(unit, root, logs_dir, timeout, execute_single):
@@ -587,12 +547,8 @@ def run_batch(unit, root, logs_dir, timeout, execute_single):
     junit = logs_dir / f"BATCH-{re.sub(r'[^A-Za-z0-9]+', '_', b['file'])}-{stamp}.xml"
     cmd = f'python -m pytest {b["target"]} {b["sel"]} -q --junitxml="{junit}"'
     t0 = time.time()
-    try:
-        proc = subprocess.run(cmd, cwd=str(root), shell=True, capture_output=True, text=True,
-                              encoding="utf-8", errors="replace", timeout=timeout)
-        out = (proc.stdout or "") + (proc.stderr or "")
-    except subprocess.TimeoutExpired:
-        out = f"TIMEOUT after {timeout}s"
+    # the merged run's timeout scales with the number of cases it carries
+    _rc, out = run_shell(cmd, str(root), timeout * max(1, len(b["members"])) if timeout else timeout)
     mlog = logs_dir / f"BATCH-{re.sub(r'[^A-Za-z0-9]+', '_', b['file'])}-{stamp}.log"
     mlog.write_text(out, encoding="utf-8")
     tcs = []
@@ -609,17 +565,19 @@ def run_batch(unit, root, logs_dir, timeout, execute_single):
         if not tcs:
             rerun.append(c)
             continue
+        mod = re.sub(r"\.py$", "", f).replace("/", ".")
+        ftcs = [t for t in tcs if ".".join(t[1]) == mod or ".".join(t[1]).startswith(mod + ".")]
         if not node and not k:
-            hit = tcs
+            hit = ftcs
         elif node:
             parts = node.split("::")
             fn = parts[-1]
             base = fn.split("[")[0]
-            hit = [t for t in tcs if (t[0] == fn if "[" in fn else (t[0] == base or t[0].startswith(base + "[")))
+            hit = [t for t in ftcs if (t[0] == fn if "[" in fn else (t[0] == base or t[0].startswith(base + "[")))
                    and (len(parts) == 1 or parts[-2] in t[1])]
         else:
             ex = Expression.compile(k)
-            hit = [t for t in tcs if ex.evaluate(_kmatcher([t[0], *t[1], Path(f).name, Path(f).stem]))]
+            hit = [t for t in ftcs if ex.evaluate(_kmatcher([t[0], *t[1], Path(f).name, Path(f).stem]))]
         if not hit or any(t[3] for t in hit):
             rerun.append(c)
             continue
@@ -663,12 +621,7 @@ def cmd_run(args, root, cfg) -> int:
             return c, None
         t0 = time.time()
         log = logs_dir / f"{c['id']}-{h.new_run_id()}.log"
-        try:
-            proc = subprocess.run(c["command"], cwd=str(root), shell=True, capture_output=True, text=True,
-                                  encoding="utf-8", errors="replace", timeout=args.case_timeout)
-            rc, out = proc.returncode, (proc.stdout or "") + (proc.stderr or "")
-        except subprocess.TimeoutExpired:
-            rc, out = 124, f"TIMEOUT after {args.case_timeout}s"
+        rc, out = run_shell(c["command"], str(root), args.case_timeout)
         dur = round(time.time() - t0, 1)
         log.write_text(out, encoding="utf-8")
         return c, (rc, dur, log)
@@ -716,7 +669,7 @@ def cmd_run(args, root, cfg) -> int:
     rest = [c for c in reps if c not in first]
     batched = 0
     if not args.no_batch and (cfg.get("system_test") or {}).get("batch_pytest", True):
-        units, used = plan_batches(rest, groups, is_serial, is_canary)
+        units, used = plan_batches(rest, groups, is_serial, is_canary, jobs, durs)
         for u in units:
             groups[u["command"]] = [x for m, _ in u["_batch"]["members"] for x in groups[m["command"]]]
         rest = [c for c in rest if c["command"] not in used] + units
@@ -873,9 +826,6 @@ def main(argv=None) -> int:
     d.add_argument("--update", action="store_true")
     rp = sub.add_parser("repair")
     rp.add_argument("--apply", action="store_true", help="修正を書き込む（既定は確認だけ）")
-    rs = sub.add_parser("restore", help="restore missing cases from a Git commit without allocating IDs")
-    rs.add_argument("--from-ref", required=True)
-    rs.add_argument("--cases", required=True)
     pf = sub.add_parser("preflight")
     pf.add_argument("--cases")
     pf.add_argument("--all", action="store_true", help="pass 済みも含める（既定は not_run・fail のケース）")
@@ -898,8 +848,8 @@ def main(argv=None) -> int:
     cfg = h.load_config(root)
     fn = {"summary": cmd_summary, "add": cmd_add, "update": cmd_update, "block": cmd_block,
           "set": cmd_set, "digests": cmd_digests, "run": cmd_run, "repair": cmd_repair,
-          "preflight": cmd_preflight, "restore": cmd_restore}[args.cmd]
-    if args.cmd in ("add", "update", "block", "set", "digests", "restore"):
+          "preflight": cmd_preflight}[args.cmd]
+    if args.cmd in ("add", "update", "block", "set", "digests"):
         with ledger_lock(root, cfg):
             return fn(args, root, cfg)
     return fn(args, root, cfg)

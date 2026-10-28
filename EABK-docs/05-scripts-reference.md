@@ -102,14 +102,11 @@ python scripts/ledger.py --by test-designer update E2E-001 --command "…" --rea
 python scripts/ledger.py --by test-designer block E2E-001 --reason "…"                 # 削除の代わりに使う
 python scripts/ledger.py set E2E-001 blocked --reason "…"
 python scripts/ledger.py digests [--update]
-python scripts/ledger.py --by test-designer restore --from-ref main --cases IT-082,IT-083,IT-084,E2E-440
 python scripts/ledger.py repair [--apply]          # 要求定義書に合わせて台帳を直す（rdfix.py から使う）
 python scripts/ledger.py preflight [--cases ID,..] [--all]   # pytest を collect-only で確認（構文・import・-k/node id の誤りで 0 件）。test-designer の終了前と工程 4 の完了前に exit 0 にする
 python scripts/ledger.py --by conductor run --select changed|failed|all [--canary-first] [--stop-on-canary-fail] [--max-minutes N]
 python scripts/ledger.py run --cases E2E-001,IT-002 --no-record   # 作業役の worktree で、台帳を更新せずに実行だけする
 ```
-
-`restore` は Git ref を commit に固定し、設定された台帳から既存ケースを復元します。ID・履歴・証跡・実行状態はそのまま保持し、選択ケースの `ac_digests` だけを現在の要求本文（PARAM 展開込み）に同期します。新規採番やテスト実行はしません。同一内容の既存 ID は保持（再実行可能）し、異なる内容の同一 ID・別 ID の同名ケース・不正な ref/JSON/台帳形式・要求との参照不整合は、全件を書き込まず拒否します。復元は test-designer が行います。
 
 `run` の出力は、元の Prompt が定める報告形式（`<id> <requirement_ids> <pass|fail> <秒> <証跡>` と `結果: …`）です。結果の詳細は `work/runs/<run-id>/results.json` にあります。
 
@@ -188,7 +185,7 @@ python scripts/kpi.py history                      # docs/run-history.md 全体�
 
 North Star は「人の介入 1 回あたりの検証済み要求」です。**検証済み要求**は、実装した要求のうち、承認済みで、カタログの行があり、BLOCKED の AC がなく、system の AC がすべて台帳で `pass` のものです。検証済みにならなかった要求は、理由（「カタログの行がない」など）を表示します。指標と目標は [08-roadmap.md の 8.2](08-roadmap.md#82-kpi) にあります。
 
-流れ（速さ）の指標として、工程ごとの時間、実装ループの実効の並列度（項目の作業時間の合計 ÷ ループの経過時間）、項目 1 件あたりの作業時間、統合の直列時間とその割合、実際に使ったモデル（hook G-7 が記録する `work/runs/<run-id>/models.jsonl`）も出力します。遅い run では、まずこの表で、並列度が低いのか（作業役の待ち）、統合の直列時間が長いのか（verify・System Test の重さ）を切り分けます。
+流れ（速さ）の指標として、工程ごとの時間、実装ループの実効の並列度（項目の作業時間の合計 ÷ ループの経過時間）、項目 1 件あたりの作業時間、統合の直列時間とその割合、実際に使ったモデル（hook が記録する `work/runs/<run-id>/models.jsonl`）も出力します。遅い run では、まずこの表で、並列度が低いのか（作業役の待ち）、統合の直列時間が長いのか（verify・System Test の重さ）を切り分けます。
 
 ## import-speckit.py（GitHub Spec Kit からの取り込み）
 
