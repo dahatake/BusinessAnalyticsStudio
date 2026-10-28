@@ -65,6 +65,8 @@ export function AiUsagePanel() {
       <Text weight="semibold">{t('Microsoft Foundry の利用量（チャット・現状の説明の合算。端末内の記録）')}</Text>
       <Text>{t('今日の回数: {n} / {limit} 回', { n: r.dayCount, limit: limits.dailyLimit })}</Text>
       <Text>{t('今月の回数: {n} 回 ／ 概算費用: {cost} 円 / 予算 {budget} 円', { n: r.monthCount, cost: Math.round(r.monthCost * 100) / 100, budget: limits.monthlyBudget })}</Text>
+      <Text data-testid="ai-usage-tokens">{t('今月の利用量: 入力 {tin} トークン / 出力 {tout} トークン', { tin: r.monthTokensIn, tout: r.monthTokensOut })}</Text>
+      <Text size={200} data-testid="ai-usage-disclaimer">{t('概算額は、端末内に記録した利用量と上の単価から計算した目安です。Azure の請求額ではありません。')}</Text>
       <Field label={t('1 日の回数の上限（回）')}>
         <Input value={daily} inputMode="numeric" onChange={(_, d) => setDaily(d.value)} />
       </Field>
