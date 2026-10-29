@@ -139,7 +139,7 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
   };
   return (
     <div ref={rootRef} className={mergeClasses(s.root, navMin ? s.rootMin : undefined)} data-nav-min={navMin ? 'true' : undefined}>
-      <header className={s.header}>
+      <header className={s.header} data-testid="app-header">
         {/* FR-176: 作業先・企業・Project の段（ProjectsPanel が portal で描く）。画面の最上段に置き、Tab 順でも最初に届く */}
         <div id="projects-head-slot" className={s.topRow} data-testid="top-row" />
         <Text as="h1" size={500} weight="semibold">{title}</Text>
