@@ -314,6 +314,18 @@
 | FR-292 | ストーリー動画の作成 1 回あたりの予算上限（見積り・制御・超過時の中止） | 承認済み | src/usecase/storyVideo.ts (planStoryVideo, runStoryVideo, appendUsageLog, browserPriceStore, currentPrices, isValidPrices), src/usecase/StoryVideoPanel.tsx (見積りの確認・進行・中止。単価が未入力なら設定画面の入力を案内), src/ai/AiUsagePanel.tsx (設定画面のストーリー動画の単価の入力欄), src/ai/aiImportLogic.ts (recordCall の再利用) | tests/unit/story-video.test.ts (AC-782、AC-783、AC-784) | AI 呼び出し口, ユースケース・アニメーション, Foundry 利用量の記録 |
 | FR-293 | 画面上部の表示言語トグル（日本語／英語） | 承認済み | src/i18n/store.ts, src/i18n/LanguageToggle.tsx, src/app/App.tsx | tests/unit/i18n.test.tsx | 表示言語の基盤 |
 | FR-294 | 画面内の固定文言の日英切り替え | 承認済み | src/i18n/translate.ts, src/i18n/useT.ts, src/i18n/dictionary.ts, src/i18n/en/core.ts | tests/unit/i18n.test.tsx | 表示言語の基盤 |
+### 承認待ちの改訂案（run 202610300723）
+
+機能表の「承認済み」は現行要求の状態であり、次の案を承認した意味ではない。詳細・対象の網羅表・依存は [要求定義書 §10.5](requirements-definition.md#105-提案仮説) に置く。本文は今回の編集許可外の `docs/requirements/` にあるため、変更していない。新規機能・AC・未実装の共通部品は登録しない。
+
+対象は GraphSurface・Graph3D・Items3DSurface・Sankey を含むフロー・Canvas 等のデータ可視化で、描画部品の違いを理由に縮小しない。`useDrawProgress` は利用者補足では使用箇所なしであり、カタログへの記載を画面への適用実績とはみなさない。CountUp/useCountUp は既存資産。改訂案は下記 3 項目・各 1 AC の更新に限定する。
+
+| 改訂対象 | 案の内容 | 案の決定状態・依存 | 既存資産・検証への影響 |
+|---|---|---|---|
+| FR-070・AC-086 | 全データ可視化の初回表示と追加/更新/削除を描画の出入り・補間で追え、停止/軽減時は最終状態を示す | AI提案／承認待ち。BLOCKED: Q-067、Q-068。PARAM-133 は TBD | 演出の動き・デザイン基盤と各描画部品を再利用。現行 AC-086 は manual のまま。承認後に system 移行を test-designer が整理 |
+| FR-045・AC-056 | 名称・値・関係・追加/削除と元に戻す操作の反映を、当該データを使う全可視化・代替表で検証 | AI提案／承認待ち。BLOCKED: Q-067 | 編集の共通ストア・顧客パックの読み込み・選択状態とエンティティ関係グラフを再利用。E2E-148 の拡張候補。現行ケースは変更なし |
+| FR-134・AC-197 | 分析パラメーターの変更・連続更新後、対応する全ビュアーで最新結果が一致する | AI提案／承認待ち。BLOCKED: Q-067 | AnalysisPanel・既存の分析結果計算を再利用。E2E-099 の拡張候補。既存の PARAM-032 の時間上限と入力検証を維持 |
+
 ## API・イベント
 
 | 名前 | 定義ファイル | 関連する要求 ID |
