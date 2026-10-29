@@ -35,23 +35,5 @@
   "parameters": {
     "section_item_limit_param": "PARAM-043",
     "section_item_limit_default": 20
-  },
-  "entity_classification": {
-    "description": "要求定義書 §3.7 のエンティティの分類表の欄（FR-212 AC-488）。検査（rdcheck CHK-29）はこの定義を読む。表は、required の欄の名前をすべて見出しに持つ表として探す。",
-    "fields": [
-      { "name": "エンティティ", "role": "name", "required": true, "type": "text" },
-      { "name": "世界区分", "role": "world", "required": true, "type": "enum", "allowed": ["現実世界", "デジタル世界"] },
-      {
-        "name": "種別", "role": "kind", "required": true, "type": "enum-by-world",
-        "allowed_by_world": {
-          "現実世界": ["拠点", "設備", "人", "組織", "業務", "モノ", "コト"],
-          "デジタル世界": ["データ", "モデル", "システム", "画面コンポーネント", "センサー/指標"]
-        }
-      },
-      { "name": "上位", "role": "parent", "required": true, "type": "entity-ref", "none": "なし" },
-      { "name": "整理の軸", "role": "axis", "required": true, "type": "enum-list", "allowed": ["位置", "名前", "時間", "分類", "階層"], "separator": "・" },
-      { "name": "ツイン", "role": "twins", "required": true, "type": "twin-list", "none": "なし", "relation_allowed": ["表す", "計測する", "記録する", "表示する"] },
-      { "name": "カタログの対応", "role": "catalog", "required": true, "type": "asset-list", "none": "なし", "asset_kinds": ["共通部品", "API", "イベント", "テーブル", "外部連携"] }
-    ]
   }
 }
