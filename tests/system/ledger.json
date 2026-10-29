@@ -152,7 +152,7 @@
     "AC-248": "sha256:8b26ee69dd22cf3a",
     "AC-249": "sha256:6afbeb628863d6bb",
     "AC-250": "sha256:48e7168573414b71",
-    "AC-251": "sha256:a7a5f2195f0c9f11",
+    "AC-251": "sha256:d87766b0231b0fae",
     "AC-254": "sha256:8c4b41cce658f864",
     "AC-257": "sha256:f2c1a59d0c97e880",
     "AC-260": "sha256:4690110bce071259",
@@ -252,7 +252,7 @@
     "AC-519": "sha256:808c1eb3df6b87b7",
     "AC-521": "sha256:0f3620c4a95cec35",
     "AC-523": "sha256:fcb5bcca0e5a3af7",
-    "AC-525": "sha256:774be91f6e997167",
+    "AC-525": "sha256:9babebd03ffec9e2",
     "AC-526": "sha256:972af3511eec95dd",
     "AC-528": "sha256:a3fad302aa45bbdc",
     "AC-529": "sha256:862c46ce942f320c",
@@ -3891,11 +3891,11 @@
       "ac_ids": [
         "AC-251"
       ],
-      "title": "企業を二段階で選び、対象 Project のみ表示・確定後に作業先が変わる（キーボード・支援技術を含む）",
+      "title": "企業名ボタンで同社 Project 一覧・別企業の一覧を開き、選択だけでは不変・確定で分析位置を復元し、Project 名ボタンで全作業先メニューを開く",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-251",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "db81e06",
       "last_run_at": "2026-10-28T01:54:37+09:00",
       "evidence": "work/runs/202610272319/logs/system-test/E2E-231-202610280133.log",
@@ -3917,6 +3917,12 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "run 202610251554: 更新ACの実装は未統合のため未実行とする。旧runのfail証跡はcommit 937b6baに保持。passを意味しない"
+        },
+        {
+          "at": "2026-10-29T09:08:05+09:00",
+          "by": "test-designer",
+          "change": "title: '企業を二段階で選び、対象 Project のみ表示・確定後に作業先が変わる（キーボード・支援技術を含む）' -> '企業名ボタンで同社 Project 一覧・別企業の一覧を開き、選択だけでは不変・確定で分析位置を復元し、Project 名ボタンで全作業先メニューを開く'",
+          "reason": "run 202610290902: AC-251 本文改訂（企業名/Project 名の 2 ボタン表示）に合わせテストを更新"
         }
       ]
     },
@@ -5852,11 +5858,11 @@
       "ac_ids": [
         "AC-525"
       ],
-      "title": "上部メニューだけに現在作業先を可視表示し、展開中も企業選択だけでは変えない（異常系）",
+      "title": "最上段の現在作業先表示領域だけに企業名・Project 名を 1 か所表示し、他段に重複せず、企業選択だけでは変えない（異常系）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-525",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "db81e06",
       "last_run_at": "2026-10-28T01:54:37+09:00",
       "evidence": "work/runs/202610272319/logs/system-test/E2E-323-202610280139.log",
@@ -5878,6 +5884,12 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "run 202610251554: 更新ACの実装は未統合のため未実行とする。旧runのfail証跡はcommit 937b6baに保持。passを意味しない"
+        },
+        {
+          "at": "2026-10-29T09:08:06+09:00",
+          "by": "test-designer",
+          "change": "title: '上部メニューだけに現在作業先を可視表示し、展開中も企業選択だけでは変えない（異常系）' -> '最上段の現在作業先表示領域だけに企業名・Project 名を 1 か所表示し、他段に重複せず、企業選択だけでは変えない（異常系）'",
+          "reason": "run 202610290902: AC-525 本文改訂（最上段表示領域のみ・個別重複も不可）に合わせテストを更新"
         }
       ]
     },

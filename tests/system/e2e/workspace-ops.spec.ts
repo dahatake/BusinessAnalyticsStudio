@@ -65,95 +65,100 @@ async function dragHeading(page: Page, c: Locator, toX: number, toY: number, rel
 
 test.describe('FR-148 最上段の作業先メニュー', () => {
   // FR-148 AC-251（AC-253 のキーボード・支援技術での到達も同じ導線で確認）
-  test('FR-148 AC-251 企業を選ぶと当該企業の Project のみ表示し、選択だけでは作業先を変えず確定後に切り替える', async ({ page, start }) => {
+  test('FR-148 AC-251 企業名ボタンで同社 Project 一覧・別企業の一覧へ（選択だけでは不変・Esc で不変）・確定で分析位置を復元し、Project 名ボタンで全作業先メニューが開く', async ({ page, start }) => {
     await start();
     await seedProjects(page, '合成株式会社A', ['業務改善 2026', '在庫最適化']);
     await seedProjects(page, '合成株式会社B', ['需要予測', '品質改善']);
-    await page.getByRole('region', { name: '企業 合成株式会社A' }).getByRole('link', { name: '業務改善 2026' }).click();
-    const menuButton = page.getByTestId('work-target-menu');
-    const current = page.getByTestId('work-target');
-    await expect(current).toContainText('合成株式会社A');
-    await expect(current).toContainText('業務改善 2026');
-    await expect(menuButton).toContainText('合成株式会社A');
-    await expect(menuButton).toContainText('業務改善 2026');
-    await menuButton.click();
-    const menu = page.getByRole('menu', { name: '作業先' });
-    await expect(menu.getByRole('menuitemradio', { name: /デモ/ })).toBeVisible();
+    await page.getByRole('region', { name: '企業 合成株式会社A' }).getByRole('link', { name: '業務改善 2026', exact: true }).click();
+    const stepper = page.getByTestId('stepper');
+    await page.getByRole('button', { name: '分析を開始' }).click();
+    await page.getByRole('listbox', { name: '分析手法' }).getByRole('option', { name: 'SWOT 分析', exact: true }).click();
+    await stepper.getByRole('button', { name: '現状分析', exact: true }).click();
 
-    const chooseCompany = async (company: string, expected: string[], excluded: string[]) => {
-      const choice = menu.getByRole('button', { name: company, exact: true });
-      await expect(choice).toBeVisible();
-      await expect(choice).toHaveAccessibleName(company);
-      await choice.click();
-      const projects = menu.getByRole('menuitemradio', { name: new RegExp(company) });
-      await expect(projects).toHaveCount(2);
-      for (const project of expected) {
-        const item = menu.getByRole('menuitemradio', { name: new RegExp(`${company}.*${project}`) });
-        await expect(item).toBeVisible();
-        await expect(item).toHaveAccessibleName(new RegExp(`${company}.*${project}`));
-      }
-      for (const project of excluded) {
-        await expect(menu.getByRole('menuitemradio', { name: new RegExp(project) })).toHaveCount(0);
-      }
-      await expect(current).toContainText('合成株式会社A');
-      await expect(current).toContainText('業務改善 2026');
-      await expect(menuButton).toContainText('合成株式会社A');
-      await expect(menuButton).toContainText('業務改善 2026');
-    };
+    // 最上段の現在先表示 =「企業名（ボタン）- Project 名（全作業先メニューのボタン）」（契約 §10）
+    const display = page.getByTestId('work-target-display');
+    const companyBtn = display.getByTestId('current-company-menu');
+    const projectBtn = display.getByTestId('work-target-menu');
+    const companyMenu = page.getByRole('menu', { name: '企業の Project' });
+    const allMenu = page.getByRole('menu', { name: '作業先', exact: true });
+    await expect(companyBtn).toContainText('合成株式会社A');
+    await expect(projectBtn).toContainText('業務改善 2026');
+    await expect(display).toHaveAccessibleName(/合成株式会社A.*業務改善 2026/);
 
-    await chooseCompany('合成株式会社A', ['業務改善 2026', '在庫最適化'], ['需要予測', '品質改善']);
-    await chooseCompany('合成株式会社B', ['需要予測', '品質改善'], ['業務改善 2026', '在庫最適化']);
-    await expect(menu).toHaveAccessibleDescription(/合成株式会社B/);
-    await expect(menu.getByRole('menuitemradio', { name: /デモ/ })).toBeVisible();
-    await menu.getByRole('menuitemradio', { name: /合成株式会社B.*品質改善/ }).click();
-    await expect(page.getByTestId('stepper')).toBeVisible();
-    await expect(current).toContainText('合成株式会社B');
-    await expect(current).toContainText('品質改善');
-    await expect(menuButton).toContainText('合成株式会社B');
-    await expect(menuButton).toContainText('品質改善');
-    const menuBox = await box(menuButton);
-    const stepperBox = await box(page.getByTestId('stepper'));
-    expect(menuBox.y, '作業先メニューがステッパーより上段にある').toBeLessThan(stepperBox.y);
+    // 企業名のボタン: 現在の企業の 2 Project を企業名・Project 名で一覧し、現在先が識別できる
+    await companyBtn.click();
+    await expect(companyMenu).toBeVisible();
+    await expect(companyMenu.getByRole('menuitemradio')).toHaveCount(2);
+    await expect(companyMenu.getByRole('menuitemradio', { name: /合成株式会社A.*業務改善 2026/ })).toBeChecked();
+    await expect(companyMenu.getByRole('menuitemradio', { name: /合成株式会社A.*在庫最適化/ })).toBeVisible();
+    await expect(companyMenu.getByRole('menuitemradio', { name: /需要予測|品質改善/ })).toHaveCount(0);
 
-    // マウスを使わずに最上段を開き、企業・Project の同じ導線をキーボードだけで完了する。
-    await tabTo(page, menuButton);
-    await page.keyboard.press('Enter');
-    await expect(menu).toBeVisible();
-    const companyA = menu.getByRole('button', { name: '合成株式会社A', exact: true });
-    await tabTo(page, companyA);
-    await page.keyboard.press('Enter');
-    await expect(menu.getByRole('menuitemradio', { name: /合成株式会社A/ })).toHaveCount(2);
-    await expect(menu.getByRole('menuitemradio', { name: /合成株式会社A.*業務改善 2026/ })).toBeVisible();
-    await expect(menu.getByRole('menuitemradio', { name: /合成株式会社B.*需要予測/ })).toHaveCount(0);
-    await expect(current).toContainText('合成株式会社B');
-    await expect(current).toContainText('品質改善');
-    const projectA = menu.getByRole('menuitemradio', { name: /合成株式会社A.*在庫最適化/ });
-    await tabTo(page, projectA);
-    await page.keyboard.press('Enter');
-    await expect(current).toContainText('合成株式会社A');
-    await expect(current).toContainText('在庫最適化');
-    await expect(menuButton).toContainText('合成株式会社A');
-    await expect(menuButton).toContainText('在庫最適化');
+    // 別の企業を選ぶと、その企業の 2 Project の一覧に変わり、他企業は含まれない。選んだだけでは作業先は変わらない
+    await companyMenu.getByRole('button', { name: '合成株式会社B', exact: true }).click();
+    await expect(companyMenu.getByRole('menuitemradio')).toHaveCount(2);
+    await expect(companyMenu.getByRole('menuitemradio', { name: /合成株式会社B.*需要予測/ })).toBeVisible();
+    await expect(companyMenu.getByRole('menuitemradio', { name: /合成株式会社B.*品質改善/ })).toBeVisible();
+    await expect(companyMenu.getByRole('menuitemradio', { name: /合成株式会社A/ })).toHaveCount(0);
+    await expect(companyBtn).toContainText('合成株式会社A');
+    await expect(projectBtn).toContainText('業務改善 2026');
 
-    await menuButton.click();
-    const demo = menu.getByRole('menuitemradio', { name: /デモ/ });
-    await expect(demo).toBeVisible();
-    await demo.click();
-    await expect(current).toContainText('デモ');
-  });
-
-  // FR-148 AC-251（異常系: 閉じて何も選ばなければ作業先は変わらない）
-  test('FR-148 AC-251 異常系: メニューを Esc で閉じても作業先は変わらず、現在の作業先の表示が保たれる', async ({ page, start }) => {
-    await start();
-    await seedProjects(page, '合成株式会社A', ['業務改善 2026']);
-    await page.getByRole('link', { name: '業務改善 2026' }).click();
-    const menu = page.getByTestId('work-target-menu');
-    await expect(menu).toContainText('業務改善 2026');
-    await menu.click();
+    // 異常系: 確定せず Esc で閉じると、現在先・分析・ステッパーは変わらず、企業名のボタンにフォーカスが戻る
     await page.keyboard.press('Escape');
-    await expect(page.getByRole('menu', { name: '作業先' })).toBeHidden();
-    await expect(menu).toContainText('合成株式会社A');
-    await expect(menu).toContainText('業務改善 2026');
+    await expect(companyMenu).toBeHidden();
+    await expect(companyBtn).toBeFocused();
+    await expect(display).toHaveAccessibleName(/合成株式会社A.*業務改善 2026/);
+    await expect(page.getByTestId('analysis')).toContainText('SWOT 分析');
+    await expect(stepper.locator('[data-step-state="current"]')).toContainText('現状分析');
+
+    // Project を選択・確定すると、その Project の分析・ステッパー位置で開き、表示が変わる
+    await companyBtn.click();
+    await companyMenu.getByRole('button', { name: '合成株式会社B', exact: true }).click();
+    await companyMenu.getByRole('menuitemradio', { name: /合成株式会社B.*品質改善/ }).click();
+    await expect(stepper).toBeVisible();
+    await expect(companyBtn).toContainText('合成株式会社B');
+    await expect(projectBtn).toContainText('品質改善');
+    await expect(companyMenu).toBeHidden();
+    await page.getByRole('button', { name: '分析を開始' }).click();
+    await page.getByRole('listbox', { name: '分析手法' }).getByRole('option', { name: '3C 分析', exact: true }).click();
+    await stepper.getByRole('button', { name: '施策計画', exact: true }).click();
+
+    // 同じ企業の別 Project にも切り替えられる（キーボードだけ: Enter・Home/ArrowDown）。元の Project の分析・位置が復元される
+    await tabTo(page, companyBtn);
+    await page.keyboard.press('Enter');
+    await expect(companyMenu).toBeVisible();
+    await expect(companyMenu.getByRole('menuitemradio', { name: /合成株式会社B.*品質改善/ })).toBeChecked();
+    await companyMenu.getByRole('button', { name: '合成株式会社A', exact: true }).click();
+    const prev = companyMenu.getByRole('menuitemradio', { name: /合成株式会社A.*業務改善 2026/ });
+    await page.keyboard.press('Home');
+    if (!(await prev.evaluate((el) => el === document.activeElement))) await page.keyboard.press('ArrowDown');
+    await expect(prev).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(companyMenu).toBeHidden();
+    await expect(companyBtn).toContainText('合成株式会社A');
+    await expect(projectBtn).toContainText('業務改善 2026');
+    await expect(page.getByTestId('analysis')).toContainText('SWOT 分析');
+    await expect(stepper.locator('[data-step-state="current"]')).toContainText('現状分析');
+
+    await companyBtn.click();
+    await companyMenu.getByRole('menuitemradio', { name: /合成株式会社A.*在庫最適化/ }).click();
+    await expect(companyBtn).toContainText('合成株式会社A');
+    await expect(projectBtn).toContainText('在庫最適化');
+
+    // Project 名のボタン: 全作業先メニュー（デモと全企業の Project）が引き続き開き、移動できる
+    await projectBtn.click();
+    await expect(allMenu).toBeVisible();
+    await expect(allMenu.getByRole('menuitemradio', { name: /デモ/ })).toBeVisible();
+    for (const [c, p] of [['合成株式会社A', '業務改善 2026'], ['合成株式会社A', '在庫最適化'], ['合成株式会社B', '需要予測'], ['合成株式会社B', '品質改善']]) {
+      await expect(allMenu.getByRole('menuitemradio', { name: new RegExp(`${c}.*${p}`) })).toBeVisible();
+    }
+    await expect(allMenu.getByRole('menuitemradio', { checked: true })).toHaveCount(1);
+    await allMenu.getByRole('menuitemradio', { name: /合成株式会社B.*需要予測/ }).click();
+    await expect(companyBtn).toContainText('合成株式会社B');
+    await expect(projectBtn).toContainText('需要予測');
+    expect((await box(display)).y, '作業先表示がステッパーより上段にある').toBeLessThan((await box(stepper)).y);
+    await projectBtn.click();
+    await allMenu.getByRole('menuitemradio', { name: /デモ/ }).click();
+    await expect(display).toContainText('デモ');
   });
 });
 

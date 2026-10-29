@@ -588,32 +588,66 @@ async function visibleTextCount(page: Page, text: string): Promise<number> {
 
 test.describe('FR-226 「[顧客名] - [プロジェクト名]」の表示を 1 か所にする', () => {
   // FR-226 AC-525
-  test('FR-226 AC-525 閉じた分析画面上部の現在作業先は最上段に 1 表示だけあり、展開メニュー項目は数えない', async ({ page, start }) => {
+  test('FR-226 AC-525 閉じた分析画面上部の現在作業先は最上段の同じ表示領域に 1 か所だけで、他段に連結・個別の重複がなく、展開メニュー項目は数えない', async ({ page, start }) => {
     await start();
     await openNewProject(page, '合成株式会社A', '業務改善 2026');
-    const label = '合成株式会社A - 業務改善 2026';
-    expect(await visibleTextCount(page, label), '閉じた分析画面上部の可視表示数').toBe(1);
-    const menu = page.getByTestId('work-target-menu');
-    await expect(menu).toContainText(label);
-    await expect(menu).toHaveAccessibleName(/合成株式会社A.*業務改善 2026/);
-    await menu.click();
-    const expandedMenu = page.getByRole('menu', { name: '作業先' });
-    await expect(expandedMenu).toBeVisible();
-    await expect(expandedMenu.getByRole('menuitemradio', { checked: true })).toHaveCount(1);
-    await expect(expandedMenu.getByRole('menuitemradio', { name: /合成株式会社A.*業務改善 2026/ })).toBeVisible();
-    expect(await visibleTextCount(page, label), '展開中のナビゲーション項目と非可視名は重複表示に数えない').toBe(1);
-    const menuBox = await menu.boundingBox();
+    const header = page.getByTestId('app-header');
+    const target = header.getByTestId('work-target-display');
+    /** 開いたメニュー内（role=menu）と非可視を除く、ヘッダー内の可視文字のうち names を含むもの（表示領域の内外別） */
+    async function scan(names: string[]) {
+      return header.evaluate((root, ns) => {
+        const display = root.querySelector('[data-testid="work-target-display"]');
+        const inside: string[] = [];
+        const outside: string[] = [];
+        const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+        for (let n = w.nextNode(); n; n = w.nextNode()) {
+          const el = n.parentElement;
+          if (!el || el.closest('[role="menu"]')) continue;
+          if (!el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) continue;
+          const r = document.createRange();
+          r.selectNodeContents(n);
+          if (![...r.getClientRects()].some((q) => q.width > 0 && q.height > 0)) continue;
+          (display?.contains(n) ? inside : outside).push(n.textContent ?? '');
+        }
+        const hit = (arr: string[]) => ns.filter((x) => arr.join(' ').includes(x));
+        return { inside: hit(inside), outside: hit(outside) };
+      }, names);
+    }
+    async function expectSingle(company: string, project: string, oldProject?: string) {
+      await expect(target).toHaveCount(1);
+      await expect(target).toBeVisible();
+      await expect(target).toContainText(company);
+      await expect(target).toContainText(project);
+      await expect(target).toHaveAccessibleName(new RegExp(`${company}.*${project}`));
+      const r = await scan([company, project, ...(oldProject ? [oldProject] : [])]);
+      expect(r.inside, '最上段の表示領域に企業名・Project 名がある').toEqual(expect.arrayContaining([company, project]));
+      expect(r.outside, '他段に企業名・Project 名（連結・個別）が重複している、または前の Project 名が残る').toEqual([]);
+      expect(await visibleTextCount(page, `${company} - ${project}`), '連結表記が他の場所に重複しない').toBeLessThanOrEqual(1);
+      const h = await target.boundingBox();
+      expect(h).not.toBeNull();
+      const upper = await header.locator('button:visible, a:visible, [role="button"]:visible').evaluateAll(
+        (els, top) => els.filter((el) => el.getBoundingClientRect().bottom <= top).length, h!.y);
+      expect(upper, '最上段: 表示領域より上の段に可視の操作がない').toBe(0);
+    }
+    await expectSingle('合成株式会社A', '業務改善 2026');
     const stepperBox = await page.getByTestId('stepper').boundingBox();
-    expect(menuBox, '最上段の作業先メニューが表示される').not.toBeNull();
-    expect(stepperBox, '分析のステッパーが表示される').not.toBeNull();
-    expect(menuBox!.y, '作業先メニューがステッパーより上段にある').toBeLessThan(stepperBox!.y);
+    expect(stepperBox).not.toBeNull();
+    expect((await target.boundingBox())!.y, '作業先表示がステッパーより上段にある').toBeLessThan(stepperBox!.y);
+
+    // メニュー展開中も最上段の現在先表示を維持する（ナビゲーション項目・非可視名は数えない）
+    await target.getByTestId('current-company-menu').click();
+    const companyMenu = page.getByRole('menu', { name: '企業の Project' });
+    await expect(companyMenu).toBeVisible();
+    await expect(target).toBeVisible();
+    await expect(target).toHaveAccessibleName(/合成株式会社A.*業務改善 2026/);
+    expect((await scan(['合成株式会社A', '業務改善 2026'])).outside, '展開中も他段に重複しない').toEqual([]);
     await page.keyboard.press('Escape');
-    await expect(expandedMenu).toBeHidden();
-    expect(await visibleTextCount(page, label), 'メニューを閉じた後も最上段だけに表示される').toBe(1);
+    await expect(companyMenu).toBeHidden();
+    await expectSingle('合成株式会社A', '業務改善 2026');
   });
 
-  // FR-226 AC-525（異常系: 企業の選択だけでは表示先が変わらず、Project 確定後にだけ切り替わる）
-  test('FR-226 AC-525 異常系: 別企業の選択中は現在表示を維持し、Project 確定後は新表示だけが 1 か所に残る', async ({ page, start }) => {
+  // FR-226 AC-525（異常系: 企業の選択だけでは表示が変わらず、Project 確定後にだけ切り替わり、旧表示が残らない）
+  test('FR-226 AC-525 異常系: 別企業の選択中は現在表示を維持し、Project 確定後は新表示だけが最上段に 1 か所残る', async ({ page, start }) => {
     await start();
     await openNewProject(page, '合成株式会社A', '業務改善 2026');
     await page.getByRole('button', { name: 'Project 一覧へ' }).click();
@@ -625,23 +659,36 @@ test.describe('FR-226 「[顧客名] - [プロジェクト名]」の表示を 1 
     await createProject(page, '合成株式会社B', '需要予測');
     await page.getByRole('region', { name: '企業 合成株式会社A' }).getByRole('link', { name: '業務改善 2026' }).click();
     await expect(page.getByTestId('stepper')).toBeVisible();
-    const menuButton = page.getByTestId('work-target-menu');
-    const menu = page.getByRole('menu', { name: '作業先' });
-    const oldLabel = '合成株式会社A - 業務改善 2026';
-    const newLabel = '合成株式会社B - 需要予測';
-    await menuButton.click();
+    const header = page.getByTestId('app-header');
+    const target = header.getByTestId('work-target-display');
+    const companyBtn = target.getByTestId('current-company-menu');
+    const menu = page.getByRole('menu', { name: '企業の Project' });
+    /** ヘッダー内の可視文字（開いたメニュー内を除く）に text を含む文字ノードの数 */
+    const count = (text: string) => header.evaluate((root, t) => {
+      let n = 0;
+      const w = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      for (let x = w.nextNode(); x; x = w.nextNode()) {
+        const el = x.parentElement;
+        if (!el || el.closest('[role="menu"]') || !x.textContent?.includes(t)) continue;
+        if (el.checkVisibility({ checkOpacity: true, checkVisibilityCSS: true })) n++;
+      }
+      return n;
+    }, text);
+    await companyBtn.click();
     await menu.getByRole('button', { name: '合成株式会社B', exact: true }).click();
-    await expect(menu.getByRole('menuitemradio', { name: /合成株式会社B/ })).toHaveCount(1);
     await expect(menu.getByRole('menuitemradio', { name: /合成株式会社B.*需要予測/ })).toBeVisible();
-    await expect(menu.getByRole('menuitemradio', { name: /合成株式会社A.*業務改善 2026/ })).toHaveCount(0);
-    await expect(menuButton).toContainText('合成株式会社A');
-    await expect(menuButton).toContainText('業務改善 2026');
-    expect(await visibleTextCount(page, oldLabel), '企業だけ選んだ時点で現在作業先は変わらない').toBe(1);
+    await expect(target).toHaveAccessibleName(/合成株式会社A.*業務改善 2026/);
+    expect(await count('業務改善 2026'), '企業だけ選んだ時点で現在作業先は変わらず 1 か所').toBe(1);
+    expect(await count('合成株式会社B'), '選択中の企業が最上段表示に出ない').toBe(0);
 
     await menu.getByRole('menuitemradio', { name: /合成株式会社B.*需要予測/ }).click();
     await expect(page.getByTestId('stepper')).toBeVisible();
-    expect(await visibleTextCount(page, newLabel), '新しい現在作業先の可視表示数').toBe(1);
-    expect(await visibleTextCount(page, oldLabel), '前の作業先の可視表記が残る').toBe(0);
+    await expect(menu).toBeHidden();
+    await expect(target).toHaveAccessibleName(/合成株式会社B.*需要予測/);
+    expect(await count('需要予測'), '新しい現在作業先の可視表示は 1 か所').toBe(1);
+    expect(await count('合成株式会社B'), '企業名の可視表示は 1 か所').toBe(1);
+    expect(await count('業務改善 2026'), '前の Project 名が残る').toBe(0);
+    expect(await count('合成株式会社A'), '前の企業名が残る').toBe(0);
   });
 });
 
