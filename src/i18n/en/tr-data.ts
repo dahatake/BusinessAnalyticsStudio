@@ -167,6 +167,8 @@ export default {
   '現在: {label}（移動先を選ぶメニュー）': 'Current: {label} (menu to choose a destination)',
   '作業先': 'Work target',
   '選択企業: {name}。表示中の Project はこの企業に属します。': 'Selected company: {name}. The Projects shown belong to this company.',
+  '同じ企業の Project': 'Projects of the same company',
+  '{name} の Project 一覧（現在: {label}）': 'Projects of {name} (current: {label})',
   '登録済みの企業はありません。': 'No companies are registered.',
   '企業を選択': 'Select a company',
   '{name} の Project': 'Projects of {name}',
