@@ -72,7 +72,7 @@ test.describe('FR-148 最上段の作業先メニュー', () => {
     await page.getByRole('region', { name: '企業 合成株式会社A' }).getByRole('link', { name: '業務改善 2026', exact: true }).click();
     const stepper = page.getByTestId('stepper');
     await page.getByRole('button', { name: '分析を開始' }).click();
-    await page.getByRole('listbox', { name: '分析手法' }).getByRole('option', { name: 'SWOT 分析', exact: true }).click();
+    await page.getByRole('listbox', { name: '分析手法' }).getByRole('option', { name: 'SWOT 分析' }).click();
     await stepper.getByRole('button', { name: '現状分析', exact: true }).click();
 
     // 最上段の現在先表示 =「企業名（ボタン）- Project 名（全作業先メニューのボタン）」（契約 §10）
@@ -119,7 +119,7 @@ test.describe('FR-148 最上段の作業先メニュー', () => {
     await expect(projectBtn).toContainText('品質改善');
     await expect(companyMenu).toBeHidden();
     await page.getByRole('button', { name: '分析を開始' }).click();
-    await page.getByRole('listbox', { name: '分析手法' }).getByRole('option', { name: '3C 分析', exact: true }).click();
+    await page.getByRole('listbox', { name: '分析手法' }).getByRole('option', { name: '3C 分析' }).click();
     await stepper.getByRole('button', { name: '施策計画', exact: true }).click();
 
     // 同じ企業の別 Project にも切り替えられる（キーボードだけ: Enter・Home/ArrowDown）。元の Project の分析・位置が復元される
