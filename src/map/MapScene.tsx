@@ -1,10 +1,13 @@
 // 地球儀・3D マップの描画（FR-021）。拠点の位置、流れの弧、流れの粒子（時間軸で量が変わり、停止中は静止する）。React Three Fiber の中で使う。
 // 地球儀の外形は手続きで作る（球・緯線経線・大気の輝き）。外部の地図画像・モデルは取得しない（FR-068）。
-import { useEffect, useMemo, useRef, type MutableRefObject } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { OrbitControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { useAnimation } from '../store/animation';
+import { DURATION, scaledDuration } from '../motion/fluent';
+import { useMotionProfile } from '../motion/useMotion';
+import { easedProgress, sampleVectorTransition, type VectorTransition } from '../three/interpolation';
+import { useObjectVectorTransition, useSceneMotionAllowed } from '../three/useSceneTransition';
 import { QUALITY_PROFILES, type Quality } from '../three/quality';
 import { type MapData } from './data';
 import { flowColor, particleCount, particleU } from './flows';
@@ -68,28 +71,109 @@ function Base({ mode }: { mode: MapMode }) {
 }
 
 function SiteDots({ data, mode, selected, accent }: { data: MapData; mode: MapMode; selected: ReadonlySet<string>; accent: string }) {
-  const r = mode === 'globe' ? 0.014 : 0.024;
   return (
     <group>
-      {data.sites.map((s) => {
-        const p = toMap(mode, s, mode === 'globe' ? 1.004 : 1);
-        if (mode === 'flat') p[1] = 0.012;
-        const on = selected.has(s.id);
-        return (
-          <mesh key={s.id} position={p} scale={on ? 1.8 : 1}>
-            <sphereGeometry args={[r, 16, 12]} />
-            <meshBasicMaterial color={on ? '#ffffff' : accent} />
-          </mesh>
-        );
-      })}
+      {data.sites.map((site) => <SiteDot key={site.id} site={site} mode={mode} selected={selected.has(site.id)} accent={accent} />)}
     </group>
+  );
+}
+
+function SiteDot({ site, mode, selected, accent }: { site: MapData['sites'][number]; mode: MapMode; selected: boolean; accent: string }) {
+  const mesh = useRef<THREE.Mesh>(null);
+  const position = toMap(mode, site, mode === 'globe' ? 1.004 : 1);
+  if (mode === 'flat') position[1] = 0.012;
+  useObjectVectorTransition(mesh, position, 'position');
+  useObjectVectorTransition(mesh, selected ? [1.8, 1.8, 1.8] : [1, 1, 1], 'scale');
+  return (
+    <mesh ref={mesh}>
+      <sphereGeometry args={[mode === 'globe' ? 0.014 : 0.024, 16, 12]} />
+      <meshBasicMaterial color={selected ? '#ffffff' : accent} />
+    </mesh>
+  );
+}
+
+function AnimatedFlowTube({ geometry, color, opacity }: { geometry: THREE.BufferGeometry; color: string; opacity: number }) {
+  const [displayGeometry] = useState(() => geometry.clone());
+  const material = useRef<THREE.MeshBasicMaterial>(null);
+  const currentOpacity = useRef(0);
+  const opacityTransition = useRef<VectorTransition | null>(null);
+  const geometryTransition = useRef<{ from: Float32Array; to: Float32Array; elapsedMs: number; durationMs: number } | null>(null);
+  const allowed = useSceneMotionAllowed();
+  const tempo = useMotionProfile().tempo;
+  const durationMs = scaledDuration(DURATION.gentle, tempo, allowed);
+  const invalidate = useThree((s) => s.invalidate);
+
+  useLayoutEffect(() => {
+    if (!allowed || durationMs === 0) {
+      currentOpacity.current = opacity;
+      opacityTransition.current = null;
+    } else if (currentOpacity.current !== opacity) {
+      opacityTransition.current = { from: [currentOpacity.current], to: [opacity], elapsedMs: 0, durationMs };
+    }
+    if (material.current) material.current.opacity = currentOpacity.current;
+    invalidate();
+  }, [allowed, durationMs, invalidate, opacity]);
+
+  useLayoutEffect(() => {
+    const currentAttribute = displayGeometry.getAttribute('position') as THREE.BufferAttribute;
+    const targetAttribute = geometry.getAttribute('position') as THREE.BufferAttribute;
+    if (currentAttribute.count !== targetAttribute.count) {
+      displayGeometry.copy(geometry);
+      geometryTransition.current = null;
+      return;
+    }
+    const from = (currentAttribute.array as Float32Array).slice();
+    const to = (targetAttribute.array as Float32Array).slice();
+    if (!allowed || durationMs === 0 || from.every((value, index) => value === to[index])) {
+      (currentAttribute.array as Float32Array).set(to);
+      currentAttribute.needsUpdate = true;
+      geometryTransition.current = null;
+    } else geometryTransition.current = { from, to, elapsedMs: 0, durationMs };
+    invalidate();
+  }, [allowed, displayGeometry, durationMs, geometry, invalidate]);
+
+  useFrame((_, delta) => {
+    if (typeof document !== 'undefined' && document.hidden) return;
+    const activeOpacity = opacityTransition.current;
+    if (activeOpacity && material.current) {
+      const sample = sampleVectorTransition(activeOpacity, delta * 1000);
+      currentOpacity.current = sample.value[0] ?? opacity;
+      material.current.opacity = currentOpacity.current;
+      opacityTransition.current = sample.done ? null : { ...activeOpacity, elapsedMs: activeOpacity.elapsedMs + delta * 1000 };
+      if (!sample.done) invalidate();
+    }
+    const activeGeometry = geometryTransition.current;
+    if (!activeGeometry) return;
+    const attribute = displayGeometry.getAttribute('position') as THREE.BufferAttribute;
+    const elapsedMs = activeGeometry.elapsedMs + delta * 1000;
+    const progress = Math.min(1, elapsedMs / activeGeometry.durationMs);
+    const eased = easedProgress(progress);
+    const values = attribute.array as Float32Array;
+    for (let i = 0; i < values.length; i++) values[i] = activeGeometry.from[i]! + (activeGeometry.to[i]! - activeGeometry.from[i]!) * eased;
+    attribute.needsUpdate = true;
+    if (progress >= 1) geometryTransition.current = null;
+    else {
+      geometryTransition.current = { ...activeGeometry, elapsedMs };
+      invalidate();
+    }
+  });
+
+  useEffect(() => () => {
+    opacityTransition.current = null;
+    geometryTransition.current = null;
+    displayGeometry.dispose();
+  }, [displayGeometry]);
+  return (
+    <mesh geometry={displayGeometry} frustumCulled={false}>
+      <meshBasicMaterial ref={material} color={color} transparent opacity={0} depthWrite={false} />
+    </mesh>
   );
 }
 
 /** 流れ。弧（太さと濃さが時刻で変わる）と粒子（数と位置が時刻で変わる）。 */
 function Flows({ data, mode, hour, quality }: { data: MapData; mode: MapMode; hour: number; quality: Quality }) {
   const invalidate = useThree((s) => s.invalidate);
-  const playing = useAnimation((s) => s.playing);
+  const playing = useSceneMotionAllowed();
   const animT = useRef(0);
   const maxPer = particlesPerFlow(quality, data.flows.length);
   const maxVolume = useMemo(() => data.flows.reduce((m, f) => Math.max(m, f.volume), 0), [data.flows]);
@@ -112,7 +196,7 @@ function Flows({ data, mode, hour, quality }: { data: MapData; mode: MapMode; ho
   useEffect(() => () => clouds.forEach((g) => g.dispose()), [clouds]);
 
   const tmp = useMemo<Vec3>(() => [0, 0, 0], []);
-  const update = (t: number): void => {
+  const update = useCallback((t: number): void => {
     data.flows.forEach((f, i) => {
       const g = clouds[i];
       const arc = arcs[i];
@@ -126,15 +210,20 @@ function Flows({ data, mode, hour, quality }: { data: MapData; mode: MapMode; ho
       attr.needsUpdate = true;
       g.setDrawRange(0, count);
     });
-  };
+  }, [arcs, clouds, data.flows, hour, maxPer, maxVolume, tmp]);
 
   // 停止中: 時刻・方式・品質が変わったときだけ位置を求め直して 1 回描く（animT は止まっているので、同じ時刻なら同じ位置）
-  useEffect(() => { update(animT.current); invalidate(); });
-  // 再生中: 経過時間を進める（停止中は進めない＝粒子が静止する。FR-071）
+  useEffect(() => {
+    if (data.flows.length === 0) return;
+    update(animT.current);
+    invalidate();
+  }, [data.flows.length, invalidate, update]);
+  // 再生中だけ粒子の位置を進め、空・非表示・停止時は更新しない。
   useFrame((_, dt) => {
-    if (!playing) return;
+    if (!playing || data.flows.length === 0 || (typeof document !== 'undefined' && document.hidden)) return;
     animT.current += dt;
     update(animT.current);
+    invalidate();
   });
 
   return (
@@ -144,9 +233,7 @@ function Flows({ data, mode, hour, quality }: { data: MapData; mode: MapMode; ho
         return (
           <group key={f.id}>
             {tubes[i] && (
-              <mesh geometry={tubes[i]!.geometry}>
-                <meshBasicMaterial color={color} transparent opacity={tubes[i]!.opacity} depthWrite={false} />
-              </mesh>
+              <AnimatedFlowTube geometry={tubes[i]!.geometry} color={color} opacity={tubes[i]!.opacity} />
             )}
             {clouds[i] && (
               <points geometry={clouds[i]} frustumCulled={false}>
@@ -165,22 +252,80 @@ function InitialView({ data, mode }: { data: MapData; mode: MapMode }) {
   const camera = useThree((s) => s.camera);
   const controls = useThree((s) => s.controls) as unknown as { target: THREE.Vector3; update(): void } | null;
   const invalidate = useThree((s) => s.invalidate);
-  useEffect(() => {
-    const v = initialView(mode, data.sites);
-    camera.position.set(...v.position);
-    if (controls) { controls.target.set(...v.target); controls.update(); } else camera.lookAt(...v.target);
+  const allowed = useSceneMotionAllowed();
+  const tempo = useMotionProfile().tempo;
+  const durationMs = scaledDuration(DURATION.gentle, tempo, allowed);
+  const allowedRef = useRef(allowed);
+  const durationRef = useRef(durationMs);
+  allowedRef.current = allowed;
+  durationRef.current = durationMs;
+  const transition = useRef<{ position: VectorTransition; target: VectorTransition } | null>(null);
+
+  useLayoutEffect(() => {
+    const view = initialView(mode, data.sites);
+    const target = controls?.target ?? new THREE.Vector3();
+    const nextPosition = [...view.position] as [number, number, number];
+    const nextTarget = [...view.target] as [number, number, number];
+    if (!allowedRef.current || durationRef.current === 0 || data.sites.length === 0) {
+      camera.position.set(...nextPosition);
+      target.set(...nextTarget);
+      if (controls) controls.update(); else camera.lookAt(...nextTarget);
+      transition.current = null;
+    } else {
+      transition.current = {
+        position: { from: camera.position.toArray(), to: nextPosition, elapsedMs: 0, durationMs: durationRef.current },
+        target: { from: target.toArray(), to: nextTarget, elapsedMs: 0, durationMs: durationRef.current },
+      };
+    }
     invalidate();
-  }, [camera, controls, data.sites, mode, invalidate]);
+  }, [camera, controls, data.sites, invalidate, mode]);
+
+  useLayoutEffect(() => {
+    const pending = transition.current;
+    if (allowed || !pending) return;
+    camera.position.set(...(pending.position.to as [number, number, number]));
+    if (controls) {
+      controls.target.set(...(pending.target.to as [number, number, number]));
+      controls.update();
+    } else camera.lookAt(...(pending.target.to as [number, number, number]));
+    transition.current = null;
+    invalidate();
+  }, [allowed, camera, controls, invalidate]);
+
+  useFrame((_, delta) => {
+    if (typeof document !== 'undefined' && document.hidden) return;
+    const current = transition.current;
+    if (!current) return;
+    const elapsedMs = current.position.elapsedMs + delta * 1000;
+    const position = sampleVectorTransition(current.position, delta * 1000);
+    const target = sampleVectorTransition(current.target, delta * 1000);
+    camera.position.set(...(position.value as [number, number, number]));
+    if (controls) {
+      controls.target.set(...(target.value as [number, number, number]));
+      controls.update();
+    } else camera.lookAt(...(target.value as [number, number, number]));
+    if (position.done && target.done) transition.current = null;
+    else {
+      transition.current = {
+        position: { ...current.position, elapsedMs },
+        target: { ...current.target, elapsedMs },
+      };
+      invalidate();
+    }
+  });
+
+  useEffect(() => () => { transition.current = null; }, []);
   return null;
 }
 
-/** DOM の拠点ボタンを、3D の位置へ合わせる（毎フレーム）。地球儀の裏側は隠す。 */
+/** DOM の拠点ボタンを、カメラ操作時に 3D の位置へ合わせる。地球儀の裏側は隠す。 */
 function MarkerProjector({ data, mode, refs }: { data: MapData; mode: MapMode; refs: MutableRefObject<Map<string, HTMLElement>> }) {
   const camera = useThree((s) => s.camera);
   const size = useThree((s) => s.size);
   const invalidate = useThree((s) => s.invalidate);
+  const controls = useThree((s) => s.controls) as unknown as { addEventListener?(type: string, listener: () => void): void; removeEventListener?(type: string, listener: () => void): void } | null;
   const v = useMemo(() => new THREE.Vector3(), []);
-  const place = (): void => {
+  const place = useCallback((): void => {
     for (const s of data.sites) {
       const el = refs.current.get(s.id);
       if (!el) continue;
@@ -192,10 +337,20 @@ function MarkerProjector({ data, mode, refs }: { data: MapData; mode: MapMode; r
       el.style.transform = `translate(${((v.x + 1) / 2) * size.width}px, ${((1 - v.y) / 2) * size.height}px) translate(-50%, -100%)`;
       el.style.visibility = front && inside ? 'visible' : 'hidden';
     }
-  };
-  useFrame(place);
-  // 初回と、拠点のボタンが増えたとき
-  useEffect(() => { place(); invalidate(); });
+  }, [camera, data.sites, mode, refs, size, v]);
+  // Camera changes are event-driven so a static map does not keep a frame loop alive.
+  useEffect(() => {
+    place();
+    if (data.sites.length === 0) return;
+    const onVisibilityChange = (): void => { if (!document.hidden) { place(); invalidate(); } };
+    controls?.addEventListener?.('change', place);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    invalidate();
+    return () => {
+      controls?.removeEventListener?.('change', place);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [controls, data.sites.length, invalidate, place]);
   return null;
 }
 
