@@ -140,6 +140,7 @@ function KpiOkrScreen() {
   usePublishViewItems('kpi-okr', useMemo(() => krs.map((k) => k.id), [krs]));
   // 出入り・遷移（FR-070 AC-086）: Key Result は同じ ID のまま、追加は現れ、削除は薄れて消え、現在値は中間値を経て最新へ収束する
   const krPresence = usePresenceItems(krs, (k) => k.id, (k) => [k.r.kpi.current]);
+  const tweenedCurrent = useMemo(() => new Map(krPresence.filter((p) => !p.exiting).map((p) => [p.id, p.vec[0] ?? p.item.r.kpi.current])), [krPresence]);
   const objCount = okr?.objectives.length ?? 0;
   const items3d = useMemo<Item3D[]>(() => krs.map((k) => {
     const a = achievement(k.r.kpi);
@@ -150,8 +151,12 @@ function KpiOkrScreen() {
   // Graph（FR-238）: Objective と Key Result をノードに、Key Result → Objective を「達成する」の向き付きのエッジにする（Key Result は 2D・3D と同じ項目・同じ件数）
   const graphNodes = useMemo<GraphNodeIn[]>(() => [
     ...(okr?.objectives ?? []).map((o, oi) => ({ id: `okr-obj-${oi + 1}`, name: o.objective, kind: 'Objective' })),
-    ...krs.map((k) => ({ id: k.id, name: k.r.name, kind: 'Key Result', note: `${k.r.kpi.name} ${achievementText(k.r.kpi)}` })),
-  ], [okr, krs]);
+    ...krs.map((k) => {
+      // 現在値は中間値を経て最新へ収束する（FR-070 AC-086）。停止中・動きの軽減中は即時（最新値）
+      const cur = tweenedCurrent.get(k.id) ?? k.r.kpi.current;
+      return { id: k.id, name: k.r.name, kind: 'Key Result', note: `${k.r.kpi.name} ${achievementText({ ...k.r.kpi, current: cur })}` };
+    }),
+  ], [okr, krs, tweenedCurrent]);
   const graphEdges = useMemo<GraphEdgeIn[]>(() => krs.map((k) => ({ id: `${k.id}>obj`, from: k.id, to: `okr-obj-${k.oi + 1}`, label: t('達成する'), meaning: 'achieves' })), [krs]);
   if (!ready) return <LoadingView label={t('KPI/OKR を読み込み中')} />;
   return (
@@ -226,7 +231,7 @@ function KpiOkrScreen() {
                       <Text size={200} block>{t('達成度')}</Text>
                       <span className={s.state}>
                         {STATE_ICON[st]}
-                        <Text weight="semibold" className={s.value} data-testid="kpi-achievement">{achievementText(r.kpi)}</Text>
+                        <Text weight="semibold" className={s.value} data-testid="kpi-achievement">{achievementText({ ...r.kpi, current: cur })}</Text>
                         <Badge appearance="tint" color={STATE_COLOR[st]} data-testid="kpi-state">{t(st)}</Badge>
                       </span>
                     </div>

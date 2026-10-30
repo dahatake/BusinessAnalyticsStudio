@@ -1,14 +1,16 @@
 // 項目を 3D 空間に描く共通の面の中身（FR-217 AC-501）。位置・大きさ・つながりを、既存の 3D 基盤（DiagramCanvas。FR-065 の描画・フォールバック・FR-147 の負荷対策）の上に置く。
 // Items3DSurface が必要になったときにだけ読み込む（最初のフレームの速さのため。three を 2D の表示の読み込みに含めない）。
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { Html } from '@react-three/drei';
 import { AnimatedLine } from './AnimatedLine';
 import { DiagramCanvas } from './DiagramCanvas';
 import { sceneLabelStyle } from './labelStyles';
 import { toSpace, type Axes3D, type Item3D, type Link3D } from '../view/items3d';
-import { useObjectVectorTransition } from './useSceneTransition';
+import { useObjectVectorTransition, useSceneMotionAllowed } from './useSceneTransition';
 import { usePresenceItems, useTweenedValue } from '../motion/usePresence';
+import { DURATION, EASING, scaledDuration } from '../motion/fluent';
+import { useMotionProfile } from '../motion/useMotion';
 
 /** グループの色（色だけに頼らず、ラベルの文字と「表で見る」でも読める） */
 const PALETTE = ['#4fc3f7', '#ffb74d', '#81c784', '#ba68c8', '#e57373', '#4db6ac', '#fff176', '#90a4ae'];
@@ -88,7 +90,23 @@ function ItemNode({ item, position, color, selected, exiting, showLabel, heavy, 
         <sphereGeometry args={[1, heavy ? 6 : 16, heavy ? 4 : 12]} />
         <meshStandardMaterial color={color} emissive={selected ? color : '#000000'} emissiveIntensity={selected ? 0.6 : 0} />
       </mesh>
-      {showLabel ? <Html center position={[0, radius + 0.25, 0]} zIndexRange={[5, 0]}><span style={sceneLabelStyle} title={item.label} data-entity-id={exiting ? undefined : item.id}>{labelText}</span></Html> : null}
+      {showLabel ? <Html center position={[0, radius + 0.25, 0]} zIndexRange={[5, 0]}><FadeLabel title={item.label} entityId={exiting ? undefined : item.id}>{labelText}</FadeLabel></Html> : null}
     </group>
+  );
+}
+
+// 追加された項目のラベルは、動きが許可されるとき、現れる遷移（不透明度）を経て表示する（FR-070 AC-086）。停止中・動きの軽減中は即時。
+function FadeLabel({ title, entityId, children }: { title: string; entityId: string | undefined; children: React.ReactNode }) {
+  const allowed = useSceneMotionAllowed();
+  const tempo = useMotionProfile().tempo;
+  const [entered, setEntered] = useState(!allowed);
+  useEffect(() => {
+    if (entered) return undefined;
+    let r2 = 0;
+    const r1 = requestAnimationFrame(() => { r2 = requestAnimationFrame(() => setEntered(true)); });
+    return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2); };
+  }, [entered]);
+  return (
+    <span style={{ ...sceneLabelStyle, opacity: entered ? 1 : 0, transition: allowed ? `opacity ${scaledDuration(DURATION.gentle, tempo, allowed)}ms ${EASING.decelerateMid}` : undefined }} title={title} data-entity-id={entityId}>{children}</span>
   );
 }
