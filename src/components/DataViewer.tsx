@@ -16,6 +16,7 @@ import { GraphAlt } from './GraphAlt';
 import { ZoomBreadcrumb, canZoomIn, canZoomOut, scaleOfDepth, zoomAttrs } from '../semanticzoom';
 import { detect3D } from '../view/render3d';
 import { useT } from '../i18n';
+import { lifeOpacity, usePresenceItems } from '../motion';
 import {
   RELATION_KIND_LABELS, RELATION_KINDS, decideViewMode, describeRelation, highlightOf, lineStyleOf, relatedOf, relationAnnouncement, simplifySelection,
   type RelationKind, type ViewerRelation,
@@ -100,6 +101,13 @@ export function DataViewer({ entities, selectedKey, onSelect, relations = NO_REL
   const detailKeys = simple?.detailKeys ?? null;
   const inDetail = (k: string) => !detailKeys || detailKeys.has(k);
 
+  // 出入り・遷移（FR-070 AC-086）: エンティティのカードは同じキーのまま現れ、削除は薄れて消える（消えるカードは操作を持たない）
+  const cardPresence = usePresenceItems(shown, (e) => e.key, () => []);
+  const clusterOfKey = useRef(new Map<string, string>());
+  for (const c of clusters) for (const e of c.entities) clusterOfKey.current.set(e.key, c.name);
+  const cardLife = new Map(cardPresence.map((p) => [p.id, p.life] as const));
+  const ghostsOf = (cluster: string): ViewerEntity[] => cardPresence.filter((p) => p.exiting && clusterOfKey.current.get(p.id) === cluster).map((p) => p.item);
+
   // 変化の通知（aria-live）。選択・解除と詳細度が変わったときに、文字で知らせる
   const lastLevel = useRef(level);
   const lastSel = useRef(selected?.name);
@@ -174,13 +182,22 @@ export function DataViewer({ entities, selectedKey, onSelect, relations = NO_REL
   const graphEdges: GraphEdgeIn[] = relations
     .filter((r) => r.entityKeys.length === 2 && r.entityKeys.every((k) => graphIds.has(k)))
     .map((r) => ({ id: r.id, from: r.entityKeys[0]!, to: r.entityKeys[1]!, label: r.label, meaning: r.kind, dash: lineStyleOf(r).dash || undefined }));
-  const entityCard = (e: ViewerEntity) => {
+  const entityCard = (e: ViewerEntity, ghost = false) => {
     const on = e.key === selectedKey;
     const h = hl(e.key);
+    const life = cardLife.get(e.key) ?? 1;
+    if (ghost) {
+      return (
+        <div key={e.key} aria-hidden className={s.card} style={{ opacity: lifeOpacity(life), pointerEvents: 'none' }}>
+          <Text weight="semibold">{e.name}</Text>
+          <Text size={200}>{e.description}</Text>
+        </div>
+      );
+    }
     return (
       <div
         key={e.key} role="option" aria-selected={on} tabIndex={0} data-viewer-entity={e.name} data-highlight={h} data-zoom-node="" data-entity-id={e.key} data-entity-name={e.name} data-kind="データエンティティ" className={mergeClasses(s.card, on && s.on)}
-        style={h === 'dimmed' ? { opacity: 0.4 } : h === 'related' ? { borderStyle: 'dashed', borderWidth: tokens.strokeWidthThick } : undefined} onClick={() => { setUseCase(null); onSelect(e.key); }}
+        style={h === 'dimmed' ? { opacity: Math.min(0.4, lifeOpacity(life)) } : { opacity: lifeOpacity(life), ...(h === 'related' ? { borderStyle: 'dashed', borderWidth: tokens.strokeWidthThick } : {}) }} onClick={() => { setUseCase(null); onSelect(e.key); }}
         onDoubleClick={() => { setUseCase(null); onSelect(e.key); goDepth(2); }}
       >
         <Text weight="semibold">{e.name}{on ? t('（選択中）') : h === 'related' ? t('（関連）') : ''}</Text>
@@ -309,7 +326,10 @@ export function DataViewer({ entities, selectedKey, onSelect, relations = NO_REL
             clusters.map((c) => (
               <div key={c.name} className={s.group} role="group" aria-label={t('塊: {name}', { name: c.name })} data-viewer-cluster-group={c.name}>
                 <Text weight="semibold" size={200}>{c.name}</Text>
-                <div className={s.grid} style={gridStyle}>{c.entities.filter((e) => inDetail(e.key)).map(entityCard)}</div>
+                <div className={s.grid} style={gridStyle}>
+                  {c.entities.filter((e) => inDetail(e.key)).map((e) => entityCard(e))}
+                  {ghostsOf(c.name).map((e) => entityCard(e, true))}
+                </div>
                 {detailKeys && c.entities.some((e) => !inDetail(e.key)) ? (
                   <Text size={200} data-viewer-aggregated>{t('ほか {n} 件を集約しています（検索すると選べます）', { n: c.entities.filter((e) => !inDetail(e.key)).length })}</Text>
                 ) : null}

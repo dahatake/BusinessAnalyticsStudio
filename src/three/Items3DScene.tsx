@@ -8,6 +8,7 @@ import { DiagramCanvas } from './DiagramCanvas';
 import { sceneLabelStyle } from './labelStyles';
 import { toSpace, type Axes3D, type Item3D, type Link3D } from '../view/items3d';
 import { useObjectVectorTransition } from './useSceneTransition';
+import { usePresenceItems } from '../motion/usePresence';
 
 /** グループの色（色だけに頼らず、ラベルの文字と「表で見る」でも読める） */
 const PALETTE = ['#4fc3f7', '#ffb74d', '#81c784', '#ba68c8', '#e57373', '#4db6ac', '#fff176', '#90a4ae'];
@@ -39,6 +40,8 @@ export default function Items3DScene({ label, items, links, selected, axes, onSe
   // 件数が多いときは球を粗い形にし、つながりの線も上限までにする（FR-147・FR-171 の負荷対策。選択中のつながりは常に描く）
   const heavy = items.length > HEAVY_LIMIT;
   const drawLinks = heavy ? links.filter((l, i) => i < LINK_LIMIT || selected.has(l.from) || selected.has(l.to)) : links;
+  // 出入り（FR-070 AC-086）: 削除された項目は縮んで消えるまで残す。値の補間は three 側が行い、React は撤去の時刻だけ更新する
+  const nodeItems = usePresenceItems(items, (i) => i.id, (i) => pos.get(i.id) ?? [0, 0, 0], { perFrame: false });
   return (
     <DiagramCanvas label={label} cameraPosition={[9, 7, 11]}>
       <gridHelper args={[10, 10, '#607d8b', '#37474f']} position={[0, -5, 0]} />
@@ -52,19 +55,20 @@ export default function Items3DScene({ label, items, links, selected, axes, onSe
         const on = selected.has(l.from) || selected.has(l.to);
         return <AnimatedLine key={`${l.from}>${l.to}`} points={[a, b]} color={on ? '#4fc3f7' : '#9aa5b1'} lineWidth={on ? 2.5 : 1.2} />;
       })}
-      {items.map((item) => (
-        <ItemNode key={item.id} item={item} position={pos.get(item.id) as [number, number, number]} color={PALETTE[groups.indexOf(item.group ?? '') % PALETTE.length] ?? PALETTE[0]!} selected={selected.has(item.id)} showLabel={showAll || selected.has(item.id)} heavy={heavy} onSelect={onSelect} />
+      {nodeItems.map(({ item, vec, exiting }) => (
+        <ItemNode key={item.id} item={item} position={exiting ? [vec[0]!, vec[1]!, vec[2]!] : pos.get(item.id) as [number, number, number]} color={PALETTE[groups.indexOf(item.group ?? '') % PALETTE.length] ?? PALETTE[0]!} selected={!exiting && selected.has(item.id)} exiting={exiting} showLabel={!exiting && (showAll || selected.has(item.id))} heavy={heavy} onSelect={onSelect} />
       ))}
     </DiagramCanvas>
   );
 }
 
 
-function ItemNode({ item, position, color, selected, showLabel, heavy, onSelect }: {
+function ItemNode({ item, position, color, selected, exiting, showLabel, heavy, onSelect }: {
   item: Item3D;
   position: [number, number, number];
   color: string;
   selected: boolean;
+  exiting: boolean;
   showLabel: boolean;
   heavy: boolean;
   onSelect: (id: string, additive: boolean) => void;
@@ -72,12 +76,12 @@ function ItemNode({ item, position, color, selected, showLabel, heavy, onSelect 
   const group = useRef<THREE.Group>(null);
   const mesh = useRef<THREE.Mesh>(null);
   const radius = 0.14 + item.size * 0.5;
-  const scale = radius * (selected ? 1.4 : 1);
+  const scale = exiting ? 0 : radius * (selected ? 1.4 : 1);
   useObjectVectorTransition(group, position, 'position');
   useObjectVectorTransition(mesh, [scale, scale, scale], 'scale');
   return (
     <group ref={group}>
-      <mesh ref={mesh} onClick={(ev) => { ev.stopPropagation(); onSelect(item.id, ev.ctrlKey || ev.metaKey || ev.shiftKey); }}>
+      <mesh ref={mesh} onClick={exiting ? undefined : (ev) => { ev.stopPropagation(); onSelect(item.id, ev.ctrlKey || ev.metaKey || ev.shiftKey); }}>
         <sphereGeometry args={[1, heavy ? 6 : 16, heavy ? 4 : 12]} />
         <meshStandardMaterial color={color} emissive={selected ? color : '#000000'} emissiveIntensity={selected ? 0.6 : 0} />
       </mesh>

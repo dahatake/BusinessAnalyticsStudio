@@ -16,6 +16,7 @@ import { Items3DSurface } from '../three/Items3DSurface';
 import { norm, spread, type Item3D } from '../view/items3d';
 import { useComponentView, usePublishViewItems } from '../view/useView';
 import { useT } from '../i18n';
+import { lifeOpacity, usePresenceItems } from '../motion';
 
 const ORIGIN = 'ranking';
 
@@ -47,6 +48,8 @@ function RankingScreen() {
     return rows.map((r, i) => ({ id: r.id, label: `${r.rank}. ${r.title}`, x: spread(i, rows.length), y: norm(r.score, Math.min(0, min), max), z: 0.5, size: max > 0 ? r.score / max : 0 }));
   }, [rows]);
   usePublishViewItems(ORIGIN, useMemo(() => rows.map((r) => r.id), [rows]));
+  // 出入り・遷移（FR-070 AC-086）: 行は同じ ID のまま、追加は現れ、削除は薄れて消え、スコアは中間値を経て最新へ収束する（最新値は data-score-latest と詳細で参照できる）
+  const rowPresence = usePresenceItems(rows, (r) => r.id, (r) => [r.score]);
   if (!ready) return <LoadingView label={t('ランキングを読み込み中')} />;
 
   const decidedNotes = rows.flatMap((r) => CRITERIA
@@ -72,11 +75,21 @@ function RankingScreen() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((r) => {
+              {rowPresence.map(({ item: r, vec, life, exiting }) => {
+                if (exiting) {
+                  return (
+                    <TableRow key={r.id} aria-hidden className={s.row} style={{ opacity: lifeOpacity(life), pointerEvents: 'none' }}>
+                      <TableCell className={s.num}>{r.rank}</TableCell>
+                      <TableCell>{r.title}</TableCell>
+                      {CRITERIA.map((c) => <TableCell key={c.key} className={s.num}>{r.values[c.key].value}</TableCell>)}
+                      <TableCell className={s.num}>{(vec[0] ?? r.score).toFixed(1)}</TableCell>
+                    </TableRow>
+                  );
+                }
                 const props = bind(r.id);
                 return (
                   <TableRow
-                    key={r.id} {...props} tabIndex={0}
+                    key={r.id} {...props} tabIndex={0} style={{ opacity: lifeOpacity(life) }} data-score-latest={r.score.toFixed(1)}
                     aria-selected={isSelectedHighlight(props['data-highlight'])}
                     className={mergeClasses(s.row, hl(props['data-highlight']))}
                     onKeyDown={(e) => { onEntityKey(e, r.id, ORIGIN); }}
@@ -92,7 +105,7 @@ function RankingScreen() {
                         </TableCell>
                       );
                     })}
-                    <TableCell className={s.num}><KpiValue>{r.score.toFixed(1)}</KpiValue></TableCell>
+                    <TableCell className={s.num}><KpiValue>{(vec[0] ?? r.score).toFixed(1)}</KpiValue></TableCell>
                   </TableRow>
                 );
               })}
