@@ -1,7 +1,7 @@
 // 没入（Immersive）の操作（FR-299・FR-300）: Focus の切替、最近使った Task Context への切替、ゾーン間の移動の計算。
 //  - Focus に入る前のモードを覚え、解除（Ctrl+Alt+Enter・⌃⌥Enter、または別のモードの選択）で、直前の配置に戻す。
 //  - Esc では解除しない（Esc は最大化の解除など既存の用途がある。FR-013）。
-import { activeWorkspace, recentWorkspaces, useTaskWorkspaces } from '../store/taskWorkspaces';
+import { activeWorkspace, recentWorkspaces, useTaskWorkspaces, workspaceLabel } from '../store/taskWorkspaces';
 import { useImmersion } from '../store/immersion';
 import { DEFAULT_MODE, ZONE_NAMES, type ZoneLayout, type ZoneName } from './zones';
 import { switchWorkspace } from './taskContext';
@@ -47,7 +47,7 @@ export function switchToNextRecent(): string | null {
   const i = list.findIndex((w) => w.id === st.active);
   const next = list[(i + 1) % list.length]!;
   switchWorkspace(next.id);
-  return next.name;
+  return workspaceLabel(next.name);
 }
 
 /** いま出しているゾーン（結合したものは代表だけ）。ゾーン間の移動の候補 */
