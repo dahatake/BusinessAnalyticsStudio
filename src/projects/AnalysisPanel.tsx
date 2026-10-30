@@ -1,7 +1,7 @@
 // 分析手法の選択と開始・パラメーター編集・ビュアー切替（FR-133〜135、NFR-A11Y-005）。
 // 結果の項目は 3 つのビュアー（表・マトリクス・グラフ）で同じ値を表示し、選択と絞り込みを共有する。
 // 図・グラフ・マトリクスでも、同じ値を表で確認できる（AC-216）。状態は文字でも示す（色だけにしない）。
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useRef, useState, type HTMLAttributes, type KeyboardEvent, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react';
 import { Button, Input, MessageBar, MessageBarBody, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { registerCommands } from '../commands/registry';
 import { useAi } from '../ai/useAi';
@@ -37,9 +37,13 @@ function useShown(target: number): string {
   return v === target ? String(target) : (Math.round(v * 10) / 10).toFixed(1);
 }
 
-/** 表のセル用。遷移中は中間値、完了後は最新値。最新値は data-value（セル）で常に読める */
-function Shown({ value }: { value: number }) {
-  return <>{useShown(value)}</>;
+/**
+ * 表の行。値が変わると行が薄い状態から最新の見た目へ戻る（遷移。FR-070 AC-086・FR-134 AC-197）。表の文字は常に最新値のまま（参照・読み上げ・コピーは遷移中も正確）。
+ */
+function ResultRow({ value, children, ...rest }: { value: number; children: ReactNode } & HTMLAttributes<HTMLTableRowElement>) {
+  const v = useTweenedValue(value);
+  const gap = Math.abs(v - value);
+  return <tr {...rest} style={gap > 0 ? { opacity: 1 - Math.min(0.5, gap * 0.1) } : undefined}>{children}</tr>;
 }
 
 function ItemBody({ item, selected }: { item: ResultItem; selected: boolean }) {
@@ -96,9 +100,9 @@ function Viewer({ a, items, onSelect }: { a: Analysis; items: ResultItem[]; onSe
           <thead><tr role="row"><th>{t('項目')}</th><th>{t('分類')}</th><th>{t('値')}</th><th>{t('重み')}</th><th>{t('結果（値×重み）')}</th></tr></thead>
           <tbody>
             {items.map((i) => (
-              <tr key={i.id} role="row" {...common(i)} className={cls(i)}>
-                <td>{a.selectedId === i.id ? '✓ ' : ''}{t(i.label)}</td><td>{t(i.category)}</td><td data-value={i.score}><Shown value={i.score} /></td><td data-value={i.weight}><Shown value={i.weight} /></td><td data-value={i.value}><Shown value={i.value} /></td>
-              </tr>
+              <ResultRow key={i.id} value={i.value} role="row" {...common(i)} className={cls(i)}>
+                <td>{a.selectedId === i.id ? '✓ ' : ''}{t(i.label)}</td><td>{t(i.category)}</td><td>{i.score}</td><td>{i.weight}</td><td>{i.value}</td>
+              </ResultRow>
             ))}
           </tbody>
         </table>
@@ -269,7 +273,7 @@ function AnalysisView({ projectId, a, onReturn }: { projectId: string; a: Analys
           <summary>{t('同じ値の表（代替表示）')}</summary>
           <table className={s.table} aria-label={t('結果の代替表')}>
             <thead><tr><th>{t('項目')}</th><th>{t('分類')}</th><th>{t('値')}</th><th>{t('重み')}</th><th>{t('結果（値×重み）')}</th></tr></thead>
-            <tbody>{visible.map((i) => <tr key={i.id}><td>{t(i.label)}</td><td>{t(i.category)}</td><td data-value={i.score}><Shown value={i.score} /></td><td data-value={i.weight}><Shown value={i.weight} /></td><td data-value={i.value}><Shown value={i.value} /></td></tr>)}</tbody>
+            <tbody>{visible.map((i) => <tr key={i.id}><td>{t(i.label)}</td><td>{t(i.category)}</td><td>{i.score}</td><td>{i.weight}</td><td>{i.value}</td></tr>)}</tbody>
           </table>
         </details>
       ) : null}

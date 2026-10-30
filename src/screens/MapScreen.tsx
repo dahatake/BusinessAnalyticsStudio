@@ -24,6 +24,7 @@ import { useView3D } from '../store/view3d';
 import { RenderCanvas } from '../three/SceneCanvas';
 import { usePane } from '../workspace/PaneContext';
 import { useT } from '../i18n';
+import { usePresenceItems } from '../motion/usePresence';
 
 const ORIGIN = 'map';
 
@@ -113,11 +114,16 @@ export function MapScreen() {
   const pane = usePane();
   const visible = pane ? pane.visible : true;
 
+  // 2D の拠点の出入り（FR-070 AC-086）。追加は薄く現れ、削除は薄れて消え、位置の変化は補間する。停止・reduce は即時
+  const flatSites = shownData?.sites ?? [];
+  const flatB = shownData ? flatBounds(shownData) : null;
+  const flatItems = usePresenceItems(flatSites, (x) => x.id, (x) => { const p = flatB ? flatPos(flatB, x.lat, x.lng) : { left: 0, top: 0 }; return [p.left, p.top]; });
+
   if (!data || !shownData) return <LoadingView label={t('地図を読み込み中')} />;
 
   const hasSites = shownData.sites.length > 0;
   const bounds = flatBounds(shownData);
-  const marker = (site: MapData['sites'][number], style: CSSProperties, refOn: boolean) => {
+  const marker = (site: MapData['sites'][number], style: CSSProperties, refOn: boolean, exiting = false) => {
     const props = bind(site.id);
     return (
       <button
@@ -128,6 +134,7 @@ export function MapScreen() {
         className={mergeClasses(s.marker, hl(props['data-highlight']))}
         aria-label={t('拠点 {name}（緯度 {lat}、経度 {lng}）', { name: site.name, lat: site.lat, lng: site.lng })}
         onKeyDown={(e) => { onEntityKey(e, site.id, ORIGIN); }}
+        {...(exiting ? { tabIndex: -1, 'aria-hidden': true } : {})}
         style={style}
       >
         {site.name}
@@ -187,10 +194,7 @@ export function MapScreen() {
             })}
           </svg>
           <div className={s.overlay}>
-            {shownData.sites.map((site) => {
-              const p = flatPos(bounds, site.lat, site.lng);
-              return marker(site, { left: `${p.left}%`, top: `${p.top}%`, transform: 'translate(-50%, -50%)' }, false);
-            })}
+            {flatItems.map((it) => marker(it.item, { left: `${it.vec[0]}%`, top: `${it.vec[1]}%`, transform: 'translate(-50%, -50%)', opacity: it.life, ...(it.exiting ? { pointerEvents: 'none' as const } : {}) }, false, it.exiting))}
           </div>
         </div>
       ) : (
@@ -199,7 +203,7 @@ export function MapScreen() {
             <MapScene data={shownData} mode={mode} hour={hour} quality={quality} selected={selected} markerRefs={markerRefs} />
           </RenderCanvas>
           <div className={s.overlay}>
-            {shownData.sites.map((site) => marker(site, { visibility: 'hidden' }, true))}
+            {shownData.sites.map((site) => marker(site, { visibility: 'hidden', transform: 'translate(-50%, -100%)' }, true))}
           </div>
         </div>
       )}

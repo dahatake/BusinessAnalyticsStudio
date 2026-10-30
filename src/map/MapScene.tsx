@@ -334,7 +334,10 @@ function MarkerProjector({ data, mode, refs }: { data: MapData; mode: MapMode; r
       v.set(...p).project(camera);
       const front = mode === 'flat' || facesCamera(p, [camera.position.x, camera.position.y, camera.position.z]);
       const inside = v.z > -1 && v.z < 1 && Math.abs(v.x) <= 1.1 && Math.abs(v.y) <= 1.1;
-      el.style.transform = `translate(${((v.x + 1) / 2) * size.width}px, ${((1 - v.y) / 2) * size.height}px) translate(-50%, -100%)`;
+      // 位置は left/top（px）で置き、transform は固定（地図の枠の大きさ・カメラが変わっても、項目自身の変形は変わらない）
+      el.style.left = `${((v.x + 1) / 2) * size.width}px`;
+      el.style.top = `${((1 - v.y) / 2) * size.height}px`;
+      el.style.transform = 'translate(-50%, -100%)';
       el.style.visibility = front && inside ? 'visible' : 'hidden';
     }
   }, [camera, data.sites, mode, refs, size, v]);
