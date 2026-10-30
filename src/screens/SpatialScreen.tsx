@@ -4,6 +4,7 @@
 // Graph の表現は、表示形式の共通の機構（FR-238）が担当する。
 import { useEffect, useMemo, useRef, type KeyboardEvent, type SVGProps } from 'react';
 import { tr, useT } from '../i18n';
+import { lifeOpacity, usePresenceItems } from '../motion';
 import { Button, Field, Select, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
@@ -126,6 +127,8 @@ export function SpatialScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [model, building, floors, twinItems]);
   usePublishViewItems(ORIGIN, shownIds);
+  // 2D の一覧は、ID を保ったまま出入りする（FR-070 AC-086）。削除は薄れて消えるまで元の位置に残る
+  const itemPresence = usePresenceItems(items, (n) => n.id, () => []);
 
   if (!model) return <LoadingView label={t('空間ビューを読み込み中')} />;
 
@@ -145,12 +148,19 @@ export function SpatialScreen() {
   for (const n of model.nodes.values()) counts[n.kind === 'equipment' ? 'room' : n.kind]++;
 
   // ---- 2D（階層ごとの一覧） ----
-  const card = (n: SpatialNode) => {
+  const card = (n: SpatialNode, life = 1, exiting = false) => {
+    if (exiting) {
+      return (
+        <li key={n.id} aria-hidden style={{ opacity: lifeOpacity(life), pointerEvents: 'none' }}>
+          <div className={s.card}><Text weight="semibold">{n.name}</Text><Text size={200}>{SPATIAL_KIND_LABELS[n.kind]}</Text></div>
+        </li>
+      );
+    }
     const props = bind(n.id, { interactive: false });
     const cell = kpiCell(model, n.id, kpi);
     const isSel = selectedIds.includes(n.id);
     return (
-      <li key={n.id}>
+      <li key={n.id} style={life < 1 ? { opacity: lifeOpacity(life) } : undefined}>
         <div
           {...props}
           data-kind={n.kind}
@@ -333,7 +343,7 @@ export function SpatialScreen() {
 
           {mode === '2d' && d >= 1 && d <= D ? (
             <ul className={s.list} aria-label={t('{kind}の一覧（2D）', { kind: d === 1 ? t('拠点') : d === 2 ? t('フロア') : t('部屋・設備') })} data-zoom-surface="2d">
-              {items.map(card)}
+              {itemPresence.map((p) => card(p.item, p.life, p.exiting))}
             </ul>
           ) : null}
 
