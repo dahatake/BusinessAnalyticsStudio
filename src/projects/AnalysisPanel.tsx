@@ -37,6 +37,11 @@ function useShown(target: number): string {
   return v === target ? String(target) : (Math.round(v * 10) / 10).toFixed(1);
 }
 
+/** 表のセル用。遷移中は中間値、完了後は最新値。最新値は data-value（セル）で常に読める */
+function Shown({ value }: { value: number }) {
+  return <>{useShown(value)}</>;
+}
+
 function ItemBody({ item, selected }: { item: ResultItem; selected: boolean }) {
   const t = useT();
   const score = useShown(item.score);
@@ -92,7 +97,7 @@ function Viewer({ a, items, onSelect }: { a: Analysis; items: ResultItem[]; onSe
           <tbody>
             {items.map((i) => (
               <tr key={i.id} role="row" {...common(i)} className={cls(i)}>
-                <td>{a.selectedId === i.id ? '✓ ' : ''}{t(i.label)}</td><td>{t(i.category)}</td><td>{i.score}</td><td>{i.weight}</td><td>{i.value}</td>
+                <td>{a.selectedId === i.id ? '✓ ' : ''}{t(i.label)}</td><td>{t(i.category)}</td><td data-value={i.score}><Shown value={i.score} /></td><td data-value={i.weight}><Shown value={i.weight} /></td><td data-value={i.value}><Shown value={i.value} /></td>
               </tr>
             ))}
           </tbody>
@@ -264,7 +269,7 @@ function AnalysisView({ projectId, a, onReturn }: { projectId: string; a: Analys
           <summary>{t('同じ値の表（代替表示）')}</summary>
           <table className={s.table} aria-label={t('結果の代替表')}>
             <thead><tr><th>{t('項目')}</th><th>{t('分類')}</th><th>{t('値')}</th><th>{t('重み')}</th><th>{t('結果（値×重み）')}</th></tr></thead>
-            <tbody>{visible.map((i) => <tr key={i.id}><td>{t(i.label)}</td><td>{t(i.category)}</td><td>{i.score}</td><td>{i.weight}</td><td>{i.value}</td></tr>)}</tbody>
+            <tbody>{visible.map((i) => <tr key={i.id}><td>{t(i.label)}</td><td>{t(i.category)}</td><td data-value={i.score}><Shown value={i.score} /></td><td data-value={i.weight}><Shown value={i.weight} /></td><td data-value={i.value}><Shown value={i.value} /></td></tr>)}</tbody>
           </table>
         </details>
       ) : null}
