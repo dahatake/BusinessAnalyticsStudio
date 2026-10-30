@@ -10,6 +10,7 @@ import { installTabsterDummyFix } from './theme/tabsterDummies';
 import { AppThemeProvider } from './theme/AppThemeProvider';
 import { initProjectPersistence } from './store/persist';
 import { bootTaskWorkspaces } from './workspace/taskContext';
+import { bootImmersion } from './workspace/immersive';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('#root がありません');
@@ -19,6 +20,7 @@ installTabsterDummyFix();
 initProjectPersistence();
 // FR-298 AC-809: タスクワークスペースのタスク文脈（絞り込み・選択・配置）を復元して、保存を始める
 bootTaskWorkspaces();
+bootImmersion();
 
 // 保存したボード（FR-095・FR-097）を読み込んでから画面を出す。読めなくても、空のボードで始める。
 void restoreInk().finally(() => {

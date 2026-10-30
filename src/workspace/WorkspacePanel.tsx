@@ -8,6 +8,10 @@ import { Button, Checkbox, Input, Tab, TabList, Text, makeStyles, tokens } from 
 import { Add20Regular, WindowArrowUp20Regular } from '@fluentui/react-icons';
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { recentWorkspaces, useActiveWorkspace, useTaskWorkspaces } from '../store/taskWorkspaces';
+import { useImmersion } from '../store/immersion';
+import { useOs } from '../store/osConvention';
+import { chordLabel } from './os';
+import { frameSurfaceStyle } from '../theme/frameMaterial';
 import { MODES, MODE_LABEL, ZONE_META, ZONE_NAMES, zoneLayout, type Ratios, type ZoneName } from './zones';
 import { addWorkspace, openInNewWindow, switchWorkspace } from './taskContext';
 import { useT } from '../i18n';
@@ -29,6 +33,9 @@ const useStyles = makeStyles({
   ratioInput: { width: '88px', minWidth: 0 },
   recent: { listStyleType: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column' },
   tight: { justifyContent: 'flex-start', minHeight: '28px' },
+  // Workspace Switcher: 枠の面（半透明の素材。FR-300）
+  switcher: { ...frameSurfaceStyle, borderRadius: tokens.borderRadiusMedium, padding: tokens.spacingHorizontalXS, boxShadow: tokens.shadow2, color: tokens.colorNeutralForeground1 },
+  hint: { color: tokens.colorNeutralForeground2 },
 });
 
 const RATIO_ZONES: ReadonlyArray<keyof Ratios> = ['main', 'reference', 'communication'];
@@ -75,7 +82,10 @@ export function WorkspacePanel() {
   const merge = useTaskWorkspaces((st) => st.merge);
   const unmerge = useTaskWorkspaces((st) => st.unmerge);
   const [picked, setPicked] = useState<ReadonlySet<ZoneName>>(new Set());
-  const layout = useMemo(() => zoneLayout(active.mode, active.ratios, active.merged), [active.mode, active.ratios, active.merged]);
+  const os = useOs();
+  const recalled = useImmersion((st) => st.recalled);
+  const toggleRecall = useImmersion((st) => st.toggleRecall);
+  const layout = useMemo(() => zoneLayout(active.mode, active.ratios, active.merged, recalled), [active.mode, active.ratios, active.merged, recalled]);
   const recent = useMemo(() => recentWorkspaces(items), [items]);
   const mergedNow = active.merged.length >= 2;
   const toggle = (n: ZoneName, on: boolean): void => setPicked((cur) => { const next = new Set(cur); if (on) next.add(n); else next.delete(n); return next; });
@@ -110,14 +120,25 @@ export function WorkspacePanel() {
       </div>
       <div className={s.group}>
         <Text size={200} weight="semibold">Workspace Switcher</Text>
-        <RadioGroup
-          data-testid="workspace-switcher"
-          aria-label="Workspace Switcher"
-          value={active.mode}
-          onChange={(_, d) => setMode(d.value as (typeof MODES)[number])}
-        >
-          {MODES.map((m) => <Radio key={m} value={m} label={MODE_LABEL[m]} />)}
-        </RadioGroup>
+        <div data-testid="workspace-switcher" className={s.switcher}>
+          <RadioGroup
+            aria-label="Workspace Switcher"
+            value={active.mode}
+            onChange={(_, d) => setMode(d.value as (typeof MODES)[number])}
+          >
+            {MODES.map((m) => <Radio key={m} value={m} label={MODE_LABEL[m]} />)}
+          </RadioGroup>
+        </div>
+        <Text size={200} className={s.hint} data-shortcut={chordLabel(os, 'focus')}>{t('Focus の切替: {key}（Esc では解除しない）', { key: chordLabel(os, 'focus') })}</Text>
+        {active.mode === 'focus' ? (
+          <div className={s.row} role="group" aria-label={t('減光したゾーンを呼び出す')}>
+            {ZONE_NAMES.filter((n) => layout[n].rect && n !== 'main').map((n) => (
+              <Button key={n} size="small" data-testid={`zone-recall-${n}`} aria-pressed={recalled.includes(n)} onClick={() => toggleRecall(n)}>
+                {recalled.includes(n) ? t('{zone} を戻す', { zone: ZONE_META[n].label }) : t('{zone} を呼び出す', { zone: ZONE_META[n].label })}
+              </Button>
+            ))}
+          </div>
+        ) : null}
       </div>
       <section className={s.group} data-testid="zone-list" aria-label={t('ゾーン')}>
         <Text size={200} weight="semibold">{t('ゾーン')}</Text>

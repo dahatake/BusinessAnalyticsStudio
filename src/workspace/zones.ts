@@ -54,11 +54,13 @@ export function sanitizeRatio(v: number): number {
 }
 
 /** モードごとの、出すゾーンとその重み。ロールの割り当てには触れない（割合は ratios から、ほかはモードの定義から） */
-export function modeWeights(mode: WorkspaceMode, ratios: Ratios): Partial<Record<ZoneName, number>> {
+export function modeWeights(mode: WorkspaceMode, ratios: Ratios, recalled: readonly ZoneName[] = []): Partial<Record<ZoneName, number>> {
   switch (mode) {
     case 'focus':
-      // Main を主にし、Main 以外は縮小して残す
-      return { main: 100 - 2 * FOCUS_SIDE, reference: FOCUS_SIDE, communication: FOCUS_SIDE };
+      // Main を主にし、Main 以外は縮小して残す。呼び出したゾーンは、割合どおりの大きさで出す（FR-300）
+      const ref = recalled.includes('reference') ? ratios.reference : FOCUS_SIDE;
+      const com = recalled.includes('communication') ? ratios.communication : FOCUS_SIDE;
+      return { main: Math.max(FOCUS_SIDE, 100 - ref - com), reference: ref, communication: com };
     case 'compare':
       return { main: 50, reference: 50 };
     case 'monitor':
@@ -75,8 +77,8 @@ export function modeWeights(mode: WorkspaceMode, ratios: Ratios): Partial<Record
  * ゾーンを横に並べた配置（合計は作業領域全体を隙間・重なりなく覆う）。
  * `merged` に 2 つ以上の（出している）ゾーンを渡すと、それらは 1 つのゾーン（最初のゾーンが代表）になる。
  */
-export function zoneLayout(mode: WorkspaceMode, ratios: Ratios, merged: readonly ZoneName[] = []): ZoneLayout {
-  const weights = modeWeights(mode, ratios);
+export function zoneLayout(mode: WorkspaceMode, ratios: Ratios, merged: readonly ZoneName[] = [], recalled: readonly ZoneName[] = []): ZoneLayout {
+  const weights = modeWeights(mode, ratios, recalled);
   const shown = ZONE_NAMES.filter((n) => (weights[n] ?? 0) > 0);
   const group = ZONE_NAMES.filter((n) => merged.includes(n) && shown.includes(n));
   const mergedOn = group.length >= 2;
@@ -90,7 +92,7 @@ export function zoneLayout(mode: WorkspaceMode, ratios: Ratios, merged: readonly
   let x = 0;
   units.forEach((n, i) => {
     const w = i === units.length - 1 ? 1 - x : weightOf(n) / total;
-    out[n] = { ...out[n], rect: { x, y: 0, w, h: 1 }, merged: mergedOn && n === rep, dimmed: mode === 'focus' && n !== 'main' };
+    out[n] = { ...out[n], rect: { x, y: 0, w, h: 1 }, merged: mergedOn && n === rep, dimmed: mode === 'focus' && n !== 'main' && !recalled.includes(n) };
     x += w;
   });
   return out;
@@ -99,6 +101,28 @@ export function zoneLayout(mode: WorkspaceMode, ratios: Ratios, merged: readonly
 /** コンポーネントを置くゾーン（結合していれば代表のゾーン）。そのゾーンを出していなければ null */
 export function hostRect(layout: ZoneLayout, zone: ZoneName): ZoneRect | null {
   return layout[layout[zone].host].rect;
+}
+
+/**
+ * ロールを割り当てていないコンポーネントの、モードによる既定の置き先（FR-300: モードの切替でも、位置・大きさが連続して変わる）。
+ * 既定の Research では使わない（利用者が置いた分割の配置のまま。呼び出し側が決める）。出しているゾーンだけに置き、情報は欠けない。
+ * 主役（tier が primary）はいちばん広いゾーン、それ以外は残りのゾーンへ順に配る。
+ */
+export function implicitRoles(layout: ZoneLayout, keys: readonly string[], tierOf: (key: string) => string, explicit: Readonly<Record<string, ZoneName>>): Record<string, ZoneName> {
+  const shown = ZONE_NAMES.filter((n) => layout[n].rect !== null && layout[n].host === n);
+  if (shown.length === 0) return {};
+  const area = (n: ZoneName): number => { const r = layout[n].rect!; return r.w * r.h; };
+  const lead = shown.reduce((a, b) => (area(b) > area(a) ? b : a));
+  const rest = shown.filter((n) => n !== lead);
+  const out: Record<string, ZoneName> = {};
+  let i = 0;
+  for (const k of keys) {
+    if (explicit[k]) continue;
+    if (tierOf(k) === 'primary' || rest.length === 0) { out[k] = lead; continue; }
+    out[k] = rest[i % rest.length]!;
+    i += 1;
+  }
+  return out;
 }
 
 /**

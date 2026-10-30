@@ -11,6 +11,7 @@ import type { ScreenDefinition } from '../screens/types';
 import { builtinCommands } from './builtin';
 import { STATIC_SHORTCUTS, commandsVersion, filterCommands, getCommands, onCommandsChanged, registerCommands, type Command } from './registry';
 import { globalKeyAction, useCommandUi } from './ui';
+import { useOsPref } from '../store/osConvention';
 
 const useStyles = makeStyles({
   list: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXXS, maxHeight: '50vh', overflowY: 'auto', marginTop: tokens.spacingVerticalS },
@@ -41,8 +42,10 @@ function useCommands(): Command[] {
   const version = useSyncExternalStore(onCommandsChanged, commandsVersion);
   // 操作名は表示時の言語で作るので、言語の切り替えでも作り直す（FR-294）
   const lang = useLang((st) => st.lang);
+  // ショートカットの表記は OS の慣習で変わるので、設定の変更でも作り直す（FR-299）
+  const osPref = useOsPref((st) => st.pref);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => getCommands(), [version, lang]);
+  return useMemo(() => getCommands(), [version, lang, osPref]);
 }
 
 export function CommandPalette() {

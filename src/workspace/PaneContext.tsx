@@ -8,11 +8,16 @@ import { SNAP_LABEL, type SnapKind } from './snap';
 import { PIN_MOVE_REASON, PIN_RESIZE_REASON, PIN_TABS_REASON, paneAction, type PaneActionId } from './paneActions';
 import { ComponentViewButton, ComponentViewSubmenu } from '../view/ViewMenu';
 import { ZONE_META, ZONE_NAMES, type ZoneName } from './zones';
+import { chordLabel } from './os';
+import { useOs } from '../store/osConvention';
 import { useT } from '../i18n';
 
 const useActionStyles = makeStyles({
   actions: { display: 'flex', alignItems: 'center', columnGap: tokens.spacingHorizontalXXS, flexShrink: 0 },
   group: { display: 'contents' },
+  hint: { fontSize: tokens.fontSizeBase200, lineHeight: tokens.lineHeightBase200 },
+  // macOS の慣習: 左端にウィンドウ操作、右端にそのほかの操作（FR-299）
+  macBar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', columnGap: tokens.spacingHorizontalS, width: '100%' },
   // 当たり判定は 24 CSS px 以上（WCAG 2.2 の 2.5.8。PARAM-040）
   icon: { minWidth: '24px', minHeight: '24px' },
 });
@@ -82,6 +87,14 @@ export interface PaneInfo {
   zone?: ZoneName;
   /** ロールへ割り当てる（座標の指定なし）。null で外す */
   assignZone?: (zone: ZoneName | null) => void;
+  /** ゾーン間の移動（FR-299 Move）。dir は +1 で次、-1 で前のゾーン。ゾーンの選択とフォーカスは保つ */
+  moveZone?: (dir: 1 | -1) => void;
+  /** いるゾーンへ吸着する（FR-299 Snap） */
+  snapZone?: () => void;
+  /** 同じグループのコンポーネントを、同じゾーンへまとめる（FR-299 Group） */
+  groupZone?: () => void;
+  /** 最後にゾーンの操作（Move・Snap・Group）をしたコンポーネントか（ゾーンの選択を保つ印） */
+  zoneSelected?: boolean;
 }
 
 export const PaneContext = createContext<PaneInfo | null>(null);
@@ -95,6 +108,10 @@ export function ComponentMenu({ pane, title, open, onOpenChange, onShowTier }: {
   onShowTier?: () => void;
 }) {
   const t = useT();
+  const os = useOs();
+  const hs = useActionStyles();
+  // キーの表記は、文字の段（12px/16px）に合わせた 1 つの span で出す（NFR-UX-015）
+  const hint = (text: string) => <span className={hs.hint}>{text}</span>;
   const pinNote = pane.pinned ? t(PIN_MOVE_REASON) : undefined;
   const resizeNote = pane.pinned ? t(PIN_RESIZE_REASON) : undefined;
   return (
@@ -137,7 +154,11 @@ export function ComponentMenu({ pane, title, open, onOpenChange, onShowTier }: {
           <MenuItem disabled={pane.pinned} secondaryContent={resizeNote} onClick={() => pane.resizeBy('h', 1)}>{t('高さを広げる')}</MenuItem>
           <MenuItem disabled={pane.pinned} secondaryContent={resizeNote} onClick={() => pane.resizeBy('h', -1)}>{t('高さを狭める')}</MenuItem>
           <MenuItem onClick={pane.toggleMaximize}>{paneAction('maximize', pane.maximized).label}</MenuItem>
-          <MenuItem onClick={pane.toggleExpand}>{pane.expanded ? t('拡大表示を戻す') : t('拡大表示（75%）')}</MenuItem>
+          <MenuItem secondaryContent={hint(chordLabel(os, 'expand'))} onClick={pane.toggleExpand}>{pane.expanded ? t('拡大表示を戻す') : t('拡大表示（75%）')}</MenuItem>
+          {/* ゾーンの操作（FR-299）。キーは OS の慣習の表記（Windows は Ctrl+Alt+→、macOS は ⌃⌥→） */}
+          {pane.moveZone ? <MenuItem secondaryContent={hint(chordLabel(os, 'snap'))} onClick={() => pane.snapZone?.()}>{t('ゾーンへスナップ')}</MenuItem> : null}
+          {pane.moveZone ? <MenuItem secondaryContent={hint(chordLabel(os, 'group'))} onClick={() => pane.groupZone?.()}>{t('同じグループをこのゾーンへまとめる')}</MenuItem> : null}
+          {pane.moveZone ? <MenuItem secondaryContent={hint(chordLabel(os, 'move'))} onClick={() => pane.moveZone?.(1)}>{t('次のゾーンへ移動')}</MenuItem> : null}
           <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={pane.toggleFloat}>{pane.floating ? t('分割の配置に戻す') : t('自由に動かせる配置にする')}</MenuItem>
           {pane.pinned ? <MenuItem disabled secondaryContent={t(PIN_TABS_REASON)}>{paneAction('tabs').label}</MenuItem> : pane.peers.length > 0 ? (
             <Menu>
@@ -251,15 +272,16 @@ export function ComponentActions({ pane, title, active, narrow, hover = false, f
   const coreStyle = shown || narrow ? undefined : { visibility: 'hidden' as const };
   const extraStyle = shown && !narrow ? undefined : narrow ? { display: 'none' } : { visibility: 'hidden' as const };
   const TabsIcon = paneAction('tabs').Icon;
-  return (
-    <div className={s.actions} data-testid="component-actions" data-minimized={pane.minimized ? 'true' : undefined}>
-      {/* ロールへの割り当ては、見出しの右寄せの並びの左端に足す（現れる・消えるときに、ほかのアイコンの位置が動かない） */}
-      {showAssign ? <AssignZoneButton pane={pane} onEngage={() => setEngaged(true)} /> : null}
-      <span className={s.group} style={extraStyle}>
+  const mac = useOs() === 'mac';
+  const assignEl = showAssign ? <AssignZoneButton pane={pane} onEngage={() => setEngaged(true)} /> : null;
+  const pinEl = (
+    <span className={s.group} style={extraStyle}>
       {/* ピン止めの切替（FR-215）: 現在の状態に応じたアイコンを 1 つだけ出す。固定なし＝「ピン止めする」Regular、固定中＝「ピン止めを外す」Filled */}
       <ActionButton action="pin" on={pane.pinned} pressed={pane.pinned} onClick={pane.togglePin} />
-      </span>
-      <span className={s.group} style={coreStyle}>
+    </span>
+  );
+  const coreEl = (
+    <span className={s.group} style={coreStyle}>
       {pane.minimized ? (
         // 最小化中は、フォーカスの有無に関わらず復元できる（見出しの操作で元の位置・大きさに戻る。FR-151）
         <ActionButton action="minimize" on onClick={pane.toggleMinimize} />
@@ -270,38 +292,62 @@ export function ComponentActions({ pane, title, active, narrow, hover = false, f
           <ActionButton action="minimize" onClick={pane.toggleMinimize} />
         </>
       ) : null}
-      </span>
+    </span>
+  );
+  const tabsEl = pane.minimized ? null : pane.pinned ? (
+    // ピン止め中はタブにまとめない（FR-216 AC-505）。理由をツールチップと名前で示す
+    <ActionButton action="tabs" disabledReason={PIN_TABS_REASON} />
+  ) : pane.inTabs ? (
+    <ActionButton action="untab" onClick={pane.untab} />
+  ) : pane.peers.length > 0 ? (
+    <Menu>
+      <Tooltip content={paneAction('tabs').label} relationship="label" withArrow>
+        <MenuTrigger disableButtonEnhancement>
+          <Button className={s.icon} appearance="subtle" size="small" data-action="tabs" data-icon-variant="regular" icon={<TabsIcon aria-hidden />} />
+        </MenuTrigger>
+      </Tooltip>
+      <MenuPopover>
+        <MenuList>
+          {pane.peers.map((p) => (
+            <MenuItem key={p.key} onClick={() => pane.mergeInto(p.key)}>{p.label}</MenuItem>
+          ))}
+        </MenuList>
+      </MenuPopover>
+    </Menu>
+  ) : null;
+  const hideEl = pane.minimized ? null : <ActionButton action="hide" onClick={pane.hide} />;
+  // 2D/3D と世界の表示の切替を 1 つにまとめた「ビュー」（FR-217・FR-218。PARAM-073 の 6 個目）
+  const viewEl = pane.minimized ? null : <ComponentViewButton paneKey={pane.key} />;
+  const menuEl = <ComponentMenu pane={pane} title={title} open={menu?.open} onOpenChange={menu?.onOpenChange} onShowTier={menu?.onShowTier} />;
+  if (mac) {
+    // macOS の慣習: ウィンドウの操作（最大化・最小化・非表示）は見出しの左端、そのほか（ピン止め・タブ・ビュー・メニュー）は右端（FR-299）。操作の名前・アイコンは Windows と同じ
+    return (
+      <div className={s.macBar}>
+        <div className={s.actions} data-testid="component-actions" data-minimized={pane.minimized ? 'true' : undefined} data-os="mac">
+          {assignEl}
+          {coreEl}
+          <span className={s.group} style={extraStyle}>{hideEl}</span>
+        </div>
+        <div className={s.actions} data-testid="component-actions-extra">
+          {pinEl}
+          <span className={s.group} style={extraStyle}>{tabsEl}{viewEl}</span>
+          {menuEl}
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className={s.actions} data-testid="component-actions" data-minimized={pane.minimized ? 'true' : undefined}>
+      {/* ロールへの割り当ては、見出しの右寄せの並びの左端に足す（現れる・消えるときに、ほかのアイコンの位置が動かない） */}
+      {assignEl}
+      {pinEl}
+      {coreEl}
       <span className={s.group} style={extraStyle}>
-      {!pane.minimized ? (
-        <>
-          {pane.pinned ? (
-            // ピン止め中はタブにまとめない（FR-216 AC-505）。理由をツールチップと名前で示す
-            <ActionButton action="tabs" disabledReason={PIN_TABS_REASON} />
-          ) : pane.inTabs ? (
-            <ActionButton action="untab" onClick={pane.untab} />
-          ) : pane.peers.length > 0 ? (
-            <Menu>
-              <Tooltip content={paneAction('tabs').label} relationship="label" withArrow>
-                <MenuTrigger disableButtonEnhancement>
-                  <Button className={s.icon} appearance="subtle" size="small" data-action="tabs" data-icon-variant="regular" icon={<TabsIcon aria-hidden />} />
-                </MenuTrigger>
-              </Tooltip>
-              <MenuPopover>
-                <MenuList>
-                  {pane.peers.map((p) => (
-                    <MenuItem key={p.key} onClick={() => pane.mergeInto(p.key)}>{p.label}</MenuItem>
-                  ))}
-                </MenuList>
-              </MenuPopover>
-            </Menu>
-          ) : null}
-          <ActionButton action="hide" onClick={pane.hide} />
-          {/* 2D/3D と世界の表示の切替を 1 つにまとめた「ビュー」（FR-217・FR-218。PARAM-073 の 6 個目） */}
-          <ComponentViewButton paneKey={pane.key} />
-        </>
-      ) : null}
+        {tabsEl}
+        {hideEl}
+        {viewEl}
       </span>
-      <ComponentMenu pane={pane} title={title} open={menu?.open} onOpenChange={menu?.onOpenChange} onShowTier={menu?.onShowTier} />
+      {menuEl}
     </div>
   );
 }

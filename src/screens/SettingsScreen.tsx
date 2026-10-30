@@ -1,7 +1,7 @@
 // 設定パネル（テーマ、ブランドの確認と上書き、3D の品質・業種プリセット、AI）。FR-058、FR-059、FR-060、FR-064、FR-065、FR-066、FR-069
 import { useEffect, useMemo, useState } from 'react';
 import { tr, useT } from '../i18n';
-import { Badge, Button, Dropdown, Field, Input, Option, Switch, Text, makeStyles, tokens } from '@fluentui/react-components';
+import { Badge, Button, Dropdown, Field, Input, Option, Select, Switch, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { Panel } from '../components/Panel';
 import { AiSettings } from '../ai/AiSettings';
@@ -9,6 +9,8 @@ import { SpeechSettings } from '../speech/SpeechSettings';
 import { WorkTargetSettings } from '../projects/WorkTargetSettings';
 import { DEFAULT_EXPAND_POSITION, EXPAND_LABEL, EXPAND_POSITIONS, THEME_MODES, useSettings, type ExpandPosition, type Handedness, type ThemeMode } from '../store/settings';
 import { INDUSTRY_PRESETS, useIndustryPreset, useView3D } from '../store/view3d';
+import { useOsPref } from '../store/osConvention';
+import { OS_PREFS, OS_PREF_LABEL, type OsPref } from '../workspace/os';
 import { QUALITIES, type Quality } from '../three/quality';
 import { PresetIcon } from '../three/presetIcons';
 import { TEMPLATE_VERSION } from '../version';
@@ -72,6 +74,8 @@ export function SettingsScreen() {
   const setHandedness = useSettings((st) => st.setHandedness);
   const expandPosition = useSettings((st) => st.expandPosition);
   const setExpandPosition = useSettings((st) => st.setExpandPosition);
+  const osPref = useOsPref((st) => st.pref);
+  const setOsPref = useOsPref((st) => st.setPref);
   const override = useSettings((st) => st.brandPrimaryOverride);
   const setOverride = useSettings((st) => st.setBrandPrimaryOverride);
   const bgmEnabled = useSettings((st) => st.bgmEnabled);
@@ -129,6 +133,11 @@ export function SettingsScreen() {
           {EXPAND_POSITIONS.map((p) => <Radio key={p} value={p} label={t(EXPAND_LABEL[p])} />)}
         </RadioGroup>
         <Button size="small" appearance="subtle" disabled={expandPosition === DEFAULT_EXPAND_POSITION} onClick={() => setExpandPosition(DEFAULT_EXPAND_POSITION)}>{t('拡大表示の位置を既定（上）に戻す')}</Button>
+      </Field>
+      <Field label={t('OS の操作慣習')} hint={t('キーの表示（Windows は Ctrl+Alt+→、macOS は ⌃⌥→）と、見出しのウィンドウ操作ボタンの位置（Windows は右端、macOS は左端）を合わせます。「自動」は、使っている OS から判別します。')}>
+        <Select value={osPref} onChange={(_, d) => setOsPref(d.value as OsPref)}>
+          {OS_PREFS.map((p) => <option key={p} value={p}>{t(OS_PREF_LABEL[p])}</option>)}
+        </Select>
       </Field>
       <WorkTargetSettings />
       <SpeechSettings />

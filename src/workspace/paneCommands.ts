@@ -6,6 +6,7 @@ import { SNAP_LABEL } from './snap';
 import { PIN_MOVE_REASON, PIN_RESIZE_REASON, PIN_TABS_REASON } from './paneActions';
 import { TIERS, TIER_LABEL } from './tiers';
 import { ZONE_META, ZONE_NAMES } from './zones';
+import { zoneOpCommands } from './zoneOps';
 import { useLayout } from '../store/layout';
 import { tr } from '../i18n';
 import { detect3D } from '../view/render3d';
@@ -99,5 +100,7 @@ export function paneCommands(current: () => PaneInfo | null, notify: (text: stri
         useLayout.getState().setView(p.key, { world: w });
       }),
     })),
+    // Snap・Group・Switch・Expand・Move と Focus の切替（FR-299・FR-300）。キーは Ctrl+Alt+キー（macOS の表示は ⌃⌥）
+    ...zoneOpCommands(current, notify),
   ];
 }
