@@ -381,11 +381,11 @@
       "ac_ids": [
         "AC-197"
       ],
-      "title": "AC-197 5手法の全ビュアー/代替表2000ms実測・連続変更収束・保持・不正入力と復帰",
+      "title": "AC-197 5手法の全ビュアー/代替表2000ms実測・連続変更収束・保持・不正入力と復帰・中間値遷移",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-197",
       "canary": false,
-      "status": "fail",
+      "status": "not_run",
       "last_commit": "69500e9",
       "last_run_at": "2026-10-30T09:38:02+09:00",
       "evidence": "work\\runs\\202610300856\\logs\\system-test\\E2E-099-202610300937.log",
@@ -401,6 +401,18 @@
           "by": "test-designer",
           "change": "title: 'パラメーター変更の 2 秒以内の反映（正常・範囲外）' -> 'AC-197 5手法の全ビュアー/代替表2000ms実測・連続変更収束・保持・不正入力と復帰'",
           "reason": "run202610300856: 5手法・表と可視化の最新入力/結果一致・共有期限実測・ID選択絞込を拡張"
+        },
+        {
+          "at": "2026-10-30T11:59:47+09:00",
+          "by": "test-designer",
+          "change": "title: 'AC-197 5手法の全ビュアー/代替表2000ms実測・連続変更収束・保持・不正入力と復帰' -> 'AC-197 5手法の全ビュアー/代替表2000ms実測・連続変更収束・保持・不正入力と復帰・中間値遷移'",
+          "reason": "分析の全ビュアーで中間値遷移と2000ms収束を追加"
+        },
+        {
+          "at": "2026-10-30T12:00:02+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "テスト拡張のため未実行へ"
         }
       ]
     },
@@ -1666,11 +1678,11 @@
       "ac_ids": [
         "AC-056"
       ],
-      "title": "AC-056 改名の全ビュー2000ms実測・連続変更・追加削除undo・ID選択出典",
+      "title": "AC-056 改名の全ビュー2000ms実測・連続変更・追加削除undo・ID選択出典（全描画形式・一覧への追従を追加）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-056",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "69500e9",
       "last_run_at": "2026-10-30T09:38:02+09:00",
       "evidence": "work\\runs\\202610300856\\logs\\system-test\\E2E-148-202610300937.log",
@@ -1686,6 +1698,18 @@
           "by": "test-designer",
           "change": "title: 'AC-056 標準の検証条件で、表で課題名を変更すると、ナレッジグラフ・課題-解決策分析・ガント・エグゼクティブサマリーの根拠表示の課' -> 'AC-056 改名の全ビュー2000ms実測・連続変更・追加削除undo・ID選択出典'",
           "reason": "run202610300856: 既存ケースを改名の全ビュー実測・連続更新・追加削除undoと保持の検証へ拡張"
+        },
+        {
+          "at": "2026-10-30T11:59:46+09:00",
+          "by": "test-designer",
+          "change": "title: 'AC-056 改名の全ビュー2000ms実測・連続変更・追加削除undo・ID選択出典' -> 'AC-056 改名の全ビュー2000ms実測・連続変更・追加削除undo・ID選択出典（全描画形式・一覧への追従を追加）'",
+          "reason": "全描画形式と一覧への追従を追加"
+        },
+        {
+          "at": "2026-10-30T12:00:01+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "テスト拡張のため未実行へ"
         }
       ]
     },
@@ -11467,7 +11491,7 @@
       "ac_ids": [
         "AC-086"
       ],
-      "title": "全画面描画形式の初回実描画・停止/reduce後静止＋追加削除undoの出入り遷移（残課題は網羅表参照）",
+      "title": "AC-086 全39描画形式＋分析の実DOM/Canvas/scene測定（出入り・名称/値更新・削除・undo・reduce）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-086",
       "canary": false,
@@ -11487,6 +11511,18 @@
           "by": "test-designer",
           "change": "title: '全画面描画形式の初回実描画・停止/reduce後静止（全ライフサイクル残課題は網羅表参照）' -> '全画面描画形式の初回実描画・停止/reduce後静止＋追加削除undoの出入り遷移（残課題は網羅表参照）'",
           "reason": "visualization-transitions.spec.ts を AC-086 に統合、基点の測定誤り（レイアウト安定待ち）を修正"
+        },
+        {
+          "at": "2026-10-30T11:59:45+09:00",
+          "by": "test-designer",
+          "change": "title: '全画面描画形式の初回実描画・停止/reduce後静止＋追加削除undoの出入り遷移（残課題は網羅表参照）' -> 'AC-086 全39描画形式＋分析の実DOM/Canvas/scene測定（出入り・名称/値更新・削除・undo・reduce）'",
+          "reason": "visualization-forms.spec.ts を追加し全形式の出入り遷移・値/名称更新を測る"
+        },
+        {
+          "at": "2026-10-30T12:00:01+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "テスト拡張のため未実行へ"
         }
       ]
     }
