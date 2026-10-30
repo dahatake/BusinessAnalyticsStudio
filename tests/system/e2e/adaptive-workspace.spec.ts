@@ -26,6 +26,7 @@ async function compKeys(page: Page): Promise<string[]> {
   return ws(page).evaluate((root) => {
     const out: string[] = [];
     root.querySelectorAll('[data-testid^="component-"]:not([data-testid="component-menu"]):not([data-testid="component-actions"])').forEach((el) => {
+      if (!el.querySelector('[data-testid="component-actions"]')) return;
       const r = (el as HTMLElement).getBoundingClientRect();
       if (r.width > 0 && r.height > 0) out.push((el.getAttribute('data-testid') ?? '').replace('component-', ''));
     });
@@ -79,6 +80,7 @@ test.describe('FR-298 適応型ワークスペース', () => {
     expect(Object.values(merged).filter(Boolean).length, '結合で 1 つのゾーンにならない').toBe(beforeCount - 1);
     await page.reload();
     await page.waitForLoadState();
+    await expect(page.getByTestId('zone-list')).toBeVisible();
     expect(Object.values(await areas(page)).filter(Boolean).length, '再読込で結合が保持されない').toBe(beforeCount - 1);
     await page.getByTestId('zone-list').getByRole('button', { name: '結合を解除' }).click();
     const restored = await areas(page);
@@ -103,7 +105,8 @@ test.describe('FR-298 適応型ワークスペース', () => {
     for (let i = 0; i < vis.length; i++) for (let j = i + 1; j < vis.length; j++) expect(overlap(vis[i], vis[j]) / (w.width * w.height), 'ゾーンが重なる').toBeLessThan(0.001);
     await page.reload();
     await page.waitForLoadState();
-    const r3 = await areas(page);
+    await expect(page.getByTestId('zone-list')).toBeVisible();
+    const r3 =  await areas(page);
     for (const n of ZONES) expect(r3[n]?.width ?? 0, `再読込で ${n} の割合が保持されない`).toBeCloseTo(r2[n]?.width ?? 0, -1);
     await expect(component(page, a)).toHaveAttribute('data-zone', 'communication');
   });
