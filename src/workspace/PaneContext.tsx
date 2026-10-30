@@ -1,5 +1,5 @@
 // コンポーネント（パネル）がワークスペースの中にいるときの文脈と、見出しのメニュー（FR-013/FR-109）。
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
 import { Button, Menu, MenuDivider, MenuItem, MenuItemRadio, MenuList, MenuPopover, MenuTrigger, Tooltip, makeStyles, tokens } from '@fluentui/react-components';
 import { MoreHorizontal20Regular } from '@fluentui/react-icons';
 import type { Move } from './layoutModel';
@@ -7,6 +7,7 @@ import { TIERS, TIER_LABEL, type Role, type Tier } from './tiers';
 import { SNAP_LABEL, type SnapKind } from './snap';
 import { PIN_MOVE_REASON, PIN_RESIZE_REASON, PIN_TABS_REASON, paneAction, type PaneActionId } from './paneActions';
 import { ComponentViewButton, ComponentViewSubmenu } from '../view/ViewMenu';
+import { ZONE_META, ZONE_NAMES, type ZoneName } from './zones';
 import { useT } from '../i18n';
 
 const useActionStyles = makeStyles({
@@ -77,6 +78,10 @@ export interface PaneInfo {
   resizeBy: (axis: 'w' | 'h', dir: 1 | -1) => void;
   /** 縁・角のドラッグで大きさを変え始める（FR-224 AC-521） */
   startResize: (edge: 'e' | 's' | 'se', e: { button: number; clientX: number; clientY: number }) => void;
+  /** ロール（割り当て先のゾーン。FR-298 AC-805）。割り当てていなければ未設定 */
+  zone?: ZoneName;
+  /** ロールへ割り当てる（座標の指定なし）。null で外す */
+  assignZone?: (zone: ZoneName | null) => void;
 }
 
 export const PaneContext = createContext<PaneInfo | null>(null);
@@ -199,10 +204,43 @@ function ActionButton({ action, on = false, pressed, onClick, disabledReason }: 
 }
 
 /**
+ * コンポーネントを、座標を指定せずにゾーンのロールへ割り当てる（FR-298 AC-805）。割り当て先のゾーンに配置される。
+ * ポインターを重ねている間（フォーカス中は除く）だけ見出しに足す。常設のボタンは PARAM-073 個までのため。
+ * キーボードからは、コマンドパレットの「ロールへ割り当て」（paneCommands）で同じ操作ができる。
+ */
+function AssignZoneButton({ pane, onEngage }: { pane: PaneInfo; onEngage: () => void }) {
+  const s = useActionStyles();
+  const t = useT();
+  const assign = pane.assignZone;
+  if (!assign) return null;
+  const v = paneAction('zone');
+  const Icon = v.Icon;
+  return (
+    <Menu checkedValues={{ zone: pane.zone ? [pane.zone] : [] }} onCheckedValueChange={(_, d) => { const z = d.checkedItems[0]; if (d.name === 'zone' && z) assign(z as ZoneName); }}>
+      <Tooltip content={v.label} relationship="label" withArrow>
+        <MenuTrigger disableButtonEnhancement>
+          <Button className={s.icon} appearance="subtle" size="small" data-action="zone" data-icon-variant={v.variant} icon={<Icon aria-hidden />} onPointerDown={onEngage} onKeyDown={onEngage} />
+        </MenuTrigger>
+      </Tooltip>
+      <MenuPopover>
+        <MenuList>
+          {ZONE_NAMES.map((n) => <MenuItemRadio key={n} name="zone" value={n}>{`${ZONE_META[n].label}（${t(ZONE_META[n].role)}）`}</MenuItemRadio>)}
+          {pane.zone ? <MenuItem onClick={() => assign(null)}>{t('ロールの割り当てを外す')}</MenuItem> : null}
+        </MenuList>
+      </MenuPopover>
+    </Menu>
+  );
+}
+
+/**
  * 見出しの操作アイコン（FR-150）。フォーカス中（または最小化中）のコンポーネントだけ、主要な操作をメニューを開かずに押せる形で並べる。
  * 狭いとき（narrow）は、アイコンを出さず「…」メニューに任せる（操作は欠けない。FR-150 AC-259）。
  */
-export function ComponentActions({ pane, title, active, narrow, menu }: { pane: PaneInfo; title: string; active: boolean; narrow: boolean; menu?: { open: boolean; onOpenChange: (open: boolean) => void; onShowTier: () => void } }) {
+export function ComponentActions({ pane, title, active, narrow, hover = false, focused = false, menu }: { pane: PaneInfo; title: string; active: boolean; narrow: boolean; /** ポインターを重ねている（ロールへ割り当てを足す。フォーカス中は足さない） */ hover?: boolean; focused?: boolean; menu?: { open: boolean; onOpenChange: (open: boolean) => void; onShowTier: () => void } }) {
+  // ロールへ割り当てを押した直後は、フォーカスが移っても消さない（メニューを開いている間は残す）
+  const [engaged, setEngaged] = useState(false);
+  useEffect(() => { if (!hover) setEngaged(false); }, [hover]);
+  const showAssign = hover && (!focused || engaged) && !pane.minimized;
   const s = useActionStyles();
   useT(); // 言語の切替で、操作の名前（paneAction）を描き直す
   // アイコンは常に描き、フォーカスのないときは隠す。隠している間は押せず、Tab でも止まらない。
@@ -215,6 +253,8 @@ export function ComponentActions({ pane, title, active, narrow, menu }: { pane: 
   const TabsIcon = paneAction('tabs').Icon;
   return (
     <div className={s.actions} data-testid="component-actions" data-minimized={pane.minimized ? 'true' : undefined}>
+      {/* ロールへの割り当ては、見出しの右寄せの並びの左端に足す（現れる・消えるときに、ほかのアイコンの位置が動かない） */}
+      {showAssign ? <AssignZoneButton pane={pane} onEngage={() => setEngaged(true)} /> : null}
       <span className={s.group} style={extraStyle}>
       {/* ピン止めの切替（FR-215）: 現在の状態に応じたアイコンを 1 つだけ出す。固定なし＝「ピン止めする」Regular、固定中＝「ピン止めを外す」Filled */}
       <ActionButton action="pin" on={pane.pinned} pressed={pane.pinned} onClick={pane.togglePin} />

@@ -165,6 +165,8 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
   const [menuOpen, setMenuOpen] = useState(false);
   const [showTier, setShowTier] = useState(false);
   const [focused, setFocused] = useState(false);
+  // ポインターを重ねている間も、見出しの操作を出す（FR-298 AC-805・AC-808: ロールへの割り当て・最大化をホバーから操作できる）
+  const [hovered, setHovered] = useState(false);
   const [narrow, setNarrow] = useState(false);
   const [compact, setCompact] = useState(false);
   const minimized = pane?.minimized === true;
@@ -212,6 +214,8 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
       ref={ref}
       onFocus={onFocus}
       onBlur={onBlur}
+      onMouseEnter={pane ? () => setHovered(true) : undefined}
+      onMouseLeave={pane ? () => setHovered(false) : undefined}
       className={mergeClasses(s.root, pane ? s.pane : undefined, pane?.maximized ? s.maximized : undefined, foldMotion)}
       style={maxWidth && !pane ? { maxWidth } : pane?.z !== undefined && !pane.maximized ? { position: 'relative', zIndex: pane.z } : undefined}
       aria-label={title}
@@ -219,6 +223,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
       onKeyDown={onKeyDown}
       data-display={pane ? (pane.maximized ? 'maximized' : 'normal') : undefined}
       data-maximized={pane?.maximized ? 'true' : undefined}
+      data-zone={pane?.zone}
       data-expanded={pane?.expanded ? 'true' : undefined}
       data-minimized={minimized ? 'true' : undefined}
       data-tier={pane?.tier ?? 'supporting'}
@@ -269,7 +274,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
               </span>
             ) : null}
           </div>
-          {pane ? <span className={mergeClasses(s.actionGroup, compact ? s.actionGroupCompact : undefined)}><ComponentActions pane={pane} title={title} active={focused || minimized} narrow={narrow} menu={{ open: menuOpen, onOpenChange: setMenuOpen, onShowTier: () => setShowTier(true) }} /></span> : null}
+          {pane ? <span className={mergeClasses(s.actionGroup, compact ? s.actionGroupCompact : undefined)}><ComponentActions pane={pane} title={title} active={focused || hovered || minimized} narrow={narrow} hover={hovered} focused={focused} menu={{ open: menuOpen, onOpenChange: setMenuOpen, onShowTier: () => setShowTier(true) }} /></span> : null}
         </div>
                   {pane && showTier && !minimized ? <Text size={300} role="status" data-testid="tier-reason" className={s.worldNote}>{pane.tierReason}</Text> : null}
         {world.note && !minimized ? <Text size={300} className={s.worldNote} data-testid="view-world-note">{world.note}</Text> : null}

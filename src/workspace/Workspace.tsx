@@ -29,6 +29,8 @@ import { registerCommands } from '../commands/registry';
 import { useStepper } from '../store/stepper';
 import { useStepFlow } from '../store/stepFlow';
 import { planStepFlow, stepRelevance } from '../stepper/flow';
+import { useActiveWorkspace, useTaskWorkspaces } from '../store/taskWorkspaces';
+import { ZONE_META, hostRect, placeByRole, zoneLayout } from './zones';
 import { tr, useLang, useT } from '../i18n';
 
 const useStyles = makeStyles({
@@ -379,6 +381,11 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   // 木の外に出して描くコンポーネント: 拡大表示中はそれ 1 つだけ（ほかは残りの領域に収める）、それ以外は自由配置したもの（FR-173・FR-174）。
   // 狭い画面（縦積み）では自由配置を使わない。
   const baseKeys = useMemo(() => new Set(keysOf(base)), [base]);
+  // ゾーン（FR-298）: ロール（コンポーネント → ゾーン）から求めた各コンポーネントの矩形。出していないゾーンのコンポーネントは描かない（状態は保つ）
+  const taskWs = useActiveWorkspace();
+  const zones = useMemo(() => zoneLayout(taskWs.mode, taskWs.ratios, taskWs.merged), [taskWs.mode, taskWs.ratios, taskWs.merged]);
+  const zonePlan = useMemo(() => placeByRole(zones, taskWs.roles, [...baseKeys]), [zones, taskWs.roles, baseKeys]);
+  const zoneHidden = useMemo(() => new Set(zonePlan.hidden), [zonePlan]);
   // コンポーネントの役割による分類と階層（主役→補助→詳細。FR-244）。ペルソナの構成と、いま表示中のものを対象にする
   const tierInfo = useMemo(() => classify(persona, [...new Set([...personaKeys(persona), ...baseKeys])], tierOverrides), [persona, baseKeys, tierOverrides, lang]);
   // 縮退: 幅が狭いとき、または、ピン止めの比率から求めた幅が最小の幅（PARAM-034）を下回るときは、縦積みにする（FR-216 AC-497）
@@ -511,6 +518,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       startDrag: (e) => startDrag(key, e),
       resizeBy: (axis, dir) => resizeByStep(key, axis, dir),
       startResize: (edge, e) => startResize(key, edge, e),
+      ...(taskWs.roles[key] ? { zone: taskWs.roles[key] } : {}),
+      assignZone: (z) => { useTaskWorkspaces.getState().assign(key, z); announce(z ? tr('{label}を {zone} のロールへ割り当てました', { label, zone: ZONE_META[z].label }) : tr('{label}のロールの割り当てを外しました', { label })); },
     };
   };
 
@@ -774,6 +783,60 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     actions().setFloats(toFractions(rects, b));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [treeFree, width, height]);
+
+  // ゾーンのロールを割り当てたコンポーネントを、ゾーンの矩形へ置く（FR-298 AC-805〜807）。ゾーンの割合・モード・結合・ロールが変わったときだけ。
+  // 置くのは自由配置（FR-173）と同じ手段（setFloats）で、重ならない配置になる（FR-109）。ほかのコンポーネントは、スナップ（FR-152）と同じく重ならない位置へ押し出す。
+  const zoneApplied = useRef('');
+  const zoneSig = JSON.stringify([taskWs.id, persona, taskWs.mode, taskWs.ratios, taskWs.merged, taskWs.roles, [...baseKeys].sort()]);
+  useEffect(() => {
+    if (compact || expandedOut || width <= 0 || height <= 0) return;
+    const assigned = Object.keys(zonePlan.rects).filter((k) => baseKeys.has(k) && !!byKey(k)?.component);
+    const lost = zonePlan.hidden.filter((k) => baseKeys.has(k) && !!byKey(k)?.component && !(floatMap && k in floatMap));
+    if (zoneApplied.current === zoneSig) return;
+    if (assigned.length === 0 && lost.length === 0) { zoneApplied.current = zoneSig; return; }
+    const root = rootRef.current;
+    const main = root?.closest('[data-testid="workspace"]');
+    if (!root || !main) return;
+    const rr = root.getBoundingClientRect();
+    const mr = main.getBoundingClientRect();
+    const bounds = { w: rr.width, h: rr.height };
+    // ゾーンの矩形（main に対する割合）を、作業領域（root）の px にする。root の外へ出る分は切る
+    const toPx = (z: { x: number; y: number; w: number; h: number }): PxRect | null => {
+      const x0 = Math.max(0, mr.left - rr.left + z.x * mr.width);
+      const y0 = Math.max(0, mr.top - rr.top + z.y * mr.height);
+      const x1 = Math.min(bounds.w, mr.left - rr.left + (z.x + z.w) * mr.width);
+      const y1 = Math.min(bounds.h, mr.top - rr.top + (z.y + z.h) * mr.height);
+      return x1 - x0 > 1 && y1 - y0 > 1 ? { x: x0, y: y0, w: x1 - x0, h: y1 - y0 } : null;
+    };
+    const targets: PxMap = {};
+    for (const k of assigned) { const p = toPx(zonePlan.rects[k]!); if (p) targets[k] = p; }
+    // すでにその位置にあれば（再読込・別のウィンドウで開いたとき）、何もしない
+    const near = (k: string): boolean => {
+      const f = floatMap?.[k]; const t0 = targets[k];
+      return !!f && !!t0 && Math.abs(f.x * bounds.w - t0.x) < 3 && Math.abs(f.y * bounds.h - t0.y) < 3 && Math.abs(f.w * bounds.w - t0.w) < 3 && Math.abs(f.h * bounds.h - t0.h) < 3;
+    };
+    if (Object.keys(targets).every(near) && lost.length === 0) { zoneApplied.current = zoneSig; return; }
+    const m = measureAll();
+    let rects: PxMap = { ...(m?.rects ?? {}) };
+    for (const [k, f] of Object.entries(floatMap ?? {})) if (!(k in rects) && baseKeys.has(k)) rects[k] = clampInto({ x: f.x * bounds.w, y: f.y * bounds.h, w: f.w * bounds.w, h: f.h * bounds.h }, bounds);
+    const fixed = new Set(pinSet);
+    for (const k of Object.keys(targets)) {
+      const next = planSnap(rects, k, targets[k]!, bounds, { fixed: new Set(fixed), anchors: new Set(), keep: manualSet() });
+      rects = next ?? { ...rects, [k]: clampInto(targets[k]!, bounds) };
+      rects[k] = clampInto(targets[k]!, bounds);
+      fixed.add(k);
+    }
+    // 出していないゾーンのコンポーネントは、既定の割合のときの自分のゾーンの位置を持たせる（描かない。出すと同じ場所へ戻る）
+    const base0 = zoneLayout('research', taskWs.ratios, []);
+    for (const k of lost) {
+      const r0 = hostRect(base0, taskWs.roles[k]!);
+      const p = r0 ? toPx(r0) : null;
+      if (p) rects[k] = p;
+    }
+    zoneApplied.current = zoneSig;
+    actions().setFloats(toFractions(rects, bounds));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoneSig, width, height, compact, expandedOut]);
 
   const hosts = useRef(new Map<string, HTMLElement>());
   useLayoutEffect(() => {
@@ -1310,7 +1373,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
             className={mergeClasses(s.floatBox, animated && !isMax && expandedOut !== k && settling !== k ? (dragged ? s.floatFollow : s.floatAnimated) : undefined)}
             data-float={k}
             data-pinned={pinSet.has(k) ? 'true' : undefined}
-            style={{ left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.w * 100}%`, height: `${r.h * 100}%`, zIndex: isMax ? 1000 : expandedOut === k ? 500 : dragged ? 600 : rank >= 0 ? 3 + rank : 2, ...(settling !== null ? { transition: 'none' } : {}), ...(maximized !== null && !isMax && outKeys.includes(maximized) ? { display: 'none' } : {}) }}
+            style={{ left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.w * 100}%`, height: `${r.h * 100}%`, zIndex: isMax ? 1000 : expandedOut === k ? 500 : dragged ? 600 : rank >= 0 ? 3 + rank : 2, ...(settling !== null ? { transition: 'none' } : {}), ...(maximized !== null && !isMax && outKeys.includes(maximized) ? { display: 'none' } : {}), ...(zoneHidden.has(k) && !isMax ? { display: 'none' } : {}) }}
           >
             <Slot host={hostOf(k)} />
           </div>
