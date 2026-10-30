@@ -153,13 +153,21 @@ export function itemsAtDepth(m: SpatialModel, depth: number, selectedIds: readon
 
 /** 3D で積む建物の拠点: 選択中の項目の拠点、なければフロアを持つ最初の拠点 */
 export function buildingSite(m: SpatialModel, selectedIds: readonly string[]): string | undefined {
+  // 複製したばかりの拠点（フロアなし）が選択に加わっても、既存の建物を作り直さない（FR-070 AC-086: 既存項目の同一性）。
+  // 選択中の拠点のうち、フロアを持つものを優先し、なければ最初に選んだ拠点を使う
+  let firstFound: string | undefined;
   for (const id of [...selectedIds].reverse()) {
     let cur = m.nodes.get(id);
     for (let n = 0; cur && n < 20; n++) {
-      if (cur.kind === 'site') return cur.id;
+      if (cur.kind === 'site') {
+        if (cur.children.some((c) => m.nodes.get(c)?.kind === 'floor')) return cur.id;
+        firstFound = cur.id; // 順に上書きする（逆順に見ているので、最後に残るのは最初に選んだ拠点）
+        break;
+      }
       cur = cur.parentId ? m.nodes.get(cur.parentId) : undefined;
     }
   }
+  if (firstFound) return firstFound;
   return m.sites.find((s) => m.nodes.get(s)!.children.some((c) => m.nodes.get(c)?.kind === 'floor')) ?? m.sites[0];
 }
 
@@ -178,3 +186,4 @@ export function isoProject(x: number, y: number, z: number): { sx: number; sy: n
   const s = Math.sin(Math.PI / 6);
   return { sx: (x - y) * c, sy: (x + y) * s - z };
 }
+
