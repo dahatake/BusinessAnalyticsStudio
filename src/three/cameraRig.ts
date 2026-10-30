@@ -6,7 +6,8 @@
 //
 // アニメーションを停止中（FR-071）は、遷移を省いて、移動後の視点に即座に切り替える。
 import { create } from 'zustand';
-import { useAnimation } from '../store/animation';
+import { prefersReducedMotion, useAnimation } from '../store/animation';
+import { motionAllowed } from '../motion/useFoldMotion';
 import { usePackStore } from '../store/pack';
 import { useSelectionStore } from '../store/selection';
 import type { TwinLayout, TwinObject, Vec3 } from './entityLayout';
@@ -187,7 +188,7 @@ function finishNow(): void {
 export function flyTo(to: CameraPose, opts: { duration?: number; onDone?: () => void } = {}): void {
   const from = currentPose();
   const duration = opts.duration ?? durationFor(from, to);
-  if (!useAnimation.getState().playing || duration <= 0) {
+  if (!motionAllowed(useAnimation.getState().playing, prefersReducedMotion()) || duration <= 0) {
     setPose(to);
     opts.onDone?.();
     return;
@@ -219,7 +220,7 @@ export function flyTo(to: CameraPose, opts: { duration?: number; onDone?: () => 
 export function flyPath(poses: readonly CameraPose[], onDone?: () => void): void {
   const last = poses[poses.length - 1];
   if (!last) { onDone?.(); return; }
-  if (!useAnimation.getState().playing) { setPose(last); onDone?.(); return; }
+  if (!motionAllowed(useAnimation.getState().playing, prefersReducedMotion())) { setPose(last); onDone?.(); return; }
   let i = 0;
   const next = (): void => {
     const p = poses[i++];

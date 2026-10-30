@@ -97,3 +97,33 @@ export function usePresenceItems<T>(
 
   return out;
 }
+
+/**
+ * 数値 1 つの遷移（分析の値・重み・結果など）。最初の描画は target そのまま。target が変わると、いまの値から target へ補間し、
+ * 停止中・動きの軽減中は即時に target を返す。遷移がないときは連続描画を行わない（FR-070 AC-086 / FR-134 AC-197）。
+ */
+export function useTweenedValue(target: number, baseMs: number = DURATION.ultraSlow): number {
+  const allowed = useMotionAllowed();
+  const tempo = useMotionProfile().tempo;
+  const durationMs = presenceDuration(baseMs, tempo, allowed);
+  const store = useRef<{ key: string; machine: PresenceMachine | null }>({ key: '', machine: null });
+  const [, setTick] = useState(0);
+  const key = `${durationMs}|${target}`;
+  const nowMs = performance.now();
+  if (store.current.key !== key) {
+    store.current = { key, machine: retargetPresence(store.current.machine, new Map([['v', [target]]]), nowMs, store.current.machine ? durationMs : 0) };
+  }
+  const sample = samplePresence(store.current.machine, nowMs);
+  const done = sample.done;
+  useEffect(() => {
+    if (done) return undefined;
+    let raf = 0;
+    const loop = (): void => {
+      setTick((n) => n + 1);
+      if (!samplePresence(store.current.machine, performance.now()).done) raf = requestAnimationFrame(loop);
+    };
+    raf = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(raf);
+  }, [done, key]);
+  return done ? target : (sample.frames.get('v')?.vec[0] ?? target);
+}
