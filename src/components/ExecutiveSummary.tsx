@@ -1,7 +1,7 @@
 // エグゼクティブサマリー（FR-041）。各コンポーネントの上部に、結論・根拠の数値・推奨アクションを置く。
 // 接続していないときは「AI 生成（モック）」のテンプレート。利用者が編集・固定でき、「編集版」と表示して AI 版と区別する。
 // 編集・固定は編集モード（FR-047）が ON のときだけ。数値は出典つき（NumericValue）で示す。
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { Badge, Button, Field, Text, Textarea, makeStyles, tokens } from '@fluentui/react-components';
 import { Edit16Regular, Pin16Regular, PinOff16Regular } from '@fluentui/react-icons';
 import { MOCK_LABEL, REAL_LABEL } from '../ai/client';
@@ -18,6 +18,7 @@ import { useTreeDoc } from '../store/tree';
 import { NumericValue } from './NumericValue';
 import { elevationStyles } from '../theme/tokens';
 import { useLang, useT } from '../i18n';
+import { useTweenedValue } from '../motion/usePresence';
 
 const useStyles = makeStyles({
   root: {
@@ -77,6 +78,14 @@ export function ExecutiveSummary({ scope }: ExecutiveSummaryProps) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<SummaryText>({ conclusion: '', evidence: '', action: '' });
 
+  // 出入り・遷移（FR-070 AC-086）: 内容（結論・根拠・アクション）が変わると、同じ枠のまま淡く入れ替わる。停止中・動きの軽減中は即時（useTweenedValue）
+  const contentSig = JSON.stringify([fp, edited?.text ?? null, aiConclusion?.text ?? null]);
+  const rev = useRef({ sig: contentSig, n: 0 });
+  if (rev.current.sig !== contentSig) rev.current = { sig: contentSig, n: rev.current.n + 1 };
+  const revTween = useTweenedValue(rev.current.n);
+  const fade = Math.min(1, Math.max(0, revTween - (rev.current.n - 1)));
+  const fadeOpacity = rev.current.n === 0 ? 1 : 0.35 + 0.65 * fade;
+
   if (!data || !generated) return null;
 
   const aiText = contentText(generated);
@@ -90,7 +99,7 @@ export function ExecutiveSummary({ scope }: ExecutiveSummaryProps) {
   };
 
   return (
-    <section className={s.root} data-surface="card" data-testid="executive-summary" aria-label={t('エグゼクティブサマリー')}>
+    <section className={s.root} data-surface="card" data-testid="executive-summary" aria-label={t('エグゼクティブサマリー')} data-summary-sig={rev.current.n}>
       <div className={s.head}>
         <Text as="h3" weight="semibold" size={400}>{t('エグゼクティブサマリー')}</Text>
         <Badge appearance={edited?.human ? 'filled' : 'tint'} color={edited?.human ? 'brand' : 'informative'} data-testid="summary-origin">{label}</Badge>
@@ -125,11 +134,11 @@ export function ExecutiveSummary({ scope }: ExecutiveSummaryProps) {
         </>
       ) : (
         <>
-          <div className={s.row}>
+          <div className={s.row} style={{ opacity: fadeOpacity }}>
             <Text weight="semibold" className={s.label}>{t('結論')}</Text>
             <Text className={s.body} data-testid="summary-conclusion">{shown.conclusion}</Text>
           </div>
-          <div className={s.row}>
+          <div className={s.row} style={{ opacity: fadeOpacity }}>
             <Text weight="semibold" className={s.label}>{t('根拠の数値')}</Text>
             <Text className={s.body} data-testid="summary-evidence">
               {edited ? shown.evidence : generated.evidence.map((p, i) => (
@@ -137,7 +146,7 @@ export function ExecutiveSummary({ scope }: ExecutiveSummaryProps) {
               ))}
             </Text>
           </div>
-          <div className={s.row}>
+          <div className={s.row} style={{ opacity: fadeOpacity }}>
             <Text weight="semibold" className={s.label}>{t('推奨アクション')}</Text>
             <Text className={s.body} data-testid="summary-action">{shown.action}</Text>
           </div>

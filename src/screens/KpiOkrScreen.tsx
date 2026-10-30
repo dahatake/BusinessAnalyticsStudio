@@ -20,6 +20,7 @@ import { achievement, achievementState, achievementText, emptyKeyResult, toDraft
 import { useEditStore } from '../store/edit';
 import { useCurrentOkr, useOkr, useOkrDialog } from '../store/okr';
 import { usePackStore } from '../store/pack';
+import { lifeOpacity, usePresenceItems } from '../motion';
 
 const useStyles = makeStyles({
   actions: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalS },
@@ -137,18 +138,25 @@ function KpiOkrScreen() {
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
   const krs = useMemo(() => (okr?.objectives ?? []).flatMap((o, oi) => o.keyResults.map((r, ri) => ({ id: `okr-${oi + 1}-${ri + 1}`, oi, ri, n: o.keyResults.length, objective: o.objective, r }))), [okr]);
   usePublishViewItems('kpi-okr', useMemo(() => krs.map((k) => k.id), [krs]));
+  // 出入り・遷移（FR-070 AC-086）: Key Result は同じ ID のまま、追加は現れ、削除は薄れて消え、現在値は中間値を経て最新へ収束する
+  const krPresence = usePresenceItems(krs, (k) => k.id, (k) => [k.r.kpi.current]);
+  const tweenedCurrent = useMemo(() => new Map(krPresence.filter((p) => !p.exiting).map((p) => [p.id, p.vec[0] ?? p.item.r.kpi.current])), [krPresence]);
   const objCount = okr?.objectives.length ?? 0;
   const items3d = useMemo<Item3D[]>(() => krs.map((k) => {
     const a = achievement(k.r.kpi);
     const v = a === null ? 0 : Math.min(1, Math.max(0, a));
-    return { id: k.id, label: `${k.r.name}（${achievementText(k.r.kpi)}）`, group: k.objective, x: spread(k.oi, objCount), z: spread(k.ri, k.n), y: v, size: v };
+    return { id: k.id, label: `${k.r.name}（${achievementText(k.r.kpi)}）`, value: v * 100, valueText: a === null ? undefined : (n: number) => `${k.r.name}（${Math.round(n)}%）`, group: k.objective, x: spread(k.oi, objCount), z: spread(k.ri, k.n), y: v, size: v };
   }), [krs, objCount]);
   const links3d = useMemo<Link3D[]>(() => krs.filter((k) => k.ri > 0).map((k) => ({ from: `okr-${k.oi + 1}-${k.ri}`, to: k.id })), [krs]);
   // Graph（FR-238）: Objective と Key Result をノードに、Key Result → Objective を「達成する」の向き付きのエッジにする（Key Result は 2D・3D と同じ項目・同じ件数）
   const graphNodes = useMemo<GraphNodeIn[]>(() => [
     ...(okr?.objectives ?? []).map((o, oi) => ({ id: `okr-obj-${oi + 1}`, name: o.objective, kind: 'Objective' })),
-    ...krs.map((k) => ({ id: k.id, name: k.r.name, kind: 'Key Result', note: `${k.r.kpi.name} ${achievementText(k.r.kpi)}` })),
-  ], [okr, krs]);
+    ...krs.map((k) => {
+      // 現在値は中間値を経て最新へ収束する（FR-070 AC-086）。停止中・動きの軽減中は即時（最新値）
+      const cur = tweenedCurrent.get(k.id) ?? k.r.kpi.current;
+      return { id: k.id, name: k.r.name, kind: 'Key Result', note: `${k.r.kpi.name} ${achievementText({ ...k.r.kpi, current: cur })}` };
+    }),
+  ], [okr, krs, tweenedCurrent]);
   const graphEdges = useMemo<GraphEdgeIn[]>(() => krs.map((k) => ({ id: `${k.id}>obj`, from: k.id, to: `okr-obj-${k.oi + 1}`, label: t('達成する'), meaning: 'achieves' })), [krs]);
   if (!ready) return <LoadingView label={t('KPI/OKR を読み込み中')} />;
   return (
@@ -201,23 +209,29 @@ function KpiOkrScreen() {
           )}
         </>
       ) : (
-        okr.objectives.map((o, oi) => (
-          <section key={oi} className={s.objective} aria-label={`Objective ${o.objective}`}>
-            <Text as="h3" weight="semibold" size={400}>Objective: {o.objective}</Text>
+        [...krPresence.reduce((m, p) => {
+          const g = m.get(p.item.oi) ?? { objective: p.item.objective, entries: [] as typeof krPresence };
+          g.entries.push(p); m.set(p.item.oi, g); return m;
+        }, new Map<number, { objective: string; entries: typeof krPresence }>()).entries()].sort((a, b) => a[0] - b[0]).map(([oi, g]) => (
+          <section key={oi} className={s.objective} aria-label={`Objective ${g.objective}`}>
+            <Text as="h3" weight="semibold" size={400}>Objective: {g.objective}</Text>
             <ul className={s.list}>
-              {o.keyResults.map((r, ri) => {
+              {g.entries.map(({ item: k, vec, life, exiting }) => {
+                const r = k.r;
                 const st = achievementState(r.kpi);
+                const cur = exiting ? r.kpi.current : (vec[0] ?? r.kpi.current);
                 return (
-                  <li key={ri} className={s.kr} data-testid="key-result-view">
+                  <li key={k.id} className={s.kr} data-testid="key-result-view" data-entity-id={exiting ? undefined : k.id} aria-hidden={exiting || undefined}
+                    style={{ opacity: lifeOpacity(life), pointerEvents: exiting ? 'none' : undefined }}>
                     <div><Text size={200} block>Key Result</Text><Text weight="semibold">{r.name}</Text></div>
                     <div><Text size={200} block>KPI</Text><Text>{r.kpi.name}</Text></div>
-                    <div><Text size={200} block>{t('現在値')}</Text><Text className={s.value}>{num(r.kpi.current)} {r.kpi.unit}</Text></div>
+                    <div><Text size={200} block>{t('現在値')}</Text><Text className={s.value} data-latest={r.kpi.current}>{num(Math.round(cur * 100) / 100)} {r.kpi.unit}</Text></div>
                     <div><Text size={200} block>{t('目標値')}</Text><Text className={s.value}>{num(r.kpi.target)} {r.kpi.unit}</Text></div>
                     <div>
                       <Text size={200} block>{t('達成度')}</Text>
                       <span className={s.state}>
                         {STATE_ICON[st]}
-                        <Text weight="semibold" className={s.value} data-testid="kpi-achievement">{achievementText(r.kpi)}</Text>
+                        <Text weight="semibold" className={s.value} data-testid="kpi-achievement">{achievementText({ ...r.kpi, current: cur })}</Text>
                         <Badge appearance="tint" color={STATE_COLOR[st]} data-testid="kpi-state">{t(st)}</Badge>
                       </span>
                     </div>

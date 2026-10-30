@@ -31,6 +31,7 @@ import { useTreeDoc, useTreeStore } from '../store/tree';
 import { useSelectionStore } from '../store/selection';
 import { ViewAsTableButton, ViewTable } from '../components/ViewTable';
 import { Items3DSurface } from '../three/Items3DSurface';
+import { lifeOpacity, usePresenceItems } from '../motion';
 import { treeLayout3D } from '../view/items3d';
 import { useComponentView, usePublishViewItems } from '../view/useView';
 
@@ -128,9 +129,22 @@ function DiscussionTreeScreen() {
   // 3D（FR-217 AC-501）: 表示中のノード（2D の木の行と同じ ID・件数）を、深さ=高さ・枝分かれ=横の位置に置き、親→子をつなぐ
   const { mode: viewMode } = useComponentView(ORIGIN);
   const [asTable, setAsTable] = useState(false);
+  // 出入り（FR-070 AC-086）: ノードの追加は現れ、削除は薄れて消える。ID（node.id）は保つ。停止中・動きの軽減中は即時
+  const rowPresence = usePresenceItems(rows, (r) => r.node.id, () => [0]);
   const shownNodes = useMemo(() => rows.map((r) => r.node), [rows]);
-  usePublishViewItems(ORIGIN, useMemo(() => shownNodes.map((n) => n.id), [shownNodes]));
-  const layout3d = useMemo(() => treeLayout3D(shownNodes, (n) => n.id, (n) => n.title, (n) => n.parentId, (n) => n.kind), [shownNodes]);
+  // 3D の項目 ID は、課題・解決策のノードでは 2D の行・表と同じ実体の ID（重複するときは最初の 1 つだけ。残りはノード ID）
+  const itemIdOf = useMemo(() => {
+    const m = new Map<string, string>();
+    const used = new Set<string>();
+    for (const n of shownNodes) {
+      const id = n.entityId !== undefined && !used.has(n.entityId) ? n.entityId : n.id;
+      used.add(id);
+      m.set(n.id, id);
+    }
+    return m;
+  }, [shownNodes]);
+  const layout3d = useMemo(() => treeLayout3D(shownNodes, (n) => itemIdOf.get(n.id) ?? n.id, (n) => n.title, (n) => (n.parentId === null ? null : itemIdOf.get(n.parentId) ?? n.parentId), (n) => n.kind), [shownNodes, itemIdOf]);
+  usePublishViewItems(ORIGIN, useMemo(() => shownNodes.map((n) => itemIdOf.get(n.id) ?? n.id), [shownNodes, itemIdOf]));
   const selectedNow = useSelectionStore((st) => st.selectedIds);
   const issueOf = useMemo(() => new Map((data?.issues.issues ?? []).map((i) => [i.id, i])), [data]);
 
@@ -298,8 +312,8 @@ function DiscussionTreeScreen() {
               ) : (
                 <Items3DSurface
                   viewKey={ORIGIN} origin={ORIGIN} label={t('議論ツリー')} items={layout3d.items} links={layout3d.links} axes={{ y: t('階層（上が根）') }}
-                  selected={new Set(shownNodes.filter((n) => picked === n.id || (n.entityId !== undefined && selectedNow.includes(n.entityId))).map((n) => n.id))}
-                  onSelect={(id, additive) => { const n = shownNodes.find((x) => x.id === id); if (n) pick(n, additive); }}
+                  selected={new Set(shownNodes.filter((n) => picked === n.id || (n.entityId !== undefined && selectedNow.includes(n.entityId))).map((n) => itemIdOf.get(n.id) ?? n.id))}
+                  onSelect={(id, additive) => { const n = shownNodes.find((x) => (itemIdOf.get(x.id) ?? x.id) === id); if (n) pick(n, additive); }}
                 />
               )}
             </>
@@ -310,11 +324,13 @@ function DiscussionTreeScreen() {
             onWheel={(e) => { if (e.ctrlKey) setZoom((z) => Math.min(2, Math.max(0.5, Math.round((z - Math.sign(e.deltaY) * 0.1) * 10) / 10))); }}
           >
             <div ref={treeRef} role="tree" aria-label={t('議論ツリー')} className={s.tree} style={{ transform: `scale(${zoom})` }}>
-              {rows.map((r, i) => {
+              {rowPresence.map(({ item: r, life, exiting }) => {
                 const n = r.node;
+                const i = Math.max(0, rows.indexOf(r));
                 const props = n.entityId ? bind(n.entityId) : { 'data-entity-id': undefined, 'data-highlight': undefined };
                 const words = (props['data-highlight'] ?? '').split(' ');
                 const { onClick: _unused, onMouseEnter, onMouseLeave, ...rest } = props as ReturnType<typeof bind>;
+                if (exiting) return <div key={n.id} aria-hidden className={s.row} style={{ marginInlineStart: `calc(${r.level} * ${tokens.spacingHorizontalXXL})`, borderLeftColor: KIND_TOKEN[n.kind], opacity: lifeOpacity(life), pointerEvents: 'none' }}><Text className={s.title}>{n.title}</Text></div>;
                 return (
                   <div
                     key={n.id} {...rest}
@@ -323,7 +339,7 @@ function DiscussionTreeScreen() {
                     data-node-kind={n.kind} data-origin={n.origin}
                     tabIndex={i === 0 ? 0 : -1}
                     className={mergeClasses(s.row, picked === n.id && s.picked, hl(props['data-highlight']))}
-                    style={{ marginInlineStart: `calc(${r.level} * ${tokens.spacingHorizontalXXL})`, borderLeftColor: KIND_TOKEN[n.kind] }}
+                    style={{ marginInlineStart: `calc(${r.level} * ${tokens.spacingHorizontalXXL})`, borderLeftColor: KIND_TOKEN[n.kind], opacity: lifeOpacity(life) }}
                     onClick={(e) => { pick(n, e.ctrlKey || e.metaKey || e.shiftKey); }}
                     onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}
                     onKeyDown={(e) => { if (n.entityId && onEntityKey(e, n.entityId, ORIGIN)) { setPicked(n.id); return; } onRowKey(e, n, r.hasChildren); }}
