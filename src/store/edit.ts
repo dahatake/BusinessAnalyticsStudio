@@ -139,7 +139,11 @@ export const useEditStore = create<EditState>((set, get) => {
     const op = from === 'past' ? 'undo' : 'redo';
     set({ [from]: stack.slice(0, -1), [to]: [...s[to], { data: now, changes: item.changes }].slice(-UNDO_LIMIT) } as Partial<EditState>);
     usePackStore.getState().setData(item.data);
-    syncSelection();
+    // 復元された項目（削除の取り消し・追加のやり直し）は選び直し、すべてのビューで「戻った項目」を確かめられるようにする（FR-045 AC-056・FR-070 AC-086）
+    const restored = item.changes
+      .filter((c) => (op === 'undo' ? c.op === 'delete' : c.op === 'add' || c.op === 'duplicate') && c.entityId)
+      .map((c) => c.entityId as string);
+    syncSelection(restored.length > 0 && getEntityGraph() ? restored.filter((id) => getEntityGraph()?.has(id)) : undefined);
     // 元に戻すは「変更後 → 変更前」、やり直しは「変更前 → 変更後」として記録する
     const changes = item.changes.map((c) => (op === 'undo' ? { ...c, before: c.after, after: c.before } : c));
     const entries = record(changes, 'human', op);

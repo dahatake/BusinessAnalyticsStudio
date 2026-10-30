@@ -8,6 +8,7 @@ import * as THREE from 'three';
 import { EDGE_STYLE, KIND_STYLE, to3D } from '../analysis/graphView';
 import type { GraphEdge, GraphNode } from '../selection/graph';
 import { useSceneMotionAllowed, useObjectVectorTransition } from './useSceneTransition';
+import { usePresenceItems } from '../motion/usePresence';
 import { DiagramCanvas } from './DiagramCanvas';
 import { sceneLabelStyle } from './labelStyles';
 import { useT } from '../i18n';
@@ -48,38 +49,45 @@ export function Graph3D({ nodes, edges, pos, size, selected, onSelect }: Graph3D
     const n = byId.get(id);
     return n ? to3D(pos(id), n.kind, size) : [0, 0, 0];
   };
+  // 出入り（FR-070 AC-086）: 削除された節・辺は、縮んで消えるまで残す。値の補間は three 側（useObjectVectorTransition・AnimatedLine）が行うので、
+  // ここでは撤去の時刻だけを管理する（perFrame=false。React は遷移の間、描き直さない）
+  const nodeItems = usePresenceItems(nodes, (n) => n.id, (n) => p3(n.id), { perFrame: false });
+  const edgeItems = usePresenceItems(edges, (e) => e.id, (e) => [...p3(e.from), ...p3(e.to)], { perFrame: false });
   return (
     <DiagramCanvas label={t3('ナレッジグラフ（3D）。ドラッグで回転、ホイールで拡大縮小')}>
-      {edges.map((e) => {
+      {edgeItems.map(({ item: e, vec, exiting }) => {
         const st = EDGE_STYLE[e.kind];
-        const a = p3(e.from);
-        const b = p3(e.to);
+        const a: [number, number, number] = exiting ? [vec[0]!, vec[1]!, vec[2]!] : p3(e.from);
+        const b: [number, number, number] = exiting ? a : p3(e.to);
         return (
           <group key={e.id}>
             <AnimatedLine points={[a, b]} color={selected.has(e.from) || selected.has(e.to) ? '#4fc3f7' : '#9aa5b1'} lineWidth={st.width} dashed={st.dash !== ''} dashSize={0.25} gapSize={0.15} />
-            {st.particles ? <Particles from={a} to={b} /> : null}
+            {st.particles && !exiting ? <Particles from={a} to={b} /> : null}
           </group>
         );
       })}
-      {nodes.map((n) => <GraphNode3D key={n.id} node={n} position={p3(n.id)} selected={selected.has(n.id)} onSelect={onSelect} />)}
+      {nodeItems.map(({ item: n, vec, exiting }) => (
+        <GraphNode3D key={n.id} node={n} position={exiting ? [vec[0]!, vec[1]!, vec[2]!] : p3(n.id)} selected={selected.has(n.id)} exiting={exiting} onSelect={onSelect} />
+      ))}
     </DiagramCanvas>
   );
 }
 
-function GraphNode3D({ node: n, position, selected, onSelect }: {
+function GraphNode3D({ node: n, position, selected, exiting, onSelect }: {
   node: GraphNode;
   position: [number, number, number];
   selected: boolean;
+  exiting: boolean;
   onSelect: (id: string, additive: boolean) => void;
 }) {
   const group = useRef<THREE.Group>(null);
   const mesh = useRef<THREE.Mesh>(null);
   const style = KIND_STYLE[n.kind];
   useObjectVectorTransition(group, position, 'position');
-  useObjectVectorTransition(mesh, selected ? [1.4, 1.4, 1.4] : [1, 1, 1], 'scale');
+  useObjectVectorTransition(mesh, exiting ? [0, 0, 0] : selected ? [1.4, 1.4, 1.4] : [1, 1, 1], 'scale');
   return (
     <group ref={group}>
-      <mesh ref={mesh} onClick={(ev) => { ev.stopPropagation(); onSelect(n.id, ev.ctrlKey || ev.metaKey || ev.shiftKey); }}>
+      <mesh ref={mesh} onClick={exiting ? undefined : (ev) => { ev.stopPropagation(); onSelect(n.id, ev.ctrlKey || ev.metaKey || ev.shiftKey); }}>
         {style.geometry === 'sphere' && <sphereGeometry args={[0.22, 20, 14]} />}
         {style.geometry === 'box' && <boxGeometry args={[0.36, 0.36, 0.36]} />}
         {style.geometry === 'octahedron' && <octahedronGeometry args={[0.26]} />}
@@ -91,7 +99,7 @@ function GraphNode3D({ node: n, position, selected, onSelect }: {
         {style.geometry === 'tetrahedron' && <tetrahedronGeometry args={[0.28]} />}
         <meshStandardMaterial color={style.hex} emissive={selected ? style.hex : '#000000'} emissiveIntensity={selected ? 0.6 : 0} />
       </mesh>
-      <Html center position={[0, 0.42, 0]} zIndexRange={[5, 0]}><span style={labelStyle} title={n.label}>{n.label}</span></Html>
+      {exiting ? null : <Html center position={[0, 0.42, 0]} zIndexRange={[5, 0]}><span style={labelStyle} title={n.label}>{n.label}</span></Html>}
     </group>
   );
 }

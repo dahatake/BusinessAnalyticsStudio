@@ -16,6 +16,7 @@ import {
 } from './presets';
 import { QUALITY_PROFILES, type Quality } from './quality';
 import { useTwinLayout } from './twin';
+import { useCanvasVisible } from './useCanvasVisible';
 import { CameraSync, EntityTwin } from './TwinScene';
 import { LaterStage, StageContext, useRenderStage, useStageProgress } from './stage';
 
@@ -360,6 +361,8 @@ export function RenderCanvas({ children, cameraPosition, fov = 45, paused = fals
   const quality = useView3D((s) => s.quality);
   const setRenderer = useView3D((s) => s.setRenderer);
   const playing = useAnimation((s) => s.playing);
+  // 画面に見えていない（背面・非表示）あいだは描かない（FR-070 AC-086）
+  const { visible: canvasVisible, attach: attachCanvas } = useCanvasVisible();
   const [kind, setKind] = useState<Kind | null>(null);
   const [ready, setReady] = useState(false);
   // 最初の描画を少し遅らせる（3D ビューだけ。地図は遅らせない。FirstFrameGate。FR-146 AC-243）
@@ -412,7 +415,8 @@ export function RenderCanvas({ children, cameraPosition, fov = 45, paused = fals
       gl={glFactory as never}
       shadows={profile.shadows}
       dpr={Math.min(typeof window === 'undefined' ? 1 : window.devicePixelRatio, profile.maxDpr)}
-      frameloop={ready && (settled || !deferFirstFrame) && !paused ? (playing ? 'always' : 'demand') : 'never'}
+      frameloop={ready && (settled || !deferFirstFrame) && !paused && canvasVisible ? (playing ? 'always' : 'demand') : 'never'}
+      onCreated={({ gl }) => attachCanvas(gl.domElement as HTMLCanvasElement)}
       camera={{ position: cameraPosition, fov }}
       style={{ width: '100%', height: '100%', display: 'block' }}
     >
