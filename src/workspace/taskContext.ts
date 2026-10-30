@@ -29,6 +29,8 @@ export function captureContext(): TaskContext {
   const layout: Record<string, unknown> = {};
   for (const k of PER_PERSONA) {
     const v = (L[k] as Record<string, unknown> | undefined)?.[L.persona];
+    // 最小化なし（空の配列）は「項目なし」と同じ意味。最小化して戻しただけで保存データを変えない（FR-279 AC-719）
+    if (k === 'minimized' && Array.isArray(v) && v.length === 0) continue;
     if (v !== undefined && jsonSafe(v)) layout[k] = clone(v);
   }
   const retained: Record<string, unknown> = {};
