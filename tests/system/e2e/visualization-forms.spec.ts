@@ -216,7 +216,121 @@ async function observe(page: Page, sel: string, id: string, title: string) {
   return { byId: ids.includes(id), byText: title.length > 0 && text.includes(title), ids };
 }
 
-for (const row of VISUALIZATION_MATRIX.filter(r => r.screen !== 'whiteboard')) {
+// architecture は cap-* を詳細パネルから複製・削除できない。画面自身の「JSON 編集」（要素の追加・名称変更・削除、FR-040）が
+// 唯一の編集経路なので、下の専用ケースでその経路から測る（汎用ケースからは除く）。
+const ARCH_ROWS = VISUALIZATION_MATRIX.filter(r => r.screen === 'architecture');
+const GENERIC_ROWS = VISUALIZATION_MATRIX.filter(r => r.screen !== 'whiteboard' && r.screen !== 'architecture');
+
+async function archJsonEdit(page: Page, mutate: (o: any) => void) {
+  await page.getByRole('button', { name: 'JSON 編集' }).click();
+  const box = page.getByRole('textbox', { name: 'アーキテクチャの JSON' });
+  await expect(box).toBeVisible({ timeout: 10_000 });
+  const o = JSON.parse(await box.inputValue());
+  mutate(o);
+  await box.fill(JSON.stringify(o, null, 2));
+  await page.getByRole('button', { name: '適用', exact: true }).click();
+}
+const archSel = '[data-testid="component-architecture"]';
+// 3D の積層図は項目を data-entity-id・scene.objects（ヒーロー・シーンは ent-* を持つ別のシーン）に出さず、
+// 画面の文字（要素一覧）と canvas にだけ出す。2D は data-entity-id で、3D は名称の文字で「出ている」を判定する。
+const archHas = async (page: Page, row: { mode: string | null }, id: string, name: string) =>
+  row.mode === '3D' ? ((await page.locator(archSel).first().textContent()) ?? '').includes(name) : (await idsIn(page, archSel)).includes(id);
+async function archFirstTobe(page: Page): Promise<{ id: string; name: string }> {
+  await page.getByRole('button', { name: 'JSON 編集' }).click();
+  const box = page.getByRole('textbox', { name: 'アーキテクチャの JSON' });
+  await expect(box).toBeVisible({ timeout: 10_000 });
+  const o = JSON.parse(await box.inputValue());
+  await page.getByRole('button', { name: 'キャンセル' }).click();
+  const e = o.tobe.elements[0];
+  return { id: e.id, name: e.name };
+}
+
+for (const row of ARCH_ROWS) {
+  // FR-070 AC-086 / FR-045 AC-056: アーキテクチャの要素（cap-*）の追加・名称更新・連続更新・削除・undo（画面の JSON 編集経路）
+  test(`FR-070 AC-086 FR-045 AC-056 ${rowKey(row)} JSON 編集での追加・名称/連続更新・削除・undo が出入りの中間値を経て ${PARAM_133_MS}ms 以内に収束する`, async ({ page, start }) => {
+    test.setTimeout(240_000);
+    await start();
+    await setEditMode(page, true);
+    const control = page.getByTestId('animation-state');
+    if (!(await control.innerText()).includes('再生中')) await control.click();
+    await showRepresentation(page, row.screen, row.mode);
+    await page.waitForTimeout(500);
+    const { id: subject, name: subjectName } = await archFirstTobe(page);
+    expect(await archHas(page, row, subject, subjectName), 'アーキテクチャが出す要素が描画に出ている').toBe(true);
+    const newId = 'cap-st-new';
+
+    await startSampler(page, archSel);
+    const t0 = await now(page);
+    await archJsonEdit(page, o => { const e = o.tobe.elements; e.push({ ...e.find((x: any) => x.id === subject) ?? e[0], id: newId, name: 'ST追加要素' }); });
+    const added = await stopSampler(page);
+    const sigAdd = sigFrames(added, t0);
+    expect(sigAdd.length, `${rowKey(row)}: 追加が描画に反映されない`).toBeGreaterThan(0);
+    expect(sigAdd.length, `${rowKey(row)}: 追加が中間値を経ずに瞬間表示された（出入りの遷移なし）`).toBeGreaterThan(1);
+    expect(sigAdd[sigAdd.length - 1][0] - t0, `追加から最終状態まで ${PARAM_133_MS}ms 以内`).toBeLessThanOrEqual(PARAM_133_MS);
+    expect(await archHas(page, row, newId, 'ST追加要素'), '追加した要素が描画に出る').toBe(true);
+    expect((added[subject] ?? added[`s:${subject}`] ?? []).filter(f => f[0] > t0 && f[1] === null), '既存項目が作り直された（同一性）').toHaveLength(0);
+
+    const first = `ST-A ${subject}`;
+    const last = `ST-B ${subject}`;
+    await startSampler(page, archSel);
+    const t1 = await now(page);
+    await archJsonEdit(page, o => { o.tobe.elements.find((x: any) => x.id === subject).name = first; });
+    await archJsonEdit(page, o => { o.tobe.elements.find((x: any) => x.id === subject).name = last; });
+    const renamed = await stopSampler(page);
+    const sigRename = sigFrames(renamed, t1);
+    expect(sigRename.length, `${rowKey(row)}: 名称更新が描画に反映されない`).toBeGreaterThan(0);
+    expect(sigRename[sigRename.length - 1][0] - t1, `名称更新から収束まで ${PARAM_133_MS}ms 以内`).toBeLessThanOrEqual(PARAM_133_MS);
+    const text = await page.locator(archSel).first().textContent() ?? '';
+    expect(text, '最後の名称へ収束していない').toContain(last);
+    expect(text, '連続更新の途中の名称が残っている').not.toContain(first);
+
+    await startSampler(page, archSel);
+    const t3 = await now(page);
+    await archJsonEdit(page, o => { o.tobe.elements = o.tobe.elements.filter((x: any) => x.id !== newId); });
+    const del = await stopSampler(page);
+    const sigDel = sigFrames(del, t3);
+    expect(sigDel.length, `${rowKey(row)}: 削除が中間値を経ずに瞬間消去された（出入りの遷移なし）`).toBeGreaterThan(1);
+    expect(sigDel[sigDel.length - 1][0] - t3, `削除から消去完了まで ${PARAM_133_MS}ms 以内`).toBeLessThanOrEqual(PARAM_133_MS);
+    expect(await archHas(page, row, newId, 'ST追加要素'), '削除済みの要素が表示に残っている').toBe(false);
+
+    await startSampler(page, archSel);
+    const t4 = await now(page);
+    await page.keyboard.press('Control+z');
+    const und = await stopSampler(page);
+    const sigUn = sigFrames(und, t4);
+    expect(sigUn.length, `${rowKey(row)}: undo が描画に反映されない`).toBeGreaterThan(0);
+    expect(sigUn[sigUn.length - 1][0] - t4, `undo から収束まで ${PARAM_133_MS}ms 以内`).toBeLessThanOrEqual(PARAM_133_MS);
+    expect(await archHas(page, row, newId, 'ST追加要素'), 'undo で同じ要素が戻る').toBe(true);
+  });
+
+  test(`FR-070 AC-086 ${rowKey(row)} 動き reduce では JSON 編集での追加が中間値なしで即時に最終状態になる`, async ({ page, start }) => {
+    test.setTimeout(120_000);
+    await start();
+    await setEditMode(page, true);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await showRepresentation(page, row.screen, row.mode);
+    await page.waitForTimeout(500);
+    const { id: subject } = await archFirstTobe(page);
+    const newId = 'cap-st-new';
+    await startSampler(page, archSel);
+    const t0 = await now(page);
+    await archJsonEdit(page, o => { const e = o.tobe.elements; e.push({ ...e.find((x: any) => x.id === subject) ?? e[0], id: newId, name: 'ST追加要素' }); });
+    const s = await stopSampler(page);
+    if (row.mode === '3D') {
+      // 3D は要素単位の DOM/scene が無いので、部品全体（文字＋canvas 画素）の署名が 1 回で最終状態になることを測る
+      const sig = sigFrames(s, t0);
+      expect(await archHas(page, row, newId, 'ST追加要素'), '追加した要素が描画に出る').toBe(true);
+      expect(sig[sig.length - 1][0] - t0, '停止/reduce は遷移を経ず最終状態を即時表示する（最終変化まで 300ms 以内）').toBeLessThanOrEqual(300);
+      return;
+    }
+    const frames = (s[newId] ?? s[`s:${newId}`] ?? []).filter(f => f[0] >= t0 - 50 && f[1] !== null);
+    expect(frames.length, '追加した要素が描画に出る').toBeGreaterThan(0);
+    const own = new Set(frames.map(f => f[1]!.startsWith('s:') ? f[1] : f[1]!.split('/').slice(0, 3).join('/')));
+    expect(own.size, '停止/reduce は中間値を経ず最終状態を即時表示する').toBe(1);
+  });
+}
+
+for (const row of GENERIC_ROWS) {
   test(`FR-070 AC-086 FR-045 AC-056 ${rowKey(row)} 追加・名称/値の更新・連続更新・削除・undo が出入りの中間値を経て ${PARAM_133_MS}ms 以内に収束する`, async ({ page, start }, info) => {
     test.setTimeout(240_000);
     await start();
@@ -364,7 +478,7 @@ for (const row of VISUALIZATION_MATRIX.filter(r => r.screen !== 'whiteboard')) {
 }
 
 // FR-070 AC-086 動き停止中・prefers-reduced-motion=reduce は、追加を遷移なしで最終状態へ即時表示する（全描画形式）
-for (const row of VISUALIZATION_MATRIX.filter(r => r.screen !== 'whiteboard')) {
+for (const row of GENERIC_ROWS) {
   test(`FR-070 AC-086 ${rowKey(row)} 動き reduce では追加が中間値なしで即時に最終状態になる`, async ({ page, start }) => {
     test.setTimeout(120_000);
     await start();

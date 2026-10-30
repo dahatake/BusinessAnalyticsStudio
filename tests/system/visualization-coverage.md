@@ -99,3 +99,9 @@ AC-198（integration）/AC-199（unit）は検証レベルを変更せず、
 | issue-solution/3D | 詳細に名前の編集がない（この形式に出る ent 12 件を選んでも詳細が出ない） | 要判断（選択しても詳細が出ない項目のみを出している。実装側の可能性） |
 
 起動競合: matrix/2D「追加から最終状態まで 2000ms」と whiteboard/Canvas「undo が瞬間消去」は全件並列の 1 回目だけ fail し、単独・再実行で pass（負荷による揺れ）。page.goto ERR_ABORTED は今回の実行で再現せず。
+
+### architecture 形式の測り直し（run 202610301406 追補）
+- 誤り: architecture が出す要素（cap-*）は、詳細パネルに「複製」「削除」がなく UI から出入りできない。汎用ケースは代わりに複製した ent-* を測っており、architecture の描画ではなく文字の変化だけを見ていた（削除の判定が誤り）。
+- 直し方: 汎用ケースから architecture を除き、画面自身の編集経路「JSON 編集」（FR-040。tobe の elements の追加・名称変更・削除）で、architecture が実際に出す要素を測る専用ケースにした（各形式 2 ケース: 追加・名称/連続更新・削除・undo、reduce の即時表示）。2D は data-entity-id の毎フレーム署名、3D は積層図が data-entity-id・scene.objects（ヒーロー・シーンは ent-* の別シーン）に出さないため、部品全体の文字＋canvas 画素の署名と名称の文字で測る。
+- 再実行（architecture/ 4 ケース）: 3D の追加・更新・削除・undo と 2D の reduce は pass。残る fail は実装側: architecture/2D「追加が中間値を経ずに瞬間表示された」（2D の出入り補間が未適用）、architecture/3D reduce「最終変化まで 370ms（即時でない）」（reduce 未適用の可能性。3D は要素単位で測れず署名で代用）。
+- 全体: forms spec は 17 fail / 31 pass（前回 24 fail）。残る 17 の分類は上表のとおりで、すべて実装側（値更新・削除の遷移未適用、3D の名称未反映、spatial の作り直し、discussion-tree 名称、architecture 2D 追加、3D reduce）。issue-solution/3D（詳細が出ない項目のみを出す）は要判断のまま。テスト側の誤りで残るものはなし。
