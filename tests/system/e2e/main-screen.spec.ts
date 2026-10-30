@@ -71,13 +71,19 @@ test.describe('FR-186 メイン画面（QuickStart・チュートリアルの手
     await openProject(page, '合成株式会社M', 'メイン画面確認 2026');
     await expect(page.getByTestId('main-screen')).toHaveCount(0);
     await expect(page.getByTestId('workspace')).toBeVisible();
-    await expect(page.getByTestId('work-target-menu')).toContainText('合成株式会社M');
-    await expect(page.getByTestId('work-target-menu')).toContainText('メイン画面確認 2026');
+    // FR-148 AC-251: 企業名と Project 名は別々のボタン。AC-396 の一致条件は両方に適用する。
+    const display = page.getByTestId('work-target-display');
+    await expect(display.getByTestId('current-company-menu')).toHaveText('合成株式会社M');
+    await expect(display.getByTestId('work-target-menu')).toHaveText(/^(?:-\s*)?メイン画面確認 2026$/);
+    await expect(display).toHaveAccessibleName(/合成株式会社M.*メイン画面確認 2026/);
     await app.reload({ skipOpening: false });
     await pressOpeningEscape(page);
     const region = page.getByTestId('main-screen').getByRole('region', { name: '企業 合成株式会社M' });
     await expect(region).toBeVisible();
     await expect(region).toContainText('メイン画面確認 2026');
+    await openProject(page, '合成株式会社M', 'メイン画面確認 2026');
+    await expect(display.getByTestId('current-company-menu')).toHaveText('合成株式会社M');
+    await expect(display.getByTestId('work-target-menu')).toHaveText(/^(?:-\s*)?メイン画面確認 2026$/);
   });
 
   // FR-186 AC-396（異常系: 複数の Project から別のものを選ぶと、選んだ方が開く）
@@ -85,6 +91,7 @@ test.describe('FR-186 メイン画面（QuickStart・チュートリアルの手
     await startAtMain(page, start);
     await registerCompanyAndProjects(page, '合成株式会社M', ['案件一号', '案件二号']);
     await openProject(page, '合成株式会社M', '案件二号');
+    await expect(page.getByTestId('work-target-display').getByTestId('current-company-menu')).toHaveText('合成株式会社M');
     await expect(page.getByTestId('work-target-menu')).toContainText('案件二号');
     await expect(page.getByTestId('work-target-menu')).not.toContainText('案件一号');
   });

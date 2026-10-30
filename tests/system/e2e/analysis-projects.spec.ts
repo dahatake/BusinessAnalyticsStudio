@@ -75,18 +75,60 @@ test.describe('FR-133 分析手法の選択と開始', () => {
 
 test.describe('FR-134 パラメーターの編集と結果の更新', () => {
   // FR-134 AC-197
-  test('FR-134 AC-197 パラメーターを変更すると 2 秒以内に結果へ反映される', async ({ page, start }) => {
+  for (const method of METHODS) test(`FR-134 AC-197 ${method}: 連続変更の最新値・全ビュアー/代替表・ID/選択/絞り込みを2秒以内に保持`, async ({ page, start }, info) => {
     await start();
     await openNewProject(page);
-    const analysis = await startAnalysis(page, 'SWOT 分析');
-    const input = analysis.getByTestId('analysis-params').getByRole('spinbutton').first();
+    const analysis = await startAnalysis(page, method);
+    const inputs = analysis.getByTestId('analysis-params').getByRole('spinbutton');
+    const input = inputs.nth(0);
+    const weight = inputs.nth(1);
     const result = analysis.getByTestId('analysis-result');
     await expect(result).toBeVisible();
-    const before = await result.innerText();
+    const viewers = analysis.getByRole('radiogroup', { name: 'ビュアー' }).getByRole('radio');
+    // Choose the result belonging to the edited parameter, not the first-ranked item.
+    const label = (await input.getAttribute('aria-label'))!.replace(/ の値.*$/, '');
+    const item = result.getByTestId('result-item').filter({ hasText: label }).first();
+    const id = await item.getAttribute('data-entity-id');
+    expect(id).toBeTruthy();
+    await item.click();
+    // The label comes from the user's parameter field, not a result calculation.
+    const filter = analysis.getByRole('searchbox', { name: '絞り込み' });
+    await filter.fill(label);
+    await weight.fill('2');
+    await input.fill('9');
+    await input.fill('2');
+    const began = Date.now();
     await input.fill('7');
     await input.blur();
-    await expect(result).toContainText('7', { timeout: REFLECT_MS });
-    expect(await result.innerText()).not.toBe(before);
+    const remaining = () => Math.max(1, REFLECT_MS - (Date.now() - began));
+    // Latest raw values must already be readable, including while a bar is moving.
+    const currentTable = () => analysis.getByRole('table', { name: '結果の代替表' })
+      .or(analysis.getByRole('grid', { name: '結果の表' }));
+    let rows: string[] | undefined;
+    for (let i = 0; i < await viewers.count(); i++) {
+      await viewers.nth(i).check();
+      await expect(filter).toHaveValue(label, { timeout: remaining() });
+      const selected = result.locator(`[data-testid="result-item"][data-entity-id="${id}"]`);
+      await expect(selected).toHaveAttribute('aria-selected', 'true', { timeout: remaining() });
+      const row = currentTable().getByRole('row').filter({ hasText: label });
+      await expect(row.locator('td').nth(2)).toHaveText('7', { timeout: remaining() });
+      await expect(row.locator('td').nth(3)).toHaveText('2', { timeout: remaining() });
+      // Coherence oracle: all viewers and alternative tables must expose the same
+      // current classification/order/result; no implementation formula is imported.
+      const latest = await currentTable().locator('tbody tr').evaluateAll(els => els.map(el =>
+        JSON.stringify(Array.from(el.querySelectorAll('td')).map((td, index) =>
+          index === 0 ? td.textContent!.trim().replace(/^✓\s*/, '') : td.textContent!.trim()))));
+      if (rows) expect(latest).toEqual(rows);
+      else rows = latest;
+      await expect(selected.locator('strong').or(selected.locator('td').last()).first())
+        .toHaveText((await row.locator('td').last().innerText()).trim(), { timeout: remaining() });
+    }
+    const elapsed = Date.now() - began;
+    expect(elapsed, '最後の有効入力から全表現への反映（ビューごとに猶予をリセットしない）').toBeLessThanOrEqual(REFLECT_MS);
+    await info.attach('latest-update-ms', { body: String(elapsed), contentType: 'text/plain' });
+    const stable = await currentTable().locator('tbody tr').allTextContents();
+    await page.waitForTimeout(REFLECT_MS);
+    expect(await currentTable().locator('tbody tr').allTextContents(), '古い非同期結果へ戻った').toEqual(stable);
   });
 
   // FR-134 AC-197（異常系: 範囲外の値では結果が変わらない）
@@ -95,6 +137,8 @@ test.describe('FR-134 パラメーターの編集と結果の更新', () => {
     await openNewProject(page);
     const analysis = await startAnalysis(page, 'SWOT 分析');
     const input = analysis.getByTestId('analysis-params').getByRole('spinbutton').first();
+    const inputs = analysis.getByTestId('analysis-params').getByRole('spinbutton');
+    const defaults = await inputs.evaluateAll(els => els.map(el => (el as HTMLInputElement).value));
     const result = analysis.getByTestId('analysis-result');
     await input.fill('3');
     await input.blur();
@@ -104,6 +148,12 @@ test.describe('FR-134 パラメーターの編集と結果の更新', () => {
     await input.blur();
     await expect(analysis.getByRole('alert')).toBeVisible({ timeout: REFLECT_MS });
     expect(await result.innerText()).toBe(valid);
+    expect(await inputs.nth(1).inputValue()).toBe(defaults[1]);
+    // FR-134 AC-198/AC-199 regression: invalid drafts must not erase other inputs;
+    // resetting restores every initial default, not just the edited field.
+    await analysis.getByRole('button', { name: '既定値に戻す', exact: true }).click();
+    expect(await inputs.evaluateAll(els => els.map(el => (el as HTMLInputElement).value))).toEqual(defaults);
+    await expect(analysis.getByRole('alert')).toHaveCount(0);
   });
 });
 
