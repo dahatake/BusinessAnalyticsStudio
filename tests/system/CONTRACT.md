@@ -210,3 +210,14 @@
 - 差し替え部品は support/ai-import-stub.ts（生成AIは実呼び出ししない）。ブラウザー → 中継（runtime-config の relayUrl）の `POST /foundry/story-video`。本文 `{kind:'storyboard'|'animation', usecase:{name,summary,persona,steps:[{title,description}],effect}}`（送る内容はこれだけ。キー・ほかのユースケースを含めない）。応答は 200 `storyboard` が `{scenes:[{scene,person,trouble,change}], usage:{inputTokens,outputTokens}}`、`animation` が `{html, usage}`。失敗は 503 `{error:{cause}}`。
 - ユースケース一覧（`usecase-list`）の各項目に button「ストーリー動画を作る」。押しても作成（登録）だけでは呼び出さない。押すと role=dialog「ストーリー動画の作成の確認」に `story-video-estimate`（見積りの費用の「円」と上限「1,000 円」を文字で含む）と button「実行」「キャンセル」。「実行」を押すまで呼び出しは 0 回。
 - 結果: `story-video-status`（文字「最新」など作成状態）、`story-video-storyboard`（シーンを role=listitem で順序どおり。各シーンに場面・登場する人・困りごと・実現後の変化の文字）、iframe `data-testid="story-video-frame"`（sandbox 属性を持ち、`allow-same-origin` を含まない）、button「ストーリー動画を再生」「ストーリー動画を一時停止」と、再生状態 `story-video-state`（文字「再生中」「一時停止中」）。
+
+## 33. 適応型ワークスペース・操作慣習・没入（FR-298〜300 AC-805〜811・813〜816。adaptive-workspace.spec.ts が前提にする画面の探し方。run 202610302249）
+- 期待値は受入基準のみ。以下は画面の探し方の契約（実装役が満たす）。
+- ゾーン: workspace の中に zone-area-main|reference|communication|monitor（意味名 Main／Reference／Communication／Monitor を表示、data-role=主/参照/対話/監視、結合中は data-merged=\"true\"）。一覧は region zone-list の zone-item-<name>（意味名とロール名を表示、checkbox「結合に含める」）と button「ゾーンを結合」「結合を解除」。非表示のゾーンは幅か高さが 0 または非表示。ゾーンの境界は zone-boundary-*。
+- コンポーネントの割り当て: コンポーネントの component-actions の button「ロールへ割り当て」→ menuitemradio（Main／Reference／Communication／Monitor）。割り当て先は data-zone。割合は zone-ratio の spinbutton「Main の割合」「Reference の割合」「Communication の割合」（Enter で確定。単位 %）。
+- Workspace Switcher: workspace-switcher の radio（Focus／Compare／Monitor／Meeting／Research）。現在のモードは workspace の data-mode。Focus は data-focus が true、通知領域 
+otifications は data-suppressed=\"true\"。Focus で減光したゾーンは button zone-recall-<name>（名前「<意味名> を呼び出す」）で呼び出せる。
+- タスクワークスペース: tablist「タスクワークスペース」の tab と button「タスクワークスペースを追加」。button「別のウィンドウへ移動」は同一オリジンの新しいウィンドウを開き、そこの workspace が同じ data-workspace-id・ゾーン構成を示す。最大化・元に戻すは component-actions の既存ボタン。
+- 最近使った: ecent-task-contexts（listitem は 5 件まで。選ぶと切替）。コマンドパレットの操作名: スナップ・グループ・切替・拡大・移動。Move の既定キーは Windows=Ctrl+Alt+→、macOS=⌃⌥→（Playwright では Control+Alt+ArrowRight）。
+- OS の操作慣習: 設定の combobox「OS の操作慣習」（自動／Windows／macOS）。キーの表示は data-shortcut 属性か表示文字。
+- 素材: pp-header・workspace-switcher・zone-boundary-* が半透明（backdrop-filter あり・不透明度 80% 以上 100% 未満）。component-* は不透明。

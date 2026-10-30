@@ -339,7 +339,18 @@
     "AC-789": "sha256:f72da02fb23e4074",
     "AC-793": "sha256:600d5f10e2a101ff",
     "AC-796": "sha256:de40dbe6ed01a69c",
-    "AC-086": "sha256:8b67fccb0f0188f0"
+    "AC-086": "sha256:8b67fccb0f0188f0",
+    "AC-805": "sha256:223c8585a83d06ba",
+    "AC-806": "sha256:293da96348f24087",
+    "AC-807": "sha256:85ad3046b45707a1",
+    "AC-808": "sha256:2e2889d0118d7404",
+    "AC-809": "sha256:3f85c5b6f953506b",
+    "AC-810": "sha256:ab276b5b35395ded",
+    "AC-811": "sha256:bc74adb08dc21051",
+    "AC-813": "sha256:1483238794b34bd5",
+    "AC-814": "sha256:f3ecca6abc3fec3d",
+    "AC-815": "sha256:80e2fd0c797a9b43",
+    "AC-816": "sha256:8e5720e5d7709753"
   },
   "cases": [
     {
@@ -11523,6 +11534,263 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "テスト拡張のため未実行へ"
+        }
+      ]
+    },
+    {
+      "id": "E2E-455",
+      "requirement_ids": [
+        "FR-298"
+      ],
+      "ac_ids": [
+        "AC-805",
+        "AC-806"
+      ],
+      "title": "FR-298 AC-805 AC-806 ゾーンの意味名・ロール割り当て・結合解除・割合とロールの独立・隙間重なりなし・再読込",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-805 AC-806",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-30T23:01:37+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "FR-298 System Test 新規"
+        }
+      ]
+    },
+    {
+      "id": "E2E-456",
+      "requirement_ids": [
+        "FR-298"
+      ],
+      "ac_ids": [
+        "AC-807"
+      ],
+      "title": "FR-298 AC-807 Workspace Switcher の 5 モード切替が上限以内・状態保持",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-807",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-30T23:01:40+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "FR-298 System Test 新規"
+        }
+      ]
+    },
+    {
+      "id": "E2E-457",
+      "requirement_ids": [
+        "FR-298"
+      ],
+      "ac_ids": [
+        "AC-808"
+      ],
+      "title": "FR-298 AC-808 別ウィンドウへの移動と最大化後の復元",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-808",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-30T23:01:43+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "FR-298 System Test 新規"
+        }
+      ]
+    },
+    {
+      "id": "E2E-458",
+      "requirement_ids": [
+        "FR-298"
+      ],
+      "ac_ids": [
+        "AC-809"
+      ],
+      "title": "FR-298 AC-809 タスクワークスペースごとの Task Context の独立と保持",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-809",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-30T23:01:46+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "FR-298 System Test 新規"
+        }
+      ]
+    },
+    {
+      "id": "E2E-459",
+      "requirement_ids": [
+        "FR-299"
+      ],
+      "ac_ids": [
+        "AC-810"
+      ],
+      "title": "FR-299 AC-810 キーボードだけの 5 操作・Move のフォーカス保持・最近使った 5 件",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-810",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-30T23:01:49+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "FR-299 System Test 新規"
+        }
+      ]
+    },
+    {
+      "id": "E2E-460",
+      "requirement_ids": [
+        "FR-299"
+      ],
+      "ac_ids": [
+        "AC-811"
+      ],
+      "title": "FR-299 AC-811 Windows/macOS のキー表記・ボタン位置・自動への復帰",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-811",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-30T23:01:52+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "FR-299 System Test 新規"
+        }
+      ]
+    },
+    {
+      "id": "E2E-461",
+      "requirement_ids": [
+        "FR-299"
+      ],
+      "ac_ids": [
+        "AC-813"
+      ],
+      "title": "FR-299 AC-813 予約キーを割り当てず既存キーと重ならない（静的＋実行時）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-813",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-30T23:01:55+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "FR-299 System Test 新規"
+        },
+        {
+          "at": "2026-10-30T23:02:26+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-813 は検証レベル integration で System Test の対象外（rdcheck CHK-10）。要求定義書との食い違いとして conductor へ返す"
+        }
+      ]
+    },
+    {
+      "id": "E2E-462",
+      "requirement_ids": [
+        "FR-300"
+      ],
+      "ac_ids": [
+        "AC-814"
+      ],
+      "title": "FR-300 AC-814 枠の面の半透明素材・コンテンツ不透明・コントラスト・強制カラー",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-814",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-30T23:01:58+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "FR-300 System Test 新規"
+        }
+      ]
+    },
+    {
+      "id": "E2E-463",
+      "requirement_ids": [
+        "FR-300"
+      ],
+      "ac_ids": [
+        "AC-815"
+      ],
+      "title": "FR-300 AC-815 切替の連続的な動きと reduced-motion",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-815",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-30T23:02:01+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "FR-300 System Test 新規"
+        }
+      ]
+    },
+    {
+      "id": "E2E-464",
+      "requirement_ids": [
+        "FR-300"
+      ],
+      "ac_ids": [
+        "AC-816"
+      ],
+      "title": "FR-300 AC-816 Focus モードの減光・通知抑制・Esc で復帰",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-816",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-30T23:02:04+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "FR-300 System Test 新規"
         }
       ]
     }
