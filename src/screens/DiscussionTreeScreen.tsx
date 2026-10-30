@@ -107,15 +107,32 @@ function DiscussionTreeScreen() {
 
   const baseline = useMemo(() => (data ? buildPackTree(data) : []), [data]);
   // 生成前は、パックの章・議題から作った全体像（読み取り専用）を見せる
-  const shown: TreeDoc | undefined = doc ?? (data && baseline.length > 0 ? { themeId: 'pack', themeTitle: data.customer.projectName, nodes: baseline, mode: 'mock' } : undefined);
+  const shownRaw: TreeDoc | undefined = doc ?? (data && baseline.length > 0 ? { themeId: 'pack', themeTitle: data.customer.projectName, nodes: baseline, mode: 'mock' } : undefined);
+  // 課題・解決策のノードは、人が木の上で名前を変えていない限り、いまの課題・解決策の名称を出す（詳細で名前を変えると木にも反映される。FR-070 AC-086）
+  const shown: TreeDoc | undefined = useMemo(() => {
+    if (!shownRaw || !data) return shownRaw;
+    const live = new Map<string, string>([...data.issues.issues.map((i) => [i.id, i.title] as const), ...data.issues.solutions.map((x) => [x.id, x.title] as const)]);
+    return { ...shownRaw, nodes: shownRaw.nodes.map((n) => { const lt = n.entityId !== undefined && n.origin !== 'human' ? live.get(n.entityId) : undefined; return lt !== undefined && lt !== n.title ? { ...n, title: lt } : n; }) };
+  }, [shownRaw, data]);
   const rows = useMemo(() => (shown ? flattenTree(shown.nodes, collapsed) : []), [shown, collapsed]);
   const node = shown?.nodes.find((n) => n.id === picked);
   // 3D（FR-217 AC-501）: 表示中のノード（2D の木の行と同じ ID・件数）を、深さ=高さ・枝分かれ=横の位置に置き、親→子をつなぐ
   const { mode: viewMode } = useComponentView(ORIGIN);
   const [asTable, setAsTable] = useState(false);
   const shownNodes = useMemo(() => rows.map((r) => r.node), [rows]);
-  usePublishViewItems(ORIGIN, useMemo(() => shownNodes.map((n) => n.id), [shownNodes]));
-  const layout3d = useMemo(() => treeLayout3D(shownNodes, (n) => n.id, (n) => n.title, (n) => n.parentId, (n) => n.kind), [shownNodes]);
+  // 3D の項目 ID は、課題・解決策のノードでは 2D の行・表と同じ実体の ID（重複するときは最初の 1 つだけ。残りはノード ID）
+  const itemIdOf = useMemo(() => {
+    const m = new Map<string, string>();
+    const used = new Set<string>();
+    for (const n of shownNodes) {
+      const id = n.entityId !== undefined && !used.has(n.entityId) ? n.entityId : n.id;
+      used.add(id);
+      m.set(n.id, id);
+    }
+    return m;
+  }, [shownNodes]);
+  const layout3d = useMemo(() => treeLayout3D(shownNodes, (n) => itemIdOf.get(n.id) ?? n.id, (n) => n.title, (n) => (n.parentId === null ? null : itemIdOf.get(n.parentId) ?? n.parentId), (n) => n.kind), [shownNodes, itemIdOf]);
+  usePublishViewItems(ORIGIN, useMemo(() => shownNodes.map((n) => itemIdOf.get(n.id) ?? n.id), [shownNodes, itemIdOf]));
   const selectedNow = useSelectionStore((st) => st.selectedIds);
 
   useEffect(() => { if (picked && shown && !shown.nodes.some((n) => n.id === picked)) setPicked(undefined); }, [shown, picked]);
@@ -282,8 +299,8 @@ function DiscussionTreeScreen() {
               ) : (
                 <Items3DSurface
                   viewKey={ORIGIN} origin={ORIGIN} label={t('議論ツリー')} items={layout3d.items} links={layout3d.links} axes={{ y: t('階層（上が根）') }}
-                  selected={new Set(shownNodes.filter((n) => picked === n.id || (n.entityId !== undefined && selectedNow.includes(n.entityId))).map((n) => n.id))}
-                  onSelect={(id, additive) => { const n = shownNodes.find((x) => x.id === id); if (n) pick(n, additive); }}
+                  selected={new Set(shownNodes.filter((n) => picked === n.id || (n.entityId !== undefined && selectedNow.includes(n.entityId))).map((n) => itemIdOf.get(n.id) ?? n.id))}
+                  onSelect={(id, additive) => { const n = shownNodes.find((x) => (itemIdOf.get(x.id) ?? x.id) === id); if (n) pick(n, additive); }}
                 />
               )}
             </>
