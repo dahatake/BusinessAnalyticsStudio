@@ -45,7 +45,7 @@ function RankingScreen() {
   const items3d = useMemo<Item3D[]>(() => {
     const max = Math.max(0, ...rows.map((r) => r.score));
     const min = Math.min(max, ...rows.map((r) => r.score));
-    return rows.map((r, i) => ({ id: r.id, label: `${r.rank}. ${r.title}`, x: spread(i, rows.length), y: norm(r.score, Math.min(0, min), max), z: 0.5, size: max > 0 ? r.score / max : 0 }));
+    return rows.map((r, i) => ({ id: r.id, label: `${r.rank}. ${r.title}`, value: r.rank, valueText: (n: number) => `${Math.round(n)}. ${r.title}`, x: spread(i, rows.length), y: norm(r.score, Math.min(0, min), max), z: 0.5, size: max > 0 ? r.score / max : 0 }));
   }, [rows]);
   usePublishViewItems(ORIGIN, useMemo(() => rows.map((r) => r.id), [rows]));
   // 出入り・遷移（FR-070 AC-086）: 行は同じ ID のまま、追加は現れ、削除は薄れて消え、スコアは中間値を経て最新へ収束する（最新値は data-score-latest と詳細で参照できる）

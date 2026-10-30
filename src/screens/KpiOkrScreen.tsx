@@ -144,7 +144,7 @@ function KpiOkrScreen() {
   const items3d = useMemo<Item3D[]>(() => krs.map((k) => {
     const a = achievement(k.r.kpi);
     const v = a === null ? 0 : Math.min(1, Math.max(0, a));
-    return { id: k.id, label: `${k.r.name}（${achievementText(k.r.kpi)}）`, group: k.objective, x: spread(k.oi, objCount), z: spread(k.ri, k.n), y: v, size: v };
+    return { id: k.id, label: `${k.r.name}（${achievementText(k.r.kpi)}）`, value: v * 100, valueText: a === null ? undefined : (n: number) => `${k.r.name}（${Math.round(n)}%）`, group: k.objective, x: spread(k.oi, objCount), z: spread(k.ri, k.n), y: v, size: v };
   }), [krs, objCount]);
   const links3d = useMemo<Link3D[]>(() => krs.filter((k) => k.ri > 0).map((k) => ({ from: `okr-${k.oi + 1}-${k.ri}`, to: k.id })), [krs]);
   // Graph（FR-238）: Objective と Key Result をノードに、Key Result → Objective を「達成する」の向き付きのエッジにする（Key Result は 2D・3D と同じ項目・同じ件数）

@@ -8,7 +8,7 @@ import { DiagramCanvas } from './DiagramCanvas';
 import { sceneLabelStyle } from './labelStyles';
 import { toSpace, type Axes3D, type Item3D, type Link3D } from '../view/items3d';
 import { useObjectVectorTransition } from './useSceneTransition';
-import { usePresenceItems } from '../motion/usePresence';
+import { usePresenceItems, useTweenedValue } from '../motion/usePresence';
 
 /** グループの色（色だけに頼らず、ラベルの文字と「表で見る」でも読める） */
 const PALETTE = ['#4fc3f7', '#ffb74d', '#81c784', '#ba68c8', '#e57373', '#4db6ac', '#fff176', '#90a4ae'];
@@ -77,6 +77,9 @@ function ItemNode({ item, position, color, selected, exiting, showLabel, heavy, 
   const mesh = useRef<THREE.Mesh>(null);
   const radius = 0.14 + item.size * 0.5;
   const scale = exiting ? 0 : radius * (selected ? 1.4 : 1);
+  // 値の遷移（FR-070 AC-086）: value があれば、ラベルの数値は中間値を経て最新へ収束する（停止中・動きの軽減中は即時）
+  const tweened = useTweenedValue(item.value ?? 0);
+  const labelText = item.value !== undefined && item.valueText ? item.valueText(tweened) : item.label;
   useObjectVectorTransition(group, position, 'position');
   useObjectVectorTransition(mesh, [scale, scale, scale], 'scale');
   return (
@@ -85,7 +88,7 @@ function ItemNode({ item, position, color, selected, exiting, showLabel, heavy, 
         <sphereGeometry args={[1, heavy ? 6 : 16, heavy ? 4 : 12]} />
         <meshStandardMaterial color={color} emissive={selected ? color : '#000000'} emissiveIntensity={selected ? 0.6 : 0} />
       </mesh>
-      {showLabel ? <Html center position={[0, radius + 0.25, 0]} zIndexRange={[5, 0]}><span style={sceneLabelStyle} title={item.label} data-entity-id={exiting ? undefined : item.id}>{item.label}</span></Html> : null}
+      {showLabel ? <Html center position={[0, radius + 0.25, 0]} zIndexRange={[5, 0]}><span style={sceneLabelStyle} title={item.label} data-entity-id={exiting ? undefined : item.id}>{labelText}</span></Html> : null}
     </group>
   );
 }
