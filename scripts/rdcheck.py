@@ -29,6 +29,8 @@ sys.dont_write_bytecode = True  # FR-1062 AC-343: 導出は読み取り専用。
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ebaklib as h  # noqa: E402
 import entities as ent  # noqa: E402
+import entity_classes as ec  # noqa: E402
+import integration_catalog as ic  # noqa: E402
 
 # requirements that must have a row in the function table of the catalog (same as rdfix.CATALOG_STATES)
 CATALOG_STATES = ("承認済み", "承認待ち", "保留")
@@ -146,7 +148,7 @@ class Checker:
         for fn in (self.chk01_02, self.chk03, self.chk04, self.chk05, self.chk06_22, self.chk07_08,
                    self.chk09, self.chk10_11, self.chk12, self.chk13_14_15, self.chk16, self.chk17,
                    self.chk18, self.chk19, self.chk20, self.chk21, self.chk23, self.chk25, self.chk26,
-                   self.chk27, self.chk24, self.chk28, self.chk29, self.chk30, self.chk31, self.chk32, self.chk33):
+                   self.chk27, self.chk24, self.chk28, self.chk28_catalog, self.chk29, self.chk30, self.chk31, self.chk32, self.chk33):
             fn()
         return self.findings
 
@@ -789,6 +791,11 @@ class Checker:
                              f"{r.id} の関連する既存資産 {m.group(1)}「{m.group(2)}」がカタログの{label[k]}の表にありません")
 
 
+    def chk28_catalog(self) -> None:
+        """外部連携カタログ（FR-188〜FR-199・NFR-SEC-006）の欄・資格情報形式の検査。"""
+        for level, loc, msg in ic.check(self.root, self.cfg, self.doc):
+            self.add(level, "CHK-28", loc, msg)
+
     # ------------------------------------------------------------------ CHK-28 (FR-1035 / FR-1036)
     def chk28(self) -> None:
         """外部連携カタログ（任意）の形式・ID・観点の欄・秘密値・要求との対応。カタログがなければ何も報告しない。"""
@@ -931,6 +938,13 @@ class Checker:
 
     # CHK-29 (FR-1058 AC-318/320): metadata definition (scripts/metadata.json)
     def chk29(self) -> None:
+        # FR-212 AC-487/488: 欄のメタデータ検査と分類表の検査を両方行う。
+        _, _, irows = ic.parse(self.root, self.cfg)
+        int_ids = set(self.integ.by_id()) if self.integ.exists else set()
+        problems = ec.check(self.doc, ec.load_definition(), self.catalog_names(),
+                            int_ids, [r.name for r in irows if r.name])
+        for f, ln, msg in problems:
+            self.err("CHK-29", self.loc(f, ln), msg)
         defs = h.requirement_field_defs()
         if not defs:
             return

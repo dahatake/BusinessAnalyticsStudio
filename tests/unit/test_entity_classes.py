@@ -166,3 +166,20 @@ def test_fr212_ac488_missing_required_column_is_reported():
     doc = h.parse_requirements_texts({"docs/requirements-definition.md": text})
     probs = ec.check(doc, ec.load_definition(), CATALOG)
     assert any("必須の欄「ツイン」" in m for _, _, m in probs)
+
+
+# FR-212 AC-487/488: rdcheck から分類表検査と既存の欄定義検査の双方に接続する。
+def test_fr212_ac487_ac488_rdcheck_reports_classification_and_field_errors(tmp_path):
+    p = tmp_path / "docs" / "requirements-definition.md"
+    p.parent.mkdir()
+    doc = doc_of(
+        replace(1, "| 拠点 | 現実世界 | 拠点 | 未知の親 | 位置 | なし | なし |"),
+        req=REQ + "- 未定義の欄: 値\n",
+    )
+    p.write_text(next(iter(doc.text.values())), encoding="utf-8")
+    ck = rdcheck.Checker(tmp_path, h.DEFAULT_CONFIG, None, None, False, False)
+    ck.run_all()
+    findings = [f for f in ck.findings if f.chk == "CHK-29"]
+    assert any("上位「未知の親」が分類表にありません" in f.msg for f in findings)
+    assert any("未定義の欄" in f.msg and "メタデータ定義" in f.msg for f in findings)
+    assert all(f.loc.startswith("docs/requirements-definition.md:") for f in findings)
