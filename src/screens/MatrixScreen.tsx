@@ -13,6 +13,7 @@ import { Items3DSurface } from '../three/Items3DSurface';
 import { norm, type Item3D } from '../view/items3d';
 import { useComponentView, usePublishViewItems } from '../view/useView';
 import { useT } from '../i18n';
+import { lifeOpacity, lifeScale, usePresenceItems } from '../motion';
 
 const ORIGIN = 'matrix';
 const W = 640;
@@ -55,10 +56,12 @@ function MatrixScreen() {
     return points.map((p) => ({ id: p.id, label: p.title, x: norm(p.x, 1, 5), y: norm(p.y, 1, 5), z: 0.5, size: Math.sqrt(p.cost / maxCost), group: t(QUADRANT_LABEL[p.quadrant]) }));
   }, [points, t]);
   usePublishViewItems(ORIGIN, useMemo(() => points.map((p) => p.id), [points]));
+  const maxCostAll = Math.max(1, ...points.map((p) => p.cost));
+  // 出入り・遷移（FR-070 AC-086）: バブルは同じ ID のまま、位置・大きさが動き、追加は現れ、削除は薄れて消える
+  const bubbles = usePresenceItems(points, (p) => p.id, (p) => [sx(p.x), sy(p.y), 12 + 26 * Math.sqrt(p.cost / maxCostAll)]);
   if (!ready) return <LoadingView label={t('マトリクスを読み込み中')} />;
 
-  const maxCost = Math.max(1, ...points.map((p) => p.cost));
-  const radius = (cost: number): number => 12 + 26 * Math.sqrt(cost / maxCost);
+
 
   return (
     <Panel
@@ -93,21 +96,21 @@ function MatrixScreen() {
           <text className={s.quad} x={L + 6} y={H - B - 8}>{t('保留')}</text>
           <text className={s.axisLabel} x={(L + W - R) / 2} y={H - 16} textAnchor="middle">{t('実現性 →')}</text>
           <text className={s.axisLabel} x={16} y={(T + H - B) / 2} textAnchor="middle" transform={`rotate(-90 16 ${(T + H - B) / 2})`}>{t('インパクト →')}</text>
-          {points.map((p) => {
+          {bubbles.map(({ item: p, vec, life, exiting }) => {
             const props = bind(p.id);
             const hlWords = (props['data-highlight'] ?? '').split(' ');
             return (
               <g
-                key={p.id} {...(props as unknown as SVGProps<SVGGElement>)} role="button" tabIndex={0} className={s.node}
+                key={p.id} {...(props as unknown as SVGProps<SVGGElement>)} role="button" tabIndex={exiting ? -1 : 0} className={s.node}
                 aria-label={t('{title}（実現性 {x}、インパクト {y}、コスト {cost} 万円）', { title: p.title, x: p.x.toFixed(1), y: p.y.toFixed(1), cost: p.cost })}
-                aria-pressed={hlWords.includes('selected')}
+                aria-pressed={hlWords.includes('selected')} aria-hidden={exiting || undefined} opacity={lifeOpacity(life)} pointerEvents={exiting ? 'none' : undefined}
                 onKeyDown={(e) => { onEntityKey(e as never, p.id, ORIGIN); }}
               >
                 <circle
-                  cx={sx(p.x)} cy={sy(p.y)} r={radius(p.cost)}
+                  cx={vec[0]} cy={vec[1]} r={vec[2]! * lifeScale(life)}
                   className={mergeClasses(s.bubble, hlWords.includes('selected') && s.selected, hlWords.includes('related') && s.related, hlWords.includes('hover') && s.hover)}
                 />
-                <text className={s.label} x={sx(p.x)} y={sy(p.y) + radius(p.cost) + 14} textAnchor="middle">{p.title}</text>
+                <text className={s.label} x={vec[0]} y={vec[1]! + vec[2]! + 14} textAnchor="middle">{p.title}</text>
               </g>
             );
           })}

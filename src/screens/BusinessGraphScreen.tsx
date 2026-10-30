@@ -3,6 +3,7 @@
 // DOM の契約は tests/system/CONTRACT.md §23。ノードは HTML、エッジは SVG（矢印つき）で描く。
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { useT } from '../i18n';
+import { lifeOpacity, lifeScale, usePresenceItems } from '../motion';
 import { Badge, Button, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
 import { GraphAlt } from '../components/GraphAlt';
@@ -193,6 +194,14 @@ function BusinessGraphScreen() {
   }, [shownEdges, shownNodes, bundled, pos, selSet, scale]);
 
   usePublishViewItems(ORIGIN, shownNodes.map((n) => n.id));
+  // 出入り・遷移（FR-070 AC-086）: 節・線は同じ ID のまま動き、追加は現れ、削除は薄れて消える（停止中・動きの軽減中は即時に最終状態）
+  const nodePresence = usePresenceItems(shownNodes, (n) => n.id, (n) => { const p = pos.get(n.id); return p ? [p.x, p.y] : [0, 0]; });
+  const edgePresence = usePresenceItems(bundled.single, (e) => e.id, (e) => {
+    const a = pos.get(e.from); const b = pos.get(e.to);
+    if (!a || !b) return [0, 0, 0, 0, 0, 0];
+    const p1 = edgePoint(a, b, 2); const p2 = edgePoint(b, a, 6);
+    return [p1.x, p1.y, p2.x, p2.y, (a.x + b.x) / 2, (a.y + b.y) / 2];
+  });
 
   // 3D（FR-238。FR-037 と同じ立体のグラフ）: 平面の配置を横・奥行きに、種別を高さの層に置く。つながり＝エッジ（2D・Graph と同じ項目・同じ関係）
   const items3d = useMemo<Item3D[]>(() => {
@@ -368,16 +377,14 @@ function BusinessGraphScreen() {
                   </marker>
                 </defs>
                 <g style={{ color: tokens.colorNeutralForeground2 }}>
-                  {bundled.single.map((e) => {
-                    const a = pos.get(e.from); const b = pos.get(e.to);
-                    if (!a || !b) return null;
-                    const p1 = edgePoint(a, b, 2); const p2 = edgePoint(b, a, 6);
+                  {edgePresence.map(({ item: e, vec, life, exiting }) => {
+                    const [x1, y1, x2, y2, mx, my] = vec as [number, number, number, number, number, number];
                     const text = labelIds.has(`e:${e.id}`) ? e.label : undefined;
                     return (
-                      <g key={e.id} data-testid="graph-edge" data-from={e.from} data-to={e.to} data-meaning={e.meaning} data-direction="forward" role="img" aria-label={t('{from} から {to} へ {label}', { from: nodeById.get(e.from)?.name ?? e.from, to: nodeById.get(e.to)?.name ?? e.to, label: e.label ?? t('（ラベルなし）') })}>
+                      <g key={e.id} data-testid={exiting ? 'graph-edge-exiting' : 'graph-edge'} data-from={e.from} data-to={e.to} data-meaning={e.meaning} data-direction="forward" role="img" opacity={lifeOpacity(life)} aria-hidden={exiting || undefined} aria-label={t('{from} から {to} へ {label}', { from: nodeById.get(e.from)?.name ?? e.from, to: nodeById.get(e.to)?.name ?? e.to, label: e.label ?? t('（ラベルなし）') })}>
                         {e.label ? <title>{`${e.label}（${readMeaning(e.meaning, nodeById.get(e.from)?.name ?? e.from, nodeById.get(e.to)?.name ?? e.to)}）`}</title> : null}
-                        <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="currentColor" strokeWidth={1.5} strokeDasharray={MEANING_DASH[e.meaning]} markerEnd="url(#bg-arrow)" />
-                        {text ? <text className={s.edgeText} x={(a.x + b.x) / 2} y={(a.y + b.y) / 2} textAnchor="middle">{text}</text> : null}
+                        <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="currentColor" strokeWidth={1.5} strokeDasharray={MEANING_DASH[e.meaning]} markerEnd="url(#bg-arrow)" />
+                        {text ? <text className={s.edgeText} x={mx} y={my} textAnchor="middle">{text}</text> : null}
                       </g>
                     );
                   })}
@@ -407,15 +414,18 @@ function BusinessGraphScreen() {
                 </g>
               </svg>
 
-              {shownNodes.map((n) => {
-                const p = pos.get(n.id); if (!p) return null;
+              {nodePresence.map(({ item: n, vec, life, exiting }) => {
                 const shape = shapes.get(n.type) ?? 'circle';
                 const showName = labelIds.has(`n:${n.id}`);
-                const st: CSSProperties = { left: p.x - NODE_W / 2, top: p.y - NODE_H / 2, width: NODE_W, height: NODE_H };
+                const st: CSSProperties = {
+                  left: vec[0]! - NODE_W / 2, top: vec[1]! - NODE_H / 2, width: NODE_W, height: NODE_H,
+                  ...(life < 1 || exiting ? { opacity: lifeOpacity(life), transform: `scale(${lifeScale(life).toFixed(3)})`, pointerEvents: 'none' as const } : {}),
+                };
                 return (
                   <div
-                    key={n.id} {...bind(n.id)} role="button" tabIndex={0} className={s.node} style={st}
-                    data-testid="graph-node" data-zoom-node="" data-kind={n.type} data-node-type={n.type} data-shape={shape} data-entity-name={n.name}
+                    key={n.id} {...bind(n.id)} role="button" tabIndex={exiting ? -1 : 0} className={s.node} style={st}
+                    data-testid={exiting ? 'graph-node-exiting' : 'graph-node'} data-zoom-node="" data-kind={n.type} data-node-type={n.type} data-shape={shape} data-entity-name={n.name}
+                    aria-hidden={exiting || undefined}
                     aria-pressed={selSet.has(n.id)} aria-label={`${n.name}（${n.type}）`}
                     onDoubleClick={() => openNode(n.id)} onKeyDown={(e) => keyOnNode(e, n.id)}
                   >
