@@ -93,7 +93,9 @@ AC-198（integration）/AC-199（unit）は検証レベルを変更せず、
 | spatial-view/3D, spatial-view/Graph | 既存項目が作り直された（同一性）。追加時に元項目の描画が一度消える | 実装側 |
 | discussion-tree/2D | 名称更新が描画に反映されない（byText=true なのに署名が変わらない） | 実装側 |
 | map/3D | 停止/reduce は中間値を経ず最終状態を即時表示する（追加が遷移する） | 実装側（reduce 未適用） |
-| matrix/3D, ranking/3D, discussion-tree/3D, kpi-okr/2D, kpi-okr/3D, kpi-okr/Graph, data-catalog/2D, data-catalog/3D, data-catalog/Graph, summary/2D/Canvas | 名称更新が描画に反映されない（byId=true・byText=false: 名称が DOM 文字に出ず、scene.objects は位置だけで名称を持たない） | 要判断: 名称を描画に出していない（実装）か、実シーンのラベルを測れない（テストの測定限界）。実装者は名称を DOM 文字か scene.objects の label として出すこと。出せない形式は rd-author に AC の扱いを依頼 |
+| matrix/3D, discussion-tree/3D（未再実測。同型） | 名称更新が描画に反映されない（byId=true・byText=false） | 実装側の可能性（要再実測）。実装者は名称を DOM 文字か scene.objects の label として出すこと |
+| ranking/3D, kpi-okr/3D | 名称更新が描画に反映されない（sigRename=0）。実測: 画面の 3D 描画域が可視の ent を出している（scene.objects の visible=true、byId=true・byText=false）が、名称を変えても図形・画素の署名が変わらない | 実装側（3D 部品が名称を描画に反映しない）。テスト側の判定誤りは解消済み |
+| kpi-okr/2D, kpi-okr/Graph, data-catalog/2D, data-catalog/3D, data-catalog/Graph, summary/2D/Canvas | 以前の fail は、idsIn が全体の scene.objects を拾って byId=true と誤判定したテスト側の誤り。修正後は「測れない形式」の分岐に入り、空・静止時に不要な連続描画がない（署名変化 1 以下）ことを確認して pass（kpi-okr 6 件中 5 pass、data-catalog 6/6、summary 2/2） | テスト側で解決（修正: idsIn は部品が可視の canvas を持つときだけ、visible な scene オブジェクトを拾う） |
 | issue-solution/3D | 詳細に名前の編集がない（この形式に出る ent 12 件を選んでも詳細が出ない） | 要判断（選択しても詳細が出ない項目のみを出している。実装側の可能性） |
 
 起動競合: matrix/2D「追加から最終状態まで 2000ms」と whiteboard/Canvas「undo が瞬間消去」は全件並列の 1 回目だけ fail し、単独・再実行で pass（負荷による揺れ）。page.goto ERR_ABORTED は今回の実行で再現せず。
