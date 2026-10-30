@@ -2,11 +2,12 @@
 // 3D の基盤（DiagramCanvas）を使い、モデルは手続きで作る（FR-068）。節を押すと共通の選択に反映する。
 import { useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Html, Line } from '@react-three/drei';
+import { Html } from '@react-three/drei';
+import { AnimatedLine } from './AnimatedLine';
 import * as THREE from 'three';
 import { EDGE_STYLE, KIND_STYLE, to3D } from '../analysis/graphView';
 import type { GraphEdge, GraphNode } from '../selection/graph';
-import { useAnimation } from '../store/animation';
+import { useSceneMotionAllowed, useObjectVectorTransition } from './useSceneTransition';
 import { DiagramCanvas } from './DiagramCanvas';
 import { sceneLabelStyle } from './labelStyles';
 import { useT } from '../i18n';
@@ -16,10 +17,10 @@ const labelStyle = sceneLabelStyle;
 /** 関係（relation）の線の上を流れる粒子 */
 function Particles({ from, to }: { from: [number, number, number]; to: [number, number, number] }) {
   const ref = useRef<THREE.Mesh>(null);
-  const playing = useAnimation((s) => s.playing);
+  const playing = useSceneMotionAllowed();
   useFrame((state) => {
     const m = ref.current;
-    if (!m || !playing) return;
+    if (!m || !playing || (typeof document !== 'undefined' && document.hidden)) return;
     const t = (state.clock.elapsedTime * 0.4) % 1;
     m.position.set(from[0] + (to[0] - from[0]) * t, from[1] + (to[1] - from[1]) * t, from[2] + (to[2] - from[2]) * t);
   });
@@ -55,32 +56,42 @@ export function Graph3D({ nodes, edges, pos, size, selected, onSelect }: Graph3D
         const b = p3(e.to);
         return (
           <group key={e.id}>
-            <Line points={[a, b]} color={selected.has(e.from) || selected.has(e.to) ? '#4fc3f7' : '#9aa5b1'} lineWidth={st.width} dashed={st.dash !== ''} dashSize={0.25} gapSize={0.15} />
+            <AnimatedLine points={[a, b]} color={selected.has(e.from) || selected.has(e.to) ? '#4fc3f7' : '#9aa5b1'} lineWidth={st.width} dashed={st.dash !== ''} dashSize={0.25} gapSize={0.15} />
             {st.particles ? <Particles from={a} to={b} /> : null}
           </group>
         );
       })}
-      {nodes.map((n) => {
-        const st = KIND_STYLE[n.kind];
-        const on = selected.has(n.id);
-        return (
-          <group key={n.id} position={p3(n.id)}>
-            <mesh onClick={(ev) => { ev.stopPropagation(); onSelect(n.id, ev.ctrlKey || ev.metaKey || ev.shiftKey); }} scale={on ? 1.4 : 1}>
-              {st.geometry === 'sphere' && <sphereGeometry args={[0.22, 20, 14]} />}
-              {st.geometry === 'box' && <boxGeometry args={[0.36, 0.36, 0.36]} />}
-              {st.geometry === 'octahedron' && <octahedronGeometry args={[0.26]} />}
-              {st.geometry === 'cone' && <coneGeometry args={[0.22, 0.4, 20]} />}
-              {st.geometry === 'cylinder' && <cylinderGeometry args={[0.2, 0.2, 0.36, 20]} />}
-              {st.geometry === 'torus' && <torusGeometry args={[0.2, 0.08, 12, 24]} />}
-              {st.geometry === 'dodecahedron' && <dodecahedronGeometry args={[0.24]} />}
-              {st.geometry === 'icosahedron' && <icosahedronGeometry args={[0.24]} />}
-              {st.geometry === 'tetrahedron' && <tetrahedronGeometry args={[0.28]} />}
-              <meshStandardMaterial color={st.hex} emissive={on ? st.hex : '#000000'} emissiveIntensity={on ? 0.6 : 0} />
-            </mesh>
-            <Html center position={[0, 0.42, 0]} zIndexRange={[5, 0]}><span style={labelStyle} title={n.label}>{n.label}</span></Html>
-          </group>
-        );
-      })}
+      {nodes.map((n) => <GraphNode3D key={n.id} node={n} position={p3(n.id)} selected={selected.has(n.id)} onSelect={onSelect} />)}
     </DiagramCanvas>
+  );
+}
+
+function GraphNode3D({ node: n, position, selected, onSelect }: {
+  node: GraphNode;
+  position: [number, number, number];
+  selected: boolean;
+  onSelect: (id: string, additive: boolean) => void;
+}) {
+  const group = useRef<THREE.Group>(null);
+  const mesh = useRef<THREE.Mesh>(null);
+  const style = KIND_STYLE[n.kind];
+  useObjectVectorTransition(group, position, 'position');
+  useObjectVectorTransition(mesh, selected ? [1.4, 1.4, 1.4] : [1, 1, 1], 'scale');
+  return (
+    <group ref={group}>
+      <mesh ref={mesh} onClick={(ev) => { ev.stopPropagation(); onSelect(n.id, ev.ctrlKey || ev.metaKey || ev.shiftKey); }}>
+        {style.geometry === 'sphere' && <sphereGeometry args={[0.22, 20, 14]} />}
+        {style.geometry === 'box' && <boxGeometry args={[0.36, 0.36, 0.36]} />}
+        {style.geometry === 'octahedron' && <octahedronGeometry args={[0.26]} />}
+        {style.geometry === 'cone' && <coneGeometry args={[0.22, 0.4, 20]} />}
+        {style.geometry === 'cylinder' && <cylinderGeometry args={[0.2, 0.2, 0.36, 20]} />}
+        {style.geometry === 'torus' && <torusGeometry args={[0.2, 0.08, 12, 24]} />}
+        {style.geometry === 'dodecahedron' && <dodecahedronGeometry args={[0.24]} />}
+        {style.geometry === 'icosahedron' && <icosahedronGeometry args={[0.24]} />}
+        {style.geometry === 'tetrahedron' && <tetrahedronGeometry args={[0.28]} />}
+        <meshStandardMaterial color={style.hex} emissive={selected ? style.hex : '#000000'} emissiveIntensity={selected ? 0.6 : 0} />
+      </mesh>
+      <Html center position={[0, 0.42, 0]} zIndexRange={[5, 0]}><span style={labelStyle} title={n.label}>{n.label}</span></Html>
+    </group>
   );
 }

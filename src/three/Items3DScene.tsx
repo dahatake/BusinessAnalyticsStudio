@@ -1,10 +1,13 @@
 // 項目を 3D 空間に描く共通の面の中身（FR-217 AC-501）。位置・大きさ・つながりを、既存の 3D 基盤（DiagramCanvas。FR-065 の描画・フォールバック・FR-147 の負荷対策）の上に置く。
 // Items3DSurface が必要になったときにだけ読み込む（最初のフレームの速さのため。three を 2D の表示の読み込みに含めない）。
-import { useMemo } from 'react';
-import { Html, Line } from '@react-three/drei';
+import { useMemo, useRef } from 'react';
+import * as THREE from 'three';
+import { Html } from '@react-three/drei';
+import { AnimatedLine } from './AnimatedLine';
 import { DiagramCanvas } from './DiagramCanvas';
 import { sceneLabelStyle } from './labelStyles';
 import { toSpace, type Axes3D, type Item3D, type Link3D } from '../view/items3d';
+import { useObjectVectorTransition } from './useSceneTransition';
 
 /** グループの色（色だけに頼らず、ラベルの文字と「表で見る」でも読める） */
 const PALETTE = ['#4fc3f7', '#ffb74d', '#81c784', '#ba68c8', '#e57373', '#4db6ac', '#fff176', '#90a4ae'];
@@ -47,23 +50,38 @@ export default function Items3DScene({ label, items, links, selected, axes, onSe
         const b = pos.get(l.to);
         if (!a || !b) return null;
         const on = selected.has(l.from) || selected.has(l.to);
-        return <Line key={`${l.from}>${l.to}`} points={[a, b]} color={on ? '#4fc3f7' : '#9aa5b1'} lineWidth={on ? 2.5 : 1.2} />;
+        return <AnimatedLine key={`${l.from}>${l.to}`} points={[a, b]} color={on ? '#4fc3f7' : '#9aa5b1'} lineWidth={on ? 2.5 : 1.2} />;
       })}
-      {items.map((it) => {
-        const on = selected.has(it.id);
-        const p = pos.get(it.id) as [number, number, number];
-        const r = 0.14 + it.size * 0.5;
-        const color = PALETTE[groups.indexOf(it.group ?? '') % PALETTE.length];
-        return (
-          <group key={it.id} position={p}>
-            <mesh onClick={(ev) => { ev.stopPropagation(); onSelect(it.id, ev.ctrlKey || ev.metaKey || ev.shiftKey); }} scale={on ? 1.4 : 1}>
-              <sphereGeometry args={heavy ? [r, 6, 4] : [r, 16, 12]} />
-              <meshStandardMaterial color={color} emissive={on ? color : '#000000'} emissiveIntensity={on ? 0.6 : 0} />
-            </mesh>
-            {showAll || on ? <Html center position={[0, r + 0.25, 0]} zIndexRange={[5, 0]}><span style={sceneLabelStyle} title={it.label}>{it.label}</span></Html> : null}
-          </group>
-        );
-      })}
+      {items.map((item) => (
+        <ItemNode key={item.id} item={item} position={pos.get(item.id) as [number, number, number]} color={PALETTE[groups.indexOf(item.group ?? '') % PALETTE.length] ?? PALETTE[0]!} selected={selected.has(item.id)} showLabel={showAll || selected.has(item.id)} heavy={heavy} onSelect={onSelect} />
+      ))}
     </DiagramCanvas>
+  );
+}
+
+
+function ItemNode({ item, position, color, selected, showLabel, heavy, onSelect }: {
+  item: Item3D;
+  position: [number, number, number];
+  color: string;
+  selected: boolean;
+  showLabel: boolean;
+  heavy: boolean;
+  onSelect: (id: string, additive: boolean) => void;
+}) {
+  const group = useRef<THREE.Group>(null);
+  const mesh = useRef<THREE.Mesh>(null);
+  const radius = 0.14 + item.size * 0.5;
+  const scale = radius * (selected ? 1.4 : 1);
+  useObjectVectorTransition(group, position, 'position');
+  useObjectVectorTransition(mesh, [scale, scale, scale], 'scale');
+  return (
+    <group ref={group}>
+      <mesh ref={mesh} onClick={(ev) => { ev.stopPropagation(); onSelect(item.id, ev.ctrlKey || ev.metaKey || ev.shiftKey); }}>
+        <sphereGeometry args={[1, heavy ? 6 : 16, heavy ? 4 : 12]} />
+        <meshStandardMaterial color={color} emissive={selected ? color : '#000000'} emissiveIntensity={selected ? 0.6 : 0} />
+      </mesh>
+      {showLabel ? <Html center position={[0, radius + 0.25, 0]} zIndexRange={[5, 0]}><span style={sceneLabelStyle} title={item.label}>{item.label}</span></Html> : null}
+    </group>
   );
 }
