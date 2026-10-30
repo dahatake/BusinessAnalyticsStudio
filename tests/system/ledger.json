@@ -11467,11 +11467,11 @@
       "ac_ids": [
         "AC-086"
       ],
-      "title": "全画面描画形式の初回実描画・停止/reduce後静止（全ライフサイクル残課題は網羅表参照）",
+      "title": "全画面描画形式の初回実描画・停止/reduce後静止＋追加削除undoの出入り遷移（残課題は網羅表参照）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-086",
       "canary": false,
-      "status": "fail",
+      "status": "not_run",
       "last_commit": "69500e9",
       "last_run_at": "2026-10-30T09:38:02+09:00",
       "evidence": "work\\runs\\202610300856\\logs\\system-test\\E2E-451-202610300937.log",
@@ -11481,6 +11481,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "検証レベルsystemへの変更に伴う実行ケース。未完成の網羅範囲はtests/system/visualization-coverage.mdで明示"
+        },
+        {
+          "at": "2026-10-30T11:05:45+09:00",
+          "by": "test-designer",
+          "change": "title: '全画面描画形式の初回実描画・停止/reduce後静止（全ライフサイクル残課題は網羅表参照）' -> '全画面描画形式の初回実描画・停止/reduce後静止＋追加削除undoの出入り遷移（残課題は網羅表参照）'",
+          "reason": "visualization-transitions.spec.ts を AC-086 に統合、基点の測定誤り（レイアウト安定待ち）を修正"
         }
       ]
     }
