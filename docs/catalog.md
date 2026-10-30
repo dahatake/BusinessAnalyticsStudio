@@ -314,6 +314,9 @@
 | FR-292 | ストーリー動画の作成 1 回あたりの予算上限（見積り・制御・超過時の中止） | 承認済み | src/usecase/storyVideo.ts (planStoryVideo, runStoryVideo, appendUsageLog, browserPriceStore, currentPrices, isValidPrices), src/usecase/StoryVideoPanel.tsx (見積りの確認・進行・中止。単価が未入力なら設定画面の入力を案内), src/ai/AiUsagePanel.tsx (設定画面のストーリー動画の単価の入力欄), src/ai/aiImportLogic.ts (recordCall の再利用) | tests/unit/story-video.test.ts (AC-782、AC-783、AC-784) | AI 呼び出し口, ユースケース・アニメーション, Foundry 利用量の記録 |
 | FR-293 | 画面上部の表示言語トグル（日本語／英語） | 承認済み | src/i18n/store.ts, src/i18n/LanguageToggle.tsx, src/app/App.tsx | tests/unit/i18n.test.tsx | 表示言語の基盤 |
 | FR-294 | 画面内の固定文言の日英切り替え | 承認済み | src/i18n/translate.ts, src/i18n/useT.ts, src/i18n/dictionary.ts, src/i18n/en/core.ts | tests/unit/i18n.test.tsx | 表示言語の基盤 |
+| FR-295 | 開いているコンポーネントの一覧（タスクバー相当）・切替・前面化 | 承認済み | 未実装 | 未実装 | - |
+| FR-296 | 複数ウィンドウの既定の構成と最小サイズ（詰め込みの禁止） | 承認待ち | 未実装 | 未実装 | - |
+| FR-297 | 没入（Immersive）表示・奥行き・素材・動き | 承認済み | 未実装 | 未実装 | - |
 ## API・イベント
 
 | 名前 | 定義ファイル | 関連する要求 ID |
