@@ -143,7 +143,7 @@
     "AC-234": "sha256:630f15947acc625b",
     "AC-235": "sha256:afc67c60e861de2c",
     "AC-237": "sha256:8143d725234c7d1f",
-    "AC-239": "sha256:a479cd99bd02a95e",
+    "AC-239": "sha256:fb769267b42432fa",
     "AC-240": "sha256:9a9a76c37b5a77fe",
     "AC-243": "sha256:64b81e427cf413b1",
     "AC-244": "sha256:0e34da53c823f470",
@@ -340,11 +340,11 @@
     "AC-793": "sha256:600d5f10e2a101ff",
     "AC-796": "sha256:de40dbe6ed01a69c",
     "AC-086": "sha256:8b67fccb0f0188f0",
-    "AC-805": "sha256:223c8585a83d06ba",
-    "AC-806": "sha256:293da96348f24087",
+    "AC-805": "sha256:0daafe8ddd44aab0",
+    "AC-806": "sha256:32b5439c333716bd",
     "AC-807": "sha256:85ad3046b45707a1",
-    "AC-808": "sha256:2e2889d0118d7404",
-    "AC-809": "sha256:3f85c5b6f953506b",
+    "AC-808": "sha256:c971cf32ee186dbe",
+    "AC-809": "sha256:363b35c959104f59",
     "AC-810": "sha256:ab276b5b35395ded",
     "AC-811": "sha256:bc74adb08dc21051",
     "AC-813": "sha256:1483238794b34bd5",
@@ -3536,11 +3536,11 @@
         "AC-229",
         "AC-239"
       ],
-      "title": "起動後メイン画面から Project を開くと作業先の選択画面（デモ・各 Project）が必ず出る（AC-229・AC-239）",
+      "title": "起動後メイン画面から Project を開くと作業先の選択画面が必ず出る。再読込の例外（操作後・workspace=）は分析画面に留まる（AC-229・AC-239）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-229 AC-239",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "42af852",
       "last_run_at": "2026-10-31T02:05:43+09:00",
       "evidence": "work/runs/202610302249/logs/system-test/E2E-218-202610310128.log",
@@ -3562,6 +3562,12 @@
           "by": "test-designer",
           "change": "title: '起動時の作業先選択（デモ／各 Project）・作業先の常時表示・再読込のたびに選択画面（AC-229・AC-239）' -> '起動後メイン画面から Project を開くと作業先の選択画面（デモ・各 Project）が必ず出る（AC-229・AC-239）'",
           "reason": "Q-026 改訂（FR-144: 起動直後はメイン画面、選択画面はメイン画面から開く）に合わせテストを更新"
+        },
+        {
+          "at": "2026-10-31T06:04:58+09:00",
+          "by": "test-designer",
+          "change": "title: '起動後メイン画面から Project を開くと作業先の選択画面（デモ・各 Project）が必ず出る（AC-229・AC-239）' -> '起動後メイン画面から Project を開くと作業先の選択画面が必ず出る。再読込の例外（操作後・workspace=）は分析画面に留まる（AC-229・AC-239）'",
+          "reason": "AC-239 例外追加（2026-10-31）に合わせテストを拡張"
         }
       ]
     },
