@@ -219,7 +219,46 @@ async function observe(page: Page, sel: string, id: string, title: string) {
 // architecture は cap-* を詳細パネルから複製・削除できない。画面自身の「JSON 編集」（要素の追加・名称変更・削除、FR-040）が
 // 唯一の編集経路なので、下の専用ケースでその経路から測る（汎用ケースからは除く）。
 const ARCH_ROWS = VISUALIZATION_MATRIX.filter(r => r.screen === 'architecture');
-const GENERIC_ROWS = VISUALIZATION_MATRIX.filter(r => r.screen !== 'whiteboard' && r.screen !== 'architecture');
+// discussion-tree・kpi-okr も汎用ケースから除く。理由（実測）:
+//  - discussion-tree: ツリーのノード名は議論ツリー自身のモデル（議論テーマ）の名前で、課題エンティティの名称を変えても変わらない。
+//    編集経路はツリー自身の「ノードを追加／名前を変更／削除／元に戻す」（FR-042）。
+//  - kpi-okr: 画面が出すのは Key Result（okr-*）で、3D 形式の canvas はヒーロー・シーン（ent-* だけ）。詳細パネルは出ず複製もできない。
+//    編集経路は画面自身の「OKR を定義」ダイアログ（Key Result 名・現在値の変更、Key Result の追加）。
+const OWN_EDIT_SCREENS = ['discussion-tree', 'kpi-okr'];
+const OWN_ROWS = VISUALIZATION_MATRIX.filter(r => OWN_EDIT_SCREENS.includes(r.screen));
+const GENERIC_ROWS = VISUALIZATION_MATRIX.filter(r => r.screen !== 'whiteboard' && r.screen !== 'architecture' && !OWN_EDIT_SCREENS.includes(r.screen));
+
+/** 画面自身の編集経路の操作（discussion-tree: ノード、kpi-okr: Key Result）。 */
+const compText = async (page: Page, sel: string) => (await page.locator(sel).first().textContent()) ?? '';
+async function treeSelect(page: Page, title: string) {
+  // ノードの選択は 2D の treeitem で行う（選択はアプリ全体で共有され、3D でも同じノードが対象）
+  const root = page.locator('[data-testid="component-discussion-tree"]');
+  await root.locator('[role="treeitem"]').filter({ hasText: title }).first().click();
+}
+async function treeRename(page: Page, name: string) {
+  const root = page.locator('[data-testid="component-discussion-tree"]');
+  await root.getByRole('button', { name: '名前を変更' }).click();
+  const box = root.getByRole('textbox', { name: 'ノードの新しい名前' });
+  await box.fill(name);
+  await box.press('Enter');
+}
+async function treeAdd(page: Page, name: string) {
+  const root = page.locator('[data-testid="component-discussion-tree"]');
+  await root.getByRole('button', { name: 'ノードを追加' }).click();
+  const box = root.getByRole('textbox', { name: '追加するノードの名前' });
+  await box.fill(name);
+  await box.press('Enter');
+}
+async function okrEdit(page: Page, fn: (dlg: ReturnType<Page['getByRole']>) => Promise<void>) {
+  const root = page.locator('[data-testid="component-kpi-okr"]');
+  await root.getByRole('button', { name: /OKR を定義/ }).click();
+  const dlg = page.getByRole('dialog');
+  await expect(dlg).toBeVisible({ timeout: 10_000 });
+  await fn(dlg);
+  await dlg.getByRole('button', { name: '保存' }).click();
+  await expect(dlg).toBeHidden({ timeout: 10_000 });
+}
+const FIRST_KR = '計画外停止の時間を減らす';
 
 async function archJsonEdit(page: Page, mutate: (o: any) => void) {
   await page.getByRole('button', { name: 'JSON 編集' }).click();
@@ -507,6 +546,130 @@ for (const row of GENERIC_ROWS) {
   });
 }
 
+
+for (const row of OWN_ROWS) {
+  const isTree = row.screen === 'discussion-tree';
+  const sel = `[data-testid="component-${row.screen}"]`;
+  // FR-070 AC-086 FR-045 AC-056 FR-042: 画面自身の編集経路（ツリー: ノード／KPI/OKR: Key Result）での更新。
+  test(`FR-070 AC-086 FR-045 AC-056 ${rowKey(row)} ${isTree ? 'ノードの追加・名前変更・連続更新・削除・元に戻す' : 'Key Result の名称・値の更新・連続更新・追加'}が出入りの中間値を経て ${PARAM_133_MS}ms 以内に収束する`, async ({ page, start }, info) => {
+    test.setTimeout(240_000);
+    await start();
+    await setEditMode(page, true);
+    const control = page.getByTestId('animation-state');
+    if (!(await control.innerText()).includes('再生中')) await control.click();
+    await showRepresentation(page, row.screen, '2D' === row.mode || !isTree ? row.mode : '2D');
+    await page.waitForTimeout(500);
+    let subjectName = FIRST_KR;
+    if (isTree) {
+      subjectName = '設備の計画外停止が多い';
+      await treeSelect(page, subjectName);
+    }
+    await showRepresentation(page, row.screen, row.mode);
+    await page.waitForTimeout(500);
+    expect(await compText(page, sel), `${rowKey(row)}: 対象（${subjectName}）がこの形式に出ている`).toContain(subjectName);
+
+    const first = `ST-A ${subjectName}`;
+    const last = `ST-B ${subjectName}`;
+    // ---- 名称更新・連続更新
+    await startSampler(page, sel);
+    const t1 = await now(page);
+    if (isTree) { await treeRename(page, first); await treeRename(page, last); }
+    else { await okrEdit(page, async d => { await d.getByRole('textbox', { name: /Key Result 名/ }).first().fill(first); }); await okrEdit(page, async d => { await d.getByRole('textbox', { name: /Key Result 名/ }).first().fill(last); }); }
+    const renamed = await stopSampler(page);
+    const sigRename = sigFrames(renamed, t1);
+    expect(sigRename.length, `${rowKey(row)}: 名称更新が描画に反映されない`).toBeGreaterThan(0);
+    expect(sigRename[sigRename.length - 1][0] - t1, `名称更新から収束まで ${PARAM_133_MS}ms 以内`).toBeLessThanOrEqual(PARAM_133_MS);
+    const text = await compText(page, sel);
+    expect(text, '最後の名称へ収束していない').toContain(last);
+    expect(text, '連続更新の途中の名称が残っている').not.toContain(first);
+
+    // ---- 値更新（KPI/OKR の現在値）。議論ツリーは課題の評価値を表示しない（FR-042）ので、値更新の対象はない（網羅表に記録）。
+    if (!isTree) {
+      await startSampler(page, sel);
+      const t2 = await now(page);
+      await okrEdit(page, async d => { await d.getByRole('spinbutton', { name: /現在値/ }).first().fill('25'); });
+      const val = await stopSampler(page);
+      const sv = sigFrames(val, t2);
+      expect(sv.length, `${rowKey(row)}: 値の更新が描画に反映されない`).toBeGreaterThan(0);
+      expect(sv.length, `${rowKey(row)}: 値の更新が中間値を経ずに瞬間反映された`).toBeGreaterThan(1);
+      expect(sv[sv.length - 1][0] - t2, `値更新から収束まで ${PARAM_133_MS}ms 以内`).toBeLessThanOrEqual(PARAM_133_MS);
+      expect(await compText(page, sel), '現在値 25（基準 40・目標 20）の達成度 75% が表示される').toMatch(/75\s*%/);
+    } else {
+      info.annotations.push({ type: 'value-update', description: '議論ツリーは課題の評価値を表示しない（FR-042）。値更新の対象なし' });
+    }
+
+    // ---- 追加
+    const addName = 'ST追加項目';
+    await startSampler(page, sel);
+    const t0 = await now(page);
+    if (isTree) await treeAdd(page, addName);
+    else await okrEdit(page, async d => {
+      await d.getByRole('button', { name: 'Key Result を追加' }).click();
+      await d.getByRole('textbox', { name: /Key Result 名/ }).last().fill(addName);
+      await d.getByRole('textbox', { name: /KPI 名/ }).last().fill('ST指標');
+      await d.getByRole('textbox', { name: /単位/ }).last().fill('件');
+      await d.getByRole('spinbutton', { name: /基準値/ }).last().fill('0');
+      await d.getByRole('spinbutton', { name: /目標値/ }).last().fill('10');
+      await d.getByRole('spinbutton', { name: /現在値/ }).last().fill('5');
+    });
+    const added = await stopSampler(page);
+    const sigAdd = sigFrames(added, t0);
+    expect(sigAdd.length, `${rowKey(row)}: 追加が描画に反映されない`).toBeGreaterThan(0);
+    expect(sigAdd.length, `${rowKey(row)}: 追加が中間値を経ずに瞬間表示された（出入りの遷移なし）`).toBeGreaterThan(1);
+    expect(sigAdd[sigAdd.length - 1][0] - t0, `追加から最終状態まで ${PARAM_133_MS}ms 以内`).toBeLessThanOrEqual(PARAM_133_MS);
+    expect(await compText(page, sel), '追加した項目が描画に出る').toContain(addName);
+
+    // ---- 削除（ツリーのみ。KPI/OKR の定義ダイアログに Key Result の削除操作はない）→ 元に戻す
+    if (isTree) {
+      const root = page.locator(sel);
+      await startSampler(page, sel);
+      const t3 = await now(page);
+      await root.getByRole('button', { name: '削除', exact: true }).click();
+      const confirmation = page.getByRole('alertdialog');
+      if (await confirmation.isVisible()) await confirmation.getByRole('button', { name: /削除/ }).click();
+      const del = await stopSampler(page);
+      const sigDel = sigFrames(del, t3);
+      expect(sigDel.length, `${rowKey(row)}: 削除が中間値を経ずに瞬間消去された（出入りの遷移なし）`).toBeGreaterThan(1);
+      expect(sigDel[sigDel.length - 1][0] - t3, `削除から消去完了まで ${PARAM_133_MS}ms 以内`).toBeLessThanOrEqual(PARAM_133_MS);
+      expect(await compText(page, sel), '削除済みのノードが表示に残っている').not.toContain(addName);
+      await startSampler(page, sel);
+      const t4 = await now(page);
+      await root.getByRole('button', { name: '元に戻す' }).click();
+      const und = await stopSampler(page);
+      const su = sigFrames(und, t4);
+      expect(su.length, `${rowKey(row)}: 元に戻すが描画に反映されない`).toBeGreaterThan(0);
+      expect(su[su.length - 1][0] - t4, `元に戻すから収束まで ${PARAM_133_MS}ms 以内`).toBeLessThanOrEqual(PARAM_133_MS);
+      expect(await compText(page, sel), '元に戻すで同じノードが戻る').toContain(addName);
+    }
+  });
+
+  test(`FR-070 AC-086 ${rowKey(row)} 動き reduce では${isTree ? 'ノード' : 'Key Result '}の追加が中間値なしで即時に最終状態になる`, async ({ page, start }) => {
+    test.setTimeout(120_000);
+    await start();
+    await setEditMode(page, true);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    if (isTree) { await showRepresentation(page, row.screen, '2D'); await page.waitForTimeout(500); await treeSelect(page, '設備の計画外停止が多い'); }
+    await showRepresentation(page, row.screen, row.mode);
+    await page.waitForTimeout(500);
+    await startSampler(page, sel);
+    const t0 = await now(page);
+    if (isTree) await treeAdd(page, 'ST追加項目');
+    else await okrEdit(page, async d => {
+      await d.getByRole('button', { name: 'Key Result を追加' }).click();
+      await d.getByRole('textbox', { name: /Key Result 名/ }).last().fill('ST追加項目');
+      await d.getByRole('textbox', { name: /KPI 名/ }).last().fill('ST指標');
+      await d.getByRole('textbox', { name: /単位/ }).last().fill('件');
+      await d.getByRole('spinbutton', { name: /基準値/ }).last().fill('0');
+      await d.getByRole('spinbutton', { name: /目標値/ }).last().fill('10');
+      await d.getByRole('spinbutton', { name: /現在値/ }).last().fill('5');
+    });
+    const s = await stopSampler(page);
+    const sig = sigFrames(s, t0);
+    expect(await compText(page, sel), '追加した項目が描画に出る').toContain('ST追加項目');
+    expect(sig.length, '追加が描画に反映されない').toBeGreaterThan(0);
+    expect(sig[sig.length - 1][0] - t0, '停止/reduce は遷移を経ず最終状態を即時表示する（最終変化まで 300ms 以内）').toBeLessThanOrEqual(300);
+  });
+}
 
 // FR-070 AC-086 ホワイトボード（Canvas）: ペンで描いた線は確定後 2000ms 以内に最終状態、undo は中間値（出入り）を経て消え、
 // 消した線が画素に残らない。実在する Canvas の画素（24x24 縮小の署名）で毎フレーム測る。

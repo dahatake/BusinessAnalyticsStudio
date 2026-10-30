@@ -91,11 +91,11 @@ AC-198（integration）/AC-199（unit）は検証レベルを変更せず、
 | issue-solution/2D, ranking/2D, issue-solution/Graph | 値の更新が中間値を経ずに瞬間反映された（sigVal フレーム 1 以下） | 実装側（値更新の遷移が未適用） |
 | business-graph/2D, architecture/2D, map/2D, twin-view/2D, spatial-view/2D, priority/2D/Canvas | 削除が中間値を経ずに瞬間消去された（出入りの遷移なし） | 実装側（削除の退出遷移が未適用） |
 | spatial-view/3D, spatial-view/Graph | 既存項目が作り直された（同一性）。追加時に元項目の描画が一度消える | 実装側 |
-| discussion-tree/2D | 名称更新が描画に反映されない（byText=true なのに署名が変わらない） | 実装側 |
+| discussion-tree/2D | （専用ケースに変更。下の「議論ツリー・KPI/OKR の測り直し」）ノードの追加が中間値を経ずに瞬間表示された（sigAdd フレーム 1） | 実装側（2D のノード追加の出入り補間が未適用） |
 | map/3D | 停止/reduce は中間値を経ず最終状態を即時表示する（追加が遷移する） | 実装側（reduce 未適用） |
-| matrix/3D, discussion-tree/3D（未再実測。同型） | 名称更新が描画に反映されない（byId=true・byText=false） | 実装側の可能性（要再実測）。実装者は名称を DOM 文字か scene.objects の label として出すこと |
-| ranking/3D, kpi-okr/3D | 名称更新が描画に反映されない（sigRename=0）。実測: 画面の 3D 描画域が可視の ent を出している（scene.objects の visible=true、byId=true・byText=false）が、名称を変えても図形・画素の署名が変わらない | 実装側（3D 部品が名称を描画に反映しない）。テスト側の判定誤りは解消済み |
-| kpi-okr/2D, kpi-okr/Graph, data-catalog/2D, data-catalog/3D, data-catalog/Graph, summary/2D/Canvas | 以前の fail は、idsIn が全体の scene.objects を拾って byId=true と誤判定したテスト側の誤り。修正後は「測れない形式」の分岐に入り、空・静止時に不要な連続描画がない（署名変化 1 以下）ことを確認して pass（kpi-okr 6 件中 5 pass、data-catalog 6/6、summary 2/2） | テスト側で解決（修正: idsIn は部品が可視の canvas を持つときだけ、visible な scene オブジェクトを拾う） |
+| matrix/3D | 名称更新が描画に反映されない（byId=true・byText=false） | 実装側の可能性（要再実測）。実装者は名称を DOM 文字か scene.objects の label として出すこと |
+| ranking/3D | 名称更新が描画に反映されない（sigRename=0）。画面の 3D 描画域が可視の ent を出している（byId=true・byText=false） | 実装側（3D 部品が名称を描画に反映しない） |
+| kpi-okr/2D, kpi-okr/3D, kpi-okr/Graph | （専用ケースに変更。下の「議論ツリー・KPI/OKR の測り直し」）値の更新が中間値を経ずに瞬間反映された（sigVal フレーム 1） | 実装側（KPI/OKR の値更新の遷移が未適用） |
 | issue-solution/3D | 詳細に名前の編集がない（この形式に出る ent 12 件を選んでも詳細が出ない） | 要判断（選択しても詳細が出ない項目のみを出している。実装側の可能性） |
 
 起動競合: matrix/2D「追加から最終状態まで 2000ms」と whiteboard/Canvas「undo が瞬間消去」は全件並列の 1 回目だけ fail し、単独・再実行で pass（負荷による揺れ）。page.goto ERR_ABORTED は今回の実行で再現せず。
@@ -105,3 +105,12 @@ AC-198（integration）/AC-199（unit）は検証レベルを変更せず、
 - 直し方: 汎用ケースから architecture を除き、画面自身の編集経路「JSON 編集」（FR-040。tobe の elements の追加・名称変更・削除）で、architecture が実際に出す要素を測る専用ケースにした（各形式 2 ケース: 追加・名称/連続更新・削除・undo、reduce の即時表示）。2D は data-entity-id の毎フレーム署名、3D は積層図が data-entity-id・scene.objects（ヒーロー・シーンは ent-* の別シーン）に出さないため、部品全体の文字＋canvas 画素の署名と名称の文字で測る。
 - 再実行（architecture/ 4 ケース）: 3D の追加・更新・削除・undo と 2D の reduce は pass。残る fail は実装側: architecture/2D「追加が中間値を経ずに瞬間表示された」（2D の出入り補間が未適用）、architecture/3D reduce「最終変化まで 370ms（即時でない）」（reduce 未適用の可能性。3D は要素単位で測れず署名で代用）。
 - 全体: forms spec は 17 fail / 31 pass（前回 24 fail）。残る 17 の分類は上表のとおりで、すべて実装側（値更新・削除の遷移未適用、3D の名称未反映、spatial の作り直し、discussion-tree 名称、architecture 2D 追加、3D reduce）。issue-solution/3D（詳細が出ない項目のみを出す）は要判断のまま。テスト側の誤りで残るものはなし。
+
+### 議論ツリー・KPI/OKR の測り直し（run 202610301406 追補 2）
+- 誤り 1（kpi-okr/3D）: 画面が出すのは Key Result（okr-*）。3D 形式の canvas はアプリ全体のヒーロー・シーン（scene.objects は ent-mono-* の 17 件だけ。KPI/OKR 画面の部品内に data-entity-id は 0 件）で、idsIn がそれを拾い、複製できない okr の代わりに ent-mono-line-a を対象にしていた。KPI/OKR 画面は ent を出さないので、対象の選び方が誤り。Graph では okr-* が出るが詳細パネルは出ず、複製・名前編集もできない。
+- 直し方 1: 汎用ケースから除き、画面自身の編集経路「OKR を定義」ダイアログ（Key Result 名・現在値の変更、Key Result の追加）で、画面が出す Key Result を測る専用ケースにした（2D・3D・Graph 各 2 ケース: 名称/連続更新・値更新・追加、reduce の即時表示）。対象は部品の文字（名称・達成度 75%）と部品全体の署名。定義ダイアログに Key Result の削除操作はなく、削除・undo は測れない（UI に経路がない）。
+- 誤り 2（discussion-tree）: ツリーのノード名は議論ツリー自身のモデル（議論テーマ）の名前で、課題エンティティの名称を変えても変わらない（実測: 課題 issue-mono-001 を ZZNAME に変えてもツリーに出ない）。汎用ケースの「課題を複製して名称を変える」はツリーが出すデータを変えていなかった。ツリーの画面には詳細パネルもない。
+- 直し方 2: 画面自身の編集経路（FR-042: ノードを追加／名前を変更／削除／元に戻す）で測る専用ケースにした（2D・3D 各 2 ケース）。
+- 値の更新（課題の評価値 77）の扱い: 議論ツリー（FR-042）は課題の評価値を表示する要求を持たず、画面には詳細パネルもなく、ツリーを開いたまま評価値を編集できない。AC-086 の「数値…の更新」は表示している値に対する要求なので、ツリーには値更新の測定対象がない（注記 value-update を残す）。実装者 B の優先順位バッジ（IssueEvaluationBadge）が出る場合も、ツリーを再び開いた時の表示であり遷移の測定対象ではない。ACは弱めていない（名称・追加・削除・undo は測る）。
+- 再実行（kpi-okr/・discussion-tree/ の 10 ケース）: 6 pass / 4 fail。pass: discussion-tree/3D（更新・追加・削除・undo と reduce）、discussion-tree/2D・kpi-okr 3 形式の reduce。fail（すべて実装側）: discussion-tree/2D「追加が中間値を経ずに瞬間表示」、kpi-okr/2D・3D・Graph「値の更新が中間値を経ずに瞬間反映」。テスト側の誤りで残るものはなし。
+- data-catalog/2D・3D・Graph、summary/2D/Canvas は、idsIn が全体の scene.objects を拾って byId=true と誤判定したテスト側の誤りを直した結果、「測れない形式」の分岐（空・静止時に不要な連続描画がない）で pass（data-catalog 6/6、summary 2/2）。
