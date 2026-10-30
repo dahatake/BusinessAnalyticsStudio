@@ -10,6 +10,7 @@ import {
 import { ChevronDown16Regular, ChevronRight16Regular, CommentMultiple24Regular, Lightbulb24Regular } from '@fluentui/react-icons';
 import { DetailPanel } from '../analysis/DetailPanel';
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
+import { IssueEvaluationBadge } from '../components/IssueEvaluationBadge';
 import { ExecutiveSummary } from '../components/ExecutiveSummary';
 import { RelatedMini } from '../components/RelatedMini';
 import { packKeyOf } from '../discussion/model';
@@ -80,6 +81,7 @@ function IssueSummary({ issue }: { issue: Issue }) {
       <div className={s.badges}>
         <Badge appearance="tint" color={issue.audience === 'external' ? 'brand' : 'informative'}>{AUDIENCE_LABELS[issue.audience]}</Badge>
         {(issue.personas ?? []).map((p) => <Badge key={p} appearance="outline">{p}</Badge>)}
+        <IssueEvaluationBadge issue={issue} />
       </div>
     </div>
   );
