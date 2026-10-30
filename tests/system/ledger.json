@@ -44,7 +44,7 @@
     "AC-053": "sha256:7e267fcf72d0f74f",
     "AC-054": "sha256:7d327d5099c270a2",
     "AC-055": "sha256:06b2fddb6a26dbda",
-    "AC-056": "sha256:8023c116d6f9992b",
+    "AC-056": "sha256:d4de6569b40752b4",
     "AC-057": "sha256:b8cb85942cb568e2",
     "AC-058": "sha256:14b43fa47aca155a",
     "AC-059": "sha256:c3283299a5bfefb9",
@@ -123,7 +123,7 @@
     "AC-192": "sha256:1c0f34a2478c5cea",
     "AC-193": "sha256:4810254bd9a33324",
     "AC-195": "sha256:09294c7e744f31dc",
-    "AC-197": "sha256:80784a06ad648e82",
+    "AC-197": "sha256:f69b68bc86da7de7",
     "AC-200": "sha256:28826404c97119db",
     "AC-202": "sha256:c7c29afee95be7eb",
     "AC-203": "sha256:aa557249c3c7131a",
@@ -338,7 +338,8 @@
     "AC-788": "sha256:8aa8721c94878ace",
     "AC-789": "sha256:f72da02fb23e4074",
     "AC-793": "sha256:600d5f10e2a101ff",
-    "AC-796": "sha256:de40dbe6ed01a69c"
+    "AC-796": "sha256:de40dbe6ed01a69c",
+    "AC-086": "sha256:8b67fccb0f0188f0"
   },
   "cases": [
     {
@@ -380,11 +381,11 @@
       "ac_ids": [
         "AC-197"
       ],
-      "title": "パラメーター変更の 2 秒以内の反映（正常・範囲外）",
+      "title": "AC-197 5手法の全ビュアー/代替表2000ms実測・連続変更収束・保持・不正入力と復帰",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-197",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "cd6a4dc",
       "last_run_at": "2026-10-30T08:04:40+09:00",
       "evidence": "work/runs/202610300723/logs/system-test/E2E-099-202610300741.log",
@@ -394,6 +395,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-30T09:19:14+09:00",
+          "by": "test-designer",
+          "change": "title: 'パラメーター変更の 2 秒以内の反映（正常・範囲外）' -> 'AC-197 5手法の全ビュアー/代替表2000ms実測・連続変更収束・保持・不正入力と復帰'",
+          "reason": "run202610300856: 5手法・表と可視化の最新入力/結果一致・共有期限実測・ID選択絞込を拡張"
         }
       ]
     },
@@ -1659,11 +1666,11 @@
       "ac_ids": [
         "AC-056"
       ],
-      "title": "AC-056 標準の検証条件で、表で課題名を変更すると、ナレッジグラフ・課題-解決策分析・ガント・エグゼクティブサマリーの根拠表示の課",
+      "title": "AC-056 改名の全ビュー2000ms実測・連続変更・追加削除undo・ID選択出典",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-056",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "cd6a4dc",
       "last_run_at": "2026-10-30T08:04:40+09:00",
       "evidence": "work/runs/202610300723/logs/system-test/E2E-148-202610300742.log",
@@ -1673,6 +1680,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-10-30T09:19:14+09:00",
+          "by": "test-designer",
+          "change": "title: 'AC-056 標準の検証条件で、表で課題名を変更すると、ナレッジグラフ・課題-解決策分析・ガント・エグゼクティブサマリーの根拠表示の課' -> 'AC-056 改名の全ビュー2000ms実測・連続変更・追加削除undo・ID選択出典'",
+          "reason": "run202610300856: 既存ケースを改名の全ビュー実測・連続更新・追加削除undoと保持の検証へ拡張"
         }
       ]
     },
@@ -4998,11 +5011,11 @@
       "ac_ids": [
         "AC-396"
       ],
-      "title": "メイン画面で企業・Project を作って開くと分析画面の最上段と一致・再読込後も保持（異常系: 2 件目を選ぶ）",
+      "title": "AC-396 分離された企業名/Project名の一致と再読込・再オープン後永続化",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-396",
-      "canary": false,
-      "status": "fail",
+      "canary": true,
+      "status": "not_run",
       "last_commit": "cd6a4dc",
       "last_run_at": "2026-10-30T08:04:40+09:00",
       "evidence": "work/runs/202610300723/logs/system-test/E2E-291-202610300746.log",
@@ -5012,6 +5025,18 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-30T09:19:15+09:00",
+          "by": "test-designer",
+          "change": "title: 'メイン画面で企業・Project を作って開くと分析画面の最上段と一致・再読込後も保持（異常系: 2 件目を選ぶ）' -> 'AC-396 分離された企業名/Project名の一致と再読込・再オープン後永続化'",
+          "reason": "FR-148 AC-251の別ボタンへ照合先を修正し、AC-396の両名称一致・永続化を維持"
+        },
+        {
+          "at": "2026-10-30T09:20:28+09:00",
+          "by": "test-designer",
+          "change": "canary: False -> True",
+          "reason": "名前の分離と永続化の主要導線を今回のcanaryとして先行確認"
         }
       ]
     },
@@ -11431,6 +11456,31 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-451",
+      "requirement_ids": [
+        "FR-070"
+      ],
+      "ac_ids": [
+        "AC-086"
+      ],
+      "title": "全画面描画形式の初回実描画・停止/reduce後静止（全ライフサイクル残課題は網羅表参照）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-086",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-30T09:19:01+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "検証レベルsystemへの変更に伴う実行ケース。未完成の網羅範囲はtests/system/visualization-coverage.mdで明示"
         }
       ]
     }
