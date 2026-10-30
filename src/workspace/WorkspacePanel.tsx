@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button, Checkbox, Input, Tab, TabList, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Add20Regular, WindowArrowUp20Regular } from '@fluentui/react-icons';
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
-import { recentWorkspaces, useActiveWorkspace, useTaskWorkspaces } from '../store/taskWorkspaces';
+import { recentWorkspaces, useActiveWorkspace, useTaskWorkspaces, workspaceLabel } from '../store/taskWorkspaces';
 import { useImmersion } from '../store/immersion';
 import { useOs } from '../store/osConvention';
 import { chordLabel } from './os';
@@ -101,7 +101,7 @@ export function WorkspacePanel() {
           selectedValue={active.id}
           onTabSelect={(_, d) => switchWorkspace(String(d.value))}
         >
-          {items.map((w) => <Tab key={w.id} value={w.id}>{w.name}</Tab>)}
+          {items.map((w) => <Tab key={w.id} value={w.id}>{workspaceLabel(w.name)}</Tab>)}
         </TabList>
         <div className={s.row}>
           <Button size="small" appearance="subtle" icon={<Add20Regular aria-hidden />} onClick={() => addWorkspace()}>{t('タスクワークスペースを追加')}</Button>
@@ -112,7 +112,7 @@ export function WorkspacePanel() {
           <ul className={s.recent}>
             {recent.map((w) => (
               <li key={w.id}>
-                <Button size="small" appearance="subtle" className={s.tight} aria-current={w.id === active.id ? 'true' : undefined} onClick={() => switchWorkspace(w.id)}>{w.name}</Button>
+                <Button size="small" appearance="subtle" className={s.tight} aria-current={w.id === active.id ? 'true' : undefined} onClick={() => switchWorkspace(w.id)}>{workspaceLabel(w.name)}</Button>
               </li>
             ))}
           </ul>

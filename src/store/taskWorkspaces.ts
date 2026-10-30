@@ -5,6 +5,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DEFAULT_MODE, DEFAULT_RATIOS, ZONE_NAMES, isMode, isZoneName, sanitizeRatio, type Ratios, type WorkspaceMode, type ZoneName } from '../workspace/zones';
+import { tr } from '../i18n';
 import { rememberEntered, workspaceFromUrl } from './workspaceEntry';
 
 /** タスク文脈（開いているコンポーネント・選択・絞り込み・入力中の内容・ズームなど。workspace/taskContext.ts が取り込み・復元する） */
@@ -62,6 +63,12 @@ function tick(): number {
 export function newId(): string {
   seq += 1;
   return `ws-${Date.now().toString(36)}${seq.toString(36)}${Math.random().toString(36).slice(2, 6)}`;
+}
+
+/** 表示する名前。既定の名前（「ワークスペース N」）は、表示言語に合わせる（利用者が付けた名前はそのまま。FR-294） */
+export function workspaceLabel(name: string): string {
+  const m = /^ワークスペース (\d+)$/.exec(name);
+  return m ? tr('ワークスペース {n}', { n: m[1]! }) : name;
 }
 
 export function blankWorkspace(index: number, id: string = newId()): TaskWorkspace {

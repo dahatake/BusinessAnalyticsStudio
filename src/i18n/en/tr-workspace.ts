@@ -2,6 +2,7 @@
 export default {
   // 適応型ワークスペース（FR-298）
   '適応型ワークスペース': 'Adaptive workspace',
+  'ワークスペース {n}': 'Workspace {n}',
   'タスクワークスペース': 'Task workspaces',
   'タスクワークスペースを追加': 'Add task workspace',
   '別のウィンドウへ移動': 'Move to another window',
