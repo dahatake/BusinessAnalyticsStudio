@@ -94,6 +94,12 @@
   to { opacity: 0; }
 }
 
+/* ── 枠の面の素材（FR-300）: コンポーネントを動かしている間（ドラッグ・境界の変更中）は、ゾーンの境界の背景のぼかしを止める。
+   ぼかしは動く要素の下で毎フレーム再合成され、操作中のフレームレート（FR-185）を下げるため。半透明の色は保つ ── */
+[data-testid="workspace"]:has([data-drag-active="true"]) [data-testid^="zone-boundary-"] {
+  backdrop-filter: none;
+}
+
 /* ── OS の「視差効果を減らす」（NFR-UX-017・FR-072）: すべての画面で、動きを付けずに最終の状態を示す ── */
 @media (prefers-reduced-motion: reduce) {
   *,

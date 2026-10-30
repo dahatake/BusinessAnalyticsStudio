@@ -5,6 +5,12 @@ import { useRetainedStore } from '../store/retained';
 import { useSelectionStore } from '../store/selection';
 import { STORAGE_KEY, activeWorkspace, useTaskWorkspaces, type TaskContext } from '../store/taskWorkspaces';
 import { WORKSPACE_PARAM } from '../store/workspaceEntry';
+import { FLIP_PREPARE_EVENT } from './spatialMotion';
+
+/** 切替の前に、いまの位置・大きさを作業領域に記録させる（切替の後に、そこから連続して動かす。FR-300） */
+function prepareFlip(): void {
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(FLIP_PREPARE_EVENT));
+}
 
 /** ペルソナごとに持つ配置の項目（store/layout.ts）。タスク文脈として、利用中のペルソナの分を持つ */
 const PER_PERSONA = ['layouts', 'floats', 'pinned', 'minimized', 'views', 'screenView', 'manual', 'moved', 'userLaid', 'tiers', 'autoOff'] as const;
@@ -68,6 +74,7 @@ export function switchWorkspace(id: string): void {
   const st = useTaskWorkspaces.getState();
   if (id === st.active || !st.items.some((w) => w.id === id)) return;
   flushContext();
+  prepareFlip();
   st.activate(id);
   applyContext(activeWorkspace(useTaskWorkspaces.getState()).context);
 }
@@ -75,6 +82,7 @@ export function switchWorkspace(id: string): void {
 /** まっさらなタスクワークスペースを足して、そこへ切り替える */
 export function addWorkspace(): string {
   flushContext();
+  prepareFlip();
   const st = useTaskWorkspaces.getState();
   const id = st.add();
   st.activate(id);

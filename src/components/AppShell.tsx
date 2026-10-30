@@ -11,6 +11,7 @@ import { useT } from '../i18n';
 import { WorkspacePanel } from '../workspace/WorkspacePanel';
 import { ZoneLayer } from '../workspace/ZoneLayer';
 import { useActiveWorkspace } from '../store/taskWorkspaces';
+import { frameSurfaceStyle, useFrameMaterial } from '../theme/frameMaterial';
 
 const useStyles = makeStyles({
   root: {
@@ -28,8 +29,11 @@ const useStyles = makeStyles({
     columnGap: tokens.spacingHorizontalM,
     rowGap: 0, // FR-176・FR-180 で段が増えても、ワークスペースの縦の領域を削らないよう、段の間隔は詰める（各段の部品に余白がある）
     padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalXL}`,
-    backgroundColor: tokens.colorNeutralBackground3,
+    ...frameSurfaceStyle, // 枠の面: 半透明の素材（FR-300）
     borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
+    position: 'relative',
+    zIndex: 2, // 最前面の枠として、エレベーションの影で前後関係を示す（NFR-UX-015）
+    boxShadow: tokens.shadow4,
   },
   topRow: { flexBasis: 'auto', flexShrink: 1, display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalS, minWidth: 0 },
   actions: { marginLeft: 'auto', display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalS },
@@ -97,6 +101,7 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
   const navMin = useLayout((st) => st.navMin);
   const wsActive = useActiveWorkspace();
   const rootRef = useRef<HTMLDivElement>(null);
+  useFrameMaterial(rootRef); // 枠の面（ヘッダー・Workspace Switcher・ゾーンの境界）の半透明の色（FR-300）
   // モーダルのダイアログが開いている間は、背景（アプリ本体）を操作・支援技術の対象から外す（WAI-ARIA のモーダルの作法）。
   // 背景の「KPI/OKR」などのボタンが、ダイアログのボタン（OK など）と取り違えられない
   useEffect(() => {
