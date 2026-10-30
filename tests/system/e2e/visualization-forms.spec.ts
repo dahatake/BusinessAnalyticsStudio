@@ -127,18 +127,42 @@ const idsIn = (page: Page, sel: string) => page.evaluate((s) => {
   return [...ids];
 }, sel);
 
-/** from 画面で id を選択する（選択はアプリ全体で共有される）。 */
-async function selectById(page: Page, kind: Kind, id: string) {
+/** from 画面で id を選択し、詳細パネルがその項目になっていることを確かめる。
+ * 選択はアプリ全体で共有され、複製後は元項目も selected のまま詳細が複製側になる（edit/model.ts の select:[元,複製]）。
+ * 項目を押すと選択が切り替わる（選択済みは解除）ため、詳細の h3 が期待と違えば押し直す（解除→再選択）。 */
+async function selectById(page: Page, kind: Kind, id: string, want?: { title?: string; notTitle?: string }) {
   const [screen, mode] = KINDS[kind].from;
   const c = await showRepresentation(page, screen, mode);
   const target = c.locator(`[data-entity-id="${id}"]`).first();
-  // すでに選択中の項目を押すと選択が外れるので、未選択のときだけ押す
-  if (!((await target.getAttribute('data-highlight')) ?? '').includes('selected')) await target.click();
+  const h3 = component(page, 'detail').locator('h3').first();
+  const ok = async () => {
+    const t = (await h3.count()) ? (await h3.innerText()).trim() : '';
+    if (want?.title !== undefined) return t === want.title;
+    if (want?.notTitle !== undefined) return t !== '' && t !== want.notTitle;
+    return t !== '';
+  };
+  const selected = async () => ((await target.getAttribute('data-highlight')) ?? '').includes('selected');
+  if (!(await selected())) await target.click();
+  for (let i = 0; i < 3 && !(await ok()); i++) {
+    // 解除してから対象だけを選び直す（複製後は元項目と複製が両方 selected）
+    await page.keyboard.press('Escape');
+    await page.waitForTimeout(150);
+    if (await selected()) await target.click();
+    await page.waitForTimeout(150);
+    if (!(await selected())) await target.click();
+    await page.waitForTimeout(150);
+  }
 }
+const detailTitle = async (page: Page) => {
+  const h3 = component(page, 'detail').locator('h3').first();
+  return (await h3.count()) ? (await h3.innerText()).trim() : '';
+};
 
 async function commitName(page: Page, name: string) {
   const detail = component(page, 'detail');
-  await detail.getByRole('button', { name: '名前を編集' }).click();
+  const editBtn = detail.getByRole('button', { name: '名前を編集' });
+  await expect(editBtn, `詳細に名前の編集がない: ${(await detail.innerText()).slice(0, 200).replace(/\s+/g, ' ')}`).toBeVisible({ timeout: 10_000 });
+  await editBtn.click();
   const box = detail.getByRole('textbox', { name: '名前' });
   await box.fill(name);
   await box.press('Enter');
@@ -164,7 +188,16 @@ async function chooseSubject(page: Page, row: { screen: string; mode: string | n
   const kind: Kind = 'ent';
   const [fromScreen, fromMode] = KINDS[kind].from;
   await showRepresentation(page, fromScreen, fromMode);
-  const subject = (await idsIn(page, `[data-testid="component-${fromScreen}"]`)).find(i => i.startsWith(KINDS[kind].prefix))!;
+  const cands = (await idsIn(page, `[data-testid="component-${fromScreen}"]`)).filter(i => i.startsWith(KINDS[kind].prefix));
+  const inViewIds = inView;
+  // この描画形式に出ている候補を優先し、選ぶと詳細が出る（名前を編集できる）項目だけを対象にする
+  cands.sort((a, b) => Number(inViewIds.includes(b)) - Number(inViewIds.includes(a)));
+  let subject = cands[0];
+  for (const cid of cands.slice(0, 12)) {
+    await selectById(page, kind, cid);
+    if (await component(page, 'detail').getByRole('button', { name: '名前を編集' }).count()) { subject = cid; break; }
+    await page.keyboard.press('Escape');
+  }
   await selectById(page, kind, subject);
   return { kind, subject, shown: false };
 }
@@ -240,7 +273,7 @@ for (const row of VISUALIZATION_MATRIX.filter(r => r.screen !== 'whiteboard')) {
     }
 
     // ---- 名称更新・連続更新（最後へ収束・最新値は遷移完了前も詳細で参照可）
-    await selectById(page, kind, subject);
+    await selectById(page, kind, subject, { title });
     await showRepresentation(page, row.screen, row.mode);
     await page.waitForTimeout(400);
     const first = `ST-A ${subject}`;
@@ -287,7 +320,7 @@ for (const row of VISUALIZATION_MATRIX.filter(r => r.screen !== 'whiteboard')) {
 
     // ---- 削除 → 中間値を経て消え、削除済みを残さない
     if (newId) {
-      await selectById(page, kind, newId);
+      await selectById(page, kind, newId, { notTitle: last });
       await showRepresentation(page, row.screen, row.mode);
       await page.waitForTimeout(400);
       await startSampler(page, sel);
@@ -422,11 +455,12 @@ for (const method of METHODS_ALL) {
     const sel = '[data-testid="analysis-result"]';
     const n = await viewers.count();
     expect(n, '分析のビュアー').toBeGreaterThan(1);
-    let value = 3;
+    // 評価値の範囲は 0〜10（AC-198。範囲外は拒否される）。範囲内の 2 値（2 と 8）を現在値と異なる側へ交互に更新する。
+    let value = Number(await input.inputValue());
     for (let i = 0; i < n; i++) {
       await viewers.nth(i).check();
       await page.waitForTimeout(400);
-      value += 4;
+      value = value === 8 ? 2 : 8;
       await startSampler(page, sel);
       const t0 = await now(page);
       await input.fill(String(value));
