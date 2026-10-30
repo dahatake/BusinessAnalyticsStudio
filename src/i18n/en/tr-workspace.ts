@@ -1,5 +1,26 @@
 // src/workspace の固定文言の英語辞書（FR-294）。
 export default {
+  // 適応型ワークスペース（FR-298）
+  '適応型ワークスペース': 'Adaptive workspace',
+  'タスクワークスペース': 'Task workspaces',
+  'タスクワークスペースを追加': 'Add task workspace',
+  '別のウィンドウへ移動': 'Move to another window',
+  '最近使った作業': 'Recent work',
+  'ゾーン': 'Zones',
+  'ゾーンの割合': 'Zone ratios',
+  '{zone} の割合': 'Ratio of {zone}',
+  '結合に含める': 'Include in merge',
+  'ゾーンを結合': 'Merge zones',
+  '結合を解除': 'Unmerge zones',
+  '・結合': ' (merged)',
+  '主': 'Primary',
+  '対話': 'Conversation',
+  '監視': 'Monitor',
+  'ロールへ割り当て': 'Assign to role',
+  'ロールの割り当てを外す': 'Remove role assignment',
+  'ロールへ割り当て: {zone}': 'Assign to role: {zone}',
+  '{label}を {zone} のロールへ割り当てました': 'Assigned {label} to the {zone} role',
+  '{label}のロールの割り当てを外しました': 'Removed the role assignment of {label}',
   // 自動配置
   '自動配置を実行': 'Run auto layout',
   '自動配置を停止': 'Stop auto layout',

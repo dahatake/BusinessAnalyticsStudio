@@ -8,6 +8,9 @@ import { useFoldClass } from '../motion/useFoldMotion';
 import type { ScreenDefinition } from '../screens/types';
 import { rovingTarget } from './roving';
 import { useT } from '../i18n';
+import { WorkspacePanel } from '../workspace/WorkspacePanel';
+import { ZoneLayer } from '../workspace/ZoneLayer';
+import { useActiveWorkspace } from '../store/taskWorkspaces';
 
 const useStyles = makeStyles({
   root: {
@@ -58,6 +61,7 @@ const useStyles = makeStyles({
   navToggle: { alignSelf: 'flex-start', overflow: 'visible', lineHeight: tokens.lineHeightBase300, minHeight: '32px', height: 'auto', paddingBlock: tokens.spacingVerticalXS },
   main: {
     position: 'relative',
+    isolation: 'isolate', // ゾーンの面（ZoneLayer。z-index: -1）を、この領域の背景の上・中身の下に置く（FR-298）
     display: 'flex',
     flexDirection: 'column',
     overflowX: 'hidden',
@@ -91,6 +95,7 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
   const s = useStyles();
   const t = useT();
   const navMin = useLayout((st) => st.navMin);
+  const wsActive = useActiveWorkspace();
   const rootRef = useRef<HTMLDivElement>(null);
   // モーダルのダイアログが開いている間は、背景（アプリ本体）を操作・支援技術の対象から外す（WAI-ARIA のモーダルの作法）。
   // 背景の「KPI/OKR」などのボタンが、ダイアログのボタン（OK など）と取り違えられない
@@ -193,8 +198,12 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
           );
         })}
         {dock}
+        <WorkspacePanel />
       </nav>
-      <main className={s.main} data-testid="workspace">{children}</main>
+      <main className={s.main} data-testid="workspace" data-workspace-id={wsActive.id} data-mode={wsActive.mode} data-focus={wsActive.mode === 'focus' ? 'true' : 'false'}>
+        <ZoneLayer />
+        {children}
+      </main>
     </div>
   );
 }
