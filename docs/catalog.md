@@ -52,7 +52,7 @@
 | FR-042 | 議論ツリー（系統ツリー）ビュー | 承認済み | src/screens/DiscussionTreeScreen.tsx, src/analysis/tree.ts, src/store/tree.ts, src/analysis/exportFile.ts, src/analysis/commands.ts, src/screens/ThemesScreen.tsx, src/screens/IssueSolutionScreen.tsx | tests/unit/analysis.test.ts (AC-052・AC-053), tests/system/e2e/views.spec.ts (E2E-041・E2E-042) | デザイン基盤, 画面の登録, 議論テーマのストア, 選択状態とエンティティ関係グラフ, AI 呼び出し口, 分析ビューの共通部品, 編集の共通ストア, 課題-解決策分析 |
 | FR-043 | ミニ・モックアプリ | 承認済み（承認依頼 2026-10-26・削除完了） | src/screens/registry.ts, src/stepper/model.ts, src/workspace/layoutModel.ts, src/workspace/tiers.ts (画面・導線を削除), src/schema/files.ts, src/schema/common.ts, schema/customer.json, examples/mono/public/data/mocks.json, examples/koto/public/data/mocks.json (旧データを保持), src/store/pack.ts, src/store/projectPacks.ts | tests/unit/prototype-retirement.test.ts, tests/unit/usecase.test.tsx, tests/unit/view-switch.test.tsx, tests/unit/edit.test.ts, tests/system/e2e/views.spec.ts (AC-054、E2E-146), tests/unit/project-pack-retention.test.ts, tests/unit/auto-layout.test.ts | デザイン基盤, 画面の登録, 選択状態とエンティティ関係グラフ, 顧客パックのスキーマと検証, Project パックの端末内保持 |
 | FR-044 | その場でのデータ編集 | 承認済み | src/edit/model.ts (updateField・addRecord・duplicateRecord・deleteRecord), src/edit/EditControls.tsx (EditToolbar), src/edit/InlineInput.tsx, src/screens/TableScreen.tsx (名称セルのその場の編集), src/analysis/DetailPanel.tsx (名前・評価属性の編集), src/analysis/SelectionDetail.tsx | tests/unit/edit.test.ts (AC-055), tests/system/e2e/editing.spec.ts (E2E-044) | 編集の共通ストア, 編集の操作部品, 詳細パネルの置き場, 選択状態とエンティティ関係グラフ, デザイン基盤 |
-| FR-045 | 編集の全ビューへの即時反映 | 承認済み | src/store/pack.ts (setData), src/store/edit.ts, src/selection/hooks.ts (useEntityGraph。data の参照が変わるとグラフを作り直す) | tests/unit/edit.test.ts (AC-056), tests/system/e2e/editing.spec.ts (E2E-045。優先順位分析・ナレッジグラフの完成待ちで blocked) | 編集の共通ストア, 顧客パックの読み込み, 選択状態とエンティティ関係グラフ |
+| FR-045 | 編集の全ビューへの即時反映 | 承認済み | src/store/pack.ts (setData), src/store/edit.ts, src/selection/hooks.ts (useEntityGraph。data の参照が変わるとグラフを作り直す) | tests/unit/edit.test.ts (AC-056), tests/system/e2e/editing.spec.ts (E2E-148, pass。新しい拡張条件への同期は test-designer) | 編集の共通ストア, 顧客パックの読み込み, 選択状態とエンティティ関係グラフ |
 | FR-046 | 入力検証・元に戻す・変更履歴・インポート/エクスポート | 承認済み | src/edit/model.ts (updateField・importCsv・importJson・exportCsv・exportJson), src/store/edit.ts (UNDO_LIMIT・履歴), src/edit/EditControls.tsx (HistoryButton・ResetSampleButton・DataTransferButtons), src/edit/useEditKeys.ts, src/app/App.tsx | tests/unit/edit.test.ts (AC-057, AC-058), tests/system/e2e/editing.spec.ts (E2E-046, E2E-047) | 編集の共通ストア, 編集の操作部品, 部分的な無効化 |
 | FR-047 | 編集モードの ON/OFF | 承認済み | src/store/edit.ts (editMode。OFF では変更を拒否), src/edit/EditControls.tsx (EditModeSwitch), src/screens/TableScreen.tsx, src/analysis/DetailPanel.tsx | tests/unit/edit.test.ts (AC-059), tests/system/e2e/editing.spec.ts (E2E-048) | 編集の共通ストア, 編集の操作部品 |
 | FR-048 | 議論テーマの選択と管理 | 承認済み | src/screens/ThemesScreen.tsx, src/store/discussion.ts, src/discussion/model.ts, src/discussion/usePackTarget.ts, src/screens/registry.ts | tests/unit/discussion.test.ts, tests/system/e2e/editing.spec.ts (E2E-049) | デザイン基盤, 画面の登録, 議論テーマのストア |
@@ -77,7 +77,7 @@
 | FR-067 | シネマティック表現 | 承認済み | src/three/Cinematic.tsx (PostFx・Hdri・HoloGrid・Hologram), src/three/cameraRig.ts (cameraPathPoses, flyPath), src/three/quality.ts (bloom・dof), src/store/view3d.ts (effects) | tests/unit/views3d.test.ts | 3D 基盤, デジタルツイン |
 | FR-068 | 3D アセットの権利 | 承認済み | CREDITS.md, src/three/presets.ts | tests/unit/assets-rights.test.ts | 3D 基盤 |
 | FR-069 | 品質プリセットと自動の品質低下 | 承認済み | src/three/quality.ts, src/store/view3d.ts, src/screens/SettingsScreen.tsx | tests/unit/quality.test.ts, tests/system/e2e/views3d.spec.ts | 3D 基盤, 設定ストア |
-| FR-070 | Fluent 2 のモーション | 承認済み | src/motion/fluent.ts, src/motion/CountUp.tsx, src/motion/useDrawProgress.ts, src/motion/motion.css, src/app/App.tsx (画面遷移), src/app/Opening.tsx | tests/unit/motion.test.ts | 演出の動き, デザイン基盤 |
+| FR-070 | Fluent 2 のモーション | 承認済み | src/motion/fluent.ts, src/motion/CountUp.tsx, src/motion/useDrawProgress.ts, src/motion/motion.css, src/app/App.tsx (画面遷移), src/app/Opening.tsx | tests/unit/motion.test.ts (AC-086 の system ケース未登録。test-designer で同期) | 演出の動き, デザイン基盤 |
 | FR-071 | グローバルのアニメーション停止 | 承認済み | src/motion/control.ts, src/motion/AnimationController.tsx, src/motion/motion.css, src/store/animation.ts, src/main.tsx | tests/unit/motion.test.ts (AC-087), tests/system/e2e/views3d.spec.ts (E2E-068。表・編集の画面の統合後に通る) | 演出の動き, 3D 基盤 |
 | FR-072 | 動きを減らす設定での起動 | 承認済み | src/store/animation.ts (prefersReducedMotion, resolvePlaying), src/app/Opening.tsx | tests/unit/motion.test.ts (AC-088), tests/system/e2e/presentation.spec.ts (E2E-069) | 演出の動き |
 | FR-073 | BGM と効果音 | 承認済み | src/audio/model.ts, src/audio/controller.ts, src/audio/engine.ts, src/audio/AudioDirector.tsx, src/audio/index.ts, src/app/App.tsx | tests/unit/audio.test.ts, tests/system/e2e/brand-settings.spec.ts | 音声制御, 設定ストア |
@@ -165,7 +165,7 @@
 | NFR-UX-004 | エラーの原因と次の行動 | 承認済み | src/export/deliver.ts, src/export/ExportDialog.tsx | tests/unit/ux.test.ts (AC-188), tests/system/e2e/export.spec.ts (IT-016) | なし |
 | NFR-UX-005 | OS と利用者の表示設定への追従 | 承認済み | src/theme/resolve.ts, src/workspace/Workspace.tsx, src/screens/KnowledgeGraphScreen.tsx | tests/unit/ux.test.ts (AC-189), tests/unit/theme.test.ts, tests/system/e2e/brand-settings.spec.ts (IT-017) | 縮退の判定 |
 | FR-133 | 分析手法の選択と開始 | 承認済み | src/methods/model.ts, src/store/analyses.ts, src/projects/AnalysisPanel.tsx, src/projects/ProjectsPanel.tsx, src/app/App.tsx | tests/unit/analysis-methods.test.ts (AC-195, AC-196), tests/system/e2e/analysis-projects.spec.ts (E2E-098) | - |
-| FR-134 | パラメーターの編集と結果の更新 | 承認済み | src/methods/model.ts, src/store/analyses.ts, src/projects/AnalysisPanel.tsx | tests/unit/analysis-methods.test.ts (AC-197, AC-198, AC-199), tests/system/e2e/analysis-projects.spec.ts (E2E-099) | - |
+| FR-134 | パラメーターの編集と結果の更新 | 承認済み | src/methods/model.ts, src/store/analyses.ts, src/projects/AnalysisPanel.tsx | tests/unit/analysis-methods.test.ts (AC-197, AC-198, AC-199), tests/system/e2e/analysis-projects.spec.ts (E2E-099, pass。新しい拡張条件への同期は test-designer) | - |
 | FR-135 | ビュアーの切替と結果の確認 | 承認済み | src/methods/model.ts, src/store/analyses.ts, src/projects/AnalysisPanel.tsx | tests/unit/analysis-methods.test.ts (AC-200, AC-201), tests/system/e2e/analysis-projects.spec.ts (E2E-100) | - |
 | FR-136 | 業務改善ステッパー | 承認済み | src/stepper/model.ts, src/stepper/Stepper.tsx, src/store/stepper.ts, src/components/AppShell.tsx (stepper スロット), src/app/App.tsx | tests/unit/stepper.test.ts (AC-202, AC-203, AC-204, AC-372), tests/system/e2e/analysis-projects.spec.ts (E2E-101, E2E-102) | デザイン基盤, 画面の登録 |
 | FR-137 | 企業の登録と複数 Project の管理 | 承認済み | src/store/projects.ts, src/store/persist.ts, src/main.tsx, src/projects/ProjectsPanel.tsx, src/app/App.tsx | tests/unit/projects.test.ts (AC-205, AC-206, AC-208), tests/unit/persist.test.ts (AC-207), tests/system/e2e/analysis-projects.spec.ts (E2E-103, E2E-208) | 企業・Project の端末内保存 |
@@ -314,18 +314,6 @@
 | FR-292 | ストーリー動画の作成 1 回あたりの予算上限（見積り・制御・超過時の中止） | 承認済み | src/usecase/storyVideo.ts (planStoryVideo, runStoryVideo, appendUsageLog, browserPriceStore, currentPrices, isValidPrices), src/usecase/StoryVideoPanel.tsx (見積りの確認・進行・中止。単価が未入力なら設定画面の入力を案内), src/ai/AiUsagePanel.tsx (設定画面のストーリー動画の単価の入力欄), src/ai/aiImportLogic.ts (recordCall の再利用) | tests/unit/story-video.test.ts (AC-782、AC-783、AC-784) | AI 呼び出し口, ユースケース・アニメーション, Foundry 利用量の記録 |
 | FR-293 | 画面上部の表示言語トグル（日本語／英語） | 承認済み | src/i18n/store.ts, src/i18n/LanguageToggle.tsx, src/app/App.tsx | tests/unit/i18n.test.tsx | 表示言語の基盤 |
 | FR-294 | 画面内の固定文言の日英切り替え | 承認済み | src/i18n/translate.ts, src/i18n/useT.ts, src/i18n/dictionary.ts, src/i18n/en/core.ts | tests/unit/i18n.test.tsx | 表示言語の基盤 |
-### 承認待ちの改訂案（run 202610300723）
-
-機能表の「承認済み」は現行要求の状態であり、次の案を承認した意味ではない。詳細・対象の網羅表・依存は [要求定義書 §10.5](requirements-definition.md#105-提案仮説) に置く。本文は今回の編集許可外の `docs/requirements/` にあるため、変更していない。新規機能・AC・未実装の共通部品は登録しない。
-
-対象は GraphSurface・Graph3D・Items3DSurface・Sankey を含むフロー・Canvas 等のデータ可視化で、描画部品の違いを理由に縮小しない。`useDrawProgress` は利用者補足では使用箇所なしであり、カタログへの記載を画面への適用実績とはみなさない。CountUp/useCountUp は既存資産。改訂案は下記 3 項目・各 1 AC の更新に限定する。
-
-| 改訂対象 | 案の内容 | 案の決定状態・依存 | 既存資産・検証への影響 |
-|---|---|---|---|
-| FR-070・AC-086 | 全データ可視化の初回表示と追加/更新/削除を描画の出入り・補間で追え、停止/軽減時は最終状態を示す | AI提案／承認待ち。BLOCKED: Q-067、Q-068。PARAM-133 は TBD | 演出の動き・デザイン基盤と各描画部品を再利用。現行 AC-086 は manual のまま。承認後に system 移行を test-designer が整理 |
-| FR-045・AC-056 | 名称・値・関係・追加/削除と元に戻す操作の反映を、当該データを使う全可視化・代替表で検証 | AI提案／承認待ち。BLOCKED: Q-067 | 編集の共通ストア・顧客パックの読み込み・選択状態とエンティティ関係グラフを再利用。E2E-148 の拡張候補。現行ケースは変更なし |
-| FR-134・AC-197 | 分析パラメーターの変更・連続更新後、対応する全ビュアーで最新結果が一致する | AI提案／承認待ち。BLOCKED: Q-067 | AnalysisPanel・既存の分析結果計算を再利用。E2E-099 の拡張候補。既存の PARAM-032 の時間上限と入力検証を維持 |
-
 ## API・イベント
 
 | 名前 | 定義ファイル | 関連する要求 ID |
