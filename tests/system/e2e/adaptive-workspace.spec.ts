@@ -392,7 +392,7 @@ test.describe('FR-300 没入', () => {
   });
 
   // FR-300 AC-816
-  test('FR-300 AC-816 Focus は Main 以外を減光・縮小し（呼び出せる）、通知を抑え、Esc で直前の配置に戻る', async ({ page, start }) => {
+  test('FR-300 AC-816 Focus は Main 以外を減光・縮小し（呼び出せる）、通知を抑え、Esc では解除されず、Ctrl+Alt+Enter の解除で直前の配置に戻る', async ({ page, start }) => {
     await start();
     await selectPersona(page, '事業部門');
     await setMode(page, 'Research');
@@ -412,11 +412,14 @@ test.describe('FR-300 没入', () => {
     // 情報は欠けず、操作で呼び出せる
     await page.getByTestId('zone-recall-reference').click();
     expect((await shown(zone(page, 'reference')))?.width ?? 0, '呼び出しで Reference が出ない').toBeGreaterThan(1);
+    // Esc では解除されない（解除は Ctrl+Alt+Enter または別モード選択）
     await page.keyboard.press('Escape');
+    await expect(ws(page), 'Esc で Focus が解除された').toHaveAttribute('data-focus', 'true');
+    await page.keyboard.press('Control+Alt+Enter');
     await expect(ws(page)).not.toHaveAttribute('data-focus', 'true');
     await page.waitForTimeout(1100);
     const after = await areas(page);
-    for (const n of ZONES) expect(after[n]?.width ?? 0, `Esc で直前の配置に戻らない: ${n}`).toBeCloseTo(before[n]?.width ?? 0, -1);
+    for (const n of ZONES) expect(after[n]?.width ?? 0, `解除で直前の配置に戻らない: ${n}`).toBeCloseTo(before[n]?.width ?? 0, -1);
     await expect(page.getByTestId('notifications')).not.toHaveAttribute('data-suppressed', 'true');
   });
 });
