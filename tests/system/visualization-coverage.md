@@ -81,3 +81,19 @@ AC-198（integration）/AC-199（unit）は検証レベルを変更せず、
 - AC-056 の一覧・出典への追従は、同じテストの最後に「一覧の名称が最新」「出典が保たれる」で確認する。
 - 停止（P）/reduce: 追加が項目自身の不透明度・変形・図形属性（3D は位置）で 1 状態だけ（中間値なし）。
 - 実装が未完了の形式は fail が正しい（2D の補間・3D の削除補間・名称の描画反映など）。
+
+## 実装待ち（run 202610301406 の実測。テスト側の誤りを直したあとに残る失敗）
+実行: `node tests/system/node_modules/@playwright/test/cli.js test visualization-forms --config tests/system/playwright.config.ts --project=chromium --grep "<形式キー>"`（形式キーの例: `kpi-okr/Graph`）。
+テスト側で直したもの: ① selectById が複製後に元項目を押さず詳細が複製側になる誤り（詳細の h3 を確認し、違えば Escape→解除→選び直し）／② 分析 5 手法の値更新が score 範囲 0〜10 を超える誤り（2 と 8 を交互に更新）／③ 詳細が出ない項目（ent-mono-line-a 等）を対象にしない。結果は 36 fail → 24 fail（52→54 pass）、分析（AC-197・E2E-099）は全 pass。
+
+| 形式キー | 失敗メッセージ（実測） | 区分 |
+|---|---|---|
+| issue-solution/2D, ranking/2D, issue-solution/Graph | 値の更新が中間値を経ずに瞬間反映された（sigVal フレーム 1 以下） | 実装側（値更新の遷移が未適用） |
+| business-graph/2D, architecture/2D, map/2D, twin-view/2D, spatial-view/2D, priority/2D/Canvas | 削除が中間値を経ずに瞬間消去された（出入りの遷移なし） | 実装側（削除の退出遷移が未適用） |
+| spatial-view/3D, spatial-view/Graph | 既存項目が作り直された（同一性）。追加時に元項目の描画が一度消える | 実装側 |
+| discussion-tree/2D | 名称更新が描画に反映されない（byText=true なのに署名が変わらない） | 実装側 |
+| map/3D | 停止/reduce は中間値を経ず最終状態を即時表示する（追加が遷移する） | 実装側（reduce 未適用） |
+| matrix/3D, ranking/3D, discussion-tree/3D, kpi-okr/2D, kpi-okr/3D, kpi-okr/Graph, data-catalog/2D, data-catalog/3D, data-catalog/Graph, summary/2D/Canvas | 名称更新が描画に反映されない（byId=true・byText=false: 名称が DOM 文字に出ず、scene.objects は位置だけで名称を持たない） | 要判断: 名称を描画に出していない（実装）か、実シーンのラベルを測れない（テストの測定限界）。実装者は名称を DOM 文字か scene.objects の label として出すこと。出せない形式は rd-author に AC の扱いを依頼 |
+| issue-solution/3D | 詳細に名前の編集がない（この形式に出る ent 12 件を選んでも詳細が出ない） | 要判断（選択しても詳細が出ない項目のみを出している。実装側の可能性） |
+
+起動競合: matrix/2D「追加から最終状態まで 2000ms」と whiteboard/Canvas「undo が瞬間消去」は全件並列の 1 回目だけ fail し、単独・再実行で pass（負荷による揺れ）。page.goto ERR_ABORTED は今回の実行で再現せず。
