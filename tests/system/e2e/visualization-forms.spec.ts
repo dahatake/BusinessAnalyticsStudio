@@ -123,7 +123,13 @@ const allIds = (page: Page) => page.evaluate(() => {
 const idsIn = (page: Page, sel: string) => page.evaluate((s) => {
   const ids = new Set<string>();
   document.querySelector(s)?.querySelectorAll('[data-entity-id]').forEach(e => ids.add(e.getAttribute('data-entity-id')!));
-  try { for (const o of ((window as any).__edbTest.scene.objects() as any[])) ids.add(o.entityId); } catch { /* no scene */ }
+  // scene.objects() はアプリ全体で 1 つのヒーロー・シーン（store/view3d.ts）。対象部品が可視の canvas を持つときだけ、
+  // かつ「部品の DOM が ent を出さず scene だけが出す」誤判定を避けるため、部品自身が 3D 描画域を持つ場合に限って拾う。
+  const root = document.querySelector(s);
+  const hasCanvas = !!root && [...root.querySelectorAll('canvas')].some(cv => { const r = cv.getBoundingClientRect(); return r.width > 0 && r.height > 0; });
+  if (hasCanvas) {
+    try { for (const o of ((window as any).__edbTest.scene.objects() as any[])) if (o.visible) ids.add(o.entityId); } catch { /* no scene */ }
+  }
   return [...ids];
 }, sel);
 
