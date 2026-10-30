@@ -221,3 +221,4 @@ otifications は data-suppressed=\"true\"。Focus で減光したゾーンは bu
 - 最近使った: ecent-task-contexts（listitem は 5 件まで。選ぶと切替）。コマンドパレットの操作名: スナップ・グループ・切替・拡大・移動。Move の既定キーは Windows=Ctrl+Alt+→、macOS=⌃⌥→（Playwright では Control+Alt+ArrowRight）。
 - OS の操作慣習: 設定の combobox「OS の操作慣習」（自動／Windows／macOS）。キーの表示は data-shortcut 属性か表示文字。
 - 素材: pp-header・workspace-switcher・zone-boundary-* が半透明（backdrop-filter あり・不透明度 80% 以上 100% 未満）。component-* は不透明。
+- 改訂（AC-816）: Focus の解除は別モードの選択か Focus 切替キー Ctrl+Alt+Enter（macOS は ⌃⌥Enter。Playwright では Control+Alt+Enter）。Esc では解除しない。Main 以外のゾーンは減光・縮小で残る（呼び出せる）。

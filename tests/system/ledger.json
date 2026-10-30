@@ -350,7 +350,7 @@
     "AC-813": "sha256:1483238794b34bd5",
     "AC-814": "sha256:f3ecca6abc3fec3d",
     "AC-815": "sha256:80e2fd0c797a9b43",
-    "AC-816": "sha256:8e5720e5d7709753"
+    "AC-816": "sha256:37ea91debac98d59"
   },
   "cases": [
     {
@@ -11777,7 +11777,7 @@
       "ac_ids": [
         "AC-816"
       ],
-      "title": "FR-300 AC-816 Focus モードの減光・通知抑制・Esc で復帰",
+      "title": "FR-300 AC-816 Focus モードの減光・通知抑制・Ctrl+Alt+Enter で解除（Esc では解除しない）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-816",
       "canary": false,
@@ -11791,6 +11791,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "FR-300 System Test 新規"
+        },
+        {
+          "at": "2026-10-30T23:04:48+09:00",
+          "by": "test-designer",
+          "change": "title: 'FR-300 AC-816 Focus モードの減光・通知抑制・Esc で復帰' -> 'FR-300 AC-816 Focus モードの減光・通知抑制・Ctrl+Alt+Enter で解除（Esc では解除しない）'",
+          "reason": "AC-816 改訂: 解除キーを Esc から Ctrl+Alt+Enter へ"
         }
       ]
     }
