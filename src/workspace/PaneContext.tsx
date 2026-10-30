@@ -273,7 +273,9 @@ export function ComponentActions({ pane, title, active, narrow, hover = false, f
   const extraStyle = shown && !narrow ? undefined : narrow ? { display: 'none' } : { visibility: 'hidden' as const };
   const TabsIcon = paneAction('tabs').Icon;
   const mac = useOs() === 'mac';
-  const assignEl = showAssign ? <AssignZoneButton pane={pane} onEngage={() => setEngaged(true)} /> : null;
+  // ポインターの有無でボタン列の位置・幅が変わらないよう、出していない間も同じ幅の場所を残す（E2E-202）
+  const assignEl = showAssign ? <AssignZoneButton pane={pane} onEngage={() => setEngaged(true)} />
+    : pane.assignZone && !pane.minimized ? <span aria-hidden="true" data-testid="assign-zone-slot" style={{ display: 'inline-block', width: '24px', height: '24px', flexShrink: 0 }} /> : null;
   const pinEl = (
     <span className={s.group} style={extraStyle}>
       {/* ピン止めの切替（FR-215）: 現在の状態に応じたアイコンを 1 つだけ出す。固定なし＝「ピン止めする」Regular、固定中＝「ピン止めを外す」Filled */}
