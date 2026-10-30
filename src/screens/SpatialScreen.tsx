@@ -57,6 +57,8 @@ const useStyles = makeStyles({
 });
 
 /** 段階の色と、色に加える形・文字（FR-240 AC-573） */
+interface StackEntry { id: string; node: SpatialNode; role: 'site' | 'floor' | 'room'; fi: number; ri: number; rn: number; nF: number; floorId: string }
+
 function KpiBadge({ cell, className }: { cell: KpiCell; className: string }) {
   return (
     <span className={className} data-kpi-state={cell.state} data-kpi-stage={cell.stage} style={cell.stage ? { backgroundColor: STAGE_FILL[cell.stage], color: tokens.colorNeutralForeground1 } : undefined}>
@@ -129,6 +131,31 @@ export function SpatialScreen() {
   usePublishViewItems(ORIGIN, shownIds);
   // 2D の一覧は、ID を保ったまま出入りする（FR-070 AC-086）。削除は薄れて消えるまで元の位置に残る
   const itemPresence = usePresenceItems(items, (n) => n.id, () => []);
+  // 3D の積層（拠点・フロア・部屋/設備）も同じ仕組みで、ID を保ったまま出入りする。削除は元の位置で薄れて消える
+  const stackEntries = useMemo<StackEntry[]>(() => {
+    if (!model || !building) return [];
+    const out: StackEntry[] = [];
+    const nF = Math.max(1, floors.length);
+    floors.forEach((f, fi) => out.push({ id: f.id, node: f, role: 'floor', fi, ri: 0, rn: 0, nF, floorId: f.id }));
+    if (d >= D) {
+      floors.forEach((f, fi) => {
+        const rs = f.children.map((c) => model.nodes.get(c)!).filter((n) => n.kind === 'room' || n.kind === 'equipment');
+        rs.forEach((r, ri) => out.push({ id: r.id, node: r, role: 'room', fi, ri, rn: rs.length, nF, floorId: f.id }));
+      });
+    }
+    const siteN = model.nodes.get(building);
+    if (siteN) out.push({ id: siteN.id, node: siteN, role: 'site', fi: 0, ri: 0, rn: 0, nF, floorId: '' });
+    return out;
+  }, [model, building, floors, d]);
+  const stackPresence = usePresenceItems(stackEntries, (e) => e.id, () => []);
+  // 代替表（3D・Graph）の行も、削除は薄れて消えるまで残す
+  const altNodeSrc = useMemo(() => {
+    if (!model || !building) return [] as SpatialNode[];
+    const out: SpatialNode[] = [model.nodes.get(building)!];
+    for (const f of floors) { out.push(f); for (const c of f.children) { const r = model.nodes.get(c)!; if (r.kind === 'room' || r.kind === 'equipment') out.push(r); } }
+    return out;
+  }, [model, building, floors]);
+  const altPresence = usePresenceItems(altNodeSrc, (n) => n.id, () => []);
 
   if (!model) return <LoadingView label={t('空間ビューを読み込み中')} />;
 
@@ -214,48 +241,49 @@ export function SpatialScreen() {
 
   const stack = (
     <svg className={s.stage} viewBox={viewBox} preserveAspectRatio="xMidYMid meet" role="group" aria-label={t('空間の 3D（等角投影）。建物の各階を積み重ねて表示します。')} data-zoom-surface="3d" data-projection="orthographic">
-      {floors.map((f, i) => {
-        const z = i * GAP;
-        const cell = kpiCell(model, f.id, kpi);
-        const state = focusFloor === undefined ? undefined : focusFloor === f.id ? 'selected' : 'dimmed';
-        const c = isoProject(W / 2, DEP * 0.82, z);
+      {stackPresence.map(({ item: en, life, exiting }) => {
+        const n = en.node;
+        const lo = lifeOpacity(life);
+        // 削除の遷移中（exiting）は、元の位置のまま薄れて消える。モデルから消えた項目なので KPI は読まず、操作もさせない
+        const live = !exiting;
+        const cell = live ? kpiCell(model, n.id, kpi) : undefined;
+        const gProps = live ? svgProps(n, '') : { 'aria-hidden': true as const, pointerEvents: 'none' as const, 'data-entity-id': n.id, 'data-exiting': true as const };
+        const fillOf = (id: string) => (live ? stageFill(id) : tokens.colorNeutralBackground1);
+        if (en.role === 'floor') {
+          const z = en.fi * GAP;
+          const state = !live || focusFloor === undefined ? undefined : focusFloor === n.id ? 'selected' : 'dimmed';
+          const c = isoProject(W / 2, DEP * 0.82, z);
+          return (
+            <g key={n.id} {...gProps} data-kind="floor" data-floor-state={state} opacity={(state === 'dimmed' ? 0.35 : 1) * lo}>
+              <polygon points={[pt(0, DEP, z), pt(W, DEP, z), pt(W, DEP, z - THICK), pt(0, DEP, z - THICK)].join(' ')} fill={tokens.colorNeutralBackground5} stroke={tokens.colorNeutralStroke1} />
+              <polygon points={[pt(W, 0, z), pt(W, DEP, z), pt(W, DEP, z - THICK), pt(W, 0, z - THICK)].join(' ')} fill={tokens.colorNeutralBackground6} stroke={tokens.colorNeutralStroke1} />
+              <polygon points={rhombus(0, 0, W, DEP, z)} fill={fillOf(n.id)} stroke={state === 'selected' ? tokens.colorBrandStroke1 : tokens.colorNeutralStroke1} strokeWidth={state === 'selected' ? 4 : 1.5} />
+              <text x={c.sx} y={c.sy - 6} textAnchor="middle" fontSize={13} fontWeight={600} fill={tokens.colorNeutralForeground1} pointerEvents="none">{n.name}</text>
+              <text x={c.sx} y={c.sy + 10} textAnchor="middle" fontSize={11} fill={tokens.colorNeutralForeground1} pointerEvents="none">{kpi && cell ? cell.text : ''}</text>
+            </g>
+          );
+        }
+        if (en.role === 'room') {
+          const z = en.fi * GAP;
+          const cw = Math.min(64, (W - 20) / Math.max(1, en.rn));
+          const x = 10 + en.ri * cw; const cd = 46;
+          const c = isoProject(x + (cw - 4) / 2, 6 + cd / 2, z);
+          return (
+            <g key={n.id} {...gProps} data-kind={n.kind} opacity={(live && focusFloor !== undefined && focusFloor !== en.floorId ? 0.35 : 1) * lo}>
+              <polygon points={rhombus(x, 6, cw - 4, cd, z)} fill={fillOf(n.id)} stroke={tokens.colorNeutralStroke1} />
+              <text x={c.sx} y={c.sy - 2} textAnchor="middle" fontSize={8} fontWeight={600} fill={tokens.colorNeutralForeground1} pointerEvents="none">{n.name}</text>
+              <text x={c.sx} y={c.sy + 8} textAnchor="middle" fontSize={7} fill={tokens.colorNeutralForeground1} pointerEvents="none">{kpi && cell ? cell.text : ''}</text>
+            </g>
+          );
+        }
+        const c = isoProject(W / 2, DEP, (en.nF - 1) * GAP + 70);
         return (
-          <g key={f.id} {...svgProps(f, '')} data-kind="floor" data-floor-state={state} opacity={state === 'dimmed' ? 0.35 : 1}>
-            <polygon points={[pt(0, DEP, z), pt(W, DEP, z), pt(W, DEP, z - THICK), pt(0, DEP, z - THICK)].join(' ')} fill={tokens.colorNeutralBackground5} stroke={tokens.colorNeutralStroke1} />
-            <polygon points={[pt(W, 0, z), pt(W, DEP, z), pt(W, DEP, z - THICK), pt(W, 0, z - THICK)].join(' ')} fill={tokens.colorNeutralBackground6} stroke={tokens.colorNeutralStroke1} />
-            <polygon points={rhombus(0, 0, W, DEP, z)} fill={stageFill(f.id)} stroke={state === 'selected' ? tokens.colorBrandStroke1 : tokens.colorNeutralStroke1} strokeWidth={state === 'selected' ? 4 : 1.5} />
-            <text x={c.sx} y={c.sy - 6} textAnchor="middle" fontSize={13} fontWeight={600} fill={tokens.colorNeutralForeground1} pointerEvents="none">{f.name}</text>
-            <text x={c.sx} y={c.sy + 10} textAnchor="middle" fontSize={11} fill={tokens.colorNeutralForeground1} pointerEvents="none">{kpi ? cell.text : ''}</text>
+          <g key={n.id} {...gProps} data-kind="site" opacity={lo}>
+            <text x={c.sx} y={c.sy - 70} textAnchor="middle" fontSize={13} fontWeight={600} fill={tokens.colorNeutralForeground1}>{t('拠点 {name}', { name: n.name })}</text>
+            <text x={c.sx} y={c.sy - 54} textAnchor="middle" fontSize={11} fill={tokens.colorNeutralForeground1}>{kpi && cell ? cell.text : ''}</text>
           </g>
         );
       })}
-      {d >= D ? floors.map((f, i) => {
-        const rs = roomsOf(f);
-        const cw = Math.min(64, (W - 20) / Math.max(1, rs.length));
-        return rs.map((r, k) => {
-          const z = i * GAP;
-          const x = 10 + k * cw; const cd = 46;
-          const c = isoProject(x + (cw - 4) / 2, 6 + cd / 2, z);
-          const cell = kpiCell(model, r.id, kpi);
-          return (
-            <g key={r.id} {...svgProps(r, '')} data-kind={r.kind} opacity={focusFloor !== undefined && focusFloor !== f.id ? 0.35 : 1}>
-              <polygon points={rhombus(x, 6, cw - 4, cd, z)} fill={stageFill(r.id)} stroke={tokens.colorNeutralStroke1} />
-              <text x={c.sx} y={c.sy - 2} textAnchor="middle" fontSize={8} fontWeight={600} fill={tokens.colorNeutralForeground1} pointerEvents="none">{r.name}</text>
-              <text x={c.sx} y={c.sy + 8} textAnchor="middle" fontSize={7} fill={tokens.colorNeutralForeground1} pointerEvents="none">{kpi ? cell.text : ''}</text>
-            </g>
-          );
-        });
-      }) : null}
-      {siteNode ? (() => {
-        const c = isoProject(W / 2, DEP, (nF - 1) * GAP + 70);
-        const cell = kpiCell(model, siteNode.id, kpi);
-        return (
-          <g {...svgProps(siteNode, '')} data-kind="site">
-            <text x={c.sx} y={c.sy - 70} textAnchor="middle" fontSize={13} fontWeight={600} fill={tokens.colorNeutralForeground1}>{t('拠点 {name}', { name: siteNode.name })}</text>
-            <text x={c.sx} y={c.sy - 54} textAnchor="middle" fontSize={11} fill={tokens.colorNeutralForeground1}>{kpi ? cell.text : ''}</text>
-          </g>
-        );
-      })() : null}
     </svg>
   );
 
@@ -351,7 +379,9 @@ export function SpatialScreen() {
           {mode !== '2d' ? (
             <GraphAlt
               origin={ORIGIN} label={t('空間ビュー')} columns={kpi ? [kpi] : []}
-              nodes={graphNodes.map((n) => ({ id: n.id, name: n.name, kind: n.kindLabel ?? n.kind, values: kpi ? [kpiCell(model, n.id, kpi).text] : [] }))}
+              nodes={altPresence.map(({ item: n, life, exiting }) => (exiting
+                ? { id: n.id, name: n.name, kind: SPATIAL_KIND_LABELS[n.kind], values: kpi ? [''] : [], life, exiting: true }
+                : { id: n.id, name: n.name, kind: SPATIAL_KIND_LABELS[n.kind], values: kpi ? [kpiCell(model, n.id, kpi).text] : [], life }))}
               relations={graphEdges.map((e) => ({ id: e.id, from: e.from, to: e.to, label: e.label }))}
               summary={t('拠点 {site}・フロア {floor}・部屋/設備 {room}（階層: 全体・拠点・フロア・部屋/設備・詳細の 5 階層。現在 {d}）', { site: n0(counts.site), floor: n0(counts.floor), room: n0(counts.room), d })}
             />
