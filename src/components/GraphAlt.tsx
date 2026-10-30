@@ -7,6 +7,7 @@ import { useSelection } from '../selection/hooks';
 import { requestGraphFocus } from './graphViewStore';
 import { ViewAsTableButton } from './ViewTable';
 import { useT } from '../i18n';
+import { lifeOpacity } from '../motion';
 
 const useStyles = makeStyles({
   root: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalS },
@@ -16,7 +17,7 @@ const useStyles = makeStyles({
   on: { backgroundColor: tokens.colorBrandBackground2 },
 });
 
-export interface AltNode { id: string; name: string; kind: string; /** 追加の列の値（columns と同じ順） */ values?: readonly string[] }
+export interface AltNode { id: string; name: string; kind: string; /** 追加の列の値（columns と同じ順） */ values?: readonly string[]; /** 出入りの途中の値（0〜1。省略は 1）と、削除の遷移中（行は薄れて残り、操作できない） */ life?: number; exiting?: boolean }
 export interface AltRelation { id: string; from: string; to: string; label?: string; kind?: string }
 
 export interface GraphAltProps {
@@ -41,19 +42,25 @@ export function GraphAlt({ origin, label, nodes, relations, columns = [], summar
   const pick = (id: string, additive = false): void => { select(id, { origin, additive }); requestGraphFocus(origin, id); };
   const names = new Map(nodes.map((n) => [n.id, n.name]));
   const nameOf = (id: string): string => names.get(id) ?? id;
+  const liveCount = nodes.filter((n) => !n.exiting).length;
   return (
     <section className={s.root} aria-label={t('{label}の表と要約', { label })} data-testid="graph-alt">
       <Text role="status" data-testid="graph-alt-summary">
-        {`${label}: ${nodes.length === 0 ? t('項目なし') : t('項目 {n} 件', { n: nodes.length })}${t('、')}${relations.length === 0 ? t('関係なし') : t('関係 {n} 件', { n: relations.length })}${summary ? `${t('。')}${summary}` : ''}`}
+        {`${label}: ${liveCount === 0 ? t('項目なし') : t('項目 {n} 件', { n: liveCount })}${t('、')}${relations.length === 0 ? t('関係なし') : t('関係 {n} 件', { n: relations.length })}${summary ? `${t('。')}${summary}` : ''}`}
       </Text>
       {showTableButton ? <div><ViewAsTableButton asTable={false} onToggle={() => { tableRef.current?.scrollIntoView?.({ block: 'nearest' }); tableRef.current?.focus(); }} /></div> : null}
       <div ref={tableRef} className={s.scroll} tabIndex={0} role="region" aria-label={t('{label}の項目（表。横にスクロールできます）', { label })}>
         <table className={s.table} aria-label={t('{label}の項目（表）', { label })} data-testid="graph-alt-nodes">
           <thead><tr>{[t('名称'), t('種別'), ...columns].map((c) => <th key={c} scope="col">{c}</th>)}</tr></thead>
           <tbody>
-            {nodes.map((n) => (
+            {nodes.map((n) => n.exiting ? (
+              <tr key={n.id} aria-hidden data-entity-id={n.id} data-exiting style={{ opacity: lifeOpacity(n.life ?? 0), pointerEvents: 'none' }}>
+                <td>{n.name}</td><td>{n.kind}</td>{columns.map((c) => <td key={c}>—</td>)}
+              </tr>
+            ) : (
               <tr
                 key={n.id} className={`${s.row} ${selectedIds.includes(n.id) ? s.on : ''}`} data-entity-id={n.id} aria-selected={selectedIds.includes(n.id)} tabIndex={0}
+                style={n.life !== undefined && n.life < 1 ? { opacity: lifeOpacity(n.life) } : undefined}
                 onClick={(e) => pick(n.id, e.ctrlKey || e.metaKey || e.shiftKey)}
                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(n.id); } }}
               >
