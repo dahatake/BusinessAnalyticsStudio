@@ -43,7 +43,7 @@ const useStyles = makeStyles({
   list: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: tokens.spacingHorizontalM, margin: 0, padding: 0, listStyle: 'none' },
   card: {
     display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS, padding: tokens.spacingHorizontalM, cursor: 'pointer',
-    borderRadius: tokens.borderRadiusMedium, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`, backgroundColor: tokens.colorNeutralBackground1,
+    borderRadius: tokens.borderRadiusMedium, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`, backgroundColor: tokens.colorNeutralBackground1, color: tokens.colorNeutralForeground1, textAlign: 'start',
     ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`, outlineOffset: '1px' },
   },
   cardSelected: { border: `${tokens.strokeWidthThick} solid ${tokens.colorBrandStroke1}` },
