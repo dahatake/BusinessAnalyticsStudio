@@ -1,6 +1,6 @@
 // デジタルツインの描画（FR-020）と、カメラのストアとの同期（FR-023）。React Three Fiber の中で使う。
 // 各エンティティを 1 つの形にし、クリックで共通の選択（FR-024）に反映し、選択・関連・ホバーを強調する（FR-025）。
-import { useEffect, useMemo, type CSSProperties } from 'react';
+import { useEffect, useMemo, useSyncExternalStore, type CSSProperties } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { Html } from '@react-three/drei';
 import * as THREE from 'three';
@@ -10,7 +10,8 @@ import { currentPose, rehomeIfPristine, syncFromCanvas, useCameraRig } from './c
 import type { TwinLayout, TwinObject, TwinTone } from './entityLayout';
 import type { IndustryPreset } from './presets';
 import { registerSceneCanvas, viewportAspect } from './sceneViewport';
-import { buildDrawables, disposeDrawables, entityIdOfHit, planDraw, setDrawOpacity } from './twinDraw';
+import { buildDrawables, applyDisplay, disposeDrawables, entityIdOfHit, planDraw, setDrawOpacity } from './twinDraw';
+import { subscribeTwinTransition, twinDisplay, twinTransitionVersion } from './twinTransition';
 import { twinGeometry, twinScale } from './twinGeometry';
 import { sceneLabelStyle } from './labelStyles';
 import { getEntityGraph } from '../selection/hooks';
@@ -73,6 +74,9 @@ function Highlight({ o, preset, emissive, opacity }: { o: TwinObject; preset: In
  * 表示中のレベルの項目だけを作り（FR-036）、同じ形・色・階層はインスタンス描画にまとめる。レベルの現れ方はクロスフェード（FR-031）。
  */
 export function EntityTwin({ layout, preset }: { layout: TwinLayout; preset: IndustryPreset }) {
+  // 遷移の途中は、削除中の項目を含む配置を描く（version が変わると描き直す）
+  useSyncExternalStore(subscribeTwinTransition, twinTransitionVersion, () => 0);
+  const drawLayout = twinDisplay().layout ?? layout;
   const { selectedIds, related, hoverId, select, setHover } = useSelection();
   const selected = useMemo(() => new Set(selectedIds), [selectedIds]);
   const invalidate = useThree((s) => s.invalidate);
@@ -87,11 +91,21 @@ export function EntityTwin({ layout, preset }: { layout: TwinLayout; preset: Ind
   }), [select, setHover]);
 
   const groups = useMemo(
-    () => planDraw(layout, (o) => toneColor(o.tone, preset, o.platform), (d) => key[d] === '1', include),
-    [layout, preset, key, include],
+    () => planDraw(drawLayout, (o) => toneColor(o.tone, preset, o.platform), (d) => key[d] === '1', include),
+    [drawLayout, preset, key, include],
   );
-  const root = useMemo(() => buildDrawables(layout, groups), [layout, groups]);
+  const root = useMemo(() => buildDrawables(drawLayout, groups), [drawLayout, groups]);
   useEffect(() => () => disposeDrawables(root), [root]);
+  // 出入り・遷移（FR-070 AC-086）: 遷移の間だけ、各項目の位置・大きさを時刻から求めて反映する。終わったら描き直しを止める
+  useFrame(() => {
+    const d = twinDisplay();
+    if (!d.active || !d.layout) return;
+    applyDisplay(root, d.layout.byId, d.displayOf);
+  });
+  useEffect(() => {
+    const d = twinDisplay();
+    if (d.active && d.layout) { applyDisplay(root, d.layout.byId, d.displayOf); invalidate(); }
+  }, [root, invalidate]);
 
   // レベルの不透明度（フェード）を材質に反映する。選択があるとき、関連しない項目は薄くする
   const dim = related ? DIM_OPACITY : 1;

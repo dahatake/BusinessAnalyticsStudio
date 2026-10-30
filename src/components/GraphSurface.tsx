@@ -13,6 +13,7 @@ import { useEntityBinding, useSelection } from '../selection/hooks';
 import { registerLocalIds } from '../store/selection';
 import { ZoomClusters } from '../semanticzoom/ZoomKit';
 import { MIN_TARGET_PX } from '../theme/tokens';
+import { lifeOpacity, lifeScale, usePresenceItems } from '../motion';
 import { clipOf } from './graphShape';
 import { GraphViewport, useGraphViewport } from './GraphViewport';
 import { GRAPH_CARD_RELATIONS_MAX } from './graphViewStore';
@@ -137,6 +138,14 @@ function GraphBody({ origin, label, nodes, edges, onOpen }: GraphSurfaceProps) {
   // 図の項目（KPI/OKR の Objective など、エンティティ関係グラフにないもの）も、この図が出ている間は選べる
   useEffect(() => registerLocalIds(nodes.map((n) => n.id)), [nodes]);
   const edgeText = (e: GraphEdgeIn): string => `${t('{from} から {to} へ', { from: String(nameOf.get(e.from)), to: String(nameOf.get(e.to)) })} ${e.label ?? t('（ラベルなし）')}`;
+  // 出入り・遷移（FR-070 AC-086）: 同じ ID の節・線は動き、追加は現れ、削除は薄れて消える（停止中・動きの軽減中は即時に最終状態）
+  const nodePresence = usePresenceItems(nodes, (n) => n.id, (n) => { const p = pos.get(n.id); return p ? [p.x, p.y] : [0, 0]; });
+  const edgePresence = usePresenceItems(okEdges, (e) => e.id, (e) => {
+    const a = pos.get(e.from); const b = pos.get(e.to);
+    if (!a || !b) return [0, 0, 0, 0, 0, 0];
+    const p1 = edgePoint(a, b, 2); const p2 = edgePoint(b, a, 6);
+    return [p1.x, p1.y, p2.x, p2.y, (a.x + b.x) / 2, (a.y + b.y) / 2];
+  });
 
   // 詳細カード: 同じ項目の再クリック（Enter）で閉じ、別の項目で内容が替わる。Esc は GraphViewport が、カードを先に閉じる
   const toggle = (c: Card): void => setCard((cur) => (cur && cur.kind === c.kind && cur.id === c.id ? null : c));
@@ -238,38 +247,38 @@ function GraphBody({ origin, label, nodes, edges, onOpen }: GraphSurfaceProps) {
           </marker>
         </defs>
         <g style={{ color: tokens.colorNeutralForeground2 }}>
-          {okEdges.map((e) => {
-            const a = pos.get(e.from); const b = pos.get(e.to);
-            if (!a || !b) return null;
-            const p1 = edgePoint(a, b, 2); const p2 = edgePoint(b, a, 6);
+          {edgePresence.map(({ item: e, vec, life, exiting }) => {
+            const [x1, y1, x2, y2, mx, my] = vec as [number, number, number, number, number, number];
             const open = card?.kind === 'edge' && card.id === e.id;
             return (
               <g
-                key={e.id} className={s.edge} data-testid="graph-edge" data-edge-id={e.id} data-from={e.from} data-to={e.to} data-meaning={e.meaning ?? 'link'} data-direction="forward"
-                role="button" tabIndex={0} aria-pressed={open} aria-label={edgeText(e)} style={{ pointerEvents: 'none' }}
+                key={e.id} className={s.edge} data-testid={exiting ? 'graph-edge-exiting' : 'graph-edge'} data-edge-id={e.id} data-from={e.from} data-to={e.to} data-meaning={e.meaning ?? 'link'} data-direction="forward"
+                role="button" tabIndex={exiting ? -1 : 0} aria-pressed={open} aria-label={edgeText(e)} aria-hidden={exiting || undefined} style={{ pointerEvents: 'none' }} opacity={lifeOpacity(life)}
                 onClick={(ev) => { ev.stopPropagation(); toggle({ kind: 'edge', id: e.id }); }}
                 onKeyDown={(ev) => { if (ev.target === ev.currentTarget && (ev.key === 'Enter' || ev.key === ' ')) { ev.preventDefault(); ev.stopPropagation(); toggle({ kind: 'edge', id: e.id }); } }}
               >
-                <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="currentColor" strokeWidth={open ? 3.5 : 1.5} strokeDasharray={e.dash} markerEnd={`url(#gs-arrow-${origin})`} />
-                <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="transparent" strokeWidth={16} style={{ pointerEvents: 'stroke' }} />
-                {e.label ? <text className={s.edgeText} x={(a.x + b.x) / 2} y={(a.y + b.y) / 2} textAnchor="middle" style={{ pointerEvents: 'all' }}>{e.label}</text> : null}
+                <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="currentColor" strokeWidth={open ? 3.5 : 1.5} strokeDasharray={e.dash} markerEnd={`url(#gs-arrow-${origin})`} />
+                <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="transparent" strokeWidth={16} style={{ pointerEvents: exiting ? 'none' : 'stroke' }} />
+                {e.label ? <text className={s.edgeText} x={mx} y={my} textAnchor="middle" style={{ pointerEvents: exiting ? 'none' : 'all' }}>{e.label}</text> : null}
               </g>
             );
           })}
         </g>
       </svg>
-      {nodes.map((n) => {
-        const p = pos.get(n.id);
-        if (!p) return null;
+      {nodePresence.map(({ item: n, vec, life, exiting }) => {
         const shape = shapes.get(n.kind) ?? 'circle';
         const on = selected.has(n.id);
-        const st: CSSProperties = { left: p.x - NODE_W / 2, top: p.y - NODE_H / 2, width: NODE_W, height: NODE_H };
+        const st: CSSProperties = {
+          left: vec[0]! - NODE_W / 2, top: vec[1]! - NODE_H / 2, width: NODE_W, height: NODE_H,
+          ...(life < 1 || exiting ? { opacity: lifeOpacity(life), transform: `scale(${lifeScale(life).toFixed(3)})`, ...(exiting ? { pointerEvents: 'none' as const } : {}) } : {}),
+        };
         const rowHl = vp.hl === n.id;
         const b = bind(n.id);
         return (
           <div
-            key={n.id} {...b} role="button" tabIndex={0} className={`${s.node} ${on ? s.nodeOn : ''} ${rowHl ? s.nodeRow : ''}`} style={st}
-            data-testid="graph-node" data-zoom-node="" data-kind={n.kind} data-node-type={n.kind} data-shape={shape} data-entity-name={n.name} data-row-highlight={rowHl ? 'true' : undefined}
+            key={n.id} {...b} role="button" tabIndex={exiting ? -1 : 0} className={`${s.node} ${on ? s.nodeOn : ''} ${rowHl ? s.nodeRow : ''}`} style={st}
+            data-testid={exiting ? 'graph-node-exiting' : 'graph-node'} data-zoom-node="" data-kind={n.kind} data-node-type={n.kind} data-shape={shape} data-entity-name={n.name} data-row-highlight={rowHl ? 'true' : undefined}
+            aria-hidden={exiting || undefined}
             aria-pressed={on} aria-label={`${t('{name}（{kind}）', { name: n.name, kind: n.kindLabel ?? n.kind })}${n.note ? `${t('、')}${n.note}` : ''}`}
             onClick={(e) => { b.onClick?.(e); if (e.detail > 1) return; prevCard.current = card; toggle({ kind: 'node', id: n.id }); }}
             onDoubleClick={() => {

@@ -13,6 +13,7 @@ import { useStepper } from '../store/stepper';
 import { STEPS } from '../stepper/model';
 import { METHODS, VIEWERS, filterItems, getMethod, type ResultItem, type ViewerId } from '../methods/model';
 import { tr, useT } from '../i18n';
+import { useTweenedValue } from '../motion';
 
 const useStyles = makeStyles({
   root: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS, padding: tokens.spacingHorizontalM, borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}` },
@@ -30,17 +31,32 @@ const useStyles = makeStyles({
   table: { borderCollapse: 'collapse', width: '100%' },
 });
 
+/** 遷移中の数値の表示（FR-070 AC-086・FR-134 AC-197）。遷移が終われば、正確な値（最新値）だけを表示する。最新値は代替表・表のビュアーでいつでも読める */
+function useShown(target: number): string {
+  const v = useTweenedValue(target);
+  return v === target ? String(target) : (Math.round(v * 10) / 10).toFixed(1);
+}
+
 function ItemBody({ item, selected }: { item: ResultItem; selected: boolean }) {
   const t = useT();
+  const score = useShown(item.score);
+  const weight = useShown(item.weight);
+  const value = useShown(item.value);
   return (
     <>
       {selected ? <span aria-hidden="true">✓ </span> : null}
       <span>{t(item.label)}</span>
-      <span>{t('（{category}）値 {score} × 重み {weight} = ', { category: t(item.category), score: item.score, weight: item.weight })}</span>
-      <strong>{item.value}</strong>
+      <span>{t('（{category}）値 {score} × 重み {weight} = ', { category: t(item.category), score, weight })}</span>
+      <strong>{value}</strong>
       {selected ? <span>{t('（選択中）')}</span> : null}
     </>
   );
+}
+
+function ChartBar({ value, max }: { value: number; max: number }) {
+  const s = useStyles();
+  const v = useTweenedValue(value);
+  return <div className={s.bar} aria-hidden="true" style={{ width: `${(v / max) * 100}%` }} />;
 }
 
 /** 結果の項目を、選択・キーボード操作つきで表示する。ビュアーはこの表現を並べ方だけ変える。 */
@@ -99,7 +115,7 @@ function Viewer({ a, items, onSelect }: { a: Analysis; items: ResultItem[]; onSe
           {items.map((i) => (
             <div key={i.id} role="option" {...common(i)} className={cls(i)}>
               <ItemBody item={i} selected={a.selectedId === i.id} />
-              <div className={s.bar} aria-hidden="true" style={{ width: `${(i.value / max) * 100}%` }} />
+              <ChartBar value={i.value} max={max} />
             </div>
           ))}
         </div>

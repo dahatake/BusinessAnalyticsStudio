@@ -2,6 +2,7 @@
 // 左に課題（イシューツリー／MECE 表）と解決策、右に詳細パネルを置く。サンキー図・マトリクスは広く使うため詳細を下に置く。狭い画面では縦に積む。
 import { useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import { useT } from '../i18n';
+import { lifeOpacity, usePresenceItems } from '../motion';
 import {
   Badge, Button, Field, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
   makeStyles, mergeClasses, tokens,
@@ -132,6 +133,8 @@ function IssueSolutionScreen() {
   const graphNodes: GraphNodeIn[] = [...visible.map((i) => ({ id: i.id, name: i.title, kind: t('課題') })), ...solutions.map((x) => ({ id: x.id, name: x.title, kind: t('解決策') }))];
   const graphEdges: GraphEdgeIn[] = links3d.map((l) => ({ id: `${l.from}>${l.to}`, from: l.from, to: l.to, label: t('解決する'), meaning: 'solves' }));
 
+  // 出入り・遷移（FR-070 AC-086）: イシューツリーの行は同じ ID のまま、追加は現れ、削除は薄れて消える
+  const treeRows = usePresenceItems(rows, (r) => r.issue.id, () => []);
   if (!data) return <LoadingView label={t('課題を読み込み中')} />
 
   const issueById = new Map(allIssues.map((i) => [i.id, i]));
@@ -263,7 +266,7 @@ function IssueSolutionScreen() {
             <MatrixView matrix={matrix} {...flowProps} />
           ) : mode === 'tree' ? (
             <div role="tree" aria-label={t('イシューツリー')} className={s.tree} ref={treeRef}>
-              {rows.map((row) => {
+              {treeRows.map(({ item: row, life, exiting }) => {
                 const id = row.issue.id;
                 const props = bind(id);
                 const isSelected = props['data-highlight']?.includes('selected') ?? false;
@@ -277,7 +280,8 @@ function IssueSolutionScreen() {
                     aria-selected={isSelected}
                     tabIndex={id === tabStopId ? 0 : -1}
                     className={mergeClasses(s.row, hl(props['data-highlight']))}
-                    style={{ marginInlineStart: `calc(${row.level} * ${tokens.spacingHorizontalXXL})` }}
+                    style={{ marginInlineStart: `calc(${row.level} * ${tokens.spacingHorizontalXXL})`, ...(life < 1 || exiting ? { opacity: lifeOpacity(life), transform: `translateY(${((1 - life) * 8).toFixed(2)}px)`, ...(exiting ? { pointerEvents: 'none' as const } : {}) } : {}) }}
+                    aria-hidden={exiting || undefined}
                     onClick={(e) => {
                       props.onClick?.(e);
                       if (row.hasChildren && !row.expanded) setExpanded(id, true);

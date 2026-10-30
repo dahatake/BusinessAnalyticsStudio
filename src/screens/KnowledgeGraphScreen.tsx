@@ -19,6 +19,7 @@ import { EmptyView, LoadingView } from '../components/StateViews';
 import { ViewAsTableButton, ViewTable } from '../components/ViewTable';
 import { KIND_LABELS, NODE_KINDS, type GraphEdge, type GraphNode, type NodeKind } from '../selection/graph';
 import { onEntityKey, useEntityBinding, useSelection } from '../selection/hooks';
+import { lifeOpacity, lifeScale, usePresenceItems } from '../motion';
 import { useAnimation } from '../store/animation';
 import { useEditStore } from '../store/edit';
 import { usePackStore } from '../store/pack';
@@ -110,16 +111,17 @@ function Graph2D({ nodes, edges, pos, size, selected, related, matches, edgeSel,
   const animate = playing && !reduced;
   const svgRef = useRef<SVGSVGElement>(null);
   const hit = useNodeHitSize(svgRef, size);
+  // 出入り・遷移（FR-070 AC-086）: 同じ ID の節・辺は動き、追加は現れ、削除は薄れて消える。停止中・動きの軽減中は即時に最終状態
+  const nodeItems = usePresenceItems(nodes, (n) => n.id, (n) => { const p = pos(n.id); return [p.x, p.y]; });
+  const edgeItems = usePresenceItems(edges, (e) => e.id, (e) => { const a = pos(e.from); const b = pos(e.to); return [a.x, a.y, b.x, b.y]; });
   return (
     <svg ref={svgRef} data-zoom-surface="graph" viewBox={`0 0 ${size.width} ${size.height}`} className={s.svg} role="group" aria-label={t('ナレッジグラフ（2D）')}>
-      {edges.map((e) => {
-        const a = pos(e.from);
-        const b = pos(e.to);
+      {edgeItems.map(({ item: e, vec, life, exiting }) => {
         const st = EDGE_STYLE[e.kind];
         const on = selected.has(e.from) || selected.has(e.to);
-        const d = `M${a.x},${a.y} L${b.x},${b.y}`;
+        const d = `M${vec[0]},${vec[1]} L${vec[2]},${vec[3]}`;
         return (
-          <g key={e.id}>
+          <g key={e.id} opacity={lifeOpacity(life)} pointerEvents={exiting ? 'none' : undefined} aria-hidden={exiting || undefined}>
             <path
               d={d} className={mergeClasses(s.edge, on && s.edgeOn, edgeSel === e.id && s.edgeSel)}
               strokeWidth={edgeSel === e.id ? st.width + 2 : st.width} strokeDasharray={st.dash || undefined}
@@ -133,7 +135,7 @@ function Graph2D({ nodes, edges, pos, size, selected, related, matches, edgeSel,
                 onClick={() => onEdge(e)} onKeyDown={(ev) => { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); onEdge(e); } }}
               />
             ) : null}
-            {st.particles && animate ? (
+            {st.particles && animate && !exiting ? (
               <circle r={3} fill="var(--colorBrandForeground1)">
                 <animateMotion dur="2.4s" repeatCount="indefinite" path={d} />
               </circle>
@@ -141,19 +143,20 @@ function Graph2D({ nodes, edges, pos, size, selected, related, matches, edgeSel,
           </g>
         );
       })}
-      {nodes.map((n) => {
-        const p = pos(n.id);
+      {nodeItems.map(({ item: n, vec, life, exiting }) => {
         const style = KIND_STYLE[n.kind];
         const Icon = KIND_ICON[style.icon];
         const props = bind(n.id);
         const words = (props['data-highlight'] ?? '').split(' ');
         const { onClick, onMouseEnter, onMouseLeave, ...rest } = props;
-        const handlers = { onClick, onMouseEnter, onMouseLeave } as unknown as SvgHandlers;
+        const handlers = (exiting ? {} : { onClick, onMouseEnter, onMouseLeave }) as unknown as SvgHandlers;
+        const base = related && !related.has(n.id) && !words.includes('selected') ? 0.55 : 1;
         return (
           <g
-            key={n.id} {...rest} {...handlers} transform={`translate(${p.x},${p.y})`} className={s.node}
-            role="button" tabIndex={0} aria-label={`${KIND_LABELS[n.kind]}: ${n.label}`} aria-pressed={words.includes('selected')}
-            opacity={related && !related.has(n.id) && !words.includes('selected') ? 0.55 : 1}
+            key={n.id} {...rest} {...handlers} transform={`translate(${vec[0]},${vec[1]}) scale(${lifeScale(life)})`} className={s.node}
+            role="button" tabIndex={exiting ? -1 : 0} aria-label={`${KIND_LABELS[n.kind]}: ${n.label}`} aria-pressed={words.includes('selected')}
+            aria-hidden={exiting || undefined} pointerEvents={exiting ? 'none' : undefined} data-exiting={exiting || undefined}
+            opacity={base * lifeOpacity(life)}
             onKeyDown={(e) => {
               if (e.altKey && e.key.startsWith('Arrow')) {
                 e.preventDefault();

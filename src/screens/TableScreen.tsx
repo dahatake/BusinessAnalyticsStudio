@@ -3,6 +3,7 @@
 // 件数バッジ・AND/OR の切替・「非表示/減光」の選択・フィルター解除を備える。
 import { useEffect, useMemo, useState } from 'react';
 import { tr, useT } from '../i18n';
+import { lifeOpacity, usePresenceItems } from '../motion';
 import {
   Badge, Button, Field, Input, MessageBar, MessageBarActions, MessageBarBody, MessageBarTitle, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
   makeStyles, mergeClasses, tokens,
@@ -158,6 +159,9 @@ function TableScreen() {
     return m;
   }, [twinLinks]);
 
+  // 出入り・遷移（FR-070 AC-086）: 表の行は同じ ID のまま、追加は現れ、削除は薄れて消える（消える行は ID・操作を持たない）
+  const rowPresence = usePresenceItems(rows, (r) => r.item.id, () => []);
+
   if (!graph) return <LoadingView label={t('一覧を読み込み中')} />;
 
   return (
@@ -228,7 +232,15 @@ function TableScreen() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map(({ item: n, depth, hasChildren, expanded }) => {
+            {rowPresence.map(({ item: { item: n, depth, hasChildren, expanded }, life, exiting }) => {
+              if (exiting) {
+                return (
+                  <TableRow key={n.id} aria-hidden className={s.row} style={{ opacity: lifeOpacity(life), pointerEvents: 'none' }}>
+                    <TableCell className={s.cell} /><TableCell className={s.cell}>{t(KIND_LABELS[n.kind])}{n.type ? `（${n.type}）` : ''}</TableCell>
+                    <TableCell className={s.cell} /><TableCell className={s.cell}>{n.label}</TableCell><TableCell className={mergeClasses(s.cell, s.idCell, s.hideNarrow)} />
+                  </TableRow>
+                );
+              }
               const props = bind(n.id, { filterable: true });
               const state = selected.has(n.id) ? '選択中' : props['data-highlight']?.includes('related') ? '関連' : '';
               // 編集モードでは関連しない行を隠さないので、減光（dimmed）で示す
@@ -247,6 +259,7 @@ function TableScreen() {
                   aria-level={depth + 1}
                   tabIndex={0}
                   className={mergeClasses(s.row, hl(highlight))}
+                  style={life < 1 ? { opacity: lifeOpacity(life) } : undefined}
                   onKeyDown={(e) => { onEntityKey(e, n.id, ORIGIN); }}
                 >
                   <TableCell className={s.cell}>{hasChildren ? (
