@@ -339,7 +339,12 @@
     "AC-789": "sha256:f72da02fb23e4074",
     "AC-793": "sha256:600d5f10e2a101ff",
     "AC-796": "sha256:de40dbe6ed01a69c",
-    "AC-086": "sha256:8b67fccb0f0188f0"
+    "AC-086": "sha256:8b67fccb0f0188f0",
+    "AC-799": "sha256:f9d0fa6aaf1a56e5",
+    "AC-800": "sha256:597049a7a71d56e8",
+    "AC-803": "sha256:c2dce60d21476d33",
+    "AC-797": "sha256:b9f77e3500529f01",
+    "AC-802": "sha256:02aa4e81ae83c15a"
   },
   "cases": [
     {
@@ -11523,6 +11528,95 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "テスト拡張のため未実行へ"
+        }
+      ]
+    },
+    {
+      "id": "E2E-452",
+      "requirement_ids": [
+        "FR-295"
+      ],
+      "ac_ids": [
+        "AC-797",
+        "AC-799"
+      ],
+      "title": "FR-295 開いているコンポーネントの一覧・切替・状態の保存復元・既定に戻す（E2E）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-797 AC-799",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-30T22:45:31+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-30T22:46:00+09:00",
+          "by": "test-designer",
+          "change": "ac_ids: ['AC-799'] -> ['AC-797', 'AC-799']",
+          "reason": "AC-797・799 を 1 ケースに"
+        }
+      ]
+    },
+    {
+      "id": "E2E-453",
+      "requirement_ids": [
+        "FR-296"
+      ],
+      "ac_ids": [
+        "AC-800"
+      ],
+      "title": "FR-296 各ペルソナ・画面の既定の同時表示上限と最小サイズ（E2E）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-800",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-30T22:45:34+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        }
+      ]
+    },
+    {
+      "id": "E2E-454",
+      "requirement_ids": [
+        "FR-297"
+      ],
+      "ac_ids": [
+        "AC-802",
+        "AC-803"
+      ],
+      "title": "FR-297 没入表示の減光・Esc/一覧で復帰・前面の奥行きと AA（E2E）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-802 AC-803",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-10-30T22:45:37+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-10-30T22:46:01+09:00",
+          "by": "test-designer",
+          "change": "ac_ids: ['AC-803'] -> ['AC-802', 'AC-803']",
+          "reason": "AC-802・803 を 1 ケースに"
         }
       ]
     }

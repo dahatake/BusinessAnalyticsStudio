@@ -210,3 +210,10 @@
 - 差し替え部品は support/ai-import-stub.ts（生成AIは実呼び出ししない）。ブラウザー → 中継（runtime-config の relayUrl）の `POST /foundry/story-video`。本文 `{kind:'storyboard'|'animation', usecase:{name,summary,persona,steps:[{title,description}],effect}}`（送る内容はこれだけ。キー・ほかのユースケースを含めない）。応答は 200 `storyboard` が `{scenes:[{scene,person,trouble,change}], usage:{inputTokens,outputTokens}}`、`animation` が `{html, usage}`。失敗は 503 `{error:{cause}}`。
 - ユースケース一覧（`usecase-list`）の各項目に button「ストーリー動画を作る」。押しても作成（登録）だけでは呼び出さない。押すと role=dialog「ストーリー動画の作成の確認」に `story-video-estimate`（見積りの費用の「円」と上限「1,000 円」を文字で含む）と button「実行」「キャンセル」。「実行」を押すまで呼び出しは 0 回。
 - 結果: `story-video-status`（文字「最新」など作成状態）、`story-video-storyboard`（シーンを role=listitem で順序どおり。各シーンに場面・登場する人・困りごと・実現後の変化の文字）、iframe `data-testid="story-video-frame"`（sandbox 属性を持ち、`allow-same-origin` を含まない）、button「ストーリー動画を再生」「ストーリー動画を一時停止」と、再生状態 `story-video-state`（文字「再生中」「一時停止中」）。
+
+## 33. 開いているコンポーネントの一覧・既定の構成・没入表示（FR-295〜297 AC-797・799・800・802・803。window-taskbar.spec.ts が前提にする画面の探し方。run 202610302230。実装前の契約案。実装役は同じ口を作る。変える場合は conductor 経由で本節を更新する）
+- 一覧（タスクバー相当）: `data-testid="window-list"`（role=toolbar、名前「開いているコンポーネント」）。項目は `data-testid="window-list-item"`（button）で、コンポーネントごとに 1 つ。属性 `data-component-key`（`component-<key>` の key）と `data-state`（`front`＝前面／`visible`＝表示中／`minimized`＝最小化／`closed`＝閉じた〔非表示〕）。見える文字（アクセシブルな名前）にコンポーネント名と状態の語（前面・表示中・最小化・閉じた）を含み、状態は文字か図（svg・img）でも区別できる（色だけにしない）。前面は常に 1 つだけ。最大化（没入）中も一覧は操作できる。
+- 項目の操作: 最小化中→元の位置・大きさで前面に復元／前面→最小化／閉じた→再表示（前面）。コンポーネントの本体・見出しを押す・フォーカスすると前面（`data-state="front"`、z 順が最上位＝計算済みの `z-index` が最大）。
+- 操作アイコン（§10 と同じ `component-actions`）の button「最小化」「非表示」を使う。「既定のレイアウトに戻す」（button）で一覧の状態・位置・大きさ・z 順が既定に戻る。
+- 没入（FR-297）: 最大化中は `data-maximized="true"`。背面の覆いは `data-testid="immersive-backdrop"`（背景色の alpha × opacity が PARAM-137＝0.60±0.05。背面のコンポーネントへの操作を通さない）。最大化中は一覧の前面の項目（またはその最大化したコンポーネント）の押下と `Esc` で通常表示に戻る。
+- 前面の強調（FR-297 AC-803）: 前面のコンポーネントの見出しに `data-testid="front-indicator"`（文字かアイコン。背面にはない）。影は計算済みの `box-shadow`（Light・Dark で前面が背面より強い）、ハイコントラスト（forced-colors）では前面の境界線（border か outline）が背面より太い。見出しの背景は透明効果が働いても、ハイコントラストでは不透明（alpha=1）。
