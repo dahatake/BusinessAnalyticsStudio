@@ -13,6 +13,8 @@ import { useSelectionStore } from '../store/selection';
 import { useComponentView } from '../view/useView';
 import { HIDDEN_SELECTION_TEXT, selectionHiddenIn, singleWorldNote } from '../view/viewModel';
 import { isEditableTarget, panelKeyAction, runPanelKeyAction, titleDoubleClick, type KeyLike } from './panelKeys';
+import { CopilotProposal } from '../review/CopilotProposal';
+import { useT } from '../i18n';
 import { TIER_APPEARANCE, TIER_LABEL } from '../workspace/tiers';
 
 /** これより狭いコンポーネントは、見出しの操作アイコンを出さず「…」メニューに任せる（FR-150 AC-259）。
@@ -55,8 +57,8 @@ const useStyles = makeStyles({
     color: tokens.colorNeutralForeground1,
     ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`, outlineOffset: '-2px' },
   },
-  paneBody: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minHeight: 0, minWidth: 0, overflow: 'auto', boxSizing: 'border-box', rowGap: tokens.spacingVerticalM, padding: `0 ${tokens.spacingHorizontalL} ${tokens.spacingVerticalS}` },
-  maximized: { position: 'absolute', inset: 0, zIndex: 10, height: 'auto' },
+  paneBody: { flexGrow: 1, flexShrink: 1, flexBasis: 0, minHeight: 0, minWidth: 0, overflow: 'auto', boxSizing: 'border-box', rowGap: tokens.spacingVerticalS, padding: `0 ${tokens.spacingHorizontalL} ${tokens.spacingVerticalS}` },
+  maximized: { position: 'absolute', inset: 0, zIndex: 900, height: 'auto' },
   // 縁・角のつまみ（FR-224）。当たり判定は 8px 以上。ホバーで色の付いた線を見せる
   resize: { position: 'absolute', zIndex: 3, touchAction: 'none', ':hover': { backgroundColor: tokens.colorNeutralStrokeAccessible } },
   resizeE: { top: '16px', right: 0, bottom: '12px', width: '8px', cursor: 'ew-resize' },
@@ -102,7 +104,8 @@ const useStyles = makeStyles({
   actionGroupCompact: { alignSelf: 'flex-end' },
   actionGroup: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS, marginInlineStart: 'auto' },
   // 見出しをつかんで動かす（FR-142）。つかめることをカーソルで示し、動かしている間に文字が選択されないようにする
-  grab: { flexGrow: 1, cursor: 'grab', userSelect: 'none', touchAction: 'none', ':active': { cursor: 'grabbing' } },
+  // 見出しは大きさ変更の持ち手（zIndex 3）より手前に置く。低い枠で見出しが下端にはみ出しても、見出しの上でドラッグを始められる
+  grab: { flexGrow: 1, position: 'relative', zIndex: 4, cursor: 'grab', userSelect: 'none', touchAction: 'none', ':active': { cursor: 'grabbing' } },
   sample: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS },
   // 詰めた見出し（狭いコンポーネント）: 見出しの上下に標準の余白（h2 の既定）を足さず、上部に結論・数値を置く画面（エグゼクティブサマリーなど）が下に押し下げられないようにする
   titleCompact: { marginBlock: 0 },
@@ -110,6 +113,7 @@ const useStyles = makeStyles({
   sampleBadge: { flexShrink: 0, whiteSpace: 'nowrap' },
   // 世界の表示の注記（FR-218）
   worldNote: { color: tokens.colorNeutralForeground2 },
+  guide: { color: tokens.colorNeutralForeground2 },
 });
 
 /**
@@ -148,9 +152,12 @@ function toKeyLike(e: KeyboardEvent<HTMLElement>): KeyLike {
 
 export function Panel({ testId, title, description, maxWidth, children }: PanelProps) {
   const s = useStyles();
+  const t = useT();
   const pane = usePane();
   const state = usePackStore((st) => st.state);
   const sample = state.status === 'ready' && hasSampleData(state.pack.data);
+  // 画面の説明（顧客パックの screenGuides。FR-287）。ないパック（実際の Project など）では出さない
+  const guide = state.status === 'ready' ? state.pack.data.customer?.screenGuides?.[testId.replace(/^component-/, '') as keyof NonNullable<typeof state.pack.data.customer.screenGuides>] : undefined;
   const ref = useRef<HTMLElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   // フォーカス中のコンポーネントだけ、見出しに操作アイコンを出す（FR-150）
@@ -225,10 +232,10 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
         // 掴み場所（ハンドル）: ドラッグで移動し、ダブルクリックで 75% 表示にする。本体では行わない（FR-183）
         <div
           data-testid="panel-handle"
-          className={mergeClasses(s.handle, !pane.maximized && !pane.expanded ? s.handleGrab : undefined)}
+          className={mergeClasses(s.handle, !pane.expanded ? s.handleGrab : undefined)}
           onDoubleClick={titleDoubleClick(pane)}
-          onMouseDown={!pane.maximized && !pane.expanded ? (e: MouseEvent<HTMLElement>) => { if (e.button === 0 && e.detail < 2) e.preventDefault(); } : undefined}
-          onPointerDown={!pane.maximized && !pane.expanded ? (e: PointerEvent<HTMLElement>) => { if (e.button === 0) { e.preventDefault(); pane.startDrag(e); } } : undefined}
+          onMouseDown={!pane.expanded ? (e: MouseEvent<HTMLElement>) => { if (e.button === 0 && e.detail < 2) e.preventDefault(); } : undefined}
+          onPointerDown={!pane.expanded ? (e: PointerEvent<HTMLElement>) => { if (e.button === 0) { e.preventDefault(); pane.startDrag(e); } } : undefined}
         >
           <span data-testid="panel-handle-grip" className={s.grip} aria-hidden />
         </div>
@@ -242,35 +249,41 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
               size={pane && compact ? 500 : 600}
               weight="semibold"
               block
-              className={mergeClasses(pane && !pane.maximized && !pane.expanded ? s.grab : undefined, pane && compact ? s.titleCompact : undefined)}
+              className={mergeClasses(pane && !pane.expanded ? s.grab : undefined, pane && compact ? s.titleCompact : undefined)}
               tabIndex={pane ? 0 : undefined}
               onContextMenu={pane ? (e: MouseEvent<HTMLElement>) => { e.preventDefault(); setMenuOpen(true); } : undefined}
               onDoubleClick={titleDoubleClick(pane)}
-              onMouseDown={pane && !pane.maximized && !pane.expanded ? (e: MouseEvent<HTMLElement>) => { if (e.button === 0 && e.detail < 2) e.preventDefault(); } : undefined}
-              onPointerDown={pane && !pane.maximized && !pane.expanded ? (e: PointerEvent<HTMLElement>) => { if (e.button === 0) { e.preventDefault(); pane.startDrag(e); } } : undefined}
+              onMouseDown={pane && !pane.expanded ? (e: MouseEvent<HTMLElement>) => { if (e.button === 0 && e.detail < 2) e.preventDefault(); } : undefined}
+              onPointerDown={pane && !pane.expanded ? (e: PointerEvent<HTMLElement>) => { if (e.button === 0) { e.preventDefault(); pane.startDrag(e); } } : undefined}
             >
               {title}
             </Text>
             {pane ? (
               // 階層は、色だけでなく文字と形（塗り・薄い塗り・枠線）でも示す（FR-244 AC-589）
-              <Badge data-testid="tier-label" appearance={TIER_APPEARANCE[pane.tier]} color={pane.tier === 'primary' ? 'brand' : 'informative'} shape={pane.tier === 'primary' ? 'rounded' : pane.tier === 'supporting' ? 'circular' : 'square'} size="medium">{TIER_LABEL[pane.tier]}</Badge>
+              <Badge data-testid="tier-label" appearance={TIER_APPEARANCE[pane.tier]} color={pane.tier === 'primary' ? 'brand' : 'informative'} shape={pane.tier === 'primary' ? 'rounded' : pane.tier === 'supporting' ? 'circular' : 'square'} size="medium">{t(TIER_LABEL[pane.tier])}</Badge>
             ) : null}
             {sample ? (
               <span className={s.sample} data-testid="sample-badge">
-                <Badge className={s.sampleBadge} appearance="filled" color="warning" size="large">サンプル</Badge>
-                <Text size={200}>架空のサンプルデータを表示しています</Text>
+                <Badge className={s.sampleBadge} appearance="filled" color="warning" size="large">{t('サンプル')}</Badge>
+                <Text size={200}>{t('架空のサンプルデータを表示しています')}</Text>
               </span>
             ) : null}
           </div>
           {pane ? <span className={mergeClasses(s.actionGroup, compact ? s.actionGroupCompact : undefined)}><ComponentActions pane={pane} title={title} active={focused || minimized} narrow={narrow} menu={{ open: menuOpen, onOpenChange: setMenuOpen, onShowTier: () => setShowTier(true) }} /></span> : null}
         </div>
                   {pane && showTier && !minimized ? <Text size={300} role="status" data-testid="tier-reason" className={s.worldNote}>{pane.tierReason}</Text> : null}
-        {description && !minimized ? <Text size={300}>{description}</Text> : null}
         {world.note && !minimized ? <Text size={300} className={s.worldNote} data-testid="view-world-note">{world.note}</Text> : null}
-        {world.hiddenNote && !minimized ? <Text size={300} role="status" className={s.worldNote} data-testid="view-hidden-selection">{HIDDEN_SELECTION_TEXT}</Text> : null}
+        {world.hiddenNote && !minimized ? <Text size={300} role="status" className={s.worldNote} data-testid="view-hidden-selection">{t(HIDDEN_SELECTION_TEXT)}</Text> : null}
       </div>
       {/* 1 つの世界の画面は、いつも同じ包みに入れて表示・非表示だけを変える（中身を作り直さない） */}
-      {world.single ? <div data-testid="view-world-body" style={{ display: world.hideAll ? 'none' : 'contents' }}>{children}</div> : children}
+      {/* component-data: コンポーネントが保持している現在のデータの欄（「Copilot で分析実行」が読む。FR-278）。Copilot の案（FR-279）はその外に別の欄で出す */}
+      <div data-testid="component-data" data-tier="supporting" style={{ display: 'contents' }}>
+        {world.single ? <div data-testid="view-world-body" style={{ display: world.hideAll ? 'none' : 'contents' }}>{children}</div> : children}
+      </div>
+      {/* 画面の説明（description・screenGuides）は、結論のサマリーを各コンポーネントの上部に出すため（FR-041 AC-051）、データの下に置く */}
+      {description && !minimized ? <Text size={300} data-testid="screen-description">{description}</Text> : null}
+      {guide && !minimized ? <Text size={300} className={s.guide} data-testid="screen-guide">{guide}</Text> : null}
+      <CopilotProposal componentKey={testId.replace(/^component-/, '')} title={title} />
       </div>
       {pane && !pane.maximized && !pane.minimized ? (
         // 縁・角のつまみ（FR-224）。縦と横を独立に変える。ホバー・フォーカスで見えるようにし、ドラッグを使わない手段は「…」メニューとコマンド

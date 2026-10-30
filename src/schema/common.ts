@@ -1,11 +1,12 @@
 // 顧客パックの共通の型（ID・作成者の種別・確度・機密区分）。
 // このモジュールは画面の部品（src/components, src/app）を参照しない（NFR-MAINT-001）。
 import { z } from 'zod';
+import { tr } from '../i18n';
 
 /** エンティティ ID。パック全体で一意（FR-114）。 */
 export const IdSchema = z
   .string()
-  .regex(/^[a-z0-9][a-z0-9-]*$/, 'ID は小文字英数字とハイフンだけで書く');
+  .regex(/^[a-z0-9][a-z0-9-]*$/, { error: () => tr('ID は小文字英数字とハイフンだけで書く') });
 export type EntityId = z.infer<typeof IdSchema>;
 
 /** 値の作成者の種別（FR-116） */

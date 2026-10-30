@@ -1,4 +1,5 @@
 // 番組の付加機能の純粋なモデル（FR-080 ナビゲーター・FR-081 ショート動画・FR-082 クイズとリアクション）。React・ストアに依存しない。
+import { tr } from '../i18n';
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === 'object' && v !== null && !Array.isArray(v);
@@ -6,7 +7,7 @@ function isRecord(v: unknown): v is Record<string, unknown> {
 
 // ───────── FR-080 AI ナビゲーター ─────────
 
-/** 議題の台本（narration）を読む。空・欠けていれば null */
+/** 論点の台本（narration）を読む。空・欠けていれば null */
 export function readNarration(topic: unknown): string | null {
   const n = isRecord(topic) ? topic.narration : undefined;
   return typeof n === 'string' && n.trim() !== '' ? n.trim() : null;
@@ -51,10 +52,10 @@ export interface Quiz { title: string; questions: QuizQuestion[]; levels: QuizLe
 export function defaultLevels(maxScore: number): QuizLevel[] {
   const at = (r: number) => Math.round(maxScore * r);
   return [
-    { minScore: 0, label: 'レベル 1: 検討前', description: 'AI の活用はこれからです。小さな業務での試行から始めましょう。' },
-    { minScore: at(0.35), label: 'レベル 2: 試行中', description: '一部の業務で試しています。成果の測り方と推進の体制を整えましょう。' },
-    { minScore: at(0.6), label: 'レベル 3: 展開中', description: '複数の業務で活用しています。データと運用の標準化で広げましょう。' },
-    { minScore: at(0.85), label: 'レベル 4: 定着', description: '業務の基盤として定着しています。効果の最大化と新しい価値の創出に進めます。' },
+    { minScore: 0, label: tr('レベル 1: 検討前'), description: tr('AI の活用はこれからです。小さな業務での試行から始めましょう。') },
+    { minScore: at(0.35), label: tr('レベル 2: 試行中'), description: tr('一部の業務で試しています。成果の測り方と推進の体制を整えましょう。') },
+    { minScore: at(0.6), label: tr('レベル 3: 展開中'), description: tr('複数の業務で活用しています。データと運用の標準化で広げましょう。') },
+    { minScore: at(0.85), label: tr('レベル 4: 定着'), description: tr('業務の基盤として定着しています。効果の最大化と新しい価値の創出に進めます。') },
   ];
 }
 
@@ -62,7 +63,7 @@ export function quizMaxScore(questions: readonly QuizQuestion[]): number {
   return questions.reduce((sum, q) => sum + Math.max(0, ...q.options.map((o) => o.score)), 0);
 }
 
-/** 議題の quiz を読む。質問が 1 問もなければ null */
+/** 論点の quiz を読む。質問が 1 問もなければ null */
 export function readQuiz(topic: unknown): Quiz | null {
   const q = isRecord(topic) ? topic.quiz : undefined;
   if (!isRecord(q) || !Array.isArray(q.questions)) return null;
@@ -85,7 +86,7 @@ export function readQuiz(topic: unknown): Quiz | null {
     : [];
   if (levels.length === 0) levels = defaultLevels(quizMaxScore(questions));
   levels.sort((a, b) => a.minScore - b.minScore);
-  return { title: typeof q.title === 'string' && q.title !== '' ? q.title : 'AI 成熟度クイズ', questions, levels };
+  return { title: typeof q.title === 'string' && q.title !== '' ? q.title : tr('AI 成熟度クイズ'), questions, levels };
 }
 
 export interface QuizResult { score: number; max: number; level: QuizLevel; levelNumber: number }
@@ -106,9 +107,9 @@ export function scoreQuiz(quiz: Quiz, answers: Readonly<Record<string, number>>)
 // ───────── FR-082 リアクション ─────────
 
 export const REACTIONS = [
-  { id: 'like', emoji: '👍', label: 'いいね' },
-  { id: 'clap', emoji: '👏', label: '拍手' },
-  { id: 'idea', emoji: '💡', label: 'なるほど' },
+  { id: 'like', emoji: '👍', get label() { return tr('いいね'); } },
+  { id: 'clap', emoji: '👏', get label() { return tr('拍手'); } },
+  { id: 'idea', emoji: '💡', get label() { return tr('なるほど'); } },
 ] as const;
 export type ReactionId = (typeof REACTIONS)[number]['id'];
 

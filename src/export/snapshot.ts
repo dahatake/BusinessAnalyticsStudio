@@ -6,6 +6,7 @@ import { BRAND_PROFILE_PATH, DATA_FILE_NAMES, formatPackError, validatePack, typ
 import { subscribeEdits, type HistoryEntry } from '../store/edit';
 import { usePackStore } from '../store/pack';
 import { recordChange, type ChangeEntry } from './changelog';
+import { tr } from '../i18n';
 
 /** `data` の中のキー */
 export const PACK_SNAPSHOT_KEY = 'pack';
@@ -20,8 +21,8 @@ const OP_LABEL: Record<HistoryEntry['op'], string> = {
 /** 編集の変更履歴の 1 行を、エクスポートの変更履歴（FR-053）の形にする。 */
 export function editToChange(e: Pick<HistoryEntry, 'op' | 'entityId' | 'entityLabel' | 'fieldLabel' | 'before' | 'after' | 'at' | 'actor'>): ChangeEntry {
   const detail = e.op === 'update' || e.op === 'undo' || e.op === 'redo'
-    ? `${OP_LABEL[e.op]}: ${e.fieldLabel}「${e.before}」→「${e.after}」`
-    : `${OP_LABEL[e.op]}${e.fieldLabel ? `（${e.fieldLabel}）` : ''}`;
+    ? `${tr(OP_LABEL[e.op], undefined, 'export')}: ${e.fieldLabel}「${e.before}」→「${e.after}」`
+    : `${tr(OP_LABEL[e.op], undefined, 'export')}${e.fieldLabel ? `（${e.fieldLabel}）` : ''}`;
   return { at: e.at, kind: OP_KIND[e.op], targetId: e.entityId ?? '', target: e.entityLabel, detail, by: e.actor };
 }
 
@@ -34,7 +35,7 @@ const isObj = (v: unknown): v is Record<string, unknown> => typeof v === 'object
 
 /** 読み込む内容の問題の一覧（空なら問題なし）。構成と、ID・参照・出典の検証を通す。 */
 export function validatePackSnapshot(value: unknown): string[] {
-  if (!isObj(value)) return ['顧客パックのデータがオブジェクトではありません。'];
+  if (!isObj(value)) return [tr('顧客パックのデータがオブジェクトではありません。')];
   const files: PackFiles = {};
   for (const name of DATA_FILE_NAMES) if (name in value) files[name] = value[name];
   const st = usePackStore.getState().state;

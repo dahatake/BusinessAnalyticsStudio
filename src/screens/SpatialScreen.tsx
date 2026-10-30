@@ -3,6 +3,8 @@
 // 3D は canvas ではなく SVG の等角投影で描くので、WebGL がなくても選べる（ガントチャートと同じ扱い）。選択はすべてのビューと共通（FR-024）。
 // Graph の表現は、表示形式の共通の機構（FR-238）が担当する。
 import { useEffect, useMemo, useRef, type KeyboardEvent, type SVGProps } from 'react';
+import { tr, useT } from '../i18n';
+import { lifeOpacity, usePresenceItems } from '../motion';
 import { Button, Field, Select, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
@@ -23,6 +25,8 @@ import { TWIN_RELATION_LABELS, type TwinRelation } from '../schema/world';
 import { useComponentView, usePublishViewItems } from '../view/useView';
 
 const ORIGIN = 'spatial-view';
+/** 件数の表示。0 は「なし」と書く（0 件の表示にしない。FR-287 AC-750） */
+const n0 = (n: number): string => (n === 0 ? tr('なし') : tr('{n} 件', { n }));
 const D = SPATIAL_ELEMENT_DEPTH;
 const DEPTH_OF_KIND = { site: 1, floor: 2, room: 3, equipment: 3 } as const;
 
@@ -39,7 +43,7 @@ const useStyles = makeStyles({
   list: { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: tokens.spacingHorizontalM, margin: 0, padding: 0, listStyle: 'none' },
   card: {
     display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS, padding: tokens.spacingHorizontalM, cursor: 'pointer',
-    borderRadius: tokens.borderRadiusMedium, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`, backgroundColor: tokens.colorNeutralBackground1,
+    borderRadius: tokens.borderRadiusMedium, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`, backgroundColor: tokens.colorNeutralBackground1, color: tokens.colorNeutralForeground1, textAlign: 'start',
     ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`, outlineOffset: '1px' },
   },
   cardSelected: { border: `${tokens.strokeWidthThick} solid ${tokens.colorBrandStroke1}` },
@@ -53,6 +57,8 @@ const useStyles = makeStyles({
 });
 
 /** 段階の色と、色に加える形・文字（FR-240 AC-573） */
+interface StackEntry { id: string; node: SpatialNode; role: 'site' | 'floor' | 'room'; fi: number; ri: number; rn: number; nF: number; floorId: string }
+
 function KpiBadge({ cell, className }: { cell: KpiCell; className: string }) {
   return (
     <span className={className} data-kpi-state={cell.state} data-kpi-stage={cell.stage} style={cell.stage ? { backgroundColor: STAGE_FILL[cell.stage], color: tokens.colorNeutralForeground1 } : undefined}>
@@ -62,6 +68,7 @@ function KpiBadge({ cell, className }: { cell: KpiCell; className: string }) {
 }
 
 export function SpatialScreen() {
+  const t = useT();
   const s = useStyles();
   const hl = useHighlightClass();
   const bind = useEntityBinding(ORIGIN);
@@ -122,8 +129,35 @@ export function SpatialScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [model, building, floors, twinItems]);
   usePublishViewItems(ORIGIN, shownIds);
+  // 2D の一覧は、ID を保ったまま出入りする（FR-070 AC-086）。削除は薄れて消えるまで元の位置に残る
+  const itemPresence = usePresenceItems(items, (n) => n.id, () => []);
+  // 3D の積層（拠点・フロア・部屋/設備）も同じ仕組みで、ID を保ったまま出入りする。削除は元の位置で薄れて消える
+  const stackEntries = useMemo<StackEntry[]>(() => {
+    if (!model || !building) return [];
+    const out: StackEntry[] = [];
+    const nF = Math.max(1, floors.length);
+    floors.forEach((f, fi) => out.push({ id: f.id, node: f, role: 'floor', fi, ri: 0, rn: 0, nF, floorId: f.id }));
+    if (d >= D) {
+      floors.forEach((f, fi) => {
+        const rs = f.children.map((c) => model.nodes.get(c)!).filter((n) => n.kind === 'room' || n.kind === 'equipment');
+        rs.forEach((r, ri) => out.push({ id: r.id, node: r, role: 'room', fi, ri, rn: rs.length, nF, floorId: f.id }));
+      });
+    }
+    const siteN = model.nodes.get(building);
+    if (siteN) out.push({ id: siteN.id, node: siteN, role: 'site', fi: 0, ri: 0, rn: 0, nF, floorId: '' });
+    return out;
+  }, [model, building, floors, d]);
+  const stackPresence = usePresenceItems(stackEntries, (e) => e.id, () => []);
+  // 代替表（3D・Graph）の行も、削除は薄れて消えるまで残す
+  const altNodeSrc = useMemo(() => {
+    if (!model || !building) return [] as SpatialNode[];
+    const out: SpatialNode[] = [model.nodes.get(building)!];
+    for (const f of floors) { out.push(f); for (const c of f.children) { const r = model.nodes.get(c)!; if (r.kind === 'room' || r.kind === 'equipment') out.push(r); } }
+    return out;
+  }, [model, building, floors]);
+  const altPresence = usePresenceItems(altNodeSrc, (n) => n.id, () => []);
 
-  if (!model) return <LoadingView label="空間ビューを読み込み中" />;
+  if (!model) return <LoadingView label={t('空間ビューを読み込み中')} />;
 
   const zoomTo = (n: number) => setDepth(n);
   // ダブルクリック・Enter: その項目を選び、一つ下の階層へ
@@ -141,12 +175,19 @@ export function SpatialScreen() {
   for (const n of model.nodes.values()) counts[n.kind === 'equipment' ? 'room' : n.kind]++;
 
   // ---- 2D（階層ごとの一覧） ----
-  const card = (n: SpatialNode) => {
+  const card = (n: SpatialNode, life = 1, exiting = false) => {
+    if (exiting) {
+      return (
+        <li key={n.id} aria-hidden style={{ opacity: lifeOpacity(life), pointerEvents: 'none' }}>
+          <div className={s.card}><Text weight="semibold">{n.name}</Text><Text size={200}>{SPATIAL_KIND_LABELS[n.kind]}</Text></div>
+        </li>
+      );
+    }
     const props = bind(n.id, { interactive: false });
     const cell = kpiCell(model, n.id, kpi);
     const isSel = selectedIds.includes(n.id);
     return (
-      <li key={n.id}>
+      <li key={n.id} style={life < 1 ? { opacity: lifeOpacity(life) } : undefined}>
         <div
           {...props}
           data-kind={n.kind}
@@ -155,7 +196,7 @@ export function SpatialScreen() {
           role="button"
           tabIndex={0}
           aria-pressed={isSel}
-          aria-label={`${SPATIAL_KIND_LABELS[n.kind]} ${n.name}、${kpi ? `${kpi} ${cell.text}` : 'KPI なし'}`}
+          aria-label={`${SPATIAL_KIND_LABELS[n.kind]} ${n.name}、${kpi ? `${kpi} ${cell.text}` : t('KPI なし')}`}
           className={mergeClasses(s.card, isSel ? s.cardSelected : undefined, hl(props['data-highlight']))}
           onClick={(e) => select(n.id, { origin: ORIGIN, additive: e.ctrlKey || e.metaKey || e.shiftKey })}
           onDoubleClick={() => zoomInto(n)}
@@ -189,7 +230,7 @@ export function SpatialScreen() {
     return {
       ...(props as unknown as SVGProps<SVGGElement>),
       role: 'button', tabIndex: 0, 'aria-pressed': selectedIds.includes(n.id),
-      'aria-label': `${SPATIAL_KIND_LABELS[n.kind]} ${n.name}、${kpi ? `${kpi} ${cell.text}` : 'KPI なし'}${extra}`,
+      'aria-label': `${SPATIAL_KIND_LABELS[n.kind]} ${n.name}、${kpi ? `${kpi} ${cell.text}` : t('KPI なし')}${extra}`,
       className: s.svgItem,
       onClick: (e) => select(n.id, { origin: ORIGIN, additive: e.ctrlKey || e.metaKey || e.shiftKey }),
       onDoubleClick: () => zoomInto(n),
@@ -199,49 +240,50 @@ export function SpatialScreen() {
   const stageFill = (id: string) => { const c = kpiCell(model, id, kpi); return c.stage ? STAGE_FILL[c.stage] : tokens.colorNeutralBackground1; };
 
   const stack = (
-    <svg className={s.stage} viewBox={viewBox} preserveAspectRatio="xMidYMid meet" role="group" aria-label="空間の 3D（等角投影）。建物の各階を積み重ねて表示します。" data-zoom-surface="3d" data-projection="orthographic">
-      {floors.map((f, i) => {
-        const z = i * GAP;
-        const cell = kpiCell(model, f.id, kpi);
-        const state = focusFloor === undefined ? undefined : focusFloor === f.id ? 'selected' : 'dimmed';
-        const c = isoProject(W / 2, DEP * 0.82, z);
+    <svg className={s.stage} viewBox={viewBox} preserveAspectRatio="xMidYMid meet" role="group" aria-label={t('空間の 3D（等角投影）。建物の各階を積み重ねて表示します。')} data-zoom-surface="3d" data-projection="orthographic">
+      {stackPresence.map(({ item: en, life, exiting }) => {
+        const n = en.node;
+        const lo = lifeOpacity(life);
+        // 削除の遷移中（exiting）は、元の位置のまま薄れて消える。モデルから消えた項目なので KPI は読まず、操作もさせない
+        const live = !exiting;
+        const cell = live ? kpiCell(model, n.id, kpi) : undefined;
+        const gProps = live ? svgProps(n, '') : { 'aria-hidden': true as const, pointerEvents: 'none' as const, 'data-entity-id': n.id, 'data-exiting': true as const };
+        const fillOf = (id: string) => (live ? stageFill(id) : tokens.colorNeutralBackground1);
+        if (en.role === 'floor') {
+          const z = en.fi * GAP;
+          const state = !live || focusFloor === undefined ? undefined : focusFloor === n.id ? 'selected' : 'dimmed';
+          const c = isoProject(W / 2, DEP * 0.82, z);
+          return (
+            <g key={n.id} {...gProps} data-kind="floor" data-floor-state={state} opacity={(state === 'dimmed' ? 0.35 : 1) * lo}>
+              <polygon points={[pt(0, DEP, z), pt(W, DEP, z), pt(W, DEP, z - THICK), pt(0, DEP, z - THICK)].join(' ')} fill={tokens.colorNeutralBackground5} stroke={tokens.colorNeutralStroke1} />
+              <polygon points={[pt(W, 0, z), pt(W, DEP, z), pt(W, DEP, z - THICK), pt(W, 0, z - THICK)].join(' ')} fill={tokens.colorNeutralBackground6} stroke={tokens.colorNeutralStroke1} />
+              <polygon points={rhombus(0, 0, W, DEP, z)} fill={fillOf(n.id)} stroke={state === 'selected' ? tokens.colorBrandStroke1 : tokens.colorNeutralStroke1} strokeWidth={state === 'selected' ? 4 : 1.5} />
+              <text x={c.sx} y={c.sy - 6} textAnchor="middle" fontSize={13} fontWeight={600} fill={tokens.colorNeutralForeground1} pointerEvents="none">{n.name}</text>
+              <text x={c.sx} y={c.sy + 10} textAnchor="middle" fontSize={11} fill={tokens.colorNeutralForeground1} pointerEvents="none">{kpi && cell ? cell.text : ''}</text>
+            </g>
+          );
+        }
+        if (en.role === 'room') {
+          const z = en.fi * GAP;
+          const cw = Math.min(64, (W - 20) / Math.max(1, en.rn));
+          const x = 10 + en.ri * cw; const cd = 46;
+          const c = isoProject(x + (cw - 4) / 2, 6 + cd / 2, z);
+          return (
+            <g key={n.id} {...gProps} data-kind={n.kind} opacity={(live && focusFloor !== undefined && focusFloor !== en.floorId ? 0.35 : 1) * lo}>
+              <polygon points={rhombus(x, 6, cw - 4, cd, z)} fill={fillOf(n.id)} stroke={tokens.colorNeutralStroke1} />
+              <text x={c.sx} y={c.sy - 2} textAnchor="middle" fontSize={8} fontWeight={600} fill={tokens.colorNeutralForeground1} pointerEvents="none">{n.name}</text>
+              <text x={c.sx} y={c.sy + 8} textAnchor="middle" fontSize={7} fill={tokens.colorNeutralForeground1} pointerEvents="none">{kpi && cell ? cell.text : ''}</text>
+            </g>
+          );
+        }
+        const c = isoProject(W / 2, DEP, (en.nF - 1) * GAP + 70);
         return (
-          <g key={f.id} {...svgProps(f, '')} data-kind="floor" data-floor-state={state} opacity={state === 'dimmed' ? 0.35 : 1}>
-            <polygon points={[pt(0, DEP, z), pt(W, DEP, z), pt(W, DEP, z - THICK), pt(0, DEP, z - THICK)].join(' ')} fill={tokens.colorNeutralBackground5} stroke={tokens.colorNeutralStroke1} />
-            <polygon points={[pt(W, 0, z), pt(W, DEP, z), pt(W, DEP, z - THICK), pt(W, 0, z - THICK)].join(' ')} fill={tokens.colorNeutralBackground6} stroke={tokens.colorNeutralStroke1} />
-            <polygon points={rhombus(0, 0, W, DEP, z)} fill={stageFill(f.id)} stroke={state === 'selected' ? tokens.colorBrandStroke1 : tokens.colorNeutralStroke1} strokeWidth={state === 'selected' ? 4 : 1.5} />
-            <text x={c.sx} y={c.sy - 6} textAnchor="middle" fontSize={13} fontWeight={600} fill={tokens.colorNeutralForeground1} pointerEvents="none">{f.name}</text>
-            <text x={c.sx} y={c.sy + 10} textAnchor="middle" fontSize={11} fill={tokens.colorNeutralForeground1} pointerEvents="none">{kpi ? cell.text : ''}</text>
+          <g key={n.id} {...gProps} data-kind="site" opacity={lo}>
+            <text x={c.sx} y={c.sy - 70} textAnchor="middle" fontSize={13} fontWeight={600} fill={tokens.colorNeutralForeground1}>{t('拠点 {name}', { name: n.name })}</text>
+            <text x={c.sx} y={c.sy - 54} textAnchor="middle" fontSize={11} fill={tokens.colorNeutralForeground1}>{kpi && cell ? cell.text : ''}</text>
           </g>
         );
       })}
-      {d >= D ? floors.map((f, i) => {
-        const rs = roomsOf(f);
-        const cw = Math.min(64, (W - 20) / Math.max(1, rs.length));
-        return rs.map((r, k) => {
-          const z = i * GAP;
-          const x = 10 + k * cw; const cd = 46;
-          const c = isoProject(x + (cw - 4) / 2, 6 + cd / 2, z);
-          const cell = kpiCell(model, r.id, kpi);
-          return (
-            <g key={r.id} {...svgProps(r, '')} data-kind={r.kind} opacity={focusFloor !== undefined && focusFloor !== f.id ? 0.35 : 1}>
-              <polygon points={rhombus(x, 6, cw - 4, cd, z)} fill={stageFill(r.id)} stroke={tokens.colorNeutralStroke1} />
-              <text x={c.sx} y={c.sy - 2} textAnchor="middle" fontSize={8} fontWeight={600} fill={tokens.colorNeutralForeground1} pointerEvents="none">{r.name}</text>
-              <text x={c.sx} y={c.sy + 8} textAnchor="middle" fontSize={7} fill={tokens.colorNeutralForeground1} pointerEvents="none">{kpi ? cell.text : ''}</text>
-            </g>
-          );
-        });
-      }) : null}
-      {siteNode ? (() => {
-        const c = isoProject(W / 2, DEP, (nF - 1) * GAP + 70);
-        const cell = kpiCell(model, siteNode.id, kpi);
-        return (
-          <g {...svgProps(siteNode, '')} data-kind="site">
-            <text x={c.sx} y={c.sy - 70} textAnchor="middle" fontSize={13} fontWeight={600} fill={tokens.colorNeutralForeground1}>{`拠点 ${siteNode.name}`}</text>
-            <text x={c.sx} y={c.sy - 54} textAnchor="middle" fontSize={11} fill={tokens.colorNeutralForeground1}>{kpi ? cell.text : ''}</text>
-          </g>
-        );
-      })() : null}
     </svg>
   );
 
@@ -256,8 +298,8 @@ export function SpatialScreen() {
     };
     add(siteNode, 1);
     for (const f of floors) {
-      add(f, 2); graphEdges.push({ id: `${siteNode.id}>${f.id}`, from: siteNode.id, to: f.id, label: '含む', meaning: 'contains' });
-      for (const r of roomsOf(f)) { add(r, 3); graphEdges.push({ id: `${f.id}>${r.id}`, from: f.id, to: r.id, label: '含む', meaning: 'contains' }); }
+      add(f, 2); graphEdges.push({ id: `${siteNode.id}>${f.id}`, from: siteNode.id, to: f.id, label: t('含む'), meaning: 'contains' });
+      for (const r of roomsOf(f)) { add(r, 3); graphEdges.push({ id: `${f.id}>${r.id}`, from: f.id, to: r.id, label: t('含む'), meaning: 'contains' }); }
     }
   }
 
@@ -265,21 +307,21 @@ export function SpatialScreen() {
     const parent = detail.parentId ? model.nodes.get(detail.parentId) : undefined;
     return (
       <div className={s.detail} data-testid="zoom-detail">
-        <section data-testid="room-detail" data-entity-id={detail.id} aria-label={`${detail.name} の詳細`}>
+        <section data-testid="room-detail" data-entity-id={detail.id} aria-label={t('{name} の詳細', { name: detail.name })}>
           <Text as="h3" weight="semibold">{SPATIAL_KIND_LABELS[detail.kind]} {detail.name}</Text>
-          <Text as="h4" weight="semibold">属性</Text>
+          <Text as="h4" weight="semibold">{t('属性')}</Text>
           <dl className={s.dl}>
-            <dt>種別</dt><dd>{SPATIAL_KIND_LABELS[detail.kind]}</dd>
-            <dt>所属</dt><dd>{parent ? `${SPATIAL_KIND_LABELS[parent.kind]} ${parent.name}` : '—'}</dd>
+            <dt>{t('種別')}</dt><dd>{SPATIAL_KIND_LABELS[detail.kind]}</dd>
+            <dt>{t('所属')}</dt><dd>{parent ? `${SPATIAL_KIND_LABELS[parent.kind]} ${parent.name}` : '—'}</dd>
             {model.kpiNames.map((k) => { const c = kpiCell(model, detail.id, k); return (<><dt key={`${k}-t`}>{k}</dt><dd key={`${k}-d`}><KpiBadge cell={c} className={s.kpi} /></dd></>); })}
           </dl>
-          <Text as="h4" weight="semibold">出典</Text>
-          <Text as="p">{detail.sourceIds.length ? detail.sourceIds.join('、') : '出典なし'}</Text>
-          <Text as="h4" weight="semibold">関係</Text>
+          <Text as="h4" weight="semibold">{t('出典')}</Text>
+          <Text as="p">{detail.sourceIds.length ? detail.sourceIds.join('、') : t('出典なし')}</Text>
+          <Text as="h4" weight="semibold">{t('関係')}</Text>
           <ul>
-            {parent ? <li>{`${SPATIAL_KIND_LABELS[parent.kind]} ${parent.name} に含まれる（配置）`}</li> : null}
-            {(model.measuredBy.get(detail.id) ?? []).map((m) => <li key={m}>{`${model.names.get(m) ?? m} が計測する`}</li>)}
-            {detail.children.map((c) => <li key={c}>{`${model.names.get(c) ?? c} を含む`}</li>)}
+            {parent ? <li>{t('{kind} {name} に含まれる（配置）', { kind: t(SPATIAL_KIND_LABELS[parent.kind]), name: parent.name })}</li> : null}
+            {(model.measuredBy.get(detail.id) ?? []).map((m) => <li key={m}>{t('{name} が計測する', { name: model.names.get(m) ?? m })}</li>)}
+            {detail.children.map((c) => <li key={c}>{t('{name} を含む', { name: model.names.get(c) ?? c })}</li>)}
           </ul>
         </section>
       </div>
@@ -287,66 +329,68 @@ export function SpatialScreen() {
   })() : null;
 
   return (
-    <Panel testId="component-spatial-view" title="空間ビュー" description="拠点・フロア・部屋/設備の空間階層に KPI を重ねて見ます。拡大すると 全体 → 拠点 → フロア → 部屋/設備 → 詳細 と進みます。値は顧客パックが与えたものだけを表示します。">
+    <Panel testId="component-spatial-view" title={t('空間ビュー')} description={t('拠点・フロア・部屋/設備の空間階層に KPI を重ねて見ます。拡大すると 全体 → 拠点 → フロア → 部屋/設備 → 詳細 と進みます。値は顧客パックが与えたものだけを表示します。')}>
       {!hasSpace ? (
-        <EmptyView message="空間の階層（種別が拠点・フロア・部屋のエンティティ）がありません。" />
+        <EmptyView message={t('空間の階層（種別が拠点・フロア・部屋のエンティティ）がありません。')} />
       ) : (
         <div ref={rootRef} className={s.root} data-testid="spatial-surface" {...zoomAttrs(d, D)}>
           <div className={s.toolbar}>
             <Field label="KPI">
               <Select value={kpi ?? ''} disabled={model.kpiNames.length === 0} onChange={(_, v) => setKpi(v.value)} aria-label="KPI">
-                {model.kpiNames.length === 0 ? <option value="">KPI なし</option> : model.kpiNames.map((k) => <option key={k} value={k}>{k}</option>)}
+                {model.kpiNames.length === 0 ? <option value="">{t('KPI なし')}</option> : model.kpiNames.map((k) => <option key={k} value={k}>{k}</option>)}
               </Select>
             </Field>
-            <div className={s.zoomBar} role="group" aria-label="ズーム">
-              <Button size="small" disabled={!canZoomIn(d, D)} onClick={() => zoomTo(stepDepth(d, 1, D))}>拡大</Button>
-              <Button size="small" disabled={!canZoomOut(d)} onClick={() => zoomTo(stepDepth(d, -1, D))}>縮小</Button>
-              <Button size="small" onClick={() => zoomTo(0)}>全体表示に戻す</Button>
-              <Button size="small" disabled={!canZoomOut(d)} onClick={() => zoomTo(stepDepth(d, -1, D))}>一つ上の階層へ</Button>
+            <div className={s.zoomBar} role="group" aria-label={t('ズーム')}>
+              <Button size="small" disabled={!canZoomIn(d, D)} onClick={() => zoomTo(stepDepth(d, 1, D))}>{t('拡大')}</Button>
+              <Button size="small" disabled={!canZoomOut(d)} onClick={() => zoomTo(stepDepth(d, -1, D))}>{t('縮小')}</Button>
+              <Button size="small" onClick={() => zoomTo(0)}>{t('全体表示に戻す')}</Button>
+              <Button size="small" disabled={!canZoomOut(d)} onClick={() => zoomTo(stepDepth(d, -1, D))}>{t('一つ上の階層へ')}</Button>
             </div>
-            <span data-testid="zoom-level" data-depth={d} data-depth-count={D + 2}>階層 {d}</span>
+            <span data-testid="zoom-level" data-depth={d} data-depth-count={D + 2}>{t('階層 {d}', { d })}</span>
           </div>
           <ZoomBreadcrumb depth={d} elementDepth={D} elementLabels={elementLabels} detailLabel={detail?.name} onGo={zoomTo} />
-          {!kpi ? <Text size={200}>顧客パックに、空間を計測する KPI（ツイン関係「計測する」）がありません。値は「データなし」と表示します。</Text> : null}
+          {!kpi ? <Text size={200}>{t('顧客パックに、空間を計測する KPI（ツイン関係「計測する」）がありません。値は「データなし」と表示します。')}</Text> : null}
 
           {mode === '3d' ? stack : null}
 
           {mode === 'graph' && d >= 1 && d <= D ? (
-            <GraphSurface origin={ORIGIN} label="空間ビュー" nodes={graphNodes.filter((n) => n.rank <= d)} edges={graphEdges.filter((e) => graphRank.get(e.from)! <= d && graphRank.get(e.to)! <= d)} onOpen={(id) => { const n = model.nodes.get(id); if (n) zoomInto(n); }} zoomControls="external" />
+            <GraphSurface origin={ORIGIN} label={t('空間ビュー')} nodes={graphNodes.filter((n) => n.rank <= d)} edges={graphEdges.filter((e) => graphRank.get(e.from)! <= d && graphRank.get(e.to)! <= d)} onOpen={(id) => { const n = model.nodes.get(id); if (n) zoomInto(n); }} zoomControls="external" />
           ) : null}
 
           {mode !== '3d' && d === 0 ? (
-            <GraphScope active={mode === 'graph'} origin={ORIGIN} label="空間ビュー"><div role="group" aria-label="全体" data-testid="spatial-overview">
+            <GraphScope active={mode === 'graph'} origin={ORIGIN} label={t('空間ビュー')}><div role="group" aria-label={t('全体')} data-testid="spatial-overview">
               {(['site', 'floor', 'room'] as const).map((k) => (
                 <span key={k} className={s.cluster} data-zoom-cluster={SPATIAL_KIND_LABELS[k]} role="button" tabIndex={0}
                   onClick={() => zoomTo(DEPTH_OF_KIND[k])} onKeyDown={(e) => { if (e.key === 'Enter') zoomTo(DEPTH_OF_KIND[k]); }}>
-                  <Text weight="semibold">{k === 'room' ? '部屋・設備' : SPATIAL_KIND_LABELS[k]}</Text>
-                  <Text size={200}>{counts[k]} 件</Text>
+                  <Text weight="semibold">{k === 'room' ? t('部屋・設備') : t(SPATIAL_KIND_LABELS[k])}</Text>
+                  <Text size={200}>{n0(counts[k])}</Text>
                 </span>
               ))}
             </div></GraphScope>
           ) : null}
 
           {mode === '2d' && d >= 1 && d <= D ? (
-            <ul className={s.list} aria-label={`${d === 1 ? '拠点' : d === 2 ? 'フロア' : '部屋・設備'}の一覧（2D）`} data-zoom-surface="2d">
-              {items.map(card)}
+            <ul className={s.list} aria-label={t('{kind}の一覧（2D）', { kind: d === 1 ? t('拠点') : d === 2 ? t('フロア') : t('部屋・設備') })} data-zoom-surface="2d">
+              {itemPresence.map((p) => card(p.item, p.life, p.exiting))}
             </ul>
           ) : null}
 
-          {detailView ? <GraphScope active={mode === 'graph'} origin={ORIGIN} label="空間ビュー">{detailView}</GraphScope> : null}
+          {detailView ? <GraphScope active={mode === 'graph'} origin={ORIGIN} label={t('空間ビュー')}>{detailView}</GraphScope> : null}
           {mode !== '2d' ? (
             <GraphAlt
-              origin={ORIGIN} label="空間ビュー" columns={kpi ? [kpi] : []}
-              nodes={graphNodes.map((n) => ({ id: n.id, name: n.name, kind: n.kindLabel ?? n.kind, values: kpi ? [kpiCell(model, n.id, kpi).text] : [] }))}
+              origin={ORIGIN} label={t('空間ビュー')} columns={kpi ? [kpi] : []}
+              nodes={altPresence.map(({ item: n, life, exiting }) => (exiting
+                ? { id: n.id, name: n.name, kind: SPATIAL_KIND_LABELS[n.kind], values: kpi ? [''] : [], life, exiting: true }
+                : { id: n.id, name: n.name, kind: SPATIAL_KIND_LABELS[n.kind], values: kpi ? [kpiCell(model, n.id, kpi).text] : [], life }))}
               relations={graphEdges.map((e) => ({ id: e.id, from: e.from, to: e.to, label: e.label }))}
-              summary={`拠点 ${counts.site} 件・フロア ${counts.floor} 件・部屋/設備 ${counts.room} 件（階層: 全体・拠点・フロア・部屋/設備・詳細の 5 階層。現在 ${d}）`}
+              summary={t('拠点 {site}・フロア {floor}・部屋/設備 {room}（階層: 全体・拠点・フロア・部屋/設備・詳細の 5 階層。現在 {d}）', { site: n0(counts.site), floor: n0(counts.floor), room: n0(counts.room), d })}
             />
           ) : null}
-          {d === D + 1 && !detail ? <EmptyView message="詳細を見る部屋・設備がありません。" /> : null}
+          {d === D + 1 && !detail ? <EmptyView message={t('詳細を見る部屋・設備がありません。')} /> : null}
 
           {twinItems.length > 0 ? (
-            <section aria-label="ツイン関係" data-testid="spatial-twins">
-              <Text weight="semibold" size={200} block>ツイン関係（空間の項目に結ばれたデジタル世界の項目）</Text>
+            <section aria-label={t('ツイン関係')} data-testid="spatial-twins">
+              <Text weight="semibold" size={200} block>{t('ツイン関係（空間の項目に結ばれたデジタル世界の項目）')}</Text>
               <ul className={s.legend}>
                 {twinItems.map((t) => {
                   const props = bind(t.id, { interactive: false });
@@ -358,7 +402,7 @@ export function SpatialScreen() {
                         onClick={(ev) => select(t.id, { origin: ORIGIN, additive: ev.ctrlKey || ev.metaKey || ev.shiftKey })}
                       >
                         <Text weight="semibold">{t.name}</Text>
-                        <Text size={200}>{`${t.of} を${t.relation}（デジタル世界）`}</Text>
+                        <Text size={200}>{tr('{of} を{relation}（デジタル世界）', { of: t.of, relation: t.relation })}</Text>
                       </button>
                     </li>
                   );
@@ -367,11 +411,11 @@ export function SpatialScreen() {
             </section>
           ) : null}
 
-          <ul className={s.legend} aria-label="KPI の凡例" data-testid="kpi-legend">
+          <ul className={s.legend} aria-label={t('KPI の凡例')} data-testid="kpi-legend">
             {KPI_STAGES.map((st) => (
               <li key={st}><span className={s.kpi} style={{ backgroundColor: STAGE_FILL[st] }}>{STAGE_GLYPHS[st]} {KPI_STAGE_LABELS[st]}</span></li>
             ))}
-            <li><span className={s.kpi}>○ データなし</span></li>
+            <li><span className={s.kpi}>{t('○ 値なし（パックに値がない項目）')}</span></li>
           </ul>
         </div>
       )}

@@ -18,13 +18,13 @@ async function gotoTopicIndex(page: Page, index: number) {
 
 function topicIndexByType(type: string): number {
   const i = mono.topics().findIndex((t) => t.topic.type === type);
-  expect(i, `お手本パックの show.json に type=${type} の議題がない`).toBeGreaterThanOrEqual(0);
+  expect(i, `お手本パックの show.json に type=${type} の論点がない`).toBeGreaterThanOrEqual(0);
   return i;
 }
 
 test.describe('FR-016 プレゼンテーションモード', () => {
   // FR-016 AC-019
-  test('FR-016 AC-019 → で show.json の順に次の議題へ進み、進行バーが同じチャプターを示し、← で戻る', async ({ page, start }) => {
+  test('FR-016 AC-019 → で show.json の順に次の論点へ進み、進行バーが同じチャプターを示し、← で戻る', async ({ page, start }) => {
     await start();
     await startPresentation(page);
     const topics = mono.topics();
@@ -37,7 +37,7 @@ test.describe('FR-016 プレゼンテーションモード', () => {
       await expect(current).toContainText(topics[i].topic.title);
       await expect(bar.locator('[aria-current="step"]')).toContainText(topics[i].chapter.title);
     }
-    // 最後の議題でさらに → を押しても先へ進まない（異常系）
+    // 最後の論点でさらに → を押しても先へ進まない（異常系）
     await page.keyboard.press('ArrowRight');
     await expect(current).toContainText(topics[topics.length - 1].topic.title);
     await page.keyboard.press('ArrowLeft');
@@ -46,7 +46,7 @@ test.describe('FR-016 プレゼンテーションモード', () => {
   });
 
   // FR-016 AC-192
-  test('FR-016 AC-192 プレゼン中は ←/→ が議題の移動でパンせず、↑/↓ と Shift+矢印でパン、終了後は矢印でパン', async ({ page, start }) => {
+  test('FR-016 AC-192 プレゼン中は ←/→ が論点の移動でパンせず、↑/↓ と Shift+矢印でパン、終了後は矢印でパン', async ({ page, start }) => {
     await start();
     await openScreen(page, 'canvas');
     await startPresentation(page);
@@ -54,7 +54,7 @@ test.describe('FR-016 プレゼンテーションモード', () => {
     await surface.focus();
     const vp = () => hook<{ x: number; y: number; zoom: number }>(page, 't.canvas.viewport()');
     const topics = mono.topics();
-    // → で次の議題（議題の移動による視点の移動は許すが、矢印によるパンは起きない: 議題の中心に合う）
+    // → で次の論点（論点の移動による視点の移動は許すが、矢印によるパンは起きない: 論点の中心に合う）
     await page.keyboard.press('ArrowRight');
     await expect(page.getByTestId('current-topic')).toContainText(topics[1].topic.title);
     await expect.poll(() => hook<boolean>(page, 't.canvas.isCentered(a)', topics[1].topic.id)).toBe(true);
@@ -63,7 +63,7 @@ test.describe('FR-016 プレゼンテーションモード', () => {
     await page.keyboard.press('ArrowDown');
     await expect.poll(async () => (await vp()).y).not.toBe(v0.y);
     await expect(page.getByTestId('current-topic')).toContainText(topics[1].topic.title);
-    // Shift+→ はパン（議題は変わらない）
+    // Shift+→ はパン（論点は変わらない）
     v0 = await vp();
     await page.keyboard.press('Shift+ArrowRight');
     await expect.poll(async () => (await vp()).x).not.toBe(v0.x);
@@ -170,7 +170,7 @@ test.describe('FR-078 テロップ', () => {
     await expect(card).toBeVisible();
     const src = mono.sources().find((s) => s.id === topic.telop.sourceIds[0]);
     await expect(card).toContainText(src.title);
-    // 別の議題に移ると、そのテロップは表示されない
+    // 別の論点に移ると、そのテロップは表示されない
     if (idx + 1 < mono.topics().length && mono.topics()[idx + 1].topic.telop?.text !== topic.telop.text) {
       await page.keyboard.press('Escape');
       await page.keyboard.press('ArrowRight');

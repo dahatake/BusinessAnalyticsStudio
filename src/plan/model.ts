@@ -1,5 +1,6 @@
 // Feature ごとの工程（FR-007）の純粋なロジック。画面の部品を参照しない。
 // 工程（いつ・誰が・何を）を、Feature ごとにまとめ、ガントチャートの位置（割合）に変える。
+import { tr } from '../i18n';
 import type { PackData } from '../schema';
 
 export type Feature = PackData['plan']['features'][number];
@@ -85,7 +86,7 @@ export function buildGantt(features: readonly Feature[], tasks: readonly Task[])
     for (let guard = 0; guard < 240; guard++) {
       const day = Math.round(Date.UTC(y, m, 1) / DAY_MS);
       if (day > endDay) break;
-      months.push({ label: `${y}年${m + 1}月`, leftPct: Math.max(0, ((day - startDay) / span) * 100) });
+      months.push({ label: tr('{y}年{m}月', { y, m: m + 1 }), leftPct: Math.max(0, ((day - startDay) / span) * 100) });
       m += 1;
       if (m > 11) { m = 0; y += 1; }
     }
@@ -95,5 +96,5 @@ export function buildGantt(features: readonly Feature[], tasks: readonly Task[])
 
 /** 工程の期間を「開始日 〜 終了日」の文字列にする。日付が無ければ「日付なし」 */
 export function formatPeriod(task: Task): string {
-  return task.start && task.end ? `${task.start} 〜 ${task.end}` : '日付なし';
+  return task.start && task.end ? `${task.start} 〜 ${task.end}` : tr('日付なし');
 }

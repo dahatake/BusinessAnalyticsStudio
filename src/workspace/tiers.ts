@@ -2,6 +2,7 @@
 // 階層は、読む順序と自動配置（FR-243。autoLayout.ts）を決めるだけで、表示できるデータの範囲は変えない（FR-112 のペルソナ切替の規則と同じ）。
 import { PERSONA_PRIMARY } from './persona';
 import type { Persona } from './layoutModel';
+import { tr } from '../i18n';
 
 export type Tier = 'primary' | 'supporting' | 'detail';
 export const TIERS: readonly Tier[] = ['primary', 'supporting', 'detail'];
@@ -19,10 +20,9 @@ export const ROLE_LABEL: Readonly<Record<Role, string>> = {
 /** コンポーネントのキー → 役割。載っていないものは「未分類」（補助として扱う。FR-244 AC-589） */
 export const ROLE_OF: Readonly<Record<string, Role>> = {
   summary: 'summary',
-  matrix: 'core', 'issue-solution': 'core', architecture: 'core', view3d: 'core',
-  'kpi-okr': 'aid', ranking: 'aid', 'discussion-tree': 'aid', 'knowledge-graph': 'aid', 'mock-app': 'aid',
+  matrix: 'core', 'issue-solution': 'core', architecture: 'core', map: 'core', 'twin-view': 'core',
+  'kpi-okr': 'aid', ranking: 'aid', 'discussion-tree': 'aid', 'knowledge-graph': 'aid',
   gantt: 'evidence', table: 'evidence', products: 'evidence',
-  canvas: 'aid',
 };
 
 /** コンポーネントのキー → 同じ対象を示すグループ。同じ階層で同じグループのものは隣り合わせに置く（FR-244） */
@@ -32,7 +32,7 @@ export const GROUP_OF: Readonly<Record<string, string>> = {
   'issue-solution': 'issue', 'discussion-tree': 'issue',
   gantt: 'process', table: 'process',
   architecture: 'system', 'knowledge-graph': 'system', products: 'system',
-  view3d: 'field', 'mock-app': 'field',
+  map: 'field', 'twin-view': 'field',
 };
 
 export const roleOf = (key: string): Role | undefined => ROLE_OF[key];
@@ -75,19 +75,23 @@ export function classify(persona: Persona, keys: readonly string[], overrides: T
     if (k === primary) {
       tier = 'primary';
       reason = o === 'primary'
-        ? '主役: 利用者が主役に選んだため、最大の領域の先頭に置きます。'
+        ? tr('主役: 利用者が主役に選んだため、最大の領域の先頭に置きます。')
         : role === 'core' && k === dflt
-          ? `主役: ${persona}の既定の情報表現（判断の中心）のため、最大の領域の先頭に置きます。`
-          : '主役: この画面で最初に読む情報として選ばれているため、最大の領域の先頭に置きます。';
+          ? tr('主役: {persona}の既定の情報表現（判断の中心）のため、最大の領域の先頭に置きます。', { persona: tr(persona) })
+          : tr('主役: この画面で最初に読む情報として選ばれているため、最大の領域の先頭に置きます。');
     } else if (o && o !== 'primary') {
       tier = o;
-      reason = `${TIER_LABEL[o]}: 利用者が変更したため、${o === 'detail' ? '主役の後ろ（下）に' : '主役の近く（右）に'}置きます。`;
+      reason = o === 'detail'
+        ? tr('詳細: 利用者が変更したため、主役の後ろ（下）に置きます。')
+        : tr('補助: 利用者が変更したため、主役の近く（右）に置きます。');
     } else {
       tier = baseTier(role);
-      const why = role ? `役割が「${ROLE_LABEL[role]}」のため` : '役割が決まっていない（未分類の）ため、補助として扱い';
+      const roleText = role ? tr(ROLE_LABEL[role]) : '';
       reason = tier === 'detail'
-        ? `詳細: ${why}、主役の後ろ（下）に置きます。`
-        : `補助: ${why}、主役の近く（右）に置きます。`;
+        ? tr('詳細: 役割が「{role}」のため、主役の後ろ（下）に置きます。', { role: roleText })
+        : role
+          ? tr('補助: 役割が「{role}」のため、主役の近く（右）に置きます。', { role: roleText })
+          : tr('補助: 役割が決まっていない（未分類の）ため、補助として扱い、主役の近く（右）に置きます。');
     }
     out[k] = { tier, reason, ...(role ? { role } : {}), ...(group ? { group } : {}), overridden: o !== undefined && o === tier };
   }

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type Keyboa
 import {
   Button, DialogActions, DialogBody, DialogContent, DialogTitle, DialogTrigger, Input, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
+import { useLang, useT } from '../i18n';
 import { Dialog, DialogSurface } from '../components/Dialog';
 import { isEditableTarget } from '../components/panelKeys';
 import type { ScreenDefinition } from '../screens/types';
@@ -38,11 +39,14 @@ const useStyles = makeStyles({
 
 function useCommands(): Command[] {
   const version = useSyncExternalStore(onCommandsChanged, commandsVersion);
+  // 操作名は表示時の言語で作るので、言語の切り替えでも作り直す（FR-294）
+  const lang = useLang((st) => st.lang);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => getCommands(), [version]);
+  return useMemo(() => getCommands(), [version, lang]);
 }
 
 export function CommandPalette() {
+  const t = useT();
   const s = useStyles();
   const open = useCommandUi((st) => st.paletteOpen);
   const setOpen = useCommandUi((st) => st.setPaletteOpen);
@@ -70,24 +74,24 @@ export function CommandPalette() {
 
   return (
     <Dialog open={open} onOpenChange={(_, d) => setOpen(d.open)}>
-      <DialogSurface aria-label="コマンドパレット" data-testid="command-palette">
+      <DialogSurface aria-label={t('コマンドパレット')} data-testid="command-palette">
         <DialogBody>
-          <DialogTitle>コマンドパレット</DialogTitle>
+          <DialogTitle>{t('コマンドパレット')}</DialogTitle>
           <DialogContent>
             <Input
               role="combobox"
-              aria-label="コマンドを検索"
+              aria-label={t('コマンドを検索')}
               aria-expanded
               aria-controls="command-palette-list"
               aria-activedescendant={results[active] ? `command-${results[active].id}` : undefined}
               aria-autocomplete="list"
-              placeholder="操作名を入力（例: 既定）"
+              placeholder={t('操作名を入力（例: 既定）')}
               value={query}
               style={{ width: '100%' }}
               onChange={(_, d) => { setQuery(d.value); setActive(0); }}
               onKeyDown={onKey}
             />
-            <div ref={list} id="command-palette-list" role="listbox" aria-label="コマンド" className={s.list}>
+            <div ref={list} id="command-palette-list" role="listbox" aria-label={t('コマンド')} className={s.list}>
               {results.map((c, i) => (
                 <div
                   key={c.id}
@@ -103,7 +107,7 @@ export function CommandPalette() {
                 </div>
               ))}
             </div>
-            {results.length === 0 ? <Text role="status">一致する操作がありません。</Text> : null}
+            {results.length === 0 ? <Text role="status">{t('一致する操作がありません。')}</Text> : null}
           </DialogContent>
         </DialogBody>
       </DialogSurface>
@@ -112,6 +116,7 @@ export function CommandPalette() {
 }
 
 export function ShortcutDialog() {
+  const t = useT();
   const s = useStyles();
   const open = useCommandUi((st) => st.shortcutsOpen);
   const setOpen = useCommandUi((st) => st.setShortcutsOpen);
@@ -130,13 +135,13 @@ export function ShortcutDialog() {
   }, [commands]);
   return (
     <Dialog open={open} onOpenChange={(_, d) => setOpen(d.open)}>
-      <DialogSurface aria-label="ショートカット一覧" data-testid="shortcut-list">
+      <DialogSurface aria-label={t('ショートカット一覧')} data-testid="shortcut-list">
         <DialogBody>
-          <DialogTitle>ショートカット一覧</DialogTitle>
+          <DialogTitle>{t('ショートカット一覧')}</DialogTitle>
           <DialogContent>
-            <Table aria-label="ショートカット" size="small">
+            <Table aria-label={t('ショートカット')} size="small">
               <TableHeader>
-                <TableRow><TableHeaderCell>操作</TableHeaderCell><TableHeaderCell>キー</TableHeaderCell></TableRow>
+                <TableRow><TableHeaderCell>{t('操作')}</TableHeaderCell><TableHeaderCell>{t('キー')}</TableHeaderCell></TableRow>
               </TableHeader>
               <TableBody>
                 {rows.map((r) => (
@@ -151,7 +156,7 @@ export function ShortcutDialog() {
           {/* フォーカスできる操作が 1 つもないモーダルは、フォーカス管理（Tabster）が後から aria-hidden にしてしまうため、閉じるボタンを置く */}
           <DialogActions>
             <DialogTrigger disableButtonEnhancement>
-              <Button appearance="primary">閉じる</Button>
+              <Button appearance="primary">{t('閉じる')}</Button>
             </DialogTrigger>
           </DialogActions>
         </DialogBody>

@@ -2,6 +2,7 @@
 // ノードの展開/折りたたみ、階層ごとの色・記号、ズーム/パン、共通の選択との連動、手動の編集（追加・移動・削除・分解のやり直し）、
 // AI 生成と人が編集したノードの区別、根拠のリンク、PNG・SVG・Mermaid・JSON の出力を備える。
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type PointerEvent as RPointerEvent } from 'react';
+import { tr, useT } from '../i18n';
 import {
   Badge, Button, Input, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, Spinner, Text, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
@@ -15,6 +16,8 @@ import {
 } from '../analysis/tree';
 import { MOCK_LABEL, REAL_LABEL } from '../ai/client';
 import { ExecutiveSummary } from '../components/ExecutiveSummary';
+import { IssueEvaluationBadge } from '../components/IssueEvaluationBadge';
+import type { Issue } from '../analysis/model';
 import { useHighlightClass } from '../components/highlight';
 import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
@@ -24,10 +27,11 @@ import { useDiscussionStore } from '../store/discussion';
 import { useEditStore } from '../store/edit';
 import { useLayout } from '../store/layout';
 import { usePackStore } from '../store/pack';
-import { useTreeStore } from '../store/tree';
+import { useTreeDoc, useTreeStore } from '../store/tree';
 import { useSelectionStore } from '../store/selection';
 import { ViewAsTableButton, ViewTable } from '../components/ViewTable';
 import { Items3DSurface } from '../three/Items3DSurface';
+import { lifeOpacity, usePresenceItems } from '../motion';
 import { treeLayout3D } from '../view/items3d';
 import { useComponentView, usePublishViewItems } from '../view/useView';
 
@@ -46,7 +50,7 @@ const KIND_TOKEN: Record<TreeKind, string> = {
 
 const useStyles = makeStyles({
   toolbar: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalS, rowGap: tokens.spacingVerticalS },
-  viewport: { overflow: 'auto', flexShrink: 0, minHeight: '240px', maxHeight: '60vh', border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium, cursor: 'grab', touchAction: 'pan-x pan-y' },
+  viewport: { overflow: 'auto', flexShrink: 0, minHeight: '240px', border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`, borderRadius: tokens.borderRadiusMedium, cursor: 'grab', touchAction: 'pan-x pan-y' },
   tree: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS, padding: tokens.spacingHorizontalM, transformOrigin: 'top left', boxSizing: 'border-box', width: '100%' },
   row: {
     display: 'flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS, flexWrap: 'wrap',
@@ -63,6 +67,7 @@ const useStyles = makeStyles({
 });
 
 function RationaleLink({ r }: { r: Rationale }) {
+  const t = useT();
   const { select } = useSelection();
   const target = usePackStore((st) => st.state);
   const open = (e: { preventDefault(): void; stopPropagation(): void }) => {
@@ -74,10 +79,11 @@ function RationaleLink({ r }: { r: Rationale }) {
       useLayout.getState().showComponent('themes');
     }
   };
-  return <a href="#rationale" onClick={open} style={{ color: tokens.colorBrandForegroundLink }}>根拠: {r.label}</a>;
+  return <a href="#rationale" onClick={open} style={{ color: tokens.colorBrandForegroundLink }}>{t('根拠:')} {t(r.label)}</a>;
 }
 
 function DiscussionTreeScreen() {
+  const t = useT();
   const s = useStyles();
   const hl = useHighlightClass();
   const bind = useEntityBinding(ORIGIN);
@@ -85,7 +91,7 @@ function DiscussionTreeScreen() {
   const editEnabled = useEditStore((st) => st.editMode);
   const data = state.status === 'ready' ? state.pack.data : undefined;
   const key = data ? packKeyOf(data.customer.name, data.customer.projectName) : '';
-  const doc = useTreeStore((st) => st.docs[key]);
+  const doc = useTreeDoc(key, data);
   const job = useTreeStore((st) => (st.job?.key === key ? st.job : null));
   const error = useTreeStore((st) => st.error);
   const canUndo = useTreeStore((st) => (st.past[key]?.length ?? 0) > 0);
@@ -104,20 +110,47 @@ function DiscussionTreeScreen() {
 
   const baseline = useMemo(() => (data ? buildPackTree(data) : []), [data]);
   // 生成前は、パックの章・議題から作った全体像（読み取り専用）を見せる
-  const shown: TreeDoc | undefined = doc ?? (data && baseline.length > 0 ? { themeId: 'pack', themeTitle: data.customer.projectName, nodes: baseline, mode: 'mock' } : undefined);
+  const rawShown: TreeDoc | undefined = doc ?? (data && baseline.length > 0 ? { themeId: 'pack', themeTitle: data.customer.projectName, nodes: baseline, mode: 'mock' } : undefined);
+  // 生成済みのツリーは作った時点の名称を持つ。課題・解決策のノードは、元の項目の最新の名称を示す（名称の更新・undo に追従。人が編集したノードは除く）
+  const shown: TreeDoc | undefined = useMemo(() => {
+    if (!rawShown || !data) return rawShown;
+    const titles = new Map<string, string>([...data.issues.issues, ...data.issues.solutions].map((x) => [x.id, x.title]));
+    let changed = false;
+    const nodes = rawShown.nodes.map((n) => {
+      const live = n.entityId && n.origin !== 'human' && (n.kind === '課題' || n.kind === '解決策') ? titles.get(n.entityId) : undefined;
+      if (live === undefined || live === n.title) return n;
+      changed = true;
+      return { ...n, title: live };
+    });
+    return changed ? { ...rawShown, nodes } : rawShown;
+  }, [rawShown, data]);
   const rows = useMemo(() => (shown ? flattenTree(shown.nodes, collapsed) : []), [shown, collapsed]);
   const node = shown?.nodes.find((n) => n.id === picked);
   // 3D（FR-217 AC-501）: 表示中のノード（2D の木の行と同じ ID・件数）を、深さ=高さ・枝分かれ=横の位置に置き、親→子をつなぐ
   const { mode: viewMode } = useComponentView(ORIGIN);
   const [asTable, setAsTable] = useState(false);
+  // 出入り（FR-070 AC-086）: ノードの追加は現れ、削除は薄れて消える。ID（node.id）は保つ。停止中・動きの軽減中は即時
+  const rowPresence = usePresenceItems(rows, (r) => r.node.id, () => [0]);
   const shownNodes = useMemo(() => rows.map((r) => r.node), [rows]);
-  usePublishViewItems(ORIGIN, useMemo(() => shownNodes.map((n) => n.id), [shownNodes]));
-  const layout3d = useMemo(() => treeLayout3D(shownNodes, (n) => n.id, (n) => n.title, (n) => n.parentId, (n) => n.kind), [shownNodes]);
+  // 3D の項目 ID は、課題・解決策のノードでは 2D の行・表と同じ実体の ID（重複するときは最初の 1 つだけ。残りはノード ID）
+  const itemIdOf = useMemo(() => {
+    const m = new Map<string, string>();
+    const used = new Set<string>();
+    for (const n of shownNodes) {
+      const id = n.entityId !== undefined && !used.has(n.entityId) ? n.entityId : n.id;
+      used.add(id);
+      m.set(n.id, id);
+    }
+    return m;
+  }, [shownNodes]);
+  const layout3d = useMemo(() => treeLayout3D(shownNodes, (n) => itemIdOf.get(n.id) ?? n.id, (n) => n.title, (n) => (n.parentId === null ? null : itemIdOf.get(n.parentId) ?? n.parentId), (n) => n.kind), [shownNodes, itemIdOf]);
+  usePublishViewItems(ORIGIN, useMemo(() => shownNodes.map((n) => itemIdOf.get(n.id) ?? n.id), [shownNodes, itemIdOf]));
   const selectedNow = useSelectionStore((st) => st.selectedIds);
+  const issueOf = useMemo(() => new Map((data?.issues.issues ?? []).map((i) => [i.id, i])), [data]);
 
   useEffect(() => { if (picked && shown && !shown.nodes.some((n) => n.id === picked)) setPicked(undefined); }, [shown, picked]);
 
-  if (!data) return <LoadingView label="議論ツリーを読み込み中" />;
+  if (!data) return <LoadingView label={t('議論ツリーを読み込み中')} />;
 
   const store = useTreeStore.getState();
   const report = (r: { ok: boolean; reason?: string }): void => setMessage(r.ok ? null : (r.reason ?? null));
@@ -194,8 +227,8 @@ function DiscussionTreeScreen() {
   return (
     <Panel
       testId="component-discussion-tree"
-      title="議論ツリー"
-      description="議論の全体像を、議題を根にした系統ツリーで見ます。ノードを選ぶと他のビューの関連項目がハイライトされます。"
+      title={t('議論ツリー')}
+      description={t('議論の全体像を、議題を根にした系統ツリーで見ます。ノードを選ぶと他のビューの関連項目がハイライトされます。')}
       maxWidth="1200px"
     >
       <ExecutiveSummary scope="discussion-tree" />
@@ -203,39 +236,39 @@ function DiscussionTreeScreen() {
       {job ? (
         <div className={s.status} role="status" aria-live="polite" aria-busy="true">
           <Spinner size="tiny" aria-hidden />
-          <Text>議題「{job.themeTitle}」のツリーを生成中…</Text>
-          <Button size="small" onClick={() => useTreeStore.getState().cancel()}>取り消し</Button>
+          <Text>{t('議題「{title}」のツリーを生成中…', { title: job.themeTitle })}</Text>
+          <Button size="small" onClick={() => useTreeStore.getState().cancel()}>{t('取り消し')}</Button>
         </div>
       ) : null}
-      {error ? <Text role="alert" style={{ color: tokens.colorPaletteRedForeground1 }}>ツリーを生成できませんでした: {error}</Text> : null}
+      {error ? <Text role="alert" style={{ color: tokens.colorPaletteRedForeground1 }}>{t('ツリーを生成できませんでした:')} {error}</Text> : null}
 
       {shown ? (
         <>
-          <div className={s.toolbar} role="toolbar" aria-label="議論ツリーの操作">
-            <Button icon={<Add24Regular aria-hidden />} disabled={!canEdit} onClick={() => { setAdding({ parentId: (node as TreeNode).id }); setRenaming(false); setDraft(''); }}>ノードを追加</Button>
-            <Button icon={<Edit24Regular aria-hidden />} disabled={!canEdit} onClick={() => { setRenaming(true); setAdding(null); setDraft(node?.title ?? ''); }}>名前を変更</Button>
+          <div className={s.toolbar} role="toolbar" aria-label={t('議論ツリーの操作')}>
+            <Button icon={<Add24Regular aria-hidden />} disabled={!canEdit} onClick={() => { setAdding({ parentId: (node as TreeNode).id }); setRenaming(false); setDraft(''); }}>{t('ノードを追加')}</Button>
+            <Button icon={<Edit24Regular aria-hidden />} disabled={!canEdit} onClick={() => { setRenaming(true); setAdding(null); setDraft(node?.title ?? ''); }}>{t('名前を変更')}</Button>
             <Menu>
               <MenuTrigger disableButtonEnhancement>
-                <Button icon={<ArrowMove24Regular aria-hidden />} disabled={!canEdit || targets.length === 0}>移動</Button>
+                <Button icon={<ArrowMove24Regular aria-hidden />} disabled={!canEdit || targets.length === 0}>{t('移動')}</Button>
               </MenuTrigger>
               <MenuPopover>
                 <MenuList>
                   {targets.map((t) => (
-                    <MenuItem key={t.id} onClick={() => node && report(store.move(key, node.id, t.id))}>{t.kind}: {t.title} の下へ</MenuItem>
+                    <MenuItem key={t.id} onClick={() => node && report(store.move(key, node.id, t.id))}>{tr('{kind}: {title} の下へ', { kind: tr(t.kind), title: t.title })}</MenuItem>
                   ))}
                 </MenuList>
               </MenuPopover>
             </Menu>
-            <Button icon={<Delete24Regular aria-hidden />} disabled={!canEdit || node?.parentId === null} onClick={del}>削除</Button>
-            <Button icon={<SplitVertical24Regular aria-hidden />} disabled={!canEdit} onClick={() => node && report(store.redecompose(key, node.id))}>分解をやり直す</Button>
-            <Button icon={<ArrowUndo24Regular aria-hidden />} disabled={!canUndo} onClick={() => store.undo(key)}>元に戻す</Button>
-            <Button icon={<ArrowRedo24Regular aria-hidden />} disabled={!canRedo} onClick={() => store.redo(key)}>やり直し</Button>
-            <Button icon={<ZoomOut24Regular aria-hidden />} aria-label="縮小" onClick={() => setZoom((z) => Math.max(0.5, Math.round((z - 0.1) * 10) / 10))} />
+            <Button icon={<Delete24Regular aria-hidden />} disabled={!canEdit || node?.parentId === null} onClick={del}>{t('削除')}</Button>
+            <Button icon={<SplitVertical24Regular aria-hidden />} disabled={!canEdit} onClick={() => node && report(store.redecompose(key, node.id))}>{t('分解をやり直す')}</Button>
+            <Button icon={<ArrowUndo24Regular aria-hidden />} disabled={!canUndo} onClick={() => store.undo(key)}>{t('元に戻す')}</Button>
+            <Button icon={<ArrowRedo24Regular aria-hidden />} disabled={!canRedo} onClick={() => store.redo(key)}>{t('やり直し')}</Button>
+            <Button icon={<ZoomOut24Regular aria-hidden />} aria-label={t('縮小')} onClick={() => setZoom((z) => Math.max(0.5, Math.round((z - 0.1) * 10) / 10))} />
             <Text aria-live="polite">{Math.round(zoom * 100)}%</Text>
-            <Button icon={<ZoomIn24Regular aria-hidden />} aria-label="拡大" onClick={() => setZoom((z) => Math.min(2, Math.round((z + 0.1) * 10) / 10))} />
+            <Button icon={<ZoomIn24Regular aria-hidden />} aria-label={t('拡大')} onClick={() => setZoom((z) => Math.min(2, Math.round((z + 0.1) * 10) / 10))} />
             <Menu>
               <MenuTrigger disableButtonEnhancement>
-                <Button icon={<ArrowDownload24Regular aria-hidden />}>ツリーを出力</Button>
+                <Button icon={<ArrowDownload24Regular aria-hidden />}>{t('ツリーを出力')}</Button>
               </MenuTrigger>
               <MenuPopover>
                 <MenuList>
@@ -243,27 +276,27 @@ function DiscussionTreeScreen() {
                 </MenuList>
               </MenuPopover>
             </Menu>
-            {!editEnabled ? <Text size={200}>編集モードを ON にすると、ノードを追加・移動・削除できます。</Text> : !doc ? <Text size={200}>議論テーマから「ツリーを生成」すると、編集できます。</Text> : null}
+            {!editEnabled ? <Text size={200}>{t('編集モードを ON にすると、ノードを追加・移動・削除できます。')}</Text> : !doc ? <Text size={200}>{t('議論テーマから「ツリーを生成」すると、編集できます。')}</Text> : null}
           </div>
 
           {adding || renaming ? (
             <div className={s.toolbar}>
               <Input
-                autoFocus aria-label={renaming ? 'ノードの新しい名前' : '追加するノードの名前'} value={draft} onChange={(_, d) => setDraft(d.value)}
+                autoFocus aria-label={renaming ? t('ノードの新しい名前') : t('追加するノードの名前')} value={draft} onChange={(_, d) => setDraft(d.value)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') { e.preventDefault(); if (renaming) commitRename(); else commitAdd(); }
                   if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setAdding(null); setRenaming(false); }
                 }}
               />
-              <Text size={200}>Enter で確定、Esc で取り消し</Text>
+              <Text size={200}>{t('Enter で確定、Esc で取り消し')}</Text>
             </div>
           ) : null}
           {message ? <Text role="alert" style={{ color: tokens.colorPaletteRedForeground1 }}>{message}</Text> : null}
 
           <div className={s.status}>
-            <Text weight="semibold">議題: {shown.themeTitle}</Text>
-            <Badge appearance="tint" color="informative">{doc ? modeLabel : 'パックの章・議題から作成（未生成）'}</Badge>
-            <Text size={200}>ノード {shown.nodes.length} 件</Text>
+            <Text weight="semibold">{t('議題:')} {shown.themeTitle}</Text>
+            <Badge appearance="tint" color="informative">{doc ? t(modeLabel) : t('パックの章・議題から作成（未生成）')}</Badge>
+            <Text size={200}>{t('ノード {n} 件', { n: shown.nodes.length })}</Text>
           </div>
 
           {viewMode === '3d' ? (
@@ -271,16 +304,16 @@ function DiscussionTreeScreen() {
               <div><ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} /></div>
               {asTable ? (
                 <ViewTable
-                  label="議論ツリーのノード"
+                  label={t('議論ツリーのノード')}
                   origin={ORIGIN}
-                  columns={['階層', '種別', '名称', '親']}
-                  rows={rows.map((r) => ({ id: r.node.entityId ?? r.node.id, cells: [r.level + 1, r.node.kind, r.node.title, shown.nodes.find((x) => x.id === r.node.parentId)?.title ?? '（根）'] }))}
+                  columns={[t('階層'), t('種別'), t('名称'), t('親')]}
+                  rows={rows.map((r) => ({ id: r.node.entityId ?? r.node.id, cells: [r.level + 1, t(r.node.kind), r.node.title, shown.nodes.find((x) => x.id === r.node.parentId)?.title ?? t('（根）')] }))}
                 />
               ) : (
                 <Items3DSurface
-                  viewKey={ORIGIN} origin={ORIGIN} label="議論ツリー" items={layout3d.items} links={layout3d.links} axes={{ y: '階層（上が根）' }}
-                  selected={new Set(shownNodes.filter((n) => picked === n.id || (n.entityId !== undefined && selectedNow.includes(n.entityId))).map((n) => n.id))}
-                  onSelect={(id, additive) => { const n = shownNodes.find((x) => x.id === id); if (n) pick(n, additive); }}
+                  viewKey={ORIGIN} origin={ORIGIN} label={t('議論ツリー')} items={layout3d.items} links={layout3d.links} axes={{ y: t('階層（上が根）') }}
+                  selected={new Set(shownNodes.filter((n) => picked === n.id || (n.entityId !== undefined && selectedNow.includes(n.entityId))).map((n) => itemIdOf.get(n.id) ?? n.id))}
+                  onSelect={(id, additive) => { const n = shownNodes.find((x) => (itemIdOf.get(x.id) ?? x.id) === id); if (n) pick(n, additive); }}
                 />
               )}
             </>
@@ -290,12 +323,14 @@ function DiscussionTreeScreen() {
             onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={() => { drag.current = null; }}
             onWheel={(e) => { if (e.ctrlKey) setZoom((z) => Math.min(2, Math.max(0.5, Math.round((z - Math.sign(e.deltaY) * 0.1) * 10) / 10))); }}
           >
-            <div ref={treeRef} role="tree" aria-label="議論ツリー" className={s.tree} style={{ transform: `scale(${zoom})` }}>
-              {rows.map((r, i) => {
+            <div ref={treeRef} role="tree" aria-label={t('議論ツリー')} className={s.tree} style={{ transform: `scale(${zoom})` }}>
+              {rowPresence.map(({ item: r, life, exiting }) => {
                 const n = r.node;
+                const i = Math.max(0, rows.indexOf(r));
                 const props = n.entityId ? bind(n.entityId) : { 'data-entity-id': undefined, 'data-highlight': undefined };
                 const words = (props['data-highlight'] ?? '').split(' ');
                 const { onClick: _unused, onMouseEnter, onMouseLeave, ...rest } = props as ReturnType<typeof bind>;
+                if (exiting) return <div key={n.id} aria-hidden className={s.row} style={{ marginInlineStart: `calc(${r.level} * ${tokens.spacingHorizontalXXL})`, borderLeftColor: KIND_TOKEN[n.kind], opacity: lifeOpacity(life), pointerEvents: 'none' }}><Text className={s.title}>{n.title}</Text></div>;
                 return (
                   <div
                     key={n.id} {...rest}
@@ -304,7 +339,7 @@ function DiscussionTreeScreen() {
                     data-node-kind={n.kind} data-origin={n.origin}
                     tabIndex={i === 0 ? 0 : -1}
                     className={mergeClasses(s.row, picked === n.id && s.picked, hl(props['data-highlight']))}
-                    style={{ marginInlineStart: `calc(${r.level} * ${tokens.spacingHorizontalXXL})`, borderLeftColor: KIND_TOKEN[n.kind] }}
+                    style={{ marginInlineStart: `calc(${r.level} * ${tokens.spacingHorizontalXXL})`, borderLeftColor: KIND_TOKEN[n.kind], opacity: lifeOpacity(life) }}
                     onClick={(e) => { pick(n, e.ctrlKey || e.metaKey || e.shiftKey); }}
                     onMouseEnter={onMouseEnter} onMouseLeave={onMouseLeave}
                     onKeyDown={(e) => { if (n.entityId && onEntityKey(e, n.entityId, ORIGIN)) { setPicked(n.id); return; } onRowKey(e, n, r.hasChildren); }}
@@ -315,10 +350,11 @@ function DiscussionTreeScreen() {
                     >
                       {r.hasChildren ? (r.expanded ? <ChevronDown16Regular /> : <ChevronRight16Regular />) : null}
                     </span>
-                    <Badge appearance="outline" style={{ borderColor: KIND_TOKEN[n.kind] }}>{KIND_MARK[n.kind]} {n.kind}</Badge>
+                    <Badge appearance="outline" style={{ borderColor: KIND_TOKEN[n.kind] }}>{KIND_MARK[n.kind]} {t(n.kind)}</Badge>
                     <Text weight={n.parentId === null ? 'semibold' : 'regular'} className={s.title}>{n.title}</Text>
+                    {n.kind === '課題' && n.entityId && issueOf.get(n.entityId) ? <IssueEvaluationBadge issue={issueOf.get(n.entityId) as Issue} /> : null}
                     <Badge appearance={n.origin === 'human' ? 'filled' : 'tint'} color={n.origin === 'human' ? 'brand' : 'informative'} size="medium">
-                      {n.origin === 'ai' ? 'AI 生成' : n.origin === 'human' ? '人が編集' : 'パックの議題'}
+                      {n.origin === 'ai' ? t('AI 生成') : n.origin === 'human' ? t('人が編集') : t('パックの議題')}
                     </Badge>
                     {n.rationale ? <RationaleLink r={n.rationale} /> : null}
                   </div>
@@ -329,7 +365,7 @@ function DiscussionTreeScreen() {
           )}
         </>
       ) : job ? null : (
-        <EmptyView message="議論ツリーはまだありません。議論テーマの画面で、記録から「ツリーを生成」してください。" />
+        <EmptyView message={t('議論ツリーはまだありません。議論テーマの画面で、記録から「ツリーを生成」してください。')} />
       )}
     </Panel>
   );

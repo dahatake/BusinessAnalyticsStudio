@@ -4,6 +4,7 @@
 import type { Page } from '@playwright/test';
 import { test, expect, openScreen, component, entity, hook, scene, expectCanvasDrawn, waitFirstFrame, captureDownload, recordExportConsent, setEditMode } from '../support/fixtures';
 import { examplePack, makeVariant } from '../support/packs';
+import { gotoScreen, chooseView, openViewMenu } from '../support/screens';
 
 const mono = examplePack('mono');
 const koto = examplePack('koto');
@@ -40,33 +41,40 @@ async function clickSceneObject(page: Page, entityId: string) {
   expect(o, `3D ビューに ${entityId} が表示されていない`).toBeTruthy();
   await page.mouse.click(o!.x, o!.y);
 }
+/** Twin ビューの 3D（Items3DScene）の状態。廃止した 3D シーンの hook（t.scene.*）ではなく t.view.state を読む */
+async function twinState(page: Page) {
+  return hook<{ selectedIds: string[]; items3d: string[] }>(page, "t.view.state('twin-view')");
+}
+/** Twin ビューの 3D で項目を押す。球は DOM でないので、ラベル（pointer-events なし。球の上に出る）の下を走査して押し、選択されるまで続ける */
+async function clickTwinItem3D(page: Page, entityId: string, name: string) {
+  const v3 = component(page, 'twin-view');
+  expect((await twinState(page)).items3d, `3D 空間に ${entityId} が描かれていない`).toContain(entityId);
+  const label = v3.locator(`[data-zoom-surface="3d"] [title="${name}"]`).first();
+  await expect(label, `3D に ${name} のラベルが出ない`).toBeVisible();
+  await v3.locator('[data-zoom-surface="3d"] canvas').first().scrollIntoViewIfNeeded();
+  let prev = '';
+  for (let i = 0; i < 40; i++) {
+    await nextFrames(page, 2);
+    const b = (await label.boundingBox())!;
+    const cur = `${b.x.toFixed(0)},${b.y.toFixed(0)}`;
+    if (cur === prev) break; // 描画位置が落ち着くのを待つ
+    prev = cur;
+    await page.waitForTimeout(100);
+  }
+  const b = (await label.boundingBox())!;
+  const cx = b.x + b.width / 2;
+  for (let dy = 6; dy <= 70; dy += 4) {
+    await page.mouse.click(cx, b.y + b.height / 2 + dy);
+    if ((await twinState(page)).selectedIds.includes(entityId)) return;
+  }
+  expect((await twinState(page)).selectedIds, `3D で ${name} を押しても選択されない`).toContain(entityId);
+}
 async function toggleAnimation(page: Page, state: '停止中' | '再生中') {
   if (!(await page.getByTestId('animation-state').innerText()).includes(state)) await page.keyboard.press('p');
   await expect(page.getByTestId('animation-state')).toContainText(state);
 }
 
-test.describe('FR-020 モノの表現', () => {
-  // FR-020 AC-024
-  test('FR-020 AC-024 モノのパックで 3D に中核オブジェクトが描画され、2D 図面に同じ部品が並び、片方の選択がもう片方で強調される', async ({ page, start }) => {
-    await start({ pack: 'mono' });
-    const v3 = await openScreen(page, 'view3d');
-    await expectCanvasDrawn(v3.locator('canvas').first());
-    const info = await scene.info(page);
-    expect(info.objectCount).toBeGreaterThan(0);
-    const parts = mono.entities().filter((e) => e.type === 'part');
-    expect(parts.length, 'お手本パック（モノ）に部品がない').toBeGreaterThan(1);
-    const d2 = await openScreen(page, 'drawing2d');
-    for (const p of parts) await expect(entity(d2, p.id).first(), `2D 図面に ${p.name} がない`).toBeVisible();
-    // 2D → 3D
-    await entity(d2, parts[0].id).first().click();
-    await expect.poll(async () => (await scene.objects(page)).find((o) => o.entityId === parts[0].id)?.highlighted).toBe(true);
-    // 3D → 2D
-    await openScreen(page, 'view3d');
-    await clickSceneObject(page, parts[1].id);
-    await openScreen(page, 'drawing2d');
-    await expect(entity(component(page, 'drawing2d'), parts[1].id).first()).toHaveAttribute('data-highlight', /selected/);
-  });
-});
+// FR-020（AC-024）は 2026-10-22 の依頼で廃止予定（画面 view3d・drawing2d の廃止）。ケース E2E-124 は台帳で blocked。テストは削除した。
 
 test.describe('FR-021 コトの表現', () => {
   // FR-021 AC-025
@@ -156,87 +164,45 @@ test.describe('FR-025 クロスハイライト', () => {
   // FR-025 AC-030
   test('FR-025 AC-030 3D で拠点を選ぶと地図・表・ガント・出典でハイライトされ、表で選ぶと 3D で強調されカメラが向く', async ({ page, start }) => {
     await start();
-    const site = mono.entities().find((e) => e.type === 'site');
-    expect(site, 'お手本パックに拠点がない').toBeTruthy();
-    await openScreen(page, 'view3d');
-    await clickSceneObject(page, site.id);
+    const sites = mono.entities().filter((e) => e.type === 'site');
+    expect(sites.length, 'お手本パックに拠点がない').toBeGreaterThan(0);
+    // 3D の表現 = Twin ビュー（Items3DScene）。項目は t.view.state('twin-view').items3d と DOM のラベルで扱う
+    await page.setViewportSize({ width: 1600, height: 1800 }); // Twin ビューの 3D 全体を画面内に収める（球をマウスで押すため）
+    const v0 = await openScreen(page, 'view3d');
+    await toggleAnimation(page, '停止中'); // 回転を止めて、球の位置を安定させる
+    const cv = (await v0.locator('[data-zoom-surface="3d"] canvas').first().boundingBox())!;
+    const items3d = (await twinState(page)).items3d;
+    const inCanvas = async (name: string) => {
+      const lb = await v0.locator(`[data-zoom-surface="3d"] [title="${name}"]`).first().boundingBox();
+      return !!lb && lb.x > cv.x + 20 && lb.x + lb.width < cv.x + cv.width - 20 && lb.y > cv.y + 20 && lb.y + lb.height < cv.y + cv.height - 80;
+    };
+    const shown: any[] = [];
+    for (const e of mono.entities().filter((x) => items3d.includes(x.id))) if (await inCanvas(e.name)) shown.push(e);
+    const site = shown.find((e) => e.type === 'site');
+    expect(site, '3D の描画領域の中に表示されている拠点がない').toBeTruthy();
+    await clickTwinItem3D(page, site.id, site.name);
     for (const key of ['map', 'table', 'gantt', 'sources']) {
       const c = await openScreen(page, key);
       await expect(entity(c, site.id).first(), `${key} でハイライトされない`).toHaveAttribute('data-highlight', /selected|related/);
     }
-    // 逆方向: 表 → 3D
-    const other = mono.entities().filter((e) => e.type === 'site' || e.type === 'part').find((e) => e.id !== site.id)!;
+    // 逆方向: 表 → 3D（Twin ビューの 3D はカメラを動かさないので、描画領域に収まっている項目で見る）
     const table = await openScreen(page, 'table');
+    let other: any;
+    for (const e of shown.filter((x) => x.id !== site.id)) if ((await entity(table, e.id).count()) > 0) { other = e; break; }
+    expect(other, '3D の描画領域の中に表示され、表にも行がある項目が、拠点のほかにない').toBeTruthy();
     await entity(table, other.id).first().click();
     const v3 = await openScreen(page, 'view3d');
-    await expect.poll(async () => (await scene.objects(page)).find((o) => o.entityId === other.id)?.highlighted).toBe(true);
-    await expect.poll(async () => (await scene.camera(page)).moving, { timeout: 10_000 }).toBe(false);
-    const o = (await scene.objects(page)).find((x) => x.entityId === other.id)!;
-    const b = (await v3.locator('canvas').first().boundingBox())!;
-    expect(o.visible).toBe(true);
-    expect(o.x).toBeGreaterThan(b.x);
-    expect(o.x).toBeLessThan(b.x + b.width);
-    expect(o.y).toBeGreaterThan(b.y);
-    expect(o.y).toBeLessThan(b.y + b.height);
+    // 3D の表現で強調（選択状態）され、描かれている項目に含まれ、ラベルが 3D の描画領域の内側に表示される
+    await expect.poll(async () => (await twinState(page)).selectedIds).toContain(other.id);
+    expect((await twinState(page)).items3d, '3D 空間に項目が描かれていない').toContain(other.id);
+    const label = v3.locator(`[data-zoom-surface="3d"] [title="${other.name}"]`).first();
+    await expect(label, `3D に ${other.name} のラベルが出ない（強調・表示されていない）`).toBeVisible();
+    // ラベルは項目が選択中のときも必ず出る（Twin ビューの 3D はカメラを動かさず、パンの位置は画面の配置に依るので、描画領域内の座標は見ない）
+
   });
 });
 
-test.describe('FR-146 3D ビューを開いた直後の大きさの追従とクリックの当たり', () => {
-  const TOL = 1; // PARAM-036（CSS px）
-  const WITHIN_MS = 1000; // PARAM-037（1 秒）
-
-  async function sizes(page: Page) {
-    return page.locator('[data-testid="component-view3d"] canvas').first().evaluate((cv) => {
-      const c = cv.getBoundingClientRect();
-      const p = (cv.parentElement as HTMLElement).getBoundingClientRect();
-      return { cw: c.width, ch: c.height, pw: p.width, ph: p.height };
-    });
-  }
-  function matches(s: { cw: number; ch: number; pw: number; ph: number }): boolean {
-    return Math.abs(s.cw - s.pw) <= TOL && Math.abs(s.ch - s.ph) <= TOL && !(Math.round(s.cw) === 300 && Math.round(s.ch) === 150 && (s.pw > 301 || s.ph > 151));
-  }
-
-  // FR-146 AC-243
-  test('FR-146 AC-243 3D ビューを開いた直後に、描画面の大きさが表示領域と 1 CSS px 以内で一致する（300×150 のままではない）', async ({ page, start }) => {
-    await start();
-    await openScreen(page, 'view3d');
-    await expect.poll(async () => matches(await sizes(page)), { timeout: WITHIN_MS, message: '描画面が表示領域の大きさに追従しない' }).toBe(true);
-  });
-
-  // FR-146 AC-243（異常系: 画面の大きさを変えた直後も追従する。小さくしても大きくしても）
-  test('FR-146 AC-243 異常系: ウィンドウの大きさを小さく・大きく変えた直後にも、描画面が表示領域に追従する', async ({ page, start }) => {
-    await start();
-    await openScreen(page, 'view3d');
-    for (const vp of [{ width: 900, height: 600 }, { width: 1400, height: 900 }]) {
-      await page.setViewportSize(vp);
-      await expect.poll(async () => matches(await sizes(page)), { timeout: WITHIN_MS, message: `${vp.width}x${vp.height} で追従しない` }).toBe(true);
-    }
-  });
-
-  // FR-146 AC-244
-  test('FR-146 AC-244 3D ビューを開いた直後に拠点をクリックすると選ばれ、地図・表・ガント・出典で同じ ID がハイライトされる', async ({ page, start }) => {
-    await start();
-    const site = mono.entities().find((e) => e.type === 'site');
-    expect(site, 'お手本パックに拠点がない').toBeTruthy();
-    await openScreen(page, 'view3d');
-    await clickSceneObject(page, site.id);
-    for (const key of ['map', 'table', 'gantt', 'sources']) {
-      const c = await openScreen(page, key);
-      await expect(entity(c, site.id).first(), `${key} でハイライトされない`).toHaveAttribute('data-highlight', /selected|related/);
-    }
-  });
-
-  // FR-146 AC-244（異常系: 大きさを変えた直後のクリックでも、現在の描画面の位置で当たる）
-  test('FR-146 AC-244 異常系: ウィンドウの大きさを変えた直後でも、拠点のクリックがその拠点を選ぶ', async ({ page, start }) => {
-    await start();
-    const site = mono.entities().find((e) => e.type === 'site');
-    await openScreen(page, 'view3d');
-    await page.setViewportSize({ width: 1000, height: 650 });
-    await clickSceneObject(page, site.id);
-    const t = await openScreen(page, 'table');
-    await expect(entity(t, site.id).first()).toHaveAttribute('data-highlight', /selected|related/);
-  });
-});
+// FR-146（AC-243・AC-244）は 2026-10-22 の依頼で廃止予定（画面 view3d の廃止）。ケース E2E-223・E2E-224 は台帳で blocked。テストは削除した。
 
 test.describe('FR-029 停止中の連動', () => {
   // FR-029 AC-035
@@ -260,28 +226,24 @@ test.describe('FR-029 停止中の連動', () => {
 test.describe('FR-033 パンくずリストとミニマップ', () => {
   // FR-033 AC-040
   test('FR-033 AC-040 末端まで移動するとパンくずに全階層が並び、上位を選ぶとその視点へ移動し、ミニマップに表示範囲が出る', async ({ page, start }) => {
+    // 画面 view3d の廃止に伴い、現行の Twin ビュー（意味的ズームのパンくず）で読み替える。ミニマップは AC のとおり Twin ビューにも必要（弱めない）
     await start();
-    await openScreen(page, 'view3d');
-    const leaf = leafEntities().find((e) => ancestors(e.id).length >= 3)!;
-    expect(leaf, 'お手本パックに 3 階層以上の項目がない').toBeTruthy();
-    const chain = ancestors(leaf.id);
-    await entity(await openScreen(page, 'table'), leaf.id).first().click();
-    await openScreen(page, 'view3d');
-    const crumbs = page.getByRole('navigation', { name: 'パンくずリスト' });
-    for (const a of chain) await expect(crumbs).toContainText(a.name);
-    await expect(page.getByTestId('minimap').getByTestId('minimap-viewport')).toBeVisible();
-    // 上位の階層名を Enter で選ぶ
-    const upper = chain[0];
-    const camBefore = await scene.camera(page);
-    await crumbs.getByRole('link', { name: upper.name }).focus();
+    const root = await openScreen(page, 'twin-view');
+    const crumbs = root.getByRole('navigation', { name: 'パンくず' });
+    await root.getByRole('button', { name: '全体表示に戻す' }).click();
+    // 末端（詳細）まで移動すると、全階層（全体・要素・詳細）の名前が並ぶ
+    for (let i = 0; i < 5 && (await root.getAttribute('data-zoom-level')) !== 'detail'; i++) await root.getByRole('button', { name: '拡大' }).click();
+    await expect(root).toHaveAttribute('data-zoom-level', 'detail');
+    for (const label of ['全体', '要素', '詳細']) await expect(crumbs, `パンくずに「${label}」がない`).toContainText(label);
+    await expect(crumbs.locator('[aria-current="location"]')).toContainText('詳細');
+    await expect(root.getByTestId('minimap').getByTestId('minimap-viewport'), 'ミニマップに現在の表示範囲が出ない').toBeVisible();
+    // 上位の階層名を Enter で選ぶ → その階層へ移動
+    await crumbs.getByRole('button', { name: /^要素/ }).focus();
     await page.keyboard.press('Enter');
-    await expect.poll(async () => JSON.stringify((await scene.camera(page)).position)).not.toBe(JSON.stringify(camBefore.position));
-    await expect(crumbs).not.toContainText(leaf.name);
+    await expect(root).toHaveAttribute('data-zoom-level', 'element');
     // クリックでも
-    await entity(await openScreen(page, 'table'), leaf.id).first().click();
-    await openScreen(page, 'view3d');
-    await crumbs.getByRole('link', { name: chain[1].name }).click();
-    await expect(crumbs).not.toContainText(leaf.name);
+    await crumbs.getByRole('button', { name: /^全体/ }).click();
+    await expect(root).toHaveAttribute('data-zoom-level', 'overview');
   });
 });
 
@@ -289,25 +251,28 @@ test.describe('FR-034 停止中の階層の切替', () => {
   // FR-034 AC-041
   test('FR-034 AC-041 P で止めてからズームすると、しきい値を越えた時点で下位の階層が表示されパンくずも変わる', async ({ page, start }) => {
     await start();
-    const v3 = await openScreen(page, 'view3d');
+    // 画面 view3d の廃止に伴い、現行の Twin ビュー（Graph。意味的ズームの倍率しきい値）で読み替える
+    await start();
+    const root = await openScreen(page, 'twin-view');
     await toggleAnimation(page, '停止中');
-    const crumbs = page.getByRole('navigation', { name: 'パンくずリスト' });
+    const menu = await openViewMenu(page, root);
+    await menu.getByRole('menuitemradio', { name: 'Graph', exact: true }).click();
+    await root.getByRole('button', { name: '全体表示に戻す' }).click();
+    await expect(root).toHaveAttribute('data-zoom-level', 'overview');
+    const crumbs = root.getByRole('navigation', { name: 'パンくず' });
     const before = await crumbs.innerText();
-    const b = (await v3.locator('canvas').first().boundingBox())!;
+    const surface = root.locator('[data-zoom-surface="graph"]').first();
+    await expect(surface).toBeVisible();
+    const b = (await surface.boundingBox())!;
     await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2);
     let changed = false;
-    for (let i = 0; i < 30 && !changed; i++) {
+    for (let i = 0; i < 40 && !changed; i++) {
       await page.mouse.wheel(0, -200);
       await nextFrames(page, 2);
-      changed = (await crumbs.innerText()) !== before;
+      changed = (await root.getAttribute('data-zoom-level')) !== 'overview';
     }
-    expect(changed, 'ズームしてもパンくずの階層が変わらない').toBe(true);
-    const visible = (await scene.objects(page)).filter((o) => o.visible).map((o) => o.entityId);
-    const level = (await crumbs.innerText()).split(/\n|>|›|\//).map((s) => s.trim()).filter(Boolean);
-    const last = mono.entities().find((e) => e.name === level[level.length - 1]);
-    expect(last, 'パンくずの末尾が階層の項目ではない').toBeTruthy();
-    const children = mono.entities().filter((e) => e.parentId === last.id).map((e) => e.id);
-    if (children.length) expect(children.some((c) => visible.includes(c)), '下位の階層が表示されていない').toBe(true);
+    expect(changed, 'ズームしてもしきい値を越えた時点で下位の階層に切り替わらない').toBe(true);
+    expect(await crumbs.innerText(), 'パンくずの階層名が変わらない').not.toBe(before);
   });
 });
 
@@ -356,36 +321,47 @@ test.describe('FR-065 WebGL2 へのフォールバック', () => {
 });
 
 test.describe('FR-066 必須の 3D シーン', () => {
-  const SCENES: Array<[string, RegExp]> = [
-    ['hero', /ヒーロー|デジタルツイン/],
-    ['kpi-tower', /KPI タワー/],
-    ['dataflow', /データフロー/],
-    ['asis-tobe', /AsIs.*ToBe/],
-  ];
+  // Q-062 A: 4 つのシーンは既存の画面に帰属する（①Twin ビュー ②KPI/OKR の 3D ③地図 ④アーキテクチャ図）。
   // FR-066 AC-081
-  test('FR-066 AC-081 4 つのシーンのそれぞれで 3D 要素が描画されページエラーがなく、業種プリセットでヒーローが変わる', async ({ page, start, pageErrors }) => {
+  test('FR-066 AC-081 4 つのシーンはそれぞれの画面で 3D 要素が描画されページエラーがなく、業種プリセットでヒーロー（Twin ビュー）が変わる', async ({ page, start, pageErrors }) => {
     await start();
-    const v3 = await openScreen(page, 'view3d');
-    for (const [key, name] of SCENES) {
-      await v3.getByRole('tab', { name }).click();
-      await expect.poll(async () => (await scene.info(page)).scene).toBe(key);
-      await expectCanvasDrawn(v3.locator('canvas').first());
-      expect((await scene.info(page)).objectCount, `${key} の 3D 要素がない`).toBeGreaterThan(0);
-    }
+    // ① ヒーロー: Twin ビュー
+    const twin = await gotoScreen(page, 'twin-view');
+    await chooseView(page, twin, '3D');
+    await expectCanvasDrawn(twin.locator('canvas').first());
+    expect((await scene.info(page)).objectCount, 'ヒーローの 3D 要素がない').toBeGreaterThan(0);
+    // ② KPI タワー: KPI/OKR の 3D
+    const kpi = await gotoScreen(page, 'kpi-okr');
+    await chooseView(page, kpi, '3D');
+    await expect(kpi.locator('[data-zoom-surface="3d"]').first(), 'KPI タワーの 3D 面が表示されない').toBeVisible();
+    await expectCanvasDrawn(kpi.locator('canvas').first());
+    // ③ データフロー: 地図（流れの粒子）
+    const map = await openScreen(page, 'map');
+    await expectCanvasDrawn(map.locator('canvas').first());
+    // ④ AsIs→ToBe: アーキテクチャ図の 3D（AsIs と ToBe の両方）
+    const arch = await gotoScreen(page, 'architecture');
+    await chooseView(page, arch, '3D');
+    await expectCanvasDrawn(arch.locator('canvas').first());
+    await arch.getByRole('radio', { name: 'ToBe' }).check();
+    await expectCanvasDrawn(arch.locator('canvas').first());
+    await arch.getByRole('radio', { name: 'AsIs' }).check();
+    await expectCanvasDrawn(arch.locator('canvas').first());
     expect(pageErrors).toEqual([]);
-    await v3.getByRole('tab', { name: SCENES[0][1] }).click();
+    const v3 = await gotoScreen(page, 'twin-view');
+    await chooseView(page, v3, '3D');
     await toggleAnimation(page, '停止中');
     const before = await v3.locator('canvas').first().screenshot();
     const preset0 = (await scene.info(page)).industryPreset;
     const settings = await openScreen(page, 'settings');
     const combo = settings.getByRole('combobox', { name: '業種プリセット' });
     await combo.click();
-    const options = page.getByRole('option');
+    const options = page.getByRole('listbox', { name: '業種プリセット' }).getByRole('option');
     expect(await options.count()).toBeGreaterThanOrEqual(5);
     const other = options.filter({ hasNotText: new RegExp(preset0) }).first();
     await other.click();
     await expect.poll(async () => (await scene.info(page)).industryPreset).not.toBe(preset0);
-    const v3b = await openScreen(page, 'view3d');
+    const v3b = await gotoScreen(page, 'twin-view');
+    await chooseView(page, v3b, '3D');
     await nextFrames(page, 3);
     const after = await v3b.locator('canvas').first().screenshot();
     expect(after.equals(before), '業種プリセットを変えてもヒーローの表示が変わらない').toBe(false);
@@ -481,130 +457,5 @@ test.describe('FR-113 表現が成り立たないときの代替表示', () => {
 
 void koto;
 
-test.describe('FR-147 3D ビューの最初のフレームの速さと描画中の応答', () => {
-  const TOL = 1; // PARAM-036（CSS px）
-  const WITHIN_MS = 1000; // PARAM-037（1 秒）
-  const FIRST_FRAME_MS = 1000; // PARAM-038（1 秒）
-  const REPEAT = 10; // PARAM-039（回）
-
-  async function sizes(page: Page) {
-    return page.locator('[data-testid="component-view3d"] canvas').first().evaluate((cv) => {
-      const c = cv.getBoundingClientRect();
-      const p = (cv.parentElement as HTMLElement).getBoundingClientRect();
-      return { cw: c.width, ch: c.height, pw: p.width, ph: p.height };
-    });
-  }
-  function matches(s: { cw: number; ch: number; pw: number; ph: number }): boolean {
-    return Math.abs(s.cw - s.pw) <= TOL && Math.abs(s.ch - s.ph) <= TOL && !(Math.round(s.cw) === 300 && Math.round(s.ch) === 150 && (s.pw > 301 || s.ph > 151));
-  }
-  /** 3D ビューを開いてから、拠点が 1 つ以上描かれた最初のフレーム（frame > 0 かつ visible な拠点あり）までの ms。 */
-  async function openToFirstFrameMs(page: Page, siteId: string): Promise<number> {
-    const t0 = Date.now();
-    await openScreen(page, 'view3d');
-    await expect
-      .poll(async () => {
-        try {
-          const f = (await scene.info(page)).frame;
-          return f > 0 && (await scene.objects(page)).some((o) => o.entityId === siteId && o.visible);
-        } catch { return false; }
-      }, { timeout: 15_000, intervals: [20], message: '最初のフレーム（拠点が描かれ選べる状態）が出ない' })
-      .toBe(true);
-    return Date.now() - t0;
-  }
-
-  // FR-147 AC-246
-  test('FR-147 AC-246 3D ビューを開いてから、拠点が描かれクリックで選べる最初のフレームが 1 秒以内に出る', async ({ page, start }) => {
-    await start();
-    const site = mono.entities().find((e) => e.type === 'site');
-    expect(site, 'お手本パックに拠点がない').toBeTruthy();
-    const ms = await openToFirstFrameMs(page, site.id);
-    expect(ms, `最初のフレームまで ${ms}ms（上限 ${FIRST_FRAME_MS}ms）`).toBeLessThanOrEqual(FIRST_FRAME_MS);
-  });
-
-  // FR-147 AC-246（異常系: 別のパック（コト）・再読み込み後でも 1 秒以内。初回だけ速いのを許さない）
-  test('FR-147 AC-246 異常系: 再読み込みして開き直しても、コトのパックでも、最初のフレームが 1 秒以内に出る', async ({ page, start }) => {
-    const app = await start({ pack: 'koto' });
-    const site = koto.entities().find((e) => e.type === 'site') ?? leafEntities(koto)[0];
-    const first = await openToFirstFrameMs(page, site.id);
-    expect(first, `1 回目 ${first}ms`).toBeLessThanOrEqual(FIRST_FRAME_MS);
-    await app.reload();
-    const second = await openToFirstFrameMs(page, site.id);
-    expect(second, `再読み込み後 ${second}ms`).toBeLessThanOrEqual(FIRST_FRAME_MS);
-  });
-
-  // FR-147 AC-247
-  test('FR-147 AC-247 3D ビューを開いた直後（最初のフレームの前後）に大きさを変えても、描画面が表示領域に 1 秒以内・1 CSS px 以内で追従する', async ({ page, start }) => {
-    await start();
-    await openScreen(page, 'view3d');
-    await page.setViewportSize({ width: 1000, height: 650 }); // 最初のフレームを待たずに変える
-    await expect.poll(async () => matches(await sizes(page)), { timeout: WITHIN_MS, message: '最初のフレーム前のリサイズに追従しない' }).toBe(true);
-    await waitFirstFrame(page);
-    await page.setViewportSize({ width: 1300, height: 800 }); // 最初のフレーム直後
-    await expect.poll(async () => matches(await sizes(page)), { timeout: WITHIN_MS, message: '最初のフレーム直後のリサイズに追従しない' }).toBe(true);
-  });
-
-  // FR-147 AC-247（異常系: 小さくする方向、連続して変える）
-  test('FR-147 AC-247 異常系: 開いた直後に小さく・大きくと続けて変えても、最後の大きさに追従する', async ({ page, start }) => {
-    await start();
-    await openScreen(page, 'view3d');
-    for (const vp of [{ width: 800, height: 500 }, { width: 1200, height: 760 }, { width: 900, height: 600 }]) await page.setViewportSize(vp);
-    await expect.poll(async () => matches(await sizes(page)), { timeout: WITHIN_MS, message: '連続リサイズの最後に追従しない' }).toBe(true);
-    await waitFirstFrame(page);
-    expect(matches(await sizes(page))).toBe(true);
-  });
-
-  // FR-147 AC-248
-  test('FR-147 AC-248 最初のフレームが出た時点で拠点をクリックすると選ばれ、地図・表・ガント・出典で同じ ID がハイライトされる', async ({ page, start }) => {
-    await start();
-    const site = mono.entities().find((e) => e.type === 'site');
-    await openScreen(page, 'view3d');
-    await waitFirstFrame(page);
-    await clickSceneObject(page, site.id);
-    expect((await scene.objects(page)).find((o) => o.entityId === site.id)?.highlighted, '3D 側で拠点が選ばれていない').toBe(true);
-    for (const key of ['map', 'table', 'gantt', 'sources']) {
-      const c = await openScreen(page, key);
-      await expect(entity(c, site.id).first(), `${key} でハイライトされない`).toHaveAttribute('data-highlight', /selected|related/);
-    }
-  });
-
-  // FR-147 AC-248（異常系: 最初のフレーム直後にリサイズしてからのクリックでも当たる）
-  test('FR-147 AC-248 異常系: 最初のフレーム直後にリサイズしてクリックしても、その拠点が選ばれる', async ({ page, start }) => {
-    await start();
-    const site = mono.entities().find((e) => e.type === 'site');
-    await openScreen(page, 'view3d');
-    await waitFirstFrame(page);
-    await page.setViewportSize({ width: 1100, height: 700 });
-    await clickSceneObject(page, site.id);
-    const t = await openScreen(page, 'table');
-    await expect(entity(t, site.id).first()).toHaveAttribute('data-highlight', /selected|related/);
-  });
-
-  // FR-147 AC-249 は、既存ケース（FR-066 AC-081・FR-071 AC-087）を同じ判定で再実行するケースで確かめる（台帳）。
-
-  // FR-147 AC-250（負荷条件。別ページで CPU を使い、AC-243 の判定を REPEAT 回連続で行う）
-  test('FR-147 AC-250 CPU 負荷をかけた条件で、AC-243 の判定（開いた直後・大きさ変更直後の追従）を 10 回連続で満たす', async ({ page, start, context }) => {
-    test.setTimeout(240_000);
-    const app = await start();
-    const load = await context.newPage();
-    await load.goto('about:blank');
-    await load.evaluate(() => {
-      const src = 'const e=Date.now()+600000;while(Date.now()<e){Math.sqrt(Math.random())}';
-      for (let i = 0; i < 4; i++) new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
-    });
-    try {
-      await page.bringToFront();
-      for (let i = 1; i <= REPEAT; i++) {
-        if (i > 1) await app.reload();
-        await page.setViewportSize({ width: 1280, height: 800 });
-        await openScreen(page, 'view3d');
-        await expect.poll(async () => matches(await sizes(page)), { timeout: WITHIN_MS, message: `${i} 回目: 開いた直後に追従しない` }).toBe(true);
-        for (const vp of [{ width: 900, height: 600 }, { width: 1400, height: 900 }]) {
-          await page.setViewportSize(vp);
-          await expect.poll(async () => matches(await sizes(page)), { timeout: WITHIN_MS, message: `${i} 回目: ${vp.width}x${vp.height} で追従しない` }).toBe(true);
-        }
-      }
-    } finally {
-      await load.close();
-    }
-  });
-});
+// FR-147（AC-246〜AC-250）は 2026-10-22 の依頼で廃止予定（画面 view3d の廃止）。ケース E2E-226〜E2E-230 は台帳で blocked。テストは削除した。
+// FR-147 AC-249 が参照していた AC-081・AC-087 は、E2E-169・E2E-171（本ファイルの FR-066・FR-071）で確かめる。

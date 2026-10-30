@@ -2,6 +2,8 @@
 // 選択はすべてのビューと共通の状態（src/store/selection.ts）で、この表の行のクリック・ホバーも同じ状態を使う（FR-024〜FR-027）。
 // 件数バッジ・AND/OR の切替・「非表示/減光」の選択・フィルター解除を備える。
 import { useEffect, useMemo, useState } from 'react';
+import { tr, useT } from '../i18n';
+import { lifeOpacity, usePresenceItems } from '../motion';
 import {
   Badge, Button, Field, Input, MessageBar, MessageBarActions, MessageBarBody, MessageBarTitle, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text,
   makeStyles, mergeClasses, tokens,
@@ -52,6 +54,7 @@ const idOf = (n: GraphNode): string => n.id;
  * role="gridcell" は、操作できるセルであることを伝える。
  */
 function NameCell({ node, className, indent = 0 }: { node: GraphNode; className: string; indent?: number }) {
+  const t = useT();
   const editMode = useEditStore((st) => st.editMode);
   const rename = useEditStore((st) => st.rename);
   const [editing, setEditing] = useState(false);
@@ -77,7 +80,7 @@ function NameCell({ node, className, indent = 0 }: { node: GraphNode; className:
           <span hidden aria-hidden="true">{node.label}</span>
           <InlineInput
             initial={node.label}
-            label={`${KIND_LABELS[node.kind]}の名称`}
+            label={t('{kind}の名称', { kind: t(KIND_LABELS[node.kind]) })}
             onClose={() => setEditing(false)}
             onSubmit={(t) => { const r = rename(node.id, t); return r.ok ? undefined : r.message; }}
           />
@@ -88,6 +91,7 @@ function NameCell({ node, className, indent = 0 }: { node: GraphNode; className:
 }
 
 function TableScreen() {
+  const t = useT();
   const s = useStyles();
   const hl = useHighlightClass();
   const { graph, selectedIds, related, mode, unrelated, setMode, setUnrelated, clear, select } = useSelection();
@@ -155,46 +159,49 @@ function TableScreen() {
     return m;
   }, [twinLinks]);
 
-  if (!graph) return <LoadingView label="一覧を読み込み中" />;
+  // 出入り・遷移（FR-070 AC-086）: 表の行は同じ ID のまま、追加は現れ、削除は薄れて消える（消える行は ID・操作を持たない）
+  const rowPresence = usePresenceItems(rows, (r) => r.item.id, () => []);
+
+  if (!graph) return <LoadingView label={t('一覧を読み込み中')} />;
 
   return (
     <Panel
       testId="component-table"
-      title="一覧表"
-      description="すべての項目を一覧にします。他のビューで項目を選ぶと、関連する行に自動で絞り込まれます。"
+      title={t('一覧表')}
+      description={t('すべての項目を一覧にします。他のビューで項目を選ぶと、関連する行に自動で絞り込まれます。')}
     >
       {fallback ? (
         <MessageBar intent="info" layout="multiline" data-testid="fallback-notice">
           <MessageBarBody>
-            <MessageBarTitle>{fallback.reason}の項目を表示しています</MessageBarTitle>
-            {fallback.source} の表現に必要な属性がないため、地図などには表示できない項目です（{fallbackNodes?.length ?? 0} 件）。
+            <MessageBarTitle>{t('{reason}の項目を表示しています', { reason: fallback.reason })}</MessageBarTitle>
+            {t('{source} の表現に必要な属性がないため、地図などには表示できない項目です（{n} 件）。', { source: fallback.source, n: fallbackNodes?.length ?? 0 })}
           </MessageBarBody>
           <MessageBarActions>
-            <Button size="small" onClick={clearFallback}>すべての項目に戻す</Button>
+            <Button size="small" onClick={clearFallback}>{t('すべての項目に戻す')}</Button>
           </MessageBarActions>
         </MessageBar>
       ) : null}
       <div className={s.toolbar}>
-        <Field label="選択の組み合わせ">
+        <Field label={t('選択の組み合わせ')}>
           <RadioGroup layout="horizontal" value={mode} onChange={(_, d) => setMode(d.value as 'AND' | 'OR')}>
             <Radio value="AND" label="AND" />
             <Radio value="OR" label="OR" />
           </RadioGroup>
         </Field>
-        <Field label="関連しない行">
+        <Field label={t('関連しない行')}>
           <RadioGroup layout="horizontal" value={unrelated} onChange={(_, d) => setUnrelated(d.value as 'hide' | 'dim')}>
-            <Radio value="hide" label="非表示" />
-            <Radio value="dim" label="減光" />
+            <Radio value="hide" label={t('非表示')} />
+            <Radio value="dim" label={t('減光')} />
           </RadioGroup>
         </Field>
-        <Field label="絞り込み">
-          <Input value={text} onChange={(_, d) => setText(d.value)} placeholder="名称・ID・種別" />
+        <Field label={t('絞り込み')}>
+          <Input value={text} onChange={(_, d) => setText(d.value)} placeholder={t('名称・ID・種別')} />
         </Field>
-        <Badge appearance="filled" color="brand" size="large" data-testid="count-badge" aria-label={`該当 ${count} 件`}>
-          {count} 件
+        <Badge appearance="filled" color="brand" size="large" data-testid="count-badge" aria-label={t('該当 {n} 件', { n: count })}>
+          {t('{n} 件', { n: count })}
         </Badge>
         <Button icon={<FilterDismiss24Regular aria-hidden />} disabled={selectedIds.length === 0} onClick={() => clear({ origin: ORIGIN })}>
-          フィルター解除
+          {t('フィルター解除')}
         </Button>
       </div>
       <DataTransferButtons />
@@ -203,29 +210,37 @@ function TableScreen() {
       <div className={editMode ? s.summarySlot : undefined}>
         {selectedIds.length > 0 ? (
           <div className={s.summary} role="status">
-            <Text weight="semibold">選択中:</Text>
+            <Text weight="semibold">{t('選択中:')}</Text>
             {selectedIds.map((id) => <Badge key={id} appearance="tint" color="brand">{graph.node(id)?.label ?? id}</Badge>)}
           </div>
         ) : null}
       </div>
 
       {visible.length === 0 ? (
-        <EmptyView message="選択に関連する項目はありません。「フィルター解除」で全件に戻せます。" />
+        <EmptyView message={t('選択に関連する項目はありません。「フィルター解除」で全件に戻せます。')} />
       ) : viewMode === '3d' && !asTable ? (
-        <Items3DSurface viewKey={ORIGIN} origin={ORIGIN} label="項目の一覧" items={items3d} links={links3d} axes={{ x: '種別' }} />
+        <Items3DSurface viewKey={ORIGIN} origin={ORIGIN} label={t('項目の一覧')} items={items3d} links={links3d} axes={{ x: t('種別') }} />
       ) : (
-        <Table aria-label="項目の一覧" size="small">
+        <Table aria-label={t('項目の一覧')} size="small">
           <TableHeader>
             <TableRow>
-              <TableHeaderCell>状態</TableHeaderCell>
-              <TableHeaderCell>種別</TableHeaderCell>
-              <TableHeaderCell>世界</TableHeaderCell>
-              <TableHeaderCell>名称</TableHeaderCell>
+              <TableHeaderCell>{t('状態')}</TableHeaderCell>
+              <TableHeaderCell>{t('種別')}</TableHeaderCell>
+              <TableHeaderCell>{t('世界')}</TableHeaderCell>
+              <TableHeaderCell>{t('名称')}</TableHeaderCell>
               <TableHeaderCell className={s.hideNarrow}>ID</TableHeaderCell>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {rows.map(({ item: n, depth, hasChildren, expanded }) => {
+            {rowPresence.map(({ item: { item: n, depth, hasChildren, expanded }, life, exiting }) => {
+              if (exiting) {
+                return (
+                  <TableRow key={n.id} aria-hidden className={s.row} style={{ opacity: lifeOpacity(life), pointerEvents: 'none' }}>
+                    <TableCell className={s.cell} /><TableCell className={s.cell}>{t(KIND_LABELS[n.kind])}{n.type ? `（${n.type}）` : ''}</TableCell>
+                    <TableCell className={s.cell} /><TableCell className={s.cell}>{n.label}</TableCell><TableCell className={mergeClasses(s.cell, s.idCell, s.hideNarrow)} />
+                  </TableRow>
+                );
+              }
               const props = bind(n.id, { filterable: true });
               const state = selected.has(n.id) ? '選択中' : props['data-highlight']?.includes('related') ? '関連' : '';
               // 編集モードでは関連しない行を隠さないので、減光（dimmed）で示す
@@ -244,23 +259,24 @@ function TableScreen() {
                   aria-level={depth + 1}
                   tabIndex={0}
                   className={mergeClasses(s.row, hl(highlight))}
+                  style={life < 1 ? { opacity: lifeOpacity(life) } : undefined}
                   onKeyDown={(e) => { onEntityKey(e, n.id, ORIGIN); }}
                 >
                   <TableCell className={s.cell}>{hasChildren ? (
                     <Button
                       size="small" appearance="subtle" icon={expanded ? <ChevronDown16Regular aria-hidden /> : <ChevronRight16Regular aria-hidden />}
-                      aria-label={expanded ? `${n.label} を折りたたむ` : `${n.label} を展開`}
+                      aria-label={expanded ? t('{title} を折りたたむ', { title: n.label }) : t('{title} を展開', { title: n.label })}
                       onClick={(e) => { e.stopPropagation(); toggle(n.id); }}
                     />
-                  ) : null}{state ? <Badge appearance="outline" color={state === '選択中' ? 'brand' : 'informative'}>{state}</Badge> : null}</TableCell>
-                  <TableCell className={s.cell}>{KIND_LABELS[n.kind]}{n.type ? `（${n.type}）` : ''}</TableCell>
+                  ) : null}{state ? <Badge appearance="outline" color={state === '選択中' ? 'brand' : 'informative'}>{t(state)}</Badge> : null}</TableCell>
+                  <TableCell className={s.cell}>{t(KIND_LABELS[n.kind])}{n.type ? `（${n.type}）` : ''}</TableCell>
                   {/* 世界区分（FR-218）。区分なしは「両方」でだけ出る。ツイン関係は相手の名前の印で示す */}
                   <TableCell className={s.cell}>
                     {n.world ? WORLD_VIEW_LABELS[n.world] : UNCLASSIFIED_LABEL}
                     {(twinPartners.get(n.id) ?? []).map((t) => {
                       const rel = graph.twinsOf(n.id).find((x) => x.id === t)?.relationLabel;
                       // 文字を拡大しても重ならないよう、折り返す 1 行の文字で示す（NFR-A11Y-009）
-                      return <span key={t} className={s.twin} data-twin-of={t}>{`⇄ ツイン: ${graph.node(t)?.label ?? t}${rel ? `（${rel}）` : ''}`}</span>;
+                      return <span key={t} className={s.twin} data-twin-of={t}>{`${tr('⇄ ツイン:')} ${graph.node(t)?.label ?? t}${rel ? `（${rel}）` : ''}`}</span>;
                     })}
                   </TableCell>
                   <NameCell node={n} className={s.cell} indent={depth} />

@@ -2,6 +2,7 @@
 // 形式: front matter（YAML）＋ 人が読む節 ＋ 機械可読の JSON ブロック（最初の ```json フェンス）。
 // 復元は JSON ブロックだけを正とする。人が読む節は引用（`> `）で書くので、本文中のフェンスが JSON ブロックと取り違えられない。
 import { z } from 'zod';
+import { tr } from '../i18n/translate';
 import {
   RECORD_FIELDS, STATUS_DISPLAY_LABEL, ThemeSchema, statusOrigin, type Theme,
 } from './model';
@@ -25,7 +26,7 @@ const yamlString = (s: string) => JSON.stringify(s);
 /** 引用ブロックにして、本文中のフェンスや見出しが構造を壊さないようにする。 */
 function quote(text: string): string {
   const t = text.trim();
-  if (t === '') return '> （未記入）';
+  if (t === '') return `> ${tr('（未記入）')}`;
   return t.split(/\r?\n/).map((l) => (l === '' ? '>' : `> ${l}`)).join('\n');
 }
 
@@ -36,15 +37,15 @@ function safeJson(value: unknown): string {
 
 export function themeToMarkdown(t: Theme): string {
   const lines: string[] = [];
-  const origin = statusOrigin(t.status) === 'ai' ? 'AI の提案' : '顧客の選択';
-  lines.push(`## テーマ: ${t.title.replace(/\s+/g, ' ')}`);
-  lines.push('', `- 決定ステータス: ${STATUS_DISPLAY_LABEL[t.status]}（${origin}）`);
-  if (t.aiProposal.trim() !== '') lines.push('', '### AI の提案', '', quote(t.aiProposal));
-  for (const f of RECORD_FIELDS) lines.push('', `### ${f.label}`, '', quote(t[f.key]));
-  lines.push('', '### 次のアクション', '');
-  if (t.actions.length === 0) lines.push('（なし）');
+  const origin = statusOrigin(t.status) === 'ai' ? tr('AI の提案') : tr('顧客の選択');
+  lines.push(`## ${tr('テーマ')}: ${t.title.replace(/\s+/g, ' ')}`);
+  lines.push('', `- ${tr('決定ステータス')}: ${tr(STATUS_DISPLAY_LABEL[t.status])}（${origin}）`);
+  if (t.aiProposal.trim() !== '') lines.push('', `### ${tr('AI の提案')}`, '', quote(t.aiProposal));
+  for (const f of RECORD_FIELDS) lines.push('', `### ${tr(f.label)}`, '', quote(t[f.key]));
+  lines.push('', `### ${tr('次のアクション')}`, '');
+  if (t.actions.length === 0) lines.push(tr('（なし）'));
   for (const a of t.actions) {
-    lines.push(`- ${a.text.replace(/\s+/g, ' ') || '（内容なし）'}（担当: ${a.owner || '未定'}／期限: ${a.due || '未定'}）`);
+    lines.push(`- ${a.text.replace(/\s+/g, ' ') || tr('（内容なし）')}（${tr('担当')}: ${a.owner || tr('未定')}／${tr('期限', undefined, 'export')}: ${a.due || tr('未定')}）`);
   }
   return lines.join('\n');
 }
@@ -80,19 +81,19 @@ export function buildDiscussionMemo(input: BuildMemoInput): string {
     `exported_at: ${yamlString(now.toISOString())}`,
     '---',
     '',
-    `# ${input.customerName} ${input.projectName} 議論メモ`,
+    `# ${input.customerName} ${input.projectName} ${tr('議論メモ')}`,
     '',
   ];
   if (input.body !== undefined) {
     out.push(input.body.trimEnd(), '');
   } else {
-    if (input.themes.length === 0) out.push('議論テーマはまだありません。', '');
+    if (input.themes.length === 0) out.push(tr('議論テーマはまだありません。'), '');
     for (const t of input.themes) out.push(themeToMarkdown(t), '');
   }
   out.push(
-    '## 機械可読データ',
+    `## ${tr('機械可読データ')}`,
     '',
-    'このブロックから、アプリで読み込んで状態を復元できます。編集するときは JSON の形式を壊さないでください。',
+    tr('このブロックから、アプリで読み込んで状態を復元できます。編集するときは JSON の形式を壊さないでください。'),
     '',
     '```json',
     safeJson(snapshot),
@@ -110,21 +111,21 @@ const FENCE = /^```json[ \t]*\r?\n([\s\S]*?)\r?\n```[ \t]*$/m;
 export function parseDiscussionMemo(text: string): ParseMemoResult {
   const src = text.replace(/^\uFEFF/, '');
   if (!/^---[ \t]*\r?\n[\s\S]*?\r?\n---[ \t]*(\r?\n|$)/.test(src)) {
-    return { ok: false, errors: ['先頭に front matter（--- で囲んだ見出し情報）がないため、議論メモとして読み込めません。'] };
+    return { ok: false, errors: [tr('先頭に front matter（--- で囲んだ見出し情報）がないため、議論メモとして読み込めません。')] };
   }
   const m = FENCE.exec(src);
-  if (!m) return { ok: false, errors: ['JSON ブロック（```json で始まる機械可読データ）が見つかりません。'] };
+  if (!m) return { ok: false, errors: [tr('JSON ブロック（```json で始まる機械可読データ）が見つかりません。')] };
   let raw: unknown;
   try {
     raw = JSON.parse(m[1] ?? '');
   } catch (e) {
-    return { ok: false, errors: [`JSON ブロックを読み取れません（${e instanceof Error ? e.message : String(e)}）。ファイルが壊れている可能性があります。`] };
+    return { ok: false, errors: [tr('JSON ブロックを読み取れません（{msg}）。ファイルが壊れている可能性があります。', { msg: e instanceof Error ? e.message : String(e) })] };
   }
   const r = MemoSnapshotSchema.safeParse(raw);
   if (!r.success) {
     return {
       ok: false,
-      errors: r.error.issues.slice(0, 10).map((i) => `JSON ブロックの ${i.path.join('.') || '(最上位)'}: ${i.message}`),
+      errors: r.error.issues.slice(0, 10).map((i) => tr('JSON ブロックの {path}: {msg}', { path: i.path.join('.') || tr('(最上位)'), msg: i.message })),
     };
   }
   return { ok: true, snapshot: r.data };

@@ -1,9 +1,11 @@
 // 画面の登録（全画面）の走査と、見出しの操作（ピン止め・ビュー）の共通の操作。
-// 「全画面」は、利用者が見る画面の一覧＝左メニュー（navigation「画面」）の `nav-<key>` を走査し、左メニューに項目を持たない
-// 画面（FR-220 AC-590 の view3d・drawing2d。コマンドから開く）を足して得る（CONTRACT.md §21）。
+// 「全画面」は、利用者が見る画面の一覧＝左メニュー（navigation「画面」）の `nav-<key>` を走査して得る（CONTRACT.md §21）。
+// 画面 view3d・drawing2d・canvas は 2026-10-22 に廃止した（FR-012・FR-020・FR-220 AC-590）ので、一覧にあれば失敗にする。
 // 期待値は要求定義書の受入基準から決め、実装の一覧（コード）からは決めない。主要画面（MAIN_SCREENS）が欠けていれば失敗にする。
 import type { Page, Locator } from '@playwright/test';
-import { expect, component, MAIN_SCREENS, closeSettings, OFF_MENU_SCREENS, isOffMenuScreen, openScreenByCommand } from './fixtures';
+import { expect, component, MAIN_SCREENS, closeSettings, OFF_MENU_SCREENS, isOffMenuScreen, openScreenByCommand, openScreen } from './fixtures';
+
+const REMOVED_SCREENS = ['view3d', 'drawing2d', 'canvas'] as const;
 
 export async function box(loc: Locator) {
   const b = await loc.boundingBox();
@@ -22,8 +24,10 @@ export async function listScreenKeys(page: Page): Promise<string[]> {
   const keys = await nav.locator('[data-testid^="nav-"]').evaluateAll((els) =>
     els.map((e) => (e.getAttribute('data-testid') ?? '').replace(/^nav-/, '')).filter((k) => k && k !== 'toggle'),
   );
-  const uniq = [...new Set([...keys, ...OFF_MENU_SCREENS])];
+  // 設定は左メニューに項目を持たず、上部のボタン「設定」から開く（FR-223 AC-774）。一覧の末尾に足す
+  const uniq = [...new Set([...keys, ...OFF_MENU_SCREENS, 'settings'])];
   for (const [k, name] of MAIN_SCREENS) expect(uniq, `画面の一覧に主要画面「${name}」がない`).toContain(k);
+  for (const k of REMOVED_SCREENS) expect(uniq, `廃止した画面 ${k} が画面の一覧にある（FR-220 AC-590）`).not.toContain(k);
   return uniq;
 }
 
@@ -31,6 +35,7 @@ export async function listScreenKeys(page: Page): Promise<string[]> {
 export async function gotoScreen(page: Page, key: string): Promise<Locator> {
   // 設定はモーダル（FR-223）。ほかの画面へ移る前に、開いている設定を閉じる（背面の覆いが操作を遮る）
   if (key !== 'settings') await closeSettings(page);
+  else return openScreen(page, key); // 設定は上部のボタン「設定」から開く（FR-223 AC-774）
   if (await isOffMenuScreen(page, key)) {
     // 左メニューにない画面（FR-220 AC-590）は、コマンドから開く
     await openScreenByCommand(page, key);

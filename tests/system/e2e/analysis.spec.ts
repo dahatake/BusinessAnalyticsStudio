@@ -253,14 +253,14 @@ test.describe('FR-011 AI モック', () => {
   test('FR-011 AC-013 「AI: モック」が常に見え、チャットの回答に「AI 生成（モック）」が付く', async ({ page, start }) => {
     await start();
     const status = page.getByTestId('ai-status');
-    for (const key of ['canvas', 'issue-solution', 'settings']) {
+    for (const key of ['priority', 'issue-solution', 'settings']) {
       await openScreen(page, key);
       await expect(status).toBeVisible();
       await expect(status).toContainText('AI: モック');
     }
     const chat = await openScreen(page, 'chat');
     await chat.getByRole('textbox', { name: /質問/ }).fill('最も優先度の高い課題は何ですか？');
-    await chat.getByRole('button', { name: '送信' }).click();
+    await chat.getByRole('button', { name: '送信', exact: true }).click();
     const answer = chat.getByTestId('chat-answer').last();
     await expect(answer).toBeVisible();
     await expect(answer).toContainText('AI 生成（モック）');
@@ -301,7 +301,7 @@ test.describe('FR-017 検索とチャット', () => {
     await start();
     const chat = await openScreen(page, 'chat');
     await chat.getByRole('textbox', { name: /質問/ }).fill(`${mono.issues()[0].title} の解決策は？`);
-    await chat.getByRole('button', { name: '送信' }).click();
+    await chat.getByRole('button', { name: '送信', exact: true }).click();
     const answer = chat.getByTestId('chat-answer').last();
     await expect(answer).toContainText('AI 生成');
     const cards = answer.getByTestId('source-card');
@@ -317,7 +317,7 @@ test.describe('FR-017 検索とチャット', () => {
     await start();
     const chat = await openScreen(page, 'chat');
     await chat.getByRole('textbox', { name: /質問/ }).fill('');
-    await expect(chat.getByRole('button', { name: '送信' })).toBeDisabled();
+    await expect(chat.getByRole('button', { name: '送信', exact: true })).toBeDisabled();
   });
 });
 

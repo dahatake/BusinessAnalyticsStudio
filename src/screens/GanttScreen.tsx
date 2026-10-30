@@ -2,7 +2,8 @@
 // 各工程の開始日・終了日・担当（誰が）・作業内容（何を）を表示する。工程にフォーカスまたはカーソルを合わせても同じ内容を示す。
 // FR-022: 2D と 2.5D（斜め上から見た奥行き付きの描画）を切り替えられる。切り替えても工程の件数・期間・選択は変わらない。
 // FR-035: 下位の工程を持つ工程は、展開すると下位の工程が出て、折りたたむと隠れる。
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
+import { useT } from '../i18n';
 import { useComponentView, usePublishViewItems } from '../view/useView';
 import { ModeRadio } from '../view/ModeRadio';
 import { Button, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
@@ -18,6 +19,7 @@ import { buildGantt, formatPeriod, type GanttTask } from '../plan/model';
 import { usePackStore } from '../store/pack';
 import { useProjectTasks } from '../store/datacatalog';
 import { useProjects } from '../store/projects';
+import { lifeOpacity, lifeScale, usePresenceItems, type PresenceItem } from '../motion';
 import { registerTestHook } from '../testing/hook';
 
 const useStyles = makeStyles({
@@ -84,12 +86,22 @@ type Hl = 'selected' | 'related' | undefined;
 const parentOfTask = (g: GanttTask): string | undefined => (g.task as { parentId?: string | null }).parentId ?? undefined;
 const taskIdOf = (g: GanttTask): string => g.task.id;
 
-/** 2.5D の描画: 工程を、時間軸に沿った奥行き付きの棒（上面・側面つき）として斜めから描く。行の並びと色は 2D と同じ */
-function drawGantt25D(canvas: HTMLCanvasElement, rows: ReadonlyArray<{ g: GanttTask; depth: number; hl: Hl }>): void {
+const ORPHAN_GROUP = '__orphan';
+
+/** 出入りの途中（life<1）の見た目。現れる＝薄い・小さい状態から、消える＝薄く・小さくなる。終わった（life=1）ら何も付けない */
+function presenceStyle(life: number, exiting: boolean): CSSProperties | undefined {
+  if (life >= 1 && !exiting) return undefined;
+  return { opacity: lifeOpacity(life), transform: `scale(${lifeScale(life).toFixed(3)})`, pointerEvents: exiting ? 'none' : undefined };
+}
+
+/** 2.5D の描画: 工程を、時間軸に沿った奥行き付きの棒（上面・側面つき）として斜めから描く。行の並びと色は 2D と同じ。
+ *  vec=[左 %, 幅 %, 行の位置]・life は、出入り・遷移の途中の値（usePresenceItems。停止中は最終値） */
+interface Row25D { g: GanttTask; depth: number; hl: Hl; vec: readonly number[]; life: number }
+function drawGantt25D(canvas: HTMLCanvasElement, rows: ReadonlyArray<Row25D>): void {
   const rowH = 30;
   const left = 190;
   const W = 900;
-  const H = Math.max(120, rows.length * rowH + 60);
+  const H = Math.max(120, Math.ceil(Math.max(0, ...rows.map((r) => r.vec[2]! + 1))) * rowH + 60);
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d');
@@ -122,22 +134,25 @@ function drawGantt25D(canvas: HTMLCanvasElement, rows: ReadonlyArray<{ g: GanttT
     ctx.beginPath(); ctx.moveTo(x, 20); ctx.lineTo(x + dx * 2, 12); ctx.lineTo(x + dx * 2, H - 20); ctx.stroke();
   }
   ctx.font = `${css(tokens.fontSizeBase200, '12px')} ${css(tokens.fontFamilyBase, 'sans-serif')}`;
-  rows.forEach(({ g, depth, hl }, i) => {
-    const y = 30 + i * rowH;
+  rows.forEach(({ g, depth, hl, vec, life }) => {
+    const y = 30 + vec[2]! * rowH;
+    ctx.globalAlpha = lifeOpacity(life);
     ctx.fillStyle = cText;
     ctx.textBaseline = 'middle';
     ctx.fillText(g.task.title.slice(0, 16), 10 + depth * 14, y + 8);
-    if (g.startDay === undefined) return;
-    const x = left + (g.leftPct / 100) * trackW;
-    const w = Math.max(6, (g.widthPct / 100) * trackW);
+    if (g.startDay === undefined) { ctx.globalAlpha = 1; return; }
+    const x = left + (vec[0]! / 100) * trackW;
+    const w = Math.max(6, (vec[1]! / 100) * trackW);
     const { front, top, side } = hl === 'selected' ? palette.selected : hl === 'related' ? palette.related : palette.plain;
     ctx.fillStyle = front; ctx.fillRect(x, y, w, 16);
     ctx.fillStyle = top; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + dx, y + dy); ctx.lineTo(x + w + dx, y + dy); ctx.lineTo(x + w, y); ctx.closePath(); ctx.fill();
     ctx.fillStyle = side; ctx.beginPath(); ctx.moveTo(x + w, y); ctx.lineTo(x + w + dx, y + dy); ctx.lineTo(x + w + dx, y + 16 + dy); ctx.lineTo(x + w, y + 16); ctx.closePath(); ctx.fill();
+    ctx.globalAlpha = 1;
   });
 }
 
 function GanttScreen() {
+  const t = useT();
   const s = useStyles();
   const state = usePackStore((st) => st.state);
   const data = state.status === 'ready' ? state.pack.data : undefined;
@@ -169,6 +184,17 @@ function GanttScreen() {
   const shownTaskIds = useMemo(() => (tasks ?? []).map((t) => t.id), [tasks]);
   usePublishViewItems('gantt', shownTaskIds);
   const orphanRows = useMemo(() => flattenTree(model.orphans, taskIdOf, parentOfTask, collapsed), [model, collapsed]);
+  // 出入り・遷移（FR-070 AC-086）。工程の行・棒・2.5D の棒は同じ ID のまま、追加は現れ、削除は薄れて消え、期間・並びの変更は動く
+  const rowItems = useMemo(() => [
+    ...groupRows.flatMap(({ g, rows }) => rows.map((row) => ({ row, gid: g.feature.id }))),
+    ...orphanRows.map((row) => ({ row, gid: ORPHAN_GROUP })),
+  ], [groupRows, orphanRows]);
+  const rowIndex = useMemo(() => new Map(rowItems.map((x, i) => [x.row.item.task.id, i])), [rowItems]);
+  const presence = usePresenceItems(
+    rowItems, (x) => x.row.item.task.id,
+    (x) => [x.row.item.startDay === undefined ? 0 : x.row.item.leftPct, x.row.item.startDay === undefined ? 0 : x.row.item.widthPct, rowIndex.get(x.row.item.task.id) ?? 0],
+    { enterVec: (_id, to) => [to[0] ?? 0, 0, to[2] ?? 0] },
+  );
 
   const highlight = (g: GanttTask): Hl =>
     selectedIds.includes(g.task.id) ? 'selected'
@@ -185,14 +211,19 @@ function GanttScreen() {
 
   useEffect(() => {
     if (view !== '2.5d' || !canvasRef.current) return;
-    const all = [...groupRows.flatMap((x) => x.rows), ...orphanRows];
-    drawGantt25D(canvasRef.current, all.map((r) => ({ g: r.item, depth: r.depth, hl: highlight(r.item) })));
+    drawGantt25D(canvasRef.current, presence.map(({ item, vec, life, exiting }) => ({
+      g: item.row.item, depth: item.row.depth, hl: exiting ? undefined : highlight(item.row.item), vec, life,
+    })));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, groupRows, orphanRows, selectedIds, related, featureId, data]);
+  }, [view, presence, selectedIds, related, featureId, data]);
 
-  if (!data) return <LoadingView label="工程を読み込み中" />;
+  const siteEntities = useMemo(() => (data?.entities.entities ?? []).filter((e) => e.type === 'site'), [data]);
+  const sitePresence = usePresenceItems(siteEntities, (e) => e.id, () => []);
+  const pickedChips = selectedIds.filter((id) => !taskIdSet.has(id)).map((id) => ({ id, label: graph?.node(id)?.label ?? id }));
+  const chipPresence = usePresenceItems(pickedChips, (c) => c.id, () => []);
 
-  const sites = data.entities.entities.filter((e) => e.type === 'site');
+  if (!data) return <LoadingView label={t('工程を読み込み中')} />;
+
 
   const featureTitle = new Map(data.plan.features.map((f) => [f.id, f.title]));
   const issueTitle = new Map(data.issues.issues.map((i) => [i.id, i.title]));
@@ -201,9 +232,8 @@ function GanttScreen() {
   const byId = new Map(allGanttTasks.map((g) => [g.task.id, g]));
   const activeId = focusId ?? hoverId ?? taskId ?? selectedTasks[0]?.task.id;
   const active = activeId ? byId.get(activeId)?.task : undefined;
-  const otherSelected = selectedIds.filter((id) => !taskIdSet.has(id));
 
-  const taskRow = ({ item: g, depth, hasChildren, expanded }: TreeRow<GanttTask>) => {
+  const taskRow = ({ item: { row: { item: g, depth, hasChildren, expanded } }, vec, life, exiting }: PresenceItem<{ row: TreeRow<GanttTask>; gid: string }>) => {
     const h = highlight(g);
     const props = bind(g.task.id);
     const tokens_ = (props['data-highlight'] ?? '').split(' ').filter(Boolean);
@@ -217,6 +247,9 @@ function GanttScreen() {
         data-highlight={tokens_.join(' ') || undefined}
         aria-expanded={hasChildren ? expanded : undefined}
         aria-level={depth + 1}
+        aria-hidden={exiting || undefined}
+        data-exiting={exiting || undefined}
+        style={life < 1 ? { opacity: lifeOpacity(life), transform: `translateY(${((1 - life) * 8).toFixed(2)}px)`, pointerEvents: exiting ? 'none' : undefined } : undefined}
         onClick={(e) => { props.onClick?.(e); setFeatureId(g.task.featureId); }}
         tabIndex={-1}
         onFocus={() => setFocusId(g.task.id)}
@@ -228,7 +261,7 @@ function GanttScreen() {
           {hasChildren ? (
             <Button
               size="small" appearance="subtle" icon={expanded ? <ChevronDown16Regular aria-hidden /> : <ChevronRight16Regular aria-hidden />}
-              aria-label={expanded ? `${g.task.title} を折りたたむ` : `${g.task.title} を展開`}
+              aria-label={expanded ? t('{title} を折りたたむ', { title: g.task.title }) : t('{title} を展開', { title: g.task.title })}
               onClick={(e) => { e.stopPropagation(); toggle(g.task.id); }}
             />
           ) : null}
@@ -236,12 +269,12 @@ function GanttScreen() {
         </div>
         <div role="gridcell" className={s.track}>
           {g.startDay === undefined ? (
-            <Text size={200}>日付なし</Text>
+            <Text size={200}>{t('日付なし')}</Text>
           ) : (
             <button
               type="button"
               className={mergeClasses(s.bar, h === 'related' && s.barRelated, h === 'selected' && s.barSelected)}
-              style={{ left: `${g.leftPct}%`, width: `${g.widthPct}%` }}
+              style={{ left: `${vec[0]}%`, width: `${vec[1]}%` }}
               aria-label={`${g.task.title}（${formatPeriod(g.task)}）`}
               aria-pressed={h === 'selected'}
               onFocus={() => setFocusId(g.task.id)}
@@ -258,39 +291,39 @@ function GanttScreen() {
   return (
     <Panel
       testId="component-gantt"
-      title="ガントチャート"
-      description="Feature ごとの工程（いつ・誰が・何を）を時間軸で確かめます。Feature を選ぶと、その工程を強調します。"
+      title={t('ガントチャート')}
+      description={t('Feature ごとの工程（いつ・誰が・何を）を時間軸で確かめます。Feature を選ぶと、その工程を強調します。')}
       maxWidth="1200px"
     >
       <ExecutiveSummary scope="gantt" />
       {data.plan.tasks.length === 0 && data.plan.features.length === 0 ? (
-        <EmptyView message="工程がありません。" />
+        <EmptyView message={t('工程がありません。')} />
       ) : (
         <>
           {/* 見出しの「ビュー」と同じ 1 つの切替。2.5D は canvas 2D で描くので WebGL2 がなくても選べる（FR-022・FR-217 AC-507） */}
           <ModeRadio viewKey="gantt" labels={{ '3d': '2.5D' }} />
-          {otherSelected.length > 0 ? (
-            <div className={s.chips} role="status" aria-label="選択中の項目">
-              <Text weight="semibold">選択中:</Text>
-              {otherSelected.map((id) => {
+          {chipPresence.length > 0 ? (
+            <div className={s.chips} role="status" aria-label={t('選択中の項目')}>
+              <Text weight="semibold">{t('選択中:')}</Text>
+              {chipPresence.map(({ item: { id, label }, life, exiting }) => {
                 const p = bind(id);
                 const on = (p['data-highlight'] ?? '').includes('selected');
-                return <span key={id} {...p} className={mergeClasses(s.chip, on && s.chipSelected)}>{graph?.node(id)?.label ?? id}</span>;
+                return <span key={id} {...p} className={mergeClasses(s.chip, on && s.chipSelected)} style={presenceStyle(life, exiting)} aria-hidden={exiting || undefined}>{label}</span>;
               })}
             </div>
           ) : null}
           {view === '2.5d' ? (
-            <canvas ref={canvasRef} className={s.canvas} role="img" aria-label="ガントチャート（2.5D）。工程を奥行きのある棒で表します。" />
+            <canvas ref={canvasRef} className={s.canvas} role="img" aria-label={t('ガントチャート（2.5D）。工程を奥行きのある棒で表します。')} />
           ) : null}
-          <div className={s.scroll} role="region" aria-label="ガントチャートの時間軸" tabIndex={0}>
-            <div className={s.chart} role="treegrid" aria-label="ガントチャート（Feature・工程）">
+          <div className={s.scroll} role="region" aria-label={t('ガントチャートの時間軸')} tabIndex={0}>
+            <div className={s.chart} role="treegrid" aria-label={t('ガントチャート（Feature・工程）')}>
               <div className={s.row} role="row">
-                <div role="columnheader" style={{ display: 'contents' }}><Text size={200} weight="semibold">Feature・工程</Text></div>
+                <div role="columnheader" style={{ display: 'contents' }}><Text size={200} weight="semibold">{t('Feature・工程')}</Text></div>
                 <div className={s.months} aria-hidden>
                   {model.months.map((m) => <Text key={m.label} size={200} className={s.month} style={{ left: `${m.leftPct}%` }}>{m.label}</Text>)}
                 </div>
               </div>
-              {groupRows.map(({ g, rows }) => {
+              {groupRows.map(({ g }) => {
                 const on = g.feature.id === featureId;
                 return (
                   <div key={g.feature.id}>
@@ -310,61 +343,61 @@ function GanttScreen() {
                       >
                         {g.feature.title}
                       </Button>
-                      <Text size={200}>{g.tasks.length} 件の工程</Text>
+                      <Text size={200}>{t('{n} 件の工程', { n: g.tasks.length })}</Text>
                       {(g.feature.issueIds ?? []).length > 0 ? (
-                        <Text size={200}>課題: {(g.feature.issueIds ?? []).map((id) => issueTitle.get(id) ?? id).join('、')}</Text>
+                        <Text size={200}>{t('課題:')} {(g.feature.issueIds ?? []).map((id) => issueTitle.get(id) ?? id).join('、')}</Text>
                       ) : null}
                       </div>
                     </div>
-                    {rows.map(taskRow)}
+                    {presence.filter((p) => p.item.gid === g.feature.id).map(taskRow)}
                   </div>
                 );
               })}
               {model.orphans.length > 0 ? (
                 <div>
-                  <div role="row" className={mergeClasses(s.row, s.featureRow)}><div role="gridcell" style={{ display: 'contents' }}><Text weight="semibold" className={s.taskLabel}>Feature に属さない工程</Text></div></div>
-                  {orphanRows.map(taskRow)}
+                  <div role="row" className={mergeClasses(s.row, s.featureRow)}><div role="gridcell" style={{ display: 'contents' }}><Text weight="semibold" className={s.taskLabel}>{t('Feature に属さない工程')}</Text></div></div>
+                  {presence.filter((p) => p.item.gid === ORPHAN_GROUP).map(taskRow)}
                 </div>
               ) : null}
             </div>
           </div>
 
-          <section className={s.info} data-testid="task-info" aria-live="polite" aria-label="工程の詳細">
+          <section className={s.info} data-testid="task-info" aria-live="polite" aria-label={t('工程の詳細')}>
             {active ? (
               <>
                 <Text as="h3" size={400} weight="semibold">{active.title}</Text>
-                <Text>Feature: {(active.featureId && featureTitle.get(active.featureId)) || 'なし'}</Text>
-                <Text>開始日: {active.start ?? '未設定'}　終了日: {active.end ?? '未設定'}</Text>
-                <Text>担当: {active.owner ?? '未設定'}</Text>
-                <Text>作業内容: {active.work ?? '未設定'}</Text>
+                <Text>Feature: {(active.featureId && featureTitle.get(active.featureId)) || t('なし')}</Text>
+                <Text>{t('開始日:')} {active.start ?? t('未設定')}　{t('終了日:')} {active.end ?? t('未設定')}</Text>
+                <Text>{t('担当:')} {active.owner ?? t('未設定')}</Text>
+                <Text>{t('作業内容:')} {active.work ?? t('未設定')}</Text>
               </>
             ) : (
-              <Text>Feature を選ぶか、工程にカーソルを合わせる（フォーカスする）と、開始日・終了日・担当・作業内容を表示します。</Text>
+              <Text>{t('Feature を選ぶか、工程にカーソルを合わせる（フォーカスする）と、開始日・終了日・担当・作業内容を表示します。')}</Text>
             )}
           </section>
 
           {featureId !== undefined ? (
-            <section className={s.section} data-testid="feature-tasks" aria-label="選んだ Feature の工程">
-              <Text as="h3" size={400} weight="semibold">{featureTitle.get(featureId) ?? featureId} の工程</Text>
-              {selectedTasks.length === 0 ? <Text>この Feature の工程はありません。</Text> : (
-                <Table aria-label="工程の一覧" size="small">
+            <section className={s.section} data-testid="feature-tasks" aria-label={t('選んだ Feature の工程')}>
+              <Text as="h3" size={400} weight="semibold">{t('{title} の工程', { title: featureTitle.get(featureId) ?? featureId })}</Text>
+              {selectedTasks.length === 0 ? <Text>{t('この Feature の工程はありません。')}</Text> : (
+                <Table aria-label={t('工程の一覧')} size="small">
                   <TableHeader>
                     <TableRow>
-                      <TableHeaderCell>工程</TableHeaderCell>
-                      <TableHeaderCell>開始日</TableHeaderCell>
-                      <TableHeaderCell>終了日</TableHeaderCell>
-                      <TableHeaderCell>担当</TableHeaderCell>
-                      <TableHeaderCell>作業内容</TableHeaderCell>
+                      <TableHeaderCell>{t('工程')}</TableHeaderCell>
+                      <TableHeaderCell>{t('開始日')}</TableHeaderCell>
+                      <TableHeaderCell>{t('終了日')}</TableHeaderCell>
+                      <TableHeaderCell>{t('担当')}</TableHeaderCell>
+                      <TableHeaderCell>{t('作業内容')}</TableHeaderCell>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {selectedTasks.map(({ task }) => (
                       <TableRow key={task.id}>
                         <TableCell>{task.title}</TableCell>
-                        <TableCell>{task.start ?? '未設定'}</TableCell>
-                        <TableCell>{task.end ?? '未設定'}</TableCell>
-                        <TableCell>{task.owner ?? '未設定'}</TableCell>
-                        <TableCell>{task.work ?? '未設定'}</TableCell>
+                        <TableCell>{task.start ?? t('未設定')}</TableCell>
+                        <TableCell>{task.end ?? t('未設定')}</TableCell>
+                        <TableCell>{task.owner ?? t('未設定')}</TableCell>
+                        <TableCell>{task.work ?? t('未設定')}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
@@ -374,14 +407,14 @@ function GanttScreen() {
           ) : null}
         </>
       )}
-      {sites.length > 0 ? (
-        <section className={s.section} data-testid="gantt-sites" aria-label="工程の実施拠点">
-          <Text as="h3" size={400} weight="semibold">実施拠点</Text>
+      {sitePresence.length > 0 ? (
+        <section className={s.section} data-testid="gantt-sites" aria-label={t('工程の実施拠点')}>
+          <Text as="h3" size={400} weight="semibold">{t('実施拠点')}</Text>
           <div className={s.siteList}>
-            {sites.map((site) => {
+            {sitePresence.map(({ item: site, life, exiting }) => {
               const p = bind(site.id);
               return (
-                <button key={site.id} type="button" className={mergeClasses(s.siteChip, hl(p['data-highlight']))} {...p}>{site.name}</button>
+                <button key={site.id} type="button" className={mergeClasses(s.siteChip, hl(p['data-highlight']))} {...p} style={presenceStyle(life, exiting)} aria-hidden={exiting || undefined} tabIndex={exiting ? -1 : undefined}>{site.name}</button>
               );
             })}
           </div>

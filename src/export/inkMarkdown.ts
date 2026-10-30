@@ -1,11 +1,12 @@
 // インクの Markdown 出力（FR-093）。ボードごとに `.md`（front matter とチェックリスト）を作り、画像は `assets/` に置いて相対リンクで参照する。
 // 純粋な関数だけで書く。ZIP にするのは zip.ts の `createZip`。
 import { sanitizeFilePart, yyyymmdd } from '../discussion/model';
+import { tr } from '../i18n/translate';
 import type { Board } from '../ink/model';
 import { boardSvg } from './svg';
 import type { ZipEntry } from './zip';
 
-const safe = (s: string): string => sanitizeFilePart(s).replace(/[()\s]+/g, '_') || 'ボード';
+const safe = (s: string): string => sanitizeFilePart(s).replace(/[()\s]+/g, '_') || tr('ボード');
 
 /** 重ならないファイル名の幹を作る（同じ名前のボードには連番を付ける）。 */
 function uniqueStems(boards: readonly Board[]): string[] {
@@ -27,10 +28,10 @@ export function checklistOf(board: Board): string[] {
     const text = (it.type === 'card' ? it.label : it.text)?.trim();
     if (!text || (it.type !== 'sticky' && it.type !== 'text' && it.type !== 'card' && it.type !== 'shape')) continue;
     const first = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean).join(' / ');
-    const votes = it.type === 'sticky' && it.votes ? `（${it.votes} 票）` : '';
+    const votes = it.type === 'sticky' && it.votes ? `（${tr('{n} 票', { n: it.votes })}）` : '';
     lines.push(`- [ ] ${first}${votes}`);
   }
-  return lines.length > 0 ? lines : ['- [ ] このボードの内容を確認する'];
+  return lines.length > 0 ? lines : ['- [ ] ' + tr('このボードの内容を確認する')];
 }
 
 /** ボード 1 枚分の Markdown。image は assets からの相対リンク（なければ画像なし）。 */
@@ -50,7 +51,7 @@ export function boardMarkdown(board: Board, imageHref: string | null, now: Date)
     '',
   ];
   if (imageHref) out.push(`![${board.name.replace(/[\][]/g, '')}](${imageHref})`, '');
-  out.push('## チェックリスト', '', ...checklistOf(board), '');
+  out.push(`## ${tr('チェックリスト')}`, '', ...checklistOf(board), '');
   return out.join('\n');
 }
 

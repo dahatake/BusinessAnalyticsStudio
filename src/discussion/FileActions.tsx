@@ -5,6 +5,7 @@ import {
   Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Input, MessageBar, MessageBarActions, MessageBarBody, MessageBarTitle, makeStyles, tokens,
 } from '@fluentui/react-components';
 import { Dialog, DialogSurface } from '../components/Dialog';
+import { useT } from '../i18n';
 import { Dismiss24Regular, FolderOpen24Regular, Save24Regular } from '@fluentui/react-icons';
 import { defaultMemoFileName } from './model';
 import { buildMemoForPack, restoreFromMemo } from './restore';
@@ -38,6 +39,7 @@ export function downloadTextFile(name: string, text: string, mime = 'text/markdo
 
 export function DiscussionFileActions() {
   const s = useStyles();
+  const t = useT();
   const target = usePackTarget();
   const fileRef = useRef<HTMLInputElement>(null);
   const [saveOpen, setSaveOpen] = useState(false);
@@ -56,9 +58,9 @@ export function DiscussionFileActions() {
     try {
       downloadTextFile(/\.md$/i.test(name) ? name : `${name}.md`, buildMemoForPack(target));
       setSaveOpen(false);
-      setNotice({ kind: 'success', title: '議論データを保存しました', lines: [name] });
+      setNotice({ kind: 'success', title: t('議論データを保存しました'), lines: [name] });
     } catch (e) {
-      setNotice({ kind: 'error', title: '保存できませんでした', lines: [e instanceof Error ? e.message : String(e)] });
+      setNotice({ kind: 'error', title: t('保存できませんでした'), lines: [e instanceof Error ? e.message : String(e)] });
     }
   };
 
@@ -68,16 +70,16 @@ export function DiscussionFileActions() {
     try {
       text = await file.text();
     } catch (e) {
-      setNotice({ kind: 'error', title: 'ファイルを読み込めませんでした', lines: [e instanceof Error ? e.message : String(e)] });
+      setNotice({ kind: 'error', title: t('ファイルを読み込めませんでした'), lines: [e instanceof Error ? e.message : String(e)] });
       return;
     }
     const r = restoreFromMemo(text, target);
     if (!r.ok) {
-      setNotice({ kind: 'error', title: `「${file.name}」を読み込めませんでした。現在のデータは変わっていません。`, lines: r.errors });
+      setNotice({ kind: 'error', title: t('「{name}」を読み込めませんでした。現在のデータは変わっていません。', { name: file.name }), lines: r.errors });
     } else {
       setNotice({
         kind: r.warnings.length > 0 ? 'warning' : 'success',
-        title: `「${file.name}」から復元しました（議論テーマ ${r.themeCount} 件）`,
+        title: t('「{name}」から復元しました（議論テーマ {n} 件）', { name: file.name, n: r.themeCount }),
         lines: r.warnings,
       });
     }
@@ -86,15 +88,15 @@ export function DiscussionFileActions() {
   return (
     <>
       <div className={s.row}>
-        <Button size="small" icon={<Save24Regular aria-hidden />} onClick={openSave}>保存</Button>
-        <Button size="small" icon={<FolderOpen24Regular aria-hidden />} onClick={() => fileRef.current?.click()}>開く</Button>
+        <Button size="small" icon={<Save24Regular aria-hidden />} onClick={openSave}>{t('保存')}</Button>
+        <Button size="small" icon={<FolderOpen24Regular aria-hidden />} onClick={() => fileRef.current?.click()}>{t('開く')}</Button>
         <input
           ref={fileRef}
           type="file"
           accept=".md,text/markdown"
           hidden
           data-testid="memo-file-input"
-          aria-label="議論メモのファイル"
+          aria-label={t('議論メモのファイル')}
           onChange={(e) => {
             const f = e.target.files?.[0];
             e.target.value = '';
@@ -104,17 +106,17 @@ export function DiscussionFileActions() {
       </div>
 
       <Dialog open={saveOpen} onOpenChange={(_, d) => setSaveOpen(d.open)}>
-        <DialogSurface aria-label="議論データを保存">
+        <DialogSurface aria-label={t('議論データを保存')}>
           <DialogBody>
-            <DialogTitle>議論データを保存</DialogTitle>
+            <DialogTitle>{t('議論データを保存')}</DialogTitle>
             <DialogContent>
-              <Field label="ファイル名" hint="既定: 日付・顧客名・Project 名から組み立てています。">
+              <Field label={t('ファイル名')} hint={t('既定: 日付・顧客名・Project 名から組み立てています。')}>
                 <Input value={fileName} onChange={(_, d) => setFileName(d.value)} onKeyDown={(e) => { if (e.key === 'Enter') save(); }} />
               </Field>
             </DialogContent>
             <DialogActions>
-              <Button appearance="secondary" onClick={() => setSaveOpen(false)}>キャンセル</Button>
-              <Button appearance="primary" onClick={save}>保存</Button>
+              <Button appearance="secondary" onClick={() => setSaveOpen(false)}>{t('キャンセル')}</Button>
+              <Button appearance="primary" onClick={save}>{t('保存')}</Button>
             </DialogActions>
           </DialogBody>
         </DialogSurface>
@@ -128,7 +130,7 @@ export function DiscussionFileActions() {
               {notice.lines.map((l, i) => <div key={i}>{l}</div>)}
             </MessageBarBody>
             <MessageBarActions
-              containerAction={<Button aria-label="閉じる" appearance="transparent" icon={<Dismiss24Regular aria-hidden />} onClick={() => setNotice(null)} />}
+              containerAction={<Button aria-label={t('閉じる')} appearance="transparent" icon={<Dismiss24Regular aria-hidden />} onClick={() => setNotice(null)} />}
             />
           </MessageBar>
         </div>

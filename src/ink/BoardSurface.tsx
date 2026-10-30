@@ -10,8 +10,14 @@ import {
   type Board, type BoardItem, type InkPoint, type ShapeKind, type ToolId, type ViewState,
 } from './model';
 import { recognizeShape } from './recognize';
+import { newFadeState, sampleGhosts, syncFade } from './fade';
+import { DURATION } from '../motion/fluent';
+import { presenceDuration } from '../motion/presence';
+import { useMotionAllowed } from '../motion/transitions';
+import { useMotionProfile } from '../motion/useMotion';
 import { TEXT_FONT_SIZE, drawBoard, drawItem, drawLiveStroke, fontFor, setImageLoadListener, STICKY_COLOR, STICKY_TEXT, textHeight } from './render';
 import { selectBoard, useInk } from './store';
+import { useT } from '../i18n';
 import { centerOn, panView, screenToWorld, worldToScreen, zoomView } from './viewport';
 import { connect, expandGroups, voteItem } from '../whiteboard/ops';
 
@@ -82,6 +88,7 @@ export interface BoardSurfaceProps {
 
 export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, overlay = false, active = true, temporary = false, minimap = false, onEntityDrop, onItemActivate, children }: BoardSurfaceProps) {
   const s = useStyles();
+  const t = useT();
   const board = useInk(useMemo(() => selectBoard(boardId), [boardId]));
   const selection = useInk((st) => st.selection);
   const connectFrom = useInk((st) => st.connectFrom);
@@ -112,6 +119,13 @@ export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, ove
   // ---- 描画（静的な層は内容と視点が変わったとき、動的な層は操作中の毎フレーム） ----
   const rafStatic = useRef(0);
   const rafLive = useRef(0);
+  const rafFade = useRef(0);
+  const fadeRef = useRef(newFadeState(boardId, board));
+  // 削除・undo の出入りの長さ（動き停止・視差効果の軽減は 0 = 即時）
+  const motionOn = useMotionAllowed();
+  const tempo = useMotionProfile().tempo;
+  const fadeMsRef = useRef(0);
+  fadeMsRef.current = presenceDuration(DURATION.ultraSlow, tempo, motionOn);
   const paintStatic = useCallback(() => {
     const cv = staticRef.current, b = boardRef.current, root = rootRef.current;
     if (!cv || !b || !root) return;
@@ -119,13 +133,37 @@ export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, ove
     if (!ctx) return;
     fgRef.current = getComputedStyle(root).color || '#000';
     const dpr = window.devicePixelRatio || 1;
-    drawBoard(ctx, b, {
+    const opts = {
       view: viewRef.current, width: b.size.w, height: b.size.h, dpr, fg: fgRef.current,
       hideIds: editingRef.current ? new Set([editingRef.current]) : undefined,
       offset: offsetRef.current,
       background: !overlay,
-    });
+    };
+    drawBoard(ctx, b, opts);
+    // 削除・undo で消えた項目は、薄れて消えるまで重ねて描く（FR-070 AC-086。動き停止・reduce は即時に消す）
+    const nowMs = performance.now();
+    let fade = fadeRef.current;
+    if (fade.boardId !== b.id) fade = fadeRef.current = newFadeState(b.id, b);
+    syncFade(fade, b, nowMs, fadeMsRef.current);
+    const groups = sampleGhosts(fade, nowMs, fadeMsRef.current);
+    if (groups.length > 0) {
+      const tmp = document.createElement('canvas');
+      tmp.width = cv.width; tmp.height = cv.height;
+      const tctx = tmp.getContext('2d');
+      if (tctx) {
+        for (const g of groups) {
+          drawBoard(tctx, { strokes: g.strokes, items: g.items, background: b.background }, { ...opts, background: false, offset: null, hideIds: undefined });
+          ctx.save();
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.globalAlpha = g.life;
+          ctx.drawImage(tmp, 0, 0);
+          ctx.restore();
+        }
+      }
+      rafFade.current = requestAnimationFrame(() => { rafFade.current = 0; paintStatic(); });
+    }
   }, [overlay]);
+
   const scheduleStatic = useCallback(() => {
     if (rafStatic.current) return;
     rafStatic.current = requestAnimationFrame(() => { rafStatic.current = 0; paintStatic(); });
@@ -239,9 +277,9 @@ export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, ove
     return () => ro.disconnect();
   }, [boardId, scheduleStatic, scheduleLive]);
 
-  useEffect(() => { scheduleStatic(); }, [board, view.x, view.y, view.zoom, editing, scheduleStatic]);
+  useEffect(() => { scheduleStatic(); }, [board, view.x, view.y, view.zoom, editing, motionOn, scheduleStatic]);
   useEffect(() => { scheduleLive(); }, [selection, connectFrom, board, view.x, view.y, view.zoom, scheduleLive]);
-  useEffect(() => () => { cancelAnimationFrame(rafStatic.current); cancelAnimationFrame(rafLive.current); }, []);
+  useEffect(() => () => { cancelAnimationFrame(rafStatic.current); cancelAnimationFrame(rafLive.current); cancelAnimationFrame(rafFade.current); }, []);
 
   // ---- 視点の操作 ----
   const setView = useCallback((v: ViewState) => { if (!fixed) useInk.getState().setView(boardId, v); }, [boardId, fixed]);
@@ -650,7 +688,7 @@ export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, ove
       tabIndex={overlay && !active ? -1 : 0}
       role="application"
       aria-label={ariaLabel}
-      aria-roledescription="描画面"
+      aria-roledescription={t('描画面')}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={(e) => finish(e, false)}
@@ -670,7 +708,7 @@ export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, ove
       {editItem && (
         <textarea
           className={s.editor}
-          aria-label={editItem.type === 'sticky' ? '付箋の文字' : 'テキストの文字'}
+          aria-label={editItem.type === 'sticky' ? t('付箋の文字') : t('テキストの文字')}
           autoFocus
           ref={(el) => { if (el && document.activeElement !== el) el.focus({ preventScroll: true }); }}
           value={editItem.text ?? ''}
@@ -716,6 +754,7 @@ const MM_W = 168;
 const MM_H = 108;
 
 function Minimap({ board, onCenter }: { board: Board; onCenter: (wx: number, wy: number) => void }) {
+  const t = useT();
   const ref = useRef<HTMLCanvasElement>(null);
   const mapRef = useRef({ x: 0, y: 0, k: 1 });
   const dragging = useRef(false);
@@ -771,7 +810,7 @@ function Minimap({ board, onCenter }: { board: Board; onCenter: (wx: number, wy:
       ref={ref}
       data-testid="board-minimap"
       role="img"
-      aria-label="ミニマップ（クリックで表示位置を移動）"
+      aria-label={t('ミニマップ（クリックで表示位置を移動）')}
       style={{
         position: 'absolute', right: 8, bottom: 8, width: MM_W, height: MM_H, cursor: 'pointer',
         backgroundColor: tokens.colorNeutralBackground2, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusSmall,

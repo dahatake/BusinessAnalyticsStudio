@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Badge, Button, Field, Link, Text, Textarea, makeStyles, tokens } from '@fluentui/react-components';
 import { Edit16Regular } from '@fluentui/react-icons';
+import { useT } from '../i18n';
 import { InlineInput } from '../edit/InlineInput';
 import { EditToolbar } from '../edit/EditControls';
 import { NumericValue } from '../components/NumericValue';
@@ -26,6 +27,9 @@ const useStyles = makeStyles({
     border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     borderRadius: tokens.borderRadiusMedium,
     minWidth: 0,
+    // 詳細が親のコンポーネントより大きな領域を占めないよう高さに上限を設け、超えた分は内側でスクロールする（FR-110 AC-135: 最大の領域は主役のコンポーネント）
+    maxHeight: 'min(40vh, 360px)',
+    overflowY: 'auto',
   },
   section: { display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS },
   badges: { display: 'flex', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalXS, rowGap: tokens.spacingVerticalXS },
@@ -85,17 +89,18 @@ export interface DetailProps {
 /** 名前（見出し）と、編集モードが ON のときの名前の編集 */
 function EditableTitle({ id, title }: { id: string; title: string }) {
   const s = useStyles();
+  const t = useT();
   const editMode = useEditStore((st) => st.editMode);
   const rename = useEditStore((st) => st.rename);
   const [editing, setEditing] = useState(false);
   useEffect(() => { if (!editMode) setEditing(false); }, [editMode]);
   if (editing) {
-    return <InlineInput initial={title} label="名前" onClose={() => setEditing(false)} onSubmit={(t) => { const r = rename(id, t); return r.ok ? undefined : r.message; }} />;
+    return <InlineInput initial={title} label={t('名前')} onClose={() => setEditing(false)} onSubmit={(v) => { const r = rename(id, v); return r.ok ? undefined : r.message; }} />;
   }
   return (
     <div className={s.titleRow}>
       <Text as="h3" size={500} weight="semibold">{title}</Text>
-      <Button size="small" appearance="subtle" icon={<Edit16Regular aria-hidden />} aria-label="名前を編集" disabled={!editMode} onClick={() => setEditing(true)} />
+      <Button size="small" appearance="subtle" icon={<Edit16Regular aria-hidden />} aria-label={t('名前を編集')} disabled={!editMode} onClick={() => setEditing(true)} />
     </div>
   );
 }
@@ -111,10 +116,11 @@ export function DetailPanel({ hostPriority = 1, ...props }: DetailProps) {
 /** 編集モードが ON のとき、未保存のメモ。入力中の内容は、画面の作り直し（ペルソナの切替など）をまたいで保つ（NFR-UX-001 AC-185）。保存はしない。 */
 function DraftNote() {
   const editMode = useEditStore((st) => st.editMode);
+  const t = useT();
   const [text, setText] = useRetainedState('detail.draftNote', '');
   if (!editMode) return null;
   return (
-    <Field label="メモ（未保存）">
+    <Field label={t('メモ（未保存）')}>
       <Textarea resize="vertical" rows={2} value={text} onChange={(_, d) => setText(d.value)} />
     </Field>
   );
@@ -122,14 +128,15 @@ function DraftNote() {
 
 function DetailBody({ selection, solutions = [], products, sources, sourceId, onOpenSource, onCloseSource }: DetailProps) {
   const s = useStyles();
+  const t = useT();
   const sourceById = new Map(sources.map((x) => [x.id, x]));
   const source = sourceId ? sourceById.get(sourceId) : undefined;
   return (
-    <aside className={s.root} data-testid="component-detail" data-tier="supporting" aria-label="詳細">
+    <aside className={s.root} data-testid="component-detail" data-tier="supporting" aria-label={t('詳細')}>
       <EditToolbar />
       <DraftNote />
       {!selection ? (
-        <Text>項目を選ぶと、詳細を表示します。</Text>
+        <Text>{t('項目を選ぶと、詳細を表示します。')}</Text>
       ) : selection.kind === 'issue' ? (
         <IssueDetail issue={selection.issue} solutions={solutions} products={products} sourceById={sourceById} onOpenSource={onOpenSource} />
       ) : selection.kind === 'solution' ? (
@@ -152,6 +159,7 @@ function EvaluationAttr({ issue, item, sourceById, onOpenSource }: {
   issue: Issue; item: ReturnType<typeof evaluationItems>[number]; sourceById: SourceMap; onOpenSource: (id: string) => void;
 }) {
   const s = useStyles();
+  const t = useT();
   const editMode = useEditStore((st) => st.editMode);
   const update = useEditStore((st) => st.update);
   const [editing, setEditing] = useState(false);
@@ -164,19 +172,19 @@ function EvaluationAttr({ issue, item, sourceById, onOpenSource }: {
         <div className={s.attrValue}>
           <InlineInput
             initial={String(ev.value)}
-            label={`${item.label}の値`}
+            label={t('{label}の値', { label: item.label })}
             numeric={typeof ev.value === 'number'}
             onClose={() => setEditing(false)}
-            onSubmit={(t) => { const r = update(issue.id, ['evaluation', item.key, 'value'], t); return r.ok ? undefined : r.message; }}
+            onSubmit={(v) => { const r = update(issue.id, ['evaluation', item.key, 'value'], v); return r.ok ? undefined : r.message; }}
           />
           {ev.unit ? <Text>{ev.unit}</Text> : null}
         </div>
       ) : (
         <div className={s.attrValue}>
           <Text data-testid="attr-value">
-            {item.display ? <NumericValue sourceIds={item.sourceIds}>{item.display}</NumericValue> : '未設定'}
+            {item.display ? <NumericValue sourceIds={item.sourceIds}>{item.display}</NumericValue> : t('未設定')}
           </Text>
-          {ev ? <Button size="small" appearance="subtle" icon={<Edit16Regular aria-hidden />} disabled={!editMode} onClick={() => setEditing(true)}>編集</Button> : null}
+          {ev ? <Button size="small" appearance="subtle" icon={<Edit16Regular aria-hidden />} disabled={!editMode} onClick={() => setEditing(true)}>{t('編集')}</Button> : null}
         </div>
       )}
       <div className={s.attrSources}>
@@ -201,6 +209,7 @@ function IssueDetail({ issue, solutions, products, sourceById, onOpenSource }: {
   issue: Issue; solutions: readonly Solution[]; products: readonly Product[]; sourceById: SourceMap; onOpenSource: (id: string) => void;
 }) {
   const s = useStyles();
+  const t = useT();
   const causes = causesOf(issue);
   const mine = solutionsOfIssue(issue.id, solutions);
   const productName = new Map(products.map((p) => [p.id, p.name]));
@@ -212,30 +221,30 @@ function IssueDetail({ issue, solutions, products, sourceById, onOpenSource }: {
           <Badge appearance="tint" color={issue.audience === 'external' ? 'brand' : 'informative'}>{AUDIENCE_LABELS[issue.audience]}</Badge>
           {(issue.personas ?? []).map((p) => <Badge key={p} appearance="outline">{p}</Badge>)}
         </div>
-        {issue.hypothesis ? <Text>仮説: {issue.hypothesis}</Text> : null}
+        {issue.hypothesis ? <Text>{t('仮説: {v}', { v: issue.hypothesis })}</Text> : null}
       </div>
       <div className={s.section} data-testid="issue-causes">
-        <Text as="h4" weight="semibold">原因</Text>
-        {causes.length === 0 ? <Text>原因は未設定です</Text> : (
+        <Text as="h4" weight="semibold">{t('原因')}</Text>
+        {causes.length === 0 ? <Text>{t('原因は未設定です')}</Text> : (
           <ul className={s.list}>{causes.map((c) => <li key={c.id}><Text>{c.title}</Text></li>)}</ul>
         )}
       </div>
       <div className={s.section} data-testid="issue-solutions">
-        <Text as="h4" weight="semibold">解決策・効果・Microsoft 製品</Text>
-        {mine.length === 0 ? <Text>解決策は未設定です</Text> : (
+        <Text as="h4" weight="semibold">{t('解決策・効果・Microsoft 製品')}</Text>
+        {mine.length === 0 ? <Text>{t('解決策は未設定です')}</Text> : (
           <ul className={s.list}>
             {mine.map((sol) => (
               <li key={sol.id} className={s.product}>
                 <Text weight="semibold">{sol.title}</Text>
-                <Text size={200}>効果: {effectsOf(sol).map((e) => e.title).join('、') || '未設定'}</Text>
-                <Text size={200}>製品: {(sol.productIds ?? []).map((id) => productName.get(id) ?? id).join('、') || '製品の関連付けなし'}</Text>
+                <Text size={200}>{t('効果: {v}', { v: effectsOf(sol).map((e) => e.title).join('、') || t('未設定') })}</Text>
+                <Text size={200}>{t('製品: {v}', { v: (sol.productIds ?? []).map((id) => productName.get(id) ?? id).join('、') || t('製品の関連付けなし') })}</Text>
               </li>
             ))}
           </ul>
         )}
       </div>
       <div className={s.section}>
-        <Text as="h4" weight="semibold">評価属性</Text>
+        <Text as="h4" weight="semibold">{t('評価属性')}</Text>
         {evaluationItems(issue).map((item) => (
           <EvaluationAttr key={item.key} issue={issue} item={item} sourceById={sourceById} onOpenSource={onOpenSource} />
         ))}
@@ -248,6 +257,7 @@ function SolutionDetail({ solution, issue, issues, products, sourceById, onOpenS
   solution: Solution; issue?: Issue; issues?: readonly Issue[]; products: readonly Product[]; sourceById: SourceMap; onOpenSource: (id: string) => void;
 }) {
   const s = useStyles();
+  const t = useT();
   const fits = productFits(solution, products);
   const effects = effectsOf(solution);
   const genAi = genAiValueItems(solution);
@@ -256,17 +266,17 @@ function SolutionDetail({ solution, issue, issues, products, sourceById, onOpenS
     <>
       <div className={s.section}>
         <EditableTitle id={solution.id} title={solution.title} />
-        {targets.length > 0 ? <Text>対象の課題: {targets.map((i) => i.title).join('、')}</Text> : null}
+        {targets.length > 0 ? <Text>{t('対象の課題: {v}', { v: targets.map((i) => i.title).join('、') })}</Text> : null}
       </div>
       <div className={s.section}>
-        <Text as="h4" weight="semibold">効果</Text>
-        {effects.length === 0 ? <Text>効果は未設定です</Text> : (
+        <Text as="h4" weight="semibold">{t('効果')}</Text>
+        {effects.length === 0 ? <Text>{t('効果は未設定です')}</Text> : (
           <ul className={s.list}>{effects.map((e) => <li key={e.id}><Text>{e.title}</Text></li>)}</ul>
         )}
       </div>
       <div className={s.section}>
-        <Text as="h4" weight="semibold">生成 AI の価値</Text>
-        {genAi.length === 0 ? <Text>生成 AI の価値の指定なし</Text> : (
+        <Text as="h4" weight="semibold">{t('生成 AI の価値')}</Text>
+        {genAi.length === 0 ? <Text>{t('生成 AI の価値の指定なし')}</Text> : (
           <ul className={s.list}>
             {genAi.map((v) => (
               <li key={v.key} className={s.product} data-testid="genai-value">
@@ -278,8 +288,8 @@ function SolutionDetail({ solution, issue, issues, products, sourceById, onOpenS
         )}
       </div>
       <div className={s.section}>
-        <Text as="h4" weight="semibold">出典</Text>
-        {(solution.sourceIds ?? []).length === 0 ? <Text>出典なし</Text> : (
+        <Text as="h4" weight="semibold">{t('出典')}</Text>
+        {(solution.sourceIds ?? []).length === 0 ? <Text>{t('出典なし')}</Text> : (
           <div className={s.badges}>
             {(solution.sourceIds ?? []).map((id) => (
               <Button key={id} size="small" appearance="outline" onClick={() => onOpenSource(id)}>
@@ -290,14 +300,14 @@ function SolutionDetail({ solution, issue, issues, products, sourceById, onOpenS
         )}
       </div>
       <div className={s.section}>
-        <Text as="h4" weight="semibold">Microsoft 製品と適合理由</Text>
-        {fits.length === 0 ? <Text>製品の関連付けなし</Text> : (
+        <Text as="h4" weight="semibold">{t('Microsoft 製品と適合理由')}</Text>
+        {fits.length === 0 ? <Text>{t('製品の関連付けなし')}</Text> : (
           <ul className={s.list}>
             {fits.map(({ product, reason }) => (
               <li key={product.id} className={s.product} data-testid="product-fit">
                 <Text weight="semibold">{product.name}</Text>
                 {product.vendor ? <Text size={200}>{product.vendor}</Text> : null}
-                <Text data-testid="product-fit-reason">{reason ?? '適合理由が未設定です'}</Text>
+                <Text data-testid="product-fit-reason">{reason ?? t('適合理由が未設定です')}</Text>
               </li>
             ))}
           </ul>
@@ -317,22 +327,24 @@ const CONFIDENCE_HINT: Record<string, string> = {
 /** 出典カード: タイトル・URL・取得日・確度（FR-004）。URL は新しいタブで開く */
 export function SourceCard({ source, onClose }: { source: Source; onClose: () => void }) {
   const s = useStyles();
+  const t = useT();
   const href = safeHttpUrl(source.url);
+  const hint = CONFIDENCE_HINT[source.confidence];
   return (
-    <section className={s.card} data-testid="source-card" aria-label={`出典: ${source.title}`}>
+    <section className={s.card} data-testid="source-card" aria-label={t('出典: {title}', { title: source.title })}>
       <Text as="h4" weight="semibold">{source.title}</Text>
       <Text>
         URL:{' '}
         {href ? (
           <Link href={href} target="_blank" rel="noopener noreferrer">{href}</Link>
         ) : (
-          source.url ?? 'なし'
+          source.url ?? t('なし')
         )}
       </Text>
-      <Text>取得日: {source.retrievedAt}</Text>
-      <Text>確度: {source.confidence}（{CONFIDENCE_HINT[source.confidence]}）</Text>
+      <Text>{t('取得日: {v}', { v: source.retrievedAt })}</Text>
+      <Text>{t('確度: {c}（{hint}）', { c: source.confidence, hint: hint ? t(hint) : '' })}</Text>
       <div>
-        <Button size="small" appearance="subtle" onClick={onClose}>出典カードを閉じる</Button>
+        <Button size="small" appearance="subtle" onClick={onClose}>{t('出典カードを閉じる')}</Button>
       </div>
     </section>
   );

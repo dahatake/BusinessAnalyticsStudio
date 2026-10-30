@@ -47,7 +47,7 @@
     "commands": [
       {
         "name": "toolkit-integration-catalog",
-        "run": "python -m pytest tests/toolkit/test_integration_catalog.py tests/toolkit/test_integration_fields_a.py tests/toolkit/test_integration_fields_b.py tests/toolkit/test_integration_secrets_boundary.py tests/unit/test_entity_classes.py -q"
+        "run": "python -m pytest tests/toolkit/test_integration_catalog.py tests/toolkit/test_integration_fields_a.py tests/toolkit/test_integration_fields_b.py tests/toolkit/test_integration_secrets_boundary.py tests/toolkit/test_management_gate_wiring.py tests/unit/test_entity_classes.py -q"
       },
       {
         "name": "typecheck",
@@ -59,11 +59,19 @@
       },
       {
         "name": "unit",
-        "run": "npx vitest run tests/unit/projects.test.ts tests/unit/stepper.test.ts tests/unit/analysis-methods.test.ts tests/unit/persist.test.ts tests/unit/ai-layout.test.ts tests/unit/work-target.test.ts tests/unit/work-target-ui.test.tsx tests/unit/work-target-menu.test.tsx tests/unit/main-screen.test.tsx tests/unit/layout-fluent.test.ts tests/unit/layoutStore.test.ts tests/unit/workspace.test.ts tests/unit/minimize.test.ts tests/unit/snap.test.ts tests/unit/usecase.test.tsx tests/unit/demo-data.test.tsx tests/unit/story.test.tsx tests/unit/story-a11y.test.tsx tests/unit/free-layout.test.ts tests/unit/panel-handle.test.tsx tests/unit/workspace-free-layout.test.tsx tests/unit/design-tokens.test.ts tests/unit/design-foundation.test.tsx tests/unit/panel-pin.test.tsx tests/unit/view-switch.test.tsx tests/unit/auto-layout.test.ts"
+        "run": "npx vitest run tests/unit/projects.test.ts tests/unit/stepper.test.ts tests/unit/analysis-methods.test.ts tests/unit/persist.test.ts tests/unit/ai-layout.test.ts tests/unit/work-target.test.ts tests/unit/work-target-ui.test.tsx tests/unit/work-target-menu.test.tsx tests/unit/main-screen.test.tsx tests/unit/layout-fluent.test.ts tests/unit/layoutStore.test.ts tests/unit/workspace.test.ts tests/unit/minimize.test.ts tests/unit/snap.test.ts tests/unit/usecase.test.tsx tests/unit/demo-data.test.tsx tests/unit/story.test.tsx tests/unit/story-a11y.test.tsx tests/unit/story-genai-ui.test.tsx tests/unit/free-layout.test.ts tests/unit/panel-handle.test.tsx tests/unit/workspace-free-layout.test.tsx tests/unit/design-tokens.test.ts tests/unit/design-foundation.test.tsx tests/unit/panel-pin.test.tsx tests/unit/view-switch.test.tsx tests/unit/auto-layout.test.ts tests/unit/prototype-retirement.test.ts tests/unit/project-pack-retention.test.ts tests/unit/screen-guides.test.tsx"
+      },
+      {
+        "name": "unit-i18n",
+        "run": "npx vitest run tests/unit/i18n.test.tsx"
       },
       {
         "name": "unit-world",
         "run": "npx vitest run tests/unit/world.test.ts tests/unit/world-pack.test.ts tests/unit/world-default.test.ts"
+      },
+      {
+        "name": "unit-ai-provider",
+        "run": "npx vitest run tests/unit/ai-provider.test.ts tests/unit/copilot-adapter.test.ts tests/unit/copilot-signin.test.ts tests/unit/provider-settings.test.tsx tests/unit/foundry.test.ts tests/unit/foundry-connection.test.ts tests/unit/foundry-chat.test.ts tests/unit/genai-scenario.test.ts tests/unit/explain.test.ts tests/unit/foundry-secret-hygiene.test.ts tests/unit/provider-usage.test.ts tests/unit/story-genai.test.ts"
       }
     ]
   },
@@ -92,7 +100,8 @@
     },
     "subagent_verify_max_blocks": 3,
     "agent_stop_max_blocks": 40,
-    "enforce_conductor_edit_scope": true
+    "enforce_conductor_edit_scope": true,
+    "allow_hook_edit": false
   },
   "credits": {
     "_note": "AI クレジットの推定。run-state.py finish が --credits なしのとき、作業役（task）の呼び出し 1 回を、モデルの倍率で数えて run-history に「推定」として記録する。倍率は契約・課金表に合わせて書く（未記載のモデルは default_multiplier）。進行役自身の呼び出しは hook から見えないため含まない。",

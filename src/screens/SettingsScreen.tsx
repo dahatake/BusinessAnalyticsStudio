@@ -1,10 +1,10 @@
 // 設定パネル（テーマ、ブランドの確認と上書き、3D の品質・業種プリセット、AI）。FR-058、FR-059、FR-060、FR-064、FR-065、FR-066、FR-069
 import { useEffect, useMemo, useState } from 'react';
+import { tr, useT } from '../i18n';
 import { Badge, Button, Dropdown, Field, Input, Option, Switch, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { Panel } from '../components/Panel';
 import { AiSettings } from '../ai/AiSettings';
-import { GenAiSettings } from '../genai/GenAiSettings';
 import { SpeechSettings } from '../speech/SpeechSettings';
 import { WorkTargetSettings } from '../projects/WorkTargetSettings';
 import { DEFAULT_EXPAND_POSITION, EXPAND_LABEL, EXPAND_POSITIONS, THEME_MODES, useSettings, type ExpandPosition, type Handedness, type ThemeMode } from '../store/settings';
@@ -47,6 +47,7 @@ const isLow = (c: Conf): boolean => c === '低' || c === '推定';
 function BrandRow({ testId, label, value, source, retrievedAt, confidence }: {
   testId: string; label: string; value: React.ReactNode; source: string; retrievedAt: string; confidence: Conf;
 }) {
+  const t = useT();
   const s = useStyles();
   return (
     <div className={s.row} data-testid={testId}>
@@ -54,15 +55,16 @@ function BrandRow({ testId, label, value, source, retrievedAt, confidence }: {
       <div>
         <div>{value}</div>
         <Text className={s.meta} size={200} block>
-          出典: {source}／確認日: {retrievedAt}／確度: {confidence}
+          {t('出典:')} {source}／{t('確認日:')} {retrievedAt}／{t('確度:')} {t(confidence)}
         </Text>
-        {isLow(confidence) ? <Badge appearance="outline" color="warning">推定</Badge> : null}
+        {isLow(confidence) ? <Badge appearance="outline" color="warning">{t('推定')}</Badge> : null}
       </div>
     </div>
   );
 }
 
 export function SettingsScreen() {
+  const t = useT();
   const s = useStyles();
   const mode = useSettings((st) => st.themeMode);
   const setMode = useSettings((st) => st.setThemeMode);
@@ -92,7 +94,7 @@ export function SettingsScreen() {
   const commit = () => {
     const v = (draft.startsWith('#') ? draft : `#${draft}`).trim();
     if (!isHexColor(v)) {
-      setError(`「${draft}」は色として読めません。#RRGGBB の形（例: #2E7D32）で入力してください。`);
+      setError(t('「{draft}」は色として読めません。#RRGGBB の形（例: #2E7D32）で入力してください。', { draft }));
       return;
     }
     setError(null);
@@ -110,38 +112,38 @@ export function SettingsScreen() {
   const setIndustry = useView3D((st) => st.setIndustry);
   const preset = useIndustryPreset();
   return (
-    <Panel testId="component-settings" title="設定パネル" description="表示の設定です。ハイコントラストは OS の設定に従います。">
-      <Field label="テーマ">
+    <Panel testId="component-settings" title={t('表示と接続の設定')} description={t('表示の設定です。ハイコントラストは OS の設定に従います。')}>
+      <Field label={t('テーマ')}>
         <RadioGroup layout="horizontal" value={mode} onChange={(_, d) => setMode(d.value as ThemeMode)}>
-          {THEME_MODES.map((m) => <Radio key={m} value={m} label={LABELS[m]} />)}
+          {THEME_MODES.map((m) => <Radio key={m} value={m} label={m === 'system' ? t(LABELS[m]) : LABELS[m]} />)}
         </RadioGroup>
       </Field>
-      <Field label="利き手（インクのツールバーを置く側）">
+      <Field label={t('利き手（インクのツールバーを置く側）')}>
         <RadioGroup layout="horizontal" value={handedness} onChange={(_, d) => setHandedness(d.value as Handedness)}>
-          <Radio value="right" label="右利き" />
-          <Radio value="left" label="左利き" />
+          <Radio value="right" label={t('右利き')} />
+          <Radio value="left" label={t('左利き')} />
         </RadioGroup>
       </Field>
-      <Field label="拡大表示の位置" hint="コンポーネントの見出しをダブルクリック（またはメニュー・Shift+E）したときに、作業領域の 75% を使って表示する位置です。">
+      <Field label={t('拡大表示の位置')} hint={t('コンポーネントの見出しをダブルクリック（またはメニュー・Shift+E）したときに、作業領域の 75% を使って表示する位置です。')}>
         <RadioGroup layout="horizontal" value={expandPosition} onChange={(_, d) => setExpandPosition(d.value as ExpandPosition)}>
-          {EXPAND_POSITIONS.map((p) => <Radio key={p} value={p} label={EXPAND_LABEL[p]} />)}
+          {EXPAND_POSITIONS.map((p) => <Radio key={p} value={p} label={t(EXPAND_LABEL[p])} />)}
         </RadioGroup>
-        <Button size="small" appearance="subtle" disabled={expandPosition === DEFAULT_EXPAND_POSITION} onClick={() => setExpandPosition(DEFAULT_EXPAND_POSITION)}>拡大表示の位置を既定（上）に戻す</Button>
+        <Button size="small" appearance="subtle" disabled={expandPosition === DEFAULT_EXPAND_POSITION} onClick={() => setExpandPosition(DEFAULT_EXPAND_POSITION)}>{t('拡大表示の位置を既定（上）に戻す')}</Button>
       </Field>
       <WorkTargetSettings />
       <SpeechSettings />
       <div role="group" aria-labelledby="audio-settings-title">
-        <Text id="audio-settings-title" as="p" weight="semibold">音声</Text>
+        <Text id="audio-settings-title" as="p" weight="semibold">{t('音声')}</Text>
         <Switch label="BGM" checked={bgmEnabled} onChange={(_, d) => setBgmEnabled(d.checked)} />
-        <Switch label="効果音" checked={seEnabled} onChange={(_, d) => setSeEnabled(d.checked)} />
-        <Text as="p" block size={200}>ミュートと音量は、画面下のショーコントロールバー（M キー）で操作します。</Text>
+        <Switch label={t('効果音')} checked={seEnabled} onChange={(_, d) => setSeEnabled(d.checked)} />
+        <Text as="p" block size={200}>{t('ミュートと音量は、画面下のショーコントロールバー（M キー）で操作します。')}</Text>
       </div>
-      <Field label="3D の品質">
+      <Field label={t('3D の品質')}>
         <RadioGroup layout="horizontal" value={quality} onChange={(_, d) => setQuality(d.value as Quality)}>
           {QUALITIES.map((q) => <Radio key={q} value={q} label={q} />)}
         </RadioGroup>
       </Field>
-      <Field label="業種プリセット">
+      <Field label={t('業種プリセット')}>
         <Dropdown
           value={preset.label}
           selectedOptions={[preset.id]}
@@ -151,40 +153,40 @@ export function SettingsScreen() {
         </Dropdown>
       </Field>
       <Text as="p" data-testid="preset-description"><PresetIcon preset={preset} /> {preset.label}: {preset.scene.description}</Text>
-      <Text as="p" data-testid="template-version">雛形のバージョン: {TEMPLATE_VERSION}</Text>
-      <Text as="p" data-testid="quality-current">現在の品質: {quality}</Text>
-      <Text as="p" data-testid="fps">FPS: {fps.toFixed(1)} fps（3D 表示中の最後の計測値）</Text>
-      <Text as="p" data-testid="renderer">描画方式: {renderer}</Text>
+      <Text as="p" data-testid="template-version">{t('雛形のバージョン:')} {TEMPLATE_VERSION}</Text>
+      <Text as="p" data-testid="quality-current">{t('現在の品質:')} {quality}</Text>
+      <Text as="p" data-testid="fps">{t('FPS: {v} fps（3D 表示中の最後の計測値）', { v: fps.toFixed(1) })}</Text>
+      <Text as="p" data-testid="renderer">{t('描画方式:')} {t(renderer)}</Text>
       {notice && <Text as="p" role="status">{notice}</Text>}
 
       {brand ? (
-        <section className={s.section} aria-label="ブランド">
-          <Text as="h3" size={400} weight="semibold">ブランド</Text>
-          <BrandRow testId="brand-color" label="色" value={<>Primary {brand.colors.primary}{override ? '（手動で上書き中）' : ''}</>}
-            source={override ? '利用者が設定パネルで上書き' : brand.colors.source} retrievedAt={override ? '—' : brand.colors.retrievedAt}
+        <section className={s.section} aria-label={t('ブランド')}>
+          <Text as="h3" size={400} weight="semibold">{t('ブランド')}</Text>
+          <BrandRow testId="brand-color" label={t('色')} value={<>Primary {brand.colors.primary}{override ? t('（手動で上書き中）') : ''}</>}
+            source={override ? t('利用者が設定で上書き') : brand.colors.source} retrievedAt={override ? '—' : brand.colors.retrievedAt}
             confidence={override ? '高' : brand.colors.confidence} />
-          <BrandRow testId="brand-logo" label="ロゴ"
-            value={brand.logo.status === 'confirmed' ? '利用条件: 確認済み（同梱のロゴを表示）' : '利用条件: 不明（プレースホルダーを表示）'}
+          <BrandRow testId="brand-logo" label={t('ロゴ')}
+            value={brand.logo.status === 'confirmed' ? t('利用条件: 確認済み（同梱のロゴを表示）') : t('利用条件: 不明（プレースホルダーを表示）')}
             source={brand.logo.source} retrievedAt={brand.logo.retrievedAt} confidence={brand.logo.confidence} />
-          <BrandRow testId="brand-font" label="フォント" value={`${brand.fonts.primary} → Segoe UI Variable → Noto Sans JP`}
+          <BrandRow testId="brand-font" label={t('フォント')} value={`${brand.fonts.primary} → Segoe UI Variable → Noto Sans JP`}
             source={brand.fonts.source} retrievedAt={brand.fonts.retrievedAt} confidence={brand.fonts.confidence} />
-          <BrandRow testId="brand-tone" label="トーン" value={brand.tone.value}
+          <BrandRow testId="brand-tone" label={t('トーン')} value={brand.tone.value}
             source={brand.tone.source} retrievedAt={brand.tone.retrievedAt} confidence={brand.tone.confidence} />
 
           <div className={s.editor}>
-            <Field label="Primary 色" validationState={error ? 'error' : 'none'} hint="#RRGGBB。Enter で反映、Esc で元に戻します。">
+            <Field label={t('Primary 色')} validationState={error ? 'error' : 'none'} hint={t('#RRGGBB。Enter で反映、Esc で元に戻します。')}>
               <Input
                 value={draft}
                 onChange={(_, d) => { setDraft(d.value); setError(null); }}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); commit(); } else if (e.key === 'Escape') revert(); }}
               />
             </Field>
-            <Button appearance="primary" className={s.forcedAuto} data-testid="primary-action" onClick={commit}>反映する</Button>
-            {override ? <Button onClick={() => { setOverride(null); setError(null); }}>パックの値{packPrimary ? `（${packPrimary}）` : ''}に戻す</Button> : null}
+            <Button appearance="primary" className={s.forcedAuto} data-testid="primary-action" onClick={commit}>{t('反映する')}</Button>
+            {override ? <Button onClick={() => { setOverride(null); setError(null); }}>{t('パックの値{primary}に戻す', { primary: packPrimary ? `（${packPrimary}）` : '' })}</Button> : null}
           </div>
           {error ? <div role="alert" className={s.error}>{error}</div> : null}
 
-          <Field label={`ブランドランプ（${themes[0]?.t.ramp.length ?? 16} 段階。濃い方が左）`}>
+          <Field label={t('ブランドランプ（{n} 段階。濃い方が左）', { n: themes[0]?.t.ramp.length ?? 16 })}>
             <div className={s.ramp} data-testid="brand-ramp">
               {themes[0]?.t.ramp.map((r) => (
                 <span key={r.step} className={s.step} data-step={r.step} data-color={r.color} data-primary={r.primary ? 'true' : 'false'}
@@ -195,15 +197,14 @@ export function SettingsScreen() {
           <div data-testid="brand-corrections">
             {themes.flatMap(({ m, t }) => t.corrections.map((c) => (
               <Text key={`${m}-${c.original}-${c.color}`} size={200} block className={s.meta}>
-                コントラストを補正: {m === 'light' ? 'Light' : 'Dark'} {c.original} → {c.color}（比 {c.ratio.toFixed(2)}、基準 {c.required}）
+                {tr('コントラストを補正: {mode} {from} → {to}（比 {ratio}、基準 {req}）', { mode: m === 'light' ? 'Light' : 'Dark', from: c.original, to: c.color, ratio: c.ratio.toFixed(2), req: c.required })}
               </Text>
             )))}
-            {themes.every(({ t }) => t.corrections.length === 0) ? <Text size={200} className={s.meta}>コントラストの補正は不要です（AA を満たしています）。</Text> : null}
+            {themes.every(({ t }) => t.corrections.length === 0) ? <Text size={200} className={s.meta}>{t('コントラストの補正は不要です（AA を満たしています）。')}</Text> : null}
           </div>
         </section>
       ) : null}
       <AiSettings />
-      <GenAiSettings />
     </Panel>
   );
 }

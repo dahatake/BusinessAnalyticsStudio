@@ -2,6 +2,203 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "type": "object",
   "properties": {
+    "screenGuides": {
+      "type": "object",
+      "properties": {
+        "issue-solution": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "priority": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "matrix": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "ranking": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "knowledge-graph": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "business-graph": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "architecture": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "discussion-tree": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "table": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "gantt": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "map": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "kpi-okr": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "twin-view": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "sources": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "usecase": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "data-catalog": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "spatial-view": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "whiteboard": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "themes": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "settings": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "genai-scenario": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "chat": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "mock-app": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        }
+      },
+      "required": [
+        "issue-solution",
+        "priority",
+        "summary",
+        "matrix",
+        "ranking",
+        "knowledge-graph",
+        "business-graph",
+        "architecture",
+        "discussion-tree",
+        "table",
+        "gantt",
+        "map",
+        "kpi-okr",
+        "twin-view",
+        "sources",
+        "usecase",
+        "data-catalog",
+        "spatial-view",
+        "whiteboard",
+        "themes",
+        "settings",
+        "genai-scenario",
+        "chat"
+      ],
+      "additionalProperties": false
+    },
+    "discussionTheme": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "issueId": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*$"
+        },
+        "options": {
+          "type": "string",
+          "minLength": 1
+        },
+        "recommendation": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decisions": {
+          "type": "string",
+          "minLength": 1
+        },
+        "actions": {
+          "minItems": 1,
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "options",
+        "recommendation",
+        "decisions",
+        "actions"
+      ],
+      "additionalProperties": {}
+    },
     "name": {
       "type": "string",
       "minLength": 1

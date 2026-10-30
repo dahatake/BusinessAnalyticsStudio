@@ -14,6 +14,15 @@ async function box(loc: Locator) {
   return b!;
 }
 
+/** Tab 操作だけで対象へフォーカスを移す（到達不能なら失敗）。 */
+async function tabTo(page: Page, target: Locator): Promise<void> {
+  for (let i = 0; i < 80; i++) {
+    if (await target.evaluate((el) => el === document.activeElement).catch(() => false)) return;
+    await page.keyboard.press('Tab');
+  }
+  throw new Error('Tab 操作で対象に到達できない');
+}
+
 /** 直下のコンポーネント（component-menu と入れ子を除く）の key 一覧 */
 async function topKeys(page: Page): Promise<string[]> {
   return page.getByTestId('workspace').evaluate((ws) => {
@@ -55,40 +64,101 @@ async function dragHeading(page: Page, c: Locator, toX: number, toY: number, rel
 }
 
 test.describe('FR-148 最上段の作業先メニュー', () => {
-  // FR-148 AC-251
-  test('FR-148 AC-251 企業 2 社（各 2 Project）で、作業先メニューにデモと 4 Project が企業名・Project 名で並び、選ぶと移動して表示が変わる', async ({ page, start }) => {
+  // FR-148 AC-251（AC-253 のキーボード・支援技術での到達も同じ導線で確認）
+  test('FR-148 AC-251 企業名ボタンで同社 Project 一覧・別企業の一覧へ（選択だけでは不変・Esc で不変）・確定で分析位置を復元し、Project 名ボタンで全作業先メニューが開く', async ({ page, start }) => {
     await start();
     await seedProjects(page, '合成株式会社A', ['業務改善 2026', '在庫最適化']);
-    await page.getByRole('button', { name: 'Project 一覧へ' }).click({ timeout: 500 }).catch(() => undefined);
     await seedProjects(page, '合成株式会社B', ['需要予測', '品質改善']);
-    const menu = page.getByTestId('work-target-menu');
-    await menu.click();
-    const list = page.getByRole('menu', { name: '作業先' });
-    await expect(list.getByRole('menuitemradio')).toHaveCount(5);
-    await expect(list.getByRole('menuitemradio', { name: /デモ/ })).toBeVisible();
-    for (const [c, p] of [['合成株式会社A', '業務改善 2026'], ['合成株式会社A', '在庫最適化'], ['合成株式会社B', '需要予測'], ['合成株式会社B', '品質改善']]) {
-      await expect(list.getByRole('menuitemradio', { name: new RegExp(`${c}.*${p}`) })).toBeVisible();
-    }
-    await expect(list.getByRole('menuitemradio', { checked: true }), '現在の作業先が 1 つだけ識別できる').toHaveCount(1);
-    await list.getByRole('menuitemradio', { name: /合成株式会社B.*品質改善/ }).click();
-    await expect(page.getByTestId('stepper')).toBeVisible();
-    await expect(menu).toContainText('合成株式会社B');
-    await expect(menu).toContainText('品質改善');
-    await expect(page.getByTestId('work-target')).toContainText('品質改善');
-  });
+    await page.getByRole('region', { name: '企業 合成株式会社A' }).getByRole('link', { name: '業務改善 2026', exact: true }).click();
+    const stepper = page.getByTestId('stepper');
+    await page.getByRole('button', { name: '分析を開始' }).click();
+    await page.getByRole('listbox', { name: '分析手法' }).getByRole('option', { name: 'SWOT 分析' }).click();
+    await stepper.getByRole('button', { name: '現状分析', exact: true }).click();
 
-  // FR-148 AC-251（異常系: 閉じて何も選ばなければ作業先は変わらない）
-  test('FR-148 AC-251 異常系: メニューを Esc で閉じても作業先は変わらず、現在の作業先の表示が保たれる', async ({ page, start }) => {
-    await start();
-    await seedProjects(page, '合成株式会社A', ['業務改善 2026']);
-    await page.getByRole('link', { name: '業務改善 2026' }).click();
-    const menu = page.getByTestId('work-target-menu');
-    await expect(menu).toContainText('業務改善 2026');
-    await menu.click();
+    // 最上段の現在先表示 =「企業名（ボタン）- Project 名（全作業先メニューのボタン）」（契約 §10）
+    const display = page.getByTestId('work-target-display');
+    const companyBtn = display.getByTestId('current-company-menu');
+    const projectBtn = display.getByTestId('work-target-menu');
+    const companyMenu = page.getByRole('menu', { name: '企業の Project' });
+    const allMenu = page.getByRole('menu', { name: '作業先', exact: true });
+    await expect(companyBtn).toContainText('合成株式会社A');
+    await expect(projectBtn).toContainText('業務改善 2026');
+    await expect(display).toHaveAccessibleName(/合成株式会社A.*業務改善 2026/);
+
+    // 企業名のボタン: 現在の企業の 2 Project を企業名・Project 名で一覧し、現在先が識別できる
+    await companyBtn.click();
+    await expect(companyMenu).toBeVisible();
+    await expect(companyMenu.getByRole('menuitemradio')).toHaveCount(2);
+    await expect(companyMenu.getByRole('menuitemradio', { name: /合成株式会社A.*業務改善 2026/ })).toBeChecked();
+    await expect(companyMenu.getByRole('menuitemradio', { name: /合成株式会社A.*在庫最適化/ })).toBeVisible();
+    await expect(companyMenu.getByRole('menuitemradio', { name: /需要予測|品質改善/ })).toHaveCount(0);
+
+    // 別の企業を選ぶと、その企業の 2 Project の一覧に変わり、他企業は含まれない。選んだだけでは作業先は変わらない
+    await companyMenu.getByRole('button', { name: '合成株式会社B', exact: true }).click();
+    await expect(companyMenu.getByRole('menuitemradio')).toHaveCount(2);
+    await expect(companyMenu.getByRole('menuitemradio', { name: /合成株式会社B.*需要予測/ })).toBeVisible();
+    await expect(companyMenu.getByRole('menuitemradio', { name: /合成株式会社B.*品質改善/ })).toBeVisible();
+    await expect(companyMenu.getByRole('menuitemradio', { name: /合成株式会社A/ })).toHaveCount(0);
+    await expect(companyBtn).toContainText('合成株式会社A');
+    await expect(projectBtn).toContainText('業務改善 2026');
+
+    // 異常系: 確定せず Esc で閉じると、現在先・分析・ステッパーは変わらず、企業名のボタンにフォーカスが戻る
     await page.keyboard.press('Escape');
-    await expect(page.getByRole('menu', { name: '作業先' })).toBeHidden();
-    await expect(menu).toContainText('合成株式会社A');
-    await expect(menu).toContainText('業務改善 2026');
+    await expect(companyMenu).toBeHidden();
+    await expect(companyBtn).toBeFocused();
+    await expect(display).toHaveAccessibleName(/合成株式会社A.*業務改善 2026/);
+    await expect(page.getByTestId('analysis')).toContainText('SWOT 分析');
+    await expect(stepper.locator('[data-step-state="current"]')).toContainText('現状分析');
+
+    // Project を選択・確定すると、その Project の分析・ステッパー位置で開き、表示が変わる
+    await companyBtn.click();
+    await companyMenu.getByRole('button', { name: '合成株式会社B', exact: true }).click();
+    await companyMenu.getByRole('menuitemradio', { name: /合成株式会社B.*品質改善/ }).click();
+    await expect(stepper).toBeVisible();
+    await expect(companyBtn).toContainText('合成株式会社B');
+    await expect(projectBtn).toContainText('品質改善');
+    await expect(companyMenu).toBeHidden();
+    await page.getByRole('button', { name: '分析を開始' }).click();
+    await page.getByRole('listbox', { name: '分析手法' }).getByRole('option', { name: '3C 分析' }).click();
+    await stepper.getByRole('button', { name: '施策計画', exact: true }).click();
+
+    // 同じ企業の別 Project にも切り替えられる（キーボードだけ: Enter・Home/ArrowDown）。元の Project の分析・位置が復元される
+    await tabTo(page, companyBtn);
+    await page.keyboard.press('Enter');
+    await expect(companyMenu).toBeVisible();
+    await expect(companyMenu.getByRole('menuitemradio', { name: /合成株式会社B.*品質改善/ })).toBeChecked();
+    await companyMenu.getByRole('button', { name: '合成株式会社A', exact: true }).click();
+    const prev = companyMenu.getByRole('menuitemradio', { name: /合成株式会社A.*業務改善 2026/ });
+    await page.keyboard.press('Home');
+    if (!(await prev.evaluate((el) => el === document.activeElement))) await page.keyboard.press('ArrowDown');
+    await expect(prev).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(companyMenu).toBeHidden();
+    await expect(companyBtn).toContainText('合成株式会社A');
+    await expect(projectBtn).toContainText('業務改善 2026');
+    await expect(page.getByTestId('analysis')).toContainText('SWOT 分析');
+    await expect(stepper.locator('[data-step-state="current"]')).toContainText('現状分析');
+
+    await companyBtn.click();
+    await companyMenu.getByRole('menuitemradio', { name: /合成株式会社A.*在庫最適化/ }).click();
+    await expect(companyBtn).toContainText('合成株式会社A');
+    await expect(projectBtn).toContainText('在庫最適化');
+
+    // Project 名のボタン: 全作業先メニュー（デモと全企業の Project）が引き続き開き、移動できる
+    await projectBtn.click();
+    await expect(allMenu).toBeVisible();
+    await expect(allMenu.getByRole('menuitemradio', { name: /デモ/ })).toBeVisible();
+    for (const [c, p] of [['合成株式会社A', '業務改善 2026'], ['合成株式会社A', '在庫最適化'], ['合成株式会社B', '需要予測'], ['合成株式会社B', '品質改善']]) {
+      await expect(allMenu.getByRole('menuitemradio', { name: new RegExp(`${c}.*${p}`) })).toBeVisible();
+    }
+    await expect(allMenu.getByRole('menuitemradio', { checked: true })).toHaveCount(1);
+    await allMenu.getByRole('menuitemradio', { name: /合成株式会社B.*需要予測/ }).click();
+    await expect(companyBtn).toContainText('合成株式会社B');
+    await expect(projectBtn).toContainText('需要予測');
+    expect((await box(display)).y, '作業先表示がステッパーより上段にある').toBeLessThan((await box(stepper)).y);
+    await projectBtn.click();
+    await allMenu.getByRole('menuitemradio', { name: /デモ/ }).click();
+    await expect(display).toContainText('デモ');
   });
 });
 
@@ -97,8 +167,8 @@ test.describe('FR-149 users-guide の全ユーザー操作を画面から', () =
   // 操作の一覧（利用者の操作名 → 画面上の操作部品）。ショートカット・コマンドパレットは使わない。
   test('FR-149 AC-254 users-guide の操作それぞれに、画面上の操作部品があり、その操作だけで結果が得られる', async ({ page, start }) => {
     await start();
-    await openScreen(page, 'canvas');
-    const c = component(page, 'canvas');
+    await openScreen(page, 'priority'); // 画面「キャンバス」は廃止（FR-012）。別の画面のコンポーネントで確かめる
+    const c = component(page, 'priority');
     await c.focus();
     // コンポーネントの最大化 → 通常表示
     const before = await box(c);
@@ -124,20 +194,20 @@ test.describe('FR-149 users-guide の全ユーザー操作を画面から', () =
     // 非表示（H）
     await c.focus();
     await icon(c, '非表示').click();
-    await expect(component(page, 'canvas')).toBeHidden();
+    await expect(component(page, 'priority')).toBeHidden();
   });
 
   // FR-149 AC-254（異常系: キー操作に頼らない。キーを押さずに非表示にしたコンポーネントを一覧から戻せる）
   test('FR-149 AC-254 異常系: 非表示にしたコンポーネントを、キー操作なしに非表示の一覧から再表示できる', async ({ page, start }) => {
     await start();
-    await openScreen(page, 'canvas');
-    const c = component(page, 'canvas');
+    await openScreen(page, 'priority');
+    const c = component(page, 'priority');
     await c.focus();
     await icon(c, '非表示').click();
-    await expect(component(page, 'canvas')).toBeHidden();
+    await expect(component(page, 'priority')).toBeHidden();
     await page.getByRole('button', { name: /非表示のコンポーネント/ }).click();
-    await page.getByRole('menuitem', { name: /キャンバス|canvas/i }).first().click();
-    await expect(component(page, 'canvas')).toBeVisible();
+    await page.getByRole('menuitem', { name: /優先順位|priority/i }).first().click();
+    await expect(component(page, 'priority')).toBeVisible();
   });
 });
 
@@ -208,28 +278,28 @@ test.describe('FR-151 最小化と左メニューのアイコン表示', () => {
   // FR-151 AC-261
   test('FR-151 AC-261 左メニューを最小化するとアイコンだけの列になり、ホバーで画面名が出て、押すと画面が開き、元の幅に戻せる（キーボードのみ）', async ({ page, start }) => {
     await start();
-    const nav = page.getByTestId('nav-canvas');
+    const nav = page.getByTestId('nav-priority');
     const wide = await box(nav);
     await page.getByRole('button', { name: 'メニューを最小化' }).focus();
     await page.keyboard.press('Enter');
-    const narrow = await box(page.getByTestId('nav-canvas'));
+    const narrow = await box(page.getByTestId('nav-priority'));
     expect(narrow.width, 'アイコンだけの細い列になる').toBeLessThan(wide.width);
-    await expect(page.getByTestId('nav-canvas')).toHaveAccessibleName(/./);
-    await page.getByTestId('nav-settings').hover();
-    await expect(page.getByRole('tooltip')).toContainText(/設定/);
-    await page.getByTestId('nav-settings').click();
-    await expect(component(page, 'settings')).toBeVisible();
-    await closeSettings(page); // 設定はモーダル（FR-223）
+    await expect(page.getByTestId('nav-priority')).toHaveAccessibleName(/./);
+    // 設定は左メニューに項目を持たない（FR-223 AC-774）ので、左メニューの画面「ガントチャート」で確かめる
+    await page.getByTestId('nav-gantt').hover();
+    await expect(page.getByRole('tooltip')).toContainText(/ガントチャート/);
+    await page.getByTestId('nav-gantt').click();
+    await expect(component(page, 'gantt')).toBeVisible();
     await page.getByRole('button', { name: /メニューを(元の幅に戻す|展開)/ }).focus();
     await page.keyboard.press('Enter');
-    expect((await box(page.getByTestId('nav-canvas'))).width).toBeGreaterThanOrEqual(wide.width - 2);
+    expect((await box(page.getByTestId('nav-priority'))).width).toBeGreaterThanOrEqual(wide.width - 2);
   });
 
   // FR-151 AC-261（異常系: 最小化していても画面へ到達できなくならない）
   test('FR-151 AC-261 異常系: 最小化した左メニューでも、すべての画面のアイコンに名前があり、到達できる', async ({ page, start }) => {
     await start();
     await page.getByRole('button', { name: 'メニューを最小化' }).click();
-    for (const k of ['canvas', 'priority', 'architecture', 'gantt', 'whiteboard', 'settings']) {
+    for (const k of ['priority', 'architecture', 'gantt', 'whiteboard']) { // 設定は左メニューにない（FR-223 AC-774）
       const n = page.getByTestId(`nav-${k}`);
       await expect(n).toBeVisible();
       await expect(n).toHaveAccessibleName(/./);

@@ -7,6 +7,8 @@ import {
   effectsOf, FLOW_COLUMNS, FLOW_LABELS, relatedFlowNodes,
   type FlowModel, type FlowNode, type MatrixModel, type Solution, type Source,
 } from './model';
+import { useT } from '../i18n';
+import { lifeOpacity, lifeScale, usePresenceItems } from '../motion';
 
 export interface FlowSelection { kind: 'issue' | 'solution'; id: string }
 
@@ -81,8 +83,9 @@ export function SourceLinks({ solution, sources, onOpen }: {
   solution: Solution; sources: ReadonlyMap<string, Source>; onOpen: (solutionId: string, sourceId: string) => void;
 }) {
   const s = useStyles();
+  const t = useT();
   const ids = solution.sourceIds ?? [];
-  if (ids.length === 0) return <Text size={200}>出典なし</Text>;
+  if (ids.length === 0) return <Text size={200}>{t('出典なし')}</Text>;
   return (
     <span className={s.links}>
       {ids.map((id) => (
@@ -109,28 +112,30 @@ export interface FlowViewProps {
 
 export function SankeyView({ flow, selection, solutions, sources, onSelectIssue, onSelectSolution, onOpenSource }: FlowViewProps & { flow: FlowModel }) {
   const s = useStyles();
+  const t = useT();
   const height = flow.rows * (NODE_H + GAP) - GAP;
   const byId = new Map(flow.nodes.map((n) => [n.id, n]));
   const selectedId = selection && byId.has(selection.id) ? selection.id : undefined;
   const related = selectedId ? relatedFlowNodes(flow, selectedId) : new Set<string>();
   const top = (n: FlowNode) => n.row * (NODE_H + GAP);
+  // 出入り・遷移（FR-070 AC-086）: 節・線は同じ ID のまま動き、追加は現れ、削除は薄れて消える
+  const nodeItems = usePresenceItems(flow.nodes, (n) => n.id, (n) => [n.column, n.row]);
+  const linkItems = usePresenceItems(flow.links, (l) => `${l.from}>${l.to}`, (l) => {
+    const a = byId.get(l.from);
+    const b = byId.get(l.to);
+    return a && b ? [a.column * 20 + 19, top(a) + NODE_H / 2, b.column * 20 + 1, top(b) + NODE_H / 2] : [0, 0, 0, 0];
+  });
 
   return (
-    <div className={s.scroll} role="region" aria-label="サンキー図" tabIndex={0}>
+    <div className={s.scroll} role="region" aria-label={t('サンキー図')} tabIndex={0}>
       <div className={s.sankey} data-testid="sankey">
         <div className={s.heads} aria-hidden>
           {FLOW_COLUMNS.map((k) => <Text key={k} size={200} weight="semibold" className={s.head}>{FLOW_LABELS[k]}</Text>)}
         </div>
         <div className={s.canvas} style={{ height }}>
           <svg className={s.svg} viewBox={`0 0 100 ${height}`} preserveAspectRatio="none" aria-hidden>
-            {flow.links.map((l) => {
-              const a = byId.get(l.from);
-              const b = byId.get(l.to);
-              if (!a || !b) return null;
-              const x1 = a.column * 20 + 19;
-              const x2 = b.column * 20 + 1;
-              const y1 = top(a) + NODE_H / 2;
-              const y2 = top(b) + NODE_H / 2;
+            {linkItems.map(({ item: l, vec, life }) => {
+              const [x1, y1, x2, y2] = vec as [number, number, number, number];
               const mid = (x1 + x2) / 2;
               const on = selectedId !== undefined && (l.from === selectedId || related.has(l.from)) && (l.to === selectedId || related.has(l.to));
               return (
@@ -139,24 +144,27 @@ export function SankeyView({ flow, selection, solutions, sources, onSelectIssue,
                   d={`M ${x1} ${y1} C ${mid} ${y1}, ${mid} ${y2}, ${x2} ${y2}`}
                   fill="none"
                   vectorEffect="non-scaling-stroke"
+                  opacity={lifeOpacity(life)}
                   style={{ stroke: on ? tokens.colorBrandStroke1 : tokens.colorNeutralStroke1, strokeWidth: on ? 3 : 1.5 }}
                 />
               );
             })}
           </svg>
-          {flow.nodes.map((n) => {
+          {nodeItems.map(({ item: n, vec, life, exiting }) => {
             const isSelected = n.id === selectedId;
             const isRelated = related.has(n.id);
             const solution = n.kind === 'solution' ? solutions.get(n.id) : undefined;
-            const clickable = n.kind === 'issue' || n.kind === 'solution';
+            const clickable = (n.kind === 'issue' || n.kind === 'solution') && !exiting;
             const select = () => { if (n.kind === 'issue') onSelectIssue(n.id); else if (n.kind === 'solution') onSelectSolution(n.id); };
             return (
               <div
                 key={n.id}
                 data-entity-id={n.id}
                 data-highlight={isSelected ? 'selected' : isRelated ? 'related' : undefined}
+                data-exiting={exiting || undefined}
+                aria-hidden={exiting || undefined}
                 className={mergeClasses(s.node, clickable && s.nodeClickable, isRelated && s.nodeRelated, isSelected && s.nodeSelected)}
-                style={{ left: `${n.column * 20 + 1}%`, top: top(n) }}
+                style={{ left: `${vec[0]! * 20 + 1}%`, top: vec[1]! * (NODE_H + GAP), ...(life < 1 || exiting ? { opacity: lifeOpacity(life), transform: `scale(${lifeScale(life).toFixed(3)})`, ...(exiting ? { pointerEvents: 'none' as const } : {}) } : {}) }}
                 onClick={clickable ? select : undefined}
               >
                 {clickable ? (
@@ -178,13 +186,14 @@ export function SankeyView({ flow, selection, solutions, sources, onSelectIssue,
 
 export function MatrixView({ matrix, selection, sources, onSelectIssue, onSelectSolution, onOpenSource }: FlowViewProps & { matrix: MatrixModel }) {
   const s = useStyles();
+  const t = useT();
   return (
-    <div className={s.scroll} role="region" aria-label="マトリクス" tabIndex={0}>
-      <Table aria-label="課題と Microsoft 製品のマトリクス" size="small" data-testid="matrix">
+    <div className={s.scroll} role="region" aria-label={t('マトリクス')} tabIndex={0}>
+      <Table aria-label={t('課題と Microsoft 製品のマトリクス')} size="small" data-testid="matrix">
         <TableHeader>
           <TableRow>
-            <TableHeaderCell>課題と原因</TableHeaderCell>
-            {matrix.columns.map((p) => <TableHeaderCell key={p?.id ?? 'none'}>{p ? p.name : '製品の関連付けなし'}</TableHeaderCell>)}
+            <TableHeaderCell>{t('課題と原因')}</TableHeaderCell>
+            {matrix.columns.map((p) => <TableHeaderCell key={p?.id ?? 'none'}>{p ? p.name : t('製品の関連付けなし')}</TableHeaderCell>)}
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -204,10 +213,10 @@ export function MatrixView({ matrix, selection, sources, onSelectIssue, onSelect
                       {row.issue.title}
                     </Button>
                     {row.causes.length > 0 ? (
-                      <ul className={s.causes} aria-label="原因">
+                      <ul className={s.causes} aria-label={t('原因')}>
                         {row.causes.map((c) => <li key={c.id}><Text size={200}>{c.title}</Text></li>)}
                       </ul>
-                    ) : <Text size={200}>原因は未設定です</Text>}
+                    ) : <Text size={200}>{t('原因は未設定です')}</Text>}
                   </div>
                 </TableCell>
                 {row.cells.map((cell) => (
@@ -225,7 +234,7 @@ export function MatrixView({ matrix, selection, sources, onSelectIssue, onSelect
                           <Button appearance="transparent" size="small" className={s.mainButton} aria-pressed={on} onClick={(e) => { e.stopPropagation(); onSelectSolution(sol.id); }}>
                             {sol.title}
                           </Button>
-                          <Text size={200}>効果: {effectsOf(sol).map((e) => e.title).join('、') || '未設定'}</Text>
+                          <Text size={200}>{t('効果: {v}', { v: effectsOf(sol).map((e) => e.title).join('、') || t('未設定') })}</Text>
                           <SourceLinks solution={sol} sources={sources} onOpen={onOpenSource} />
                         </div>
                       );

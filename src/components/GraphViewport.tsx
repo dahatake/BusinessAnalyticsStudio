@@ -14,6 +14,10 @@ import { ZOOM_KIND_LABELS, kindOfDepth, stepDepth, zoomAttrs } from '../semantic
 import {
   GRAPH_PAN_STEP, GRAPH_SCALE_STEP, GRAPH_VIEW_INIT, clampScale, highlightRowItem, onGraphFocus, useGraphView, useGraphViewStore,
 } from './graphViewStore';
+import { tr, useT } from '../i18n';
+
+/** ボタンの名前が、日本語・現在の言語のどちらの「name」とも一致するか（画面側のボタンを名前で見つけるため） */
+const isName = (actual: string, ja: string): boolean => actual === ja || actual === tr(ja);
 
 const useStyles = makeStyles({
   root: {
@@ -54,7 +58,7 @@ export interface GraphViewportCtx {
 const Ctx = createContext<GraphViewportCtx | null>(null);
 export const useGraphViewport = (): GraphViewportCtx | null => useContext(Ctx);
 
-const HOST_SEL = '[data-testid^="component-"], [data-testid="data-viewer"]';
+const HOST_SEL = '[data-testid^="component-"]:not([data-testid="component-data"]), [data-testid="data-viewer"]';
 const IGNORE_DRAG = 'button, a, input, select, textarea, table, [data-zoom-node], [data-zoom-cluster], [data-testid="graph-edge"], [data-testid="detail-card"], [role="table"], [role="listbox"]';
 const prefersReduced = (): boolean => typeof window !== 'undefined' && typeof window.matchMedia === 'function' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 /** 面の中で display:none の祖先の下にあるか（全体の階層で隠したノード） */
@@ -114,11 +118,13 @@ export interface GraphViewportProps {
 
 export function GraphViewport({ origin, label, standalone = false, className, attrs, children }: GraphViewportProps) {
   const s = useStyles();
+  const t = useT();
   const view = useGraphView(origin);
   const patch = useGraphViewStore((st) => st.patch);
   const rootRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement | null>(null);
   const closerRef = useRef<(() => boolean) | null>(null);
+  const levelClick = useRef(false);
   const fsRef = useRef<HTMLButtonElement>(null);
   const exitRef = useRef<HTMLButtonElement>(null);
   const [cardHost, setCardHost] = useState<HTMLElement | null>(null);
@@ -191,11 +197,11 @@ export function GraphViewport({ origin, label, standalone = false, className, at
     const h = (e: MouseEvent): void => {
       const btn = (e.target as Element | null)?.closest?.('button');
       const root = rootRef.current;
-      if (!btn || !root || root.contains(btn)) return;
+      if (!btn || !root || root.contains(btn) || levelClick.current) return;
       const host = root.closest(HOST_SEL);
       if (!host || !host.contains(btn)) return;
       const name = btn.getAttribute('aria-label') || (btn.textContent ?? '').trim();
-      if (name === '拡大') { animate(); zoomBy(GRAPH_SCALE_STEP); } else if (name === '縮小') { animate(); zoomBy(1 / GRAPH_SCALE_STEP); } else if (name === '全体表示に戻す') { homeNow(); }
+      if (isName(name, '拡大')) { animate(); zoomBy(GRAPH_SCALE_STEP); } else if (isName(name, '縮小')) { animate(); zoomBy(1 / GRAPH_SCALE_STEP); } else if (isName(name, '全体表示に戻す')) { homeNow(); }
     };
     document.addEventListener('click', h, true);
     return () => document.removeEventListener('click', h, true);
@@ -208,7 +214,7 @@ export function GraphViewport({ origin, label, standalone = false, className, at
       const host = rootRef.current?.closest<HTMLElement>('[data-zoom-level]');
       if (!host) return;
       const want = host.getAttribute('data-zoom-level') === 'detail' ? '縮小' : '拡大';
-      [...host.querySelectorAll('button')].find((b) => (b.getAttribute('aria-label') || (b.textContent ?? '').trim()) === want && !b.disabled)?.click();
+      [...host.querySelectorAll('button')].find((b) => isName(b.getAttribute('aria-label') || (b.textContent ?? '').trim(), want) && !b.disabled)?.click();
     };
     const run = (id: string, attempt: number): void => {
       const stage = stageRef.current;
@@ -245,7 +251,17 @@ export function GraphViewport({ origin, label, standalone = false, className, at
       if ((e.target as Element | null)?.closest?.('[data-testid="detail-card"]')) return;
       e.preventDefault(); e.stopPropagation();
       const r = el.getBoundingClientRect();
+      const band = (sc: number): number => (sc >= 2.5 ? 2 : sc >= 1.5 ? 1 : 0);
+      const before = band(get().s);
       zoomBy(Math.exp(-e.deltaY * (e.ctrlKey ? 0.01 : 0.0015)), { x: e.clientX - r.left - r.width / 2, y: e.clientY - r.top - r.height / 2 });
+      // 画面側が階層を持つ面は、倍率のしきい値を越えたとき、画面の拡大・縮小ボタンと同じ操作で階層を切り替える（パンくずも変わる）
+      const after = band(get().s);
+      if (!standalone && after !== before) {
+        const host = rootRef.current?.closest<HTMLElement>(HOST_SEL);
+        const name = after > before ? '拡大' : '縮小';
+        const btn = [...(host?.querySelectorAll('button') ?? [])].find((b) => !rootRef.current?.contains(b) && isName(b.getAttribute('aria-label') || (b.textContent ?? '').trim(), name) && !b.disabled);
+        if (btn) { levelClick.current = true; try { btn.click(); } finally { levelClick.current = false; } }
+      }
     };
     el.addEventListener('wheel', h, { passive: false });
     return () => el.removeEventListener('wheel', h);
@@ -343,22 +359,22 @@ export function GraphViewport({ origin, label, standalone = false, className, at
   const cw = content?.w ?? stageSize.w; const ch = content?.h ?? stageSize.h;
   const tx = stageSize.w / 2 + view.x - (cw * k) / 2; const ty = stageSize.h / 2 + view.y - (ch * k) / 2;
   const move = (name: string, icon: JSX.Element, dx: number, dy: number) => (
-    <Button size="small" className={s.btn} icon={icon} aria-label={name} title={name} onClick={() => panBy(dx, dy)} />
+    <Button size="small" className={s.btn} icon={icon} aria-label={t(name)} title={t(name)} onClick={() => panBy(dx, dy)} />
   );
   return (
     <Ctx.Provider value={ctx}>
       <div
-        ref={rootRef} className={mergeClasses(s.root, view.full && s.full, dragging && s.dragging, className)} role="group" aria-label={`${label}の図（ドラッグ・Shift＋矢印キーで移動、ホイールで拡大縮小、F キーで全画面）`} tabIndex={0}
+        ref={rootRef} className={mergeClasses(s.root, view.full && s.full, dragging && s.dragging, className)} role="group" aria-label={t('{label}の図（ドラッグ・Shift＋矢印キーで移動、ホイールで拡大縮小、F キーで全画面）', { label })} tabIndex={0}
         data-zoom-surface="graph" data-pan-x={r2(view.x)} data-pan-y={r2(view.y)} data-scale={r2(view.s)} data-fullscreen={view.full ? 'true' : undefined} {...attrs}
         onKeyDown={onKeyDown} onPointerDown={onPointerDown} onPointerMove={onPointerMove} onPointerUp={onPointerUp} onPointerCancel={onPointerUp}
       >
-        <div className={s.toolbar} role="toolbar" aria-label={`${label}の図の操作`}>
+        <div className={s.toolbar} role="toolbar" aria-label={t('{label}の図の操作', { label })}>
           {standalone ? (
             <>
-              <Button size="small" className={s.btn} onClick={() => { animate(); zoomBy(GRAPH_SCALE_STEP, undefined, 1); }}>拡大</Button>
-              <Button size="small" className={s.btn} onClick={() => { animate(); zoomBy(1 / GRAPH_SCALE_STEP, undefined, -1); }}>縮小</Button>
-              <Button size="small" className={s.btn} onClick={() => { homeNow(); }}>全体表示に戻す</Button>
-              <span data-testid="zoom-level" data-depth={view.depth} data-depth-count={3}><Badge appearance="tint">{ZOOM_KIND_LABELS[kind]}</Badge></span>
+              <Button size="small" className={s.btn} onClick={() => { animate(); zoomBy(GRAPH_SCALE_STEP, undefined, 1); }}>{t('拡大')}</Button>
+              <Button size="small" className={s.btn} onClick={() => { animate(); zoomBy(1 / GRAPH_SCALE_STEP, undefined, -1); }}>{t('縮小')}</Button>
+              <Button size="small" className={s.btn} onClick={() => { homeNow(); }}>{t('全体表示に戻す')}</Button>
+              <span data-testid="zoom-level" data-depth={view.depth} data-depth-count={3}><Badge appearance="tint">{t(ZOOM_KIND_LABELS[kind])}</Badge></span>
             </>
           ) : null}
           {move('図を上へ移動', <ArrowUp20Regular />, 0, -GRAPH_PAN_STEP)}
@@ -367,9 +383,9 @@ export function GraphViewport({ origin, label, standalone = false, className, at
           {move('図を右へ移動', <ArrowRight20Regular />, GRAPH_PAN_STEP, 0)}
           <span className={s.grow} />
           {view.full ? (
-            <Button key="exit" ref={exitRef} size="small" className={s.btn} icon={<FullScreenMinimize20Regular />} onClick={toggleFull}>全画面を終了</Button>
+            <Button key="exit" ref={exitRef} size="small" className={s.btn} icon={<FullScreenMinimize20Regular />} onClick={toggleFull}>{t('全画面を終了')}</Button>
           ) : (
-            <Button key="enter" ref={fsRef} size="small" className={s.btn} icon={<FullScreenMaximize20Regular />} onClick={toggleFull}>全画面</Button>
+            <Button key="enter" ref={fsRef} size="small" className={s.btn} icon={<FullScreenMaximize20Regular />} onClick={toggleFull}>{t('全画面')}</Button>
           )}
         </div>
         <div ref={setCardHost} className={s.cardHost} />

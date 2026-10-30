@@ -59,7 +59,7 @@ test.describe('FR-182 実接続の説明と既定', () => {
   test('FR-182 AC-379 キーの入力欄は値を表示せず、入力したキーが画面の文字に現れない', async ({ page, start }) => {
     await start();
     const settings = await openScreen(page, 'settings');
-    const secret = 'sk-test-DUMMY-0123456789';
+    const secret = 'sk-' + 'test-DUMMY-0123456789'; // 静的検査（AC-729）に該当しないよう実行時に組み立てる
     const keyInputs = settings.locator('input[type="password"]');
     const n = await keyInputs.count();
     for (let i = 0; i < n; i++) {

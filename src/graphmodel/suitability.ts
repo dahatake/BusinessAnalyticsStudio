@@ -1,13 +1,15 @@
 // グラフ表現に向くエンティティ・関係の判断基準（FR-235）。純粋な関数だけで書く（同じ入力は同じ結果）。
 // 意味の種類・読み方・既定の判定は共通の語彙で、顧客固有の語を持たない。画面の部品を参照しない（NFR-MAINT-001）。
 import { MEANINGS, MEANING_LABELS, isMeaning, readMeaning, type Meaning } from '../schema/graph';
+import { tr } from '../i18n';
+import { trRecord } from '../schema/trRecord';
 
 /** 利用者の問い。(a) 連鎖・経路 (b) 多対多 (c) 到達性・孤立 (d) つながりの多い中心 */
 export const GRAPH_QUESTIONS = ['path', 'manyToMany', 'reachability', 'hub'] as const;
 export type GraphQuestion = (typeof GRAPH_QUESTIONS)[number];
-export const GRAPH_QUESTION_LABELS: Readonly<Record<GraphQuestion, string>> = {
+export const GRAPH_QUESTION_LABELS: Readonly<Record<GraphQuestion, string>> = trRecord<GraphQuestion>({
   path: '連鎖・経路をたどる', manyToMany: '多対多の関係を見る', reachability: '到達性・孤立を確かめる', hub: 'つながりの多い中心を探す',
-};
+});
 
 /** グラフ以外の表現が向く関係の性質 */
 export const NON_GRAPH_NATURES = ['timeOrder', 'locationOnly', 'parentChild', 'oneToOne', 'quantity'] as const;
@@ -15,16 +17,16 @@ export type NonGraphNature = (typeof NON_GRAPH_NATURES)[number];
 
 /** 推奨の表現 */
 export type Representation = 'graph' | 'gantt' | 'timeline' | 'map' | 'tree' | 'nested' | 'table' | 'chart';
-export const REPRESENTATION_LABELS: Readonly<Record<Representation, string>> = {
+export const REPRESENTATION_LABELS: Readonly<Record<Representation, string>> = trRecord<Representation>({
   graph: 'グラフ（ノードと関係）', gantt: 'ガント', timeline: '時系列', map: '地図', tree: 'ツリー', nested: '入れ子', table: '表', chart: 'グラフ（チャート）',
-};
+});
 
 const NATURE_ADVICE: Readonly<Record<NonGraphNature, { reason: string; recommended: readonly Representation[] }>> = {
-  timeOrder: { reason: '時間の前後だけの関係です', recommended: ['gantt', 'timeline', 'table'] },
-  locationOnly: { reason: '位置だけの関係です', recommended: ['map'] },
-  parentChild: { reason: '純粋な親子の関係です', recommended: ['tree', 'nested'] },
-  oneToOne: { reason: '一対一の属性です', recommended: ['table'] },
-  quantity: { reason: '数量の比較です', recommended: ['chart'] },
+  timeOrder: { get reason() { return tr('時間の前後だけの関係です'); }, recommended: ['gantt', 'timeline', 'table'] },
+  locationOnly: { get reason() { return tr('位置だけの関係です'); }, recommended: ['map'] },
+  parentChild: { get reason() { return tr('純粋な親子の関係です'); }, recommended: ['tree', 'nested'] },
+  oneToOne: { get reason() { return tr('一対一の属性です'); }, recommended: ['table'] },
+  quantity: { get reason() { return tr('数量の比較です'); }, recommended: ['chart'] },
 };
 
 export type SuitabilityReasonCode = 'suitable' | 'no-direction' | 'no-meaning' | 'invalid-meaning' | NonGraphNature;
@@ -69,20 +71,20 @@ export function judgeGraphSuitability(input: RelationInput): Suitability {
     return { suitable: false, code: input.nature, reason: a.reason, recommended: a.recommended };
   }
   if (input.directed === false) {
-    return { suitable: false, code: 'no-direction', reason: '向きなし（向きのない関係は、つながりの方向を読めません）', recommended: ['table'] };
+    return { suitable: false, code: 'no-direction', reason: tr('向きなし（向きのない関係は、つながりの方向を読めません）'), recommended: ['table'] };
   }
   if (!hasMeaning) {
-    return { suitable: false, code: 'no-meaning', reason: '意味なし（意味の種類がない関係は、何のつながりか読めません）', recommended: ['table'] };
+    return { suitable: false, code: 'no-meaning', reason: tr('意味なし（意味の種類がない関係は、何のつながりか読めません）'), recommended: ['table'] };
   }
   if (!isMeaning(input.meaning)) {
-    return { suitable: false, code: 'invalid-meaning', reason: `意味なし（「${String(input.meaning)}」は九つの意味の種類にありません）`, recommended: ['table'] };
+    return { suitable: false, code: 'invalid-meaning', reason: tr('意味なし（「{meaning}」は九つの意味の種類にありません）', { meaning: String(input.meaning) }), recommended: ['table'] };
   }
   if (input.nature) {
     const a = NATURE_ADVICE[input.nature];
     return { suitable: false, code: input.nature, reason: a.reason, recommended: a.recommended };
   }
   const question = input.question ?? DEFAULT_QUESTION_BY_MEANING[input.meaning];
-  return { suitable: true, code: 'suitable', reason: `${MEANING_LABELS[input.meaning].name}の関係で、「${GRAPH_QUESTION_LABELS[question]}」問いに向きます`, recommended: ['graph'], question };
+  return { suitable: true, code: 'suitable', reason: tr('{meaning}の関係で、「{question}」問いに向きます', { meaning: MEANING_LABELS[input.meaning].name, question: GRAPH_QUESTION_LABELS[question] }), recommended: ['graph'], question };
 }
 
 /** 既定の判定の対応表（FR-235）。向く七つの組と、向かない一つの組 */
@@ -96,14 +98,14 @@ export interface DefaultJudgment {
   suitable: boolean;
 }
 export const DEFAULT_JUDGMENTS: readonly DefaultJudgment[] = [
-  { key: 'causal', description: '課題→原因→解決策→効果（因果）', meaning: 'causes', question: 'path', suitable: true },
-  { key: 'dependency', description: '工程→工程（依存）', meaning: 'dependsOn', question: 'path', suitable: true },
-  { key: 'membership', description: '組織→人（所属・所有）', meaning: 'memberOf', question: 'manyToMany', suitable: true },
-  { key: 'lineage', description: 'データエンティティ→列・ユースケース（データ系統）', meaning: 'derivedFrom', question: 'path', suitable: true },
-  { key: 'influence', description: 'KPI→OKR（影響）', meaning: 'influences', question: 'path', suitable: true },
-  { key: 'measurement-control', description: '設備→センサー/指標（計測・制御）', meaning: 'measures', question: 'hub', suitable: true },
-  { key: 'placement', description: '拠点→設備（配置）', meaning: 'locatedIn', question: 'reachability', suitable: true },
-  { key: 'time-order', description: '議題→次のアクション（時間の前後だけ）', nature: 'timeOrder', suitable: false },
+  { key: 'causal', get description() { return tr('課題→原因→解決策→効果（因果）'); }, meaning: 'causes', question: 'path', suitable: true },
+  { key: 'dependency', get description() { return tr('工程→工程（依存）'); }, meaning: 'dependsOn', question: 'path', suitable: true },
+  { key: 'membership', get description() { return tr('組織→人（所属・所有）'); }, meaning: 'memberOf', question: 'manyToMany', suitable: true },
+  { key: 'lineage', get description() { return tr('データエンティティ→列・ユースケース（データ系統）'); }, meaning: 'derivedFrom', question: 'path', suitable: true },
+  { key: 'influence', get description() { return tr('KPI→OKR（影響）'); }, meaning: 'influences', question: 'path', suitable: true },
+  { key: 'measurement-control', get description() { return tr('設備→センサー/指標（計測・制御）'); }, meaning: 'measures', question: 'hub', suitable: true },
+  { key: 'placement', get description() { return tr('拠点→設備（配置）'); }, meaning: 'locatedIn', question: 'reachability', suitable: true },
+  { key: 'time-order', get description() { return tr('論点→次のアクション（時間の前後だけ）'); }, nature: 'timeOrder', suitable: false },
 ];
 
 export interface PackRelationLike { id?: string; from: string; to: string; meaning?: string | null; label?: string; directed?: boolean; nature?: NonGraphNature }

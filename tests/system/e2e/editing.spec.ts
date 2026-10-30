@@ -14,7 +14,9 @@ async function editCell(page: Page, cell: Locator, value: string) {
   const input = cell.getByRole('textbox').or(cell.getByRole('spinbutton')).first();
   await expect(input).toBeVisible();
   await input.fill(value);
+  const committedAt = Date.now();
   await page.keyboard.press('Enter');
+  return committedAt;
 }
 async function makeTheme(page: Page, issue = mono.issues()[0]) {
   const view = await openScreen(page, 'issue-solution');
@@ -53,7 +55,7 @@ test.describe('FR-044 その場での編集', () => {
 
 test.describe('FR-045 全ビューへの即時反映', () => {
   // FR-045 AC-056
-  test('FR-045 AC-056 表で課題名を変えるとナレッジグラフ・課題-解決策分析・ガント・サマリーの根拠の課題名が再読込なしで変わる', async ({ page, start }) => {
+  test('FR-045 AC-056 課題の改名・連続変更・追加/削除/undoが再読込なく伝播し、ID・選択・出典が保たれる', async ({ page, start }, info) => {
     await start();
     const pr = await openScreen(page, 'priority');
     const ev = await pr.getByTestId('executive-summary').getByTestId('summary-evidence').innerText();
@@ -63,12 +65,70 @@ test.describe('FR-045 全ビューへの即時反映', () => {
     for (const v of views) await expect(await openScreen(page, v), `${v} に課題名がない（前提）`).toContainText(issue.title);
     await setEditMode(page, true);
     const table = await openScreen(page, 'table');
+    await entity(table, issue.id).first().click();
+    const sources = await component(page, 'detail').getByTestId('source-card').allTextContents();
     const renamed = `改名ST-056 ${issue.title}`;
     let navigations = 0;
-    page.on('framenavigated', () => navigations++);
-    await editCell(page, cellOf(table, issue.title), renamed);
-    for (const v of views) await expect(await openScreen(page, v), v).toContainText(renamed);
-    await expect((await openScreen(page, 'priority')).getByTestId('executive-summary').getByTestId('summary-evidence')).toContainText(renamed);
+    // Only a new main document is a reload. Child iframe navigation or a URL/hash
+    // change must not masquerade as reloading the application.
+    page.on('request', request => {
+      if (request.isNavigationRequest() && request.resourceType() === 'document' && request.frame() === page.mainFrame()) navigations++;
+    });
+    // Measure commit-to-render, not double-click/typing/navigation by the tester.
+    const began = await editCell(page, cellOf(table, issue.title), renamed);
+    const remaining = () => Math.max(1, 2000 - (Date.now() - began));
+    await expect(entity(table, issue.id).first()).toContainText(renamed, { timeout: remaining() });
+    // All these panels were opened above. Observe their real retained DOM in
+    // parallel; opening tabs serially would charge user-navigation time to rendering.
+    await expect.poll(async () => {
+      const texts = await Promise.all(views.map(v => component(page, v).allTextContents()));
+      const summary = await component(page, 'priority').getByTestId('executive-summary')
+        .getByTestId('summary-evidence').allTextContents();
+      return [...texts, summary].every(text => text.join(' ').includes(renamed));
+    }, { timeout: remaining(), intervals: [16, 32, 50] }).toBe(true);
+    const elapsed = Date.now() - began;
+    expect(elapsed, '全ビューが同じ最新名になるまでの実測（各assertionの待機時間ではない）').toBeLessThanOrEqual(2000);
+    await info.attach('rename-update-ms', { body: String(elapsed), contentType: 'text/plain' });
+    for (const v of views) expect(await (await openScreen(page, v)).textContent()).toContain(renamed);
+    expect(await (await openScreen(page, 'priority')).getByTestId('executive-summary').getByTestId('summary-evidence').textContent()).toContain(renamed);
+    await openScreen(page, 'table');
+    await expect(entity(table, issue.id).first()).toHaveAttribute('data-highlight', /selected/);
+    expect(await component(page, 'detail').getByTestId('source-card').allTextContents()).toEqual(sources);
+    // Consecutive commits must converge on the final name.
+    await editCell(page, cellOf(table, renamed), 'ST-056 中間');
+    await editCell(page, cellOf(table, 'ST-056 中間'), 'ST-056 最後');
+    for (const v of views) {
+      const current = await openScreen(page, v);
+      await expect(current).toContainText('ST-056 最後', { timeout: 2000 });
+      await expect(current).not.toContainText('ST-056 中間');
+    }
+    // Add via duplicate, delete that new item, then undo. Compare real table IDs,
+    // never counts alone (deleting the wrong record must fail).
+    await openScreen(page, 'table');
+    const ids = await table.locator('[role="row"][data-entity-id]').evaluateAll(els => els.map(el => el.getAttribute('data-entity-id')!));
+    await entity(table, issue.id).first().click();
+    await component(page, 'detail').getByRole('button', { name: '複製', exact: true }).click();
+    const added = await table.locator('[role="row"][data-entity-id]').evaluateAll((els, old) =>
+      els.map(el => el.getAttribute('data-entity-id')!).filter(id => !old.includes(id)), ids);
+    expect(added).toHaveLength(1);
+    await entity(table, added[0]).first().click();
+    await component(page, 'detail').getByRole('button', { name: '削除', exact: true }).click();
+    const confirmation = page.getByRole('alertdialog');
+    if (await confirmation.isVisible()) await confirmation.getByRole('button', { name: /削除/ }).click();
+    await expect(entity(table, added[0])).toHaveCount(0, { timeout: 2000 });
+    await expect(entity(table, issue.id).first()).toContainText('ST-056 最後');
+    await table.click({ position: { x: 5, y: 5 } });
+    await page.keyboard.press('Control+z');
+    await expect(entity(table, added[0]).first()).toContainText('ST-056 最後', { timeout: 2000 });
+    // Undo the duplicate. Deleted records must not leak
+    // into the graph, and unchanged original identity must survive.
+    await page.keyboard.press('Control+z');
+    await expect(entity(table, added[0])).toHaveCount(0);
+    for (const v of ['knowledge-graph', 'issue-solution']) {
+      const current = await openScreen(page, v);
+      await expect(entity(current, added[0])).toHaveCount(0);
+      await expect(current).toContainText('ST-056 最後');
+    }
     expect(navigations, '再読込が起きた').toBe(0);
   });
 });
@@ -293,6 +353,9 @@ test.describe('NFR-UX-003 時間のかかる処理', () => {
     await start({ aiMockDelayMs: 15_000 });
     await setEditMode(page, true);
     const themes = await makeTheme(page);
+    const treeBefore = await openScreen(page, 'discussion-tree');
+    const decisionsBefore = await treeBefore.locator('[role="treeitem"][data-node-kind="決定事項"]').count();
+    await openScreen(page, 'themes');
     await themes.getByRole('button', { name: 'ツリーを生成' }).click();
     const progress = page.getByRole('progressbar', { name: /生成/ }).or(page.getByRole('status').filter({ hasText: /生成中/ })).first();
     await expect(progress).toBeVisible();
@@ -313,6 +376,7 @@ test.describe('NFR-UX-003 時間のかかる処理', () => {
     await expect(progress).toBeHidden();
     await page.waitForTimeout(16_000);
     const tree = await openScreen(page, 'discussion-tree');
-    await expect(tree.locator('[role="treeitem"][data-node-kind="決定事項"]')).toHaveCount(0);
+    // 先に出ている議論ツリー（デモ）の決定事項は残るので、取り消した生成結果で増えていないことを比較する
+    await expect(tree.locator('[role="treeitem"][data-node-kind="決定事項"]')).toHaveCount(decisionsBefore);
   });
 });

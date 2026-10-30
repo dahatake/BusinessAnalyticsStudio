@@ -7,6 +7,7 @@ import { TIERS, TIER_LABEL, type Role, type Tier } from './tiers';
 import { SNAP_LABEL, type SnapKind } from './snap';
 import { PIN_MOVE_REASON, PIN_RESIZE_REASON, PIN_TABS_REASON, paneAction, type PaneActionId } from './paneActions';
 import { ComponentViewButton, ComponentViewSubmenu } from '../view/ViewMenu';
+import { useT } from '../i18n';
 
 const useActionStyles = makeStyles({
   actions: { display: 'flex', alignItems: 'center', columnGap: tokens.spacingHorizontalXXS, flexShrink: 0 },
@@ -88,16 +89,18 @@ export function ComponentMenu({ pane, title, open, onOpenChange, onShowTier }: {
   /** 「情報の階層」を選んだとき（階層と理由を見出しの下に示す） */
   onShowTier?: () => void;
 }) {
-  const pinNote = pane.pinned ? PIN_MOVE_REASON : undefined;
+  const t = useT();
+  const pinNote = pane.pinned ? t(PIN_MOVE_REASON) : undefined;
+  const resizeNote = pane.pinned ? t(PIN_RESIZE_REASON) : undefined;
   return (
-    <Menu {...(open !== undefined ? { open, onOpenChange: (_: unknown, d: { open: boolean }) => onOpenChange?.(d.open) } : {})}>
+    <Menu positioning={{ autoSize: 'height', overflowBoundary: 'window', flipBoundary: 'window' } as never} {...(open !== undefined ? { open, onOpenChange: (_: unknown, d: { open: boolean }) => onOpenChange?.(d.open) } : {})}>
       <MenuTrigger disableButtonEnhancement>
         <Button
           data-testid="component-menu"
           appearance="subtle"
           size="small"
           icon={<MoreHorizontal20Regular aria-hidden />}
-          aria-label={`その他の操作（${title}のメニュー）`}
+          aria-label={t('その他の操作（{title}のメニュー）', { title })}
         />
       </MenuTrigger>
       <MenuPopover>
@@ -105,36 +108,36 @@ export function ComponentMenu({ pane, title, open, onOpenChange, onShowTier }: {
           <MenuItem onClick={pane.togglePin}>{paneAction('pin', pane.pinned).label}</MenuItem>
           <MenuItem onClick={pane.toggleMinimize}>{paneAction('minimize', pane.minimized).label}</MenuItem>
           {/* ピン止め中は動かす操作を無効にし、理由を示す（FR-216 AC-496） */}
-          <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={() => pane.move('up')}>上へ移動</MenuItem>
-          <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={() => pane.move('down')}>下へ移動</MenuItem>
-          <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={() => pane.move('left')}>左へ移動</MenuItem>
-          <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={() => pane.move('right')}>右へ移動</MenuItem>
-          <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={pane.toggleDirection}>並べる方向を変える（横/縦）</MenuItem>
-          {pane.pinned ? <MenuItem disabled secondaryContent={PIN_MOVE_REASON}>画面に配置</MenuItem> : (
+          <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={() => pane.move('up')}>{t('上へ移動')}</MenuItem>
+          <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={() => pane.move('down')}>{t('下へ移動')}</MenuItem>
+          <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={() => pane.move('left')}>{t('左へ移動')}</MenuItem>
+          <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={() => pane.move('right')}>{t('右へ移動')}</MenuItem>
+          <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={pane.toggleDirection}>{t('並べる方向を変える（横/縦）')}</MenuItem>
+          {pane.pinned ? <MenuItem disabled secondaryContent={t(PIN_MOVE_REASON)}>{t('画面に配置')}</MenuItem> : (
           <Menu>
             <MenuTrigger disableButtonEnhancement>
-              <MenuItem>画面に配置</MenuItem>
+              <MenuItem>{t('画面に配置')}</MenuItem>
             </MenuTrigger>
             <MenuPopover>
               <MenuList>
                 {pane.snapKinds.filter((k) => k !== 'tabs' || pane.peers.length > 0).map((k) => (
-                  <MenuItem key={k} onClick={() => pane.snapTo(k)}>{SNAP_LABEL[k]}</MenuItem>
+                  <MenuItem key={k} onClick={() => pane.snapTo(k)}>{t(SNAP_LABEL[k])}</MenuItem>
                 ))}
               </MenuList>
             </MenuPopover>
           </Menu>
           )}
-          <MenuItem disabled={pane.pinned} secondaryContent={pane.pinned ? PIN_RESIZE_REASON : undefined} onClick={() => pane.resizeBy('w', 1)}>幅を広げる</MenuItem>
-          <MenuItem disabled={pane.pinned} secondaryContent={pane.pinned ? PIN_RESIZE_REASON : undefined} onClick={() => pane.resizeBy('w', -1)}>幅を狭める</MenuItem>
-          <MenuItem disabled={pane.pinned} secondaryContent={pane.pinned ? PIN_RESIZE_REASON : undefined} onClick={() => pane.resizeBy('h', 1)}>高さを広げる</MenuItem>
-          <MenuItem disabled={pane.pinned} secondaryContent={pane.pinned ? PIN_RESIZE_REASON : undefined} onClick={() => pane.resizeBy('h', -1)}>高さを狭める</MenuItem>
+          <MenuItem disabled={pane.pinned} secondaryContent={resizeNote} onClick={() => pane.resizeBy('w', 1)}>{t('幅を広げる')}</MenuItem>
+          <MenuItem disabled={pane.pinned} secondaryContent={resizeNote} onClick={() => pane.resizeBy('w', -1)}>{t('幅を狭める')}</MenuItem>
+          <MenuItem disabled={pane.pinned} secondaryContent={resizeNote} onClick={() => pane.resizeBy('h', 1)}>{t('高さを広げる')}</MenuItem>
+          <MenuItem disabled={pane.pinned} secondaryContent={resizeNote} onClick={() => pane.resizeBy('h', -1)}>{t('高さを狭める')}</MenuItem>
           <MenuItem onClick={pane.toggleMaximize}>{paneAction('maximize', pane.maximized).label}</MenuItem>
-          <MenuItem onClick={pane.toggleExpand}>{pane.expanded ? '拡大表示を戻す' : '拡大表示（75%）'}</MenuItem>
-          <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={pane.toggleFloat}>{pane.floating ? '分割の配置に戻す' : '自由に動かせる配置にする'}</MenuItem>
-          {pane.pinned ? <MenuItem disabled secondaryContent={PIN_TABS_REASON}>{paneAction('tabs').label}</MenuItem> : pane.peers.length > 0 ? (
+          <MenuItem onClick={pane.toggleExpand}>{pane.expanded ? t('拡大表示を戻す') : t('拡大表示（75%）')}</MenuItem>
+          <MenuItem disabled={pane.pinned} secondaryContent={pinNote} onClick={pane.toggleFloat}>{pane.floating ? t('分割の配置に戻す') : t('自由に動かせる配置にする')}</MenuItem>
+          {pane.pinned ? <MenuItem disabled secondaryContent={t(PIN_TABS_REASON)}>{paneAction('tabs').label}</MenuItem> : pane.peers.length > 0 ? (
             <Menu>
               <MenuTrigger disableButtonEnhancement>
-                <MenuItem>タブにまとめる</MenuItem>
+                <MenuItem>{t('タブにまとめる')}</MenuItem>
               </MenuTrigger>
               <MenuPopover>
                 <MenuList>
@@ -149,16 +152,16 @@ export function ComponentMenu({ pane, title, open, onOpenChange, onShowTier }: {
           <MenuItem onClick={pane.hide}>{paneAction('hide').label}</MenuItem>
           {/* 情報の階層（主役→補助→詳細）の確認と変更（FR-244）。階層の違いは名前（文字）で示す */}
           <MenuDivider />
-          <MenuItem onClick={onShowTier}>情報の階層</MenuItem>
-          {TIERS.map((t) => (
-            <MenuItemRadio key={t} name="tier" value={t}>{TIER_LABEL[t]}</MenuItemRadio>
+          <MenuItem onClick={onShowTier}>{t('情報の階層')}</MenuItem>
+          {TIERS.map((tier) => (
+            <MenuItemRadio key={tier} name="tier" value={tier}>{t(TIER_LABEL[tier])}</MenuItemRadio>
           ))}
-          {pane.tierOverridden ? <MenuItem onClick={() => pane.setTier(null)}>階層を既定に戻す</MenuItem> : null}
+          {pane.tierOverridden ? <MenuItem onClick={() => pane.setTier(null)}>{t('階層を既定に戻す')}</MenuItem> : null}
           {/* 自動配置（FR-243）。ドラッグなしで、実行・停止・取消ができる（NFR-A11Y-004） */}
           <MenuDivider />
-          <MenuItem onClick={pane.autoRun}>自動配置を実行</MenuItem>
-          <MenuItem disabled={!pane.autoOn} onClick={pane.autoStop}>自動配置を停止</MenuItem>
-          <MenuItem disabled={!pane.canUndoAuto} onClick={pane.autoUndo}>自動配置を取り消す</MenuItem>
+          <MenuItem onClick={pane.autoRun}>{t('自動配置を実行')}</MenuItem>
+          <MenuItem disabled={!pane.autoOn} onClick={pane.autoStop}>{t('自動配置を停止')}</MenuItem>
+          <MenuItem disabled={!pane.canUndoAuto} onClick={pane.autoUndo}>{t('自動配置を取り消す')}</MenuItem>
           <MenuDivider />
           {/* ビューの切替（FR-217・FR-218）。見出しのボタンが隠れるときも、ここから操作できる */}
           <ComponentViewSubmenu paneKey={pane.key} />
@@ -175,10 +178,11 @@ export function ComponentMenu({ pane, title, open, onOpenChange, onShowTier }: {
  */
 function ActionButton({ action, on = false, pressed, onClick, disabledReason }: { action: PaneActionId; on?: boolean; pressed?: boolean; onClick?: () => void; disabledReason?: string }) {
   const s = useActionStyles();
+  const t = useT();
   const v = paneAction(action, on);
   const Icon = v.Icon;
   return (
-    <Tooltip content={disabledReason ? `${v.label}（${disabledReason}）` : v.label} relationship="label" withArrow>
+    <Tooltip content={disabledReason ? t('{label}（{reason}）', { label: v.label, reason: t(disabledReason) }) : v.label} relationship="label" withArrow>
       <Button
         className={s.icon}
         appearance="subtle"
@@ -200,6 +204,7 @@ function ActionButton({ action, on = false, pressed, onClick, disabledReason }: 
  */
 export function ComponentActions({ pane, title, active, narrow, menu }: { pane: PaneInfo; title: string; active: boolean; narrow: boolean; menu?: { open: boolean; onOpenChange: (open: boolean) => void; onShowTier: () => void } }) {
   const s = useActionStyles();
+  useT(); // 言語の切替で、操作の名前（paneAction）を描き直す
   // アイコンは常に描き、フォーカスのないときは隠す。隠している間は押せず、Tab でも止まらない。
   // 広いときは visibility: hidden で場所を残す（フォーカスが入った瞬間に見出しの折り返しが変わり、押そうとしたボタンが動いてクリックが外れるのを防ぐ）。狭いときは display: none。
   // フォーカスが入ると現れ、操作できる（FR-150）。最小化中は復元のアイコンだけを、フォーカスに関わらず出す

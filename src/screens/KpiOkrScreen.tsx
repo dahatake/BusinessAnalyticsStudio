@@ -2,6 +2,7 @@
 // 状態は色だけで示さず、アイコンと文字（達成・進行中・未着手・算出できない）を併記する。未定義の Project は「未設定」と定義への案内を出す。
 // 定義は編集モード（FR-047）のときだけ「OKR を定義」から行う。
 import { useMemo, useState } from 'react';
+import { tr, useT } from '../i18n';
 import {
   Badge, Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Input, MessageBar, MessageBarBody, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, tokens,
 } from '@fluentui/react-components';
@@ -19,6 +20,7 @@ import { achievement, achievementState, achievementText, emptyKeyResult, toDraft
 import { useEditStore } from '../store/edit';
 import { useCurrentOkr, useOkr, useOkrDialog } from '../store/okr';
 import { usePackStore } from '../store/pack';
+import { lifeOpacity, usePresenceItems } from '../motion';
 
 const useStyles = makeStyles({
   actions: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalS },
@@ -64,7 +66,7 @@ const STATE_COLOR: Record<AchievementState, 'success' | 'informative' | 'subtle'
 const num = (n: number) => n.toLocaleString('ja-JP');
 
 function formatUpdated(iso: string): string {
-  if (!iso) return '未更新';
+  if (!iso) return tr('未更新');
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   const p = (n: number) => String(n).padStart(2, '0');
@@ -72,6 +74,7 @@ function formatUpdated(iso: string): string {
 }
 
 function DefineDialog({ target, onClose }: { target: string; onClose: () => void }) {
+  const t = useT();
   const s = useStyles();
   const draft = useOkrDialog((d) => d.draft) ?? { objective: '', keyResults: [] };
   const setDraft = (fn: (d: OkrDraft) => OkrDraft) => useOkrDialog.getState().set(fn(useOkrDialog.getState().draft ?? { objective: '', keyResults: [] }));
@@ -84,25 +87,25 @@ function DefineDialog({ target, onClose }: { target: string; onClose: () => void
   };
   return (
     <Dialog open modalType="modal" onOpenChange={(_, d) => { if (!d.open) onClose(); }}>
-      <DialogSurface aria-label="OKR の定義">
+      <DialogSurface aria-label={t('OKR の定義')}>
         <DialogBody>
-          <DialogTitle>OKR の定義</DialogTitle>
+          <DialogTitle>{t('OKR の定義')}</DialogTitle>
           <DialogContent className={s.form}>
             <Field label="Objective" required>
               <Input value={draft.objective} onChange={(_, d) => setDraft((x) => ({ ...x, objective: d.value }))} />
             </Field>
             {draft.keyResults.map((r, i) => (
               <div key={i} className={s.krForm} data-testid="key-result" role="group" aria-label={`Key Result ${i + 1}`}>
-                <Field label="Key Result 名" required><Input value={r.name} onChange={(_, d) => setKr(i, { name: d.value })} /></Field>
-                <Field label="KPI 名" required><Input value={r.kpiName} onChange={(_, d) => setKr(i, { kpiName: d.value })} /></Field>
-                <Field label="単位" required><Input value={r.unit} onChange={(_, d) => setKr(i, { unit: d.value })} /></Field>
-                <Field label="基準値" required><Input type="number" value={r.baseline} onChange={(_, d) => setKr(i, { baseline: d.value })} /></Field>
-                <Field label="目標値" required><Input type="number" value={r.target} onChange={(_, d) => setKr(i, { target: d.value })} /></Field>
-                <Field label="現在値" required><Input type="number" value={r.current} onChange={(_, d) => setKr(i, { current: d.value })} /></Field>
+                <Field label={t('Key Result 名')} required><Input value={r.name} onChange={(_, d) => setKr(i, { name: d.value })} /></Field>
+                <Field label={t('KPI 名')} required><Input value={r.kpiName} onChange={(_, d) => setKr(i, { kpiName: d.value })} /></Field>
+                <Field label={t('単位')} required><Input value={r.unit} onChange={(_, d) => setKr(i, { unit: d.value })} /></Field>
+                <Field label={t('基準値')} required><Input type="number" value={r.baseline} onChange={(_, d) => setKr(i, { baseline: d.value })} /></Field>
+                <Field label={t('目標値')} required><Input type="number" value={r.target} onChange={(_, d) => setKr(i, { target: d.value })} /></Field>
+                <Field label={t('現在値')} required><Input type="number" value={r.current} onChange={(_, d) => setKr(i, { current: d.value })} /></Field>
               </div>
             ))}
             <div>
-              <Button icon={<Add24Regular />} onClick={() => setDraft((d) => ({ ...d, keyResults: [...d.keyResults, emptyKeyResult()] }))}>Key Result を追加</Button>
+              <Button icon={<Add24Regular />} onClick={() => setDraft((d) => ({ ...d, keyResults: [...d.keyResults, emptyKeyResult()] }))}>{t('Key Result を追加')}</Button>
             </div>
             {errors.length > 0 ? (
               <MessageBar intent="error" layout="multiline" role="alert">
@@ -113,8 +116,8 @@ function DefineDialog({ target, onClose }: { target: string; onClose: () => void
             ) : null}
           </DialogContent>
           <DialogActions>
-            <Button appearance="primary" onClick={save}>保存</Button>
-            <Button onClick={onClose}>キャンセル</Button>
+            <Button appearance="primary" onClick={save}>{t('保存')}</Button>
+            <Button onClick={onClose}>{t('キャンセル')}</Button>
           </DialogActions>
         </DialogBody>
       </DialogSurface>
@@ -123,6 +126,7 @@ function DefineDialog({ target, onClose }: { target: string; onClose: () => void
 }
 
 function KpiOkrScreen() {
+  const t = useT();
   const s = useStyles();
   const ready = usePackStore((st) => st.state.status === 'ready');
   const editMode = useEditStore((st) => st.editMode);
@@ -134,37 +138,44 @@ function KpiOkrScreen() {
   const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
   const krs = useMemo(() => (okr?.objectives ?? []).flatMap((o, oi) => o.keyResults.map((r, ri) => ({ id: `okr-${oi + 1}-${ri + 1}`, oi, ri, n: o.keyResults.length, objective: o.objective, r }))), [okr]);
   usePublishViewItems('kpi-okr', useMemo(() => krs.map((k) => k.id), [krs]));
+  // 出入り・遷移（FR-070 AC-086）: Key Result は同じ ID のまま、追加は現れ、削除は薄れて消え、現在値は中間値を経て最新へ収束する
+  const krPresence = usePresenceItems(krs, (k) => k.id, (k) => [k.r.kpi.current]);
+  const tweenedCurrent = useMemo(() => new Map(krPresence.filter((p) => !p.exiting).map((p) => [p.id, p.vec[0] ?? p.item.r.kpi.current])), [krPresence]);
   const objCount = okr?.objectives.length ?? 0;
   const items3d = useMemo<Item3D[]>(() => krs.map((k) => {
     const a = achievement(k.r.kpi);
     const v = a === null ? 0 : Math.min(1, Math.max(0, a));
-    return { id: k.id, label: `${k.r.name}（${achievementText(k.r.kpi)}）`, group: k.objective, x: spread(k.oi, objCount), z: spread(k.ri, k.n), y: v, size: v };
+    return { id: k.id, label: `${k.r.name}（${achievementText(k.r.kpi)}）`, value: v * 100, valueText: a === null ? undefined : (n: number) => `${k.r.name}（${Math.round(n)}%）`, group: k.objective, x: spread(k.oi, objCount), z: spread(k.ri, k.n), y: v, size: v };
   }), [krs, objCount]);
   const links3d = useMemo<Link3D[]>(() => krs.filter((k) => k.ri > 0).map((k) => ({ from: `okr-${k.oi + 1}-${k.ri}`, to: k.id })), [krs]);
   // Graph（FR-238）: Objective と Key Result をノードに、Key Result → Objective を「達成する」の向き付きのエッジにする（Key Result は 2D・3D と同じ項目・同じ件数）
   const graphNodes = useMemo<GraphNodeIn[]>(() => [
     ...(okr?.objectives ?? []).map((o, oi) => ({ id: `okr-obj-${oi + 1}`, name: o.objective, kind: 'Objective' })),
-    ...krs.map((k) => ({ id: k.id, name: k.r.name, kind: 'Key Result', note: `${k.r.kpi.name} ${achievementText(k.r.kpi)}` })),
-  ], [okr, krs]);
-  const graphEdges = useMemo<GraphEdgeIn[]>(() => krs.map((k) => ({ id: `${k.id}>obj`, from: k.id, to: `okr-obj-${k.oi + 1}`, label: '達成する', meaning: 'achieves' })), [krs]);
-  if (!ready) return <LoadingView label="KPI/OKR を読み込み中" />;
+    ...krs.map((k) => {
+      // 現在値は中間値を経て最新へ収束する（FR-070 AC-086）。停止中・動きの軽減中は即時（最新値）
+      const cur = tweenedCurrent.get(k.id) ?? k.r.kpi.current;
+      return { id: k.id, name: k.r.name, kind: 'Key Result', note: `${k.r.kpi.name} ${achievementText({ ...k.r.kpi, current: cur })}` };
+    }),
+  ], [okr, krs, tweenedCurrent]);
+  const graphEdges = useMemo<GraphEdgeIn[]>(() => krs.map((k) => ({ id: `${k.id}>obj`, from: k.id, to: `okr-obj-${k.oi + 1}`, label: t('達成する'), meaning: 'achieves' })), [krs]);
+  if (!ready) return <LoadingView label={t('KPI/OKR を読み込み中')} />;
   return (
-    <Panel testId="component-kpi-okr" title="KPI/OKR" description="議論の目的と成果を、Objective・Key Result・KPI の数値で共有します。">
+    <Panel testId="component-kpi-okr" title="KPI/OKR" description={t('議論の目的と成果を、Objective・Key Result・KPI の数値で共有します。')}>
       <div className={s.actions}>
-        <Button appearance="primary" className={s.define} disabled={!editMode} onClick={() => useOkrDialog.getState().show(toDraft(okr?.objectives[0]))}>OKR を定義</Button>
-        {!editMode ? <Text size={200}>定義と現在値の更新は、編集モードを ON にして行います。</Text> : null}
-        <Text size={200} data-testid="okr-updated">最終更新日時: {okr ? formatUpdated(okr.updatedAt) : '未更新'}</Text>
+        <Button appearance="primary" className={s.define} disabled={!editMode} onClick={() => useOkrDialog.getState().show(toDraft(okr?.objectives[0]))}>{t('OKR を定義')}</Button>
+        {!editMode ? <Text size={200}>{t('定義と現在値の更新は、編集モードを ON にして行います。')}</Text> : null}
+        <Text size={200} data-testid="okr-updated">{t('最終更新日時:')} {okr ? formatUpdated(okr.updatedAt) : t('未更新')}</Text>
       </div>
       {!okr ? (
         <div data-testid="okr-unset" role="status">
-          <Text weight="semibold" block>未設定</Text>
-          <Text block>この作業先には KPI と OKR がありません。編集モードを ON にして「OKR を定義」から、Objective・Key Result・KPI を設定してください。</Text>
+          <Text weight="semibold" block>{t('未設定')}</Text>
+          <Text block>{t('この作業先には KPI と OKR がありません。編集モードを ON にして「OKR を定義」から、Objective・Key Result・KPI を設定してください。')}</Text>
         </div>
       ) : mode === 'graph' ? (
         <>
           <GraphSurface origin="kpi-okr" label="KPI/OKR" nodes={graphNodes} edges={graphEdges} />
           <GraphAlt
-            origin="kpi-okr" label="KPI/OKR" nodes={graphNodes.map((n) => ({ id: n.id, name: n.name, kind: n.kind, values: [n.note ?? '—'] }))} columns={['KPI と達成度']}
+            origin="kpi-okr" label="KPI/OKR" nodes={graphNodes.map((n) => ({ id: n.id, name: n.name, kind: n.kind, values: [n.note ?? '—'] }))} columns={[t('KPI と達成度')]}
             relations={graphEdges.map((e) => ({ ...e }))}
           />
         </>
@@ -172,11 +183,11 @@ function KpiOkrScreen() {
         <>
           <div><ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} /></div>
           {asTable ? (
-            <Table aria-label="KPI/OKR の値" size="small">
+            <Table aria-label={t('KPI/OKR の値')} size="small">
               <TableHeader>
                 <TableRow>
                   <TableHeaderCell>Objective</TableHeaderCell><TableHeaderCell>Key Result</TableHeaderCell><TableHeaderCell>KPI</TableHeaderCell>
-                  <TableHeaderCell>現在値</TableHeaderCell><TableHeaderCell>目標値</TableHeaderCell><TableHeaderCell>達成度</TableHeaderCell>
+                  <TableHeaderCell>{t('現在値')}</TableHeaderCell><TableHeaderCell>{t('目標値')}</TableHeaderCell><TableHeaderCell>{t('達成度')}</TableHeaderCell>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -184,38 +195,44 @@ function KpiOkrScreen() {
                   <TableRow key={k.id} data-kr-id={k.id}>
                     <TableCell>{k.objective}</TableCell><TableCell>{k.r.name}</TableCell><TableCell>{k.r.kpi.name}</TableCell>
                     <TableCell>{num(k.r.kpi.current)} {k.r.kpi.unit}</TableCell><TableCell>{num(k.r.kpi.target)} {k.r.kpi.unit}</TableCell>
-                    <TableCell>{achievementText(k.r.kpi)}（{achievementState(k.r.kpi)}）</TableCell>
+                    <TableCell>{achievementText(k.r.kpi)}（{t(achievementState(k.r.kpi))}）</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           ) : (
             <Items3DSurface
-              viewKey="kpi-okr" origin="kpi-okr" label="KPI/OKR の Key Result" items={items3d} links={links3d} axes={{ x: 'Objective', y: '達成度', z: 'Key Result' }}
+              viewKey="kpi-okr" origin="kpi-okr" label={t('KPI/OKR の Key Result')} items={items3d} links={links3d} axes={{ x: 'Objective', y: t('達成度'), z: 'Key Result' }}
               selected={picked}
               onSelect={(id, additive) => setPicked((p) => (additive ? new Set([...p, id]) : new Set([id])))}
             />
           )}
         </>
       ) : (
-        okr.objectives.map((o, oi) => (
-          <section key={oi} className={s.objective} aria-label={`Objective ${o.objective}`}>
-            <Text as="h3" weight="semibold" size={400}>Objective: {o.objective}</Text>
+        [...krPresence.reduce((m, p) => {
+          const g = m.get(p.item.oi) ?? { objective: p.item.objective, entries: [] as typeof krPresence };
+          g.entries.push(p); m.set(p.item.oi, g); return m;
+        }, new Map<number, { objective: string; entries: typeof krPresence }>()).entries()].sort((a, b) => a[0] - b[0]).map(([oi, g]) => (
+          <section key={oi} className={s.objective} aria-label={`Objective ${g.objective}`}>
+            <Text as="h3" weight="semibold" size={400}>Objective: {g.objective}</Text>
             <ul className={s.list}>
-              {o.keyResults.map((r, ri) => {
+              {g.entries.map(({ item: k, vec, life, exiting }) => {
+                const r = k.r;
                 const st = achievementState(r.kpi);
+                const cur = exiting ? r.kpi.current : (vec[0] ?? r.kpi.current);
                 return (
-                  <li key={ri} className={s.kr} data-testid="key-result-view">
+                  <li key={k.id} className={s.kr} data-testid="key-result-view" data-entity-id={exiting ? undefined : k.id} aria-hidden={exiting || undefined}
+                    style={{ opacity: lifeOpacity(life), pointerEvents: exiting ? 'none' : undefined }}>
                     <div><Text size={200} block>Key Result</Text><Text weight="semibold">{r.name}</Text></div>
                     <div><Text size={200} block>KPI</Text><Text>{r.kpi.name}</Text></div>
-                    <div><Text size={200} block>現在値</Text><Text className={s.value}>{num(r.kpi.current)} {r.kpi.unit}</Text></div>
-                    <div><Text size={200} block>目標値</Text><Text className={s.value}>{num(r.kpi.target)} {r.kpi.unit}</Text></div>
+                    <div><Text size={200} block>{t('現在値')}</Text><Text className={s.value} data-latest={r.kpi.current}>{num(Math.round(cur * 100) / 100)} {r.kpi.unit}</Text></div>
+                    <div><Text size={200} block>{t('目標値')}</Text><Text className={s.value}>{num(r.kpi.target)} {r.kpi.unit}</Text></div>
                     <div>
-                      <Text size={200} block>達成度</Text>
+                      <Text size={200} block>{t('達成度')}</Text>
                       <span className={s.state}>
                         {STATE_ICON[st]}
-                        <Text weight="semibold" className={s.value} data-testid="kpi-achievement">{achievementText(r.kpi)}</Text>
-                        <Badge appearance="tint" color={STATE_COLOR[st]} data-testid="kpi-state">{st}</Badge>
+                        <Text weight="semibold" className={s.value} data-testid="kpi-achievement">{achievementText({ ...r.kpi, current: cur })}</Text>
+                        <Badge appearance="tint" color={STATE_COLOR[st]} data-testid="kpi-state">{t(st)}</Badge>
                       </span>
                     </div>
                   </li>

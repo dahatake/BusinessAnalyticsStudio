@@ -3,6 +3,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { FluentProvider, webLightTheme } from '@fluentui/react-components';
+import userEvent from '@testing-library/user-event';
 import type { ReactNode } from 'react';
 import { ProjectsPanel } from '../../src/projects/ProjectsPanel';
 import { menuGroups } from '../../src/projects/workTarget';
@@ -29,7 +30,7 @@ beforeEach(() => {
   (globalThis as { ResizeObserver?: unknown }).ResizeObserver ??= class { observe() {} unobserve() {} disconnect() {} };
   Element.prototype.scrollIntoView ??= vi.fn();
 });
-afterEach(() => cleanup());
+afterEach(() => { cleanup(); vi.restoreAllMocks(); });
 
 async function openMenu() {
   render(wrap(<ProjectsPanel />));
@@ -49,45 +50,120 @@ describe('FR-148 作業先メニュー', () => {
   });
 
   // FR-148 AC-251 AC-253: 一覧・現在の作業先・キーボード
-  it('FR-148 AC-251 AC-253 デモと全 Project が企業名・Project 名で並び、現在の作業先が checked。選ぶと表示が変わる', async () => {
-    company('合成株式会社A', ['業務改善 2026', '在庫最適化']);
+  it('FR-148 AC-251 AC-253 FR-226 AC-525 選択企業だけの Project が並び、企業の選択では現在先を変えず Project 確定で変更する', async () => {
+    const [a1] = company('合成株式会社A', ['業務改善 2026', '在庫最適化']);
     const [b2] = company('合成株式会社B', ['需要予測', '品質改善']).slice(1);
+    st().open(a1 ?? null);
     await openMenu();
     fireEvent.click(screen.getByRole('button', { name: '作業先' })); // 作業先の選択画面を開く（起動直後はメイン画面。FR-144 AC-398）
     const dlg = await screen.findByRole('dialog', { name: '作業先の選択' });
-    fireEvent.click(within(dlg).getByRole('option', { name: /デモ/ }));
+    fireEvent.click(within(dlg).getByRole('option', { name: /業務改善 2026/ }));
     await waitFor(() => expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull());
-    const trigger = screen.getByTestId('work-target-menu');
-    expect(trigger.textContent).toBe('デモ');
-    expect(trigger.getAttribute('aria-label')).toContain('デモ');
-    fireEvent.click(trigger);
-    const list = await screen.findByRole('menu', { name: '作業先' });
-    expect(within(list).getAllByRole('menuitemradio').length).toBe(5);
+    const display = screen.getByTestId('work-target-display');
+    const trigger = within(display).getByTestId('work-target-menu');
+    const companyButton = within(display).getByTestId('current-company-menu');
+    expect(companyButton.textContent).toBe('合成株式会社A');
+    expect(trigger.textContent).toContain('業務改善 2026');
+    expect(display.getAttribute('aria-label')).toContain('合成株式会社A - 業務改善 2026');
+    // 企業名のボタン: 現在の企業の Project だけを一覧する
+    fireEvent.click(companyButton);
+    const list = await screen.findByRole('menu', { name: '同じ企業の Project' });
+    expect(within(list).getAllByRole('menuitemradio').length).toBe(2);
     expect(within(list).getAllByRole('menuitemradio').filter((i) => i.getAttribute('aria-checked') === 'true').length).toBe(1);
-    expect(within(list).getByRole('menuitemradio', { name: /デモ/ }).getAttribute('aria-checked')).toBe('true');
+    expect(within(list).getByRole('menuitemradio', { name: /合成株式会社A.*業務改善 2026/ }).getAttribute('aria-checked')).toBe('true');
+    expect(within(list).getByRole('button', { name: '合成株式会社A' }).getAttribute('aria-pressed')).toBe('true');
+    expect(within(list).queryByRole('menuitemradio', { name: /合成株式会社B/ })).toBeNull();
+    fireEvent.click(within(list).getByRole('button', { name: '合成株式会社B' }));
+    expect(within(list).getByRole('button', { name: '合成株式会社B' }).getAttribute('aria-pressed')).toBe('true');
+    expect(within(list).getByRole('button', { name: '合成株式会社A' }).getAttribute('aria-pressed')).toBe('false');
+    expect(list.getAttribute('aria-describedby')).toBeTruthy();
+    expect(document.getElementById(list.getAttribute('aria-describedby')!)?.textContent).toContain('合成株式会社B');
+    expect(within(list).getByRole('group', { name: '合成株式会社B の Project' })).toBeTruthy();
+    expect(within(list).queryByRole('menuitemradio', { name: /合成株式会社A/ })).toBeNull();
+    expect(st().openId).toBe(a1); // 企業の選択だけでは現在先を変えない
+    expect(trigger.textContent).toContain('業務改善 2026');
     fireEvent.click(within(list).getByRole('menuitemradio', { name: /合成株式会社B.*品質改善/ }));
     await waitFor(() => expect(st().openId).toBe(b2));
-    expect(screen.getByTestId('work-target-menu').textContent).toBe('合成株式会社B - 品質改善'); // FR-226 AC-525
+    expect(screen.getByTestId('current-company-menu').textContent).toBe('合成株式会社B'); // FR-226 AC-525
+    expect(screen.getByTestId('work-target-menu').textContent).toContain('品質改善');
+    expect(screen.getByTestId('work-target-display').getAttribute('aria-label')).toContain('合成株式会社B - 品質改善');
+    const head = screen.getByTestId('projects-head');
+    // 非可視の現在先通知は残し、上部の可視の企業名・Project 名は最上段の表示領域だけにする。
+    expect(within(head).getByRole('status').getAttribute('aria-label')).toContain('合成株式会社B - 品質改善');
+    expect(within(head).queryByText(/開いている Project/)).toBeNull();
+    expect(within(head).getAllByText(/品質改善/).filter((el) => !el.closest('[role="status"]') && !el.closest('[data-testid="work-target-display"]')))
+      .toEqual([]);
+    // Project 名のボタン: 全作業先メニュー（デモと全企業の Project）
+    fireEvent.click(screen.getByTestId('work-target-menu'));
+    const all = await screen.findByRole('menu', { name: '作業先' });
+    expect(within(all).getAllByRole('menuitemradio').length).toBe(5);
+    expect(within(all).getByRole('menuitemradio', { name: /デモ/ })).toBeTruthy();
+    expect(within(all).getByRole('menuitemradio', { name: /合成株式会社A.*在庫最適化/ })).toBeTruthy();
   });
 
   // FR-148 AC-253: キーボードだけで開き、選び、確定し、Esc で閉じる
-  it('FR-148 AC-253 キーボードだけで開き、矢印で選び、Enter で確定、Esc で閉じられる', async () => {
+  it('FR-148 AC-251 AC-253 FR-226 AC-525 キーボードだけで企業選択と Project 確定ができ、Esc で閉じると現在企業に戻る', async () => {
+    // jsdom はレイアウトを持たない。Tabster が可視要素を判定できるよう、
+    // display:none を保った offsetParent と body の領域だけを補う（操作・focus はモックしない）。
+    vi.spyOn(HTMLElement.prototype, 'offsetParent', 'get').mockImplementation(function (this: HTMLElement) {
+      for (let el: HTMLElement | null = this; el; el = el.parentElement) {
+        if (el.hidden || getComputedStyle(el).display === 'none') return null;
+      }
+      return this.parentElement;
+    });
+    vi.spyOn(document.body, 'getBoundingClientRect').mockReturnValue(new DOMRect(0, 0, 1280, 900));
+    const user = userEvent.setup();
     const [p1] = company('合成株式会社A', ['業務改善 2026', '在庫最適化']);
+    const [b1] = company('合成株式会社B', ['需要予測', '品質改善']);
     st().open(p1 ?? null);
     await openMenu();
     fireEvent.click(screen.getByRole('button', { name: '作業先' })); // 作業先の選択画面を開く（起動直後はメイン画面。FR-144 AC-398）
     const dlg = await screen.findByRole('dialog', { name: '作業先の選択' });
     fireEvent.click(within(dlg).getAllByRole('option')[0]!);
     await waitFor(() => expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull());
+    const companyBtn = screen.getByTestId('current-company-menu');
     const trigger = screen.getByTestId('work-target-menu');
-    expect(trigger.tagName).toBe('BUTTON'); // Tab で到達でき、Enter・Space で開ける標準のボタン
+    expect(companyBtn.tagName).toBe('BUTTON'); // Tab で到達でき、Enter・Space で開ける標準のボタン
+    expect(trigger.tagName).toBe('BUTTON');
+    const tabTo = async (target: HTMLElement) => {
+      for (let i = 0; i < 12 && document.activeElement !== target; i++) await user.tab();
+      expect(document.activeElement).toBe(target);
+    };
+    // 企業名のボタン: Enter で開き、企業を選び（一覧だけ変わる）、Project を確定して切り替える
+    act(() => companyBtn.focus());
+    await user.keyboard('{Enter}');
+    const list = await screen.findByRole('menu', { name: '同じ企業の Project' });
+    expect(within(list).getByRole('menuitemradio', { name: /合成株式会社A.*業務改善/ }).getAttribute('aria-checked')).toBe('true');
+    await tabTo(within(list).getByRole('button', { name: '合成株式会社B' }));
+    await user.keyboard('{Enter}');
+    expect(st().openId).toBe(p1);
+    expect(trigger.textContent).toContain('業務改善 2026');
+    expect(within(list).queryByRole('menuitemradio', { name: /合成株式会社A/ })).toBeNull();
+    expect(document.getElementById(list.getAttribute('aria-describedby')!)?.textContent).toContain('合成株式会社B');
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('menu', { name: '同じ企業の Project' })).toBeNull());
+    expect(document.activeElement).toBe(companyBtn);
+    await user.keyboard('{ArrowDown}');
+    const reopened = await screen.findByRole('menu', { name: '同じ企業の Project' });
+    expect(within(reopened).getByRole('menuitemradio', { name: /合成株式会社A.*業務改善/ }).getAttribute('aria-checked')).toBe('true'); // 現在企業に戻る
+    await tabTo(within(reopened).getByRole('button', { name: '合成株式会社B' }));
+    await user.keyboard(' ');
+    await tabTo(within(reopened).getByRole('menuitemradio', { name: /合成株式会社B.*需要予測/ }));
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(st().openId).toBe(b1));
+    expect(screen.queryByRole('menu', { name: '同じ企業の Project' })).toBeNull();
+    expect(screen.getByTestId('current-company-menu').textContent).toBe('合成株式会社B');
+    expect(trigger.textContent).toContain('需要予測');
+    // Project 名のボタンも Tab・Enter で到達でき、全作業先メニューから同じ企業内の切替とデモへの移動もできる。
     act(() => trigger.focus());
-    fireEvent.keyDown(trigger, { key: 'Enter' });
-    fireEvent.click(trigger);
-    const list = await screen.findByRole('menu', { name: '作業先' });
-    fireEvent.keyDown(list, { key: 'Escape' });
-    await waitFor(() => expect(screen.queryByRole('menu', { name: '作業先' })).toBeNull());
-    expect(screen.getByTestId('work-target-menu').textContent).toContain('業務改善 2026');
+    await user.keyboard('{Enter}');
+    await screen.findByRole('menu', { name: '作業先' });
+    await user.click(await screen.findByRole('menuitemradio', { name: /合成株式会社B.*品質改善/ }));
+    expect(trigger.textContent).toContain('品質改善');
+    await user.click(trigger);
+    await user.click(await screen.findByRole('menuitemradio', { name: /デモ/ }));
+    expect(trigger.textContent).toBe('デモ');
+    expect(screen.queryByTestId('current-company-menu')).toBeNull();
   });
 
   // FR-148 AC-252 AC-210 AC-209
@@ -101,7 +177,8 @@ describe('FR-148 作業先メニュー', () => {
     const dlg = await screen.findByRole('dialog', { name: '作業先の選択' });
     fireEvent.click(within(dlg).getByRole('option', { name: /業務改善 2026/ }));
     await waitFor(() => expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull());
-    fireEvent.click(screen.getByTestId('work-target-menu'));
+    fireEvent.click(screen.getByTestId('current-company-menu'));
+    fireEvent.click(await screen.findByRole('button', { name: '合成株式会社B' }));
     fireEvent.click(await screen.findByRole('menuitemradio', { name: /合成株式会社B.*需要予測/ }));
     await screen.findByRole('alertdialog', { name: '未保存の入力があります' }, { timeout: 5000 });
     expect(st().openId).toBe(a1);
@@ -109,7 +186,8 @@ describe('FR-148 作業先メニュー', () => {
     await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog', { name: '未保存の入力があります' })).getByRole('button', { name: 'キャンセル' })), { timeout: 5000 });
     expect(st().openId).toBe(a1);
     expect(useAnalyses.getState().drafts[a1 ?? '']?.param).toBe('9'); // 失われない
-    fireEvent.click(screen.getByTestId('work-target-menu'));
+    fireEvent.click(screen.getByTestId('current-company-menu'));
+    fireEvent.click(await screen.findByRole('button', { name: '合成株式会社B' }));
     fireEvent.click(await screen.findByRole('menuitemradio', { name: /合成株式会社B.*需要予測/ }));
     await waitFor(() => fireEvent.click(within(screen.getByRole('alertdialog', { name: '未保存の入力があります' })).getByRole('button', { name: '切り替える' })), { timeout: 5000 });
     await waitFor(() => expect(st().openId).toBe(b1));
@@ -120,14 +198,24 @@ describe('FR-148 作業先メニュー', () => {
   // FR-148 AC-252: 0 件の企業
   it('FR-148 AC-252 Project が 0 件の企業は、Project がないことと作成への案内が示され、押すと作成の dialog が開く', async () => {
     company('合成株式会社A', []);
+    company('合成株式会社B', ['需要予測']);
     await openMenu();
     fireEvent.click(screen.getByRole('button', { name: '作業先' })); // 作業先の選択画面を開く（起動直後はメイン画面。FR-144 AC-398）
     const dlg = await screen.findByRole('dialog', { name: '作業先の選択' });
-    fireEvent.click(within(dlg).getByRole('option', { name: /デモ/ }));
+    fireEvent.click(within(dlg).getByRole('option', { name: /需要予測/ }));
     await waitFor(() => expect(screen.queryByRole('dialog', { name: '作業先の選択' })).toBeNull());
-    fireEvent.click(screen.getByTestId('work-target-menu'));
+    fireEvent.click(screen.getByTestId('current-company-menu'));
+    expect(await screen.findByRole('menuitemradio', { name: /合成株式会社B.*需要予測/ })).toBeTruthy();
+    expect(screen.queryByRole('menuitem', { name: /Project がありません/ })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '合成株式会社A' }));
+    expect(screen.queryByRole('menuitemradio', { name: /合成株式会社B/ })).toBeNull();
     const guide = await screen.findByRole('menuitem', { name: /Project がありません/ });
     fireEvent.click(guide);
-    expect(await screen.findByRole('dialog', { name: 'Project を作成' })).toBeTruthy();
+    const create = await screen.findByRole('dialog', { name: 'Project を作成' });
+    fireEvent.change(within(create).getByRole('textbox', { name: 'Project 名' }), { target: { value: '新しい分析' } });
+    fireEvent.click(within(create).getByRole('button', { name: '作成' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Project を作成' })).toBeNull());
+    const added = st().projects.find((p) => p.name === '新しい分析');
+    expect(added?.companyId).toBe(st().companies.find((c) => c.name === '合成株式会社A')?.id);
   });
 });

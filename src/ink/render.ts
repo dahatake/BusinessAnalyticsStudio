@@ -1,6 +1,7 @@
 // ボードの Canvas 描画。NFR-PERF-004（1 フレーム 16ms 以内を目標）のため、画面外のストロークは描かず、
 // 小さく見えるストロークは 1 本の直線に簡略化して、色ごとにまとめて描く。
 import type { Board, BoardItem, Bounds, Stroke, ViewState } from './model';
+import { tr } from '../i18n';
 import { strokeOutline } from './outline';
 import { FRAME_TITLE, connectorLine } from '../whiteboard/ops';
 
@@ -195,7 +196,7 @@ export function drawItem(ctx: CanvasRenderingContext2D, item: BoardItem, fg: str
       ctx.setLineDash(item.author === 'ai' ? [8, 4] : []);
       ctx.stroke();
       ctx.restore();
-      const head = [item.label ?? '', item.author === 'ai' ? 'AI 生成' : ''].filter(Boolean).join('  ・');
+      const head = [tr(item.label ?? ''), item.author === 'ai' ? tr('AI 生成') : ''].filter(Boolean).join('  ・');
       if (head) {
         ctx.save();
         ctx.beginPath();

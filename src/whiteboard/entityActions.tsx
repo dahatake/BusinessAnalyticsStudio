@@ -12,8 +12,9 @@ import { getEntityGraph } from '../selection/hooks';
 import { useDiscussionStore } from '../store/discussion';
 import { usePackStore } from '../store/pack';
 import { CARD_H, placeCard } from './ops';
+import { tr, useT } from '../i18n';
 
-/** いま開いている議題の ID（なければ null）。ホワイトボードは議題ごとにボードを持つ。 */
+/** いま開いている論点の ID（なければ null）。ホワイトボードは論点ごとにボードを持つ。 */
 export function currentTopicId(): string | null {
   const st = usePackStore.getState().state;
   if (st.status !== 'ready') return null;
@@ -24,19 +25,19 @@ export function currentTopicId(): string | null {
 export interface PlaceResult { ok: boolean; message: string }
 
 /**
- * 元データ entityId のカードを、いまの議題のボードに置く。at はカードの中心（ワールド座標）。なければ表示範囲の中央。
+ * 元データ entityId のカードを、いまの論点のボードに置く。at はカードの中心（ワールド座標）。なければ表示範囲の中央。
  * すでに同じ元データのカードがあれば、増やさずにそのことを返す。
  */
 export function placeEntityOnBoard(entityId: string, at?: { x: number; y: number }): PlaceResult {
   const node = getEntityGraph()?.node(entityId);
-  if (!node) return { ok: false, message: 'データが見つからないため、ボードに置けません。' };
+  if (!node) return { ok: false, message: tr('データが見つからないため、ボードに置けません。') };
   const ink = useInk.getState();
   ink.ensureTopicBoard(currentTopicId());
   const boardId = useInk.getState().activeBoardId;
   const board = useInk.getState().boards.find((b) => b.id === boardId);
-  if (!board) return { ok: false, message: 'ボードがありません。' };
+  if (!board) return { ok: false, message: tr('ボードがありません。') };
   const existing = board.items.some((i) => i.type === 'card' && i.sourceEntityId === entityId);
-  if (existing) return { ok: true, message: `「${node.label}」はすでにボードに置かれています。` };
+  if (existing) return { ok: true, message: tr('「{name}」はすでにボードに置かれています。', { name: node.label }) };
   // 表示範囲の中央に置くときは、重ならないように、置いた数だけずらす
   const n = board.items.filter((i) => i.type === 'card').length;
   const c = at ?? {
@@ -44,7 +45,7 @@ export function placeEntityOnBoard(entityId: string, at?: { x: number; y: number
     y: board.view.y + board.size.h / board.view.zoom / 2 + (n % 6) * (CARD_H / 3),
   };
   useInk.getState().updateItems(boardId, (items) => placeCard(items, { entityId, label: node.label, sub: KIND_LABELS[node.kind] }, c).items);
-  return { ok: true, message: `${KIND_LABELS[node.kind]}「${node.label}」をボードに置きました。` };
+  return { ok: true, message: tr('{kind}「{name}」をボードに置きました。', { kind: tr(KIND_LABELS[node.kind]), name: node.label }) };
 }
 
 const insideBoard = (el: Element): boolean => !!el.closest('[data-testid="board-surface"]');
@@ -55,6 +56,7 @@ interface MenuState { id: string; x: number; y: number }
 const HIDDEN: React.CSSProperties = { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap' };
 
 export function EntityBoardActions() {
+  const t = useT();
   const [menu, setMenu] = useState<MenuState | null>(null);
   const [message, setMessage] = useState('');
   const frame = useRef(0);
@@ -117,7 +119,7 @@ export function EntityBoardActions() {
       >
         <MenuPopover>
           <MenuList>
-            <MenuItem onClick={() => { if (menu) setMessage(placeEntityOnBoard(menu.id).message); setMenu(null); }}>ボードに配置</MenuItem>
+            <MenuItem onClick={() => { if (menu) setMessage(placeEntityOnBoard(menu.id).message); setMenu(null); }}>{t('ボードに配置')}</MenuItem>
           </MenuList>
         </MenuPopover>
       </Menu>

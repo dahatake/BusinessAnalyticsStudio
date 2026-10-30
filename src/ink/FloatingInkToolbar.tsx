@@ -13,12 +13,14 @@ import { effectiveLayout, useLayout } from '../store/layout';
 import { currentTopic, usePresentationStore } from '../store/presentation';
 import { useSettings } from '../store/settings';
 import { isVisible } from '../workspace/layoutModel';
+import { useT } from '../i18n';
 
 /** 操作がなければ畳むまでの時間（ミリ秒）。 */
 export const AUTO_STOW_MS = 30_000;
 
 const useStyles = makeStyles({
-  host: { position: 'fixed', top: '50%', transform: 'translateY(-50%)', zIndex: 20, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS },
+  // 下端に寄せる（中央だと、右端・左端のコンポーネントの見出し（「ビュー」など）に重なって操作を遮る）
+  host: { position: 'fixed', bottom: tokens.spacingVerticalS, zIndex: 20, display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalXS },
   left: { left: tokens.spacingHorizontalS, alignItems: 'flex-start' },
   right: { right: tokens.spacingHorizontalS, alignItems: 'flex-end' },
   panel: {
@@ -38,6 +40,7 @@ export interface FloatingInkToolbarProps {
 
 export function FloatingInkToolbar({ boardId, label = 'インクの道具', whiteboard = false }: FloatingInkToolbarProps) {
   const s = useStyles();
+  const t = useT();
   const handedness = useSettings((st) => st.handedness);
   const [stowed, setStowed] = useState(false);
   const [dim, setDim] = useState(false);
@@ -88,11 +91,11 @@ export function FloatingInkToolbar({ boardId, label = 'インクの道具', whit
       onKeyDownCapture={() => { if (!stowed) armIdle(); }}
     >
       {stowed ? (
-        <Button className={s.forcedAuto} appearance="primary" icon={<PenSparkle24Regular aria-hidden />} aria-label="ツールバーを開く" onClick={() => setStowed(false)} />
+        <Button className={s.forcedAuto} appearance="primary" icon={<PenSparkle24Regular aria-hidden />} aria-label={t('ツールバーを開く')} onClick={() => setStowed(false)} />
       ) : (
         <div className={`${s.panel} ${dim ? s.dim : ''}`}>
           <InkToolbar boardId={boardId} label={label} whiteboard={whiteboard} compact />
-          <Button size="small" appearance="subtle" icon={<Dismiss16Regular aria-hidden />} aria-label="ツールバーを格納" onClick={() => setStowed(true)} />
+          <Button size="small" appearance="subtle" icon={<Dismiss16Regular aria-hidden />} aria-label={t('ツールバーを格納')} onClick={() => setStowed(true)} />
         </div>
       )}
     </div>
@@ -105,13 +108,12 @@ export function FloatingInkToolbar({ boardId, label = 'インクの道具', whit
  */
 export function InkToolbarHost() {
   const wbVisible = useLayout((st) => isVisible(effectiveLayout(st), 'whiteboard'));
-  const canvasVisible = useLayout((st) => isVisible(effectiveLayout(st), 'canvas'));
   const presenting = usePresentationStore((st) => currentTopic(st) !== null);
   const mode = usePresentationInk((st) => st.mode);
   const activeId = useInk((st) => st.activeBoardId);
   const activeIsBoard = useInk((st) => selectBoard(st.activeBoardId)(st)?.kind === 'board');
 
-  const annotating = presenting && canvasVisible && mode !== 'off';
+  const annotating = presenting && mode !== 'off';
   if (!annotating && !(wbVisible && activeIsBoard)) return null;
   return <FloatingInkToolbar boardId={annotating ? PRESENTATION_BOARD_ID : activeId} whiteboard={!annotating} />;
 }

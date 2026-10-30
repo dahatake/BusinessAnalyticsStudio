@@ -1,7 +1,7 @@
 // 分析手法の選択と開始・パラメーター編集・ビュアー切替（FR-133〜135、NFR-A11Y-005）。
 // 結果の項目は 3 つのビュアー（表・マトリクス・グラフ）で同じ値を表示し、選択と絞り込みを共有する。
 // 図・グラフ・マトリクスでも、同じ値を表で確認できる（AC-216）。状態は文字でも示す（色だけにしない）。
-import { useEffect, useRef, useState, type KeyboardEvent, type PointerEvent as ReactPointerEvent } from 'react';
+import { useEffect, useRef, useState, type HTMLAttributes, type KeyboardEvent, type ReactNode, type PointerEvent as ReactPointerEvent } from 'react';
 import { Button, Input, MessageBar, MessageBarBody, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { registerCommands } from '../commands/registry';
 import { useAi } from '../ai/useAi';
@@ -12,6 +12,8 @@ import { analysisResult, useAnalyses, type Analysis } from '../store/analyses';
 import { useStepper } from '../store/stepper';
 import { STEPS } from '../stepper/model';
 import { METHODS, VIEWERS, filterItems, getMethod, type ResultItem, type ViewerId } from '../methods/model';
+import { tr, useT } from '../i18n';
+import { useTweenedValue } from '../motion';
 
 const useStyles = makeStyles({
   root: { display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS, padding: tokens.spacingHorizontalM, borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}` },
@@ -29,21 +31,47 @@ const useStyles = makeStyles({
   table: { borderCollapse: 'collapse', width: '100%' },
 });
 
+/** 遷移中の数値の表示（FR-070 AC-086・FR-134 AC-197）。遷移が終われば、正確な値（最新値）だけを表示する。最新値は代替表・表のビュアーでいつでも読める */
+function useShown(target: number): string {
+  const v = useTweenedValue(target);
+  return v === target ? String(target) : (Math.round(v * 10) / 10).toFixed(1);
+}
+
+/**
+ * 表の行。値が変わると行が薄い状態から最新の見た目へ戻る（遷移。FR-070 AC-086・FR-134 AC-197）。表の文字は常に最新値のまま（参照・読み上げ・コピーは遷移中も正確）。
+ */
+function ResultRow({ value, children, ...rest }: { value: number; children: ReactNode } & HTMLAttributes<HTMLTableRowElement>) {
+  const v = useTweenedValue(value);
+  const gap = Math.abs(v - value);
+  return <tr {...rest} style={gap > 0 ? { opacity: 1 - Math.min(0.5, gap * 0.1) } : undefined}>{children}</tr>;
+}
+
 function ItemBody({ item, selected }: { item: ResultItem; selected: boolean }) {
+  const t = useT();
+  const score = useShown(item.score);
+  const weight = useShown(item.weight);
+  const value = useShown(item.value);
   return (
     <>
       {selected ? <span aria-hidden="true">✓ </span> : null}
-      <span>{item.label}</span>
-      <span>（{item.category}）値 {item.score} × 重み {item.weight} = </span>
-      <strong>{item.value}</strong>
-      {selected ? <span>（選択中）</span> : null}
+      <span>{t(item.label)}</span>
+      <span>{t('（{category}）値 {score} × 重み {weight} = ', { category: t(item.category), score, weight })}</span>
+      <strong>{value}</strong>
+      {selected ? <span>{t('（選択中）')}</span> : null}
     </>
   );
+}
+
+function ChartBar({ value, max }: { value: number; max: number }) {
+  const s = useStyles();
+  const v = useTweenedValue(value);
+  return <div className={s.bar} aria-hidden="true" style={{ width: `${(v / max) * 100}%` }} />;
 }
 
 /** 結果の項目を、選択・キーボード操作つきで表示する。ビュアーはこの表現を並べ方だけ変える。 */
 function Viewer({ a, items, onSelect }: { a: Analysis; items: ResultItem[]; onSelect: (id: string) => void }) {
   const s = useStyles();
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   const m = getMethod(a.methodId);
   const tabId = items.some((i) => i.id === a.selectedId) ? a.selectedId : items[0]?.id;
@@ -63,27 +91,27 @@ function Viewer({ a, items, onSelect }: { a: Analysis; items: ResultItem[]; onSe
     'aria-selected': a.selectedId === i.id, tabIndex: tabId === i.id ? 0 : -1, onClick: () => onSelect(i.id),
   });
   const cls = (i: ResultItem) => `${s.item} ${a.selectedId === i.id ? s.selected : ''}`;
-  if (items.length === 0) return <Text role="status">条件に合う項目がありません。絞り込みを変更してください。</Text>;
+  if (items.length === 0) return <Text role="status">{t('条件に合う項目がありません。絞り込みを変更してください。')}</Text>;
   const max = Math.max(1, ...items.map((i) => i.value));
   return (
     <div ref={ref} onKeyDown={onKey}>
       {a.viewer === 'table' ? (
-        <table className={s.table} role="grid" aria-label="結果の表">
-          <thead><tr role="row"><th>項目</th><th>分類</th><th>値</th><th>重み</th><th>結果（値×重み）</th></tr></thead>
+        <table className={s.table} role="grid" aria-label={t('結果の表')}>
+          <thead><tr role="row"><th>{t('項目')}</th><th>{t('分類')}</th><th>{t('値')}</th><th>{t('重み')}</th><th>{t('結果（値×重み）')}</th></tr></thead>
           <tbody>
             {items.map((i) => (
-              <tr key={i.id} role="row" {...common(i)} className={cls(i)}>
-                <td>{a.selectedId === i.id ? '✓ ' : ''}{i.label}</td><td>{i.category}</td><td>{i.score}</td><td>{i.weight}</td><td>{i.value}</td>
-              </tr>
+              <ResultRow key={i.id} value={i.value} role="row" {...common(i)} className={cls(i)}>
+                <td>{a.selectedId === i.id ? '✓ ' : ''}{t(i.label)}</td><td>{t(i.category)}</td><td>{i.score}</td><td>{i.weight}</td><td>{i.value}</td>
+              </ResultRow>
             ))}
           </tbody>
         </table>
       ) : null}
       {a.viewer === 'matrix' ? (
-        <div className={s.matrix} role="listbox" aria-label="結果のマトリクス">
+        <div className={s.matrix} role="listbox" aria-label={t('結果のマトリクス')}>
           {m.categories.map((c) => (
-            <section key={c} className={s.cell} aria-label={c}>
-              <Text weight="semibold">{c}</Text>
+            <section key={c} className={s.cell} aria-label={t(c)}>
+              <Text weight="semibold">{t(c)}</Text>
               {items.filter((i) => i.category === c).map((i) => (
                 <div key={i.id} role="option" {...common(i)} className={cls(i)}><ItemBody item={i} selected={a.selectedId === i.id} /></div>
               ))}
@@ -92,11 +120,11 @@ function Viewer({ a, items, onSelect }: { a: Analysis; items: ResultItem[]; onSe
         </div>
       ) : null}
       {a.viewer === 'chart' ? (
-        <div role="listbox" aria-label="結果のグラフ" className={s.list}>
+        <div role="listbox" aria-label={t('結果のグラフ')} className={s.list}>
           {items.map((i) => (
             <div key={i.id} role="option" {...common(i)} className={cls(i)}>
               <ItemBody item={i} selected={a.selectedId === i.id} />
-              <div className={s.bar} aria-hidden="true" style={{ width: `${(i.value / max) * 100}%` }} />
+              <ChartBar value={i.value} max={max} />
             </div>
           ))}
         </div>
@@ -109,6 +137,7 @@ const NO_DRAFTS: Record<string, string> = {};
 
 function AnalysisView({ projectId, a, onReturn }: { projectId: string; a: Analysis; onReturn?: (from: string) => void }) {
   const s = useStyles();
+  const t = useT();
   const st = useAnalyses();
   const m = getMethod(a.methodId);
   const result = analysisResult(a);
@@ -127,13 +156,13 @@ function AnalysisView({ projectId, a, onReturn }: { projectId: string; a: Analys
   const layout = useAnalysisLayout();
   const pl = layout.screens[ANALYSIS_SCREEN] ?? DEFAULT_LAYOUT;
   useEffect(() => registerCommands(() => [
-    { id: 'analysis.layout.reset', label: '分析画面のレイアウトを既定に戻す', keywords: ['レイアウト', '分析'], run: () => useAnalysisLayout.getState().reset(ANALYSIS_SCREEN) },
-    { id: 'analysis.layout.left', label: '分析結果パネルを左へ移動', keywords: ['レイアウト', '分析'], run: () => useAnalysisLayout.getState().moveBy(ANALYSIS_SCREEN, -MOVE_STEP, 0) },
-    { id: 'analysis.layout.right', label: '分析結果パネルを右へ移動', keywords: ['レイアウト', '分析'], run: () => useAnalysisLayout.getState().moveBy(ANALYSIS_SCREEN, MOVE_STEP, 0) },
-    { id: 'analysis.layout.up', label: '分析結果パネルを上へ移動', keywords: ['レイアウト', '分析'], run: () => useAnalysisLayout.getState().moveBy(ANALYSIS_SCREEN, 0, -MOVE_STEP) },
-    { id: 'analysis.layout.down', label: '分析結果パネルを下へ移動', keywords: ['レイアウト', '分析'], run: () => useAnalysisLayout.getState().moveBy(ANALYSIS_SCREEN, 0, MOVE_STEP) },
-    { id: 'analysis.layout.wider', label: '分析結果パネルを広げる', keywords: ['レイアウト', '分析', '大きさ'], run: () => useAnalysisLayout.getState().resizeBy(ANALYSIS_SCREEN, MOVE_STEP) },
-    { id: 'analysis.layout.narrower', label: '分析結果パネルを狭める', keywords: ['レイアウト', '分析', '大きさ'], run: () => useAnalysisLayout.getState().resizeBy(ANALYSIS_SCREEN, -MOVE_STEP) },
+    { id: 'analysis.layout.reset', label: tr('分析画面のレイアウトを既定に戻す'), keywords: [tr('レイアウト'), tr('分析')], run: () => useAnalysisLayout.getState().reset(ANALYSIS_SCREEN) },
+    { id: 'analysis.layout.left', label: tr('分析結果パネルを左へ移動'), keywords: [tr('レイアウト'), tr('分析')], run: () => useAnalysisLayout.getState().moveBy(ANALYSIS_SCREEN, -MOVE_STEP, 0) },
+    { id: 'analysis.layout.right', label: tr('分析結果パネルを右へ移動'), keywords: [tr('レイアウト'), tr('分析')], run: () => useAnalysisLayout.getState().moveBy(ANALYSIS_SCREEN, MOVE_STEP, 0) },
+    { id: 'analysis.layout.up', label: tr('分析結果パネルを上へ移動'), keywords: [tr('レイアウト'), tr('分析')], run: () => useAnalysisLayout.getState().moveBy(ANALYSIS_SCREEN, 0, -MOVE_STEP) },
+    { id: 'analysis.layout.down', label: tr('分析結果パネルを下へ移動'), keywords: [tr('レイアウト'), tr('分析')], run: () => useAnalysisLayout.getState().moveBy(ANALYSIS_SCREEN, 0, MOVE_STEP) },
+    { id: 'analysis.layout.wider', label: tr('分析結果パネルを広げる'), keywords: [tr('レイアウト'), tr('分析'), tr('大きさ')], run: () => useAnalysisLayout.getState().resizeBy(ANALYSIS_SCREEN, MOVE_STEP) },
+    { id: 'analysis.layout.narrower', label: tr('分析結果パネルを狭める'), keywords: [tr('レイアウト'), tr('分析'), tr('大きさ')], run: () => useAnalysisLayout.getState().resizeBy(ANALYSIS_SCREEN, -MOVE_STEP) },
   ]), []);
   const onHandleDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return;
@@ -166,48 +195,48 @@ function AnalysisView({ projectId, a, onReturn }: { projectId: string; a: Analys
     try { setOutcome(await requestDraft(company?.aiAllowed, a, (prompt) => ask('recommend', prompt))); } finally { setBusy(false); }
   };
   return (
-    <div data-testid="analysis" className={s.root} role="region" aria-label={`分析 ${m.name}`}>
+    <div data-testid="analysis" className={s.root} role="region" aria-label={t('分析 {name}', { name: m.name })}>
       <div className={s.row}>
         <Text weight="semibold">{m.name}</Text>
-        <Text>状態: {a.status}</Text>
-        {a.from && onReturn ? <Button size="small" onClick={() => onReturn(a.from!)}>元の作業に戻る（{a.from}）</Button> : null}
-        <Button size="small" onClick={() => { st.resetParams(projectId); st.clearDrafts(projectId); setError(null); }}>既定値に戻す</Button>
+        <Text>{t('状態: {status}', { status: t(a.status) })}</Text>
+        {a.from && onReturn ? <Button size="small" onClick={() => onReturn(a.from!)}>{t('元の作業に戻る（{from}）', { from: t(a.from) })}</Button> : null}
+        <Button size="small" onClick={() => { st.resetParams(projectId); st.clearDrafts(projectId); setError(null); }}>{t('既定値に戻す')}</Button>
         {/* 結果の位置は本文のスクロールに従う。この操作のフォーカス・スクロール要求で本文を送らない（scroll-margin。位置が変わらないようにする） */}
-        <Button size="small" style={{ scrollMarginTop: '100vh', scrollMarginBottom: '100vh' }} onClick={() => layout.reset(ANALYSIS_SCREEN)}>レイアウトを既定に戻す</Button>
+        <Button size="small" style={{ scrollMarginTop: '100vh', scrollMarginBottom: '100vh' }} onClick={() => layout.reset(ANALYSIS_SCREEN)}>{t('レイアウトを既定に戻す')}</Button>
       </div>
       <Text>{m.summary}</Text>
       <div className={s.row}>
-        <div role="radiogroup" aria-label="ビュアー" className={s.row}>
+        <div role="radiogroup" aria-label={t('ビュアー')} className={s.row}>
           {VIEWERS.map((v) => (
             <label key={v.id}>
-              <input type="radio" name={`viewer-${projectId}`} checked={a.viewer === v.id} onChange={() => st.setViewer(projectId, v.id as ViewerId)} /> {v.name}
+              <input type="radio" name={`viewer-${projectId}`} checked={a.viewer === v.id} onChange={() => st.setViewer(projectId, v.id as ViewerId)} /> {t(v.name)}
             </label>
           ))}
         </div>
-        <Input type="search" aria-label="絞り込み" role="searchbox" placeholder="項目・分類で絞り込み" value={a.filter} onChange={(_, d) => st.setFilter(projectId, d.value)} />
+        <Input type="search" aria-label={t('絞り込み')} role="searchbox" placeholder={t('項目・分類で絞り込み')} value={a.filter} onChange={(_, d) => st.setFilter(projectId, d.value)} />
       </div>
-      <div data-testid="analysis-result" role="region" aria-label="分析結果" className={s.panel}
+      <div data-testid="analysis-result" role="region" aria-label={t('分析結果')} className={s.panel}
         style={{ transform: `translate(${pl.dx}px, ${pl.dy}px)`, width: pl.dw === 0 ? undefined : `calc(100% + ${pl.dw}px)` }}>
         <div data-testid="panel-handle" className={s.handle} tabIndex={0} role="group"
-          aria-label="結果パネルの見出し（ドラッグ、または矢印キーで移動、Shift＋左右矢印で大きさ、Esc で既定に戻す）"
+          aria-label={t('結果パネルの見出し（ドラッグ、または矢印キーで移動、Shift＋左右矢印で大きさ、Esc で既定に戻す）')}
           onPointerDown={onHandleDown} onKeyDown={onHandleKey}>
-          <Text weight="semibold">分析結果</Text>
+          <Text weight="semibold">{t('分析結果')}</Text>
         </div>
-        <Text block>採用した手法: {m.name}／パラメーター: {result.items.map((i) => `${i.label} ${i.score}×${i.weight}`).join('、')}</Text>
-        <Text block>分類ごとの合計: {result.totals.map((t) => `${t.category} ${t.total}`).join('、')}</Text>
+        <Text block>{t('採用した手法: {name}／パラメーター: {params}', { name: m.name, params: result.items.map((i) => `${t(i.label)} ${i.score}×${i.weight}`).join(t('、')) })}</Text>
+        <Text block>{t('分類ごとの合計: {totals}', { totals: result.totals.map((tot) => `${t(tot.category)} ${tot.total}`).join(t('、')) })}</Text>
         <Viewer a={a} items={visible} onSelect={(id) => st.select(projectId, id)} />
       </div>
-      <div data-testid="analysis-params" role="group" aria-label="パラメーター">
+      <div data-testid="analysis-params" role="group" aria-label={t('パラメーター')}>
         <div className={s.params}>
           {m.factors.map((fc) => (
             <div key={fc.id} style={{ display: 'contents' }}>
-              <Text>{fc.label}（{fc.category}）</Text>
+              <Text>{t(fc.label)}（{t(fc.category)}）</Text>
               {(['score', 'weight'] as const).map((field) => {
                 const key = `${fc.id}:${field}`;
                 const stored = String(a.params[fc.id]?.[field] ?? '');
                 const shown = drafts[key] ?? stored;
                 return (
-                  <Input key={field} type="number" value={shown} aria-label={`${fc.label} の${field === 'score' ? '値（0〜10）' : '重み（1〜5）'}`}
+                  <Input key={field} type="number" value={shown} aria-label={field === 'score' ? t('{label} の値（0〜10）', { label: t(fc.label) }) : t('{label} の重み（1〜5）', { label: t(fc.label) })}
                     aria-invalid={drafts[key] !== undefined && stored !== drafts[key] ? true : undefined}
                     onChange={(_, d) => edit(fc.id, field, d.value)} />
                 );
@@ -215,36 +244,36 @@ function AnalysisView({ projectId, a, onReturn }: { projectId: string; a: Analys
             </div>
           ))}
         </div>
-        {error ? <MessageBar intent="error" role="alert"><MessageBarBody>{error}（結果は直前の有効な値のままです）</MessageBarBody></MessageBar> : null}
+        {error ? <MessageBar intent="error" role="alert"><MessageBarBody>{t('{error}（結果は直前の有効な値のままです）', { error: t(error) })}</MessageBarBody></MessageBar> : null}
       </div>
-      <div role="group" aria-label="結果パネルの移動と大きさ" className={s.row}>
-        <Button size="small" onClick={() => layout.moveBy(ANALYSIS_SCREEN, -MOVE_STEP, 0)}>結果を左へ移動</Button>
-        <Button size="small" onClick={() => layout.moveBy(ANALYSIS_SCREEN, MOVE_STEP, 0)}>結果を右へ移動</Button>
-        <Button size="small" onClick={() => layout.moveBy(ANALYSIS_SCREEN, 0, -MOVE_STEP)}>結果を上へ移動</Button>
-        <Button size="small" onClick={() => layout.moveBy(ANALYSIS_SCREEN, 0, MOVE_STEP)}>結果を下へ移動</Button>
-        <Button size="small" onClick={() => layout.resizeBy(ANALYSIS_SCREEN, MOVE_STEP)}>結果を広げる</Button>
-        <Button size="small" onClick={() => layout.resizeBy(ANALYSIS_SCREEN, -MOVE_STEP)}>結果を狭める</Button>
+      <div role="group" aria-label={t('結果パネルの移動と大きさ')} className={s.row}>
+        <Button size="small" onClick={() => layout.moveBy(ANALYSIS_SCREEN, -MOVE_STEP, 0)}>{t('結果を左へ移動')}</Button>
+        <Button size="small" onClick={() => layout.moveBy(ANALYSIS_SCREEN, MOVE_STEP, 0)}>{t('結果を右へ移動')}</Button>
+        <Button size="small" onClick={() => layout.moveBy(ANALYSIS_SCREEN, 0, -MOVE_STEP)}>{t('結果を上へ移動')}</Button>
+        <Button size="small" onClick={() => layout.moveBy(ANALYSIS_SCREEN, 0, MOVE_STEP)}>{t('結果を下へ移動')}</Button>
+        <Button size="small" onClick={() => layout.resizeBy(ANALYSIS_SCREEN, MOVE_STEP)}>{t('結果を広げる')}</Button>
+        <Button size="small" onClick={() => layout.resizeBy(ANALYSIS_SCREEN, -MOVE_STEP)}>{t('結果を狭める')}</Button>
       </div>
-      <div data-testid="ai-draft" role="group" aria-label="AI 下書き" className={s.row}>
-        <Button size="small" disabled={busy} onClick={() => void askDraft()}>AI 下書きを依頼</Button>
-        {outcome?.status === 'not-allowed' ? <MessageBar intent="warning" role="status"><MessageBarBody>{outcome.message}</MessageBarBody></MessageBar> : null}
-        {outcome?.status === 'error' ? <MessageBar intent="error" role="alert"><MessageBarBody>{outcome.message}</MessageBarBody></MessageBar> : null}
+      <div data-testid="ai-draft" role="group" aria-label={t('AI 下書き')} className={s.row}>
+        <Button size="small" disabled={busy} onClick={() => void askDraft()}>{t('AI 下書きを依頼')}</Button>
+        {outcome?.status === 'not-allowed' ? <MessageBar intent="warning" role="status"><MessageBarBody>{t(outcome.message)}</MessageBarBody></MessageBar> : null}
+        {outcome?.status === 'error' ? <MessageBar intent="error" role="alert"><MessageBarBody>{t(outcome.message)}</MessageBarBody></MessageBar> : null}
         {outcome?.status === 'draft' ? (
-          <div role="group" aria-label="AI の下書き">
-            <Text block>{outcome.mock ? 'AI 生成（モック）' : 'AI 生成'}の下書き（採用するまで分析には反映されません）:</Text>
+          <div role="group" aria-label={t('AI の下書き')}>
+            <Text block>{outcome.mock ? t('AI 生成（モック）の下書き（採用するまで分析には反映されません）:') : t('AI 生成の下書き（採用するまで分析には反映されません）:')}</Text>
             <Text block data-testid="ai-draft-text">{outcome.text}</Text>
-            <Button size="small" appearance="primary" onClick={() => { st.setAiNote(projectId, outcome.text); setOutcome(null); }}>採用</Button>
-            <Button size="small" onClick={() => setOutcome(null)}>却下</Button>
+            <Button size="small" appearance="primary" onClick={() => { st.setAiNote(projectId, outcome.text); setOutcome(null); }}>{t('採用')}</Button>
+            <Button size="small" onClick={() => setOutcome(null)}>{t('却下')}</Button>
           </div>
         ) : null}
-        {a.aiNote ? <Text block data-testid="ai-note">採用した AI 下書き: {a.aiNote}</Text> : null}
+        {a.aiNote ? <Text block data-testid="ai-note">{t('採用した AI 下書き: {note}', { note: a.aiNote })}</Text> : null}
       </div>
       {a.viewer !== 'table' ? (
         <details open>
-          <summary>同じ値の表（代替表示）</summary>
-          <table className={s.table} aria-label="結果の代替表">
-            <thead><tr><th>項目</th><th>分類</th><th>値</th><th>重み</th><th>結果（値×重み）</th></tr></thead>
-            <tbody>{visible.map((i) => <tr key={i.id}><td>{i.label}</td><td>{i.category}</td><td>{i.score}</td><td>{i.weight}</td><td>{i.value}</td></tr>)}</tbody>
+          <summary>{t('同じ値の表（代替表示）')}</summary>
+          <table className={s.table} aria-label={t('結果の代替表')}>
+            <thead><tr><th>{t('項目')}</th><th>{t('分類')}</th><th>{t('値')}</th><th>{t('重み')}</th><th>{t('結果（値×重み）')}</th></tr></thead>
+            <tbody>{visible.map((i) => <tr key={i.id}><td>{t(i.label)}</td><td>{t(i.category)}</td><td>{i.score}</td><td>{i.weight}</td><td>{i.value}</td></tr>)}</tbody>
           </table>
         </details>
       ) : null}
@@ -255,6 +284,7 @@ function AnalysisView({ projectId, a, onReturn }: { projectId: string; a: Analys
 /** 分析の開始（手法の一覧）。ビジネスシナリオ・KPI 測定・ユースケース作成の各画面からも `from` つきで使える。 */
 export function AnalysisStart({ projectId, from = null }: { projectId: string; from?: string | null }) {
   const s = useStyles();
+  const t = useT();
   const start = useAnalyses((x) => x.start);
   const [open, setOpen] = useState(false);
   const first = useRef<HTMLLIElement>(null);
@@ -270,12 +300,12 @@ export function AnalysisStart({ projectId, from = null }: { projectId: string; f
   };
   return (
     <div>
-      <Button size="small" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((o) => !o)}>分析を開始</Button>
+      <Button size="small" aria-haspopup="listbox" aria-expanded={open} onClick={() => setOpen((o) => !o)}>{t('分析を開始')}</Button>
       {open ? (
-        <ul role="listbox" aria-label="分析手法" className={s.list} onKeyDown={onKey}>
+        <ul role="listbox" aria-label={t('分析手法')} className={s.list} onKeyDown={onKey}>
           {METHODS.map((m, i) => (
             <li key={m.id} role="option" aria-selected={false} tabIndex={i === 0 ? 0 : -1} ref={i === 0 ? first : undefined} className={s.option} onClick={() => choose(m.id)}>
-              <strong>{m.name}</strong> — {m.summary}
+              <strong>{t(m.name)}</strong> — {t(m.summary)}
             </li>
           ))}
         </ul>

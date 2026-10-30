@@ -437,8 +437,8 @@ test.describe('NFR-UX-017 Fluent 2 のモーション', () => {
     await start();
     await selectPersona(page, '事業部門');
     await ensurePlaying(page);
-    // 画面の切替の動きは左メニューの押下の直後に測る。左メニューに項目を持たない画面（FR-220 AC-590 の view3d・drawing2d）は
-    // コマンドパレット（それ自体がダイアログの動きを伴う）でしか開けないので、切替の 2 画面は左メニューにある画面から選ぶ。
+        // 画面の切替の動きは左メニューの押下の直後に測る（左メニューに項目を持たない画面はない。画面 view3d・drawing2d・canvas は廃止。FR-220 AC-590）。
+        // 切替の 2 画面は左メニューにある画面から選ぶ。
     const keys: string[] = [];
     for (const k of await listScreenKeys(page)) if (!(await isOffMenuScreen(page, k))) keys.push(k);
     const [a, b] = [keys[0], keys[1]];

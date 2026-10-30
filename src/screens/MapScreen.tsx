@@ -23,6 +23,8 @@ import { formatHour, useTimeline } from '../store/timeline';
 import { useView3D } from '../store/view3d';
 import { RenderCanvas } from '../three/SceneCanvas';
 import { usePane } from '../workspace/PaneContext';
+import { useT } from '../i18n';
+import { usePresenceItems } from '../motion/usePresence';
 
 const ORIGIN = 'map';
 
@@ -85,6 +87,7 @@ function flatPos(b: ReturnType<typeof flatBounds>, lat: number, lng: number): { 
 
 export function MapScreen() {
   const s = useStyles();
+  const t = useT();
   const hl = useHighlightClass();
   const data = useMapData();
   const bind = useEntityBinding(ORIGIN);
@@ -111,11 +114,16 @@ export function MapScreen() {
   const pane = usePane();
   const visible = pane ? pane.visible : true;
 
-  if (!data || !shownData) return <LoadingView label="地図を読み込み中" />;
+  // 2D の拠点の出入り（FR-070 AC-086）。追加は薄く現れ、削除は薄れて消え、位置の変化は補間する。停止・reduce は即時
+  const flatSites = shownData?.sites ?? [];
+  const flatB = shownData ? flatBounds(shownData) : null;
+  const flatItems = usePresenceItems(flatSites, (x) => x.id, (x) => { const p = flatB ? flatPos(flatB, x.lat, x.lng) : { left: 0, top: 0 }; return [p.left, p.top]; });
+
+  if (!data || !shownData) return <LoadingView label={t('地図を読み込み中')} />;
 
   const hasSites = shownData.sites.length > 0;
   const bounds = flatBounds(shownData);
-  const marker = (site: MapData['sites'][number], style: CSSProperties, refOn: boolean) => {
+  const marker = (site: MapData['sites'][number], style: CSSProperties, refOn: boolean, exiting = false) => {
     const props = bind(site.id);
     return (
       <button
@@ -124,8 +132,9 @@ export function MapScreen() {
         ref={refOn ? (el) => { if (el) markerRefs.current.set(site.id, el); else markerRefs.current.delete(site.id); } : undefined}
         {...props}
         className={mergeClasses(s.marker, hl(props['data-highlight']))}
-        aria-label={`拠点 ${site.name}（緯度 ${site.lat}、経度 ${site.lng}）`}
+        aria-label={t('拠点 {name}（緯度 {lat}、経度 {lng}）', { name: site.name, lat: site.lat, lng: site.lng })}
         onKeyDown={(e) => { onEntityKey(e, site.id, ORIGIN); }}
+        {...(exiting ? { tabIndex: -1, 'aria-hidden': true } : {})}
         style={style}
       >
         {site.name}
@@ -135,18 +144,18 @@ export function MapScreen() {
   return (
     <Panel
       testId="component-map"
-      title="地図"
-      description="拠点を地球儀・3D マップ上の位置に表示し、物流やデータの流れを粒子で示します。時間軸（画面上部）で時刻を動かすと、流れの量が変わります。"
+      title={t('地図')}
+      description={t('拠点を地球儀・3D マップ上の位置に表示し、物流やデータの流れを粒子で示します。時間軸（画面上部）で時刻を動かすと、流れの量が変わります。')}
       maxWidth="1200px"
     >
       <div className={s.toolbar}>
-        <Field label="3D の表示">
+        <Field label={t('3D の表示')}>
           <RadioGroup layout="horizontal" value={mode} disabled={view.mode !== '3d'} onChange={(_, d) => setMode(d.value as MapMode)}>
-            <Radio value="globe" label="地球儀" />
-            <Radio value="flat" label="平面マップ" />
+            <Radio value="globe" label={t('地球儀')} />
+            <Radio value="flat" label={t('平面マップ')} />
           </RadioGroup>
         </Field>
-        <Text weight="semibold" data-testid="map-time" aria-live="polite">時刻: {formatHour(hour)}</Text>
+        <Text weight="semibold" data-testid="map-time" aria-live="polite">{t('時刻:')} {formatHour(hour)}</Text>
         <ViewAsTableButton asTable={asTable} onToggle={() => setAsTable((v) => !v)} />
         <UnrenderableNote
           source="map"
@@ -156,17 +165,17 @@ export function MapScreen() {
       </div>
 
       {!hasSites ? (
-        <EmptyView message="位置を持つ拠点がありません。拠点（type が site）に location（lat・lng）を入れると、地図に表示されます。" />
+        <EmptyView message={t('位置を持つ拠点がありません。拠点（type が site）に location（lat・lng）を入れると、地図に表示されます。')} />
       ) : asTable ? (
         <ViewTable
-          label="地図の拠点"
+          label={t('地図の拠点')}
           origin={ORIGIN}
-          columns={['名称', '種別', '緯度', '経度']}
+          columns={[t('名称'), t('種別'), t('緯度'), t('経度')]}
           rows={siteTableRows(shownData.sites)}
         />
       ) : view.mode === '2d' ? (
         <div className={s.stage} data-zoom-surface="map" data-map-mode="2d">
-          <svg className={s.flat} role="img" aria-label="地図（2D）。経度を横、緯度を縦にした平面図です。" viewBox="0 0 100 100" preserveAspectRatio="none">
+          <svg className={s.flat} role="img" aria-label={t('地図（2D）。経度を横、緯度を縦にした平面図です。')} viewBox="0 0 100 100" preserveAspectRatio="none">
             {[25, 50, 75].map((g) => (
               <g key={g} aria-hidden="true">
                 <line x1={g} y1={0} x2={g} y2={100} className={s.flatGrid} />
@@ -185,10 +194,7 @@ export function MapScreen() {
             })}
           </svg>
           <div className={s.overlay}>
-            {shownData.sites.map((site) => {
-              const p = flatPos(bounds, site.lat, site.lng);
-              return marker(site, { left: `${p.left}%`, top: `${p.top}%`, transform: 'translate(-50%, -50%)' }, false);
-            })}
+            {flatItems.map((it) => marker(it.item, { left: `${it.vec[0]}%`, top: `${it.vec[1]}%`, transform: 'translate(-50%, -50%)', opacity: it.life, ...(it.exiting ? { pointerEvents: 'none' as const } : {}) }, false, it.exiting))}
           </div>
         </div>
       ) : (
@@ -197,13 +203,13 @@ export function MapScreen() {
             <MapScene data={shownData} mode={mode} hour={hour} quality={quality} selected={selected} markerRefs={markerRefs} />
           </RenderCanvas>
           <div className={s.overlay}>
-            {shownData.sites.map((site) => marker(site, { visibility: 'hidden' }, true))}
+            {shownData.sites.map((site) => marker(site, { visibility: 'hidden', transform: 'translate(-50%, -100%)' }, true))}
           </div>
         </div>
       )}
 
       {shownData.flows.length > 0 ? (
-        <ul className={s.legend} aria-label="流れの量（現在の時刻）" data-testid="flow-legend">
+        <ul className={s.legend} aria-label={t('流れの量（現在の時刻）')} data-testid="flow-legend">
           {shownData.flows.map((f) => (
             <li key={f.id} className={s.legendItem}>
               <span className={s.swatch} style={{ backgroundColor: flowColor(f.kind) }} aria-hidden="true" />
@@ -212,7 +218,7 @@ export function MapScreen() {
           ))}
         </ul>
       ) : hasSites ? (
-        <Text size={200}>流れ（entities.json の flows）のデータがないため、流れの粒子は表示していません。</Text>
+        <Text size={200}>{t('流れ（entities.json の flows）のデータがないため、流れの粒子は表示していません。')}</Text>
       ) : null}
     </Panel>
   );

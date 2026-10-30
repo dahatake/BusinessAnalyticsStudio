@@ -9,7 +9,7 @@ import { syncLod, useLod } from '../store/lod';
 import { CAMERA_FOV, rehomeIfPristine, useCameraRig } from './cameraRig';
 import { pickPoints, type TwinLayout } from './entityLayout';
 import { ensureCanvasInView, flushSceneSize, viewportAspect, viewportRect, type ViewportRect } from './sceneViewport';
-import { getTwinLayout } from './twin';
+import { twinDisplay, type TwinDisplay } from './twinTransition';
 import { twinGeometry, twinScale } from './twinGeometry';
 import { twinPartnersOfSelection } from './twinLinks';
 import { viewStateOf } from '../view/useView';
@@ -35,19 +35,22 @@ const camera = new THREE.PerspectiveCamera(CAMERA_FOV, 16 / 9, 0.1, 1000);
 const raycaster = new THREE.Raycaster();
 
 /** 投影の対象は、今生成している（表示中のレベルの）項目と、いまの世界の表示（FR-218）で描いている項目だけ。下位のレベルは、カメラが近づくまで生成しない（FR-036） */
-function ensureProbe(layout: TwinLayout, key: string, world: WorldView): Probe {
-  if (probe && probe.layout === layout && probe.key === key && probe.world === world) return probe;
+function ensureProbe(layout: TwinLayout, key: string, world: WorldView, disp: TwinDisplay): Probe {
+  // 出入り・遷移の途中（FR-070）は、いま描いている位置・大きさで投影する（キャッシュしない）
+  if (!disp.active && probe && probe.layout === layout && probe.key === key && probe.world === world) return probe;
   const mat = new THREE.MeshBasicMaterial();
   const meshes = layout.objects.filter((o) => key[o.depth] === '1' && isShownInWorld(o.world, world)).map((o) => {
+    const d = disp.displayOf(o);
     const m = new THREE.Mesh(twinGeometry(o.shape), mat);
-    m.position.set(...o.position);
-    m.scale.set(...twinScale(o.shape, o.size));
+    m.position.set(...d.position);
+    m.scale.set(...twinScale(o.shape, d.size));
     m.userData.entityId = o.entityId;
     m.updateMatrixWorld(true);
     return m;
   });
-  probe = { layout, key, world, meshes };
-  return probe;
+  const next = { layout, key, world, meshes };
+  if (!disp.active) probe = next;
+  return next;
 }
 
 /** 今のカメラ（cameraRig）を投影用のカメラに写す */
@@ -66,7 +69,9 @@ const dir = new THREE.Vector3();
 
 /** デジタルツインの各項目の、画面上の位置・可視・強調。デジタルツインがない（パック未読込）ときは空。 */
 export function sceneObjects(): SceneObjectInfo[] {
-  const layout = getTwinLayout();
+  // 出入り・遷移の途中は、削除中の項目も含め、いま描いている位置・大きさ（twinTransition）
+  const disp = twinDisplay();
+  const layout = disp.layout;
   if (!layout) return [];
   // 座標を返す前に、描画面の大きさ・見える位置・ホームを今の表示領域に合わせる（開いた直後・大きさを変えた直後でも、クリックが外れない。FR-146）
   flushSceneSize();
@@ -74,8 +79,10 @@ export function sceneObjects(): SceneObjectInfo[] {
   rehomeIfPristine(viewportAspect());
   syncLod();
   const key = useLod.getState().key;
-  const world = viewStateOf('view3d').world;
-  const { meshes } = ensureProbe(layout, key, world);
+  // 画面 view3d は廃止（Q-062 A）。3D の世界の表示は、Twin ビューの設定を使う（Twin ビューで「両方」のときは従来の view3d の設定）
+  const twinWorld = viewStateOf('twin-view').world;
+  const world = twinWorld !== 'both' ? twinWorld : viewStateOf('view3d').world;
+  const { meshes } = ensureProbe(layout, key, world, disp);
   const rect = viewportRect();
   syncCamera(rect);
   const sel = useSelectionStore.getState();
@@ -90,7 +97,8 @@ export function sceneObjects(): SceneObjectInfo[] {
     let first: { x: number; y: number } | null = null;
     // 生成していないレベルの項目と、いまの世界の表示で描いていない項目は、画面にない（visible=false）
     const generated = key[o.depth] === '1' && isShownInWorld(o.world, world);
-    for (const p of generated ? pickPoints(o) : []) {
+    const d = disp.displayOf(o);
+    for (const p of generated ? pickPoints({ ...o, position: d.position, size: d.size, top: d.top }) : []) {
       v.set(p[0], p[1], p[2]).project(camera);
       const x = rect.left + ((v.x + 1) / 2) * rect.width;
       const y = rect.top + ((1 - v.y) / 2) * rect.height;

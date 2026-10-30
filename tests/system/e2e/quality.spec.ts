@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準（docs/requirements/quality.md）と PARAM（§3.3）から決める。
 import AxeBuilder from '@axe-core/playwright';
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, entity, hook, scene, MAIN_SCREENS, captureDownload, recordExportConsent, continuePersonConfirm, selectPersona, setEditMode, closeSettings } from '../support/fixtures';
+import { test, expect, openScreen, component, entity, hook, scene, MAIN_SCREENS, captureDownload, recordExportConsent, continuePersonConfirm, selectPersona, setEditMode, closeSettings, screenEntry } from '../support/fixtures';
 import { examplePack } from '../support/packs';
 import { startRelayStub } from '../support/relay-stub';
 
@@ -139,7 +139,7 @@ test.describe('NFR-A11Y-001 WCAG 2.2 AA・キーボード', () => {
         return els.length;
       });
       expect(total, `${name} に操作要素がない`).toBeGreaterThan(0);
-      await page.getByTestId(`nav-${key}`).focus();
+      await screenEntry(page, key).focus(); // 設定は上部のボタン「設定」（FR-223 AC-774）
       const visited = new Set<string>();
       let left = 0;
       let noRing: string[] = [];
@@ -177,13 +177,13 @@ test.describe('NFR-A11Y-001 WCAG 2.2 AA・キーボード', () => {
 test.describe('NFR-A11Y-003 視覚的な表現の代替', () => {
   type Shown = { ids: string[] };
   const shown: Record<string, (page: Page, c: Locator) => Promise<Shown>> = {
-    view3d: async (page) => ({ ids: (await scene.objects(page)).filter((o) => o.visible).map((o) => o.entityId) }),
+    view3d: async (page) => ({ ids: (await scene.objects(page)).map((o) => o.entityId) }),
     map: async (page) => ({ ids: (await hook<Array<{ entityId: string }>>(page, 't.map.markers()')).map((m) => m.entityId) }),
     'knowledge-graph': async (page) => ({ ids: (await hook<Array<{ id: string; visible: boolean }>>(page, 't.graph.nodes()')).filter((n) => n.visible).map((n) => n.id) }),
     matrix: async (_p, c) => ({ ids: await c.locator('[data-entity-id]').evaluateAll((els) => [...new Set(els.map((e) => e.getAttribute('data-entity-id')!))]) }),
   };
   const all = () => [...mono.issues(), ...mono.solutions(), ...mono.products(), ...mono.entities()];
-  // NFR-A11Y-003 AC-173
+  // NFR-A11Y-003 AC-173（明確化: 表は LOD で 3D 上非表示の項目も含むモデルの全項目。3D は visible で絞らず全件と比べる）
   test('NFR-A11Y-003 AC-173 3D・地図・ナレッジグラフ・2×2 で「表で見る」を選ぶと同じ件数・同じ値の表が出て、表の選択が元の表現でも選択される', async ({ page, start }) => {
     await start();
     for (const key of Object.keys(shown)) {
@@ -287,7 +287,7 @@ test.describe('NFR-SEC-002 外部への通信の限定と明示', () => {
       const chat = await openScreen(page, 'chat');
       const q = '送信内容の確認ST-176';
       await chat.getByRole('textbox', { name: /質問/ }).fill(q);
-      await chat.getByRole('button', { name: '送信' }).click();
+      await chat.getByRole('button', { name: '送信', exact: true }).click();
       // FR-219 AC-511 AC-512: 種別「人」を含み了承がある案件では送信前に確認が出る。出たら続行まで進める（出なければそのまま）
       const personConfirm = page.locator('[role="alertdialog"], [role="dialog"]').filter({ hasText: /種別「人」/ }).filter({ hasText: /了承/ });
       await expect(personConfirm.or(page.getByTestId('sending-indicator')).first()).toBeVisible();
@@ -327,7 +327,7 @@ test.describe('NFR-SEC-002 実接続の有効化は了承の記録が条件（�
       // 質問してもモックの回答で、中継プロセスには何も送られない
       const chat = await openScreen(page, 'chat');
       await chat.getByRole('textbox', { name: /質問/ }).fill('了承なしの確認ST-176');
-      await chat.getByRole('button', { name: '送信' }).click();
+      await chat.getByRole('button', { name: '送信', exact: true }).click();
       await expect(chat.getByTestId('chat-answer').last()).toContainText('AI 生成（モック）', { timeout: 15_000 });
       expect(relay.received.some((r) => r.body.includes('了承なしの確認ST-176'))).toBe(false);
     } finally {
@@ -338,7 +338,9 @@ test.describe('NFR-SEC-002 実接続の有効化は了承の記録が条件（�
 
 test.describe('NFR-LEGAL-002 サンプル・AI 生成・モックの明示', () => {
   // NFR-LEGAL-002 AC-180
-  test('NFR-LEGAL-002 AC-180 主要画面に「サンプル」、AI の回答・サマリー・ツリーに「AI 生成」、ミニ・モックアプリに「モック（イメージ）」', async ({ page, start }) => {
+  // FR-043 AC-054 によりミニ・モックアプリ（mock-app）は廃止。「モック（イメージ）」の表示は FR-043 で「提供を継続する条件にしない」
+  // とされたため、AC-180 のうち廃止画面の部分は確かめない（AC-180 の本文の更新は rd-author へ競合として返す）。
+  test('NFR-LEGAL-002 AC-180 主要画面に「サンプル」、AI の回答・サマリー・ツリーに「AI 生成」（ミニ・モックアプリは FR-043 で廃止）', async ({ page, start }) => {
     await start();
     for (const [key, name] of MAIN_SCREENS) {
       const c = await openScreen(page, key);
@@ -346,7 +348,7 @@ test.describe('NFR-LEGAL-002 サンプル・AI 生成・モックの明示', () 
     }
     const chat = await openScreen(page, 'chat');
     await chat.getByRole('textbox', { name: /質問/ }).fill('概要を教えて');
-    await chat.getByRole('button', { name: '送信' }).click();
+    await chat.getByRole('button', { name: '送信', exact: true }).click();
     await expect(chat.getByTestId('chat-answer').last()).toContainText('AI 生成');
     await expect((await openScreen(page, 'priority')).getByTestId('executive-summary')).toContainText('AI 生成');
     // ツリー
@@ -357,9 +359,7 @@ test.describe('NFR-LEGAL-002 サンプル・AI 生成・モックの明示', () 
     await themes.getByRole('button', { name: 'ツリーを生成' }).click();
     const tree = component(page, 'discussion-tree');
     await expect(tree.getByRole('treeitem').nth(1)).toContainText('AI 生成', { timeout: 15_000 });
-    // モック
-    const sol = mono.solutions().find((s) => mono.mocks().some((m) => m.solutionId === s.id))!;
-    await entity(await openScreen(page, 'issue-solution'), sol.id).first().click();
-    await expect(await openScreen(page, 'mock-app')).toContainText('モック（イメージ）');
+    // 廃止したミニ・モックアプリ（FR-043）は開けない
+    await expect(page.getByTestId('nav-mock-app')).toHaveCount(0);
   });
 });

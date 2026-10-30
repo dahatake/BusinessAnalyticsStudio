@@ -2,6 +2,7 @@
 // 顧客固有の語は持たない。顧客の言葉は、顧客パックの関係ラベル（label）として持つ。
 // このモジュールは画面の部品を参照しない（NFR-MAINT-001）。
 import { z } from 'zod';
+import { tr } from '../i18n';
 
 /** 関係の意味の種類（FR-235。九つ） */
 export const MEANINGS = [
@@ -12,21 +13,23 @@ export const MeaningSchema = z.enum(MEANINGS);
 export const isMeaning = (v: unknown): v is Meaning => typeof v === 'string' && (MEANINGS as readonly string[]).includes(v);
 
 /** 意味の種類の日本語の名前と、「A は B に影響する」の形の読み方（述部） */
+// 表示のたびに言語に合わせて読めるよう、getter で持つ（言語切替で更新される）
+const meaningLabel = (name: string, predicate: string) => ({ get name() { return tr(name); }, get predicate() { return tr(predicate); } });
 export const MEANING_LABELS: Readonly<Record<Meaning, { name: string; predicate: string }>> = {
-  influences: { name: '影響', predicate: 'に影響する' },
-  dependsOn: { name: '依存', predicate: 'に依存する' },
-  causes: { name: '因果', predicate: 'の原因になる' },
-  owns: { name: '所有', predicate: 'を所有する' },
-  derivedFrom: { name: 'データ系統', predicate: 'から導出される' },
-  memberOf: { name: '所属', predicate: 'に所属する' },
-  locatedIn: { name: '配置', predicate: 'に配置される' },
-  measures: { name: '計測', predicate: 'を計測する' },
-  controls: { name: '制御', predicate: 'を制御する' },
+  influences: meaningLabel('影響', 'に影響する'),
+  dependsOn: meaningLabel('依存', 'に依存する'),
+  causes: meaningLabel('因果', 'の原因になる'),
+  owns: meaningLabel('所有', 'を所有する'),
+  derivedFrom: meaningLabel('データ系統', 'から導出される'),
+  memberOf: meaningLabel('所属', 'に所属する'),
+  locatedIn: meaningLabel('配置', 'に配置される'),
+  measures: meaningLabel('計測', 'を計測する'),
+  controls: meaningLabel('制御', 'を制御する'),
 };
 
 /** 「A は B に影響する」の形の読み上げ文 */
 export const readMeaning = (meaning: Meaning, from: string, to: string): string =>
-  `${from} は ${to} ${MEANING_LABELS[meaning].predicate}`;
+  tr('{from} は {to} {predicate}', { from, to, predicate: MEANING_LABELS[meaning].predicate });
 
 /** Twin の流れの向き（data＝データ、control＝制御） */
 export const FLOW_KINDS = ['data', 'control'] as const;
@@ -43,7 +46,9 @@ export const isTwinLayer = (v: unknown): v is TwinLayer => typeof v === 'string'
 /** KPI の段階 */
 export const KPI_STAGES = ['good', 'caution', 'action'] as const;
 export type KpiStage = (typeof KPI_STAGES)[number];
-export const KPI_STAGE_LABELS: Readonly<Record<KpiStage, string>> = { good: '良', caution: '注意', action: '要対応' };
+export const KPI_STAGE_LABELS: Readonly<Record<KpiStage, string>> = {
+  get good() { return tr('良'); }, get caution() { return tr('注意'); }, get action() { return tr('要対応'); },
+};
 
 /**
  * KPI の段階の境界。boundaries は昇順の 2 値 [b1, b2]。
@@ -55,7 +60,7 @@ export const KpiStagesSchema = z.looseObject({
   betterWhen: z.enum(['high', 'low']).optional(),
 }).superRefine((v, ctx) => {
   if (!(v.boundaries[0] < v.boundaries[1])) {
-    ctx.addIssue({ code: 'custom', path: ['boundaries'], message: '段階の境界は昇順（良・注意・要対応の境目が小さい順）で書きます' });
+    ctx.addIssue({ code: 'custom', path: ['boundaries'], message: tr('段階の境界は昇順（良・注意・要対応の境目が小さい順）で書きます') });
   }
 });
 export type KpiStages = z.infer<typeof KpiStagesSchema>;
@@ -72,7 +77,7 @@ const idRe = /^[a-z0-9][a-z0-9-]*$/;
 
 /** 意味ラベル付きの関係（entities.json の relations[]）。label は顧客の言葉（自由な文字列） */
 export const RelationSchema = z.looseObject({
-  id: z.string().regex(idRe, 'ID は小文字英数字とハイフンだけで書く').optional(),
+  id: z.string().regex(idRe, { error: () => tr('ID は小文字英数字とハイフンだけで書く') }).optional(),
   from: z.string().regex(idRe),
   to: z.string().regex(idRe),
   meaning: MeaningSchema,
@@ -100,7 +105,7 @@ export function checkGraphStructure(
 
   entities.forEach((e, i) => {
     if (e && typeof e === 'object' && e.layer !== undefined && isTwinLayer(e.layer) && e.world !== 'digital') {
-      issues.push({ path: ['entities', i, 'layer'], message: '層（layer）はデジタル世界のエンティティだけが持てます' });
+      issues.push({ path: ['entities', i, 'layer'], message: tr('層（layer）はデジタル世界のエンティティだけが持てます') });
     }
   });
 
@@ -109,7 +114,7 @@ export function checkGraphStructure(
     for (const key of ['from', 'to'] as const) {
       const id = (r as Record<string, unknown>)[key];
       if (typeof id === 'string' && !worldById.has(id)) {
-        issues.push({ path: ['relations', i, key], message: `関係の ${key} が、entities にない ID を指しています: ${id}` });
+        issues.push({ path: ['relations', i, key], message: tr('関係の {key} が、entities にない ID を指しています: {id}', { key, id }) });
       }
     }
   });
@@ -122,10 +127,10 @@ export function checkGraphStructure(
     const touchesDigital = fromW === 'digital' || toW === 'digital';
     if (!touchesDigital) return;
     if (!isFlowKind(fl.kind)) {
-      issues.push({ path: ['flows', i, 'kind'], message: `Twin の流れの向きは ${FLOW_KINDS.join('／')} のどちらかです（実際は ${String(fl.kind)}）` });
+      issues.push({ path: ['flows', i, 'kind'], message: tr('Twin の流れの向きは {kinds} のどちらかです（実際は {actual}）', { kinds: FLOW_KINDS.join('／'), actual: String(fl.kind) }) });
     }
     if (fromW === toW) {
-      issues.push({ path: ['flows', i, 'to'], message: 'Twin の流れの両端は、現実世界とデジタル世界の組み合わせにします（同じ世界区分は指せません）' });
+      issues.push({ path: ['flows', i, 'to'], message: tr('Twin の流れの両端は、現実世界とデジタル世界の組み合わせにします（同じ世界区分は指せません）') });
     }
   });
   return issues;

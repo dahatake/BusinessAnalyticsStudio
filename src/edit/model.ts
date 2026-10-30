@@ -7,6 +7,7 @@ import {
   type BrandProfile, type DataFileName, type PackData, type PackError, type PackFiles,
 } from '../schema';
 import { KIND_LABELS, type NodeKind } from '../selection/graph';
+import { tr } from '../i18n';
 
 type Rec = Record<string, unknown>;
 
@@ -50,7 +51,7 @@ const TOPIC: Def = { kind: 'topic', file: 'show', key: 'chapters', nameKey: 'tit
 
 interface Loc {
   def: Def;
-  /** 議題のとき、所属する章の位置 */
+  /** 論点のとき、所属する章の位置 */
   chapter?: number;
   index: number;
   rec: Rec;
@@ -135,12 +136,12 @@ function uniqueId(used: Set<string>, base: string): string {
 export const NAME_FIELD_LABEL = '名前（タイトル）';
 
 function fieldLabelOf(path: readonly string[], nameKey: Def['nameKey']): string {
-  if (path.length === 1 && path[0] === nameKey) return NAME_FIELD_LABEL;
+  if (path.length === 1 && path[0] === nameKey) return tr(NAME_FIELD_LABEL);
   if (path[0] === 'evaluation' && path[1]) {
     const base = (EVALUATION_LABELS as Record<string, string>)[path[1]] ?? path[1];
     return path[2] && path[2] !== 'value' ? `${base}（${path[2]}）` : base;
   }
-  if (path.length === 1 && path[0] === 'type') return 'タイプ';
+  if (path.length === 1 && path[0] === 'type') return tr('タイプ');
   return path.join('.');
 }
 
@@ -172,7 +173,7 @@ function checkSchema(next: PackData, file: DataFileName): string | undefined {
   if (r.success) return undefined;
   const i = r.error.issues[0]!;
   const at = i.path.length ? `（${i.path.join('.')}）` : '';
-  return `入力が正しくありません${at}: ${i.message}`;
+  return tr('入力が正しくありません{at}: {message}', { at, message: i.message });
 }
 
 const show = (v: unknown): string => (typeof v === 'string' ? v : v === undefined || v === null ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v));
@@ -201,17 +202,17 @@ export function nameKeyOf(d: PackData, id: string): string | undefined {
  */
 export function updateField(d: PackData, id: string, path: readonly string[], raw: string): EditResult {
   const loc = locate(d, id);
-  if (!loc) return { ok: false, message: `項目が見つかりません: ${id}` };
+  if (!loc) return { ok: false, message: tr('項目が見つかりません: {id}', { id }) };
   const cur = getIn(loc.rec, path);
-  if (typeof cur !== 'string' && typeof cur !== 'number') return { ok: false, message: 'この項目は編集できません。' };
+  if (typeof cur !== 'string' && typeof cur !== 'number') return { ok: false, message: tr('この項目は編集できません。') };
   let value: string | number;
   if (typeof cur === 'number') {
     const n = parseNumberInput(raw);
-    if (n === undefined) return { ok: false, message: '数値を入力してください（例: 1200）。' };
+    if (n === undefined) return { ok: false, message: tr('数値を入力してください（例: 1200）。') };
     value = n;
   } else {
     const t = raw.trim();
-    if (t === '') return { ok: false, message: '空にはできません。値を入力してください。' };
+    if (t === '') return { ok: false, message: tr('空にはできません。値を入力してください。') };
     value = t;
   }
   if (value === cur) return { ok: true, data: d, changes: [] };
@@ -231,24 +232,36 @@ export function updateField(d: PackData, id: string, path: readonly string[], ra
 /** 項目の名前（title / name / label）を書き換える */
 export function renameRecord(d: PackData, id: string, raw: string): EditResult {
   const key = nameKeyOf(d, id);
-  return key ? updateField(d, id, [key], raw) : { ok: false, message: `項目が見つかりません: ${id}` };
+  return key ? updateField(d, id, [key], raw) : { ok: false, message: tr('項目が見つかりません: {id}', { id }) };
 }
 
 // ---- 追加・複製・削除 ----
 
-const NEW_NAMES: Record<NodeKind, string> = {
-  entity: '新しいエンティティ', issue: '新しい課題', solution: '新しい解決策', product: '新しい製品', feature: '新しい機能',
-  task: '新しいタスク', architecture: '新しいノード', mock: '新しいモック', chapter: '新しい章', topic: '新しい議題', source: '新しい出典',
-};
+/** 新規項目の初期名。作成時の言語で生成する（作成済みのデータは変えない） */
+function newName(kind: NodeKind): string {
+  switch (kind) {
+    case 'entity': return tr('新しいエンティティ');
+    case 'issue': return tr('新しい課題');
+    case 'solution': return tr('新しい解決策');
+    case 'product': return tr('新しい製品');
+    case 'feature': return tr('新しい機能');
+    case 'task': return tr('新しいタスク');
+    case 'architecture': return tr('新しいノード');
+    case 'mock': return tr('新しいモック');
+    case 'chapter': return tr('新しい章');
+    case 'topic': return tr('新しい論点');
+    case 'source': return tr('新しい出典');
+  }
+}
 
 function templateFor(d: PackData, kind: NodeKind, sib: Rec | undefined): Rec | string {
-  const name = NEW_NAMES[kind];
+  const name = newName(kind);
   switch (kind) {
     case 'entity': return { type: isStr(sib?.type) ? sib.type : 'エンティティ', name };
     case 'issue': return { title: name, audience: sib?.audience === 'external' ? 'external' : 'internal', ...(isStr(sib?.parentId) ? { parentId: sib.parentId } : {}) };
     case 'solution': {
       const issueId = isStr(sib?.issueId) ? sib.issueId : (listOf(d, ISSUE_DEF)[0]?.id as string | undefined);
-      return issueId ? { title: name, issueId } : '解決策を追加するには、先に課題が必要です。';
+      return issueId ? { title: name, issueId } : tr('解決策を追加するには、先に課題が必要です。');
     }
     case 'product': return { name };
     case 'feature': return { title: name };
@@ -279,7 +292,7 @@ export function addRecord(d: PackData, refId?: string): EditResult {
   const label = nameOf(rec, def.nameKey);
   return {
     ok: true, data: next, select: [id],
-    changes: [{ op: 'add', entityId: id, entityLabel: label, fieldLabel: `${KIND_LABELS[def.kind]}の追加`, before: '', after: label }],
+    changes: [{ op: 'add', entityId: id, entityLabel: label, fieldLabel: tr('{kind}の追加', { kind: tr(KIND_LABELS[def.kind]) }), before: '', after: label }],
   };
 }
 
@@ -294,10 +307,10 @@ function renewIds(v: unknown, used: Set<string>): unknown {
 /** 項目を複製し、元の項目のすぐ後ろに置く。名前には「（複製）」を足す */
 export function duplicateRecord(d: PackData, id: string): EditResult {
   const loc = locate(d, id);
-  if (!loc) return { ok: false, message: `項目が見つかりません: ${id}` };
+  if (!loc) return { ok: false, message: tr('項目が見つかりません: {id}', { id }) };
   const copy = renewIds(loc.rec, allIds(d)) as Rec;
   const base = nameOf(loc.rec, loc.def.nameKey);
-  const name = `${base}（複製）`;
+  const name = tr('{base}（複製）', { base });
   copy[loc.def.nameKey] = name;
   copy.createdBy = 'human';
   const next = mapList(d, loc, (list) => [...list.slice(0, loc.index + 1), copy, ...list.slice(loc.index + 1)]);
@@ -305,7 +318,7 @@ export function duplicateRecord(d: PackData, id: string): EditResult {
   if (problem) return { ok: false, message: problem };
   return {
     ok: true, data: next, select: [id, copy.id as string],
-    changes: [{ op: 'duplicate', entityId: copy.id as string, entityLabel: name, fieldLabel: `${KIND_LABELS[loc.def.kind]}の複製`, before: base, after: name }],
+    changes: [{ op: 'duplicate', entityId: copy.id as string, entityLabel: name, fieldLabel: tr('{kind}の複製', { kind: tr(KIND_LABELS[loc.def.kind]) }), before: base, after: name }],
   };
 }
 
@@ -378,7 +391,7 @@ function scrub(v: unknown, removed: ReadonlySet<string>, to: ScrubTargets): unkn
  */
 export function deleteRecord(d: PackData, id: string): EditResult {
   const loc = locate(d, id);
-  if (!loc) return { ok: false, message: `項目が見つかりません: ${id}` };
+  if (!loc) return { ok: false, message: tr('項目が見つかりません: {id}', { id }) };
   const removed = new Set<string>();
   walk(loc.rec, (o) => { if (isStr(o.id)) removed.add(o.id); });
   const parent = isStr(loc.rec.parentId) ? loc.rec.parentId : undefined;
@@ -397,11 +410,11 @@ export function deleteRecord(d: PackData, id: string): EditResult {
         ?? list.slice(0, loc.index).reverse().map(pick).find(Boolean);
       if (!issueTarget) {
         const names = orphans.map((s) => `「${nameOf(s, 'title')}」`).join('、');
-        return { ok: false, message: `解決策${names}の対象の課題がなくなるため、この課題は削除できません。先に解決策を削除するか、別の課題を追加してください。` };
+        return { ok: false, message: tr('解決策{names}の対象の課題がなくなるため、この課題は削除できません。先に解決策を削除するか、別の課題を追加してください。', { names }) };
       }
       const targetName = nameOf(list.find((i) => i.id === issueTarget)!, 'title');
       for (const s of orphans) {
-        reassigned.push({ op: 'update', entityId: s.id as string, entityLabel: nameOf(s, 'title'), fieldLabel: '対象の課題（付け替え）', before: nameOf(loc.rec, 'title'), after: targetName });
+        reassigned.push({ op: 'update', entityId: s.id as string, entityLabel: nameOf(s, 'title'), fieldLabel: tr('対象の課題（付け替え）'), before: nameOf(loc.rec, 'title'), after: targetName });
       }
     }
   }
@@ -413,13 +426,13 @@ export function deleteRecord(d: PackData, id: string): EditResult {
   if (dataErrors(d).length === 0) {
     const broken = dataErrors(scrubbed as unknown as PackData);
     if (broken.length > 0) {
-      return { ok: false, message: `「${label}」を削除すると、データの規則を満たせなくなるため削除できません。先に、これを参照している項目を編集してください。`, details: broken.slice(0, 5).map(formatPackError) };
+      return { ok: false, message: tr('「{label}」を削除すると、データの規則を満たせなくなるため削除できません。先に、これを参照している項目を編集してください。', { label }), details: broken.slice(0, 5).map(formatPackError) };
     }
   }
   return {
     ok: true, data: scrubbed as unknown as PackData,
     changes: [
-      { op: 'delete', entityId: id, entityLabel: label, fieldLabel: `${KIND_LABELS[loc.def.kind]}の削除`, before: label, after: '（削除）' },
+      { op: 'delete', entityId: id, entityLabel: label, fieldLabel: tr('{kind}の削除', { kind: tr(KIND_LABELS[loc.def.kind]) }), before: label, after: tr('（削除）') },
       ...reassigned,
     ],
   };
@@ -485,41 +498,41 @@ export function parseCsv(text: string): { records: CsvRecord[]; error?: { line: 
     touched = true;
     cur += c;
   }
-  if (quoted) return { records, error: { line: startLine, message: '引用符が閉じていません（形式が不正です）' } };
+  if (quoted) return { records, error: { line: startLine, message: tr('引用符が閉じていません（形式が不正です）') } };
   if (cur !== '' || cells.length > 0 || touched) endRecord();
   return { records };
 }
 
 const MAX_REPORTED = 20;
-const CSV_FAILED = 'CSV を取り込めませんでした。現在のデータは変わっていません。';
+const csvFailed = (): string => tr('CSV を取り込めませんでした。現在のデータは変わっていません。');
 
 /** CSV を取り込む。1 行でも不正なら何も取り込まず、行番号と理由を返す（FR-046）。取り込めるのは既存の項目の名称・タイプ */
 export function importCsv(d: PackData, text: string): EditResult {
   const parsed = parseCsv(text);
-  if (parsed.error) return { ok: false, message: CSV_FAILED, details: [`${parsed.error.line} 行目: ${parsed.error.message}`] };
+  if (parsed.error) return { ok: false, message: csvFailed(), details: [tr('{line} 行目: {reason}', { line: parsed.error.line, reason: parsed.error.message })] };
   const [head, ...rows] = parsed.records;
   if (!head || head.cells.length !== CSV_HEADER.length || head.cells.some((c, i) => c !== CSV_HEADER[i])) {
-    return { ok: false, message: CSV_FAILED, details: [`${head?.line ?? 1} 行目: ヘッダーが違います。先頭の行は「${CSV_HEADER.join(',')}」にしてください（形式が不正です）`] };
+    return { ok: false, message: csvFailed(), details: [tr('{line} 行目: ヘッダーが違います。先頭の行は「{header}」にしてください（形式が不正です）', { line: head?.line ?? 1, header: CSV_HEADER.join(',') })] };
   }
   const errors: string[] = [];
-  const fail = (line: number, reason: string) => { if (errors.length < MAX_REPORTED) errors.push(`${line} 行目: ${reason}`); };
+  const fail = (line: number, reason: string) => { if (errors.length < MAX_REPORTED) errors.push(tr('{line} 行目: {reason}', { line, reason })); };
   const seen = new Set<string>();
   const plan: Array<{ line: number; id: string; name: string; type: string }> = [];
   for (const r of rows) {
     if (r.cells.length !== CSV_HEADER.length) {
-      fail(r.line, `列の数が合いません（${CSV_HEADER.length} 列が必要ですが ${r.cells.length} 列あります）。形式が不正です`);
+      fail(r.line, tr('列の数が合いません（{need} 列が必要ですが {got} 列あります）。形式が不正です', { need: CSV_HEADER.length, got: r.cells.length }));
       continue;
     }
     const [id, kindLabel, type, name] = r.cells.map((c) => c.trim()) as [string, string, string, string];
     const loc = locate(d, id);
-    if (!loc) { fail(r.line, `ID「${id}」の項目がありません（行の追加は取り込めません）`); continue; }
-    if (seen.has(id)) { fail(r.line, `ID「${id}」が重複しています`); continue; }
+    if (!loc) { fail(r.line, tr('ID「{id}」の項目がありません（行の追加は取り込めません）', { id })); continue; }
+    if (seen.has(id)) { fail(r.line, tr('ID「{id}」が重複しています', { id })); continue; }
     seen.add(id);
-    if (KIND_BY_LABEL.get(kindLabel) !== loc.def.kind) { fail(r.line, `種別「${kindLabel}」が項目の種別（${KIND_LABELS[loc.def.kind]}）と合いません（不正な値）`); continue; }
-    if (name === '') { fail(r.line, '名称が空です（不正な値）'); continue; }
+    if (KIND_BY_LABEL.get(kindLabel) !== loc.def.kind) { fail(r.line, tr('種別「{kind}」が項目の種別（{expected}）と合いません（不正な値）', { kind: kindLabel, expected: KIND_LABELS[loc.def.kind] })); continue; }
+    if (name === '') { fail(r.line, tr('名称が空です（不正な値）')); continue; }
     plan.push({ line: r.line, id, name, type });
   }
-  if (errors.length > 0) return { ok: false, message: CSV_FAILED, details: errors };
+  if (errors.length > 0) return { ok: false, message: csvFailed(), details: errors };
   let next = d;
   const changes: DataChange[] = [];
   for (const p of plan) {
@@ -533,7 +546,7 @@ export function importCsv(d: PackData, text: string): EditResult {
       changes.push(...r.changes);
     }
   }
-  if (errors.length > 0) return { ok: false, message: CSV_FAILED, details: errors };
+  if (errors.length > 0) return { ok: false, message: csvFailed(), details: errors };
   return { ok: true, data: next, changes };
 }
 
@@ -548,14 +561,14 @@ export function exportJson(d: PackData): string {
 
 /** JSON を取り込む。起動時と同じ検証をし、問題のある項目だけを無効にして取り込む。特定できない誤りは取り込まない */
 export function importJson(text: string, brand: BrandProfile): EditResult {
-  const stop = (details: string[]): EditResult => ({ ok: false, message: 'JSON を取り込めませんでした。現在のデータは変わっていません。', details });
+  const stop = (details: string[]): EditResult => ({ ok: false, message: tr('JSON を取り込めませんでした。現在のデータは変わっていません。'), details });
   let parsed: unknown;
   try {
     parsed = JSON.parse(text.replace(/^\uFEFF/, ''));
   } catch (e) {
-    return stop([`JSON として読めません（形式が不正です）: ${e instanceof Error ? e.message : String(e)}`]);
+    return stop([tr('JSON として読めません（形式が不正です）: {error}', { error: e instanceof Error ? e.message : String(e) })]);
   }
-  if (!isRec(parsed)) return stop(['JSON のトップレベルがオブジェクトではありません（形式が不正です）']);
+  if (!isRec(parsed)) return stop([tr('JSON のトップレベルがオブジェクトではありません（形式が不正です）')]);
   const input: PackFiles = { brandProfile: brand };
   for (const name of DATA_FILE_NAMES) if (parsed[name] !== undefined) input[name] = parsed[name];
   const r = disableInvalidItems(input);
@@ -566,7 +579,7 @@ export function importJson(text: string, brand: BrandProfile): EditResult {
   return {
     ok: true,
     data: next,
-    changes: [{ op: 'import', entityLabel: 'データ全体', fieldLabel: 'JSON の取り込み', before: '', after: `${allIds(next).size} 件の ID` }],
+    changes: [{ op: 'import', entityLabel: tr('データ全体'), fieldLabel: tr('JSON の取り込み'), before: '', after: tr('{n} 件の ID', { n: allIds(next).size }) }],
     warnings: r.issues.map(formatPackError),
   };
 }
@@ -575,6 +588,6 @@ export function importJson(text: string, brand: BrandProfile): EditResult {
 export function resetTo(current: PackData, sample: PackData): EditResult {
   return {
     ok: true, data: sample,
-    changes: [{ op: 'reset', entityLabel: 'データ全体', fieldLabel: 'サンプルに戻す', before: `${allIds(current).size} 件の ID`, after: `${allIds(sample).size} 件の ID` }],
+    changes: [{ op: 'reset', entityLabel: tr('データ全体'), fieldLabel: tr('サンプルに戻す'), before: tr('{n} 件の ID', { n: allIds(current).size }), after: tr('{n} 件の ID', { n: allIds(sample).size }) }],
   };
 }

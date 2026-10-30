@@ -1,10 +1,11 @@
 // System Test: 連動（絞り込み・ホバー・URL・キーボード）と分析ビュー（ナレッジグラフ・課題-解決策・優先順位・アーキテクチャ・サマリー・議論ツリー・モック）
 // 期待値は要求定義書の受入基準と、お手本パックの内容から決める。
 import fs from 'node:fs';
+import JSZip from 'jszip';
 import { createRequire } from 'node:module';
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, entity, hook, countBadge, captureDownload, setEditMode, tableRows, gotoAndEnter } from '../support/fixtures';
-import { examplePack } from '../support/packs';
+import { test, expect, openScreen, component, entity, hook, countBadge, captureDownload, setEditMode, tableRows, gotoAndEnter, skipOpening, recordExportConsent } from '../support/fixtures';
+import { examplePack, makeVariant, type Pack } from '../support/packs';
 
 const require = createRequire(import.meta.url);
 const mono = examplePack('mono');
@@ -545,34 +546,185 @@ test.describe('FR-042 議論ツリー', () => {
   });
 });
 
-test.describe('FR-043 ミニ・モックアプリ', () => {
-  // FR-043 AC-054
-  test('FR-043 AC-054 解決策を選ぶとそのモックが表示され、画面間を遷移でき、枠を切り替えられ、「モック（イメージ）」と表示される', async ({ page, start }) => {
-    await start();
-    const mock = mono.mocks()[0];
-    const sol = mono.solutions().find((s) => s.id === mock.solutionId)!;
-    const view = await openScreen(page, 'issue-solution');
-    await entity(view, sol.id).first().click();
-    const m = await openScreen(page, 'mock-app');
-    await expect(m).toContainText('モック（イメージ）');
-    const screens: any[] = mock.screens;
-    expect(screens.length).toBeGreaterThanOrEqual(1);
-    expect(screens.length).toBeLessThanOrEqual(3);
-    await expect(m.getByTestId('mock-screen')).toContainText(screens[0].title);
-    if (screens.length > 1) {
-      await m.getByTestId('mock-screen').getByRole('button', { name: screens[1].title }).click();
-      await expect(m.getByTestId('mock-screen')).toContainText(screens[1].title);
+// FR-043 AC-054: 外部形式だけを使う入力fixture。製品のstore・移行関数は呼ばない。
+const RETIRED_SCREEN = /プロトタイプ|ミニ[・･\s]?モック|モックアプリ|mock-app/i;
+
+async function noPrototype(page: Page): Promise<void> {
+  await expect(page.getByTestId('nav-mock-app')).toHaveCount(0);
+  await expect(page.getByTestId('component-mock-app')).toHaveCount(0);
+  await expect(page.getByTestId('mock-screen')).toHaveCount(0);
+  await expect(page.getByTestId('device-frame')).toHaveCount(0);
+  await expect(page.getByRole('navigation', { name: '画面', exact: true })
+    .getByRole('button', { name: RETIRED_SCREEN })).toHaveCount(0);
+  // 画面追加/切替のUIが存在する場合、その候補も検査。導線自体の廃止は許容する。
+  await expect(page.getByRole('tab', { name: RETIRED_SCREEN })).toHaveCount(0);
+  const pickers = page.getByRole('button', { name: /^(画面の追加|画面を追加|画面の切替|画面を切り替える|追加する画面|切り替える画面)$/ });
+  for (let i = 0; i < await pickers.count(); i++) {
+    if (!(await pickers.nth(i).isEnabled())) continue; // 無効な入口からは開けない
+    await pickers.nth(i).click();
+    await expect(page.getByRole('menuitem', { name: RETIRED_SCREEN })).toHaveCount(0);
+    await expect(page.getByRole('option', { name: RETIRED_SCREEN })).toHaveCount(0);
+    await page.keyboard.press('Escape');
+  }
+  // 検索語だけでなく、旧コマンドIDでの直接検索も拒否されること。
+  for (const query of ['プロトタイプ', 'mock-app', 'show mock-app']) {
+    await page.keyboard.press('Control+k');
+    const palette = page.getByRole('dialog', { name: 'コマンドパレット' });
+    await expect(palette).toBeVisible();
+    await palette.getByRole('combobox').fill(query);
+    await expect(palette.getByRole('option', { name: RETIRED_SCREEN })).toHaveCount(0);
+    await expect(palette.locator('[id="command-view.show.mock-app"]')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+  }
+}
+
+function memoPack(text: string): any {
+  const match = /^```json[ \t]*\r?\n([\s\S]*?)\r?\n```[ \t]*$/m.exec(text);
+  expect(match, '保存/書き出しに復元可能なJSONがない').not.toBeNull();
+  const snapshot = JSON.parse(match![1]);
+  expect(snapshot.format).toBe('edb-discussion-memo');
+  expect(snapshot.data?.pack, '顧客パックが保存されていない').toBeTruthy();
+  return snapshot.data.pack;
+}
+
+function preservedPack(actual: any, input: Pack): void {
+  // 起動後の値を期待値にしない。全モックと全解決策（参照を含む）を入力と完全比較。
+  expect(actual.mocks).toEqual(input.json('mocks'));
+  expect(actual.issues).toEqual(input.json('issues'));
+  expect(actual.customer.screenGuides).toEqual(input.json('customer').screenGuides);
+}
+
+async function savedPack(page: Page): Promise<any> {
+  const { data } = await captureDownload(page, async () => {
+    await page.getByRole('button', { name: '保存', exact: true }).first().click();
+    const dialog = page.getByRole('dialog', { name: /保存/ });
+    if (await dialog.waitFor({ state: 'visible', timeout: 1_000 }).then(() => true).catch(() => false)) {
+      await dialog.getByRole('button', { name: /保存|ダウンロード/ }).last().click();
     }
-    const frame = m.getByTestId('device-frame');
-    const ratios: number[] = [];
-    for (const d of ['スマホ', 'タブレット', 'PC']) {
-      await m.getByRole('radio', { name: d }).check();
-      const b = (await frame.boundingBox())!;
-      ratios.push(b.width / b.height);
-    }
-    expect(ratios[0]).toBeLessThan(ratios[2]);
-    expect(new Set(ratios.map((r) => r.toFixed(2))).size).toBe(3);
   });
+  return memoPack(data.toString('utf8'));
+}
+
+test.describe('FR-043 ミニ・モックアプリの廃止と非破壊条件', () => {
+  for (const scenario of ['mono', 'koto', 'saved-project'] as const) {
+    // FR-043 AC-054 / FR-287 AC-748（旧説明キーは任意。保存の非破壊確認をここに集約）
+    test(`FR-043 AC-054 ${scenario}: 導線・試作画面を廃止し、旧レイアウトから安全に起動して保存・再読込・書き出しでもモックと参照を保持する`, async ({ page, start, pageErrors }) => {
+      test.setTimeout(180_000);
+      const pack = makeVariant(scenario === 'koto' ? 'koto' : 'mono', `ac054-${scenario}`, (p) => {
+        p.edit('customer', (c) => {
+          c.screenGuides ??= {};
+          if (scenario === 'koto') delete c.screenGuides['mock-app'];
+          else c.screenGuides['mock-app'] = '互換説明: 保存済みの試作画面の内容。';
+        });
+        if (scenario === 'saved-project') {
+          // 配信元のデモと異なる保存済み内容。再読込でデモへ置換するバグを見逃さない。
+          p.edit('mocks', (data) => { data.mocks[0].screens[0].title += '（保存済みAC054）'; });
+          p.edit('issues', (data) => { data.solutions[0].title += '（保存済みAC054）'; });
+        }
+      });
+      const originalMocks = fs.readFileSync(pack.file('mocks'));
+      expect(pack.mocks().length, '非破壊確認用モックがない').toBeGreaterThan(0);
+      const savedProject = scenario === 'saved-project';
+      const target = savedProject ? /AC054保存Project/ : /デモ/;
+      // 異常系: 旧画面だけの枝、旧画面がactiveな混在タブ、浮動・最小化の記録。
+      // sessionStorageで初回だけ投入し、再読込では製品が保存した結果を検査する。
+      await page.addInitScript(({ savedProject }) => {
+        if (sessionStorage.getItem('ac054-seeded')) return;
+        sessionStorage.setItem('ac054-seeded', '1');
+        localStorage.setItem('edb.layout', JSON.stringify({
+          version: 1,
+          state: {
+            persona: '経営層',
+            layouts: { '経営層': savedProject ? {
+              kind: 'tabs', tabs: ['mock-app', 'issue-solution'], active: 'mock-app',
+            } : {
+              kind: 'split', dir: 'row', sizes: [0.3, 0.7], children: [
+                { kind: 'tabs', tabs: ['mock-app'], active: 'mock-app' },
+                { kind: 'tabs', tabs: ['issue-solution', 'usecase'], active: 'issue-solution' },
+              ],
+            } },
+            floats: { '経営層': { 'mock-app': { x: 0.1, y: 0.1, w: 0.4, h: 0.4 } } },
+            minimized: { '経営層': ['mock-app'] },
+            pinned: { '経営層': { 'mock-app': { x: 0.1, y: 0.1, w: 0.4, h: 0.4 } } },
+          },
+        }));
+        if (savedProject) localStorage.setItem('eabk.projects.v1', JSON.stringify({
+          v: 1, companies: [{ id: 'co-ac054', name: '合成AC054社' }],
+          projects: [{ id: 'pr-ac054', companyId: 'co-ac054', name: 'AC054保存Project', archived: false }],
+          openId: 'pr-ac054', seq: 100, analyses: {}, steps: { 'pr-ac054': 3 },
+        }));
+      }, { savedProject });
+      const app = await start({ pack: savedProject ? mono : pack, skipOpening: false, aiMockDelayMs: 0 });
+      await skipOpening(page, target);
+      if (savedProject) {
+        // 保存済みProjectのデータを、公開の議論メモ読み込み経路で投入する。
+        const fixture = {
+          format: 'edb-discussion-memo', version: 1,
+          customer: { name: pack.customerName, projectName: pack.projectName },
+          discussion: { themes: [] },
+          data: { pack: Object.fromEntries(['customer', 'entities', 'issues', 'products', 'plan', 'architecture', 'mocks', 'show', 'sources']
+            .map((key) => [key, pack.json(key as Parameters<Pack['json']>[0])])) },
+        };
+        const [chooser] = await Promise.all([
+          page.waitForEvent('filechooser'),
+          page.getByRole('button', { name: /開く|読み込む/ }).first().click(),
+        ]);
+        await chooser.setFiles({
+          name: 'ac054-existing.md', mimeType: 'text/markdown',
+          buffer: Buffer.from(`---\nformat: edb-discussion-memo\n---\n\n\`\`\`json\n${JSON.stringify(fixture)}\n\`\`\`\n`),
+        });
+      }
+      const checkRemaining = async () => {
+        await noPrototype(page);
+        const analysis = await openScreen(page, 'issue-solution');
+        await expect(entity(analysis, pack.solutions()[0].id).first()).toBeVisible();
+        await entity(analysis, pack.solutions()[0].id).first().click();
+        await expect(await openScreen(page, 'usecase')).toBeVisible();
+        await expect(await openScreen(page, 'whiteboard')).toBeVisible();
+        if (savedProject) {
+          await page.getByTestId('stepper').getByRole('button', { name: 'ユースケース作成', exact: true }).click();
+          await expect(component(page, 'usecase')).toBeVisible();
+          await expect(component(page, 'mock-app')).toHaveCount(0);
+        }
+      };
+      await checkRemaining();
+      preservedPack(await savedPack(page), pack);
+      await page.reload();
+      await skipOpening(page, target);
+      await checkRemaining();
+      preservedPack(await savedPack(page), pack);
+      // 汎用のモック応答は廃止対象ではない（外部接続なし）。
+      const chat = await openScreen(page, 'chat');
+      await chat.getByRole('textbox', { name: /質問/ }).fill('この課題の概要を教えて');
+      await chat.getByRole('button', { name: '送信', exact: true }).click();
+      await expect(chat.getByTestId('chat-answer').last()).toContainText(/\S/);
+      await recordExportConsent(page);
+      await page.keyboard.press('Control+Shift+E');
+      const dialog = page.getByRole('dialog', { name: /エクスポート/ });
+      await expect(dialog).toBeVisible();
+      await dialog.getByRole('radio', { name: '全体', exact: true }).check();
+      await dialog.getByRole('radio', { name: '.zip', exact: true }).check();
+      const anonymize = dialog.getByRole('checkbox', { name: /匿名化/ });
+      if (await anonymize.isChecked()) await anonymize.uncheck();
+      const raw = dialog.getByRole('checkbox', { name: /社内限定の情報をそのまま出力/ });
+      if (await raw.isVisible()) await raw.check();
+      const { data } = await captureDownload(page, () => dialog.getByRole('button', { name: 'エクスポート', exact: true }).click());
+      const zip = await JSZip.loadAsync(data);
+      const snapshots: any[] = [];
+      for (const name of Object.keys(zip.files).filter((n) => /\.md$/i.test(n))) {
+        const text = await zip.files[name].async('string');
+        if (text.includes('"edb-discussion-memo"')) snapshots.push(memoPack(text));
+      }
+      expect(snapshots.length, '全量出力に顧客パックのスナップショットがない').toBeGreaterThan(0);
+      for (const snapshot of snapshots) preservedPack(snapshot, pack);
+      expect(fs.readFileSync(pack.file('mocks'))).toEqual(originalMocks);
+      const response = await page.request.get(`${app.server.url}/data/mocks.json`);
+      expect(response.ok()).toBeTruthy();
+      // 配信元と保存済みProjectは別物。配信元を保存済み内容で上書きすることも許さない。
+      expect(await response.json()).toEqual((savedProject ? mono : pack).json('mocks'));
+      expect(pageErrors).toEqual([]);
+    });
+  }
 });
 
 void fs;

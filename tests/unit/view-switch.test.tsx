@@ -119,12 +119,11 @@ describe('FR-217 AC-498・FR-218 AC-502 全画面の宣言と「ビュー」ボ�
     for (const k of ['map', 'knowledge-graph', 'architecture', 'data-catalog', 'gantt']) expect(has3D).toContain(k);
     // 既定の表示モードは本要求より前の表示を変えない（3D だけ＝3D、地図＝3D、それ以外＝2D）
     const byKey = new Map(SCREENS.map((s) => [s.key, s.view!]));
-    expect(defaultModeOf(byKey.get('view3d')!)).toBe('3d');
     expect(defaultModeOf(byKey.get('map')!)).toBe('3d');
     expect(defaultModeOf(byKey.get('knowledge-graph')!)).toBe('2d');
     expect(defaultModeOf(byKey.get('gantt')!)).toBe('2d');
-    // FR-020 の 3D ビューと 2D 図面は表現を固定したコンポーネント
-    expect(byKey.get('view3d')!.fixed && byKey.get('drawing2d')!.fixed).toBe(true);
+    // FR-020・FR-146・FR-147 の廃止に伴い、view3d・drawing2d は登録されない\r
+    expect(byKey.has('view3d') || byKey.has('drawing2d') || byKey.has('canvas')).toBe(false);
     // 世界区分を持つデータを表示しない画面（設定パネル・チャット）は宣言で示す
     expect(byKey.get('settings')!.world).toBe(false);
     expect(byKey.get('chat')!.world).toBe(false);
@@ -366,12 +365,12 @@ describe('FR-218 世界の表示のコンポーネント共通の扱い（結合
 
 describe('FR-218 AC-502 全画面の世界区分の宣言が §3.7 の分類表と合う', () => {
   // FR-218 AC-502
-  it('FR-218 AC-502 登録している全画面の world 宣言が §3.7 の分類（課題・解決策・工程・ユースケース・議題＝現実世界、出典・議論ツリー・付箋・議論テーマ・KPI/OKR・アーキテクチャ・データカタログ＝デジタル世界）と合い、1 つの世界の画面は根拠と理由を持つ', async () => {
+  it('FR-218 AC-502 登録している全画面の world 宣言が §3.7 の分類（課題・解決策・工程・ユースケース＝現実世界、出典・議論ツリー・付箋・議論テーマ・KPI/OKR・アーキテクチャ・データカタログ＝デジタル世界）と合い、1 つの世界の画面は根拠と理由を持つ', async () => {
     const { SCREENS } = await import('../../src/screens/registry');
     const want: Record<string, 'real' | 'digital' | 'items' | false> = {
-      canvas: 'real', 'issue-solution': 'real', priority: 'real', summary: false, matrix: 'real', ranking: 'real',
+      'issue-solution': 'real', priority: 'real', summary: false, matrix: 'real', ranking: 'real',
       'knowledge-graph': 'items', architecture: 'digital', 'discussion-tree': 'digital', table: 'items', gantt: 'real',
-      view3d: 'items', drawing2d: 'items', map: 'items', 'kpi-okr': 'digital', sources: 'digital', 'mock-app': false,
+      map: 'items', 'kpi-okr': 'digital', sources: 'digital',
       usecase: 'real', 'data-catalog': 'digital', whiteboard: 'digital', themes: 'digital', settings: false, chat: false,
       'business-graph': 'items',
       'twin-view': 'items',
@@ -379,6 +378,7 @@ describe('FR-218 AC-502 全画面の世界区分の宣言が §3.7 の分類表�
       'spatial-view': false,
       // FR-284 生成AIの効果的な活用シナリオの分析（世界区分を持つデータを表示しない）
       'genai-scenario': false,
+      memo: false,
     };
     expect(SCREENS.map((x) => x.key).sort()).toEqual(Object.keys(want).sort());
     for (const sc of SCREENS) {
@@ -392,7 +392,7 @@ describe('FR-218 AC-502 全画面の世界区分の宣言が §3.7 の分類表�
     const rd = readFileSync('docs/requirements-definition.md', 'utf8');
     const row = (name: string) => rd.match(new RegExp(`^\\| ${name} \\| (現実世界|デジタル世界) \\|`, 'm'))?.[1];
     const check: Array<[string, string]> = [
-      ['課題', 'issue-solution'], ['解決策', 'priority'], ['工程', 'gantt'], ['ユースケース', 'usecase'], ['議題', 'canvas'],
+      ['課題', 'issue-solution'], ['解決策', 'priority'], ['工程', 'gantt'], ['ユースケース', 'usecase'],
       ['出典', 'sources'], ['議論ツリー', 'discussion-tree'], ['付箋', 'whiteboard'], ['議論テーマ', 'themes'], ['KPI', 'kpi-okr'],
       ['アーキテクチャ', 'architecture'], ['データエンティティ', 'data-catalog'],
     ];
@@ -412,8 +412,7 @@ describe('FR-218 AC-502 全画面の世界区分の宣言が §3.7 の分類表�
       if (v.world !== 'real' && v.world !== 'digital') continue;
       expect(v.basis, sc.key).toBeTruthy();
       const kinds = (v.kinds ?? []) as Array<(typeof NODE_KINDS)[number]>;
-      // キャンバスは章（チャプター＝デジタル世界）と議題（現実世界）をともに含み、根拠は議題（既存の宣言のまま）
-      if (sc.key === 'canvas' || kinds.length === 0) continue;
+      if (kinds.length === 0) continue;
       const ws = kinds.map((kd) => defaultWorldOfNodeKind(kd));
       if (ws.some((w) => w === undefined)) continue; // エンティティ（entity）は世界区分の項目を持つため既定の区分を当てない（工程＝task はガントの宣言と照合する）
       for (const w of ws) expect(w, `${sc.key} の宣言（${v.world}）と節の既定の世界区分が合わない`).toBe(v.world);

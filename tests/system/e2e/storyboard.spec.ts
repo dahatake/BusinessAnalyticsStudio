@@ -4,7 +4,7 @@
 // PARAM-052 30 秒 ±PARAM-053 5 秒 / PARAM-054 強調テロップ 20 文字。
 // AC-327・329〜331 は検証レベルが integration（承認済み）のためここでは作らない。AC-320（system）は末尾の describe「FR-168 再生の既定の演出強度」。
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, hook, contrastRatio, reloadAndEnter, settingsDialog, closeSettings } from '../support/fixtures';
+import { test, expect, hook, contrastRatio, reloadAndEnter, settingsDialog, closeSettings, settingsButton } from '../support/fixtures';
 
 const CREATE_MS = 2_000; // PARAM-048
 const TARGET_MS = 30_000; // PARAM-052
@@ -87,7 +87,7 @@ async function mockSpeech(page: Page, mode: 'ok' | 'fail' | 'timeout'): Promise<
 }
 async function openSpeechSettings(page: Page): Promise<Locator> {
   // 設定はモーダル（FR-223）。開いていなければ開く
-  if (!(await settingsDialog(page).isVisible())) await page.getByTestId('nav-settings').click();
+  if (!(await settingsDialog(page).isVisible())) await settingsButton(page).click(); // 上部のボタン「設定」（FR-223 AC-774）
   await expect(settingsDialog(page)).toBeVisible();
   const box = settingsDialog(page).getByRole('region', { name: '音声設定' });
   await expect(box).toBeVisible();
@@ -451,7 +451,7 @@ test.describe('FR-167 設定画面と字幕の読み上げ（音声はモック�
   test('FR-167 AC-328 設定画面（音声設定）はキーボードだけで開いて読み上げを切り替えられ、状態が文字で示され、名前を持つ', async ({ page, start }) => {
     await start({ speech: SPEECH });
     await openNewProject(page);
-    await page.getByTestId('nav-settings').focus();
+    await settingsButton(page).focus(); // 上部のボタン「設定」（FR-223 AC-774）
     await page.keyboard.press('Enter');
     const box = settingsDialog(page).getByRole('region', { name: '音声設定' });
     await expect(box).toBeVisible();

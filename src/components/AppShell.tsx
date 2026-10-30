@@ -7,6 +7,7 @@ import { useLayout } from '../store/layout';
 import { useFoldClass } from '../motion/useFoldMotion';
 import type { ScreenDefinition } from '../screens/types';
 import { rovingTarget } from './roving';
+import { useT } from '../i18n';
 
 const useStyles = makeStyles({
   root: {
@@ -88,6 +89,7 @@ export interface AppShellProps {
 
 export function AppShell({ title, screens, activeKey, onSelect, headerExtra, actions, dock, children, brand, stepper }: AppShellProps) {
   const s = useStyles();
+  const t = useT();
   const navMin = useLayout((st) => st.navMin);
   const rootRef = useRef<HTMLDivElement>(null);
   // モーダルのダイアログが開いている間は、背景（アプリ本体）を操作・支援技術の対象から外す（WAI-ARIA のモーダルの作法）。
@@ -137,7 +139,7 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
   };
   return (
     <div ref={rootRef} className={mergeClasses(s.root, navMin ? s.rootMin : undefined)} data-nav-min={navMin ? 'true' : undefined}>
-      <header className={s.header}>
+      <header className={s.header} data-testid="app-header">
         {/* FR-176: 作業先・企業・Project の段（ProjectsPanel が portal で描く）。画面の最上段に置き、Tab 順でも最初に届く */}
         <div id="projects-head-slot" className={s.topRow} data-testid="top-row" />
         <Text as="h1" size={500} weight="semibold">{title}</Text>
@@ -148,8 +150,8 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
         </div>
         {stepper}
       </header>
-      <nav className={mergeClasses(s.nav, navMin ? s.navMin : undefined, navMotion)} aria-label="画面">
-        <Tooltip content={navMin ? 'メニューを元の幅に戻す' : 'メニューを最小化'} relationship="label" withArrow visible={toggleTip && !toggleHold} onVisibleChange={(_, d) => setToggleTip(d.visible)}>
+      <nav className={mergeClasses(s.nav, navMin ? s.navMin : undefined, navMotion)}       aria-label={t('画面')}>
+              <Tooltip content={navMin ? t('メニューを元の幅に戻す') : t('メニューを最小化')} relationship="label" withArrow visible={toggleTip && !toggleHold} onVisibleChange={(_, d) => setToggleTip(d.visible)}>
           <Button
             data-testid="nav-toggle"
             className={s.navToggle}
@@ -160,7 +162,7 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
             onBlur={() => setToggleHold(false)}
             onMouseLeave={() => setToggleHold(false)}
           >
-            {navMin ? null : 'メニューを最小化'}
+            {navMin ? null : t('メニューを最小化')}
           </Button>
         </Tooltip>
         {screens.map((sc) => {
@@ -169,7 +171,7 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
           const button = (
             <Button
               key={sc.key}
-              data-testid={`nav-${sc.key}`}
+              data-testid={sc.key === 'settings' ? 'settings-button' : `nav-${sc.key}`}
               className={mergeClasses(s.navButton, navMin ? s.navButtonMin : undefined)}
               aria-label={navMin ? sc.label : undefined}
               appearance={active ? 'secondary' : 'subtle'}

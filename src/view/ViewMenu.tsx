@@ -8,6 +8,7 @@ import {
   Button, Menu, MenuDivider, MenuGroup, MenuGroupHeader, MenuItem, MenuItemRadio, MenuList, MenuPopover, MenuTrigger, Tooltip, makeStyles, tokens,
   type MenuProps,
 } from '@fluentui/react-components';
+import { useT } from '../i18n';
 import { paneAction } from '../workspace/paneActions';
 import { applyScreenView, useComponentView, useScreenView } from './useView';
 import {
@@ -24,8 +25,12 @@ const useStyles = makeStyles({
 
 type Checked = Record<string, string[]>;
 
+// 既定の移動（10px の滑り込み）をなくす。開いた直後に項目が動き続けると、操作（クリック）の位置が定まるまで待たされる
+const NO_SLIDE = { distance: 0 } as never;
+
 function Options<T extends string>({ name, options }: { name: string; options: ViewOption<T>[] }) {
   const s = useStyles();
+  const t = useT();
   const base = useId();
   return (
     <>
@@ -37,12 +42,12 @@ function Options<T extends string>({ name, options }: { name: string; options: V
             name={name}
             value={o.value}
             // 名前は選択肢の文字だけ（理由は説明として読み上げる）
-            aria-label={o.label}
+            aria-label={t(o.label)}
             aria-describedby={o.reason ? rid : undefined}
             disabled={!o.enabled}
-            secondaryContent={o.reason ? <span id={rid} className={s.reason}>{o.reason}</span> : undefined}
+            secondaryContent={o.reason ? <span id={rid} className={s.reason}>{t(o.reason)}</span> : undefined}
           >
-            {o.label}
+            {t(o.label)}
           </MenuItemRadio>
         );
       })}
@@ -51,15 +56,16 @@ function Options<T extends string>({ name, options }: { name: string; options: V
 }
 
 function ViewMenuList({ modes, worlds }: { modes: ViewOption<ViewMode>[]; worlds: ViewOption<WorldView>[] }) {
+  const t = useT();
   return (
     <MenuList>
       <MenuGroup>
-        <MenuGroupHeader>表示形式</MenuGroupHeader>
+        <MenuGroupHeader>{t('表示形式')}</MenuGroupHeader>
         <Options name="mode" options={modes} />
       </MenuGroup>
       <MenuDivider />
       <MenuGroup>
-        <MenuGroupHeader>世界の表示</MenuGroupHeader>
+        <MenuGroupHeader>{t('世界の表示')}</MenuGroupHeader>
         <Options name="world" options={worlds} />
       </MenuGroup>
     </MenuList>
@@ -78,16 +84,17 @@ function onChecked(setMode: (m: ViewMode) => void, setWorld: (w: WorldView) => v
 /** コンポーネントの見出しの「ビュー」ボタン。名前は「ビュー」で始まり、見える文字に現在の表示モードと世界の表示を含む（CONTRACT.md §21） */
 export function ComponentViewButton({ paneKey }: { paneKey: string }) {
   const s = useStyles();
+  const t = useT();
   const v = useComponentView(paneKey);
   const a = paneAction('view');
   const checked: Checked = { mode: [v.mode], world: [v.world] };
   const text = viewText(v.mode, v.world);
   return (
-    <Menu checkedValues={checked} onCheckedValueChange={onChecked(v.setMode, v.setWorld)}>
-      <Tooltip content="ビュー（このコンポーネントの表示モードと世界の表示）" relationship="description" withArrow>
+    <Menu surfaceMotion={NO_SLIDE} positioning={{ autoSize: 'height', overflowBoundary: 'window', flipBoundary: 'window' } as never} checkedValues={checked} onCheckedValueChange={onChecked(v.setMode, v.setWorld)}>
+      <Tooltip content={t('ビュー（このコンポーネントの表示モードと世界の表示）')} relationship="description" withArrow>
         <MenuTrigger disableButtonEnhancement>
           {/* 見出しの幅を取りすぎないよう、アイコンは付けず文字（現在の表示モード・世界の表示）だけで示す */}
-          <Button className={s.button} appearance="subtle" size="small" data-action="view" data-icon-variant={a.variant} aria-label={`ビュー: ${text}`}>
+          <Button className={s.button} appearance="subtle" size="small" data-action="view" data-icon-variant={a.variant} aria-label={t('ビュー: {text}', { text })}>
             {text}
           </Button>
         </MenuTrigger>
@@ -101,12 +108,13 @@ export function ComponentViewButton({ paneKey }: { paneKey: string }) {
 
 /** 「その他の操作」メニューの中のビューの切替（入れ子のメニュー） */
 export function ComponentViewSubmenu({ paneKey }: { paneKey: string }) {
+  const t = useT();
   const v = useComponentView(paneKey);
   const checked: Checked = { mode: [v.mode], world: [v.world] };
   return (
-    <Menu checkedValues={checked} onCheckedValueChange={onChecked(v.setMode, v.setWorld)}>
+    <Menu surfaceMotion={NO_SLIDE} checkedValues={checked} onCheckedValueChange={onChecked(v.setMode, v.setWorld)}>
       <MenuTrigger disableButtonEnhancement>
-        <MenuItem>{`ビュー（${viewText(v.mode, v.world)}）`}</MenuItem>
+        <MenuItem>{t('ビュー（{text}）', { text: viewText(v.mode, v.world) })}</MenuItem>
       </MenuTrigger>
       <MenuPopover>
         <ViewMenuList modes={modeOptions(v.decl, v.can3D)} worlds={worldOptions(v.decl)} />
@@ -118,6 +126,7 @@ export function ComponentViewSubmenu({ paneKey }: { paneKey: string }) {
 /** 画面の見出しの「ビュー」ボタン。選んだ値を画面の全コンポーネントにまとめて入れる（表現を固定したもの・その表現を持たないものは変えない） */
 export function ScreenViewButton() {
   const s = useStyles();
+  const t = useT();
   const cur = useScreenView();
   const Icon = paneAction('view').Icon;
   const checked: Checked = { mode: [cur.mode], world: [cur.world] };
@@ -129,14 +138,15 @@ export function ScreenViewButton() {
   const worlds = worldOptions({ ...FALLBACK_DECL, world: 'items' });
   return (
     <Menu
+      surfaceMotion={NO_SLIDE}
       checkedValues={checked}
       onCheckedValueChange={onChecked((m) => applyScreenView({ mode: m }), (w) => applyScreenView({ world: w }))}
     >
       {/* 画面の見出し（FR-220 AC-515）。名前は「ビュー」で始まり、コンポーネントの見出しの「ビュー」と同じメニュー。左メニューには切替を置かない */}
       <span data-testid="screen-heading" className={s.heading}>
         <MenuTrigger disableButtonEnhancement>
-          <Button className={s.button} icon={<Icon aria-hidden />} aria-label={`ビュー: ${text}`} data-testid="screen-view">
-            ビュー: {text}
+          <Button className={s.button} icon={<Icon aria-hidden />} aria-label={t('ビュー: {text}', { text })} data-testid="screen-view">
+            {t('ビュー: {text}', { text })}
           </Button>
         </MenuTrigger>
       </span>

@@ -2,6 +2,7 @@
 // AI は使わず、保存もしない（登録で初めて保存される）。
 import type { Issue, Product, Solution } from '../analysis/model';
 import { MAX_STEPS, type UseCaseDraft, type UseCaseSource } from './model';
+import { tr } from '../i18n';
 
 export interface Candidate {
   /** 導出元（解決策 × 課題）。登録済みの導出元参照と同じ形 */
@@ -34,7 +35,7 @@ export function deriveCandidates(
   const is = issues ?? [];
   const ss = solutions ?? [];
   if (is.length === 0 || ss.length === 0) {
-    return { candidates: [], issuesWithoutSolution: is.length, emptyReason: NO_SOURCE_REASON };
+    return { candidates: [], issuesWithoutSolution: is.length, emptyReason: tr(NO_SOURCE_REASON) };
   }
   const taken = new Set(registered.filter((r): r is UseCaseSource => !!r).map(sourceKey));
   const issueMap = new Map(is.map((i) => [i.id, i]));

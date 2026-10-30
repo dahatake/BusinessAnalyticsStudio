@@ -4,6 +4,7 @@ import {
   SHORT_VIDEO_FPS, SHORT_VIDEO_HEIGHT, SHORT_VIDEO_SECONDS, SHORT_VIDEO_WATERMARK, SHORT_VIDEO_WIDTH,
   slideIndexAt, wrapText, type ShortSlide,
 } from './extras';
+import { tr } from '../i18n';
 
 export interface ShortVideoSource {
   customerName: string;
@@ -62,13 +63,13 @@ export function drawShortFrame(ctx: CanvasRenderingContext2D, src: ShortVideoSou
   ctx.textBaseline = 'middle';
   ctx.fillStyle = 'rgba(255,255,255,0.28)';
   ctx.font = font(150, 800);
-  ctx.fillText(SHORT_VIDEO_WATERMARK, 0, 0);
+  ctx.fillText(tr(SHORT_VIDEO_WATERMARK), 0, 0);
   ctx.restore();
   ctx.textAlign = 'right';
   ctx.textBaseline = 'top';
   ctx.fillStyle = 'rgba(255,255,255,0.85)';
   ctx.font = font(24, 700);
-  ctx.fillText(SHORT_VIDEO_WATERMARK, w - 30, 24);
+  ctx.fillText(tr(SHORT_VIDEO_WATERMARK), w - 30, 24);
   ctx.textAlign = 'left';
 }
 
@@ -91,12 +92,12 @@ export interface RecordOptions {
 export async function recordShortVideo(src: ShortVideoSource, opts: RecordOptions = {}): Promise<Blob | null> {
   const seconds = opts.seconds ?? SHORT_VIDEO_SECONDS;
   const mime = pickWebmMimeType();
-  if (!mime) throw new Error('このブラウザーは WebM の録画に対応していません。');
+  if (!mime) throw new Error(tr('このブラウザーは WebM の録画に対応していません。'));
   const canvas = document.createElement('canvas');
   canvas.width = SHORT_VIDEO_WIDTH;
   canvas.height = SHORT_VIDEO_HEIGHT;
   const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('キャンバスを使えません。');
+  if (!ctx) throw new Error(tr('キャンバスを使えません。'));
   const stream = canvas.captureStream(SHORT_VIDEO_FPS);
   const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 2_500_000 });
   const chunks: Blob[] = [];

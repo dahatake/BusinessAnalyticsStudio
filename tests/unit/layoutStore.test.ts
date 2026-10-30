@@ -15,7 +15,7 @@ class MemoryStorage {
   clear() { this.m.clear(); }
 }
 
-const ALL = ['canvas', 'summary', 'matrix', 'ranking', 'issue-solution', 'discussion-tree', 'gantt', 'architecture', 'knowledge-graph', 'products', 'view3d', 'mock-app', 'table', 'kpi-okr'];
+const ALL = ['summary', 'matrix', 'ranking', 'issue-solution', 'discussion-tree', 'gantt', 'architecture', 'knowledge-graph', 'products', 'map', 'twin-view', 'mock-app', 'table', 'kpi-okr'];
 
 /** 新しいストアを、保存値（あれば）を読んだ状態で作る。 */
 async function freshStore(available: readonly string[], saved?: unknown) {
@@ -154,7 +154,7 @@ describe('FR-012 FR-014 AC-017 既定が空になるときの退避（暫定）'
   // FR-012 FR-112 経営層の既定にはキャンバスが背景の全体図として残る（§7 の表）。既定は情報の階層の配置（FR-243・FR-244）: 主役が左上で最大、補助が右、詳細（キャンバス）が下
   it('FR-112 §7 経営層の既定のレイアウトにはキャンバスが含まれ、2×2 マトリクスが最大の領域になる', () => {
     const l = defaultLayout('経営層');
-    expect(keysOf(l)).toEqual(['matrix', 'canvas', 'summary', 'kpi-okr', 'ranking']);
+    expect(keysOf(l)).toEqual(['matrix', 'summary', 'kpi-okr', 'ranking']);
     expect(largestComponent(l)).toBe('matrix');
   });
 

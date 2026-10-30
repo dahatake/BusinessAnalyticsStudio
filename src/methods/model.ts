@@ -2,6 +2,7 @@
 // 手法の名称と枠組みだけを使い、既存資料の本文は複製しない。項目名は一般的な観点の短い見出しである。
 
 export type MethodId = 'swot' | 'five-forces' | 'value-chain' | '3c' | 'bsc';
+import { tr, useLang } from '../i18n';
 
 /** 1 項目の分類・値（スコア）・重み */
 export interface Factor { id: string; label: string; category: string }
@@ -13,7 +14,8 @@ export const WEIGHT = { min: 1, max: 5, def: 1 } as const;
 
 const f = (id: string, category: string, label: string): Factor => ({ id: `factor-${id}`, label, category });
 
-export const METHODS: Method[] = [
+/** 日本語の定義（表示するときに tr() で訳す。FR-294） */
+const METHOD_DEFS: Method[] = [
   {
     id: 'swot', name: 'SWOT 分析', summary: '内部の強み・弱みと外部の機会・脅威を評価する',
     categories: ['強み', '弱み', '機会', '脅威'],
@@ -61,6 +63,30 @@ export const METHODS: Method[] = [
   },
 ];
 
+/** 言語ごとに 1 回だけ作る（表示言語が変わると作り直す。配列の同一性は言語が同じ間は保つ） */
+function perLang<T>(make: () => T): () => T {
+  let lang: string | undefined;
+  let value: T;
+  return () => {
+    const cur = useLang.getState().lang;
+    if (lang !== cur || value === undefined) { lang = cur; value = make(); }
+    return value;
+  };
+}
+
+/** 手法の定義。名称・分類・項目名は、表示するときの言語で返す（getter）。 */
+export const METHODS: Method[] = METHOD_DEFS.map((d) => {
+  const categories = perLang(() => d.categories.map((c) => tr(c)));
+  const factors = perLang(() => d.factors.map((x) => ({ ...x, label: tr(x.label), category: tr(x.category) })));
+  return {
+    id: d.id,
+    get name() { return tr(d.name); },
+    get summary() { return tr(d.summary); },
+    get categories() { return categories(); },
+    get factors() { return factors(); },
+  };
+});
+
 export function getMethod(id: MethodId): Method {
   const m = METHODS.find((x) => x.id === id);
   if (!m) throw new Error(`未知の分析手法: ${id}`);
@@ -80,17 +106,17 @@ export type Parsed = { ok: true; value: number } | { ok: false; reason: string }
 /** 入力文字列を検証する。範囲外・型違いは、原因と直し方を返す。 */
 export function parseField(field: Field, raw: string): Parsed {
   const range = field === 'score' ? SCORE : WEIGHT;
-  const name = field === 'score' ? '値' : '重み';
+  const name = field === 'score' ? tr('値') : tr('重み');
   const text = raw.trim();
   if (text === '' || !/^[+-]?\d+(\.\d+)?$/.test(text)) {
-    return { ok: false, reason: `${name}は数値で入力してください（${range.min}〜${range.max}）。` };
+    return { ok: false, reason: tr('{name}は数値で入力してください（{min}〜{max}）。', { name, min: range.min, max: range.max }) };
   }
   const n = Number(text);
   if (n < range.min || n > range.max) {
-    return { ok: false, reason: `${name}は ${range.min}〜${range.max} の範囲で入力してください（入力: ${text}）。` };
+    return { ok: false, reason: tr('{name}は {min}〜{max} の範囲で入力してください（入力: {text}）。', { name, min: range.min, max: range.max, text }) };
   }
   if (field === 'weight' && !Number.isInteger(n)) {
-    return { ok: false, reason: `重みは整数で入力してください（入力: ${text}）。` };
+    return { ok: false, reason: tr('重みは整数で入力してください（入力: {text}）。', { text }) };
   }
   return { ok: true, value: n };
 }
@@ -121,5 +147,7 @@ export function filterItems(items: ResultItem[], query: string): ResultItem[] {
 
 export type ViewerId = 'table' | 'matrix' | 'chart';
 export const VIEWERS: { id: ViewerId; name: string }[] = [
-  { id: 'table', name: '表' }, { id: 'matrix', name: 'マトリクス' }, { id: 'chart', name: 'グラフ' },
+  { id: 'table', get name() { return tr('表'); } },
+  { id: 'matrix', get name() { return tr('マトリクス'); } },
+  { id: 'chart', get name() { return tr('グラフ'); } },
 ];

@@ -99,6 +99,35 @@ export function setDrawOpacity(root: THREE.Object3D, levelOpacity: (depth: numbe
   }
 }
 
+/**
+ * 出入り・遷移の途中（FR-070）の位置・大きさを、組み立て済みのオブジェクトへ反映する。
+ * 形・色・階層のグループ（メッシュ）は変えず、各項目の行列（位置・大きさ）だけを更新する。
+ */
+export function applyDisplay(
+  root: THREE.Object3D, byId: ReadonlyMap<string, TwinObject>,
+  displayOf: (o: TwinObject) => { position: readonly [number, number, number]; size: readonly [number, number, number] },
+): void {
+  for (const child of root.children) {
+    const ids = (child.userData as { ids?: string[] }).ids ?? [];
+    const inst = child as THREE.InstancedMesh;
+    ids.forEach((id, i) => {
+      const o = byId.get(id);
+      if (!o) return;
+      const d = displayOf(o);
+      if (inst.isInstancedMesh) {
+        tmpPos.set(...d.position);
+        tmpScale.set(...twinScale(o.shape, d.size as [number, number, number]));
+        tmpMatrix.compose(tmpPos, identityQ, tmpScale);
+        inst.setMatrixAt(i, tmpMatrix);
+      } else {
+        child.position.set(...d.position);
+        child.scale.set(...twinScale(o.shape, d.size as [number, number, number]));
+      }
+    });
+    if (inst.isInstancedMesh) { inst.instanceMatrix.needsUpdate = true; inst.computeBoundingSphere(); }
+  }
+}
+
 export function drawStats(root: THREE.Object3D): DrawStats {
   let objects = 0;
   let instancedMeshes = 0;

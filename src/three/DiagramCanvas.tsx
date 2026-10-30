@@ -6,13 +6,15 @@ import { OrbitControls } from '@react-three/drei';
 import { useAnimation } from '../store/animation';
 import { countFrame, useIndustryPreset, useView3D } from '../store/view3d';
 import { QUALITY_PROFILES } from './quality';
+import { useCanvasVisible } from './useCanvasVisible';
 import { tokens } from '../theme/tokens';
+import { tr } from '../i18n';
 
 class Boundary extends Component<{ children: ReactNode }, { failed: boolean }> {
   override state = { failed: false };
   static getDerivedStateFromError() { return { failed: true }; }
   override render() {
-    if (this.state.failed) return <span role="alert">3D を表示できませんでした。2D の表示に切り替えてください。</span>;
+    if (this.state.failed) return <span role="alert">{tr('3D を表示できませんでした。2D の表示に切り替えてください。')}</span>;
     return this.props.children;
   }
 }
@@ -33,14 +35,19 @@ export function DiagramCanvas({ children, cameraPosition = [9, 8, 11], label }: 
   const quality = useView3D((s) => s.quality);
   const playing = useAnimation((s) => s.playing);
   const preset = useIndustryPreset();
+  const setRenderer = useView3D((s) => s.setRenderer);
   const profile = QUALITY_PROFILES[quality];
+  // 画面に見えていない（背面・非表示）あいだは描かない（FR-070 AC-086）
+  const { visible, attach } = useCanvasVisible();
   return (
     <div style={{ position: 'relative', width: '100%', height: '60vh', minHeight: 320, flexShrink: 0, overflow: 'hidden', borderRadius: tokens.borderRadiusMedium }} role="img" aria-label={label} data-testid="diagram-3d">
       <Boundary>
         <Canvas
           gl={{ antialias: profile.antialias, preserveDrawingBuffer: true, powerPreference: 'high-performance' }}
           dpr={Math.min(typeof window === 'undefined' ? 1 : window.devicePixelRatio, profile.maxDpr)}
-          frameloop={playing ? 'always' : 'demand'}
+          frameloop={visible ? (playing ? 'always' : 'demand') : 'never'}
+          // この枠は WebGL2 で描く（FR-065 AC-080）。設定パネルの描画方式に反映する
+          onCreated={({ gl }) => { setRenderer('WebGL2'); attach(gl.domElement); }}
           camera={{ position: cameraPosition, fov: 45 }}
           style={{ width: '100%', height: '100%', display: 'block' }}
         >

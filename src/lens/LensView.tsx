@@ -6,6 +6,7 @@ import { useHighlightClass } from '../components/highlight';
 import { GlossaryText } from '../glossary/GlossaryText';
 import { onEntityKey, useEntityBinding, useEntityGraph } from '../selection/hooks';
 import { useLens } from '../store/lens';
+import { useT } from '../i18n';
 import { LENS_LABELS, LENS_MODES, buildLensItems, type LensItem, type LensMode } from './model';
 
 /** 選択を起こしたビューとして記録する名前 */
@@ -44,11 +45,12 @@ const useStyles = makeStyles({
 
 function LensPane({ testId, title, items, field }: { testId: string; title: string; items: LensItem[]; field: 'businessNote' | 'itNote' }) {
   const s = useStyles();
+  const t = useT();
   const bind = useEntityBinding(ORIGIN);
   const hl = useHighlightClass();
   return (
-    <section className={s.pane} data-testid={testId} aria-label={`${title}のレンズ`}>
-      <Text as="h3" weight="semibold">{title}のレンズ</Text>
+    <section className={s.pane} data-testid={testId} aria-label={t('{title}のレンズ', { title })}>
+      <Text as="h2" weight="semibold">{t('{title}のレンズ', { title })}</Text>
       <ul className={s.list}>
         {items.map((it) => {
           const props = bind(it.id, { filterable: false });
@@ -72,20 +74,21 @@ function LensPane({ testId, title, items, field }: { testId: string; title: stri
 
 export function LensView() {
   const s = useStyles();
+  const t = useT();
   const mode = useLens((st) => st.mode);
   const setMode = useLens((st) => st.setMode);
   const graph = useEntityGraph();
   const items = useMemo(() => buildLensItems(graph), [graph]);
   return (
     <div className={s.root} data-testid="lens" data-lens-mode={mode}>
-      <RadioGroup aria-label="レンズ" layout="horizontal" value={mode} onChange={(_, d) => setMode(d.value as LensMode)}>
+      <RadioGroup aria-label={t('レンズ')} layout="horizontal" value={mode} onChange={(_, d) => setMode(d.value as LensMode)}>
         {LENS_MODES.map((m) => <Radio key={m} value={m} label={LENS_LABELS[m]} />)}
       </RadioGroup>
       <div className={mergeClasses(s.panes, mode === 'both' ? s.panesBoth : undefined)}>
-        {mode !== 'it' ? <LensPane testId="lens-business" title="ビジネス" items={items} field="businessNote" /> : null}
+        {mode !== 'it' ? <LensPane testId="lens-business" title={t('ビジネス')} items={items} field="businessNote" /> : null}
         {mode !== 'business' ? <LensPane testId="lens-it" title="IT" items={items} field="itNote" /> : null}
       </div>
-      {items.length === 0 ? <Text size={200}>レンズに並べる項目が顧客パックにありません。</Text> : null}
+      {items.length === 0 ? <Text size={200}>{t('レンズに並べる項目が顧客パックにありません。')}</Text> : null}
     </div>
   );
 }

@@ -178,6 +178,24 @@ describe('FR-178 ストーリーの画面（結合）', () => {
   const position = () => screen.getByTestId('story-position').textContent ?? '';
   const key = (k: string) => fireEvent.keyDown(window, { key: k });
 
+  // FR-178 AC-740: 全シーンの各要素に配置検査用の data-story-el が付き、見出しは 1 つ（実際の矩形の検査は System Test E2E-374）
+  it('FR-178 AC-740 すべてのシーンで要素に data-story-el が付く（big とラベル・見出し・本文・CTA）', () => {
+    open();
+    const seen = new Set<string>();
+    for (let i = 0; i < 40; i++) {
+      const scene = screen.getByTestId('story-scene');
+      scene.querySelectorAll('[data-story-el]').forEach((e) => seen.add(e.getAttribute('data-story-el') ?? ''));
+      expect(scene.querySelectorAll('[data-story-el="heading"]').length).toBe(1);
+      expect(scene.querySelectorAll('[data-story-el="kicker"]').length).toBe(1);
+      const big = scene.querySelector('[data-story-el="big"]');
+      if (big) expect(scene.querySelector('[data-story-el="big-label"]')).not.toBeNull();
+      const m = /(\d+) \/ (\d+)/.exec(position());
+      if (!m || m[1] === m[2]) break;
+      key('ArrowRight');
+    }
+    for (const k of ['kicker', 'big', 'big-label', 'heading', 'body-line']) expect(seen.has(k), k).toBe(true);
+  });
+
   // FR-177 AC-358 / FR-178 AC-360
   it('FR-177 AC-358 FR-178 AC-360 開始でフルスクリーンになり、→・←・Home で動き、F で抜け・入り、Esc でまずフルスクリーンを抜けて位置とペルソナを保ち、もう一度で終了する', () => {
     open();

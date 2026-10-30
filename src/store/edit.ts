@@ -3,6 +3,7 @@
 // （すべてのビューが usePackStore を購読しているので、再読込なしで即座に変わる: FR-045）→ 元に戻す/やり直しの履歴と変更履歴に記録（FR-046）。
 // 後続のビュー（3D・ナレッジグラフなど）は、usePackStore の data を読むだけで編集を反映できる。編集の発生を知りたいときは `subscribeEdits`。
 import { create } from 'zustand';
+import { tr } from '../i18n';
 import {
   addRecord, deleteRecord, duplicateRecord, importCsv, importJson, renameRecord, resetTo, updateField,
   type DataChange, type EditResult,
@@ -10,6 +11,7 @@ import {
 import type { PackData } from '../schema';
 import { getEntityGraph } from '../selection/hooks';
 import { usePackStore } from './pack';
+import { useProjects } from './projects';
 import { useSelectionStore } from './selection';
 
 /** 元に戻す履歴の上限（PARAM-024） */
@@ -32,7 +34,7 @@ interface Step {
 }
 
 const MODE_KEY = 'edb.editMode';
-const OFF_MESSAGE = '編集モードが OFF です。ヘッダーの「編集モード」を ON にしてください。';
+const offMessage = (): string => tr('編集モードが OFF です。ヘッダーの「編集モード」を ON にしてください。');
 
 function readMode(): boolean {
   try { return localStorage.getItem(MODE_KEY) === '1'; } catch { return false; }
@@ -101,10 +103,10 @@ export const useEditStore = create<EditState>((set, get) => {
   };
 
   const apply = (result: EditResult, actor: Actor): EditResult => {
-    if (!get().editMode) return { ok: false, message: OFF_MESSAGE };
+    if (!get().editMode) return { ok: false, message: offMessage() };
     if (!result.ok) return result;
     const before = currentData();
-    if (!before) return { ok: false, message: '顧客パックが読み込まれていません。' };
+    if (!before) return { ok: false, message: tr('顧客パックが読み込まれていません。') };
     if (result.changes.length === 0) return result;
     set((s) => ({ past: [...s.past, { data: before, changes: result.changes }].slice(-UNDO_LIMIT), future: [] }));
     usePackStore.getState().setData(result.data);
@@ -115,15 +117,15 @@ export const useEditStore = create<EditState>((set, get) => {
   };
 
   const run = (fn: (d: PackData) => EditResult, actor: Actor): EditResult => {
-    if (!get().editMode) return { ok: false, message: OFF_MESSAGE };
+    if (!get().editMode) return { ok: false, message: offMessage() };
     const d = currentData();
-    if (!d) return { ok: false, message: '顧客パックが読み込まれていません。' };
+    if (!d) return { ok: false, message: tr('顧客パックが読み込まれていません。') };
     return apply(fn(d), actor);
   };
 
   const preview = (fn: (d: PackData) => EditResult): EditResult => {
     const d = currentData();
-    return d ? fn(d) : { ok: false, message: '顧客パックが読み込まれていません。' };
+    return d ? fn(d) : { ok: false, message: tr('顧客パックが読み込まれていません。') };
   };
 
   const step = (from: 'past' | 'future'): boolean => {
@@ -137,7 +139,11 @@ export const useEditStore = create<EditState>((set, get) => {
     const op = from === 'past' ? 'undo' : 'redo';
     set({ [from]: stack.slice(0, -1), [to]: [...s[to], { data: now, changes: item.changes }].slice(-UNDO_LIMIT) } as Partial<EditState>);
     usePackStore.getState().setData(item.data);
-    syncSelection();
+    // 復元された項目（削除の取り消し・追加のやり直し）は選び直し、すべてのビューで「戻った項目」を確かめられるようにする（FR-045 AC-056・FR-070 AC-086）
+    const restored = item.changes
+      .filter((c) => (op === 'undo' ? c.op === 'delete' : c.op === 'add' || c.op === 'duplicate') && c.entityId)
+      .map((c) => c.entityId as string);
+    syncSelection(restored.length > 0 && getEntityGraph() ? restored.filter((id) => getEntityGraph()?.has(id)) : undefined);
     // 元に戻すは「変更後 → 変更前」、やり直しは「変更前 → 変更後」として記録する
     const changes = item.changes.map((c) => (op === 'undo' ? { ...c, before: c.after, after: c.before } : c));
     const entries = record(changes, 'human', op);
@@ -161,21 +167,28 @@ export const useEditStore = create<EditState>((set, get) => {
     importCsv: (text, actor = 'human') => run((d) => importCsv(d, text), actor),
     importJson: (text, actor = 'human') => {
       const brand = usePackStore.getState().state;
-      return run(() => (brand.status === 'ready' ? importJson(text, brand.pack.brand) : { ok: false, message: '顧客パックが読み込まれていません。' }), actor);
+      return run(() => (brand.status === 'ready' ? importJson(text, brand.pack.brand) : { ok: false, message: tr('顧客パックが読み込まれていません。') }), actor);
     },
     resetToSample: (actor = 'human') => run((d) => {
       const original = usePackStore.getState().original;
-      return original ? resetTo(d, original) : { ok: false, message: '戻し先のサンプルがありません。' };
+      return original ? resetTo(d, original) : { ok: false, message: tr('戻し先のサンプルがありません。') };
     }, actor),
     previewCsv: (text) => preview((d) => importCsv(d, text)),
     previewJson: (text) => {
       const st = usePackStore.getState().state;
-      return st.status === 'ready' ? importJson(text, st.pack.brand) : { ok: false, message: '顧客パックが読み込まれていません。' };
+      return st.status === 'ready' ? importJson(text, st.pack.brand) : { ok: false, message: tr('顧客パックが読み込まれていません。') };
     },
     commit: (result, actor = 'human') => apply(result, actor),
     undo: () => step('past'),
     redo: () => step('future'),
   };
+});
+
+// FR-043 AC-054: 作業先（Project・デモ）を切り替えたら元に戻す/やり直しの履歴を捨てる。
+// 履歴の Step は別の作業先のパック全体を持つので、残すと Undo で他の作業先のパックが適用・保存されてしまう。
+useProjects.subscribe((next, previous) => {
+  if (next.openId === previous.openId) return;
+  useEditStore.setState({ past: [], future: [] });
 });
 
 /** 単体テスト用: 編集の状態を初期化する */

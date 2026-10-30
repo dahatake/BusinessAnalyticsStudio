@@ -1,12 +1,14 @@
 // インク・ボードのデータモデル（FR-086〜FR-089）。自前の Canvas 実装（[ASSUMPTION] A-01、Q-003 の推奨案 A）。
 // 座標はすべて「ワールド座標」（無限キャンバス上の座標）。画面の座標への変換は viewport.ts。
+import { tr } from '../i18n';
 
 export type Background = 'plain' | 'grid' | 'dots' | 'lines';
+// label は読むたびに翻訳する（言語切替で更新されるよう getter にしている）
 export const BACKGROUNDS: ReadonlyArray<{ value: Background; label: string }> = [
-  { value: 'plain', label: '無地' },
-  { value: 'grid', label: '方眼' },
-  { value: 'dots', label: 'ドット' },
-  { value: 'lines', label: '罫線' },
+  { value: 'plain', get label() { return tr('無地'); } },
+  { value: 'grid', get label() { return tr('方眼'); } },
+  { value: 'dots', get label() { return tr('ドット'); } },
+  { value: 'lines', get label() { return tr('罫線'); } },
 ];
 
 /** p は筆圧（0〜1）。マウスは 0.5 固定。ペンの傾きは effectivePressure で p に畳み込み済み。 */
@@ -69,7 +71,7 @@ export interface ViewState { x: number; y: number; zoom: number }
 export interface Board {
   id: string;
   name: string;
-  /** 議題（議論テーマ）の ID。なければ null */
+  /** 論点（議論テーマ）の ID。なければ null */
   topicId: string | null;
   /** 'annotation' は他のビューの上に重ねる注釈（ボードの一覧には出さない） */
   kind: 'board' | 'annotation';

@@ -15,6 +15,8 @@ import { GraphScope } from './GraphViewport';
 import { GraphAlt } from './GraphAlt';
 import { ZoomBreadcrumb, canZoomIn, canZoomOut, scaleOfDepth, zoomAttrs } from '../semanticzoom';
 import { detect3D } from '../view/render3d';
+import { useT } from '../i18n';
+import { lifeOpacity, usePresenceItems } from '../motion';
 import {
   RELATION_KIND_LABELS, RELATION_KINDS, decideViewMode, describeRelation, highlightOf, lineStyleOf, relatedOf, relationAnnouncement, simplifySelection,
   type RelationKind, type ViewerRelation,
@@ -60,6 +62,7 @@ const NO_RELATIONS: readonly ViewerRelation[] = [];
 
 export function DataViewer({ entities, selectedKey, onSelect, relations = NO_RELATIONS, limits, available3D }: DataViewerProps) {
   const s = useStyles();
+  const t = useT();
   const { mode, zoom, level, filter, cluster, useCase } = useDataViewer();
   const setUseCase = useDataViewer((x) => x.setUseCase);
   const setMode = useDataViewer((x) => x.setMode);
@@ -98,19 +101,26 @@ export function DataViewer({ entities, selectedKey, onSelect, relations = NO_REL
   const detailKeys = simple?.detailKeys ?? null;
   const inDetail = (k: string) => !detailKeys || detailKeys.has(k);
 
+  // 出入り・遷移（FR-070 AC-086）: エンティティのカードは同じキーのまま現れ、削除は薄れて消える（消えるカードは操作を持たない）
+  const cardPresence = usePresenceItems(shown, (e) => e.key, () => []);
+  const clusterOfKey = useRef(new Map<string, string>());
+  for (const c of clusters) for (const e of c.entities) clusterOfKey.current.set(e.key, c.name);
+  const cardLife = new Map(cardPresence.map((p) => [p.id, p.life] as const));
+  const ghostsOf = (cluster: string): ViewerEntity[] => cardPresence.filter((p) => p.exiting && clusterOfKey.current.get(p.id) === cluster).map((p) => p.item);
+
   // 変化の通知（aria-live）。選択・解除と詳細度が変わったときに、文字で知らせる
   const lastLevel = useRef(level);
   const lastSel = useRef(selected?.name);
   useEffect(() => {
     const msgs: string[] = [];
-    if (lastLevel.current !== level) msgs.push(`詳細度が ${DETAIL_LABELS[level]} になりました。`);
+    if (lastLevel.current !== level) msgs.push(t('詳細度が {level} になりました。', { level: t(DETAIL_LABELS[level]) }));
     if (lastSel.current !== selected?.name) {
-      if (selected) msgs.push(`${selected.name} を選択しました。列 ${selected.columns.length} 件。関連する対象 ${Math.max(0, (rel?.entityKeys.size ?? 1) - 1)} 件。`);
+      if (selected) msgs.push(t('{name} を選択しました。列 {cols} 件。関連する対象 {rel} 件。', { name: selected.name, cols: selected.columns.length, rel: Math.max(0, (rel?.entityKeys.size ?? 1) - 1) }));
       else msgs.push(relationAnnouncement(null, 0));
     }
     lastLevel.current = level; lastSel.current = selected?.name;
     if (msgs.length) setLive(msgs.join(' '));
-  }, [level, selected, rel]);
+  }, [level, selected, rel, t]);
 
   // ホイール・ピンチ（ドラッグでの移動にはボタン・キーという別の手段がある。2.5.7）
   useEffect(() => {
@@ -166,27 +176,36 @@ export function DataViewer({ entities, selectedKey, onSelect, relations = NO_REL
   // Graph（FR-238）: エンティティをノードに、関連（2 つのエンティティを結ぶもの）を意味ラベル付きの向き付きのエッジにする
   const clusterNameOf = new Map(clusters.flatMap((c) => c.entities.map((e) => [e.key, c.name] as const)));
   const graphNodes: GraphNodeIn[] = shown.filter((e) => inDetail(e.key)).map((e) => ({
-    id: e.key, name: e.name, kind: clusterNameOf.get(e.key) ?? 'データエンティティ', cluster: clusterNameOf.get(e.key), note: `列 ${e.columns.length} 件`,
+    id: e.key, name: e.name, kind: clusterNameOf.get(e.key) ?? 'データエンティティ', kindLabel: clusterNameOf.has(e.key) ? undefined : t('データエンティティ'), cluster: clusterNameOf.get(e.key), note: t('列 {n} 件', { n: e.columns.length }),
   }));
   const graphIds = new Set(graphNodes.map((n) => n.id));
   const graphEdges: GraphEdgeIn[] = relations
     .filter((r) => r.entityKeys.length === 2 && r.entityKeys.every((k) => graphIds.has(k)))
     .map((r) => ({ id: r.id, from: r.entityKeys[0]!, to: r.entityKeys[1]!, label: r.label, meaning: r.kind, dash: lineStyleOf(r).dash || undefined }));
-  const entityCard = (e: ViewerEntity) => {
+  const entityCard = (e: ViewerEntity, ghost = false) => {
     const on = e.key === selectedKey;
     const h = hl(e.key);
+    const life = cardLife.get(e.key) ?? 1;
+    if (ghost) {
+      return (
+        <div key={e.key} aria-hidden className={s.card} style={{ opacity: lifeOpacity(life), pointerEvents: 'none' }}>
+          <Text weight="semibold">{e.name}</Text>
+          <Text size={200}>{e.description}</Text>
+        </div>
+      );
+    }
     return (
       <div
         key={e.key} role="option" aria-selected={on} tabIndex={0} data-viewer-entity={e.name} data-highlight={h} data-zoom-node="" data-entity-id={e.key} data-entity-name={e.name} data-kind="データエンティティ" className={mergeClasses(s.card, on && s.on)}
-        style={h === 'dimmed' ? { opacity: 0.4 } : h === 'related' ? { borderStyle: 'dashed', borderWidth: tokens.strokeWidthThick } : undefined} onClick={() => { setUseCase(null); onSelect(e.key); }}
+        style={h === 'dimmed' ? { opacity: Math.min(0.4, lifeOpacity(life)) } : { opacity: lifeOpacity(life), ...(h === 'related' ? { borderStyle: 'dashed', borderWidth: tokens.strokeWidthThick } : {}) }} onClick={() => { setUseCase(null); onSelect(e.key); }}
         onDoubleClick={() => { setUseCase(null); onSelect(e.key); goDepth(2); }}
       >
-        <Text weight="semibold">{e.name}{on ? '（選択中）' : h === 'related' ? '（関連）' : ''}</Text>
+        <Text weight="semibold">{e.name}{on ? t('（選択中）') : h === 'related' ? t('（関連）') : ''}</Text>
         <Text size={200}>{e.description}</Text>
-        {level === 'entity' ? <Text size={200}>データエンティティ</Text> : null}
+        {level === 'entity' ? <Text size={200}>{t('データエンティティ')}</Text> : null}
         {level === 'column' ? (
           e.columns.length === 0
-            ? <Text size={200} data-viewer-nocolumns>{NO_COLUMNS_LABEL}</Text>
+            ? <Text size={200} data-viewer-nocolumns>{t(NO_COLUMNS_LABEL)}</Text>
             : <ul className={s.cols}>{e.columns.map((c, i) => <li key={i} tabIndex={-1} data-viewer-column={c.name}>{c.name}{c.type ? `（${c.type}）` : ''}</li>)}</ul>
         ) : null}
       </div>
@@ -201,7 +220,7 @@ export function DataViewer({ entities, selectedKey, onSelect, relations = NO_REL
         onClick={() => setCluster(c.name)} onDoubleClick={() => { setCluster(c.name); goDepth(1); }}
       >
         <Text weight="semibold">{c.name}</Text>
-        <Text size={200}>{c.entities.length} 件のエンティティ</Text>
+        <Text size={200}>{t('{n} 件のエンティティ', { n: c.entities.length })}</Text>
       </div>
     ))}
   </div>
@@ -210,58 +229,58 @@ export function DataViewer({ entities, selectedKey, onSelect, relations = NO_REL
   return (
     <div
       ref={root} className={s.root} data-testid="data-viewer" data-view-mode={effectiveMode} data-detail-level={level} data-zoom={zoom.toFixed(3)} {...zoomAttrs(depth, 1)}
-      role="group" aria-label="データビュアー" aria-roledescription="データビュアー。+ − で拡大縮小、0 で全体表示、矢印キーで移動、Enter で選択" tabIndex={0} onKeyDown={onKeyDown}
+      role="group" aria-label={t('データビュアー')} aria-roledescription={t('データビュアー。+ − で拡大縮小、0 で全体表示、矢印キーで移動、Enter で選択')} tabIndex={0} onKeyDown={onKeyDown}
     >
       <div className={s.bar}>
-        <RadioGroup layout="horizontal" aria-label="表示モード" value={effectiveMode} onChange={(_, d) => { if (d.value === '3d' && !can3D) return; setMode(d.value as '2d' | '3d' | 'graph'); }}>
+        <RadioGroup layout="horizontal" aria-label={t('表示モード')} value={effectiveMode} onChange={(_, d) => { if (d.value === '3d' && !can3D) return; setMode(d.value as '2d' | '3d' | 'graph'); }}>
           <Radio value="2d" label="2D" />
           <Radio value="3d" label="3D" disabled={!can3D} />
           <Radio value="graph" label="Graph" />
         </RadioGroup>
-        <Button size="small" aria-label="拡大" aria-disabled={!canZoomIn(depth, 1)} onClick={() => step(1)}>＋</Button>
-        <Button size="small" aria-label="縮小" disabled={depth === 0 && zoom <= ZOOM_HOME} onClick={() => step(-1)}>－</Button>
-        <Button size="small" aria-label="一つ上の階層へ" disabled={!canZoomOut(depth)} onClick={() => goDepth(depth - 1)}>一つ上</Button>
-        <Button size="small" aria-label="全体表示に戻す" onClick={() => home()}>全体表示</Button>
+        <Button size="small" aria-label={t('拡大')} aria-disabled={!canZoomIn(depth, 1)} onClick={() => step(1)}>＋</Button>
+        <Button size="small" aria-label={t('縮小')} disabled={depth === 0 && zoom <= ZOOM_HOME} onClick={() => step(-1)}>－</Button>
+        <Button size="small" aria-label={t('一つ上の階層へ')} disabled={!canZoomOut(depth)} onClick={() => goDepth(depth - 1)}>{t('一つ上')}</Button>
+        <Button size="small" aria-label={t('全体表示に戻す')} onClick={() => home()}>{t('全体表示')}</Button>
         <label>
-          <span>絞り込み</span>{' '}
-          <Input type="search" aria-label="絞り込み" value={filter} onChange={(_, d) => setFilter(d.value)} placeholder="エンティティ名・列名" />
+          <span>{t('絞り込み')}</span>{' '}
+          <Input type="search" aria-label={t('絞り込み')} value={filter} onChange={(_, d) => setFilter(d.value)} placeholder={t('エンティティ名・列名')} />
         </label>
-        <Text role="status" size={200} data-testid="zoom-level" data-depth={depth}>詳細度: {DETAIL_LABELS[level]}／倍率: {zoom.toFixed(2)} 倍</Text>
+        <Text role="status" size={200} data-testid="zoom-level" data-depth={depth}>{t('詳細度: {level}／倍率: {zoom} 倍', { level: t(DETAIL_LABELS[level]), zoom: zoom.toFixed(2) })}</Text>
       </div>
       <ZoomBreadcrumb depth={depth} elementDepth={1} onGo={goDepth} />
-      {!can3D ? <Text role="status" data-testid="viewer-no3d-reason" size={200}>{NO_3D_REASON}</Text> : null}
+      {!can3D ? <Text role="status" data-testid="viewer-no3d-reason" size={200}>{t(NO_3D_REASON)}</Text> : null}
       <div className={s.hidden} role="status" aria-live="polite" data-testid="viewer-live">{live}</div>
       {viewMode.simplified ? (
         <Text role="status" data-testid="viewer-simplified" size={200}>
-          簡略表示です。理由: {viewMode.reason}。鳥観図と、選択中のエンティティとその近傍だけを詳細で表示し、ほか {simple?.aggregated ?? 0} 件を集約しています。検索で絞り込んで選ぶと詳細で表示します。表（一覧）には全件があります。
+          {t('簡略表示です。理由: {reason}。鳥観図と、選択中のエンティティとその近傍だけを詳細で表示し、ほか {n} 件を集約しています。検索で絞り込んで選ぶと詳細で表示します。表（一覧）には全件があります。', { reason: t(viewMode.reason), n: simple?.aggregated ?? 0 })}
         </Text>
       ) : null}
       {relations.length > 0 || selected ? (
-        <section aria-label="関連" data-testid="viewer-relations" className={s.group}>
-          <Text weight="semibold" size={200}>関連（種類は線の種類と文字で区別します）</Text>
-          <ul className={s.cols} aria-label="関連の凡例">
+        <section aria-label={t('関連')} data-testid="viewer-relations" className={s.group}>
+          <Text weight="semibold" size={200}>{t('関連（種類は線の種類と文字で区別します）')}</Text>
+          <ul className={s.cols} aria-label={t('関連の凡例')}>
             {RELATION_KINDS.map((k: RelationKind) => {
               const sample = lineStyleOf({ kind: k, state: k === 'usecase' ? '導出' : k === 'reconcile' ? '一致' : '' });
               return (
                 <li key={k} data-relation-legend={k}>
                   <svg width="48" height="8" aria-hidden="true" focusable="false"><line x1="0" y1="4" x2="48" y2="4" stroke="currentColor" strokeWidth={sample.width} strokeDasharray={sample.dash || undefined} /></svg>{' '}
-                  {RELATION_KIND_LABELS[k]}（{sample.label}）
+                  {t(RELATION_KIND_LABELS[k])}（{t(sample.label)}）
                 </li>
               );
             })}
           </ul>
           {useCases.length > 0 ? (
-            <div className={s.bar} role="group" aria-label="ユースケースで関連を見る">
+            <div className={s.bar} role="group" aria-label={t('ユースケースで関連を見る')}>
               {useCases.map((u) => (
                 <Button key={u} size="small" appearance={!selected && useCase === u ? 'primary' : 'secondary'} aria-pressed={!selected && useCase === u} data-viewer-usecase={u} onClick={() => { onSelect(null); setUseCase(useCase === u && !selected ? null : u); }}>{u}</Button>
               ))}
             </div>
           ) : null}
-          {selected || useCase ? <Button size="small" data-testid="viewer-clear" onClick={() => { setUseCase(null); onSelect(null); }}>選択を解除</Button> : null}
+          {selected || useCase ? <Button size="small" data-testid="viewer-clear" onClick={() => { setUseCase(null); onSelect(null); }}>{t('選択を解除')}</Button> : null}
           {rel ? (
             rel.relations.length === 0
-              ? <Text size={200} data-testid="viewer-relations-empty">関連はありません。</Text>
-              : <ul className={s.cols} data-testid="viewer-relation-list" aria-label="選択に関連する線">
+              ? <Text size={200} data-testid="viewer-relations-empty">{t('関連はありません。')}</Text>
+              : <ul className={s.cols} data-testid="viewer-relation-list" aria-label={t('選択に関連する線')}>
                 {rel.relations.map((r) => {
                   const st = lineStyleOf(r);
                   return (
@@ -277,24 +296,24 @@ export function DataViewer({ entities, selectedKey, onSelect, relations = NO_REL
       ) : null}
 
       {shown.length === 0 ? (
-        <Text role="status">{entities.length === 0 ? '表示するデータエンティティがありません。' : '絞り込みに合うデータエンティティがありません。'}</Text>
+        <Text role="status">{entities.length === 0 ? t('表示するデータエンティティがありません。') : t('絞り込みに合うデータエンティティがありません。')}</Text>
       ) : effectiveMode === 'graph' ? (
         <div className={s.group}>
-          <GraphScope active origin="data-viewer" label="データビュアー">
+          <GraphScope active origin="data-viewer" label={t('データビュアー')}>
             {level === 'bird' ? birdGrid : (
-              <GraphSurface origin="data-viewer" label="データビュアー" nodes={graphNodes} edges={graphEdges} onOpen={(k) => { setUseCase(null); onSelect(k); goDepth(2); }} zoomControls="external" />
+              <GraphSurface origin="data-viewer" label={t('データビュアー')} nodes={graphNodes} edges={graphEdges} onOpen={(k) => { setUseCase(null); onSelect(k); goDepth(2); }} zoomControls="external" />
             )}
           </GraphScope>
           <GraphAlt
-            origin="data-viewer" label="データビュアー" columns={['列']}
-            nodes={graphNodes.map((n) => ({ id: n.id, name: n.name, kind: n.kind, values: [n.note ?? '—'] }))}
+            origin="data-viewer" label={t('データビュアー')} columns={[t('列')]}
+            nodes={graphNodes.map((n) => ({ id: n.id, name: n.name, kind: n.kindLabel ?? n.kind, values: [n.note ?? '—'] }))}
             relations={graphEdges.map((e) => ({ id: e.id, from: e.from, to: e.to, label: e.label }))}
-            summary={`塊 ${clusters.length} 件。詳細度は ${DETAIL_LABELS[level]}（鳥観図・エンティティ・列の 3 階層）`}
+            summary={t('塊 {n} 件。詳細度は {level}（鳥観図・エンティティ・列の 3 階層）', { n: clusters.length, level: t(DETAIL_LABELS[level]) })}
           />
         </div>
       ) : effectiveMode === '3d' ? (
         <div data-zoom-surface="3d">
-          <Suspense fallback={<Text role="status">3D を読み込んでいます。</Text>}>
+          <Suspense fallback={<Text role="status">{t('3D を読み込んでいます。')}</Text>}>
             <DataViewer3D
               clusters={clusters} layout={layout} level={level} zoom={zoom} selectedKey={selectedKey} activeCluster={cluster} onSelect={(k) => { setUseCase(null); onSelect(k); }} onCluster={setCluster}
               relations={relations} related={rel} detailKeys={detailKeys}
@@ -302,14 +321,17 @@ export function DataViewer({ entities, selectedKey, onSelect, relations = NO_REL
           </Suspense>
         </div>
       ) : (
-        <div className={s.stage} role="listbox" aria-label={`データエンティティ（${DETAIL_LABELS[level]}）`}>
+        <div className={s.stage} role="listbox" aria-label={t('データエンティティ（{level}）', { level: t(DETAIL_LABELS[level]) })}>
           {level === 'bird' ? birdGrid : (
             clusters.map((c) => (
-              <div key={c.name} className={s.group} role="group" aria-label={`塊: ${c.name}`} data-viewer-cluster-group={c.name}>
+              <div key={c.name} className={s.group} role="group" aria-label={t('塊: {name}', { name: c.name })} data-viewer-cluster-group={c.name}>
                 <Text weight="semibold" size={200}>{c.name}</Text>
-                <div className={s.grid} style={gridStyle}>{c.entities.filter((e) => inDetail(e.key)).map(entityCard)}</div>
+                <div className={s.grid} style={gridStyle}>
+                  {c.entities.filter((e) => inDetail(e.key)).map((e) => entityCard(e))}
+                  {ghostsOf(c.name).map((e) => entityCard(e, true))}
+                </div>
                 {detailKeys && c.entities.some((e) => !inDetail(e.key)) ? (
-                  <Text size={200} data-viewer-aggregated>ほか {c.entities.filter((e) => !inDetail(e.key)).length} 件を集約しています（検索すると選べます）</Text>
+                  <Text size={200} data-viewer-aggregated>{t('ほか {n} 件を集約しています（検索すると選べます）', { n: c.entities.filter((e) => !inDetail(e.key)).length })}</Text>
                 ) : null}
               </div>
             ))
@@ -318,24 +340,24 @@ export function DataViewer({ entities, selectedKey, onSelect, relations = NO_REL
       )}
 
       {level === 'column' && selected ? (
-        <section aria-label="詳細" data-testid="zoom-detail" data-entity-id={selected.key} className={s.group}>
+        <section aria-label={t('詳細')} data-testid="zoom-detail" data-entity-id={selected.key} className={s.group}>
           <Text weight="semibold">{selected.name}</Text>
-          <h4>属性</h4>
-          {selected.columns.length === 0 ? <Text size={200}>{NO_COLUMNS_LABEL}</Text> : <ul>{selected.columns.map((c, i) => <li key={i}>{c.name}{c.type ? `（${c.type}）` : ''}</li>)}</ul>}
-          <h4>出典</h4>
-          <Text size={200}>{selected.category ? `突合の区分: ${selected.category}` : '（取り込みなし）'}</Text>
-          <h4>関係</h4>
-          {selected.relatedUseCases.length === 0 ? <Text size={200}>（なし）</Text> : <ul>{selected.relatedUseCases.map((r) => <li key={r.name}>{r.name}（{KIND_LABELS[r.kind]}）</li>)}</ul>}
+          <h4>{t('属性')}</h4>
+          {selected.columns.length === 0 ? <Text size={200}>{t(NO_COLUMNS_LABEL)}</Text> : <ul>{selected.columns.map((c, i) => <li key={i}>{c.name}{c.type ? `（${c.type}）` : ''}</li>)}</ul>}
+          <h4>{t('出典')}</h4>
+          <Text size={200}>{selected.category ? t('突合の区分: {category}', { category: selected.category }) : t('（取り込みなし）')}</Text>
+          <h4>{t('関係')}</h4>
+          {selected.relatedUseCases.length === 0 ? <Text size={200}>{t('（なし）')}</Text> : <ul>{selected.relatedUseCases.map((r) => <li key={r.name}>{r.name}（{t(KIND_LABELS[r.kind])}）</li>)}</ul>}
         </section>
       ) : null}
 
       <details>
-        <summary>一覧（表）で確認する（{shown.length} 件）</summary>
+        <summary>{t('一覧（表）で確認する（{n} 件）', { n: shown.length })}</summary>
         <div className={s.scroll}>
-          <table aria-label="データビュアーの一覧（表）" data-testid="viewer-table">
+          <table aria-label={t('データビュアーの一覧（表）')} data-testid="viewer-table">
             <thead>
               <tr>
-                {['塊', 'エンティティ', '説明', '区分', '列', '関連するユースケース'].map((h) => <th key={h} scope="col" className={s.cell}>{h}</th>)}
+                {['塊', 'エンティティ', '説明', '区分', '列', '関連するユースケース'].map((h) => <th key={h} scope="col" className={s.cell}>{t(h)}</th>)}
               </tr>
             </thead>
             <tbody>
@@ -344,9 +366,9 @@ export function DataViewer({ entities, selectedKey, onSelect, relations = NO_REL
                   <td className={s.cell}>{e.cluster}</td>
                   <th scope="row" className={s.cell}>{e.name}</th>
                   <td className={s.cell}>{e.description}</td>
-                  <td className={s.cell}>{e.category || '（取り込みなし）'}</td>
-                  <td className={s.cell}>{e.columns.length === 0 ? NO_COLUMNS_LABEL : e.columns.map((c) => (c.type ? `${c.name}（${c.type}）` : c.name)).join('、')}</td>
-                  <td className={s.cell}>{e.relatedUseCases.length === 0 ? '（なし）' : e.relatedUseCases.map((r) => `${r.name}（${KIND_LABELS[r.kind]}）`).join('、')}</td>
+                  <td className={s.cell}>{e.category || t('（取り込みなし）')}</td>
+                  <td className={s.cell}>{e.columns.length === 0 ? t(NO_COLUMNS_LABEL) : e.columns.map((c) => (c.type ? `${c.name}（${c.type}）` : c.name)).join(t('、'))}</td>
+                  <td className={s.cell}>{e.relatedUseCases.length === 0 ? t('（なし）') : e.relatedUseCases.map((r) => `${r.name}（${t(KIND_LABELS[r.kind])}）`).join(t('、'))}</td>
                 </tr>
               ))}
             </tbody>

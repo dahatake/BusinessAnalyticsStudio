@@ -8,10 +8,13 @@ import { useAi } from './useAi';
 import { useConsent } from './useConsent';
 import { ConsentSettings } from './ConsentSettings';
 import { AzureSettings } from './AzureSettings';
-import { FoundrySettings } from './FoundrySettings';
+import { ProviderSettings } from './ProviderSettings';
+import { AiUsagePanel } from './AiUsagePanel';
 import { tokens } from '../theme/tokens';
+import { useT } from '../i18n';
 
 export function AiSettings() {
+  const t = useT();
   const { mode, realEnabled, enable, disable, notice, packId } = useAi();
   const { granted } = useConsent();
   const [confirming, setConfirming] = useState(false);
@@ -20,32 +23,30 @@ export function AiSettings() {
   return (
     <>
     <ConsentSettings onRevoke={disable} />
-    <section aria-label="AI・音声・手書きの接続" style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalM }}>
-    <Field label="AI 接続" hint="既定はモックです。実接続は、この顧客パックでだけ有効になり、別の顧客パックで起動するとモックに戻ります。">
+    <section aria-label={t('AI・音声・手書きの接続')} style={{ display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalM }}>
+    <Field label={t('AI 接続')} hint={t('既定はモックです。実接続は、この顧客パックでだけ有効になり、別の顧客パックで起動するとモックに戻ります。')}>
       <Switch
         checked={realEnabled}
         disabled={busy || !packId || !granted}
-        label="AI の実接続を有効にする（GitHub Copilot）"
+        label={t('AI の実接続を有効にする（GitHub Copilot）')}
         onChange={(_, d) => { if (d.checked) setConfirming(true); else void disable(); }}
       />
-      <Text size={200} data-testid="ai-mode-text">現在の状態: {mode === 'connected' ? '接続済み' : 'モック（外部へは送信しません）'}</Text>
+      <Text size={200} data-testid="ai-mode-text">{t('現在の状態:')} {mode === 'connected' ? t('接続済み') : t('モック（外部へは送信しません）')}</Text>
       {notice ? <MessageBar intent="warning"><MessageBarBody>{notice}</MessageBarBody></MessageBar> : null}
       <Dialog open={confirming} modalType="alert" onOpenChange={(_, d) => setConfirming(d.open)}>
         <DialogSurface>
           <DialogBody>
-            <DialogTitle>AI の実接続を有効にしますか</DialogTitle>
+            <DialogTitle>{t('AI の実接続を有効にしますか')}</DialogTitle>
             <DialogContent>
-              有効にすると、ローカルの中継プロセスを通じて GitHub Copilot に次の情報が送信されます:
-              顧客名、議論の内容、顧客パックのデータ（課題・解決策・出典など）、チャットの質問。
-              送信中は画面に表示され、送信した内容を確認できます。
+              {t('有効にすると、ローカルの中継プロセスを通じて GitHub Copilot に次の情報が送信されます: 顧客名、議論の内容、顧客パックのデータ（課題・解決策・出典など）、チャットの質問。 送信中は画面に表示され、送信した内容を確認できます。')}
             </DialogContent>
             <DialogActions>
-              <Button appearance="secondary" onClick={() => setConfirming(false)}>キャンセル</Button>
+              <Button appearance="secondary" onClick={() => setConfirming(false)}>{t('キャンセル')}</Button>
               <Button
                 appearance="primary"
                 onClick={async () => { setBusy(true); setConfirming(false); await enable(); setBusy(false); }}
               >
-                有効にする
+                {t('有効にする')}
               </Button>
             </DialogActions>
           </DialogBody>
@@ -55,7 +56,8 @@ export function AiSettings() {
     <AzureSettings />
     </section>
     {/* FR-275: Foundry の欄は独立した区画にする（AI・音声・手書きの区画の説明・スイッチと重ならないように。FR-182 AC-379・NFR-SEC-002 AC-176） */}
-    <FoundrySettings />
+    <ProviderSettings />
+    <AiUsagePanel />
     </>
   );
 }

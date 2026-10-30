@@ -11,8 +11,9 @@ import { useShowUi } from '../store/show';
 import { readTelop } from './model';
 import { SHORT_VIDEO_SECONDS, SHORT_VIDEO_WATERMARK, readNarration, shortVideoFileName, type ShortSlide } from './extras';
 import { pickWebmMimeType, recordShortVideo, type ShortVideoSource } from './shortVideoRecorder';
+import { useT } from '../i18n';
 
-/** 顧客パックの show.json から、動画に出すスライド（章・議題・台本またはテロップ）を作る。最初に顧客名とプロジェクト名のスライドを置く */
+/** 顧客パックの show.json から、動画に出すスライド（章・論点・台本またはテロップ）を作る。最初に顧客名とプロジェクト名のスライドを置く */
 function useShortSource(): ShortVideoSource | null {
   const state = usePackStore((s) => s.state);
   return useMemo(() => {
@@ -30,14 +31,16 @@ function useShortSource(): ShortVideoSource | null {
 
 export function ShortVideoButton() {
   const open = useShowUi((s) => s.setShortVideoOpen);
+  const t = useT();
   return (
-    <Button icon={<Video20Regular aria-hidden />} onClick={() => open(true)}>ショート動画を書き出す</Button>
+    <Button icon={<Video20Regular aria-hidden />} onClick={() => open(true)}>{t('ショート動画を書き出す')}</Button>
   );
 }
 
 type Phase = 'idle' | 'recording' | 'done' | 'error';
 
 export function ShortVideoDialog() {
+  const t = useT();
   const isOpen = useShowUi((s) => s.shortVideoOpen);
   const setOpen = useShowUi((s) => s.setShortVideoOpen);
   const src = useShortSource();
@@ -71,10 +74,10 @@ export function ShortVideoDialog() {
       a.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 10_000);
       setPhase('done');
-      setMessage(`${a.download} を書き出しました。`);
+      setMessage(t('{name} を書き出しました。', { name: a.download }));
     } catch (e) {
       setPhase('error');
-      setMessage(e instanceof Error ? e.message : '書き出しに失敗しました。');
+      setMessage(e instanceof Error ? e.message : t('書き出しに失敗しました。'));
     } finally {
       abort.current = null;
     }
@@ -82,25 +85,25 @@ export function ShortVideoDialog() {
 
   return (
     <Dialog open={isOpen} modalType="modal" onOpenChange={(_, d) => { if (!d.open) close(); }}>
-      <DialogSurface aria-label="ショート動画の書き出し">
+      <DialogSurface aria-label={t('ショート動画の書き出し')}>
         <DialogBody>
-          <DialogTitle>ショート動画の書き出し</DialogTitle>
+          <DialogTitle>{t('ショート動画の書き出し')}</DialogTitle>
           <DialogContent>
-            <Text as="p" block>縦横比 9:16・約 {SHORT_VIDEO_SECONDS} 秒の動画（WebM）を、このブラウザーの中で作ります。外部には送りません。</Text>
-            <Text as="p" block data-testid="short-watermark">動画には「{SHORT_VIDEO_WATERMARK}」の透かしが入ります。</Text>
-            {!supported ? <MessageBar intent="warning"><MessageBarBody>このブラウザーは WebM の録画に対応していません。</MessageBarBody></MessageBar> : null}
+            <Text as="p" block>{t('縦横比 9:16・約 {n} 秒の動画（WebM）を、このブラウザーの中で作ります。外部には送りません。', { n: SHORT_VIDEO_SECONDS })}</Text>
+            <Text as="p" block data-testid="short-watermark">{t('動画には「{mark}」の透かしが入ります。', { mark: t(SHORT_VIDEO_WATERMARK) })}</Text>
+            {!supported ? <MessageBar intent="warning"><MessageBarBody>{t('このブラウザーは WebM の録画に対応していません。')}</MessageBarBody></MessageBar> : null}
             {phase === 'recording' ? (
               <div data-testid="short-progress">
-                <ProgressBar value={ratio} aria-label="書き出しの進み具合" />
-                <Text size={200}>録画中です（約 {SHORT_VIDEO_SECONDS} 秒かかります）。このまま画面を開いたままにしてください。</Text>
+                <ProgressBar value={ratio} aria-label={t('書き出しの進み具合')} />
+                <Text size={200}>{t('録画中です（約 {n} 秒かかります）。このまま画面を開いたままにしてください。', { n: SHORT_VIDEO_SECONDS })}</Text>
               </div>
             ) : null}
             {phase === 'done' ? <MessageBar intent="success"><MessageBarBody>{message}</MessageBarBody></MessageBar> : null}
             {phase === 'error' ? <MessageBar intent="error"><MessageBarBody>{message}</MessageBarBody></MessageBar> : null}
           </DialogContent>
           <DialogActions>
-            <Button appearance="secondary" onClick={close}>{phase === 'recording' ? '中止' : '閉じる'}</Button>
-            <Button appearance="primary" disabled={!supported || !src || phase === 'recording'} onClick={() => { void start(); }}>書き出す</Button>
+            <Button appearance="secondary" onClick={close}>{phase === 'recording' ? t('中止') : t('閉じる')}</Button>
+            <Button appearance="primary" disabled={!supported || !src || phase === 'recording'} onClick={() => { void start(); }}>{t('書き出す')}</Button>
           </DialogActions>
         </DialogBody>
       </DialogSurface>

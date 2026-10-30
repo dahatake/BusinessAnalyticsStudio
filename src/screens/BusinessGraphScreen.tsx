@@ -2,6 +2,8 @@
 // 配置・集約・束ね・ラベルの出し分けは src/graphmodel（純粋なモジュール）、意味的ズームは src/semanticzoom（FR-237）、選択は FR-024 の共通の選択状態。
 // DOM の契約は tests/system/CONTRACT.md §23。ノードは HTML、エッジは SVG（矢印つき）で描く。
 import { useEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
+import { useT } from '../i18n';
+import { lifeOpacity, lifeScale, usePresenceItems } from '../motion';
 import { Badge, Button, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Panel } from '../components/Panel';
 import { GraphAlt } from '../components/GraphAlt';
@@ -33,6 +35,7 @@ const useStyles = makeStyles({
   toolbar: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalS },
   group: { display: 'flex', flexWrap: 'wrap', alignItems: 'center', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalXS, border: 'none', margin: 0, padding: 0 },
   check: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalXS, minHeight: `${MIN_TARGET_PX}px` },
+  box: { width: `${MIN_TARGET_PX}px`, height: `${MIN_TARGET_PX}px`, margin: 0 },
   scroll: { overflow: 'auto', maxHeight: '70vh', borderRadius: tokens.borderRadiusMedium, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`, backgroundColor: tokens.colorNeutralBackground2 },
   canvas: { position: 'relative' },
   node: {
@@ -43,7 +46,7 @@ const useStyles = makeStyles({
   },
   marker: { width: '22px', height: '22px', backgroundColor: tokens.colorBrandForeground1, display: 'inline-block' },
   name: { position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', whiteSpace: 'nowrap', fontSize: tokens.fontSizeBase300, lineHeight: tokens.lineHeightBase300, backgroundColor: tokens.colorNeutralBackground1, paddingInline: tokens.spacingHorizontalXXS },
-  srOnly: { position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' },
+  srOnly: { position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap', opacity: 0 },
   clusters: { display: 'flex', flexWrap: 'wrap', gap: tokens.spacingHorizontalM, padding: tokens.spacingHorizontalM },
   cluster: {
     display: 'flex', flexDirection: 'column', alignItems: 'flex-start', minWidth: '140px', minHeight: `${MIN_TARGET_PX}px`, padding: tokens.spacingHorizontalM, cursor: 'pointer',
@@ -68,6 +71,7 @@ function edgePoint(c: Pt, to: Pt, pad = 0): Pt {
 }
 
 function BusinessGraphScreen() {
+  const t = useT();
   const s = useStyles();
   const bind = useEntityBinding(ORIGIN);
   const state = usePackStore((st) => st.state);
@@ -190,6 +194,14 @@ function BusinessGraphScreen() {
   }, [shownEdges, shownNodes, bundled, pos, selSet, scale]);
 
   usePublishViewItems(ORIGIN, shownNodes.map((n) => n.id));
+  // 出入り・遷移（FR-070 AC-086）: 節・線は同じ ID のまま動き、追加は現れ、削除は薄れて消える（停止中・動きの軽減中は即時に最終状態）
+  const nodePresence = usePresenceItems(shownNodes, (n) => n.id, (n) => { const p = pos.get(n.id); return p ? [p.x, p.y] : [0, 0]; });
+  const edgePresence = usePresenceItems(bundled.single, (e) => e.id, (e) => {
+    const a = pos.get(e.from); const b = pos.get(e.to);
+    if (!a || !b) return [0, 0, 0, 0, 0, 0];
+    const p1 = edgePoint(a, b, 2); const p2 = edgePoint(b, a, 6);
+    return [p1.x, p1.y, p2.x, p2.y, (a.x + b.x) / 2, (a.y + b.y) / 2];
+  });
 
   // 3D（FR-238。FR-037 と同じ立体のグラフ）: 平面の配置を横・奥行きに、種別を高さの層に置く。つながり＝エッジ（2D・Graph と同じ項目・同じ関係）
   const items3d = useMemo<Item3D[]>(() => {
@@ -210,7 +222,7 @@ function BusinessGraphScreen() {
     for (const [k, v] of Object.entries(za)) el.setAttribute(k, String(v));
   }, [za['data-zoom-level'], za['data-depth'], za['data-depth-count']]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  if (state.status !== 'ready') return <LoadingView label="ビジネス関係グラフを読み込み中" />;
+  if (state.status !== 'ready') return <LoadingView label={t('ビジネス関係グラフを読み込み中')} />;
 
   const goDepth = (d: number): void => {
     const k = clampDepth(d, ELEMENT_DEPTH);
@@ -256,62 +268,62 @@ function BusinessGraphScreen() {
   return (
     <Panel
       testId={SCREEN_TESTID}
-      title="ビジネス関係グラフ"
-      description="エンティティの関係を、意味ラベル付きの向きのある線で見ます。ノードを選ぶと、そのホップ数以内だけを表示します。"
+      title={t('ビジネス関係グラフ')}
+      description={t('エンティティの関係を、意味ラベル付きの向きのある線で見ます。ノードを選ぶと、そのホップ数以内だけを表示します。')}
       maxWidth="1200px"
     >
       <div ref={rootRef} style={{ display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM }}>
-        <div className={s.toolbar} role="toolbar" aria-label="ビジネス関係グラフの操作">
-          <Button size="small" disabled={!canZoomIn(depth, ELEMENT_DEPTH)} onClick={() => goDepth(stepDepth(depth, 1, ELEMENT_DEPTH))}>拡大</Button>
-          <Button size="small" disabled={!canZoomOut(depth)} onClick={() => goDepth(stepDepth(depth, -1, ELEMENT_DEPTH))}>縮小</Button>
-          <Button size="small" onClick={() => goDepth(0)}>全体表示に戻す</Button>
-          <Button size="small" disabled={depth === 0} onClick={() => goDepth(depth - 1)}>一つ上の階層へ</Button>
+        <div className={s.toolbar} role="toolbar" aria-label={t('ビジネス関係グラフの操作')}>
+          <Button size="small" disabled={!canZoomIn(depth, ELEMENT_DEPTH)} onClick={() => goDepth(stepDepth(depth, 1, ELEMENT_DEPTH))}>{t('拡大')}</Button>
+          <Button size="small" disabled={!canZoomOut(depth)} onClick={() => goDepth(stepDepth(depth, -1, ELEMENT_DEPTH))}>{t('縮小')}</Button>
+          <Button size="small" onClick={() => goDepth(0)}>{t('全体表示に戻す')}</Button>
+          <Button size="small" disabled={depth === 0} onClick={() => goDepth(depth - 1)}>{t('一つ上の階層へ')}</Button>
           <span data-testid="zoom-level" data-depth={za['data-depth']} data-depth-count={zoomDepthCount(ELEMENT_DEPTH)}>
             <Badge appearance="tint">{ZOOM_KIND_LABELS[kind]}</Badge>
           </span>
           <label className={s.check}>
-            <Text>ホップ数（{HOP_MIN}〜{HOP_MAX}）</Text>
-            <input type="range" aria-label="ホップ数" min={HOP_MIN} max={HOP_MAX} step={1} value={hop} onChange={(e) => setHop(clampHop(Number(e.target.value)))} />
+            <Text>{t('ホップ数（{min}〜{max}）', { min: HOP_MIN, max: HOP_MAX })}</Text>
+            <input type="range" aria-label={t('ホップ数')} min={HOP_MIN} max={HOP_MAX} step={1} value={hop} onChange={(e) => setHop(clampHop(Number(e.target.value)))} />
             <Text>{hop}</Text>
           </label>
         </div>
         <ZoomBreadcrumb depth={depth} elementDepth={ELEMENT_DEPTH} elementLabels={focusCluster ? [focusCluster] : []} detailLabel={detailNode?.name} onGo={goDepth} />
 
-        <fieldset className={s.group} role="group" aria-label="種別">
+        <fieldset className={s.group} role="group" aria-label={t('種別')}>
           {types.map((t) => (
             <label key={t} className={s.check}>
-              <input type="checkbox" data-filter-value={t} checked={!hiddenTypes.has(t)} onChange={(e) => setHiddenTypes((h) => toggle(h, t, e.target.checked))} />
+              <input type="checkbox" className={s.box} data-filter-value={t} checked={!hiddenTypes.has(t)} onChange={(e) => setHiddenTypes((h) => toggle(h, t, e.target.checked))} />
               <Text>{t}</Text>
             </label>
           ))}
         </fieldset>
-        <fieldset className={s.group} role="group" aria-label="意味の種類">
+        <fieldset className={s.group} role="group" aria-label={t('意味の種類')}>
           {meaningsPresent.map((m: Meaning) => (
             <label key={m} className={s.check}>
-              <input type="checkbox" data-filter-value={m} checked={!hiddenMeanings.has(m)} onChange={(e) => setHiddenMeanings((h) => toggle(h, m, e.target.checked))} />
+              <input type="checkbox" className={s.box} data-filter-value={m} checked={!hiddenMeanings.has(m)} onChange={(e) => setHiddenMeanings((h) => toggle(h, m, e.target.checked))} />
               <Text>{meaningName(m)}</Text>
             </label>
           ))}
         </fieldset>
 
-        {biz.nodes.length === 0 ? <EmptyView message="関係を持つ項目がありません" /> : null}
+        {biz.nodes.length === 0 ? <EmptyView message={t('関係を持つ項目がありません')} /> : null}
 
         {mode === '3d' && biz.nodes.length > 0 ? (
-          <Items3DSurface viewKey={ORIGIN} origin={ORIGIN} label="ビジネス関係グラフ" items={items3d} links={links3d} axes={{ y: '種別' }} />
+          <Items3DSurface viewKey={ORIGIN} origin={ORIGIN} label={t('ビジネス関係グラフ')} items={items3d} links={links3d} axes={{ y: t('種別') }} />
         ) : null}
 
         <div data-zoom-surface={mode === 'graph' ? 'graph' : undefined} style={{ display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM }}>
         {depth === 0 ? (
-          <div className={s.clusters} role="group" aria-label="塊">
+          <div className={s.clusters} role="group" aria-label={t('塊')}>
             {[...clusterCounts].sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([name, n]) => (
               <div
                 key={name} role="button" tabIndex={0} className={s.cluster} data-zoom-cluster={name}
-                aria-label={`${name} ${n} 件。ダブルクリックか Enter で要素へ`}
+                aria-label={t('{name} {n} 件。ダブルクリックか Enter で要素へ', { name, n })}
                 onDoubleClick={() => openCluster(name)}
                 onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); openCluster(name); } }}
               >
                 <Text weight="semibold">{name}</Text>
-                <Text>{n} 件</Text>
+                <Text>{t('{n} 件', { n })}</Text>
               </div>
             ))}
           </div>
@@ -319,34 +331,39 @@ function BusinessGraphScreen() {
 
         {depth === 1 && mode === '2d' && biz.nodes.length > 0 ? (
           <div data-testid="biz-2d" style={{ display: 'flex', flexDirection: 'column', rowGap: tokens.spacingVerticalM }}>
-            <Text as="h3" weight="semibold">関係表（起点・意味ラベル・終点）</Text>
-            <table aria-label="関係表" data-testid="biz-relation-table" className={s.table}>
-              <thead><tr><th scope="col">起点</th><th scope="col">意味ラベル</th><th scope="col">終点</th><th scope="col">意味の種類</th></tr></thead>
+            <Text as="h3" weight="semibold">{t('関係表（起点・意味ラベル・終点）')}</Text>
+            <table aria-label={t('関係表')} data-testid="biz-relation-table" className={s.table}>
+              <thead><tr><th scope="col">{t('起点')}</th><th scope="col">{t('意味ラベル')}</th><th scope="col">{t('終点')}</th><th scope="col">{t('意味の種類')}</th></tr></thead>
               <tbody>
-                {shownEdges.length === 0 ? <tr><td colSpan={4}>関係はありません</td></tr> : null}
+                {shownEdges.length === 0 ? <tr><td colSpan={4}>{t('関係はありません')}</td></tr> : null}
                 {shownEdges.map((e) => (
                   <tr key={e.id} data-relation-id={e.id} className={s.trow} onClick={() => select(e.from, { origin: ORIGIN })}>
-                    <td>{nameOfId(e.from)}</td><td>{e.label ?? '（ラベルなし）'}</td><td>{nameOfId(e.to)}</td><td>{meaningName(e.meaning)}</td>
+                    <td>{nameOfId(e.from)}</td><td>{e.label ?? t('（ラベルなし）')}</td><td>{nameOfId(e.to)}</td><td>{meaningName(e.meaning)}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <Text as="h3" weight="semibold">隣接表（種別ごと）</Text>
-            {types.filter((t) => shownNodes.some((n) => n.type === t)).map((t) => (
-              <table key={t} aria-label={`隣接表: ${t}`} data-testid="biz-adjacency-table" data-kind-table={t} className={s.table}>
-                <caption>{t}</caption>
-                <thead><tr><th scope="col">名称</th><th scope="col">つながり（→ 向かう先／← 向かってくる元）</th></tr></thead>
+            <Text as="h3" weight="semibold">{t('隣接表（種別ごと）')}</Text>
+            {types.filter((k) => nodePresence.some((p) => p.item.type === k)).map((k) => (
+              <table key={k} aria-label={`${t('隣接表:')} ${k}`} data-testid="biz-adjacency-table" data-kind-table={k} className={s.table}>
+                <caption>{k}</caption>
+                <thead><tr><th scope="col">{t('名称')}</th><th scope="col">{t('つながり（→ 向かう先／← 向かってくる元）')}</th></tr></thead>
                 <tbody>
-                  {shownNodes.filter((n) => n.type === t).map((n) => (
+                  {nodePresence.filter((p) => p.item.type === k).map(({ item: n, life, exiting }) => exiting ? (
+                    <tr key={n.id} aria-hidden className={s.trow} style={{ opacity: lifeOpacity(life), pointerEvents: 'none' }}>
+                      <td>{n.name}</td><td />
+                    </tr>
+                  ) : (
                     <tr
                       key={n.id} {...bind(n.id)} tabIndex={0} className={s.trow} data-zoom-node="" data-kind={n.type} data-entity-name={n.name} aria-selected={selSet.has(n.id)}
+                      style={life < 1 ? { opacity: lifeOpacity(life) } : undefined}
                       onDoubleClick={() => openNode(n.id)} onKeyDown={(e) => keyOnNode(e, n.id)}
                     >
                       <td>{n.name}</td>
                       <td>{[
                         ...shownEdges.filter((e) => e.from === n.id).map((e) => `→ ${nameOfId(e.to)}${e.label ? `（${e.label}）` : ''}`),
                         ...shownEdges.filter((e) => e.to === n.id).map((e) => `← ${nameOfId(e.from)}${e.label ? `（${e.label}）` : ''}`),
-                      ].join('、') || '（つながりなし）'}</td>
+                      ].join('、') || t('（つながりなし）')}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -358,23 +375,21 @@ function BusinessGraphScreen() {
         {depth === 1 && mode === 'graph' && biz.nodes.length > 0 ? (
           <div className={s.scroll}>
             <div className={s.canvas} style={{ width: size.w, height: size.h }} data-testid="graph-canvas">
-              <svg width={size.w} height={size.h} style={{ position: 'absolute', inset: 0 }} aria-hidden={false} role="img" aria-label="関係の線">
+              <svg width={size.w} height={size.h} style={{ position: 'absolute', inset: 0 }} aria-hidden={false} role="img" aria-label={t('関係の線')}>
                 <defs>
                   <marker id="bg-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
                     <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
                   </marker>
                 </defs>
                 <g style={{ color: tokens.colorNeutralForeground2 }}>
-                  {bundled.single.map((e) => {
-                    const a = pos.get(e.from); const b = pos.get(e.to);
-                    if (!a || !b) return null;
-                    const p1 = edgePoint(a, b, 2); const p2 = edgePoint(b, a, 6);
+                  {edgePresence.map(({ item: e, vec, life, exiting }) => {
+                    const [x1, y1, x2, y2, mx, my] = vec as [number, number, number, number, number, number];
                     const text = labelIds.has(`e:${e.id}`) ? e.label : undefined;
                     return (
-                      <g key={e.id} data-testid="graph-edge" data-from={e.from} data-to={e.to} data-meaning={e.meaning} data-direction="forward" role="img" aria-label={`${nodeById.get(e.from)?.name ?? e.from} から ${nodeById.get(e.to)?.name ?? e.to} へ ${e.label ?? '（ラベルなし）'}`}>
+                      <g key={e.id} data-testid={exiting ? 'graph-edge-exiting' : 'graph-edge'} data-from={e.from} data-to={e.to} data-meaning={e.meaning} data-direction="forward" role="img" opacity={lifeOpacity(life)} aria-hidden={exiting || undefined} aria-label={t('{from} から {to} へ {label}', { from: nodeById.get(e.from)?.name ?? e.from, to: nodeById.get(e.to)?.name ?? e.to, label: e.label ?? t('（ラベルなし）') })}>
                         {e.label ? <title>{`${e.label}（${readMeaning(e.meaning, nodeById.get(e.from)?.name ?? e.from, nodeById.get(e.to)?.name ?? e.to)}）`}</title> : null}
-                        <line x1={p1.x} y1={p1.y} x2={p2.x} y2={p2.y} stroke="currentColor" strokeWidth={1.5} strokeDasharray={MEANING_DASH[e.meaning]} markerEnd="url(#bg-arrow)" />
-                        {text ? <text className={s.edgeText} x={(a.x + b.x) / 2} y={(a.y + b.y) / 2} textAnchor="middle">{text}</text> : null}
+                        <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="currentColor" strokeWidth={1.5} strokeDasharray={MEANING_DASH[e.meaning]} markerEnd="url(#bg-arrow)" />
+                        {text ? <text className={s.edgeText} x={mx} y={my} textAnchor="middle">{text}</text> : null}
                       </g>
                     );
                   })}
@@ -383,11 +398,11 @@ function BusinessGraphScreen() {
                     if (!a || !b) return null;
                     return (
                       <g key={g.key} data-testid="graph-bundle" data-count={g.edges.length} role="button" tabIndex={0} style={{ cursor: 'pointer' }}
-                        aria-label={`${g.fromCluster} と ${g.toCluster} の間の ${g.edges.length} 本をまとめた線。押すと個別に展開`}
+                        aria-label={t('{a} と {b} の間の {n} 本をまとめた線。押すと個別に展開', { a: g.fromCluster, b: g.toCluster, n: g.edges.length })}
                         onClick={() => setExpandedBundles((x) => new Set(x).add(g.key))}
                         onKeyDown={(e) => { if (e.key === 'Enter') setExpandedBundles((x) => new Set(x).add(g.key)); }}>
                         <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="currentColor" strokeWidth={4} markerEnd="url(#bg-arrow)" />
-                        <text className={s.edgeText} x={(a.x + b.x) / 2} y={(a.y + b.y) / 2} textAnchor="middle">{g.edges.length} 本</text>
+                        <text className={s.edgeText} x={(a.x + b.x) / 2} y={(a.y + b.y) / 2} textAnchor="middle">{t('{n} 本', { n: g.edges.length })}</text>
                       </g>
                     );
                   })}
@@ -397,22 +412,25 @@ function BusinessGraphScreen() {
                     return (
                       <g key={`${l.from}>${l.to}`} data-testid="graph-bundle" data-count={l.n}>
                         <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} stroke="currentColor" strokeWidth={3} markerEnd="url(#bg-arrow)" />
-                        <text className={s.edgeText} x={(a.x + b.x) / 2} y={(a.y + b.y) / 2} textAnchor="middle">{l.n} 本</text>
+                        <text className={s.edgeText} x={(a.x + b.x) / 2} y={(a.y + b.y) / 2} textAnchor="middle">{t('{n} 本', { n: l.n })}</text>
                       </g>
                     );
                   })}
                 </g>
               </svg>
 
-              {shownNodes.map((n) => {
-                const p = pos.get(n.id); if (!p) return null;
+              {nodePresence.map(({ item: n, vec, life, exiting }) => {
                 const shape = shapes.get(n.type) ?? 'circle';
                 const showName = labelIds.has(`n:${n.id}`);
-                const st: CSSProperties = { left: p.x - NODE_W / 2, top: p.y - NODE_H / 2, width: NODE_W, height: NODE_H };
+                const st: CSSProperties = {
+                  left: vec[0]! - NODE_W / 2, top: vec[1]! - NODE_H / 2, width: NODE_W, height: NODE_H,
+                  ...(life < 1 || exiting ? { opacity: lifeOpacity(life), transform: `scale(${lifeScale(life).toFixed(3)})`, ...(exiting ? { pointerEvents: 'none' as const } : {}) } : {}),
+                };
                 return (
                   <div
-                    key={n.id} {...bind(n.id)} role="button" tabIndex={0} className={s.node} style={st}
-                    data-testid="graph-node" data-zoom-node="" data-kind={n.type} data-node-type={n.type} data-shape={shape} data-entity-name={n.name}
+                    key={n.id} {...bind(n.id)} role="button" tabIndex={exiting ? -1 : 0} className={s.node} style={st}
+                    data-testid={exiting ? 'graph-node-exiting' : 'graph-node'} data-zoom-node="" data-kind={n.type} data-node-type={n.type} data-shape={shape} data-entity-name={n.name}
+                    aria-hidden={exiting || undefined}
                     aria-pressed={selSet.has(n.id)} aria-label={`${n.name}（${n.type}）`}
                     onDoubleClick={() => openNode(n.id)} onKeyDown={(e) => keyOnNode(e, n.id)}
                   >
@@ -429,10 +447,10 @@ function BusinessGraphScreen() {
                   <button
                     key={c} type="button" className={s.node} data-testid="graph-cluster" data-cluster={c} data-count={ids.length}
                     style={{ left: p.x - NODE_W / 2, top: p.y - NODE_H / 2, width: NODE_W, height: NODE_H }}
-                    aria-label={`${c} に集約した ${ids.length} 件。押すと個別に展開`}
+                    aria-label={t('{c} に集約した {n} 件。押すと個別に展開', { c, n: ids.length })}
                     onClick={() => setExpandedClusters((x) => new Set(x).add(c))}
                   >
-                    <span>{c}</span><span>{ids.length} 件</span>
+                    <span>{c}</span><span>{t('{n} 件', { n: ids.length })}</span>
                   </button>
                 );
               })}
@@ -442,27 +460,27 @@ function BusinessGraphScreen() {
 
         {depth === 1 && agg.collapsed.size > 0 ? (
           <Text role="status" data-testid="graph-aggregate-note">
-            ノードが {MAX_NODES} 件を超えるため、{[...agg.collapsed.values()].reduce((a, v) => a + v.length, 0)} 件を {agg.collapsed.size} 個の塊に集約しています（全 {visibleNodes.length} 件）。
+            {t('ノードが {max} 件を超えるため、{n} 件を {m} 個の塊に集約しています（全 {total} 件）。', { max: MAX_NODES, n: [...agg.collapsed.values()].reduce((a, v) => a + v.length, 0), m: agg.collapsed.size, total: visibleNodes.length })}
           </Text>
         ) : null}
 
         {depth === 2 && detailNode ? (
-          <section className={s.detail} data-testid="zoom-detail" aria-label="詳細">
+          <section className={s.detail} data-testid="zoom-detail" aria-label={t('詳細')}>
             <Text as="h2" size={500} weight="semibold" data-entity-id={detailNode.id}>{detailNode.name}</Text>
-            <Text as="h3" weight="semibold">属性</Text>
+            <Text as="h3" weight="semibold">{t('属性')}</Text>
             <dl style={{ margin: 0 }}>
-              <dt>種別</dt><dd>{detailNode.type}</dd>
+              <dt>{t('種別')}</dt><dd>{detailNode.type}</dd>
               <dt>ID</dt><dd>{detailNode.id}</dd>
-              <dt>塊</dt><dd>{detailNode.cluster}</dd>
-              <dt>世界区分</dt><dd>{detailNode.world === 'real' ? '現実世界' : detailNode.world === 'digital' ? 'デジタル世界' : '区分なし'}</dd>
+              <dt>{t('塊')}</dt><dd>{detailNode.cluster}</dd>
+              <dt>{t('世界区分')}</dt><dd>{detailNode.world === 'real' ? t('現実世界') : detailNode.world === 'digital' ? t('デジタル世界') : t('区分なし')}</dd>
             </dl>
-            <Text as="h3" weight="semibold">出典</Text>
-            <ul style={{ margin: 0 }}>{detailNode.sourceIds.length ? detailNode.sourceIds.map((x) => <li key={x}>{x}</li>) : <li>出典なし</li>}</ul>
-            <Text as="h3" weight="semibold">関係</Text>
+            <Text as="h3" weight="semibold">{t('出典')}</Text>
+            <ul style={{ margin: 0 }}>{detailNode.sourceIds.length ? detailNode.sourceIds.map((x) => <li key={x}>{x}</li>) : <li>{t('出典なし')}</li>}</ul>
+            <Text as="h3" weight="semibold">{t('関係')}</Text>
             <ul style={{ margin: 0 }}>
               {detailEdges.length
                 ? detailEdges.map((e) => <li key={e.id}>{e.label ? `${e.label}: ` : ''}{readMeaning(e.meaning, nodeById.get(e.from)?.name ?? e.from, nodeById.get(e.to)?.name ?? e.to)}</li>)
-                : <li>関係なし</li>}
+                : <li>{t('関係なし')}</li>}
             </ul>
           </section>
         ) : null}
@@ -470,10 +488,10 @@ function BusinessGraphScreen() {
 
         {mode !== '2d' && biz.nodes.length > 0 ? (
           <GraphAlt
-            origin={ORIGIN} label="ビジネス関係グラフ" showTableButton={false}
+            origin={ORIGIN} label={t('ビジネス関係グラフ')} showTableButton={false}
             nodes={shownNodes.map((n) => ({ id: n.id, name: n.name, kind: n.type }))}
             relations={shownEdges.map((e) => ({ id: e.id, from: e.from, to: e.to, label: e.label, kind: meaningName(e.meaning) }))}
-            summary={`階層は ${ZOOM_KIND_LABELS[kind]}（全体・要素・詳細の 3 階層）`}
+            summary={t('階層は {kind}（全体・要素・詳細の 3 階層）', { kind: t(ZOOM_KIND_LABELS[kind]) })}
           />
         ) : null}
       </div>
@@ -482,3 +500,4 @@ function BusinessGraphScreen() {
 }
 
 export { BusinessGraphScreen };
+

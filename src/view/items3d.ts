@@ -18,6 +18,10 @@ export interface Item3D {
   size: number;
   /** 種類・グループ（色の割り当てに使う）。省略はすべて同じ */
   group?: string;
+  /** 値（順位・達成度など）。変わると、ラベルの数値が中間値を経て最新へ移る（FR-070 AC-086）。省略は補間なし */
+  value?: number;
+  /** value の（補間中を含む）値からラベルの文字を作る。省略は label */
+  valueText?: (n: number) => string;
 }
 
 /** 項目どうしのつながり（from → to） */

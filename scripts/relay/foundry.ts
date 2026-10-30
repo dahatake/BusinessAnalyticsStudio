@@ -2,8 +2,11 @@
 // - 送信先は、設定したエンドポイント配下の /responses だけ。リダイレクトは追わない（キーを別の宛先へ送らない。NFR-SEC-005 ⑤）。
 // - エラー・応答の文字列にキーの値は含めない。
 export class FoundryError extends Error {
-  constructor(message: string, readonly kind: 'timeout' | 'http' | 'network' | 'format') { super(message); }
+  constructor(message: string, readonly kind: 'timeout' | 'http' | 'network' | 'format' | 'token') { super(message); }
 }
+
+/** Entra ID のトークンを取得できないときの案内（値は含めない。FR-282 AC-761） */
+export const TOKEN_UNAVAILABLE_MESSAGE = 'Microsoft Entra ID のトークンを取得できませんでした。ターミナルで `az login` を実行して Azure にサインインしてください（Azure CLI が必要です）';
 
 export const FOUNDRY_TIMEOUT_MS = 30_000;
 
@@ -23,6 +26,8 @@ function extractText(j: unknown): string | null {
 
 export async function callFoundry(
   s: FoundrySecret, input: string, f: typeof fetch = (u, i) => fetch(u, i), timeoutMs = FOUNDRY_TIMEOUT_MS,
+  /** 出力のトークンの上限（FR-276）。指定すると max_output_tokens として依頼する */
+  maxOutputTokens?: number,
 ): Promise<string> {
   const ctl = new AbortController();
   const timer = setTimeout(() => ctl.abort(), timeoutMs);
@@ -32,7 +37,7 @@ export async function callFoundry(
       redirect: 'error',
       signal: ctl.signal,
       headers: { 'content-type': 'application/json', authorization: `Bearer ${s.key}`, 'api-key': s.key },
-      body: JSON.stringify({ model: s.deployment, input }),
+      body: JSON.stringify({ model: s.deployment, input, ...(maxOutputTokens ? { max_output_tokens: maxOutputTokens } : {}) }),
     });
     if (!res.ok) throw new FoundryError(`Foundry がエラーを返しました（HTTP ${res.status}）`, 'http');
     const text = extractText(await res.json().catch(() => null));
@@ -45,4 +50,70 @@ export async function callFoundry(
   } finally {
     clearTimeout(timer);
   }
+}
+
+// ---- FR-289: AI 取り込み。ファイル（PDF・画像・Office・テキスト）を Responses API の入力として送る。呼ぶのは中継プロセスだけ ----
+/** 認証方式が Microsoft Entra ID のときのトークン取得口（差し替え部品）。値はログ・応答に出さない */
+export type TokenProvider = () => Promise<string>;
+
+export interface ImportFile { name: string; mime: string; dataBase64: string }
+
+export const IMPORT_INSTRUCTION =
+  '添付のファイルから、データエンティティ（名称と説明）を抽出し、次の JSON だけを返してください: {"entities":[{"name":"…","description":"…"}]}。説明のない項目は description を空文字にしてください。';
+
+function importInput(file: ImportFile): unknown {
+  const dataUrl = `data:${file.mime || 'application/octet-stream'};base64,${file.dataBase64}`;
+  const part = (file.mime || '').startsWith('image/')
+    ? { type: 'input_image', image_url: dataUrl }
+    : { type: 'input_file', filename: file.name, file_data: dataUrl };
+  return [{ role: 'user', content: [{ type: 'input_text', text: IMPORT_INSTRUCTION }, part] }];
+}
+
+/** 認証情報を付けて Responses API を呼ぶ。エラー・応答の文字列に認証情報は含めない */
+export async function callFoundryWithInput(
+  s: FoundrySecret & { authMethod?: 'api-key' | 'entra' }, input: unknown,
+  f: typeof fetch = (u, i) => fetch(u, i), timeoutMs = FOUNDRY_TIMEOUT_MS, getToken?: TokenProvider, maxOutputTokens?: number,
+): Promise<string> {
+  let credential = s.key;
+  if (s.authMethod === 'entra') {
+    try { credential = getToken ? await getToken() : ''; } catch { credential = ''; }
+    if (!credential) throw new FoundryError(TOKEN_UNAVAILABLE_MESSAGE, 'token');
+  }
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), timeoutMs);
+  try {
+    const headers: Record<string, string> = { 'content-type': 'application/json', authorization: ['Bearer', credential].join(' ') };
+    if (s.authMethod !== 'entra') headers['api-key'] = credential;
+    const res = await f(responsesUrl(s.endpoint), {
+      method: 'POST', redirect: 'error', signal: ctl.signal, headers, body: JSON.stringify({ model: s.deployment, input, ...(maxOutputTokens ? { max_output_tokens: maxOutputTokens } : {}) }),
+    });
+    if (!res.ok) throw new FoundryError(`Foundry がエラーを返しました（HTTP ${res.status}）`, 'http');
+    const text = extractText(await res.json().catch(() => null));
+    if (!text) throw new FoundryError('Foundry の応答の形式が想定と異なります', 'format');
+    return text;
+  } catch (e) {
+    if (e instanceof FoundryError) throw e;
+    if (ctl.signal.aborted) throw new FoundryError('Foundry の応答がタイムアウトしました', 'timeout');
+    throw new FoundryError('Foundry に接続できませんでした', 'network');
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** ファイルを送り、取り込んだエンティティを返す。形式が想定と異なるときは FoundryError('format') */
+export async function importWithFoundry(
+  s: FoundrySecret & { authMethod?: 'api-key' | 'entra' }, file: ImportFile,
+  f?: typeof fetch, timeoutMs?: number, getToken?: TokenProvider,
+): Promise<Array<{ name: string; description: string }>> {
+  const text = await callFoundryWithInput(s, importInput(file), f, timeoutMs, getToken);
+  const m = /\{[\s\S]*\}/.exec(text);
+  let parsed: unknown = null;
+  try { parsed = m ? JSON.parse(m[0]) : null; } catch { parsed = null; }
+  const list = (parsed as { entities?: unknown })?.entities;
+  if (!Array.isArray(list)) throw new FoundryError('Foundry の応答の形式が想定と異なります', 'format');
+  const out = list
+    .map((e) => ({ name: String((e as { name?: unknown })?.name ?? '').trim(), description: String((e as { description?: unknown })?.description ?? '').trim() }))
+    .filter((e) => e.name);
+  if (out.length === 0) throw new FoundryError('Foundry の応答から取り込める項目が見つかりませんでした', 'format');
+  return out;
 }

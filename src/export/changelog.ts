@@ -3,6 +3,7 @@
 import { useDiscussionStore } from '../store/discussion';
 import type { Theme } from '../discussion/model';
 import { STATUS_DISPLAY_LABEL } from '../discussion/model';
+import { tr } from '../i18n/translate';
 
 export interface ChangeEntry {
   /** ISO 8601 */
@@ -46,18 +47,18 @@ export function diffThemes(before: readonly Theme[], after: readonly Theme[], at
   for (const [id, t] of a) {
     const old = b.get(id);
     if (!old) {
-      out.push({ at, kind: 'added', targetId: id, target: t.title, detail: '議論テーマを追加', by: t.createdBy === 'ai' ? 'ai' : 'human' });
+      out.push({ at, kind: 'added', targetId: id, target: t.title, detail: tr('議論テーマを追加'), by: t.createdBy === 'ai' ? 'ai' : 'human' });
       continue;
     }
     const changes: string[] = [];
-    if (old.title !== t.title) changes.push(`名前を「${old.title}」から変更`);
-    if (old.status !== t.status) changes.push(`決定ステータス: ${STATUS_DISPLAY_LABEL[old.status]} → ${STATUS_DISPLAY_LABEL[t.status]}`);
-    if (old.decisions !== t.decisions) changes.push('決定事項を更新');
-    if (old.openIssues !== t.openIssues) changes.push('未決事項を更新');
-    if (changes.length > 0) out.push({ at, kind: 'changed', targetId: id, target: t.title, detail: changes.join('、'), by: 'human' });
+    if (old.title !== t.title) changes.push(tr('名前を「{old}」から変更', { old: old.title }));
+    if (old.status !== t.status) changes.push(`${tr('決定ステータス')}: ${tr(STATUS_DISPLAY_LABEL[old.status])} → ${tr(STATUS_DISPLAY_LABEL[t.status])}`);
+    if (old.decisions !== t.decisions) changes.push(tr('決定事項を更新'));
+    if (old.openIssues !== t.openIssues) changes.push(tr('未決事項を更新'));
+    if (changes.length > 0) out.push({ at, kind: 'changed', targetId: id, target: t.title, detail: changes.join(tr('、')), by: 'human' });
   }
   for (const [id, t] of b) {
-    if (!a.has(id)) out.push({ at, kind: 'removed', targetId: id, target: t.title, detail: '議論テーマを削除', by: 'human' });
+    if (!a.has(id)) out.push({ at, kind: 'removed', targetId: id, target: t.title, detail: tr('議論テーマを削除'), by: 'human' });
   }
   return out;
 }

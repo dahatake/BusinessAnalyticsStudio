@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準（docs/requirements/app-experience.md の FR-173〜176）だけから決める。
 // 画面の探し方は tests/system/CONTRACT.md §12。PARAM-058=75（%）、PARAM-059=上、PARAM-029=320（CSS px）。
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, selectPersona, MAIN_SCREENS } from '../support/fixtures';
+import { test, expect, openScreen, component, selectPersona, MAIN_SCREENS, screenEntry } from '../support/fixtures';
 
 const RATIO = 0.75; // PARAM-058
 const TOL = 0.03; // 割合・位置の許容（キャンバスの寸法に対する比）
@@ -42,8 +42,8 @@ async function dragHeading(page: Page, c: Locator, toX: number, toY: number): Pr
 const overlap = (a: Box, b: Box) => Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
 
 test.describe('FR-173 コンポーネントのキャンバス内での自由な移動', () => {
-  // FR-173 AC-348（Q-025 で改訂: 重なる位置へ置くと、ぶつかられたものが押し出されて重ならない）
-  test('FR-173 AC-348 ヘッダーのドラッグで別の位置に置け、再読込後も同じ位置。ほかのコンポーネントの上へ置くとそちらが押し出され、重なって表示されない', async ({ page, start }) => {
+  // FR-173 AC-348（Q-066 B 2026-10-27 で改訂: 重なる位置へ置くと押し出さず、重なって表示され、掴んだものが手前に出る）
+  test('FR-173 AC-348 ヘッダーのドラッグで別の位置に置け、再読込後も同じ位置。ほかのコンポーネントの上へ置くと押し出されず重なって表示され、掴んだものが手前に出る', async ({ page, start }) => {
     const app = await start();
     await selectPersona(page, '事業部門');
     const ks = await topKeys(page);
@@ -51,22 +51,23 @@ test.describe('FR-173 コンポーネントのキャンバス内での自由な�
     const [a, b] = ks;
     const ba = await box(component(page, a));
     const bb = await box(component(page, b));
-    // a を b の中央へ（b を押し出させる）
+    // a を b の中央へ（重ねて置く。b は押し出されない）
     await dragHeading(page, component(page, a), bb.x + bb.width / 2, bb.y + bb.height / 2);
-    await expect.poll(async () => {
-      const m = await box(component(page, a));
-      const o = await box(component(page, b));
-      return overlap(m, o);
-    }, { timeout: 5_000, message: '移動後も重なって表示されている（押し出されない）' }).toBeLessThanOrEqual(4);
+    await page.waitForTimeout(700); // 押し出しのアニメーションがあっても終わる時間
     const moved = await box(component(page, a));
+    const bAfter = await box(component(page, b));
     expect(Math.abs(moved.x - ba.x) + Math.abs(moved.y - ba.y), '位置が変わらない').toBeGreaterThan(2);
-    // すべてのコンポーネントが互いに重ならない
-    const boxes: Record<string, Box> = {};
-    for (const k of await topKeys(page)) boxes[k] = await box(component(page, k));
-    const names = Object.keys(boxes);
-    for (let i = 0; i < names.length; i++) for (let j = i + 1; j < names.length; j++) {
-      expect(overlap(boxes[names[i]], boxes[names[j]]), `${names[i]} と ${names[j]} が重なる`).toBeLessThanOrEqual(4);
-    }
+    expect(overlap(moved, bAfter), '重なって表示されない（重なりを許す）').toBeGreaterThan(100);
+    expect(Math.abs(bAfter.x - bb.x) + Math.abs(bAfter.y - bb.y), 'ぶつかられた b が押し出された（動いてはならない）').toBeLessThanOrEqual(4);
+    // 重なった領域の中心では、掴んだ a が手前に表示される
+    const cx = (Math.max(moved.x, bAfter.x) + Math.min(moved.x + moved.width, bAfter.x + bAfter.width)) / 2;
+    const cy = (Math.max(moved.y, bAfter.y) + Math.min(moved.y + moved.height, bAfter.y + bAfter.height)) / 2;
+    const frontKey = await page.evaluate(([x, y]) => {
+      const el = document.elementFromPoint(x, y);
+      const hit = el?.closest('[data-testid^="component-"]:not([data-testid="component-menu"]):not([data-testid="component-actions"])');
+      return hit?.getAttribute('data-testid') ?? null;
+    }, [cx, cy]);
+    expect(frontKey, '掴んだコンポーネントが手前に出ていない').toBe(`component-${a}`);
     const pos = await box(component(page, a));
     await app.reload();
     const again = await box(component(page, a));
@@ -216,7 +217,8 @@ test.describe('FR-176 作業先・企業・Project のメニューを画面の�
       const others: Array<[string, Locator]> = [
         ['ペルソナ', page.getByRole('button', { name: /ペルソナ/ })],
         ['編集モード', page.getByRole('switch', { name: '編集モード' })],
-        ...MAIN_SCREENS.map(([k]): [string, Locator] => [`nav-${k}`, page.getByTestId(`nav-${k}`)]),
+        // 設定は上部のボタン「設定」（FR-223 AC-774。作業先の段より上に置かない）
+        ...MAIN_SCREENS.map(([k]): [string, Locator] => [k === 'settings' ? '設定' : `nav-${k}`, screenEntry(page, k)]),
       ];
       const stepper = page.getByTestId('stepper');
       if (await stepper.count()) others.push(['stepper', stepper]);
@@ -244,7 +246,7 @@ test.describe('FR-176 作業先・企業・Project のメニューを画面の�
     for (const key of ['priority', 'settings']) {
       await openScreen(page, key);
       const wt = (await box(page.getByTestId('work-target-menu'))).y;
-      const nav = (await box(page.getByTestId(`nav-${key}`))).y;
+      const nav = (await box(screenEntry(page, key))).y; // 設定は上部のボタン「設定」（FR-223 AC-774）
       expect(wt, `${key} 表示中に作業先が nav より下`).toBeLessThanOrEqual(nav + 1);
     }
   });

@@ -2,6 +2,7 @@
 // ルート=議題、枝=論点・課題・原因・解決策・決定事項・次のアクション。生成（モックの AI）、編集、出力（Mermaid・SVG・JSON）を受け持つ。
 import { newId, type Theme } from '../discussion/model';
 import type { PackData } from '../schema';
+import { tr } from '../i18n';
 import { solutionsOfIssue } from './model';
 
 export const TREE_KINDS = ['議題', '論点', '課題', '原因', '解決策', '決定事項', '次のアクション'] as const;
@@ -82,24 +83,24 @@ export function buildPackTree(data: PackData): TreeNode[] {
 /** 議論の記録から、モックの AI が返すツリー。同じ入力なら同じ構造になる（ID は毎回新しい）。 */
 export function buildMockTree(theme: ThemeLike, data: PackData): TreeNode[] {
   const out: TreeNode[] = [];
-  const themeRef = (field: string): Rationale => ({ label: `議論の記録（${field}）`, kind: 'theme', refId: theme.id });
+  const themeRef = (field: string): Rationale => ({ label: tr('議論の記録（{field}）', { field: tr(field) }), kind: 'theme', refId: theme.id });
   const issue = theme.issueId ? data.issues.issues.find((i) => i.id === theme.issueId) : undefined;
   const root = node({ parentId: null, kind: '議題', title: theme.title, origin: 'ai', ...(issue ? { entityId: issue.id } : {}), rationale: themeRef('議題') });
   out.push(root);
 
   const options = splitItems(theme.options);
-  for (const o of options.length ? options : [`${theme.title} をどう進めるか`]) {
+  for (const o of options.length ? options : [tr('{title} をどう進めるか', { title: theme.title })]) {
     out.push(node({ parentId: root.id, kind: '論点', title: o, origin: 'ai', rationale: themeRef('選択肢') }));
   }
 
   const srcOf = (ids: readonly string[] | undefined): Rationale | undefined => {
     const id = ids?.find((s) => data.sources.sources.some((x) => x.id === s));
     const src = id ? data.sources.sources.find((x) => x.id === id) : undefined;
-    return src ? { label: `出典: ${src.title}`, kind: 'source', refId: src.id } : undefined;
+    return src ? { label: tr('出典: {title}', { title: src.title }), kind: 'source', refId: src.id } : undefined;
   };
 
   const problem = node({
-    parentId: root.id, kind: '課題', title: issue ? issue.title : `${theme.title} の課題`, origin: 'ai',
+    parentId: root.id, kind: '課題', title: issue ? issue.title : tr('{title} の課題', { title: theme.title }), origin: 'ai',
     ...(issue ? { entityId: issue.id } : {}), rationale: srcOf(issue?.sourceIds) ?? themeRef('根拠'),
   });
   out.push(problem);
@@ -112,19 +113,34 @@ export function buildMockTree(theme: ThemeLike, data: PackData): TreeNode[] {
     for (const s of sols) out.push(node({ parentId: root.id, kind: '解決策', title: s.title, origin: 'ai', entityId: s.id, rationale: srcOf(s.sourceIds) ?? themeRef('戦略的提言') }));
   } else {
     const rec = splitItems(theme.recommendation);
-    for (const r of rec.length ? rec : ['解決策の候補を洗い出す']) out.push(node({ parentId: root.id, kind: '解決策', title: r, origin: 'ai', rationale: themeRef('戦略的提言') }));
+    for (const r of rec.length ? rec : [tr('解決策の候補を洗い出す')]) out.push(node({ parentId: root.id, kind: '解決策', title: r, origin: 'ai', rationale: themeRef('戦略的提言') }));
   }
 
   const decisions = splitItems(theme.decisions);
-  for (const d of decisions.length ? decisions : ['決定事項を確定する（未決）']) {
+  for (const d of decisions.length ? decisions : [tr('決定事項を確定する（未決）')]) {
     out.push(node({ parentId: root.id, kind: '決定事項', title: d, origin: 'ai', rationale: themeRef('決定事項') }));
   }
 
   const actions = theme.actions.map((a) => a.text.trim()).filter((t) => t !== '');
-  for (const a of actions.length ? actions : ['担当と期限を決める']) {
+  for (const a of actions.length ? actions : [tr('担当と期限を決める')]) {
     out.push(node({ parentId: root.id, kind: '次のアクション', title: a, origin: 'ai', rationale: themeRef('次のアクション') }));
   }
   return out;
+}
+
+/**
+ * デモ（お手本パック）の議論ツリー（FR-287 AC-750）。パックの discussionTheme（議論の記録）から、モックの AI と同じ規則で作る。
+ * パックが持たない実際の Project では undefined（デモの値は混ざらない。FR-138）。ノードの ID は呼び出しごとに新しい。
+ */
+export function demoTreeDoc(data: PackData): TreeDoc | undefined {
+  const t = data.customer.discussionTheme;
+  if (!t) return undefined;
+  const theme: ThemeLike = {
+    id: t.id, title: t.title, ...(t.issueId ? { issueId: t.issueId } : {}),
+    options: t.options, recommendation: t.recommendation, decisions: t.decisions, rationale: '', openIssues: '',
+    actions: t.actions.map((text, i) => ({ id: `${t.id}-act-${i + 1}`, text, owner: '', due: '' })),
+  };
+  return { themeId: theme.id, themeTitle: theme.title, nodes: buildMockTree(theme, data), mode: 'mock' };
 }
 
 /** AI の回答（JSON のツリー）を読む。形が違えば null。実接続の回答用で、読めなければ呼び出し側がモックに戻す。 */
@@ -135,12 +151,12 @@ export function parseAiTree(answer: string, theme: ThemeLike): TreeNode[] | null
   try { raw = JSON.parse(m[0]); } catch { return null; }
   const list = Array.isArray(raw) ? raw : (raw as { nodes?: unknown })?.nodes;
   if (!Array.isArray(list) || list.length === 0) return null;
-  const root = node({ parentId: null, kind: '議題', title: theme.title, origin: 'ai', rationale: { label: '議論の記録（議題）', kind: 'theme', refId: theme.id } });
+  const root = node({ parentId: null, kind: '議題', title: theme.title, origin: 'ai', rationale: { label: tr('議論の記録（議題）'), kind: 'theme', refId: theme.id } });
   const out: TreeNode[] = [root];
   for (const x of list) {
     const r = x as { kind?: string; title?: string; parent?: string };
     if (!r || typeof r.title !== 'string' || !TREE_KINDS.includes(r.kind as TreeKind) || r.kind === '議題') return null;
-    out.push(node({ parentId: root.id, kind: r.kind as TreeKind, title: r.title, origin: 'ai', rationale: { label: '議論の記録（根拠）', kind: 'theme', refId: theme.id } }));
+    out.push(node({ parentId: root.id, kind: r.kind as TreeKind, title: r.title, origin: 'ai', rationale: { label: tr('議論の記録（根拠）'), kind: 'theme', refId: theme.id } }));
   }
   return out;
 }
@@ -185,9 +201,9 @@ export type TreeEdit = { ok: true; nodes: TreeNode[]; id?: string } | { ok: fals
 /** ノードを追加する（人が追加したので「人が編集」）。 */
 export function addChild(nodes: readonly TreeNode[], parentId: string, title: string, kind?: TreeKind): TreeEdit {
   const t = title.trim();
-  if (t === '') return { ok: false, reason: 'ノードの名前を入力してください。' };
+  if (t === '') return { ok: false, reason: tr('ノードの名前を入力してください。') };
   const parent = nodes.find((n) => n.id === parentId);
-  if (!parent) return { ok: false, reason: '追加先のノードを選んでください。' };
+  if (!parent) return { ok: false, reason: tr('追加先のノードを選んでください。') };
   const added = node({ parentId, kind: kind ?? defaultChildKind(parent.kind), title: t, origin: 'human' });
   // 親の子の末尾（子孫の後）に挿入する
   const sub = descendantIds(nodes, parentId);
@@ -198,16 +214,16 @@ export function addChild(nodes: readonly TreeNode[], parentId: string, title: st
 
 export function renameNode(nodes: readonly TreeNode[], id: string, title: string): TreeEdit {
   const t = title.trim();
-  if (t === '') return { ok: false, reason: 'ノードの名前を入力してください。' };
-  if (!nodes.some((n) => n.id === id)) return { ok: false, reason: 'ノードが見つかりません。' };
+  if (t === '') return { ok: false, reason: tr('ノードの名前を入力してください。') };
+  if (!nodes.some((n) => n.id === id)) return { ok: false, reason: tr('ノードが見つかりません。') };
   return { ok: true, nodes: nodes.map((n) => (n.id === id ? { ...n, title: t, origin: 'human' as const } : n)) };
 }
 
 /** ノードを子孫ごと削除する。ルートは削除できない。 */
 export function removeTreeNode(nodes: readonly TreeNode[], id: string): TreeEdit {
   const n = nodes.find((x) => x.id === id);
-  if (!n) return { ok: false, reason: 'ノードが見つかりません。' };
-  if (n.parentId === null) return { ok: false, reason: 'ルート（議題）は削除できません。' };
+  if (!n) return { ok: false, reason: tr('ノードが見つかりません。') };
+  if (n.parentId === null) return { ok: false, reason: tr('ルート（議題）は削除できません。') };
   const gone = descendantIds(nodes, id);
   gone.add(id);
   return { ok: true, nodes: nodes.filter((x) => !gone.has(x.id)) };
@@ -224,10 +240,10 @@ export function moveTargets(nodes: readonly TreeNode[], id: string): TreeNode[] 
 /** ノードを別の親へ移動する（人が編集したので「人が編集」）。自分や子孫の下へは移動できない。 */
 export function moveNode(nodes: readonly TreeNode[], id: string, newParentId: string): TreeEdit {
   const n = nodes.find((x) => x.id === id);
-  if (!n) return { ok: false, reason: 'ノードが見つかりません。' };
-  if (n.parentId === null) return { ok: false, reason: 'ルート（議題）は移動できません。' };
-  if (id === newParentId || descendantIds(nodes, id).has(newParentId)) return { ok: false, reason: '自分自身や子孫の下には移動できません。' };
-  if (!nodes.some((x) => x.id === newParentId)) return { ok: false, reason: '移動先のノードが見つかりません。' };
+  if (!n) return { ok: false, reason: tr('ノードが見つかりません。') };
+  if (n.parentId === null) return { ok: false, reason: tr('ルート（議題）は移動できません。') };
+  if (id === newParentId || descendantIds(nodes, id).has(newParentId)) return { ok: false, reason: tr('自分自身や子孫の下には移動できません。') };
+  if (!nodes.some((x) => x.id === newParentId)) return { ok: false, reason: tr('移動先のノードが見つかりません。') };
   const moving = new Set([id, ...descendantIds(nodes, id)]);
   const block = nodes.filter((x) => moving.has(x.id)).map((x) => (x.id === id ? { ...x, parentId: newParentId, origin: 'human' as const } : x));
   const rest = nodes.filter((x) => !moving.has(x.id));
@@ -240,12 +256,12 @@ export function moveNode(nodes: readonly TreeNode[], id: string, newParentId: st
 /** ノードの分解をやり直す。子孫を捨て、名前を「、」「・」などで区切った項目から子を作り直す（なければ検討の 1 件）。 */
 export function redecompose(nodes: readonly TreeNode[], id: string): TreeEdit {
   const n = nodes.find((x) => x.id === id);
-  if (!n) return { ok: false, reason: 'ノードが見つかりません。' };
+  if (!n) return { ok: false, reason: tr('ノードが見つかりません。') };
   const gone = descendantIds(nodes, id);
   const kept = nodes.filter((x) => !gone.has(x.id));
   const parts = n.title.split(/[、,，・／/]+/).map((s) => s.trim()).filter((s) => s !== '');
   const kind = defaultChildKind(n.kind);
-  const kids = (parts.length > 1 ? parts : [`${n.title} の詳細を検討する`]).map((t) =>
+  const kids = (parts.length > 1 ? parts : [tr('{title} の詳細を検討する', { title: n.title })]).map((t) =>
     node({ parentId: id, kind, title: t, origin: 'ai', rationale: n.rationale }),
   );
   const at = kept.findIndex((x) => x.id === id);

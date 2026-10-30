@@ -1,5 +1,6 @@
 // 図・データのファイル出力（FR-040 AC-050、FR-042 AC-053）。ブラウザーのダウンロードとして保存する。
 import { sanitizeFilePart, yyyymmdd } from '../discussion/model';
+import { tr } from '../i18n';
 
 /** 保存の既定のファイル名 `<yyyymmdd>-<顧客名>-<Project名>-<種類>.<拡張子>` */
 export function exportFileName(customer: string, project: string, kind: string, ext: string, date: Date = new Date()): string {
@@ -26,7 +27,7 @@ export async function svgToPng(svg: string, width: number, height: number, scale
   const img = new Image();
   const loaded = new Promise<void>((resolve, reject) => {
     img.onload = () => resolve();
-    img.onerror = () => reject(new Error('図を画像に変換できませんでした。'));
+    img.onerror = () => reject(new Error(tr('図を画像に変換できませんでした。')));
   });
   img.src = `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
   await loaded;
@@ -34,11 +35,11 @@ export async function svgToPng(svg: string, width: number, height: number, scale
   canvas.width = Math.max(1, Math.round(width * scale));
   canvas.height = Math.max(1, Math.round(height * scale));
   const ctx = canvas.getContext('2d');
-  if (!ctx) throw new Error('画像を作れませんでした。');
+  if (!ctx) throw new Error(tr('画像を作れませんでした。'));
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
   return new Promise<Blob>((resolve, reject) => {
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('PNG を作れませんでした。'))), 'image/png');
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error(tr('PNG を作れませんでした。')))), 'image/png');
   });
 }
