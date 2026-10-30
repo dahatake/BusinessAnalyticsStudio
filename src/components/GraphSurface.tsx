@@ -270,7 +270,7 @@ function GraphBody({ origin, label, nodes, edges, onOpen }: GraphSurfaceProps) {
         const on = selected.has(n.id);
         const st: CSSProperties = {
           left: vec[0]! - NODE_W / 2, top: vec[1]! - NODE_H / 2, width: NODE_W, height: NODE_H,
-          ...(life < 1 || exiting ? { opacity: lifeOpacity(life), transform: `scale(${lifeScale(life).toFixed(3)})`, pointerEvents: 'none' as const } : {}),
+          ...(life < 1 || exiting ? { opacity: lifeOpacity(life), transform: `scale(${lifeScale(life).toFixed(3)})`, ...(exiting ? { pointerEvents: 'none' as const } : {}) } : {}),
         };
         const rowHl = vp.hl === n.id;
         const b = bind(n.id);

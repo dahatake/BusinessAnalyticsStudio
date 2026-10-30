@@ -164,7 +164,7 @@ export function SankeyView({ flow, selection, solutions, sources, onSelectIssue,
                 data-exiting={exiting || undefined}
                 aria-hidden={exiting || undefined}
                 className={mergeClasses(s.node, clickable && s.nodeClickable, isRelated && s.nodeRelated, isSelected && s.nodeSelected)}
-                style={{ left: `${vec[0]! * 20 + 1}%`, top: vec[1]! * (NODE_H + GAP), ...(life < 1 || exiting ? { opacity: lifeOpacity(life), transform: `scale(${lifeScale(life).toFixed(3)})`, pointerEvents: 'none' as const } : {}) }}
+                style={{ left: `${vec[0]! * 20 + 1}%`, top: vec[1]! * (NODE_H + GAP), ...(life < 1 || exiting ? { opacity: lifeOpacity(life), transform: `scale(${lifeScale(life).toFixed(3)})`, ...(exiting ? { pointerEvents: 'none' as const } : {}) } : {}) }}
                 onClick={clickable ? select : undefined}
               >
                 {clickable ? (
