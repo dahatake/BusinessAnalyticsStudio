@@ -344,14 +344,19 @@ function BusinessGraphScreen() {
               </tbody>
             </table>
             <Text as="h3" weight="semibold">{t('隣接表（種別ごと）')}</Text>
-            {types.filter((k) => shownNodes.some((n) => n.type === k)).map((k) => (
+            {types.filter((k) => nodePresence.some((p) => p.item.type === k)).map((k) => (
               <table key={k} aria-label={`${t('隣接表:')} ${k}`} data-testid="biz-adjacency-table" data-kind-table={k} className={s.table}>
                 <caption>{k}</caption>
                 <thead><tr><th scope="col">{t('名称')}</th><th scope="col">{t('つながり（→ 向かう先／← 向かってくる元）')}</th></tr></thead>
                 <tbody>
-                  {shownNodes.filter((n) => n.type === k).map((n) => (
+                  {nodePresence.filter((p) => p.item.type === k).map(({ item: n, life, exiting }) => exiting ? (
+                    <tr key={n.id} aria-hidden className={s.trow} style={{ opacity: lifeOpacity(life), pointerEvents: 'none' }}>
+                      <td>{n.name}</td><td />
+                    </tr>
+                  ) : (
                     <tr
                       key={n.id} {...bind(n.id)} tabIndex={0} className={s.trow} data-zoom-node="" data-kind={n.type} data-entity-name={n.name} aria-selected={selSet.has(n.id)}
+                      style={life < 1 ? { opacity: lifeOpacity(life) } : undefined}
                       onDoubleClick={() => openNode(n.id)} onKeyDown={(e) => keyOnNode(e, n.id)}
                     >
                       <td>{n.name}</td>
@@ -495,3 +500,4 @@ function BusinessGraphScreen() {
 }
 
 export { BusinessGraphScreen };
+

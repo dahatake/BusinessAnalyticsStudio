@@ -3,7 +3,8 @@
 // 項目を選ぶと、ツイン関係（FR-214）と流れで結ばれた項目・流れが、共通の選択（useEntityBinding）で他の画面と連動して強調される。
 // Control は図に示すだけで、このアプリは実機・外部システムへ何も送信しない（C-01。AC-569）。値は顧客パックの静的な値（鮮度を示す）。
 // Graph の表現（FR-238）は、表示形式の共通の仕組み（FR-238）の担当。
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { lifeOpacity, usePresenceItems } from '../motion';
 import { useT } from '../i18n';
 import { Badge, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { useHighlightClass } from '../components/highlight';
@@ -63,12 +64,13 @@ const useStyles = makeStyles({
   flowDim: { opacity: 0.55 },
 });
 
-function ItemButton({ item, selectedFlag, onOpen }: { item: TwinItem; selectedFlag: boolean; onOpen: (id: string) => void }) {
+function ItemButton({ item, selectedFlag, onOpen, life = 1, exiting = false }: { item: TwinItem; selectedFlag: boolean; onOpen: (id: string) => void; life?: number; exiting?: boolean }) {
   const t = useT();
   const s = useStyles();
   const hl = useHighlightClass();
   const bind = useEntityBinding(ORIGIN);
   const props = bind(item.id);
+  if (exiting) return <span aria-hidden className={s.item} style={{ opacity: lifeOpacity(life), pointerEvents: 'none' }}>{item.name}</span>;
   return (
     <button
       type="button" {...props} className={mergeClasses(s.item, hl(props['data-highlight']))} aria-pressed={selectedFlag}
@@ -167,6 +169,10 @@ export function TwinViewScreen() {
   }, [data]);
 
   const allItems = useMemo(() => [...model.real, ...model.digital], [model]);
+  // 一覧は、ID を保ったまま出入りする（FR-070 AC-086）。削除は薄れて消えるまで、元の一覧の位置に残る
+  const presence = usePresenceItems(allItems, (i) => i.id, () => []);
+  const lifeOf = new Map(presence.map((p) => [p.id, p.life]));
+  const listOf = useRef(new Map<string, string>());
   const clusters = useMemo(() => {
     const m = new Map<string, number>();
     for (const i of allItems) m.set(clusterOfItem(i), (m.get(clusterOfItem(i)) ?? 0) + 1);
@@ -207,6 +213,13 @@ export function TwinViewScreen() {
   );
   const nameOf = (id: string): string => names.get(id) ?? id;
 
+  const rowsOf = (key: string, items: readonly TwinItem[]): ReactNode[] => {
+    for (const i of items) listOf.current.set(i.id, key);
+    const rows: ReactNode[] = items.map((i) => <li key={i.id}><ItemButton item={i} selectedFlag={selected.has(i.id)} onOpen={openItem} life={lifeOf.get(i.id) ?? 1} /></li>);
+    for (const p of presence) if (p.exiting && listOf.current.get(p.id) === key) rows.push(<li key={p.id}><ItemButton item={p.item} selectedFlag={false} onOpen={openItem} life={p.life} exiting /></li>);
+    return rows;
+  };
+
   const realColumn = showReal ? (
     <section className={s.world} data-testid="twin-world-real" aria-label={t('現実世界')}>
       <Text weight="semibold">{t('現実世界')}</Text>
@@ -214,7 +227,7 @@ export function TwinViewScreen() {
       {model.realByGroup.map((g) => (
         <div key={g.group} className={s.group} data-testid={`twin-group-${g.group}`}>
           <Text size={200} weight="semibold">{REAL_GROUP_LABELS[g.group]}</Text>
-          <ul className={s.list}>{g.items.map((i) => <li key={i.id}><ItemButton item={i} selectedFlag={selected.has(i.id)} onOpen={openItem} /></li>)}</ul>
+          <ul className={s.list}>{rowsOf(`real:${g.group}`, g.items)}</ul>
         </div>
       ))}
     </section>
@@ -227,7 +240,7 @@ export function TwinViewScreen() {
         <div key={l.layer} className={s.layer} data-testid={`twin-layer-${l.layer}`}>
           <Text size={200} weight="semibold">{LAYER_LABELS[l.layer]}</Text>
           {l.items.length === 0 ? <Text size={200}>{t('この層の項目はありません。')}</Text> : (
-            <ul className={s.list}>{l.items.map((i) => <li key={i.id}><ItemButton item={i} selectedFlag={selected.has(i.id)} onOpen={openItem} /></li>)}</ul>
+            <ul className={s.list}>{rowsOf(`digital:${l.layer}`, l.items)}</ul>
           )}
         </div>
       ))}
@@ -317,3 +330,4 @@ export function TwinViewScreen() {
     </Panel>
   );
 }
+

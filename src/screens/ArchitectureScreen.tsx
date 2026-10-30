@@ -2,6 +2,7 @@
 // AsIs/ToBe を切り替えると差分（追加・削除・変更）を色とラベルでハイライトする。図は Mermaid・SVG・PNG で出力でき、JSON で編集できる。
 import { useEffect, useMemo, useState } from 'react';
 import { useT } from '../i18n';
+import { lifeOpacity, usePresenceItems } from '../motion';
 import {
   Badge, Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Menu, MenuItem, MenuList, MenuPopover, MenuTrigger, Text, Textarea, makeStyles, mergeClasses, tokens,
 } from '@fluentui/react-components';
@@ -58,7 +59,7 @@ function DiffBadge({ diff }: { diff: DiffKind }) {
   return <Badge appearance="filled" color={color} size="medium">{mark} {DIFF_LABEL[diff]}</Badge>;
 }
 
-function ElementCard({ item, chevron }: { item: DiffElement; chevron?: boolean }) {
+function ElementCard({ item, chevron, life = 1 }: { item: DiffElement; chevron?: boolean; life?: number }) {
   const s = useStyles();
   const hl = useHighlightClass();
   const bind = useEntityBinding(ORIGIN);
@@ -67,6 +68,7 @@ function ElementCard({ item, chevron }: { item: DiffElement; chevron?: boolean }
     <div
       {...props} role="button" tabIndex={0}
       data-diff={item.diff === 'same' ? undefined : item.diff}
+      style={life < 1 ? { opacity: lifeOpacity(life) } : undefined}
       className={mergeClasses(s.card, chevron && s.chevron, item.diff === 'added' && s.added, item.diff === 'removed' && s.removed, item.diff === 'changed' && s.changed, hl(props['data-highlight']))}
       onKeyDown={(e) => { onEntityKey(e, item.element.id, ORIGIN); }}
     >
@@ -76,20 +78,29 @@ function ElementCard({ item, chevron }: { item: DiffElement; chevron?: boolean }
   );
 }
 
-function Diagram2D({ sections }: { sections: ArchSection[] }) {
+/** 区画 1 つ。要素は ID を保ったまま出入りする（FR-070 AC-086）。削除は薄れて消えるまで元の区画に残る（消える途中のカードは ID・操作を持たない）。 */
+function SectionBlock({ sec }: { sec: ArchSection }) {
   const s = useStyles();
+  const presence = usePresenceItems(sec.items, (e) => e.element.id, () => []);
   return (
-    <>
-      {sections.map((sec) => (
-        <section key={sec.title} className={s.section} aria-label={sec.title}>
-          <Text as="h3" size={400} weight="semibold">{sec.title}</Text>
-          <div className={sec.kind === 'stream' ? s.stream : s.grid}>
-            {sec.items.map((it) => <ElementCard key={it.element.id} item={it} chevron={sec.kind === 'stream'} />)}
-          </div>
-        </section>
-      ))}
-    </>
+    <section className={s.section} aria-label={sec.title}>
+      <Text as="h3" size={400} weight="semibold">{sec.title}</Text>
+      <div className={sec.kind === 'stream' ? s.stream : s.grid}>
+        {presence.map(({ item, life, exiting }) => exiting
+          ? (
+            <div key={item.element.id} aria-hidden style={{ opacity: lifeOpacity(life), pointerEvents: 'none' }}
+              className={mergeClasses(s.card, sec.kind === 'stream' && s.chevron)}>
+              <Text weight="semibold">{item.element.name}</Text>
+            </div>
+          )
+          : <ElementCard key={item.element.id} item={item} chevron={sec.kind === 'stream'} life={life} />)}
+      </div>
+    </section>
   );
+}
+
+function Diagram2D({ sections }: { sections: ArchSection[] }) {
+  return <>{sections.map((sec) => <SectionBlock key={sec.title} sec={sec} />)}</>;
 }
 
 function ArchitectureScreen() {

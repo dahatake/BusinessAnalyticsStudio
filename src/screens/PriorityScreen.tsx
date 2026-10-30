@@ -1,6 +1,7 @@
 // 優先順位分析（FR-039）。重みのスライダー（キーボード・数値入力でも操作可）、重み付きスコアの KPI、感度分析、AI 提案と顧客決定の区別。
 // ランキング表（component-ranking）と 2×2 マトリクス（component-matrix）は別のコンポーネントで、同じ重みから再計算される。
 import { useEffect, useMemo, useState } from 'react';
+import { lifeOpacity, usePresenceItems } from '../motion';
 import { useT } from '../i18n';
 import { Badge, Button, Input, Table, TableBody, TableCell, TableHeader, TableHeaderCell, TableRow, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { ArrowReset24Regular } from '@fluentui/react-icons';
@@ -98,6 +99,11 @@ function PriorityScreen() {
     [packState, issues, weights],
   );
 
+  // 上位 5 件・解決策の一覧は、ID を保ったまま出入りする（FR-070 AC-086）。削除は薄れて消えるまで元の位置に残る
+  const top5 = useMemo(() => topFive(rows), [rows]);
+  const top5Presence = usePresenceItems(top5, (r) => r.id, () => []);
+  const solPresence = usePresenceItems(rankedSolutions, (r) => r.solution.id, () => []);
+
   if (!ready) return <LoadingView label={t('優先順位を読み込み中')} />;
 
   const top = rows[0];
@@ -140,11 +146,11 @@ function PriorityScreen() {
       <section aria-label={t('現在の上位 5 件')}>
         <Text as="h3" size={500} weight="semibold" block>{t('現在の上位 5 件')}</Text>
         <ol className={s.top5}>
-          {topFive(rows).map((r) => (
-            <li key={r.id} className={s.top5Row} data-testid="ranking-row">
-              <span className={s.top5Rank}>{r.rank}</span>
-              <span>{r.title}</span>
-              <span><KpiValue>{r.score.toFixed(1)}</KpiValue></span>
+          {top5Presence.map((p) => (
+            <li key={p.id} className={s.top5Row} data-testid="ranking-row" data-entity-id={p.id} {...(p.exiting ? { 'aria-hidden': true } : {})} style={p.life < 1 ? { opacity: lifeOpacity(p.life), ...(p.exiting ? { pointerEvents: 'none' as const } : {}) } : undefined}>
+              <span className={s.top5Rank}>{p.item.rank}</span>
+              <span>{p.item.title}</span>
+              <span><KpiValue>{p.item.score.toFixed(1)}</KpiValue></span>
             </li>
           ))}
         </ol>
@@ -153,10 +159,10 @@ function PriorityScreen() {
       <section aria-label={t('優先度の高い解決策')}>
         <Text as="h3" size={500} weight="semibold" block>{t('優先度の高い解決策（効く課題の順位の高い順）')}</Text>
         <ol className={s.top5}>
-          {rankedSolutions.map((r, i) => (
-            <li key={r.solution.id} className={s.top5Row} data-testid="solution-rank-row" data-entity-id={r.solution.id}>
+          {solPresence.map((p, i) => (
+            <li key={p.id} className={s.top5Row} data-testid="solution-rank-row" {...(p.exiting ? { 'aria-hidden': true } : { 'data-entity-id': p.id })} style={p.life < 1 ? { opacity: lifeOpacity(p.life), ...(p.exiting ? { pointerEvents: 'none' as const } : {}) } : undefined}>
               <span className={s.top5Rank}>{i + 1}</span>
-              <span>{r.solution.title}</span>
+              <span>{p.item.solution.title}</span>
             </li>
           ))}
         </ol>
@@ -207,3 +213,5 @@ function PriorityScreen() {
 }
 
 export { PriorityScreen };
+
+

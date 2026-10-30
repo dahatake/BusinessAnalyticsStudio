@@ -16,6 +16,8 @@ import {
 } from '../analysis/tree';
 import { MOCK_LABEL, REAL_LABEL } from '../ai/client';
 import { ExecutiveSummary } from '../components/ExecutiveSummary';
+import { IssueEvaluationBadge } from '../components/IssueEvaluationBadge';
+import type { Issue } from '../analysis/model';
 import { useHighlightClass } from '../components/highlight';
 import { Panel } from '../components/Panel';
 import { EmptyView, LoadingView } from '../components/StateViews';
@@ -107,7 +109,20 @@ function DiscussionTreeScreen() {
 
   const baseline = useMemo(() => (data ? buildPackTree(data) : []), [data]);
   // 生成前は、パックの章・議題から作った全体像（読み取り専用）を見せる
-  const shown: TreeDoc | undefined = doc ?? (data && baseline.length > 0 ? { themeId: 'pack', themeTitle: data.customer.projectName, nodes: baseline, mode: 'mock' } : undefined);
+  const rawShown: TreeDoc | undefined = doc ?? (data && baseline.length > 0 ? { themeId: 'pack', themeTitle: data.customer.projectName, nodes: baseline, mode: 'mock' } : undefined);
+  // 生成済みのツリーは作った時点の名称を持つ。課題・解決策のノードは、元の項目の最新の名称を示す（名称の更新・undo に追従。人が編集したノードは除く）
+  const shown: TreeDoc | undefined = useMemo(() => {
+    if (!rawShown || !data) return rawShown;
+    const titles = new Map<string, string>([...data.issues.issues, ...data.issues.solutions].map((x) => [x.id, x.title]));
+    let changed = false;
+    const nodes = rawShown.nodes.map((n) => {
+      const live = n.entityId && n.origin !== 'human' && (n.kind === '課題' || n.kind === '解決策') ? titles.get(n.entityId) : undefined;
+      if (live === undefined || live === n.title) return n;
+      changed = true;
+      return { ...n, title: live };
+    });
+    return changed ? { ...rawShown, nodes } : rawShown;
+  }, [rawShown, data]);
   const rows = useMemo(() => (shown ? flattenTree(shown.nodes, collapsed) : []), [shown, collapsed]);
   const node = shown?.nodes.find((n) => n.id === picked);
   // 3D（FR-217 AC-501）: 表示中のノード（2D の木の行と同じ ID・件数）を、深さ=高さ・枝分かれ=横の位置に置き、親→子をつなぐ
@@ -117,6 +132,7 @@ function DiscussionTreeScreen() {
   usePublishViewItems(ORIGIN, useMemo(() => shownNodes.map((n) => n.id), [shownNodes]));
   const layout3d = useMemo(() => treeLayout3D(shownNodes, (n) => n.id, (n) => n.title, (n) => n.parentId, (n) => n.kind), [shownNodes]);
   const selectedNow = useSelectionStore((st) => st.selectedIds);
+  const issueOf = useMemo(() => new Map((data?.issues.issues ?? []).map((i) => [i.id, i])), [data]);
 
   useEffect(() => { if (picked && shown && !shown.nodes.some((n) => n.id === picked)) setPicked(undefined); }, [shown, picked]);
 
@@ -320,6 +336,7 @@ function DiscussionTreeScreen() {
                     </span>
                     <Badge appearance="outline" style={{ borderColor: KIND_TOKEN[n.kind] }}>{KIND_MARK[n.kind]} {t(n.kind)}</Badge>
                     <Text weight={n.parentId === null ? 'semibold' : 'regular'} className={s.title}>{n.title}</Text>
+                    {n.kind === '課題' && n.entityId && issueOf.get(n.entityId) ? <IssueEvaluationBadge issue={issueOf.get(n.entityId) as Issue} /> : null}
                     <Badge appearance={n.origin === 'human' ? 'filled' : 'tint'} color={n.origin === 'human' ? 'brand' : 'informative'} size="medium">
                       {n.origin === 'ai' ? t('AI 生成') : n.origin === 'human' ? t('人が編集') : t('パックの議題')}
                     </Badge>
