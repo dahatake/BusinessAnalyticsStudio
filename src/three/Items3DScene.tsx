@@ -85,7 +85,7 @@ function ItemNode({ item, position, color, selected, exiting, showLabel, heavy, 
         <sphereGeometry args={[1, heavy ? 6 : 16, heavy ? 4 : 12]} />
         <meshStandardMaterial color={color} emissive={selected ? color : '#000000'} emissiveIntensity={selected ? 0.6 : 0} />
       </mesh>
-      {showLabel ? <Html center position={[0, radius + 0.25, 0]} zIndexRange={[5, 0]}><span style={sceneLabelStyle} title={item.label}>{item.label}</span></Html> : null}
+      {showLabel ? <Html center position={[0, radius + 0.25, 0]} zIndexRange={[5, 0]}><span style={sceneLabelStyle} title={item.label} data-entity-id={exiting ? undefined : item.id}>{item.label}</span></Html> : null}
     </group>
   );
 }
