@@ -15,6 +15,7 @@ import { HIDDEN_SELECTION_TEXT, selectionHiddenIn, singleWorldNote } from '../vi
 import { isEditableTarget, panelKeyAction, runPanelKeyAction, titleDoubleClick, type KeyLike } from './panelKeys';
 import { CopilotProposal } from '../review/CopilotProposal';
 import { useT } from '../i18n';
+import { useOs } from '../store/osConvention';
 import { TIER_APPEARANCE, TIER_LABEL } from '../workspace/tiers';
 
 /** これより狭いコンポーネントは、見出しの操作アイコンを出さず「…」メニューに任せる（FR-150 AC-259）。
@@ -103,6 +104,9 @@ const useStyles = makeStyles({
   headRowCompact: { flexDirection: 'column-reverse', alignItems: 'stretch', flexWrap: 'nowrap', rowGap: 0 },
   actionGroupCompact: { alignSelf: 'flex-end' },
   actionGroup: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS, marginInlineStart: 'auto' },
+  // macOS の慣習: ウィンドウ操作のボタンは見出しの左端（FR-299）。見出しの上の行を全幅にし、左にウィンドウ操作・右にそのほかの操作を置く。操作の名前・アイコンは変えない（NFR-UX-018）
+  actionGroupMac: { order: -1, flexBasis: '100%', marginInlineStart: 0 },
+  actionGroupMacCompact: { alignSelf: 'stretch', flexBasis: 'auto' },
   // 見出しをつかんで動かす（FR-142）。つかめることをカーソルで示し、動かしている間に文字が選択されないようにする
   // 見出しは大きさ変更の持ち手（zIndex 3）より手前に置く。低い枠で見出しが下端にはみ出しても、見出しの上でドラッグを始められる
   grab: { flexGrow: 1, position: 'relative', zIndex: 4, cursor: 'grab', userSelect: 'none', touchAction: 'none', ':active': { cursor: 'grabbing' } },
@@ -154,6 +158,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
   const s = useStyles();
   const t = useT();
   const pane = usePane();
+  const os = useOs();
   const state = usePackStore((st) => st.state);
   const sample = state.status === 'ready' && hasSampleData(state.pack.data);
   // 画面の説明（顧客パックの screenGuides。FR-287）。ないパック（実際の Project など）では出さない
@@ -165,6 +170,8 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
   const [menuOpen, setMenuOpen] = useState(false);
   const [showTier, setShowTier] = useState(false);
   const [focused, setFocused] = useState(false);
+  // ポインターを重ねている間も、見出しの操作を出す（FR-298 AC-805・AC-808: ロールへの割り当て・最大化をホバーから操作できる）
+  const [hovered, setHovered] = useState(false);
   const [narrow, setNarrow] = useState(false);
   const [compact, setCompact] = useState(false);
   const minimized = pane?.minimized === true;
@@ -212,6 +219,8 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
       ref={ref}
       onFocus={onFocus}
       onBlur={onBlur}
+      onMouseEnter={pane ? () => setHovered(true) : undefined}
+      onMouseLeave={pane ? () => setHovered(false) : undefined}
       className={mergeClasses(s.root, pane ? s.pane : undefined, pane?.maximized ? s.maximized : undefined, foldMotion)}
       style={maxWidth && !pane ? { maxWidth } : pane?.z !== undefined && !pane.maximized ? { position: 'relative', zIndex: pane.z } : undefined}
       aria-label={title}
@@ -219,6 +228,8 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
       onKeyDown={onKeyDown}
       data-display={pane ? (pane.maximized ? 'maximized' : 'normal') : undefined}
       data-maximized={pane?.maximized ? 'true' : undefined}
+      data-zone={pane?.zone}
+      aria-selected={pane?.zoneSelected ? true : undefined}
       data-expanded={pane?.expanded ? 'true' : undefined}
       data-minimized={minimized ? 'true' : undefined}
       data-tier={pane?.tier ?? 'supporting'}
@@ -269,7 +280,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
               </span>
             ) : null}
           </div>
-          {pane ? <span className={mergeClasses(s.actionGroup, compact ? s.actionGroupCompact : undefined)}><ComponentActions pane={pane} title={title} active={focused || minimized} narrow={narrow} menu={{ open: menuOpen, onOpenChange: setMenuOpen, onShowTier: () => setShowTier(true) }} /></span> : null}
+          {pane ? <span className={mergeClasses(s.actionGroup, compact ? s.actionGroupCompact : undefined, os === 'mac' ? s.actionGroupMac : undefined, os === 'mac' && compact ? s.actionGroupMacCompact : undefined)}><ComponentActions pane={pane} title={title} active={focused || hovered || minimized} narrow={narrow} hover={hovered} focused={focused} menu={{ open: menuOpen, onOpenChange: setMenuOpen, onShowTier: () => setShowTier(true) }} /></span> : null}
         </div>
                   {pane && showTier && !minimized ? <Text size={300} role="status" data-testid="tier-reason" className={s.worldNote}>{pane.tierReason}</Text> : null}
         {world.note && !minimized ? <Text size={300} className={s.worldNote} data-testid="view-world-note">{world.note}</Text> : null}

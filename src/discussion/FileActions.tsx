@@ -2,7 +2,7 @@
 // 保存は既定のファイル名（<yyyymmdd>-顧客名-Project名-discussion-memo.md）を提示し、読み込みは Markdown の JSON ブロックから復元する。
 import { useRef, useState } from 'react';
 import {
-  Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Input, MessageBar, MessageBarActions, MessageBarBody, MessageBarTitle, makeStyles, tokens,
+  Button, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Input, MessageBar, MessageBarActions, MessageBarBody, MessageBarTitle, Portal, makeStyles, tokens,
 } from '@fluentui/react-components';
 import { Dialog, DialogSurface } from '../components/Dialog';
 import { useT } from '../i18n';
@@ -123,6 +123,8 @@ export function DiscussionFileActions() {
       </Dialog>
 
       {notice ? (
+        // 枠の面（ヘッダー）は背景のぼかしで固定配置の基準になるため、画面の右下に出す通知はポータルで外に出す（FR-300）
+        <Portal>
         <div className={s.notice} role={notice.kind === 'error' ? 'alert' : 'status'} data-testid="file-notice">
           <MessageBar intent={notice.kind} layout="multiline">
             <MessageBarBody>
@@ -134,6 +136,7 @@ export function DiscussionFileActions() {
             />
           </MessageBar>
         </div>
+        </Portal>
       ) : null}
     </>
   );
