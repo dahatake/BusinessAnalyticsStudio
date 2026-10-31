@@ -222,3 +222,11 @@ otifications は data-suppressed=\"true\"。Focus で減光したゾーンは bu
 - OS の操作慣習: 設定の combobox「OS の操作慣習」（自動／Windows／macOS）。キーの表示は data-shortcut 属性か表示文字。
 - 素材: pp-header・workspace-switcher・zone-boundary-* が半透明（backdrop-filter あり・不透明度 80% 以上 100% 未満）。component-* は不透明。
 - 改訂（AC-816）: Focus の解除は別モードの選択か Focus 切替キー Ctrl+Alt+Enter（macOS は ⌃⌥Enter。Playwright では Control+Alt+Enter）。Esc では解除しない。Main 以外のゾーンは減光・縮小で残る（呼び出せる）。
+
+## 34. 開いているコンポーネントの一覧・既定の構成・没入表示（FR-295〜297 AC-797・799・800・802・803。window-taskbar.spec.ts が前提にする画面の探し方。run 202610302230。実装前の契約案。実装役は同じ口を作る。変える場合は conductor 経由で本節を更新する）
+- 一覧（タスクバー相当）: `data-testid="window-list"`（role=toolbar、名前「開いているコンポーネント」）。項目は `data-testid="window-list-item"`（button）で、コンポーネントごとに 1 つ。属性 `data-component-key`（`component-<key>` の key）と `data-state`（`front`＝前面／`visible`＝表示中／`minimized`＝最小化／`closed`＝閉じた〔非表示〕）。見える文字（アクセシブルな名前）にコンポーネント名と状態の語（前面・表示中・最小化・閉じた）を含み、状態は文字か図（svg・img）でも区別できる（色だけにしない）。前面は常に 1 つだけ。最大化（没入）中も一覧は操作できる。
+- 項目の操作: 最小化中→元の位置・大きさで前面に復元／前面→最小化／閉じた→再表示（前面）。コンポーネントの本体・見出しを押す・フォーカスすると前面（`data-state="front"`、z 順が最上位＝計算済みの `z-index` が最大）。
+- 操作アイコン（§10 と同じ `component-actions`）の button「最小化」「非表示」を使う。「既定のレイアウトに戻す」（button）で一覧の状態・位置・大きさ・z 順が既定に戻る。
+- 没入（FR-297）: 最大化中は `data-maximized="true"`。背面の覆いは `data-testid="immersive-backdrop"`（背景色の alpha × opacity が PARAM-137＝0.60±0.05。背面のコンポーネントへの操作を通さない）。最大化中は一覧の前面の項目（またはその最大化したコンポーネント）の押下と `Esc` で通常表示に戻る。
+- キー（2026-10-31 統合で調整）: 切替は Ctrl+Alt+PageDown／PageUp（Playwright では Control+Alt+PageDown／PageUp）。Ctrl+Alt+方向キー（Move、§33）・Ctrl+Alt+Enter（Focus 切替）とは別。Esc の優先順は、切替の最中は切替の取消、それ以外は最大化・没入の復帰。Focus（FR-300）は Esc で解除しない。
+- 前面の強調（FR-297 AC-803）: 前面のコンポーネントの見出しに `data-testid="front-indicator"`（文字かアイコン。背面にはない）。影は計算済みの `box-shadow`（Light・Dark で前面が背面より強い）、ハイコントラスト（forced-colors）では前面の境界線（border か outline）が背面より太い。見出しの背景は透明効果が働いても、ハイコントラストでは不透明（alpha=1）。
