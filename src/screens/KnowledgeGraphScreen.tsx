@@ -166,7 +166,8 @@ function Graph2D({ nodes, edges, pos, size, selected, related, matches, edgeSel,
               onEntityKey(e as never, n.id, ORIGIN);
             }}
           >
-            <rect x={-hit.w / 2} y={15 - hit.h / 2} width={hit.w} height={hit.h} fill="transparent" />
+            {/* 出入りの拡大縮小（lifeScale）の途中でも、画面上の当たり判定が 24px を下回らないよう、節の拡大率で割って大きくする */}
+            <rect x={-hit.w / 2 / lifeScale(life)} y={15 - hit.h / 2 / lifeScale(life)} width={hit.w / lifeScale(life)} height={hit.h / lifeScale(life)} fill="transparent" />
             <path
               d={shapePath(style.shape)} className={s.shape} fill={style.color} fillOpacity={words.includes('selected') ? 0.55 : 0.22} stroke={style.color}
               strokeWidth={words.includes('selected') ? 5 : words.includes('related') || words.includes('hover') ? 3.5 : 2}

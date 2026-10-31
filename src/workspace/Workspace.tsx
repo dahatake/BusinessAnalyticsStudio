@@ -29,7 +29,15 @@ import { registerCommands } from '../commands/registry';
 import { useStepper } from '../store/stepper';
 import { useStepFlow } from '../store/stepFlow';
 import { planStepFlow, stepRelevance } from '../stepper/flow';
+import { useActiveWorkspace, useTaskWorkspaces } from '../store/taskWorkspaces';
+import { ZONE_META, hostRect, implicitRoles, placeByRole, zoneLayout, type ZoneName } from './zones';
+import { useImmersion } from '../store/immersion';
+import { isLetterChord, matchZoneOp } from './os';
+import { runZoneOp } from './zoneOps';
+import { stepZone } from './immersive';
+import { isEditableTarget } from '../components/panelKeys';
 import { tr, useLang, useT } from '../i18n';
+import { FLIP_PREPARE_EVENT, SPATIAL_MOTION_EASING, SPATIAL_MOTION_MS } from './spatialMotion';
 
 const useStyles = makeStyles({
   // ドラッグ中に、置ける場所をドロップの前に示す（FR-142）。Fluent 2 のブランドの色トークンと 4px グリッド
@@ -379,8 +387,20 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   // 木の外に出して描くコンポーネント: 拡大表示中はそれ 1 つだけ（ほかは残りの領域に収める）、それ以外は自由配置したもの（FR-173・FR-174）。
   // 狭い画面（縦積み）では自由配置を使わない。
   const baseKeys = useMemo(() => new Set(keysOf(base)), [base]);
+  // ゾーン（FR-298）: ロール（コンポーネント → ゾーン）から求めた各コンポーネントの矩形。出していないゾーンのコンポーネントは描かない（状態は保つ）
+  const taskWs = useActiveWorkspace();
+  const recalled = useImmersion((st) => st.recalled);
+  const zoneSelectedKey = useImmersion((st) => st.selectedKey);
+  const zones = useMemo(() => zoneLayout(taskWs.mode, taskWs.ratios, taskWs.merged, recalled), [taskWs.mode, taskWs.ratios, taskWs.merged, recalled]);
   // コンポーネントの役割による分類と階層（主役→補助→詳細。FR-244）。ペルソナの構成と、いま表示中のものを対象にする
   const tierInfo = useMemo(() => classify(persona, [...new Set([...personaKeys(persona), ...baseKeys])], tierOverrides), [persona, baseKeys, tierOverrides, lang]);
+  // モード（Research 以外）では、ロールを割り当てていないコンポーネントも、モードの構成で出しているゾーンへ置く（FR-300 AC-815。連続して動く）
+  const effectiveRoles = useMemo(() => {
+    if (taskWs.mode === 'research') return taskWs.roles;
+    return { ...implicitRoles(zones, [...baseKeys], (k) => tierInfo[k]?.tier ?? 'supporting', taskWs.roles), ...taskWs.roles };
+  }, [taskWs.mode, taskWs.roles, zones, baseKeys, tierInfo]);
+  const zonePlan = useMemo(() => placeByRole(zones, effectiveRoles, [...baseKeys]), [zones, effectiveRoles, baseKeys]);
+  const zoneHidden = useMemo(() => new Set(zonePlan.hidden), [zonePlan]);
   // 縮退: 幅が狭いとき、または、ピン止めの比率から求めた幅が最小の幅（PARAM-034）を下回るときは、縦積みにする（FR-216 AC-497）
   const pinTooNarrow = width > 0 && Object.entries(pinnedMap ?? {}).some(([k, r]) => baseKeys.has(k) && r.w * width < MIN_COMPONENT_WIDTH);
   const compact = narrowWs || pinTooNarrow;
@@ -430,6 +450,34 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     });
     return fitMinWidth(sized, treeWidth, [picked, focusKey]);
   }, [treeBase, compact, autoSize, expandedOut, focusKey, persona, manualKeys, treeWidth, picked]);
+
+  // FR-299: ゾーンの操作（Snap・Group・Move）の補助。Snap・Group は、割り当て済みのコンポーネントの位置も、ゾーンの矩形へ置き直す
+  const [snapNonce, setSnapNonce] = useState(0);
+  /** コンポーネントのいるゾーン: ロール、なければ画面上の中心があるゾーン（なければ、出している最初のゾーン） */
+  const zoneOfKey = (key: string): ZoneName => {
+    const explicit = effectiveRoles[key];
+    if (explicit && zones[explicit].rect) return zones[explicit].host;
+    const el = rootRef.current?.querySelector(`[data-testid="component-${key}"]`);
+    const main = rootRef.current?.closest('[data-testid="workspace"]');
+    const shown = (['main', 'reference', 'communication', 'monitor'] as const).filter((n) => zones[n].rect && zones[n].host === n);
+    if (el && main) {
+      const r = el.getBoundingClientRect();
+      const mr = main.getBoundingClientRect();
+      const c = mr.width > 0 ? (r.left + r.width / 2 - mr.left) / mr.width : 0;
+      const hit = shown.find((n) => { const z = zones[n].rect!; return c >= z.x && c < z.x + z.w; });
+      if (hit) return hit;
+    }
+    return shown.includes('main') ? 'main' : (shown[0] ?? 'main');
+  };
+  /** 配置の変更でコンポーネントの DOM が移っても、フォーカスをそのコンポーネントに残す */
+  const refocus = (key: string): void => {
+    const f = (): void => {
+      const el = rootRef.current?.querySelector<HTMLElement>(`[data-testid="component-${key}"]`);
+      const cur = document.activeElement;
+      if (el && el !== cur && (cur === null || cur === document.body || !el.contains(cur))) el.focus({ preventScroll: true });
+    };
+    for (const ms of [0, 60, 200, 450]) window.setTimeout(f, ms);
+  };
 
   const pane = (key: string, group: string[], active: string): PaneInfo => {
     const a = actions();
@@ -511,6 +559,43 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       startDrag: (e) => startDrag(key, e),
       resizeBy: (axis, dir) => resizeByStep(key, axis, dir),
       startResize: (edge, e) => startResize(key, edge, e),
+      ...(taskWs.roles[key] ? { zone: taskWs.roles[key] } : {}),
+      assignZone: (z) => { useTaskWorkspaces.getState().assign(key, z); announce(z ? tr('{label}を {zone} のロールへ割り当てました', { label, zone: ZONE_META[z].label }) : tr('{label}のロールの割り当てを外しました', { label })); },
+      zoneSelected: zoneSelectedKey === key,
+      // FR-299: ゾーン間の移動（Move）。ロールを変えるだけで座標は指定しない。ゾーンの選択とフォーカスは保つ
+      moveZone: (dir) => {
+        if (pinned) { announce(PIN_MOVE_REASON); return; }
+        const to = stepZone(zones, zoneOfKey(key), dir);
+        if (!to) { announce(tr('移動できるゾーンがありません')); return; }
+        useTaskWorkspaces.getState().assign(key, to);
+        useImmersion.getState().select(key);
+        announce(tr('{label}を {zone} へ移動しました', { label, zone: ZONE_META[to].label }));
+        refocus(key);
+      },
+      // FR-299: ゾーンへ吸着（Snap）。いるゾーンの矩形へ置き直す
+      snapZone: () => {
+        if (pinned) { announce(PIN_MOVE_REASON); return; }
+        const z = zoneOfKey(key);
+        useTaskWorkspaces.getState().assign(key, z);
+        setSnapNonce((n) => n + 1);
+        useImmersion.getState().select(key);
+        announce(tr('{label}を {zone} へスナップしました', { label, zone: ZONE_META[z].label }));
+        refocus(key);
+      },
+      // FR-299: 同じグループのコンポーネントを、同じゾーンへまとめる（Group）
+      groupZone: () => {
+        const z = zoneOfKey(key);
+        const g = ti.group;
+        const mates = g ? [...baseKeys].filter((k) => k !== key && tierInfo[k]?.group === g && !pinSet.has(k)) : [];
+        if (mates.length === 0) { announce(tr('同じグループのコンポーネントがありません')); return; }
+        const st = useTaskWorkspaces.getState();
+        st.assign(key, z);
+        for (const k of mates) st.assign(k, z);
+        setSnapNonce((n) => n + 1);
+        useImmersion.getState().select(key);
+        announce(tr('{n} 個のコンポーネントを {zone} へまとめました', { n: mates.length + 1, zone: ZONE_META[z].label }));
+        refocus(key);
+      },
     };
   };
 
@@ -774,6 +859,134 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     actions().setFloats(toFractions(rects, b));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [treeFree, width, height]);
+
+  // ゾーンのロールを割り当てたコンポーネントを、ゾーンの矩形へ置く（FR-298 AC-805〜807）。ゾーンの割合・モード・結合・ロールが変わったときだけ。
+  // 置くのは自由配置（FR-173）と同じ手段（setFloats）で、重ならない配置になる（FR-109）。ほかのコンポーネントは、スナップ（FR-152）と同じく重ならない位置へ押し出す。
+  const zoneApplied = useRef('');
+  /** 直前に適用したモード（Research から出るとき、出る前の自由配置を覚え、Research へ戻るとき復元する。FR-300: 解除すると直前の配置に戻る） */
+  const zoneMode = useRef<{ id: string; mode: string } | null>(null);
+  const preFloats = useRef<{ id: string; map: Record<string, FloatRect> } | null>(null);
+  /** 切替の前のコンポーネントの位置・大きさ。切替の後に、元の位置から連続して動かす（FLIP。FR-300 AC-815） */
+  const flipFrom = useRef<{ at: number; rects: Map<string, DOMRect> } | null>(null);
+  const recordFlip = (): void => {
+    const root = rootRef.current;
+    if (!root) return;
+    const rects = new Map<string, DOMRect>();
+    for (const k of baseKeys) {
+      const el = root.querySelector(`[data-testid="component-${k}"]`);
+      const r = el?.getBoundingClientRect();
+      if (r && r.width > 1 && r.height > 1) rects.set(k, r);
+    }
+    flipFrom.current = { at: performance.now(), rects };
+  };
+  const zoneSig = JSON.stringify([taskWs.id, persona, taskWs.mode, taskWs.ratios, taskWs.merged, effectiveRoles, recalled, snapNonce, [...baseKeys].sort()]);
+  useEffect(() => {
+    if (compact || expandedOut || width <= 0 || height <= 0) return;
+    const assigned = Object.keys(zonePlan.rects).filter((k) => baseKeys.has(k) && !!byKey(k)?.component);
+    const lost = zonePlan.hidden.filter((k) => baseKeys.has(k) && !!byKey(k)?.component && !(floatMap && k in floatMap));
+    if (zoneApplied.current === zoneSig) return;
+    const root = rootRef.current;
+    const main = root?.closest('[data-testid="workspace"]');
+    if (!root || !main) return;
+    const prevMode = zoneMode.current && zoneMode.current.id === taskWs.id ? zoneMode.current.mode : null;
+    zoneMode.current = { id: taskWs.id, mode: taskWs.mode };
+    if (prevMode === 'research' && taskWs.mode !== 'research') preFloats.current = { id: taskWs.id, map: JSON.parse(JSON.stringify(floatMap ?? {})) as Record<string, FloatRect> };
+    const restore = taskWs.mode === 'research' && prevMode !== null && prevMode !== 'research' && preFloats.current?.id === taskWs.id ? preFloats.current.map : null;
+    if (restore) preFloats.current = null;
+    if (assigned.length === 0 && lost.length === 0 && !restore) { zoneApplied.current = zoneSig; return; }
+    const rr = root.getBoundingClientRect();
+    const mr = main.getBoundingClientRect();
+    const bounds = { w: rr.width, h: rr.height };
+    // ゾーンの矩形（main に対する割合）を、作業領域（root）の px にする。root の外へ出る分は切る
+    const toPx = (z: { x: number; y: number; w: number; h: number }): PxRect | null => {
+      const x0 = Math.max(0, mr.left - rr.left + z.x * mr.width);
+      const y0 = Math.max(0, mr.top - rr.top + z.y * mr.height);
+      const x1 = Math.min(bounds.w, mr.left - rr.left + (z.x + z.w) * mr.width);
+      const y1 = Math.min(bounds.h, mr.top - rr.top + (z.y + z.h) * mr.height);
+      return x1 - x0 > 1 && y1 - y0 > 1 ? { x: x0, y: y0, w: x1 - x0, h: y1 - y0 } : null;
+    };
+    const targets: PxMap = {};
+    for (const k of assigned) { const p = toPx(zonePlan.rects[k]!); if (p) targets[k] = p; }
+    // すでにその位置にあれば（再読込・別のウィンドウで開いたとき）、何もしない
+    const near = (k: string): boolean => {
+      const f = floatMap?.[k]; const t0 = targets[k];
+      return !!f && !!t0 && Math.abs(f.x * bounds.w - t0.x) < 3 && Math.abs(f.y * bounds.h - t0.y) < 3 && Math.abs(f.w * bounds.w - t0.w) < 3 && Math.abs(f.h * bounds.h - t0.h) < 3;
+    };
+    if (Object.keys(targets).every(near) && lost.length === 0 && !restore) { zoneApplied.current = zoneSig; return; }
+    const m = measureAll();
+    let rects: PxMap = restore ? {} : { ...(m?.rects ?? {}) };
+    for (const [k, f] of Object.entries(restore ?? floatMap ?? {})) if (!(k in rects) && baseKeys.has(k)) rects[k] = clampInto({ x: f.x * bounds.w, y: f.y * bounds.h, w: f.w * bounds.w, h: f.h * bounds.h }, bounds);
+    const fixed = new Set(pinSet);
+    for (const k of Object.keys(targets)) {
+      const next = planSnap(rects, k, targets[k]!, bounds, { fixed: new Set(fixed), anchors: new Set(), keep: manualSet() });
+      rects = next ?? { ...rects, [k]: clampInto(targets[k]!, bounds) };
+      rects[k] = clampInto(targets[k]!, bounds);
+      fixed.add(k);
+    }
+    // 出していないゾーンのコンポーネントは、既定の割合のときの自分のゾーンの位置を持たせる（描かない。出すと同じ場所へ戻る）
+    const base0 = zoneLayout('research', taskWs.ratios, []);
+    for (const k of lost) {
+      const r0 = hostRect(base0, effectiveRoles[k]!);
+      const p = r0 ? toPx(r0) : null;
+      if (p) rects[k] = p;
+    }
+    zoneApplied.current = zoneSig;
+    recordFlip();
+    if (restore) actions().clearFloats();
+    if (Object.keys(rects).length > 0) actions().setFloats(toFractions(rects, bounds));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [zoneSig, width, height, compact, expandedOut]);
+
+  // 切替の前の位置・大きさから、切替の後の位置・大きさへ、連続して動かす（モード・ゾーン・タスクワークスペースの切替。FR-300 AC-815）。
+  // 動きの軽減・アニメーション停止中は、動かさずに最終の配置を示す（FR-071）。要素の transform だけを動かし、配置の計算（保存する値）は変えない
+  useLayoutEffect(() => {
+    const f = flipFrom.current;
+    if (!f) return;
+    if (performance.now() - f.at > 700) { flipFrom.current = null; return; }
+    const root = rootRef.current;
+    if (!root) return;
+    let moved = false;
+    for (const [k, from] of f.rects) {
+      const el = root.querySelector<HTMLElement>(`[data-testid="component-${k}"]`);
+      if (!el) continue;
+      const to = el.getBoundingClientRect();
+      if (to.width < 1 || to.height < 1) continue;
+      const dx = from.left - to.left; const dy = from.top - to.top;
+      const sx = from.width / to.width; const sy = from.height / to.height;
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1 && Math.abs(sx - 1) < 0.01 && Math.abs(sy - 1) < 0.01) continue;
+      moved = true;
+      if (!motionAllowed(useAnimation.getState().playing, prefersReducedMotion()) || typeof el.animate !== 'function') continue;
+      el.animate(
+        [{ transformOrigin: '0 0', transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})` }, { transformOrigin: '0 0', transform: 'none' }],
+        { duration: SPATIAL_MOTION_MS, easing: SPATIAL_MOTION_EASING },
+      );
+    }
+    if (moved) flipFrom.current = null;
+  });
+  // タスクワークスペースの切替の前に、いまの位置を記録する（taskContext.ts が通知する）
+  useEffect(() => {
+    const on = (): void => recordFlip();
+    window.addEventListener(FLIP_PREPARE_EVENT, on);
+    return () => window.removeEventListener(FLIP_PREPARE_EVENT, on);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // FR-299: Ctrl+Alt+キー（macOS の表示は ⌃⌥）の 5 つの操作と Focus の切替。Win キー・⌘ + 方向キーは使わない（ブラウザーが横取りできない）。
+  // 押下は物理キーで判別する（macOS の Option は文字を変える）。ダイアログ・メニューの中、入力欄の中の文字のキーでは動かさない（AltGr との衝突を避ける）。
+  useEffect(() => {
+    const onKey = (e: globalThis.KeyboardEvent): void => {
+      const op = matchZoneOp(e);
+      if (!op || e.defaultPrevented || e.repeat) return;
+      const t0 = e.target as Element | null;
+      if (t0?.closest?.('[role="dialog"], [role="menu"], [role="listbox"], [role="alertdialog"]')) return;
+      if (isLetterChord(op) && isEditableTarget(e.target)) return;
+      e.preventDefault();
+      runZoneOp(op, currentPane.current(), announce);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [announce]);
 
   const hosts = useRef(new Map<string, HTMLElement>());
   useLayoutEffect(() => {
@@ -1231,6 +1444,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       data-view-y={areaView.y}
       className={mergeClasses(s.root, compact ? s.rootCompact : undefined, resizing && motionOn ? s.resizing : undefined)}
       data-layout={compact ? 'stacked' : 'split'}
+      data-drag-active={drag || resizing ? 'true' : undefined}
       tabIndex={0}
     >
       <WorkspaceOverview />
@@ -1290,7 +1504,10 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
           </>
         );
       })() : null}
-      <div data-testid="workspace-notice" role="status" aria-live="polite" className={notice ? s.notice : s.noticeIdle}>{notice?.text ?? ''}</div>
+      {/* 通知の表示領域。Focus では通知の表示を抑える（見た目の表示を止め、支援技術への読み上げは残す。情報は欠けない。FR-300） */}
+      <div data-testid="notifications" data-suppressed={taskWs.mode === 'focus' ? 'true' : 'false'}>
+        <div data-testid="workspace-notice" role="status" aria-live="polite" className={notice && taskWs.mode !== 'focus' ? s.notice : s.noticeIdle}>{notice?.text ?? ''}</div>
+      </div>
       <div ref={treeRef} className={s.treeBox} style={inset ? { ...inset, minHeight: 0 } : undefined}>
         {layout ? (compact ? renderStack(layout) : render(layout, [])) : (
           <Text className={s.empty} size={400}>{outKeys.length > 0 ? '' : t('表示中のコンポーネントがありません。左のドックから再表示してください。')}</Text>
@@ -1310,7 +1527,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
             className={mergeClasses(s.floatBox, animated && !isMax && expandedOut !== k && settling !== k ? (dragged ? s.floatFollow : s.floatAnimated) : undefined)}
             data-float={k}
             data-pinned={pinSet.has(k) ? 'true' : undefined}
-            style={{ left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.w * 100}%`, height: `${r.h * 100}%`, zIndex: isMax ? 1000 : expandedOut === k ? 500 : dragged ? 600 : rank >= 0 ? 3 + rank : 2, ...(settling !== null ? { transition: 'none' } : {}), ...(maximized !== null && !isMax && outKeys.includes(maximized) ? { display: 'none' } : {}) }}
+            style={{ left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.w * 100}%`, height: `${r.h * 100}%`, zIndex: isMax ? 1000 : expandedOut === k ? 500 : dragged ? 600 : rank >= 0 ? 3 + rank : 2, ...(settling !== null ? { transition: 'none' } : {}), ...(maximized !== null && !isMax && outKeys.includes(maximized) ? { display: 'none' } : {}), ...(zoneHidden.has(k) && !isMax ? { display: 'none' } : {}) }}
           >
             <Slot host={hostOf(k)} />
           </div>

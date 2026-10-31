@@ -8,6 +8,10 @@ import { useFoldClass } from '../motion/useFoldMotion';
 import type { ScreenDefinition } from '../screens/types';
 import { rovingTarget } from './roving';
 import { useT } from '../i18n';
+import { WorkspacePanel } from '../workspace/WorkspacePanel';
+import { ZoneLayer } from '../workspace/ZoneLayer';
+import { useActiveWorkspace } from '../store/taskWorkspaces';
+import { frameSurfaceStyle, useFrameMaterial } from '../theme/frameMaterial';
 
 const useStyles = makeStyles({
   root: {
@@ -25,8 +29,11 @@ const useStyles = makeStyles({
     columnGap: tokens.spacingHorizontalM,
     rowGap: 0, // FR-176・FR-180 で段が増えても、ワークスペースの縦の領域を削らないよう、段の間隔は詰める（各段の部品に余白がある）
     padding: `${tokens.spacingVerticalXS} ${tokens.spacingHorizontalXL}`,
-    backgroundColor: tokens.colorNeutralBackground3,
+    ...frameSurfaceStyle, // 枠の面: 半透明の素材（FR-300）
     borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
+    position: 'relative',
+    zIndex: 2, // 最前面の枠として、エレベーションの影で前後関係を示す（NFR-UX-015）
+    boxShadow: tokens.shadow4,
   },
   topRow: { flexBasis: 'auto', flexShrink: 1, display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalS, minWidth: 0 },
   actions: { marginLeft: 'auto', display: 'flex', alignItems: 'center', flexWrap: 'wrap', columnGap: tokens.spacingHorizontalS },
@@ -48,6 +55,10 @@ const useStyles = makeStyles({
       borderBottom: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     },
   },
+  // ゾーンの面（ZoneLayer。z-index: -1）を、この領域の背景の上・中身の下に置く（FR-298）。
+  // 最大化中は隔離しない: 隔離すると最大化したペイン（z-index: 1000）が main の中に閉じ込められ、
+  // 領域の外の浮遊 UI（ショーコントロールバーなど。z-index: 20）の下に隠れてしまう（FR-013 AC-591）。最大化中はペインが領域全体を覆うのでゾーンの面は見えなくてよい。
+  mainIsolated: { isolation: 'isolate' },
   rootMin: { gridTemplateColumns: '56px 1fr', '@media (max-width: 720px)': { gridTemplateColumns: '1fr' } },
   navMin: { overflowX: 'hidden', alignItems: 'center', paddingInline: tokens.spacingHorizontalS },
   navButton: { justifyContent: 'flex-start', minHeight: '32px' },
@@ -91,7 +102,10 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
   const s = useStyles();
   const t = useT();
   const navMin = useLayout((st) => st.navMin);
+  const maximizedKey = useLayout((st) => st.maximized);
+  const wsActive = useActiveWorkspace();
   const rootRef = useRef<HTMLDivElement>(null);
+  useFrameMaterial(rootRef); // 枠の面（ヘッダー・Workspace Switcher・ゾーンの境界）の半透明の色（FR-300）
   // モーダルのダイアログが開いている間は、背景（アプリ本体）を操作・支援技術の対象から外す（WAI-ARIA のモーダルの作法）。
   // 背景の「KPI/OKR」などのボタンが、ダイアログのボタン（OK など）と取り違えられない
   useEffect(() => {
@@ -193,8 +207,12 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
           );
         })}
         {dock}
+        <WorkspacePanel />
       </nav>
-      <main className={s.main} data-testid="workspace">{children}</main>
+      <main className={mergeClasses(s.main, maximizedKey === null && s.mainIsolated)} data-testid="workspace" data-workspace-id={wsActive.id} data-mode={wsActive.mode} data-focus={wsActive.mode === 'focus' ? 'true' : 'false'}>
+        <ZoneLayer />
+        {children}
+      </main>
     </div>
   );
 }

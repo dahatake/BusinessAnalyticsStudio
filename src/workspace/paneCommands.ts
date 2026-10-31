@@ -5,6 +5,8 @@ import type { PaneInfo } from './PaneContext';
 import { SNAP_LABEL } from './snap';
 import { PIN_MOVE_REASON, PIN_RESIZE_REASON, PIN_TABS_REASON } from './paneActions';
 import { TIERS, TIER_LABEL } from './tiers';
+import { ZONE_META, ZONE_NAMES } from './zones';
+import { zoneOpCommands } from './zoneOps';
 import { useLayout } from '../store/layout';
 import { tr } from '../i18n';
 import { detect3D } from '../view/render3d';
@@ -55,6 +57,13 @@ export function paneCommands(current: () => PaneInfo | null, notify: (text: stri
     },
     { id: 'pane.untab', label: L('タブから出す'), keywords: [...kw, 'タブ', 'untab'], run: on((p) => { if (p.inTabs && !p.pinned) p.untab(); }) },
     { id: 'pane.hide', label: L('非表示'), keywords: [...kw, '非表示', 'hide'], run: on((p) => p.hide()) },
+    // ロールへの割り当て（FR-298 AC-805）。座標を指定せず、ゾーンの意味名で配置する（見出しのボタンと同じ操作を、キーボードからも）
+    ...ZONE_NAMES.map<Command>((n) => ({
+      id: `pane.zone.${n}`,
+      label: `${tr('ロールへ割り当て: {zone}', { zone: `${ZONE_META[n].label}（${tr(ZONE_META[n].role)}）` })}${tr('（操作中のコンポーネント）')}`,
+      keywords: [...kw, 'ロール', 'ゾーン', '割り当て', ZONE_META[n].label, 'zone', 'role'],
+      run: on((p) => p.assignZone?.(n)),
+    })),
     // 情報の階層（主役→補助→詳細。FR-244）。理由の確認と変更もコマンドパレットから（メニューと同じ操作。NFR-UX-018）
     { id: 'pane.tier.show', label: L('情報の階層を確かめる'), keywords: [...kw, '階層', '主役', '補助', '詳細', '理由', 'tier'], run: on((p) => notify(p.tierReason)) },
     ...TIERS.map<Command>((t) => ({
@@ -91,5 +100,7 @@ export function paneCommands(current: () => PaneInfo | null, notify: (text: stri
         useLayout.getState().setView(p.key, { world: w });
       }),
     })),
+    // Snap・Group・Switch・Expand・Move と Focus の切替（FR-299・FR-300）。キーは Ctrl+Alt+キー（macOS の表示は ⌃⌥）
+    ...zoneOpCommands(current, notify),
   ];
 }

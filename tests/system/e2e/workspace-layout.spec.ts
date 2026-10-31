@@ -308,6 +308,41 @@ test.describe('FR-144 起動後のデモ／実プロジェクトの選択', () =
     await expect(page.getByRole('dialog', { name: '作業先の選択' }), '戻って開き直しても選択画面が出ない').toBeVisible();
   });
 
+  // FR-144 AC-239（例外 2026-10-31: タスクワークスペース操作後・URL の workspace= の再読込は分析画面に留まり、メイン画面へ戻ると解除）
+  test('FR-144 AC-239 例外: タスクワークスペースを操作したタブの再読込と workspace= 付き URL は分析画面に留まり、メイン画面へ戻ると再読込はメイン画面になる', async ({ page, start }) => {
+    const app = await start();
+    // 通常: 新しいタブ・起動直後はメイン画面（例外の対象ではない）
+    await restartAndOpenPicker(page, app);
+    await page.keyboard.press('Escape');
+    await page.getByTestId('main-screen').getByRole('button', { name: 'Project を開く' }).click();
+    await page.getByRole('dialog', { name: '作業先の選択' }).getByRole('option', { name: /デモ/ }).click();
+    // 例外 1: このタブでタスクワークスペースを操作したあとの再読込は分析画面に留まる
+    await page.getByRole('button', { name: 'タスクワークスペースを追加' }).click();
+    const id = await page.getByTestId('workspace').getAttribute('data-workspace-id');
+    await app.reload({ skipOpening: false });
+    await pressOpeningEscape(page);
+    await expect(page.getByTestId('workspace'), '操作後の再読込で分析画面に留まらない').toBeVisible();
+    await expect(page.getByTestId('main-screen')).toHaveCount(0);
+    // 例外 2: 新しいタブでも URL に workspace= があれば分析画面に留まる（操作していないタブ）
+    const tab = await page.context().newPage();
+    const u = new URL(app.url);
+    u.searchParams.set('workspace', id ?? '');
+    await tab.goto(u.toString());
+    await pressOpeningEscape(tab);
+    await expect(tab.getByTestId('workspace'), 'workspace= 付き URL の再読込で分析画面に留まらない').toBeVisible();
+    await tab.reload();
+    await pressOpeningEscape(tab);
+    await expect(tab.getByTestId('workspace')).toBeVisible();
+    await tab.close();
+    // メイン画面へ戻ると例外は解除され、以後の再読込はメイン画面
+    await page.getByRole('button', { name: 'メイン画面へ戻る' }).click();
+    await expect(page.getByTestId('main-screen')).toBeVisible();
+    await app.reload({ skipOpening: false });
+    await pressOpeningEscape(page);
+    await expect(page.getByTestId('main-screen'), '戻った後の再読込でメイン画面にならない').toBeVisible();
+    await expect(page.getByTestId('workspace')).toHaveCount(0);
+  });
+
   // FR-144 AC-239（異常系: 0 件の端末でも毎回出る。選択を覚えて省略しない）
   test('FR-144 AC-239 異常系: 実 Project が 0 件の端末でも、デモを選んだ後に再起動して Project を開くと選択画面が省略されない', async ({ page, start }) => {
     const app = await start();

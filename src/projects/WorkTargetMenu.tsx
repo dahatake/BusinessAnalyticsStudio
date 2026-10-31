@@ -77,7 +77,8 @@ export function WorkTargetMenu(props: {
               checkedValues={{ target: [current] }} onCheckedValueChange={(_, d) => choose(d.checkedItems[0])}
               onKeyDown={(e) => {
                 // 企業のボタンにフォーカスがあっても、Home/End/↑↓ で Project 項目へ移れる（AC-253）
-                if (!['Home', 'End', 'ArrowDown', 'ArrowUp'].includes(e.key) || e.altKey || e.ctrlKey || e.metaKey) return;
+                const modified = e.altKey || e.ctrlKey || e.metaKey; // 修飾キーを伴う操作は、ここでは扱わない
+                if (!['Home', 'End', 'ArrowDown', 'ArrowUp'].includes(e.key) || modified) return;
                 const items = Array.from(e.currentTarget.querySelectorAll<HTMLElement>('[role="menuitemradio"]'));
                 if (!items.length) return;
                 const index = items.indexOf(e.currentTarget.ownerDocument.activeElement as HTMLElement);
