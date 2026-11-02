@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "description": "管理データのメタデータ定義（FR-1058）。欄名・必須/任意・許容値・型の正本。rdcheck・ebaklib・Studio はここを読む。",
+  "requirement_fields": [
+    {"name": "要求", "required": true, "type": "text"},
+    {"name": "決定状態", "role": "status", "required": true, "type": "state", "pattern": "^\\**(承認済み|承認待ち|AI提案|保留|却下|廃止)"},
+    {"name": "出自", "role": "origin", "required": false, "type": "text"},
+    {"name": "優先度", "role": "priority", "required": true, "type": "priority", "pattern": "^\\**(MUST|SHOULD|MAY)\\b"},
+    {"name": "上位", "role": "goal", "required": true, "type": "id-list"},
+    {"name": "出典", "role": "sources", "required": false, "type": "id-list"},
+    {"name": "対象エンティティ", "role": "entities", "required": true, "type": "name-list"},
+    {"name": "関係する状態", "role": "states", "required": true, "type": "name-list"},
+    {"name": "参照パラメータ", "role": "params", "required": true, "type": "id-list"},
+    {"name": "関連する既存資産", "role": "assets", "required": false, "type": "name-list"},
+    {"name": "エンティティの使い方", "required": false, "type": "text"},
+    {"name": "利用シナリオ", "required": false, "type": "text"},
+    {"name": "領域", "role": "area", "required": false, "required_when": "area-assignment", "type": "text"},
+    {"name": "更新日", "role": "updated", "required": false, "type": "date", "pattern": "^\\d{4}-\\d{2}-\\d{2}$"},
+    {"name": "版", "role": "version", "required": false, "type": "integer", "pattern": "^\\d+$"},
+    {"name": "関係", "required": false, "type": "text", "note": "他の要求との関係の補足（自由記述）"},
+    {"name": "構造判定表", "required": false, "type": "text", "note": "現行の自由記述の補足欄"},
+    {"name": "差分種別の判定規則", "required": false, "type": "text", "note": "現行の自由記述の補足欄"},
+    {"name": "保守契約", "required": false, "type": "text", "note": "現行の自由記述の補足欄"},
+    {"name": "画面画像manifestの必須主要要素", "required": false, "type": "text", "note": "現行の自由記述の補足欄"},
+    {"name": "選択の方式", "required": false, "type": "text", "note": "現行の自由記述の補足欄"},
+    {"name": "優先度と FR-1012 の関係", "required": false, "type": "text", "note": "現行の自由記述の補足欄"},
+    {"name": "配置先", "required": false, "type": "text", "note": "現行の自由記述の補足欄"}
+  ],
+  "ac_fields": [
+    {"name": "検証レベル", "required": true, "type": "enum", "allowed": ["system", "integration", "unit", "manual"]},
+    {"name": "BLOCKED", "required": false, "type": "text"},
+    {"name": "対応する要求", "required": false, "type": "id"},
+    {"name": "決定状態", "role": "status", "required": false, "type": "state"}
+  ],
+  "parameters": {
+    "section_item_limit_param": "PARAM-043",
+    "section_item_limit_default": 20
+  },
+  "entity_classification": {
+    "description": "要求定義書 §3.7 のエンティティの分類表の欄（FR-212 AC-488）。検査（rdcheck CHK-29）はこの定義を読む。表は、required の欄の名前をすべて見出しに持つ表として探す。",
+    "fields": [
+      { "name": "エンティティ", "role": "name", "required": true, "type": "text" },
+      { "name": "世界区分", "role": "world", "required": true, "type": "enum", "allowed": ["現実世界", "デジタル世界"] },
+      {
+        "name": "種別", "role": "kind", "required": true, "type": "enum-by-world",
+        "allowed_by_world": {
+          "現実世界": ["拠点", "設備", "人", "組織", "業務", "モノ", "コト"],
+          "デジタル世界": ["データ", "モデル", "システム", "画面コンポーネント", "センサー/指標"]
+        }
+      },
+      { "name": "上位", "role": "parent", "required": true, "type": "entity-ref", "none": "なし" },
+      { "name": "整理の軸", "role": "axis", "required": true, "type": "enum-list", "allowed": ["位置", "名前", "時間", "分類", "階層"], "separator": "・" },
+      { "name": "ツイン", "role": "twins", "required": true, "type": "twin-list", "none": "なし", "relation_allowed": ["表す", "計測する", "記録する", "表示する"] },
+      { "name": "カタログの対応", "role": "catalog", "required": true, "type": "asset-list", "none": "なし", "asset_kinds": ["共通部品", "API", "イベント", "テーブル", "外部連携"] }
+    ]
+  }
+}
