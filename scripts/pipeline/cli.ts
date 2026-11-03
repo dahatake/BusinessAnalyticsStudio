@@ -21,8 +21,8 @@ export interface CliDeps {
   /** 差し替え（テスト用）。指定がなければ --generator / --researcher の指定、なければ同梱のモック */
   generator?: PackGenerator;
   researcher?: Researcher;
-  /** 案件の了承の記録の有無の差し替え（テスト用）。指定がなければ作業フォルダーの consent.json（FR-181） */
-  consent?: (input: Inputs) => boolean;
+  /** 種別「人」を含む案件の確認の差し替え（テスト用）。指定がなければ ask（対話）で y/N を尋ね、既定は中止（FR-219 AC-512） */
+  confirmPerson?: PipelineDeps['confirmPerson'];
   /** ⑥ verify のブラウザー検査の差し替え（テスト用）。指定がなければ --smoke の指定、なければ Playwright */
   smoke?: SmokeRunner;
 }
@@ -30,8 +30,10 @@ export interface CliDeps {
 const USAGE = `使い方: npm run pipeline -- <${COMMANDS.join('|')}> [--customer 顧客名] [--project Project名]
   [--intensity Executive|Showcase|Entertainment] [--bgm BGMフォルダー] [--material 追加資料]...
   [--workspace 作業フォルダーの親] [--template 雛形] [--sample お手本パック]
-  [--generator mock|モジュールのパス] [--researcher sample|モジュールのパス] [--smoke playwright|mock] [--copy] [--no-keep]
+  [--generator mock|モジュールのパス] [--researcher sample|モジュールのパス] [--smoke playwright|mock] [--copy] [--no-keep] [--live]
   research=①②（事前調査）、build=③〜⑦（複製・生成・検証・起動）、all=①〜⑦。顧客名を省くと対話形式で尋ねる。
+  --live: 外部（LLM・WorkIQ・Web）へ送る実調査・生成をする。付けないときは外部へ送信せず、前提を置いたサンプル・モックで進む。
+          種別「人」を含む案件では、送る前に件数を示して y/N を尋ねる（既定は中止）。
   --smoke: ⑥ verify のブラウザー検査。既定は playwright（Chromium）、mock はブラウザーを使わずに合格とする。
   --copy: ③で node_modules と dist をフルコピーする（既定は読み取り専用のリンクで共有）。
   --no-keep: ⑦で起動を確かめたら、サーバーを止めて終了する。`;
@@ -87,6 +89,19 @@ export async function main(argv: readonly string[], deps: CliDeps = {}): Promise
     let ask = deps.ask;
     if (!ask) { term = terminalAsk(); ask = term.ask; }
     const input = await resolveInputs(args, { ask, interactive: deps.interactive ?? (process.stdin.isTTY === true) });
+    // 種別「人」の確認（AC-512）。差し替えがなければ、質問できる経路（渡された ask か端末）で y/N を尋ねる。答えられなければ中止
+    const canAsk = deps.ask !== undefined || process.stdin.isTTY === true;
+    const confirmPerson: PipelineDeps['confirmPerson'] = deps.confirmPerson ?? (canAsk ? async (info) => {
+      const t = deps.ask ? undefined : terminalAsk();
+      try {
+        const a = await (deps.ask ?? t!.ask)(info.question, 'N');
+        return /^\s*y(es)?\s*$/i.test(a);
+      } catch {
+        return false;
+      } finally {
+        t?.close();
+      }
+    } : undefined);
     term?.close();
     term = undefined;
 
@@ -106,7 +121,8 @@ export async function main(argv: readonly string[], deps: CliDeps = {}): Promise
 
     const pdeps: PipelineDeps = {
       paths, generator, researcher, log, cloneMode: args.flags.has('copy') ? 'copy' : 'link',
-      ...(deps.consent ? { consent: deps.consent } : {}),
+      live: args.flags.has('live'),
+      ...(confirmPerson ? { confirmPerson } : {}),
       ...(smoke ? { smoke } : {}),
     };
     const result = await runPipeline(command, input, pdeps);

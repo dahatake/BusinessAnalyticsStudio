@@ -44,19 +44,18 @@ export function storyVideoState(uc: UseCaseDraft, v: StoryVideo | undefined): St
 }
 
 // ---- 利用できる条件（FR-275 の外部送信の条件。欠けると呼び出し 0 回） ----
-export type StoryVideoMissing = '設定' | '有効化' | '了承' | '接続先';
+export type StoryVideoMissing = '設定' | '有効化' | '接続先';
 export interface StoryVideoAvailability { available: boolean; missing: StoryVideoMissing[]; guide: string }
-export function storyVideoAvailability(view: FoundryView | null, consentGranted: boolean): StoryVideoAvailability {
+export function storyVideoAvailability(view: FoundryView | null): StoryVideoAvailability {
   if (view?.provider === 'copilot') {
     return { available: false, missing: ['接続先'], guide: tr('ストーリー動画は使えません（欠けている条件: 接続先）。GitHub Copilot SDK では費用を円で制御できないため、Foundry を選んだときだけ使えます。設定画面の「生成AIの接続先」で Microsoft Foundry を選択してください。') };
   }
   const missing: StoryVideoMissing[] = [];
   if (!view?.configured) missing.push('設定');
   if (!view?.enabled) missing.push('有効化');
-  if (!consentGranted) missing.push('了承');
   if (missing.length === 0) return { available: true, missing, guide: '' };
-  const parts = missing.map((m) => (m === '設定' ? tr('Foundry の接続情報が設定されていません') : m === '有効化' ? tr('Foundry の実接続（送信）が有効になっていません') : tr('この案件に顧客の了承の記録がありません')));
-  const where = missing.includes('了承') ? `${SETTINGS_GUIDE}${tr('顧客の了承は設定画面の「了承の記録」で入力します。')}` : SETTINGS_GUIDE;
+  const parts = missing.map((m) => (m === '設定' ? tr('Foundry の接続情報が設定されていません') : tr('Foundry の実接続（送信）が有効になっていません')));
+  const where = SETTINGS_GUIDE;
   return { available: false, missing, guide: `${tr('ストーリー動画は使えません（欠けている条件: {missing}）。', { missing: missing.map((m) => tr(m)).join(tr('・')) })}${parts.join(tr('。'))}${tr('。')}${where}` };
 }
 
@@ -292,7 +291,6 @@ const dflt: F = (u, i) => fetch(u, i);
 const NO_RELAY = (): string => tr('中継プロセスに届きませんでした。`npm run relay` で起動しているか確認してください。');
 /** 原因ごとの文（読むたびに翻訳する。キーは日本語の原文） */
 const CAUSE_TEXT: Record<string, string> = {
-  consent: '顧客の了承の記録がないため送信できません。設定画面で了承の記録を確認してください。',
   disabled: 'Foundry の実接続が有効ではありません。設定画面で送信を有効にしてください。',
   'key-missing': 'Foundry の接続情報が未設定です。設定画面で接続情報を確認してください。',
   'person-unconfirmed': '種別「人」を含む顧客パックは、送信前の確認が必要です。',
@@ -309,7 +307,7 @@ export function describeStoryVideoFailure(cause: string | undefined, status?: nu
 
 export async function requestStoryVideo(
   relayUrl: string | undefined,
-  req: { packId: string; kind: CallKind; usecase: StoryVideoPayload; consent: boolean; includesPerson: boolean; personConfirmed: boolean; maxOutputTokens: number },
+  req: { packId: string; kind: CallKind; usecase: StoryVideoPayload; includesPerson: boolean; personConfirmed: boolean; maxOutputTokens: number },
   f: F = dflt,
 ): Promise<CallResult> {
   if (!relayUrl || !/^https?:\/\/(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/i.test(relayUrl.replace(/\/$/, '')))   return { ok: false, cause: 'relay', message: NO_RELAY() };
@@ -317,7 +315,7 @@ export async function requestStoryVideo(
     const r = await f(`${relayUrl}/foundry/story-video`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        kind: req.kind, usecase: req.usecase, packId: req.packId, consent: req.consent, confirmed: true,
+        kind: req.kind, usecase: req.usecase, packId: req.packId, confirmed: true,
         includesPerson: req.includesPerson, personConfirmed: req.personConfirmed, maxOutputTokens: req.maxOutputTokens,
       }),
     });

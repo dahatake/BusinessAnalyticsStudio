@@ -1,5 +1,5 @@
 // 「Copilot で分析実行」（FR-278）の 1 回分の流れと、Foundry 依頼の口（中継の POST /foundry/review）。
-// 判定の順: 対象あり → 了承の記録（FR-181）→ 設定済み・実接続が有効（FR-275）→ 回数・予算の上限（FR-276）→ 送信前の確認（取り消しで 0 回）→ 種別「人」の確認（FR-219）→ 呼ぶ。
+// 判定の順: 対象あり → 設定済み・実接続が有効（FR-275）→ 回数・予算の上限（FR-276）→ 送信前の確認（取り消しで 0 回）→ 種別「人」の確認（FR-219）→ 呼ぶ。
 // どの失敗でも別の送信先へは切り替えない。呼んだ分（失敗も）は利用量に数える。
 import { isLoopbackUrl } from '../ai/client';
 import { estimateTokens, foundryReasonText, MAX_INPUT_TOKENS } from '../ai/foundryChat';
@@ -30,7 +30,7 @@ type F = typeof fetch;
 
 export async function requestReview(
   relayUrl: string | undefined,
-  req: { packId: string; consent: boolean; includesPerson?: boolean; personConfirmed?: boolean; components: Array<{ id: string; data: string }> },
+  req: { packId: string; includesPerson?: boolean; personConfirmed?: boolean; components: Array<{ id: string; data: string }> },
   f: F = (u, i) => fetch(u, i),
 ): Promise<ReviewReply> {
   if (!relayUrl || !isLoopbackUrl(relayUrl)) return { ok: false, reason: 'relay' };
@@ -55,7 +55,6 @@ export async function requestReview(
 export interface ReviewDeps {
   relayUrl: string | undefined;
   packId: string;
-  consent: boolean;
   includesPerson: boolean;
   /** 設定済み・実接続の有効を中継から読む。届かないときは null */
   view: () => Promise<FoundryView | null>;
@@ -81,7 +80,6 @@ export async function runReview(deps: ReviewDeps, all: readonly ReviewTarget[]):
   // データを持たないコンポーネントは送らない（「案なし」になる）
   const targets = fitTargets(all.filter((t) => t.data.trim() !== ''));
   if (targets.length === 0) return { kind: 'blocked', text: tr('レビューの対象になるデータを持つコンポーネントがありません。') };
-  if (!deps.consent) return { kind: 'blocked', text: foundryReasonText('consent') };
   // 押下の直後に確認を同期的に出す（中継の設定の取得はそのあと。操作の前には要求しない）。実行できない状態なら確認を閉じて案内を出す
   const pending = deps.confirmSend(targets);
   const block = (text: string): ReviewOutcome => { deps.dismissConfirm?.(); return { kind: 'blocked', text }; };
@@ -97,7 +95,7 @@ export async function runReview(deps: ReviewDeps, all: readonly ReviewTarget[]):
     if (!g.allowed) return { kind: 'blocked', text: g.reason ?? foundryReasonText('person-unconfirmed') };
   }
   const r = await (deps.request ?? requestReview)(deps.relayUrl, {
-    packId: deps.packId, consent: deps.consent,
+    packId: deps.packId,
     ...(deps.includesPerson ? { includesPerson: true, personConfirmed: true } : {}),
     components: targets.map((t) => ({ id: t.id, data: t.data })),
   });

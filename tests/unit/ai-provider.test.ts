@@ -12,7 +12,7 @@ import { CopilotError } from '../../scripts/relay/copilot-adapter';
 const dirs: string[] = []; const relays: Relay[] = [];
 const opts = { protector: fileProtector, restrict: () => {}, warn: () => {} };
 const TOKEN = ['dummy', 'copilot', 'secret', '772'].join('-');
-const payload = { packId: 'P', consent: true, prompt: '質問', solution: '解決策', components: [{ id: 'x', data: '表示中の内容' }] };
+const payload = { packId: 'P', prompt: '質問', solution: '解決策', components: [{ id: 'x', data: '表示中の内容' }] };
 const review = { reviews: [{ id: 'x', proposal: '案' }] };
 const result = { conclusion: 'conditional', criteria: [], reason: '根拠', alternatives: [] };
 afterEach(async () => { await Promise.all(relays.splice(0).map(r => r.close())); for (const dir of dirs.splice(0)) fs.rmSync(dir, { recursive: true, force: true }); });
@@ -26,7 +26,7 @@ async function setup(signedIn = true, suppliedSdk?: CopilotSdk | null, foundryTo
   const r = await startRelay({ sdk, aiProvider: store, foundryVault, foundryFetch: foundryFetch as typeof fetch, foundryToken, foundry: useDefaultFoundry ? undefined : { analyze } }); relays.push(r);
   const request = async (url: string, body?: unknown, method = body === undefined ? 'GET' : 'POST') => { const response = await fetch(r.url + url, { method, ...(body === undefined ? {} : { body: JSON.stringify(body), headers: { 'content-type': 'application/json' } }) }); return { status: response.status, body: await response.json() }; };
   const select = (provider: string) => request('/ai/provider', {provider}, 'PUT');
-  const enable = (over = {}) => request('/foundry/connection', { packId: 'P', enable: true, consent: true, confirmed: true, ...over });
+  const enable = (over = {}) => request('/foundry/connection', { packId: 'P', enable: true, confirmed: true, ...over });
   const saveFoundry = (over = {}) => request('/foundry/config', { endpoint: 'https://x.openai.azure.com/openai/v1', deployment: 'd', key: 'dummy-key', ...over }, 'PUT');
   return { dir, store, sdk, r, request, select, enable, saveFoundry, foundryFetch, analyze };
 }
@@ -62,7 +62,7 @@ describe('FR-275 common provider integration', () => {
     await s.select('foundry'); await s.saveFoundry(); await s.enable();
     await s.request('/foundry/ask',payload); await s.request('/foundry/review',payload); await s.request('/foundry/analyze',payload);
     expect(s.foundryFetch).toHaveBeenCalledTimes(2); expect(s.analyze).toHaveBeenCalledTimes(1); expect(s.sdk!.complete).toHaveBeenCalledTimes(3);
-    await s.request('/connection',{packId:'P',enable:true,consent:true,confirmed:true});
+    await s.request('/connection',{packId:'P',enable:true,confirmed:true});
     for (const kind of ['structure','summary','recommend','chat','exec-summary']) await s.request('/ask',{packId:'P',kind,prompt:'従来'});
     expect(s.sdk!.complete).toHaveBeenCalledTimes(8);
   });
@@ -81,11 +81,11 @@ describe('FR-275 common provider integration', () => {
   it('FR-275 AC-706/770 refuses unauthorized SDK, missing tokens or SDK and enforces every generation guard', async () => {
     for (const sdk of [undefined,null]) { const s=await setup(false,sdk); await s.select('copilot'); expect((await s.enable()).status).toBe(409); expect((await s.request('/foundry/ask',payload)).body.mode).toBe('unavailable'); }
     const s=await setup(); await s.select('copilot'); await s.request('/copilot/config',{authMethod:'token',model:''},'PUT'); expect((await s.enable()).status).toBe(409);
-    await s.request('/copilot/config',{authMethod:'signin',model:''},'PUT'); expect((await s.enable({consent:false})).status).toBe(403); await s.enable();
-    for (const guard of [{consent:false},{includesPerson:true,personConfirmed:false}]) for (const route of ['ask','review','analyze']) await s.request('/foundry/'+route,{...payload,...guard});
+    await s.request('/copilot/config',{authMethod:'signin',model:''},'PUT'); expect((await s.enable({confirmed:false})).status).toBe(400); await s.enable();
+    for (const guard of [{includesPerson:true,personConfirmed:false}]) for (const route of ['ask','review','analyze']) await s.request('/foundry/'+route,{...payload,...guard});
     expect(s.sdk!.complete).not.toHaveBeenCalled();
     await s.request('/foundry/ask',payload); expect(s.sdk!.complete).toHaveBeenCalledTimes(1);
-    await s.request('/foundry/ask',{...payload,consent:false}); expect(s.sdk!.complete).toHaveBeenCalledTimes(1);
+    await s.request('/foundry/ask',{...payload,includesPerson:true,personConfirmed:false}); expect(s.sdk!.complete).toHaveBeenCalledTimes(1);
   });
   it('FR-011 AC-772 encrypts tokens, returns fixed masks, passes tokens only to SDK and never falls back after deletion', async () => {
     const s=await setup(); await s.select('copilot');

@@ -71,11 +71,10 @@ describe('FR-284 AC-736 入力の検査', () => {
 });
 
 describe('FR-285 AC-737 実接続の条件', () => {
-  it('AC-737 共通接続が無効・了承なしは実接続にならない（モック）', () => {
-    expect(isGenAiReal('A', false, true)).toBe(false);
-    expect(isGenAiReal('A', true, false)).toBe(false);
-    expect(isGenAiReal('', true, true)).toBe(false);
-    expect(isGenAiReal('A', true, true)).toBe(true);
+  it('AC-737 共通接続が無効・接続先なしは実接続にならない（モック）', () => {
+    expect(isGenAiReal('A', false)).toBe(false);
+    expect(isGenAiReal('', true)).toBe(false);
+    expect(isGenAiReal('A', true)).toBe(true);
   });
   it('AC-737 モックの分析は外部へ呼び出さない（純粋関数。fetch を使わない）', () => {
     const f = globalThis.fetch;
@@ -109,7 +108,7 @@ async function relayWith(key: string | undefined, fetchFn: typeof fetch, timeout
   open.push(r);
   if (key) {
     expect((await putFoundryConfig(r.url, PACK, { endpoint: DEFAULT_FOUNDRY_ENDPOINT, deployment: DEFAULT_FOUNDRY_DEPLOYMENT, key })).ok).toBe(true);
-    if (enabled) expect((await setFoundryConnection(r.url, PACK, true, { consent: true, confirmed: true })).mode).toBe('connected');
+    if (enabled) expect((await setFoundryConnection(r.url, PACK, true, { confirmed: true })).mode).toBe('connected');
   }
   return r;
 }
@@ -140,7 +139,7 @@ describe('FR-285 AC-738 Responses API の呼び出し（差し替え部品）', 
     // FR-275 AC-705: re-confirm after changing the shared connection.
     expect(await analyzeViaRelay(env(r), '文章を要約する')).toMatchObject({ ok: false, cause: 'disabled' });
     expect(up.calls).toHaveLength(0);
-    await setFoundryConnection(r.url, PACK, true, { consent: true, confirmed: true });
+    await setFoundryConnection(r.url, PACK, true, { confirmed: true });
     await analyzeViaRelay(env(r), '文章を要約する');
     expect(up.calls[0]!.url).toBe('https://other.openai.azure.com/openai/v1/responses');
     expect(JSON.parse(up.calls[0]!.body).model).toBe('my-deploy');
@@ -150,7 +149,7 @@ describe('FR-285 AC-738 Responses API の呼び出し（差し替え部品）', 
     const up = upstream();
     const r = await relayWith(DUMMY_KEY, up.fetchFn);
     await putFoundryConfig(r.url, PACK, { endpoint: 'https://evil.example.com/openai/v1', deployment: 'd', key: '' });
-    await setFoundryConnection(r.url, PACK, true, { consent: true, confirmed: true });
+    await setFoundryConnection(r.url, PACK, true, { confirmed: true });
     const out = await analyzeViaRelay(env(r), '文章を要約する');
     expect(out).toMatchObject({ ok: false, cause: 'bad-request' });
     expect(up.calls).toHaveLength(0);
@@ -176,7 +175,7 @@ describe('FR-285 AC-738 Responses API の呼び出し（差し替え部品）', 
       expect(await (await fetch(`${r.url}/health`)).text()).toContain('"keyConfigured":false');
       expect(up.calls).toHaveLength(0);
       const r2 = await relayWith(DUMMY_KEY, up.fetchFn);
-      await fetch(`${r2.url}/foundry/analyze`, { method: 'POST', body: JSON.stringify({ packId: PACK, solution: '文章', consent: true, endpoint: 'https://evil.openai.azure.com/v1', deployment: 'evil' }) });
+      await fetch(`${r2.url}/foundry/analyze`, { method: 'POST', body: JSON.stringify({ packId: PACK, solution: '文章', endpoint: 'https://evil.openai.azure.com/v1', deployment: 'evil' }) });
       expect(up.calls[0]!.url).toBe(`${DEFAULT_FOUNDRY_ENDPOINT}/responses`);
     } finally {
       if (prev === undefined) delete process.env.FOUNDRY_API_KEY; else process.env.FOUNDRY_API_KEY = prev;

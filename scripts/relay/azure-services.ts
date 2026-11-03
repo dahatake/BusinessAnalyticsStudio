@@ -1,6 +1,6 @@
 // 音声合成（Azure AI Speech）・手書き認識（Azure AI Vision）の接続部品（FR-182）。呼ぶ主体は中継プロセス。
 // - キーは中継側の環境変数（.env）だけに置く。ブラウザー・応答・ログ・エラーには出さない（NFR-SEC-001）。
-// - キー未設定、または機能が有効でない、または了承の記録がないときは、外部を呼ばずモックで答える。
+// - キー未設定、または機能が有効でないときは、外部を呼ばずモックで答える。
 // - HTTP 呼び出しは HttpPost として差し替えられる（テストはスタブ、本番は fetch）。
 
 export type AzureFeature = 'speech' | 'vision';
@@ -56,8 +56,8 @@ export const isValidStrokeCount = (n: unknown): n is number => typeof n === 'num
 export interface AzureServices {
   /** キーが設定されているか（値は返さない） */
   hasKey(feature: AzureFeature): boolean;
-  /** 有効にする。了承・キーの条件を満たさなければ有効にならず、理由を返す */
-  enable(feature: AzureFeature, packId: string, consent: boolean): { ok: true; mode: 'connected' } | { ok: false; mode: 'mock'; reason: string; code: 'no-consent' | 'no-key' };
+  /** 有効にする。キーの条件を満たさなければ有効にならず、理由を返す */
+  enable(feature: AzureFeature, packId: string): { ok: true; mode: 'connected' } | { ok: false; mode: 'mock'; reason: string; code: 'no-key' };
   disable(feature: AzureFeature, packId: string): void;
   mode(feature: AzureFeature, packId: string): AzureMode;
   synthesize(packId: string, text: string): Promise<SpeechResult>;
@@ -88,8 +88,7 @@ export function createAzureServices(config: AzureConfig, http: HttpPost = fetchP
 
   return {
     hasKey: ready,
-    enable(feature, packId, consent) {
-      if (!consent) return { ok: false, mode: 'mock', code: 'no-consent', reason: '顧客の了承の記録がないため、実接続を有効にできません' };
+    enable(feature, packId) {
       if (!ready(feature)) return { ok: false, mode: 'mock', code: 'no-key', reason: 'キーが未設定のため、モックのまま動作します' };
       enabled.add(slot(feature, packId));
       return { ok: true, mode: 'connected' };

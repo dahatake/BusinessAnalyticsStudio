@@ -23,7 +23,7 @@ export interface FoundryView {
   enabled: boolean;
 }
 
-export type FoundryUnavailableReason = 'consent' | 'disabled' | 'not-configured' | 'person-unconfirmed' | 'timeout' | 'error' | 'relay';
+export type FoundryUnavailableReason = 'disabled' | 'not-configured' | 'person-unconfirmed' | 'timeout' | 'error' | 'relay';
 export type FoundryAskResult =
   | { mode: 'connected'; answer: string }
   | { mode: 'unavailable'; reason: FoundryUnavailableReason; message: string };
@@ -86,17 +86,17 @@ export async function deleteFoundryConfig(relayUrl: string, packId: string, f: F
 }
 
 export async function setFoundryConnection(
-  relayUrl: string, packId: string, enable: boolean, opt: { consent: boolean; confirmed: boolean }, f: F = dflt,
+  relayUrl: string, packId: string, enable: boolean, opt: { confirmed: boolean }, f: F = dflt,
 ): Promise<{ ok: boolean; mode: 'connected' | 'mock'; message?: string }> {
   if (!isLoopbackUrl(relayUrl)) return { ok: false, mode: 'mock', message: noRelay() };
   try {
     const r = await f(`${relayUrl}/foundry/connection`, {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ packId, enable, ...opt }),
     });
-    const j = (await r.json()) as { mode?: 'connected' | 'mock'; error?: string };
+    const j = (await r.json()) as { mode?: 'connected' | 'mock'; enabled?: boolean; error?: string };
     if (r.ok) notifyFoundryChanged();
-    // FR-275 AC-703・FR-290 AC-777: 有効化の確認で示した送信情報の種類を記録する（無効にしたら消す）
-    if (r.ok && enable && opt.confirmed && (j.mode ?? 'mock') === 'connected') recordConfirmedSendKinds(packId);
+    // FR-275 AC-703・FR-290 AC-777: 有効化の確認で示した送信情報の種類を記録する（無効にしたら消す）。有効になった印は、mode が connected か、応答の接続の状態が enabled
+    if (r.ok && enable && opt.confirmed && (j.mode === 'connected' || j.enabled === true)) recordConfirmedSendKinds(packId);
     if (r.ok && !enable) clearConfirmedSendKinds(packId);
     return { ok: r.ok, mode: j.mode ?? 'mock', message: j.error };
   } catch {
@@ -104,10 +104,10 @@ export async function setFoundryConnection(
   }
 }
 
-/** 生成の依頼。了承の記録（FR-181）の有無は毎回渡す（取り消すと次の呼び出しから 0 回になる） */
+/** 生成の依頼 */
 export async function askFoundry(
   relayUrl: string | undefined,
-  req: { packId: string; prompt: string; consent: boolean; includesPerson?: boolean; personConfirmed?: boolean; maxOutputTokens?: number; timeoutSeconds?: number; purpose?: string },
+  req: { packId: string; prompt: string; includesPerson?: boolean; personConfirmed?: boolean; maxOutputTokens?: number; timeoutSeconds?: number; purpose?: string },
   f: F = dflt,
   signal?: AbortSignal,
 ): Promise<FoundryAskResult> {

@@ -9,9 +9,8 @@ import { useT } from '../i18n';
 import { usePackStore } from '../store/pack';
 import { useAnimation } from '../store/animation';
 import { useUseCases } from '../store/usecases';
-import { useConsent } from '../ai/useConsent';
 import { fetchFoundryView } from '../ai/foundryClient';
-import { AI_SCOPE_LABEL, confirmViaUi, consentOf, countPersons, gatePersonConfirm } from '../ai/personConfirm';
+import { AI_SCOPE_LABEL, confirmViaUi, countPersons, gatePersonConfirm } from '../ai/personConfirm';
 import { browserUsageStore, currentUsage, recordCall } from '../ai/aiImportLogic';
 import { toDraft, type UseCase } from './model';
 import {
@@ -60,7 +59,6 @@ export function StoryVideoItemActions({ uc, video }: { uc: UseCase; video: Story
   const t = useT();
   const relayUrl = usePackStore((x) => x.runtime.relayUrl);
   const pack = usePackStore((x) => x.state);
-  const { granted } = useConsent();
   const running = useStoryVideoUi((x) => x.job.status === 'running');
   const st = storyVideoState(toDraft(uc), video);
 
@@ -68,9 +66,9 @@ export function StoryVideoItemActions({ uc, video }: { uc: UseCase; video: Story
     const ui = useStoryVideoUi.getState();
     ui.patch({ notice: null, confirm: null });
     const packId = pack.status === 'ready' ? pack.pack.data.customer.name : '';
-    // 条件（設定済み・実接続の有効化・了承・接続先）は、押した時点の最新を確かめる。欠けるときは呼び出し 0 回で理由と直し方を示す
+    // 条件(設定済み・実接続の有効化・接続先）は、押した時点の最新を確かめる。欠けるときは呼び出し 0 回で理由と直し方を示す
     const view = await fetchFoundryView(relayUrl, packId);
-    const avail = storyVideoAvailability(view, granted);
+    const avail = storyVideoAvailability(view);
     if (!avail.available) { useStoryVideoUi.getState().patch({ notice: { ucId: uc.id, text: avail.guide } }); return; }
     if (uc.steps.length === 0) { useStoryVideoUi.getState().patch({ notice: { ucId: uc.id,     text: t('手順がないため、ストーリー動画を作成できません。「編集」から手順を追加して保存してください。') } }); return; }
     const prices = currentPrices();
@@ -95,7 +93,6 @@ export function StoryVideoSection({ projectId, items, videos }: { projectId: str
   const ui = useStoryVideoUi();
   const relayUrl = usePackStore((x) => x.runtime.relayUrl);
   const pack = usePackStore((x) => x.state);
-  const { granted } = useConsent();
   const saveStoryVideo = useUseCases((x) => x.saveStoryVideo);
   const motion = useAnimation((x) => x.playing);
   const [play, setPlay] = useState<'playing' | 'paused'>(motion ? 'playing' : 'paused');
@@ -128,7 +125,7 @@ export function StoryVideoSection({ projectId, items, videos }: { projectId: str
     const personCount = countPersons(data);
     const gate = await gatePersonConfirm({
           destination: 'ai', scopeLabel: `${t(AI_SCOPE_LABEL)}${t('（ストーリー動画: 選んだユースケースの名称・概要・対象ペルソナ・手順・期待する効果だけ）')}`,
-      data, consent: consentOf(data), confirm: confirmViaUi,
+      data, confirm: confirmViaUi,
     });
         if (!gate.allowed) { useStoryVideoUi.getState().patch({ notice: { ucId, text: gate.reason ?? t('送信しませんでした。') } }); return; }
     cancelFlag = false;
@@ -137,7 +134,7 @@ export function StoryVideoSection({ projectId, items, videos }: { projectId: str
     const out = await runStoryVideo(
       { payload: plan.payload, limits: plan.limits, limitYen: plan.limitYen, monthRemainingYen: plan.monthRemainingYen, prices },
       {
-        call: (kind, payload, maxOutputTokens) => requestStoryVideo(relayUrl, { packId: data.customer.name, kind, usecase: payload, consent: granted, includesPerson: personCount > 0, personConfirmed: true, maxOutputTokens }),
+        call: (kind, payload, maxOutputTokens) => requestStoryVideo(relayUrl, { packId: data.customer.name, kind, usecase: payload, includesPerson: personCount > 0, personConfirmed: true, maxOutputTokens }),
         // 失敗した呼び出しも概算に算入する（FR-276・安全側）。月の概算費用（FR-276 の記録）に合算する
         recordCost: (cost, u) => { recordCall(browserUsageStore, new Date(), cost); inTok += u.inputTokens; outTok += u.outputTokens; },
         isCancelled: () => cancelFlag,

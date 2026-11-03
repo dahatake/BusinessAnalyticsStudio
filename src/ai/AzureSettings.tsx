@@ -24,7 +24,7 @@ const copyOf = (f: AzureFeature): { title: string; service: string; sends: strin
 function AzureFeatureSettings({ feature }: { feature: AzureFeature }) {
   const t = useT();
   const c = copyOf(feature);
-  const { switchOn, realEnabled, granted, packId, enable, disable, notice } = useAzure(feature);
+  const { switchOn, realEnabled, packId, enable, disable, notice } = useAzure(feature);
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   return (
@@ -33,7 +33,7 @@ function AzureFeatureSettings({ feature }: { feature: AzureFeature }) {
       <Text size={200}>{t('送信するもの: {sends}。{fallback}', { sends: c.sends, fallback: c.fallback })}</Text>
       <Switch
         checked={switchOn}
-        disabled={busy || !packId || !granted}
+        disabled={busy || !packId}
         label={c.label}
         onChange={(_, d) => { if (d.checked) setConfirming(true); else void disable(); }}
       />

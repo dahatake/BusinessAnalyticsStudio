@@ -12,7 +12,7 @@ import { registerProjectIntegrationsSnapshot } from '../store/projectIntegration
 import { useExportShortcuts } from './commands';
 import { ExportDialog, type ExportScreenRef } from './ExportDialog';
 import { PersonConfirmDialog } from '../ai/PersonConfirmDialog';
-import { confirmViaUi, consentOf, gatePersonConfirm } from '../ai/personConfirm';
+import { confirmViaUi, gatePersonConfirm } from '../ai/personConfirm';
 import { useExportUi } from './ui';
 import { useT } from '../i18n';
 
@@ -34,8 +34,8 @@ export function ExportButton() {
     if (!input) { setNotice({ kind: 'error', title: t('サマリーパックを作れません'), lines: [t('データの読み込みが終わってから、もう一度押してください。')] }); return; }
     setBusy(true);
     try {
-      // FR-219: 種別「人」を含むときは出力の前に確認を通す（了承の記録がなければ出力しない）
-      const gate = await gatePersonConfirm({ destination: 'export', scopeLabel: t('Engagement サマリーパック（PDF と Markdown）'), data: input.data, consent: consentOf(input.data), confirm: confirmViaUi });
+      // FR-219: 種別「人」を含むときは出力の前に確認を通す
+      const gate = await gatePersonConfirm({ destination: 'export', scopeLabel: t('Engagement サマリーパック（PDF と Markdown）'), data: input.data, confirm: confirmViaUi });
       if (!gate.allowed) {
         if (gate.reason) setNotice({ kind: 'error', title: t('サマリーパックを出力しませんでした'), lines: [gate.reason] });
         return;

@@ -7,7 +7,6 @@ import { ProviderSettings } from '../../src/ai/ProviderSettings';
 import { AiImport } from '../../src/ai/AiImport';
 const state = { runtime:{relayUrl:'http://127.0.0.1:8787'},state:{status:'ready',pack:{data:{customer:{name:'P'},entities:[]}}} };
 vi.mock('../../src/store/pack',()=>({usePackStore:(select:(s:unknown)=>unknown)=>select(state)}));
-vi.mock('../../src/ai/useConsent',()=>({useConsent:()=>({granted:true})}));
 vi.mock('../../src/ai/FoundrySettings',()=>({FoundrySettings:()=> <section data-testid="foundry-settings">Foundry 接続情報</section>}));
 let provider='foundry';let authMethod='signin';let model='';let tokenConfigured=false;let signedIn=false;let enabled=false;
 let fetchMock: ReturnType<typeof vi.fn>;

@@ -8,6 +8,8 @@ import { usePlaying } from '../motion/useMotion';
 import { subtitleDurationMs, splitSubtitles } from './extras';
 import { useAzure } from '../ai/useAzure';
 import { synthesizeSpeech } from '../ai/azureClient';
+import { confirmViaUi, gatePersonConfirm } from '../ai/personConfirm';
+import { usePackStore } from '../store/pack';
 import { useT, tr } from '../i18n';
 
 const useStyles = makeStyles({
@@ -65,13 +67,20 @@ export function Navigator({ script, topicId }: { script: string; topicId: string
   const text = playing ? sentences[Math.min(index, sentences.length - 1)] ?? '' : sentences.join('');
   // 音声合成の実接続（FR-182）。有効なときだけ中継プロセスに台本を送る。失敗しても字幕だけで進める
   const { realEnabled, relayUrl, packId } = useAzure('speech');
+  // FR-219 AC-377: 種別「人」を含む案件は、台本を送る前に確認を通す（同じ内容なら繰り返さない）
+  const packState = usePackStore((x) => x.state);
+  const speechConfirm = (): { confirmPerson?: () => Promise<{ allowed: boolean; reason?: string }> } => {
+    if (packState.status !== 'ready') return {};
+    const data = packState.pack.data;
+    return { confirmPerson: () => gatePersonConfirm({ destination: 'ai', scopeLabel: tr('音声合成（台本の文章を Azure AI Speech へ送信）'), data, confirm: confirmViaUi }) };
+  };
   const [speechError, setSpeechError] = useState<string | null>(null);
   useEffect(() => {
     setSpeechError(null);
     if (!realEnabled || !playing) return undefined;
     let cancelled = false;
     let audio: HTMLAudioElement | null = null;
-    void synthesizeSpeech({ relayUrl, realEnabled, packId }, script).then((o) => {
+    void synthesizeSpeech({ relayUrl, realEnabled, packId, ...speechConfirm() }, script).then((o) => {
       if (cancelled) return;
       if (o.kind === 'error') setSpeechError(o.message);
       else if (o.kind === 'audio' && typeof Audio !== 'undefined') {

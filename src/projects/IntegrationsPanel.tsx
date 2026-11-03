@@ -2,7 +2,6 @@
 // 選択は「連携の選択を保存」で確定する（保存しない選択は残らない）。選択・設定の保存は端末内だけで、外部送信はしない。
 import { useState } from 'react';
 import { Badge, Button, Text, makeStyles, tokens } from '@fluentui/react-components';
-import { useConsent } from '../ai/useConsent';
 import { INTEGRATION_CATALOG, catalogStatusOf } from '../integrations/catalog';
 import { integrationNotice } from '../integrations/sendGate';
 import { useT } from '../i18n';
@@ -86,11 +85,10 @@ export function IntegrationsPanel({ projectId }: { projectId: string }) {
   const t = useT();
   const cur = useProjectIntegrations((st) => st.byProject[projectId]);
   const { select, deselect } = useProjectIntegrations.getState();
-  const { granted } = useConsent();
   const saved = cur?.selected ?? [];
   const [draft, setDraft] = useState<string[]>(saved);
   const [error, setError] = useState<string | null>(null);
-  const notice = integrationNotice(granted, cur);
+  const notice = integrationNotice(cur);
 
   const toggle = (id: string, on: boolean) => {
     setDraft((d) => (on ? [...d.filter((x) => x !== id), id] : d.filter((x) => x !== id)));
@@ -138,7 +136,6 @@ export function IntegrationsPanel({ projectId }: { projectId: string }) {
         {dirty ? <Text>{t('未保存の変更があります。')}</Text> : null}
       </div>
       {error ? <Text role="alert">{error}</Text> : null}
-      {notice.consentNotice ? <Text role="status" data-testid="integration-consent-notice">{notice.consentNotice}</Text> : null}
       {notice.unconfirmed.length > 0 ? (
         <Text role="status" data-testid="integration-unconfirmed">{t('未確認の項目がある連携: {names}', { names: notice.unconfirmed.join(t('、')) })}</Text>
       ) : null}
