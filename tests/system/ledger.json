@@ -355,7 +355,8 @@
     "AC-800": "sha256:424a64b846ae8547",
     "AC-803": "sha256:c2dce60d21476d33",
     "AC-797": "sha256:443f94c5875d400d",
-    "AC-802": "sha256:02aa4e81ae83c15a"
+    "AC-802": "sha256:02aa4e81ae83c15a",
+    "AC-817": "sha256:eb1b44e001e8c6f4"
   },
   "cases": [
     {
@@ -12030,6 +12031,43 @@
           "by": "test-designer",
           "change": "title: 'FR-300 AC-816 Focus モードの減光・通知抑制・Esc で復帰' -> 'FR-300 AC-816 Focus モードの減光・通知抑制・Ctrl+Alt+Enter で解除（Esc では解除しない）'",
           "reason": "AC-816 改訂: 解除キーを Esc から Ctrl+Alt+Enter へ"
+        }
+      ]
+    },
+    {
+      "id": "IT-085",
+      "requirement_ids": [
+        "FR-011"
+      ],
+      "ac_ids": [
+        "AC-817"
+      ],
+      "title": "Copilot SDK 認証済みでの接続先の自動選択と、保存済みの接続先の保持（中継を起動・SDK はスタブ・異常系込み）",
+      "layer": "api",
+      "command": "npx tsx --test tests/system/api/copilot-autoselect.test.ts",
+      "canary": false,
+      "status": "blocked",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-11-03T17:02:46+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-03T17:03:40+09:00",
+          "by": "test-designer",
+          "change": "ac_ids: ['AC-818'] -> ['AC-817']",
+          "reason": "AC-818 は検証レベル=integration で System Test の対象外のため台帳の対象から外す（テストはファイルに残す）"
+        },
+        {
+          "at": "2026-11-03T17:04:01+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "競合: FR-011 AC-817・AC-818 は検証レベル=integration で System Test の台帳対象外（CHK-10）。要求側で level=system とするか、unit/integration 側で扱う判断が必要。テストは tests/system/api/copilot-autoselect.test.ts に作成済み"
         }
       ]
     }

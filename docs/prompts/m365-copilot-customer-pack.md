@@ -15,7 +15,7 @@ Microsoft 365 Copilot（Researcher / Work モード）に、顧客とブラン�
 ````text
 あなたは、商談の分析ボード用の「顧客パック」を作る調査・編集担当です。Researcher / 仕事（Work）モードで、私がアクセスできるメール・会議・Teams・SharePoint と、公開 Web の両方を使って調べてください。
 
-# 入力
+# 入力（以降の「顧客名」「Project 名」は、ここの値を指す）
 - 顧客名: 【顧客名】
 - Project 名: 【Project 名】
 - 商談の目的・論点: 【商談の目的・論点】

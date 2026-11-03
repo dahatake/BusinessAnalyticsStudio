@@ -19,6 +19,7 @@ afterEach(async () => { await Promise.all(relays.splice(0).map(r => r.close()));
 async function setup(signedIn = true, suppliedSdk?: CopilotSdk | null, foundryToken?: () => Promise<string>, useDefaultFoundry = false) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'provider-unit-')); dirs.push(dir);
   const store = openAiProvider(dir, opts);
+  store.setProvider('foundry'); // FR-011 AC-818: these cases model a user who explicitly saved Foundry (auto-select is covered in its own describe)
   const sdk = suppliedSdk === undefined ? { status: vi.fn(async (_c?: CopilotConfig) => ({ signedIn })), complete: vi.fn(async (_k: string, prompt: string, _c?: CopilotConfig) => prompt.includes('コンポーネント') ? JSON.stringify(review) : prompt.includes('判断基準') ? JSON.stringify(result) : '回答') } : suppliedSdk;
   const foundryFetch = vi.fn(async () => new Response(JSON.stringify({ output_text: JSON.stringify(review) })));
   const analyze = vi.fn(async () => result);
@@ -171,5 +172,27 @@ describe('FR-275 AC-770 delayed-auth configuration and connection races', () => 
     expect(sdk.complete).not.toHaveBeenCalled();expect(s.foundryFetch).not.toHaveBeenCalled();expect(s.analyze).not.toHaveBeenCalled();
     expect((await s.request('/foundry/config?packId=P')).body.enabled).toBe(newerEnabled);
     if(newerEnabled) { expect((await s.request('/foundry/ask',payload)).body.mode).toBe('connected');expect(sdk.complete).toHaveBeenCalledOnce(); }
+  });
+});
+
+// FR-011 AC-817: authenticated SDK + no saved provider => in-memory copilot default, nothing persisted, foundryEnabled untouched.
+// FR-011 AC-818: an explicitly saved provider is never overridden; unauthenticated keeps the default.
+describe('FR-011 AC-817/818 provider auto-select', () => {
+  const mk = () => { const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'autosel-unit-')); dirs.push(dir); return dir; };
+  const sdk = (signedIn: boolean) => ({ status: vi.fn(async () => ({ signedIn })), complete: vi.fn(async () => 'x') });
+  it('AC-817 selects copilot in memory without writing ai-provider.json', async () => {
+    const dir = mk(); const store = openAiProvider(dir, opts);
+    const r = await startRelay({ sdk: sdk(true), aiProvider: store, port: 0, ...opts } as never); relays.push(r);
+    expect(store.provider()).toBe('copilot'); expect(store.isExplicit()).toBe(false);
+    expect(fs.existsSync(path.join(dir, 'ai-provider.json'))).toBe(false);
+    store.save({ authMethod: 'signin', model: 'm' }); expect(store.isExplicit()).toBe(false);
+  });
+  it('AC-818 keeps an explicit foundry choice and the default when unauthenticated', async () => {
+    const dir = mk(); const store = openAiProvider(dir, opts); store.setProvider('foundry');
+    const r = await startRelay({ sdk: sdk(true), aiProvider: store, port: 0, ...opts } as never); relays.push(r);
+    expect(store.provider()).toBe('foundry');
+    const d2 = mk(); const s2 = openAiProvider(d2, opts);
+    const r2 = await startRelay({ sdk: sdk(false), aiProvider: s2, port: 0, ...opts } as never); relays.push(r2);
+    expect(s2.provider()).toBe('foundry');
   });
 });

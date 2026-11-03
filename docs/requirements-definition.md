@@ -1,7 +1,8 @@
 # 要求定義書
 
 <!--
-この文書は、このアプリの要求の唯一の正本です。編集できるのは rd-author だけです（hook G-1）。
+この文書| 2026-11-03 | メイン画面の大見出しを「企業名-Project名」にし、「はじめての方へ」「顧客パックとは」を右側の開閉できる補足パネルへ移す依頼（run 202611031703） | 変更: FR-186（h1 を開いている／最後に開いた Project の「企業名-Project名」、なければ「メイン画面」。AC-819 追加）、FR-266（常時表示→右側の補足パネルの開閉・既定は閉じる・開閉ボタンは常に見える・アニメーションと動きの軽減・aria-expanded・狭い画面は下へ縮退。AC-675 改訂、AC-820・AC-821 追加。参照に PARAM-029・PARAM-074）、FR-268（AC-682・本文を補足パネル内に）。FR-267 は変更なし（初回ダイアログ）。既存で充足し新規にしない: NFR-UX-017・PARAM-074（動き）、PARAM-029（縮退幅）、NFR-A11Y-001。新規 FR・NFR・PARAM なし。包括承認なし（依頼で承認）。影響: AC-675・AC-682 の台帳のケース（E2E-359・E2E-363 ほか）の見直し、AC-819〜AC-821 のケース追加（test-designer）。統合・廃止はなし | なし | なし |
+は、このアプリの要求の唯一の正本です。編集できるのは rd-author だけです（hook G-1）。
 書式の規則は .github/skills/requirement-definition/SKILL.md を参照します。
 ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだけ採番します（G-3）。
 要求の本文は業務の境界ごとに docs/requirements/ に分けています（構成要素が A・B・C の 3 つで、要求が 150 件を超えるため）。
@@ -403,7 +404,7 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 | Twin の流れ | 現実世界とデジタル世界のエンティティを結ぶ向き付きの流れ。Data は現実世界からデジタル世界へ、Control はデジタル世界から現実世界へ（FR-239・FR-241） | なし |
 | Twin の層 | デジタル世界のエンティティが属する層。Operations（稼働・保守・自動化）、Experience（人と空間の体験）、Insights（分析・KPI・予測）（FR-239・FR-241） | なし |
 | 空間ビュー | 空間の階層（全体→拠点→フロア→部屋・設備）に KPI を重ねて見る画面（FR-240） | なし |
-| Copilot で分析実行 | 画面上部のボタンから、現在の画面のすべてのコンポーネントのデータを Microsoft Foundry の生成 AI にレビューさせ、コンポーネントごとの案を得る操作（FR-278）。名前に Copilot を含むが、使う生成 AI は設定画面で選んだ接続先（既定は Microsoft Foundry〈C-03 の例外〉。GitHub Copilot SDK も選べる。FR-275） | なし |
+| Copilot で分析実行 | 画面上部のボタンから、現在の画面のすべてのコンポーネントのデータを Microsoft Foundry の生成 AI にレビューさせ、コンポーネントごとの案を得る操作（FR-278）。名前に Copilot を含むが、使う生成 AI は設定画面で選んだ接続先（既定は Microsoft Foundry〈C-03 の例外〉。接続先が未保存で起動時に Copilot SDK が認証済みなら自動で GitHub Copilot SDK になる〈FR-011〉。GitHub Copilot SDK も選べる。FR-275） | なし |
 | Copilot の分析実行 | 「Copilot で分析実行」の 1 回の実行。実行状態と利用量を持つ（FR-278・NFR-COST-001） | なし |
 | Copilot の案 | 分析実行の結果として、コンポーネントごとに示す AI 生成の変更案。反映するまで画面・管理データを変えない（FR-279・FR-280） | なし |
 | Foundry 接続設定 | 設定画面で入力する Microsoft Foundry のエンドポイント・デプロイ名・認証方式・API キー。キーは中継プロセスが暗号化して端末内だけに保管し、再表示しない（FR-282・NFR-SEC-012） | なし |
