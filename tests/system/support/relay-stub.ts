@@ -97,7 +97,8 @@ export async function startFoundryRelayStub(mode: FoundryStubMode = 'ok'): Promi
       // 共通接続が未設定・無効なら外部を呼ばずに失敗を返す（FR-285）。body の endpoint・deployment は使わない
       if (mode === 'key-missing' || !vault.v || !vault.v.enabled) return json(503, { error: { cause: 'key-missing' } });
       state.modelCalls += 1;
-      switch (mode) {
+      // 上の if で 'key-missing' は絞り込まれて除外されるため、型を広げて全モードを列挙する（実行時の挙動は変わらない）
+      switch (mode as FoundryStubMode) {
         case 'ok':
           return json(200, {
             conclusion: 'conditional',
