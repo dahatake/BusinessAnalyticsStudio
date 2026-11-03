@@ -22,7 +22,12 @@ export async function listScreenKeys(page: Page): Promise<string[]> {
   const nav = page.getByRole('navigation', { name: '画面', exact: true });
   await expect(nav).toBeAttached();
   const keys = await nav.locator('[data-testid^="nav-"]').evaluateAll((els) =>
-    els.map((e) => (e.getAttribute('data-testid') ?? '').replace(/^nav-/, '')).filter((k) => k && k !== 'toggle'),
+    els
+      .map((e) => e.getAttribute('data-testid') ?? '')
+      // CONTRACT §34 の `nav-bar-<key>`・`nav-badge-<key>` は画面ではない（タスクバー風の装飾）
+      .filter((t) => !t.startsWith('nav-bar-') && !t.startsWith('nav-badge-'))
+      .map((t) => t.replace(/^nav-/, ''))
+      .filter((k) => k && k !== 'toggle'),
   );
   // 設定は左メニューに項目を持たず、上部のボタン「設定」から開く（FR-223 AC-774）。一覧の末尾に足す
   const uniq = [...new Set([...keys, ...OFF_MENU_SCREENS, 'settings'])];
