@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { ShowSchema } from '../../src/schema';
 import {
   COUNTDOWN_STEPS, COUNTDOWN_STEP_MS, LOGO_REVEAL_MS, OPENING_MAX_MS, OPENING_MIN_MS, OPENING_TOTAL_MS,
-  clampOpeningMs, clampSlider, nextChapterOf, nextIntensity, openingPhaseAt, openingTitle, readBeforeAfter, readRoi, readTelop,
+  clampOpeningMs, clampSlider, nextChapterOf, nextIntensity, openingPhaseAt, readBeforeAfter, readRoi, readTelop,
   showsConfetti, topFive, topicTypeOf, usesEnterMotion,
 } from '../../src/show/model';
 import { flattenTopics } from '../../src/presentation/model';
@@ -37,8 +37,12 @@ describe('FR-076 オープニング', () => {
   });
 
   // FR-076 AC-093
-  it('FR-076 AC-093 タイトルは「{顧客名} × Microsoft — {Project名}: The Future Ahead」', () => {
-    expect(openingTitle('架空製作所', '予兆保全')).toBe('架空製作所 × Microsoft — 予兆保全: The Future Ahead');
+  it('FR-076 AC-093 オープニングが表示する文字はアプリケーション名だけ（顧客名・Project 名・旧タイトルを持たない）で、英語版にも訳がある', () => {
+    const src = readFileSync(resolve(__dirname, '../../src/app/Opening.tsx'), 'utf8');
+    expect(src).toContain("t('Business Analytics Studio')");
+    expect(src).not.toMatch(/customerName|projectName|opening-caption|BrandLockup|openingTitle|× Microsoft/);
+    const tr = readFileSync(resolve(__dirname, '../../src/i18n/en/tr-workspace.ts'), 'utf8');
+    expect(tr).toContain("'Business Analytics Studio': 'Business Analytics Studio'");
   });
 
   // FR-076 AC-093
