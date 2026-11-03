@@ -9,8 +9,8 @@ import { usePackStore } from '../store/pack';
 import { MOCK_LABEL, REAL_LABEL, type AiResult } from './client';
 import { groundQuestion } from './grounding';
 import { useAi } from './useAi';
-import { useConsent } from './useConsent';
 import { fetchFoundryView } from './foundryClient';
+import { mayQueryProviderOnLoad } from './genAiProviderStatus';
 import { buildFoundryPrompt, TRIM_NOTICE, type FoundryPrompt } from './foundryChat';
 import { sendFoundryChat } from './foundryChatFlow';
 import { useUsageStore } from './foundryUsage';
@@ -63,7 +63,6 @@ export function ChatScreen() {
   const t = useT();
   const s = useStyles();
   const { ask, mode, relayUrl, packId } = useAi();
-  const { granted: consentGranted, record: consentRecord } = useConsent();
   const pack = usePackStore((st) => st.state);
   const graph = useEntityGraph();
   const allSources = useMemo<Source[]>(() => (pack.status === 'ready' ? pack.pack.data.sources.sources : []), [pack]);
@@ -85,16 +84,16 @@ export function ChatScreen() {
     return () => window.removeEventListener('keydown', h);
   }, [preview]);
 
-  /** Foundry で送る条件（FR-286）: 設定済み・実接続が有効・了承の記録あり。毎回中継から読み直す（取り消し・無効化が次の送信から効く）。
+  /** Foundry で送る条件（FR-286）: 設定済み・実接続が有効。毎回中継から読み直す（無効化が次の送信から効く）。
    *  中継に届かないときは、直前に読めた状態を使う（Foundry を使える状態だったなら、停止を理由つきで示し、別の送信先へ切り替えない） */
   const lastReady = useRef(false);
   const foundryReady = async (): Promise<boolean> => {
-    if (!consentGranted || !packId) return false;
+    if (!packId || !mayQueryProviderOnLoad(packId)) return false; // この端末で確認して有効にした記録がなければ、中継へ問い合わせない（NFR-SEC-004 AC-218）
     const v = await fetchFoundryView(relayUrl, packId, undefined, false);
     if (v) lastReady.current = v.configured && v.enabled;
     return lastReady.current;
   };
-  useEffect(() => { lastReady.current = false; void foundryReady(); }, [relayUrl, packId, consentGranted]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { lastReady.current = false; void foundryReady(); }, [relayUrl, packId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /** 質問に近い顧客パックの項目と出典（FR-017）と、Foundry へ送る内容 */
   const plan = (question: string) => {
@@ -137,9 +136,9 @@ export function ChatScreen() {
         const usage = useUsageStore.getState();
         const provider = (await fetchFoundryView(relayUrl, packId))?.provider ?? 'foundry';
         const out = await sendFoundryChat({
-          relayUrl, packId, consent: consentGranted,
+          relayUrl, packId,
           includesPerson: !!data && countPersons(data) > 0,
-          confirmPerson: () => gatePersonConfirm({ destination: 'ai', scopeLabel: FOUNDRY_SCOPE_LABEL, data: data!, consent: consentRecord, confirm: confirmViaUi }),
+          confirmPerson: () => gatePersonConfirm({ destination: 'ai', scopeLabel: FOUNDRY_SCOPE_LABEL, data: data!, confirm: confirmViaUi }),
           usage: { check: () => usage.check(new Date(), provider), count: (n) => usage.count(n, new Date(), provider) },
         }, built);
         if (out.kind === 'answer') {

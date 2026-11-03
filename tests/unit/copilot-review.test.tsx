@@ -30,7 +30,7 @@ function deps(over: Partial<ReviewDeps> = {}) {
   const calls = { request: 0, confirm: 0, person: 0 };
   let rec = emptyRecord(NOW);
   const d: ReviewDeps = {
-    relayUrl: 'http://127.0.0.1:1', packId: 'P', consent: true, includesPerson: false,
+    relayUrl: 'http://127.0.0.1:1', packId: 'P', includesPerson: false,
     view: async () => view(),
     usage: { check: () => checkUsage(rec, DEFAULT_LIMITS, NOW), count: (n) => { rec = addUsage(rec, DEFAULT_LIMITS, NOW, n); } },
     confirmSend: async () => { calls.confirm++; return true; },
@@ -41,7 +41,7 @@ function deps(over: Partial<ReviewDeps> = {}) {
   return { d, calls, get rec() { return rec; } };
 }
 
-describe('FR-278 AC-716 送信前の確認・了承のゲート（結合）', () => {
+describe('FR-278 AC-716 送信前の確認のゲート（結合）', () => {
   it('確認を取り消すと Foundry への呼び出しは 0 回で、利用量も数えない', async () => {
     const x = deps({ confirmSend: async () => false });
     const out = await runReview(x.d, T);
@@ -54,13 +54,6 @@ describe('FR-278 AC-716 送信前の確認・了承のゲート（結合）', ()
     const x = deps({ confirmSend: async (t) => { seen = t.map((a) => a.id); return true; } });
     await runReview(x.d, T);
     expect(seen).toEqual(['table', 'issue-solution']);
-  });
-  it('了承の記録がない案件は、理由が示され、確認も呼び出しも 0 回', async () => {
-    const x = deps({ consent: false });
-    const out = await runReview(x.d, T);
-    expect(out.kind).toBe('blocked');
-    if (out.kind === 'blocked') expect(out.text).toContain('了承');
-    expect(x.calls.request + x.calls.confirm).toBe(0);
   });
   it('未設定・実接続が無効・中継に届かないときは、理由を示して 0 回', async () => {
     for (const v of [view({ configured: false }), view({ enabled: false }), null]) {
@@ -140,25 +133,24 @@ describe('中継 POST /foundry/review（Foundry の送信口はスタブ）', ()
 
   it('実接続が有効でなければ Foundry を呼ばない。有効なら案を id ごとに返し、依頼にない id は捨てる', async () => {
     const s = await setup('```json\n{"reviews":[{"id":"table","proposal":"表の案"},{"id":"zzz","proposal":"x"}]}\n```');
-    expect((await post(s.relay.url, { packId: 'P', consent: true, components: comps })).reason).toBe('disabled');
-    await setFoundryConnection(s.relay.url, 'P', true, { consent: true, confirmed: true });
-    expect((await post(s.relay.url, { packId: 'P', consent: false, components: comps })).reason).toBe('consent');
-    expect((await post(s.relay.url, { packId: 'P', consent: true, includesPerson: true, components: comps })).reason).toBe('person-unconfirmed');
+    expect((await post(s.relay.url, { packId: 'P', components: comps })).reason).toBe('disabled');
+    await setFoundryConnection(s.relay.url, 'P', true, { confirmed: true });
+    expect((await post(s.relay.url, { packId: 'P', includesPerson: true, components: comps })).reason).toBe('person-unconfirmed');
     expect(s.calls()).toBe(0);
-    const ok = await post(s.relay.url, { packId: 'P', consent: true, components: comps });
+    const ok = await post(s.relay.url, { packId: 'P', components: comps });
     expect(ok.reviews).toEqual([{ id: 'table', proposal: '表の案' }]);
     expect(s.calls()).toBe(1);
   });
   it('異常系: 読めない応答は unavailable（error）で、キーを含まない', async () => {
     const s = await setup('これは JSON ではありません');
-    await setFoundryConnection(s.relay.url, 'P', true, { consent: true, confirmed: true });
-    const r = await post(s.relay.url, { packId: 'P', consent: true, components: comps });
+    await setFoundryConnection(s.relay.url, 'P', true, { confirmed: true });
+    const r = await post(s.relay.url, { packId: 'P', components: comps });
     expect(r.reason).toBe('error');
     expect(JSON.stringify(r)).not.toContain('dummy-foundry-key');
   });
   it('components がなければ 400', async () => {
     const s = await setup('{}');
-    expect((await fetch(`${s.relay.url}/foundry/review`, { method: 'POST', body: JSON.stringify({ packId: 'P', consent: true }) })).status).toBe(400);
+    expect((await fetch(`${s.relay.url}/foundry/review`, { method: 'POST', body: JSON.stringify({ packId: 'P' }) })).status).toBe(400);
   });
   it('依頼の組み立てと応答の解釈（純粋）', () => {
     expect(parseReviewComponents([{ id: 'a', data: 'x' }, { id: 'a', data: 'y' }, { id: 3 }, null])).toEqual([{ id: 'a', data: 'x' }]);

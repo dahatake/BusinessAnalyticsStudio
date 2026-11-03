@@ -20,15 +20,14 @@ const goodAnswer = JSON.stringify({
 const view: FoundryView = { configured: true, endpoint: 'https://x.invalid/', host: 'x.invalid', deployment: 'd', keyMask: '••••', enabled: true };
 const NOW = new Date(2026, 9, 22, 12, 0, 0);
 
-function setup(o: { view?: FoundryView | null; consent?: boolean; answer?: FoundryAskResult; limits?: Partial<ExplainLimits>; usage?: UsageState; now?: Date } = {}) {
+function setup(o: { view?: FoundryView | null; answer?: FoundryAskResult; limits?: Partial<ExplainLimits>; usage?: UsageState; now?: Date } = {}) {
   let usage = o.usage ?? emptyUsage(NOW);
-  const calls: Array<{ prompt: string; consent: boolean; maxOutputTokens: number }> = [];
+  const calls: Array<{ prompt: string; maxOutputTokens: number }> = [];
   let now = o.now ?? NOW;
   const deps: ExplainDeps = {
     now: () => now,
     limits: () => ({ ...DEFAULT_LIMITS, ...o.limits }),
     usage: { get: () => usage, set: (u) => { usage = u; } },
-    consent: o.consent ?? true,
     fetchView: async () => (o.view === undefined ? view : o.view),
     ask: async (req) => { calls.push(req); return o.answer ?? { mode: 'connected', answer: goodAnswer }; },
   };
@@ -106,7 +105,6 @@ describe('FR-277 AC-714 代替の説明', () => {
     expect(a).toContain('欠品率を下げる');
   });
   it.each([
-    ['consent', { consent: false }, '了承'],
     ['relay', { view: null }, '中継プロセス'],
     ['not-configured', { view: { ...view, configured: false } }, '未設定'],
     ['disabled', { view: { ...view, enabled: false } }, '有効になっていません'],
@@ -117,7 +115,7 @@ describe('FR-277 AC-714 代替の説明', () => {
     const r = await runExplain(t.deps, t.session, snap);
     expect(r.kind).toBe('fallback');
     if (r.kind === 'fallback') { expect(r.reason).toBe(reason); expect(r.reasonText).toContain(word); expect(r.text).toBe(buildFallback(snap)); }
-    if (['consent', 'relay', 'not-configured', 'disabled'].includes(reason)) expect(t.calls).toHaveLength(0);
+    if (['relay', 'not-configured', 'disabled'].includes(reason)) expect(t.calls).toHaveLength(0);
   });
 });
 

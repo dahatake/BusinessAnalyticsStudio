@@ -106,7 +106,7 @@ describe('FR-120 Skill のコマンド', () => {
 
   it('FR-120 AC-146 build は調査キャッシュがなくても前提を置いたサンプルで続け、推定として記録する', async () => {
     const r = await runPipeline('build', { customer: 'A社', projectName: 'A', intensity: 'Showcase', materials: [] },
-      { paths: paths(), consent: () => true, generator: mockGenerator, launcher: async () => ({ url: 'http://127.0.0.1:1/', close: async () => {} }), log });
+      { paths: paths(), live: true, generator: mockGenerator, launcher: async () => ({ url: 'http://127.0.0.1:1/', close: async () => {} }), log });
     expect(r.stages).toEqual(COMMAND_STAGES.build);
     const meta = JSON.parse(fs.readFileSync(path.join(researchCacheDir(paths(), 'A社'), 'meta.json'), 'utf8')) as { customerSource: string };
     expect(meta.customerSource).toBe('推定（サンプル）');
@@ -120,7 +120,7 @@ describe('FR-120 Skill のコマンド', () => {
         return v;
       },
     };
-    const code = await main(['build', '--customer', 'B社', '--no-keep', '--workspace', workspace, '--template', template], { consent: () => true, log, generator: bad });
+    const code = await main(['build', '--customer', 'B社', '--no-keep', '--live', '--workspace', workspace, '--template', template], { log, generator: bad });
     expect(code).toBe(1);
     expect(logs.join('\n')).toContain('issues.json');
   });
@@ -291,7 +291,7 @@ describe('FR-125 顧客パックの生成', () => {
     const calls: string[] = [];
     const spy: PackGenerator = { generate: async (req) => { calls.push(req.key); return mockGenerator.generate(req); } };
     await runPipeline('build', { customer: 'ミライ商事', projectName: 'ミライ 改革', intensity: 'Executive', materials: [] },
-      { paths: paths(), consent: () => true, generator: spy, launcher: async () => ({ url: 'http://127.0.0.1:1/', close: async () => {} }), log });
+      { paths: paths(), live: true, generator: spy, launcher: async () => ({ url: 'http://127.0.0.1:1/', close: async () => {} }), log });
     const wd = workDir(paths(), 'ミライ商事');
     expect(calls.sort()).toEqual([...PACK_FILE_KEYS].sort()); // ファイル単位で 1 回ずつ生成する
     for (const key of PACK_FILE_KEYS) expect(fs.existsSync(path.join(wd, packFilePath(key))), key).toBe(true);
@@ -303,6 +303,23 @@ describe('FR-125 顧客パックの生成', () => {
     expect(customer['defaultIntensity']).toBe('Executive');
     const brand = JSON.parse(fs.readFileSync(path.join(wd, 'public', 'brand', 'brand-profile.json'), 'utf8')) as { name: string };
     expect(brand.name).toBe('ミライ商事');
+  });
+
+  // FR-121 AC-823
+  it('FR-121 AC-823 `--live` なしで build を実行すると、生成の差し替え部品は呼ばれず（送信 0 回）、実調査をしていない旨を出力して、サンプル・モックで成功する。`--live` を付けると呼ばれる', async () => {
+    const calls: string[] = [];
+    const spy: PackGenerator = { generate: async (req) => { calls.push(req.key); return mockGenerator.generate(req); } };
+    const launcher = async () => ({ url: 'http://127.0.0.1:1/', close: async () => {} });
+    const lines: string[] = [];
+    const r = await runPipeline('build', { customer: '無送信社', projectName: 'P', intensity: 'Executive', materials: [] },
+      { paths: paths(), generator: spy, launcher, log: (l) => lines.push(l) });
+    expect(r.stages).toEqual(COMMAND_STAGES.build);
+    expect(calls).toEqual([]);
+    expect(lines.join('\n')).toContain('実調査をしていません');
+    expect(lines.join('\n')).toContain('--live');
+    await runPipeline('build', { customer: '送信社', projectName: 'P', intensity: 'Executive', materials: [] },
+      { paths: paths(), live: true, generator: spy, launcher, log });
+    expect(calls.length).toBe(PACK_FILE_KEYS.length);
   });
 
   it('FR-125 AC-152 調査キャッシュの内容が顧客調査・ブランド調査の Markdown に入り、BGM と追加資料は指定したときだけ複製する', async () => {

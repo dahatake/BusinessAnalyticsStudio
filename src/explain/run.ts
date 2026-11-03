@@ -12,12 +12,10 @@ export interface ExplainDeps {
   now: () => Date;
   limits: () => ExplainLimits;
   usage: { get: () => UsageState; set: (s: UsageState) => void };
-  /** 顧客の了承の記録があるか（FR-181） */
-  consent: boolean;
   includesPerson?: boolean;
   confirmPerson?: () => Promise<{ allowed: boolean }>;
   fetchView: () => Promise<FoundryView | null>;
-  ask: (req: { prompt: string; consent: boolean; maxOutputTokens: number; includesPerson?: boolean; personConfirmed?: boolean }) => Promise<FoundryAskResult>;
+  ask: (req: { prompt: string; maxOutputTokens: number; includesPerson?: boolean; personConfirmed?: boolean }) => Promise<FoundryAskResult>;
 }
 
 /** 前回の呼び出しの開始時刻と、生成中かどうか（二重の呼び出しをしない。FR-276 (4)） */
@@ -50,7 +48,6 @@ export async function runExplain(
   if (wait > 0) return { kind: 'wait', waitSec: wait, message: tr('前回の呼び出しから {min} 秒たっていません。あと {wait} 秒待ってから押してください', { min: limits.minIntervalSec, wait }) };
 
   // FR-277: AI が使えない条件（外部へは何も呼ばない）
-  if (!deps.consent) return fallback(snapshot, 'consent');
   const view = await deps.fetchView();
   if (!view) return fallback(snapshot, 'relay');
   if (!view.configured) return fallback(snapshot, 'not-configured');
@@ -77,7 +74,7 @@ export async function runExplain(
     const aborted = new Promise<'aborted'>((res) => { signal?.addEventListener('abort', () => res('aborted'), { once: true }); });
     if (signal?.aborted) return { kind: 'cancelled' };
     // (3) 出力は上限を指定して依頼する
-    const r = await Promise.race([deps.ask({ prompt, consent: deps.consent, maxOutputTokens: limits.outputMaxTokens, ...(deps.includesPerson ? { includesPerson: true, personConfirmed: true } : {}) }), aborted]);
+    const r = await Promise.race([deps.ask({ prompt, maxOutputTokens: limits.outputMaxTokens, ...(deps.includesPerson ? { includesPerson: true, personConfirmed: true } : {}) }), aborted]);
     if (r === 'aborted') return { kind: 'cancelled' };
     if (r.mode === 'unavailable') return fallback(snapshot, r.reason, { truncated: fit.truncated, warning });
     const parsed = parseAiExplanation(r.answer, fit.snapshot);

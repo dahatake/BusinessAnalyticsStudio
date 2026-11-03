@@ -13,13 +13,12 @@ import type { StoryScene } from './model';
 import { tr } from '../i18n';
 
 export type StoryUnavailable =
-  | 'company' | 'consent' | 'relay' | 'not-configured' | 'disabled' | 'person-unconfirmed'
+  | 'company' | 'relay' | 'not-configured' | 'disabled' | 'person-unconfirmed'
   | 'daily-limit' | 'budget' | 'error' | 'timeout' | 'invalid';
 
 /** 理由の文（接続先に依らない書き方）。言語切替で更新されるよう、読むたびに翻訳する getter にしている */
 export const STORY_REASON_TEXT: Record<StoryUnavailable, string> = {
   get company() { return tr('この Project の企業は外部 AI への送信を許可していないため、生成 AI に接続しませんでした（企業の設定の「外部 AI への送信を許可する」で許可できます）'); },
-  get consent() { return tr('顧客の了承の記録がないため、生成 AI へ送信できません'); },
   get relay() { return tr('中継プロセスに届かないため、生成 AI に接続できません（`npm run relay` で起動しているか確認してください）'); },
   get 'not-configured'() { return tr('生成 AI の接続情報が未設定のため、接続できません（設定画面で設定できます）'); },
   get disabled() { return tr('生成 AI の実接続が有効になっていません（設定画面で有効にできます）'); },
@@ -51,7 +50,6 @@ export interface StoryGenaiDeps {
   now: () => Date;
   limits: () => ExplainLimits;
   usage: { get: () => UsageState; set: (s: UsageState) => void };
-  consent: boolean;
   /** 開いている Project の企業が外部 AI への送信を許可しているか（FR-140・FR-290 AC-785）。undefined はお手本パックのデモ（許可は不要） */
   companyAllowed?: boolean;
   includesPerson?: boolean;
@@ -59,7 +57,7 @@ export interface StoryGenaiDeps {
   fetchView: () => Promise<FoundryView | null>;
   /** 有効化の確認で確認済みの送信情報の種類（FR-290 AC-777） */
   confirmedKinds: () => readonly string[];
-  ask: (req: { prompt: string; consent: boolean; maxOutputTokens: number; timeoutSeconds: number; includesPerson?: boolean; personConfirmed?: boolean }, signal: AbortSignal) => Promise<FoundryAskResult>;
+  ask: (req: { prompt: string; maxOutputTokens: number; timeoutSeconds: number; includesPerson?: boolean; personConfirmed?: boolean }, signal: AbortSignal) => Promise<FoundryAskResult>;
   /** 応答待ちの上限（秒）。既定は PARAM-127 */
   timeoutSec?: number;
 }
@@ -93,8 +91,7 @@ export async function runStoryGenai(
 
   // FR-290 AC-785: Project の企業が外部 AI への送信を許可していなければ、呼び出さない（FR-140。お手本パックのデモは対象外）
   if (deps.companyAllowed === false) return unavailable('company');
-  // AC-776: 了承・中継・接続情報・実接続の有効のどれかが欠けたら、呼び出さない
-  if (!deps.consent) return unavailable('consent');
+  // AC-776: 中継・接続情報・実接続の有効のどれかが欠けたら、呼び出さない
   const view = await deps.fetchView();
   if (!view) return unavailable('relay');
   if (!view.configured) return unavailable('not-configured');
@@ -126,7 +123,7 @@ export async function runStoryGenai(
     const timedOut = new Promise<'timeout'>((res) => { timer = setTimeout(() => { res('timeout'); ctl.abort(); }, timeoutSec * 1000); });
     const r = await Promise.race([
       deps.ask({
-        prompt: p.prompt, consent: deps.consent, maxOutputTokens: STORY_GENAI_MAX_OUTPUT_TOKENS, timeoutSeconds: timeoutSec,
+        prompt: p.prompt, maxOutputTokens: STORY_GENAI_MAX_OUTPUT_TOKENS, timeoutSeconds: timeoutSec,
         ...(deps.includesPerson ? { includesPerson: true, personConfirmed: true } : {}),
       }, ctl.signal),
       timedOut, aborted,

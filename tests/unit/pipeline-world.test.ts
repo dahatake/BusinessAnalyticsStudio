@@ -76,7 +76,7 @@ describe('FR-213 AC-509 生成パイプラインが作る顧客パックの世�
   // FR-213 AC-509
   it('FR-213 AC-509 固定の入力で build を実行すると、出力の全エンティティが §3.7 の許容値の世界区分と種別を持ち、verify:pack の区分なしが 0 件', async () => {
     const input = { customer: 'ツイン商事', projectName: 'ツイン 改革', intensity: 'Showcase' as const, materials: [] };
-    const r = await runPipeline('build', input, { paths: paths(), consent: () => true, generator: mockGenerator, smoke: mockSmoke, launcher, log });
+    const r = await runPipeline('build', input, { paths: paths(), live: true, generator: mockGenerator, smoke: mockSmoke, launcher, log });
     const wd = workDir(paths(), input.customer);
     expect(r.workDir).toBe(wd);
 
@@ -107,7 +107,7 @@ describe('FR-213 AC-509 生成パイプラインが作る顧客パックの世�
   it('FR-213 AC-509 世界区分・種別のないエンティティを出力する生成は、⑤スキーマ検証で項目の位置を示して不合格になる', async () => {
     const input = { customer: '区分なし商事', projectName: 'X', intensity: 'Showcase' as const, materials: [] };
     const err = await runPipeline('build', input, {
-      paths: paths(), consent: () => true, generator: stripping(mockGenerator, [0, 2], true), smoke: mockSmoke, launcher, log,
+      paths: paths(), live: true, generator: stripping(mockGenerator, [0, 2], true), smoke: mockSmoke, launcher, log,
     }).then(() => undefined, (e: unknown) => e);
     expect(err).toBeInstanceOf(PipelineError);
     const pe = err as PipelineError;
@@ -126,7 +126,7 @@ describe('FR-213 AC-509 生成パイプラインが作る顧客パックの世�
     const k = untwinnedIndex();
     const base = stripping(mockGenerator, [k], false);
     const spy: PackGenerator = { generate: async (req) => { if (req.target) asked.push(`${req.key} ${req.target.path}`); return base.generate(req); } };
-    await runPipeline('build', input, { paths: paths(), consent: () => true, generator: spy, smoke: mockSmoke, launcher, log });
+    await runPipeline('build', input, { paths: paths(), live: true, generator: spy, smoke: mockSmoke, launcher, log });
     expect(asked.sort()).toEqual([`entities entities[${k}].kind`, `entities entities[${k}].world`]);
     const wd = workDir(paths(), input.customer);
     expect(countUnclassified(readEntities(wd))).toBe(0);
@@ -135,7 +135,7 @@ describe('FR-213 AC-509 生成パイプラインが作る顧客パックの世�
 
   it('FR-213 AC-509 verify:pack は、生成した顧客パック（--generated）の区分なしを項目 1 の位置つきの不合格にし、手作りの顧客パックでは警告のまま（AC-490）', async () => {
     const input = { customer: '検証商事', projectName: 'Z', intensity: 'Showcase' as const, materials: [] };
-    await runPipeline('build', input, { paths: paths(), consent: () => true, generator: mockGenerator, smoke: mockSmoke, launcher, log });
+    await runPipeline('build', input, { paths: paths(), live: true, generator: mockGenerator, smoke: mockSmoke, launcher, log });
     const wd = workDir(paths(), input.customer);
     const k = untwinnedIndex(1);
     const json = readEntities(wd);

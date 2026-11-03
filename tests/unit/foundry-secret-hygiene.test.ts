@@ -60,9 +60,9 @@ const post = (url: string, p: string, b: unknown) => fetch(`${url}${p}`, { metho
 async function runAll(url: string): Promise<string[]> {
   const out: string[] = [];
   const keep = async (r: Response) => { out.push(`${r.status} ${await r.text()}`); };
-  await keep(await post(url, '/foundry/connection', { packId: 'P', enable: true, consent: true, confirmed: true }));
-  await keep(await post(url, '/foundry/ask', { packId: 'P', prompt: '課題の説明', consent: true }));
-  await keep(await post(url, '/foundry/review', { packId: 'P', consent: true, components: [{ id: 'c1', title: 't', text: 'x' }] }));
+  await keep(await post(url, '/foundry/connection',   { packId: 'P', enable: true, confirmed: true }));
+    await keep(await post(url, '/foundry/ask', { packId: 'P', prompt: '課題の説明' }));
+    await keep(await post(url, '/foundry/review', { packId: 'P', components: [{ id: 'c1', title: 't', text: 'x' }] }));
   await keep(await post(url, '/foundry/analyze', { packId: 'P', solution: '解決策' }));
   await keep(await fetch(`${url}/foundry/config?packId=P`));
   await keep(await fetch(`${url}/health`));

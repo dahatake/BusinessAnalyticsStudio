@@ -8,8 +8,6 @@ import { tr } from '../i18n';
 export interface FoundryChatDeps {
   relayUrl: string | undefined;
   packId: string;
-  /** 起動中の案件に了承の記録（FR-181）がある */
-  consent: boolean;
   /** 顧客パックが種別「人」を含む */
   includesPerson: boolean;
   /** 種別「人」の確認（FR-219）。含まないときは呼ばれない */
@@ -31,7 +29,7 @@ export async function sendFoundryChat(deps: FoundryChatDeps, built: FoundryPromp
     if (!g.allowed) return { kind: 'blocked', text: g.reason ?? tr('種別「人」の確認が済んでいないため、送信しませんでした。') };
   }
   const r = await (deps.ask ?? askFoundry)(deps.relayUrl, {
-    packId: deps.packId, prompt: built.prompt, consent: deps.consent,
+    packId: deps.packId, prompt: built.prompt,
     ...(deps.includesPerson ? { includesPerson: true, personConfirmed: true } : {}),
   });
   deps.usage.count(built.tokens);

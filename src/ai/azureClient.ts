@@ -8,6 +8,9 @@ export type AzureFeature = 'speech' | 'vision';
 type FetchFn = NonNullable<AiEnv['fetchFn']>;
 const defaultFetch: FetchFn = (u, i) => fetch(u, i);
 
+/** 種別「人」の確認（FR-219）。含まない案件・続行のときは allowed: true。呼び出し側が personConfirm の gatePersonConfirm で作る */
+export type PersonCheck = () => Promise<{ allowed: boolean; reason?: string }>;
+
 export interface ConnectionResult {
   ok: boolean;
   mode: 'mock' | 'connected';
@@ -17,13 +20,13 @@ export interface ConnectionResult {
 
 /** 中継プロセスに、この機能・顧客パックの実接続を登録・解除する */
 export async function setAzureConnection(
-  relayUrl: string | undefined, feature: AzureFeature, packId: string, enable: boolean, consent: boolean, fetchFn: FetchFn = defaultFetch,
+  relayUrl: string | undefined, feature: AzureFeature, packId: string, enable: boolean, fetchFn: FetchFn = defaultFetch,
 ): Promise<ConnectionResult> {
   if (!relayUrl || !isLoopbackUrl(relayUrl)) return { ok: false, mode: 'mock', reason: tr('中継プロセスの URL（localhost）が設定されていません。') };
   try {
     const res = await fetchFn(`${relayUrl}/azure/connection`, {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ feature, packId, enable, confirmed: enable, consent }),
+      body: JSON.stringify({ feature, packId, enable, confirmed: enable }),
     });
     const j = (await res.json().catch(() => ({}))) as { mode?: string; reason?: string; error?: string };
     if (!res.ok) return { ok: false, mode: 'mock', reason: j.error ?? tr('中継プロセスがエラーを返しました（{status}）', { status: res.status }) };
@@ -39,11 +42,15 @@ export type SpeechOutcome =
   /** 接続の失敗。字幕だけで進める */
   | { kind: 'error'; message: string };
 
-/** 台本の文章を音声にする。実接続が有効でなければ呼び出さず、字幕だけにする */
+/** 台本の文章を音声にする。実接続が有効でなければ呼び出さず、字幕だけにする。種別「人」を含む案件は、送る前に確認を通す（FR-219 AC-377） */
 export async function synthesizeSpeech(
-  env: { relayUrl?: string; realEnabled: boolean; packId: string; fetchFn?: FetchFn }, text: string,
+  env: { relayUrl?: string; realEnabled: boolean; packId: string; fetchFn?: FetchFn; confirmPerson?: PersonCheck }, text: string,
 ): Promise<SpeechOutcome> {
   if (!env.realEnabled || !env.relayUrl || !isLoopbackUrl(env.relayUrl)) return { kind: 'subtitle-only' };
+  if (env.confirmPerson) {
+    const g = await env.confirmPerson();
+    if (!g.allowed) return { kind: 'subtitle-only', ...(g.reason ? { reason: g.reason } : {}) };
+  }
   const f = env.fetchFn ?? defaultFetch;
   try {
     const res = await f(`${env.relayUrl}/azure/speech`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ packId: env.packId, text }) });
@@ -58,11 +65,15 @@ export async function synthesizeSpeech(
 
 export interface RelayRecognition { text: string; mock: boolean }
 
-/** 手書きの画像（PNG の base64）を認識する。失敗は Error を投げる（呼び出し側は元の手書きを残したまま通知する） */
+/** 手書きの画像（PNG の base64）を認識する。失敗は Error を投げる（呼び出し側は元の手書きを残したまま通知する）。種別「人」を含む案件は、送る前に確認を通す（FR-219 AC-377） */
 export async function recognizeViaRelay(
-  env: { relayUrl?: string; packId: string; fetchFn?: FetchFn }, imageBase64: string, strokeCount: number,
+  env: { relayUrl?: string; packId: string; fetchFn?: FetchFn; confirmPerson?: PersonCheck }, imageBase64: string, strokeCount: number,
 ): Promise<RelayRecognition> {
   if (!env.relayUrl || !isLoopbackUrl(env.relayUrl)) throw new Error(tr('中継プロセスの URL（localhost）が設定されていません'));
+  if (env.confirmPerson) {
+    const g = await env.confirmPerson();
+    if (!g.allowed) throw new Error(g.reason ?? tr('種別「人」の確認が済んでいないため、送信しませんでした。'));
+  }
   const f = env.fetchFn ?? defaultFetch;
   let res;
   try {

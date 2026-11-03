@@ -41,7 +41,7 @@ async function setup(stub: () => Promise<Response> = async () => new Response(JS
 }
 const mkFile = (name: string, content: string | Uint8Array, type = 'application/pdf') => new File([content as BlobPart], name, { type });
 const req = (file: File, o: Partial<Parameters<typeof requestAiImport>[1]> = {}) =>
-  ({ packId: 'P', file, consent: true, includesPerson: false, personConfirmed: false, ...o });
+  ({ packId: 'P', file, includesPerson: false, personConfirmed: false, ...o });
 const view = (o: Partial<FoundryView> = {}): FoundryView => ({ configured: true, endpoint: EP, host: 'h', deployment: 'd', keyMask: '', enabled: true, ...o });
 
 describe('FR-289 AC-757 AC-758 選べる条件', () => {
@@ -54,26 +54,26 @@ describe('FR-289 AC-757 AC-758 選べる条件', () => {
       let n = 0;
       target.addEventListener(FOUNDRY_CHANGED_EVENT, () => { n++; });
       const ok = (body: unknown) => (async () => new Response(JSON.stringify(body), { status: 200 })) as unknown as typeof fetch;
-      await setFoundryConnection('http://127.0.0.1:1', 'P', true, { consent: true, confirmed: true }, ok({ mode: 'connected' }));
-      await setFoundryConnection('http://127.0.0.1:1', 'P', false, { consent: true, confirmed: false }, ok({ mode: 'mock' }));
+      await setFoundryConnection('http://127.0.0.1:1', 'P', true, { confirmed: true }, ok({ mode: 'connected' }));
+      await setFoundryConnection('http://127.0.0.1:1', 'P', false, { confirmed: false }, ok({ mode: 'mock' }));
       await deleteFoundryConfig('http://127.0.0.1:1', 'P', ok(view({ configured: false, enabled: false })));
       expect(n).toBe(3);
     } finally { g.window = prev; }
   });
-  it('設定・有効化・了承のどれかが欠けると選べず、欠けた条件と設定画面への案内が示される', () => {
-    const a = aiImportAvailability(view({ configured: false, enabled: false }), false);
+  it('設定・有効化のどれかが欠けると選べず、欠けた条件と設定画面への案内が示される（顧客の了承の記録は条件にしない）', () => {
+    const a = aiImportAvailability(view({ configured: false, enabled: false }));
     expect(a.available).toBe(false);
-    expect(a.missing).toEqual(['設定', '有効化', '了承']);
+    expect(a.missing).toEqual(['設定', '有効化']);
     expect(a.guide).toContain('設定画面');
-    expect(aiImportAvailability(view({ enabled: false }), true).missing).toEqual(['有効化']);
-    expect(aiImportAvailability(view(), false).missing).toEqual(['了承']);
-    expect(aiImportAvailability(null, true).available).toBe(false);
-    expect(aiImportAvailability(view(), true)).toEqual({ available: true, missing: [], guide: '' });
+    expect(a.guide).not.toContain('了承');
+    expect(aiImportAvailability(view({ enabled: false })).missing).toEqual(['有効化']);
+    expect(aiImportAvailability(null).available).toBe(false);
+    expect(aiImportAvailability(view())).toEqual({ available: true, missing: [], guide: '' });
   });
 
   // FR-289 AC-757（接続先が Copilot SDK）
   it('FR-289 AC-757 接続先が Copilot SDK なら、ほかの条件がそろっていても選べず、欠けている条件「接続先」と「Copilot SDK では未対応」・設定画面への案内が示される', () => {
-    const a = aiImportAvailability(view({ provider: 'copilot' }), true);
+    const a = aiImportAvailability(view({ provider: 'copilot' }));
     expect(a.available).toBe(false);
     expect(a.missing).toEqual(['接続先']);
     expect(a.guide).toMatch(/欠けている条件[:：][^）]*接続先/);
@@ -102,10 +102,10 @@ describe('FR-289 AC-757 AC-758 選べる条件', () => {
     const e = await putFoundryConfig(url, 'P', { endpoint: EP, deployment: 'd', key: '', authMethod: 'entra' });
     expect(e.ok && e.view.configured && e.view.authMethod === 'entra').toBe(true);
     // 実接続を有効にすると選べる。無効に戻すと再び選べない
-    expect((await setFoundryConnection(url, 'P', true, { consent: true, confirmed: true })).mode).toBe('connected');
-    expect(aiImportAvailability(await fetchFoundryView(url, 'P'), true).available).toBe(true);
-    await setFoundryConnection(url, 'P', false, { consent: true, confirmed: false });
-    expect(aiImportAvailability(await fetchFoundryView(url, 'P'), true).available).toBe(false);
+    expect((await setFoundryConnection(url, 'P', true, { confirmed: true })).mode).toBe('connected');
+    expect(aiImportAvailability(await fetchFoundryView(url, 'P')).available).toBe(true);
+    await setFoundryConnection(url, 'P', false, { confirmed: false });
+    expect(aiImportAvailability(await fetchFoundryView(url, 'P')).available).toBe(false);
     // API キー方式でキーなしは保存できない
     await fetch(`${url}/foundry/config?packId=P`, { method: 'DELETE' });
     expect((await putFoundryConfig(url, 'P', { endpoint: EP, deployment: 'd', key: '' })).ok).toBe(false);
@@ -119,9 +119,7 @@ describe('FR-289 AC-757 AC-758 選べる条件', () => {
     await putFoundryConfig(url, 'P', { endpoint: EP, deployment: 'd', key: DUMMY_KEY });
     // 実接続が無効
     expect((await requestAiImport(url, req(f))).ok).toBe(false);
-    await setFoundryConnection(url, 'P', true, { consent: true, confirmed: true });
-    // 了承なし
-    expect((await requestAiImport(url, req(f, { consent: false }))).ok).toBe(false);
+    await setFoundryConnection(url, 'P', true, { confirmed: true });
     // 種別「人」で確認なし
     expect((await requestAiImport(url, req(f, { includesPerson: true, personConfirmed: false }))).ok).toBe(false);
     expect(calls).toHaveLength(0);
@@ -132,7 +130,7 @@ describe('FR-289 AC-759 取り込み・上限・予算・失敗', () => {
   const ready = async (stub?: () => Promise<Response>) => {
     const s = await setup(stub);
     await putFoundryConfig(s.url, 'P', { endpoint: EP, deployment: 'd', key: DUMMY_KEY });
-    await setFoundryConnection(s.url, 'P', true, { consent: true, confirmed: true });
+    await setFoundryConnection(s.url, 'P', true, { confirmed: true });
     return s;
   };
 
@@ -189,7 +187,7 @@ describe('FR-289 AC-760 キーの秘匿と送信先', () => {
     const spy = (async (u: RequestInfo | URL, i?: RequestInit) => { const r = await fetch(u, i); const c = r.clone(); seen.push(String(i?.body ?? ''), await c.text()); return r; }) as typeof fetch;
     const { url, calls } = await setup(async () => new Response(JSON.stringify({ error: `bad ${DUMMY_KEY}` }), { status: 401 }));
     await putFoundryConfig(url, 'P', { endpoint: EP, deployment: 'd', key: DUMMY_KEY });
-    await setFoundryConnection(url, 'P', true, { consent: true, confirmed: true });
+    await setFoundryConnection(url, 'P', true, { confirmed: true });
     const r = await requestAiImport(url, req(mkFile('a.pdf', '%PDF')), spy);
     expect(r.ok).toBe(false);
     expect(JSON.stringify(r)).not.toContain(DUMMY_KEY);
@@ -200,7 +198,7 @@ describe('FR-289 AC-760 キーの秘匿と送信先', () => {
     // Entra ID 方式
     await putFoundryConfig(url, 'P', { endpoint: EP, deployment: 'd', key: '', authMethod: 'entra' });
     // FR-275 AC-705: 共有の接続設定を変えたら、使う前に確認し直す
-    await setFoundryConnection(url, 'P', true, { consent: true, confirmed: true });
+    await setFoundryConnection(url, 'P', true, { confirmed: true });
     await requestAiImport(url, req(mkFile('b.pdf', '%PDF')));
     expect(calls[1]!.auth).toBe('Bearer dummy-entra-token-ABCDE');
   });

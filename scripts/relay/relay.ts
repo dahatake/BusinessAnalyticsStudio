@@ -203,7 +203,7 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
         if (req.method === 'GET' && path === '/health') {
           return json(200, { status: 'ready', copilot: (await signedIn()) ? 'signed-in' : 'signed-out', foundry: { keyConfigured: getFoundry().secret() !== null || getFoundry().entraReady() } });
         }
-        // ---- FR-282 AC-763: 接続テスト。保存済みの接続情報で最小の入力を 1 回だけ送る。了承・有効化は問わない。返すのは成功か原因種別だけ（キー・トークン・上流の本文は返さない） ----
+        // ---- FR-282 AC-763: 接続テスト。保存済みの接続情報で最小の入力を 1 回だけ送る。有効化は問わない。返すのは成功か原因種別だけ（キー・トークン・上流の本文は返さない） ----
         if (req.method === 'POST' && path === '/foundry/test') {
           const secret = getFoundry().importSecret();
           if (!secret) return json(200, { ok: false, cause: 'not-configured', message: 'Foundry の接続情報が未設定です' });
@@ -223,14 +223,14 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
         }
         // ---- FR-285: 生成AIの活用分析。共通接続（FR-275）の保管庫のエンドポイント・デプロイ名・キーと、packId 単位の有効化だけを使う。応答にキーの値・上流の本文は含めない ----
         if (req.method === 'POST' && path === '/foundry/analyze') {
-          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: unknown; solution?: unknown; consent?: boolean; includesPerson?: boolean; personConfirmed?: boolean };
+          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: unknown; solution?: unknown; includesPerson?: boolean; personConfirmed?: boolean };
           try {
             if (typeof b.packId !== 'string' || !b.packId || typeof b.solution !== 'string' || !b.solution || b.solution.length > FOUNDRY_MAX_INPUT_CHARS) throw new GenAiFoundryError('bad-request');
             if (provider.provider() === 'foundry' && !getFoundry().importSecret()) throw new GenAiFoundryError('key-missing');
             if (!foundryEnabled.has(b.packId)) throw new GenAiFoundryError('disabled');
-            // FR-285 の契約は body に packId・solution だけ（了承は有効化〈/foundry/connection〉で確かめ済み）。
-            // 画面が了承の取り消し（consent: false）や「人」の未確認を明示したときだけ、ここでも止める（AC-706）。
-            if (b.consent === false || (b.includesPerson && !b.personConfirmed)) return json(403, { error: { cause: 'disabled' } });
+            // FR-285 の契約は body に packId・solution だけ。
+            // 画面が「人」の未確認を明示したときだけ、ここでも止める（AC-706）。
+            if (b.includesPerson && !b.personConfirmed) return json(403, { error: { cause: 'disabled' } });
             if (provider.provider() === 'copilot') {
               return json(200, parseJsonText(await copilotComplete(b.packId, buildPrompt(b.solution))));
             }
@@ -279,10 +279,9 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           }
         }
         if (req.method === 'POST' && path === '/foundry/connection') {
-          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; enable?: boolean; confirmed?: boolean; consent?: boolean };
+          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; enable?: boolean; confirmed?: boolean };
           if (typeof b.packId !== 'string' || !b.packId) return json(400, { error: 'packId が必要です' });
           if (!b.enable) { nextConnectionRevision(b.packId); foundryEnabled.delete(b.packId); return json(200, { mode: 'mock' }); }
-          if (b.consent !== true) return json(403, { error: '顧客の了承の記録がないため、実接続を有効にできません', mode: 'mock' });
           if (b.confirmed !== true) return json(400, { error: '費用と送信内容の確認が必要です' });
           nextConnectionRevision(b.packId);
           foundryEnabled.delete(b.packId);
@@ -299,13 +298,12 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
         }
         // 「現状の説明」などの生成。条件が 1 つでも欠けると Foundry を呼ばない（呼び出し 0 回。FR-275 AC-706）
         if (req.method === 'POST' && path === '/foundry/ask') {
-          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; prompt?: string; consent?: boolean; includesPerson?: boolean; personConfirmed?: boolean; maxOutputTokens?: unknown; timeoutSeconds?: unknown };
+          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; prompt?: string; includesPerson?: boolean; personConfirmed?: boolean; maxOutputTokens?: unknown; timeoutSeconds?: unknown };
           if (typeof b.packId !== 'string' || !b.packId || typeof b.prompt !== 'string') return json(400, { error: 'packId・prompt が必要です' });
           // FR-276・FR-290: 呼び出し元が出力の上限（PARAM-132 など）と応答待ちの上限（PARAM-127 など）を指定できる。範囲外は無視する
           const askMaxOut = typeof b.maxOutputTokens === 'number' && Number.isFinite(b.maxOutputTokens) && b.maxOutputTokens >= 1 ? Math.min(Math.floor(b.maxOutputTokens), 32000) : undefined;
           const askTimeoutMs = opts.foundryTimeoutMs ?? (typeof b.timeoutSeconds === 'number' && Number.isFinite(b.timeoutSeconds) && b.timeoutSeconds >= 1 ? Math.min(b.timeoutSeconds, 600) * 1000 : undefined);
           const unavailable = (reason: string, message: string, status = 200) => json(status, { mode: 'unavailable', reason, message });
-          if (b.consent !== true) return unavailable('consent', '顧客の了承の記録がないため、AI は使えません');
           if (!foundryEnabled.has(b.packId)) return unavailable('disabled', 'Foundry の実接続が有効ではありません');
           const secret = getFoundry().importSecret();
           if (provider.provider() === 'foundry' && !secret) return unavailable('not-configured', 'Foundry の接続情報が未設定です');
@@ -321,14 +319,13 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
             return unavailable(kind === 'timeout' ? 'timeout' : 'error', msg, 200);
           }
         }
-        // 「Copilot で分析実行」（FR-278）。条件は /foundry/ask と同じ（了承・実接続の有効・設定・種別「人」の確認）。欠けると Foundry を呼ばない
+        // 「Copilot で分析実行」（FR-278）。条件は /foundry/ask と同じ（実接続の有効・設定・種別「人」の確認）。欠けると Foundry を呼ばない
         if (req.method === 'POST' && path === '/foundry/review') {
-          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; consent?: boolean; includesPerson?: boolean; personConfirmed?: boolean; components?: unknown };
+          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; includesPerson?: boolean; personConfirmed?: boolean; components?: unknown };
           if (typeof b.packId !== 'string' || !b.packId) return json(400, { error: 'packId が必要です' });
           const comps = parseReviewComponents(b.components);
           if (comps.length === 0) return json(400, { error: 'components が必要です' });
           const unavailable = (reason: string, message: string) => json(200, { mode: 'unavailable', reason, message });
-          if (b.consent !== true) return unavailable('consent', '顧客の了承の記録がないため、AI は使えません');
           if (!foundryEnabled.has(b.packId)) return unavailable('disabled', 'Foundry の実接続が有効ではありません');
           const secret = getFoundry().importSecret();
           if (provider.provider() === 'foundry' && !secret) return unavailable('not-configured', 'Foundry の接続情報が未設定です');
@@ -352,12 +349,11 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
         if (req.method === 'POST' && path === '/foundry/import') {
           if (provider.provider() === 'copilot') return json(409, { error: { cause: 'unsupported', message: 'Copilot SDK では未対応です。AI 取り込みには Microsoft Foundry を選択してください' } });
           const b = JSON.parse((await readBody(req, IMPORT_BODY_LIMIT)) || '{}') as {
-            packId?: string; consent?: boolean; confirmed?: boolean; includesPerson?: boolean; personConfirmed?: boolean;
+            packId?: string; confirmed?: boolean; includesPerson?: boolean; personConfirmed?: boolean;
             fileName?: string; mime?: string; size?: number; dataBase64?: string;
           };
           const fail = (status: number, cause: string, extra: Record<string, unknown> = {}, message?: string) => json(status, { error: { cause, ...extra, ...(message ? { message } : {}) } });
           if (typeof b.packId !== 'string' || !b.packId || typeof b.dataBase64 !== 'string' || typeof b.fileName !== 'string') return fail(400, 'bad-request');
-          if (b.consent !== true) return fail(403, 'consent');
           if (!foundryEnabled.has(b.packId)) return fail(403, 'disabled');
           const secret = getFoundry().importSecret();
           if (!secret) return fail(503, 'key-missing');
@@ -378,12 +374,11 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
         if (req.method === 'POST' && path === '/foundry/story-video') {
           if (provider.provider() === 'copilot') return json(409, { error: { cause: 'unsupported', message: 'Copilot SDK では未対応です。ストーリー動画には Microsoft Foundry を選択してください' } });
           const b = JSON.parse((await readBody(req)) || '{}') as {
-            packId?: string; kind?: string; usecase?: unknown; consent?: boolean; confirmed?: boolean; includesPerson?: boolean; personConfirmed?: boolean; maxOutputTokens?: number;
+            packId?: string; kind?: string; usecase?: unknown; confirmed?: boolean; includesPerson?: boolean; personConfirmed?: boolean; maxOutputTokens?: number;
           };
           const fail = (status: number, cause: string, extra: Record<string, unknown> = {}) => json(status, { error: { cause, ...extra } });
           const uc = parseUseCase(b.usecase);
           if (typeof b.packId !== 'string' || !b.packId || (b.kind !== 'storyboard' && b.kind !== 'animation') || !uc) return fail(400, 'bad-request');
-          if (b.consent !== true) return fail(403, 'consent');
           if (!foundryEnabled.has(b.packId)) return fail(403, 'disabled');
           const secret = getFoundry().importSecret();
           if (!secret) return fail(503, 'key-missing');
@@ -425,11 +420,9 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
           }
         }
         if (req.method === 'POST' && path === '/connection') {
-          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; enable?: boolean;           confirmed?: boolean; consent?: boolean };
+          const b = JSON.parse((await readBody(req)) || '{}') as { packId?: string; enable?: boolean; confirmed?: boolean };
           if (typeof b.packId !== 'string' || !b.packId) return json(400, { error: 'packId が必要です' });
           if (b.enable) {
-                      // FR-181: 顧客の了承の記録（利用者の自己申告）がない案件は、実接続を有効にできない
-                      if (b.consent !== true) return json(403, { error: '顧客の了承の記録がないため、実接続を有効にできません', mode: 'mock' });
                       if (b.confirmed !== true) return json(400, { error: '送信内容の確認が必要です' });
             if (!(await signedIn())) return json(409, { error: 'Copilot にサインインしていません', mode: 'mock' });
             enabled.add(b.packId);
@@ -442,14 +435,13 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
         if (path.startsWith('/azure/')) {
           const az = opts.azure;
           if (req.method === 'POST' && path === '/azure/connection') {
-            const b = JSON.parse((await readBody(req)) || '{}') as { feature?: string; packId?: string; enable?: boolean; confirmed?: boolean; consent?: boolean };
+            const b = JSON.parse((await readBody(req)) || '{}') as { feature?: string; packId?: string; enable?: boolean; confirmed?: boolean };
             if (!AZURE_FEATURES.includes(b.feature as AzureFeature) || typeof b.packId !== 'string' || !b.packId) return json(400, { error: 'feature・packId が必要です' });
             const feature = b.feature as AzureFeature;
             if (!b.enable) { az?.disable(feature, b.packId); return json(200, { mode: 'mock' }); }
-            if (b.consent !== true) return json(403, { error: '顧客の了承の記録がないため、実接続を有効にできません', mode: 'mock' });
             if (b.confirmed !== true) return json(400, { error: '送信内容の確認が必要です' });
             if (!az) return json(200, { mode: 'mock', reason: 'キーが未設定のため、モックのまま動作します' });
-            const r = az.enable(feature, b.packId, true);
+            const r = az.enable(feature, b.packId);
             return json(200, r.ok ? { mode: 'connected' } : { mode: 'mock', reason: r.reason });
           }
           if (req.method === 'POST' && path === '/azure/speech') {
