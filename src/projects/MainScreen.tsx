@@ -2,7 +2,7 @@
 // 手順: 企業を登録 → Project を作成 → Project を開く → 分析を開始（分析手法の選択は分析画面で行う）。
 // 手順に含まれない機能（分析のコンポーネント・ツールバーなど）は並べない。アプリの起動直後に表示する（FR-144 AC-398）。
 import { useState } from 'react';
-import { Button, MessageBar, MessageBarBody, Text, Title2, makeStyles, tokens } from '@fluentui/react-components';
+import { Button, MessageBar, MessageBarBody, Text, Title1, makeStyles, tokens } from '@fluentui/react-components';
 import { NameDialog, UnsavedDialog } from './dialogs';
 import { WorkTargetPicker } from './WorkTargetPicker';
 import { useWorkTargetUi } from './workTargetUi';
@@ -17,9 +17,16 @@ import { useT } from '../i18n';
 const useStyles = makeStyles({
   root: {
     boxSizing: 'border-box', minHeight: '100vh', display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalL,
-    padding: `${tokens.spacingVerticalXXL} ${tokens.spacingHorizontalXXL}`, maxWidth: '960px', marginLeft: 'auto', marginRight: 'auto',
+    padding: `${tokens.spacingVerticalXXL} ${tokens.spacingHorizontalXXL}`, maxWidth: '1280px', width: '100%', marginLeft: 'auto', marginRight: 'auto',
     backgroundColor: tokens.colorNeutralBackground1, color: tokens.colorNeutralForeground1,
   },
+  // 本文（手順・企業一覧）は左、補足パネル（はじめての方へ）は右。狭い画面（PARAM-029 相当・高い拡大率）では本文の下へ回る（FR-266 AC-821）
+  layout: {
+    display: 'flex', flexDirection: 'row', alignItems: 'flex-start', gap: tokens.spacingHorizontalXXL,
+    '@media (max-width: 720px)': { flexDirection: 'column', alignItems: 'stretch', gap: tokens.spacingVerticalL },
+  },
+  body: { flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalL, width: '100%' },
+  side: { flex: '0 1 420px', minWidth: 0, width: '100%', '@media (min-width: 721px)': { width: '420px' } },
   guide: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS },
   step: {
     display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalM, flexWrap: 'wrap',
@@ -57,6 +64,13 @@ export function MainScreen() {
 
   const active = st.projects.filter((p) => !p.archived);
 
+  // h1: 開いている Project → 端末内に記録のある直近に開いた Project の「企業名-Project名」。なければ「メイン画面」（FR-186 AC-819）
+  const shownProject = [st.openId, st.lastOpenedId]
+    .map((pid) => (pid ? st.projects.find((p) => p.id === pid && !p.archived) : undefined))
+    .find((p) => p !== undefined);
+  const shownCompany = shownProject ? st.companies.find((x) => x.id === shownProject.companyId) : undefined;
+  const heading = shownProject && shownCompany ? `${shownCompany.name}-${shownProject.name}` : t('メイン画面');
+
   // いま行う手順（支援技術にも aria-current で伝える）
   const current = st.companies.length === 0 ? 0 : active.length === 0 ? 1 : 2;
 
@@ -93,7 +107,9 @@ export function MainScreen() {
 
   return (
     <main className={s.root} data-testid="main-screen" aria-label={t('メイン画面')}>
-      <Title2 as="h1">{t('メイン画面')}</Title2>
+      <Title1 as="h1">{heading}</Title1>
+      <div className={s.layout}>
+      <div className={s.body}>
       <Text>{t('企業を登録し、Project を作成して開き、分析を始めます（QuickStart の手順）。')}</Text>
       <ol className={s.guide} data-testid="main-guide" aria-label={t('始め方の手順')}>
         {STEPS.map((step, i) => (
@@ -104,7 +120,6 @@ export function MainScreen() {
           </li>
         ))}
       </ol>
-      <GettingStarted />
       {notice ? <MessageBar intent="warning" role="alert" layout="multiline"><MessageBarBody>{t(notice)}</MessageBarBody></MessageBar> : null}
       {st.companies.map((c) => (
         <section key={c.id} role="region" aria-label={t('企業 {name}', { name: c.name })} className={s.company}>
@@ -122,6 +137,9 @@ export function MainScreen() {
           </ul>
         </section>
       ))}
+      </div>
+      <aside className={s.side} aria-label={t('補足')}><GettingStarted /></aside>
+      </div>
       {pickerOpen ? <WorkTargetPicker projects={st.projects} companies={st.companies} showDemo={showDemo} currentId={st.openId} onChoose={choose} onClose={() => setPickerOpen(false)} /> : null}
       {pending ? <UnsavedDialog onCancel={() => setPending(null)} onConfirm={() => { go(pending.target, pending.demo); setPending(null); }} /> : null}
       {modal?.kind === 'company' ? (

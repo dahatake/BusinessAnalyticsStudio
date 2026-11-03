@@ -47,7 +47,9 @@ export const PACK_SAMPLE = 'examples/mono';
 export const PACK_PROMPT_POINTS = [
   'あなたは、商談の分析ボード用の「顧客パック」を作る調査・編集担当です。',
   '顧客名と Project 名を入れて、顧客とブランドを調べ、出典つきで次のファイルを作ってください。',
-  '- public/data/ の customer.json, entities.json, issues.json, products.json, plan.json, architecture.json, mocks.json, show.json, sources.json',
+  '- public/data/ に、次の JSON を作る',
+  '  customer, entities, issues, products, plan,',
+  '  architecture, mocks, show, sources（各 .json）',
   '- public/brand/brand-profile.json',
   '規則: 添付の schema/*.json に従う。出典のない数値は置かない。AI が作ったデータは「AI生成」にする。',
 ].join('\n');

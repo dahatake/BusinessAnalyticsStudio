@@ -20,6 +20,8 @@ interface Snapshot {
   companies: Company[];
   projects: Project[];
   openId: string | null;
+  /** 直近に開いた Project（FR-186 AC-819）。古い保存内容にはない */
+  lastOpenedId?: string | null;
   seq: number;
   analyses: Record<string, Analysis>;
   steps: Record<string, number>;
@@ -46,6 +48,7 @@ export function snapshot(): Snapshot {
     companies: p.companies,
     projects: p.projects,
     openId: p.openId,
+    lastOpenedId: p.lastOpenedId,
     seq: p.seq,
     analyses: useAnalyses.getState().byProject,
     steps: useStepper.getState().byProject,
@@ -86,9 +89,10 @@ export function restore(storage: Store): boolean {
   const companies = (data.companies as Company[]).filter((c) => isObj(c) && typeof c.id === 'string' && typeof c.name === 'string');
   const projects = (data.projects as Project[]).filter((p) => isObj(p) && typeof p.id === 'string' && typeof p.companyId === 'string' && typeof p.name === 'string');
   const openId = typeof data.openId === 'string' && projects.some((p) => p.id === data.openId && !p.archived) ? data.openId : null;
+  const lastOpenedId = typeof data.lastOpenedId === 'string' && projects.some((p) => p.id === data.lastOpenedId) ? data.lastOpenedId : openId;
   const steps = isObj(data.steps) ? (data.steps as Record<string, number>) : {};
   const analyses = isObj(data.analyses) ? (data.analyses as Record<string, Analysis>) : {};
-  useProjects.setState({ companies, projects, openId, seq: typeof data.seq === 'number' ? data.seq : companies.length + projects.length });
+  useProjects.setState({ companies, projects, openId, lastOpenedId, seq: typeof data.seq === 'number' ? data.seq : companies.length + projects.length });
   useAnalyses.setState({ byProject: analyses });
   useStepper.setState({ byProject: steps });
   const okr = isObj(data.okr) ? (data.okr as Record<string, OkrSet>) : {};

@@ -163,7 +163,8 @@ export function CommandRow({ label, command }: { label: string; command: string 
   return (
     <div className={s.cmd}>
       <Text>{t(label)}</Text>
-      <code ref={ref} className={s.code}>{command}</code>
+      {/* 長いコマンドは、狭いパネルで読みやすいよう引数ごとに行を分ける（コピーされる文字列は command のまま） */}
+      <code ref={ref} className={s.code}>{command.split(/ (?=--(?:customer|project) )/).map((part, i) => <span key={i} style={{ display: 'block' }}>{i > 0 ? ' ' : ''}{part}</span>)}</code>
       <CopyButton text={command} label={label} codeRef={ref} />
     </div>
   );
@@ -177,7 +178,7 @@ export function PackSection({ withHeading = true }: { withHeading?: boolean }) {
   return (
     <div className={s.block}>
       {withHeading ? <GuideH>顧客パックとは</GuideH> : null}
-      <Text>{t('顧客パックは、顧客ごとの課題・解決策・計画・ブランド（色・ロゴ）などをまとめたデータのフォルダーです（public/data/ と public/brand/ ほか）。')}</Text>
+      <Text>{t('顧客パックは、顧客ごとの課題・解決策・計画・ブランド（色・ロゴ）などをまとめたフォルダーです。')}{t('置き場所は、public/data/ と public/brand/ ほかです。')}</Text>
       <Text weight="semibold">{t('顧客パックがなくても、デモ（お手本パック {sample}/）で試せます。', { sample: PACK_SAMPLE })}</Text>
       <GuideH level={4}>作り方は 3 通り</GuideH>
       <ol className={s.list}>
