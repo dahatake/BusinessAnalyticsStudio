@@ -1,6 +1,6 @@
 // アプリの外枠: ヘッダー（顧客名・操作）、ナビゲーション、ドック、ワークスペース。
 // 広い画面では左にナビゲーション、狭い画面では上に横並びに組み替える（横スクロールを強いない）。
-import { useEffect, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Button, Text, Tooltip, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { PanelLeftContract20Regular, PanelLeftExpand20Regular } from '@fluentui/react-icons';
 import { useLayout } from '../store/layout';
@@ -11,6 +11,9 @@ import { useT } from '../i18n';
 import { WorkspacePanel } from '../workspace/WorkspacePanel';
 import { ZoneLayer } from '../workspace/ZoneLayer';
 import { useActiveWorkspace } from '../store/taskWorkspaces';
+import { useWindowStatus } from '../store/windowStatus';
+import { navSummary } from '../workspace/windowStates';
+import { NavTaskbarMark } from './NavTaskbarMark';
 import { frameSurfaceStyle, useFrameMaterial } from '../theme/frameMaterial';
 
 const useStyles = makeStyles({
@@ -61,7 +64,7 @@ const useStyles = makeStyles({
   mainIsolated: { isolation: 'isolate' },
   rootMin: { gridTemplateColumns: '56px 1fr', '@media (max-width: 720px)': { gridTemplateColumns: '1fr' } },
   navMin: { overflowX: 'hidden', alignItems: 'center', paddingInline: tokens.spacingHorizontalS },
-  navButton: { justifyContent: 'flex-start', minHeight: '32px' },
+  navButton: { justifyContent: 'flex-start', minHeight: '32px', position: 'relative' },
   // アイコンだけの列（FR-151）。当たり判定は 24 CSS px 以上
   navButtonMin: { justifyContent: 'center', minWidth: '32px', paddingInline: 0 },
   // 「メニューを最小化」の文字を上下とも欠けさせない（FR-221 AC-517）。Fluent のボタンは overflow: hidden で行の高さが 20px のため、
@@ -104,6 +107,10 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
   const navMin = useLayout((st) => st.navMin);
   const maximizedKey = useLayout((st) => st.maximized);
   const wsActive = useActiveWorkspace();
+  // 左メニューのバッジ・青いバー（FR-295 AC-824）。一覧（WindowList）が求めた状態と同じものを使う
+  const winStates = useWindowStatus((st) => st.states);
+  const winScreenOf = useWindowStatus((st) => st.screenOf);
+  const summary = useMemo(() => navSummary(winStates, winScreenOf), [winStates, winScreenOf]);
   const rootRef = useRef<HTMLDivElement>(null);
   useFrameMaterial(rootRef); // 枠の面（ヘッダー・Workspace Switcher・ゾーンの境界）の半透明の色（FR-300）
   // モーダルのダイアログが開いている間は、背景（アプリ本体）を操作・支援技術の対象から外す（WAI-ARIA のモーダルの作法）。
@@ -182,6 +189,7 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
         {screens.map((sc) => {
           const Icon = sc.icon;
           const active = sc.key === activeKey;
+          const win = summary[sc.key];
           const button = (
             <Button
               key={sc.key}
@@ -197,6 +205,7 @@ export function AppShell({ title, screens, activeKey, onSelect, headerExtra, act
               onClick={() => onSelect(sc.key)}
             >
               {navMin ? null : sc.label}
+              {win ? <NavTaskbarMark screenKey={sc.key} count={win.count} hasFront={win.hasFront} /> : null}
             </Button>
           );
           // 最小化中は、ホバー・フォーカスで画面名を出す（支援技術には aria-label で伝わる）

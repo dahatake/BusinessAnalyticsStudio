@@ -60,6 +60,49 @@ export function switchKey(e: { key: string; ctrlKey: boolean; altKey: boolean; s
   return e.key === 'PageDown' ? 'down' : e.key === 'PageUp' ? 'up' : null;
 }
 
+// ---- 左メニューのタスクバー化（FR-295 AC-824・AC-825。契約: CONTRACT.md §34）----
+/** コンポーネント（Window）が属する画面（左メニューの項目）の key。宣言がなければ自分自身 */
+export function screenKeyOf(sc: { key: string; screenKey?: string }): string {
+  return sc.screenKey ?? sc.key;
+}
+
+export interface NavSummary {
+  /** 閉じていない Window の数（表示中・最小化中。閉じたものは数えない） */
+  count: number;
+  /** 前面の Window がある（長い青いバー）か。false は前面でない Window だけ（短い青いバー） */
+  hasFront: boolean;
+}
+
+/** 画面ごとの Window の件数と前面の有無。Window がない（すべて閉じた・未表示の）画面は含めない */
+export function navSummary(states: Readonly<Record<string, WindowState>>, screenOf: Readonly<Record<string, string>>): Record<string, NavSummary> {
+  const out: Record<string, NavSummary> = {};
+  for (const [k, st] of Object.entries(states)) {
+    if (st === 'closed') continue;
+    const sc = screenOf[k] ?? k;
+    const cur = out[sc] ?? { count: 0, hasFront: false };
+    out[sc] = { count: cur.count + 1, hasFront: cur.hasFront || st === 'front' };
+  }
+  return out;
+}
+
+/**
+ * 左メニューの項目を押したときの対象と、その時点の状態。
+ * 前面の Window があればそれ（→最小化）、なければ最後に前面にした開いている Window（最小化中→復元、表示中→前面へ）、
+ * 開いているものがなければ閉じた Window（最後に使ったもの。なければ画面と同じ key のもの、なければ先頭）を表示する。属する Window がなければ null
+ */
+export function navTarget(screen: string, states: Readonly<Record<string, WindowState>>, screenOf: Readonly<Record<string, string>>, usedAt: Readonly<Record<string, number>>): { key: string; state: WindowState } | null {
+  const mine = Object.keys(states).filter((k) => (screenOf[k] ?? k) === screen);
+  const latest = (ks: string[]) => ks.reduce<string | undefined>((best, k) => (best === undefined || (usedAt[k] ?? 0) > (usedAt[best] ?? 0) ? k : best), undefined);
+  const front = mine.find((k) => states[k] === 'front');
+  // 前面でも使用記録がない（usedAt が 0）Window は、既定で前面になっているだけなので最小化せず前面に出す（使用後に押すと最小化）
+  if (front !== undefined) return { key: front, state: (usedAt[front] ?? 0) > 0 ? 'front' : 'visible' };
+  const open = latest(mine.filter((k) => states[k] !== 'closed'));
+  if (open !== undefined) return { key: open, state: states[open]! };
+  const closed = mine.filter((k) => states[k] === 'closed');
+  const key = latest(closed.filter((k) => (usedAt[k] ?? 0) > 0)) ?? (closed.includes(screen) ? screen : closed[0]);
+  return key === undefined ? null : { key, state: 'closed' };
+}
+
 /** 表示中（前面・表示中）のコンポーネントの数 */
 export function shownCount(states: Readonly<Record<string, WindowState>>): number {
   return Object.values(states).filter((s) => s === 'front' || s === 'visible').length;

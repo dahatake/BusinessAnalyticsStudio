@@ -168,7 +168,7 @@ describe('FR-013 AC-591 AC-592 free maximize host and persisted restore', () => 
         expect(Number(host.style.zIndex)).toBeGreaterThan(Number(other.style.zIndex));
         expect(st().floats[persona()]![key]).toEqual(original);
         expect(saved()).toEqual(stored);
-        if (restore === 'button') fireEvent.click(within(section(key)).getByRole('button', { name: '通常表示' }));
+        if (restore === 'button') fireEvent.click(within(section(key)).getByRole('button', { name: '元に戻す' }));
         else fireEvent.keyDown(section(key), { key: 'Escape' });
         expect([host.style.left, host.style.top, host.style.width, host.style.height]).toEqual(initialStyle);
         expect(saved()).toEqual(stored);

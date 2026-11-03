@@ -496,9 +496,9 @@ export const useLayout = create<LayoutState>()(
       name: 'edb.layout',
       version: 1,
       storage: layoutStorage as never,
-      partialize: (s) => ({ persona: s.persona, floats: s.floats, pinned: s.pinned, views: s.views, screenView: s.screenView, zOrder: s.zOrder, layouts: s.layouts, autoSize: s.autoSize, manual: s.manual, minimized: s.minimized, closed: s.closed, navMin: s.navMin, tiers: s.tiers, autoOff: s.autoOff, moved: s.moved, userLaid: s.userLaid }),
+      partialize: (s) => ({ persona: s.persona, floats: s.floats, pinned: s.pinned, views: s.views, screenView: s.screenView, zOrder: s.zOrder, usedAt: s.usedAt, layouts: s.layouts, autoSize: s.autoSize, manual: s.manual, minimized: s.minimized, closed: s.closed, navMin: s.navMin, tiers: s.tiers, autoOff: s.autoOff, moved: s.moved, userLaid: s.userLaid }),
       merge: (persisted, current) => {
-        const p = (persisted ?? {}) as Partial<Pick<LayoutState, 'persona' | 'floats' | 'pinned' | 'views' | 'screenView' | 'zOrder' | 'layouts' | 'autoSize' | 'manual' |         'minimized' | 'navMin' | 'tiers' | 'autoOff' | 'moved' | 'userLaid'>>;
+        const p = (persisted ?? {}) as Partial<Pick<LayoutState, 'persona' | 'floats' | 'pinned' | 'views' | 'screenView' | 'zOrder' | 'usedAt' | 'layouts' | 'autoSize' | 'manual' |         'minimized' | 'navMin' | 'tiers' | 'autoOff' | 'moved' | 'userLaid'>>;
                 const tiers: Partial<Record<Persona, TierOverrides>> = {};
                 const autoOff: Partial<Record<Persona, boolean>> = {};
                 const moved: Partial<Record<Persona, string[]>> = {};
@@ -569,7 +569,9 @@ export const useLayout = create<LayoutState>()(
           if (isViewSetting(sv)) screenView[name] = sv;
         }
         const zOrder = Array.isArray(p.zOrder) && p.zOrder.every((k) => typeof k === 'string') ? p.zOrder : [];
-        return { ...current, tiers, autoOff, moved, userLaid, floats, pinned, views, screenView, zOrder, persona, layouts, manual, minimized, closed, navMin: p.navMin === true, autoSize: typeof p.autoSize === 'boolean' ? p.autoSize : true };
+        const usedAt: Record<string, number> = {};
+        if (p.usedAt && typeof p.usedAt === 'object') for (const [k, v] of Object.entries(p.usedAt)) if (typeof v === 'number' && Number.isFinite(v) && v > 0) { usedAt[k] = v; if (v > useClock) useClock = v; }
+        return { ...current, usedAt, tiers, autoOff, moved, userLaid, floats, pinned, views, screenView, zOrder, persona, layouts, manual, minimized, closed, navMin: p.navMin === true, autoSize: typeof p.autoSize === 'boolean' ? p.autoSize : true };
       },
     },
   ),
