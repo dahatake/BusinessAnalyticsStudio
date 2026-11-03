@@ -41,7 +41,7 @@ npm run relay          # ポートは .env の EDB_RELAY_PORT（既定 8787）�
 |---|---|
 | `GET /health` | 生存確認。アプリは `probeRelay` でこれを呼び、状態表示（モック／接続済み）を決める |
 | `POST /ask` | 従来の 5 種の AI 処理の入口。Copilot SDK 固定。共通接続の選択の対象外 |
-| `GET・PUT /ai/provider` | 共通生成AIの接続先（`foundry` / `copilot`）。再起動後も保持 |
+| `GET・PUT /ai/provider` | 共通生成AIの接続先（`foundry` / `copilot`）。再起動後も保持 |。接続先が未保存で SDK が認証済みなら、起動時に自動で `copilot` が既定になります（保存・認証情報の記録・外部送信の有効化はしません。明示保存した接続先は変わりません）
 | `GET・PUT・DELETE /copilot/config` | 認証方式・モデル名・暗号化トークンの管理（トークンの値は取得不可） |
 | `GET・POST /copilot/signin` | Web サインインの開始・固定 URL とコード・SDK 認証状態の取得 |
 | `POST /foundry/ask・review・analyze` | 共通接続で選択した先だけに送信 |

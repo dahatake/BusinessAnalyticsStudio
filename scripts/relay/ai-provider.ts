@@ -13,16 +13,26 @@ export function openAiProvider(dataDir = defaultDataDir(), options: VaultOptions
     try { const v = JSON.parse(fs.readFileSync(file, 'utf8')); return { provider: v.provider === 'copilot' ? 'copilot' : 'foundry', authMethod: v.authMethod === 'token' ? 'token' : 'signin', model: typeof v.model === 'string' ? v.model : '' }; }
     catch { return { provider: 'foundry', authMethod: 'signin', model: '' }; }
   };
-  const write = (v: ReturnType<typeof read>) => { fs.mkdirSync(dataDir, { recursive: true, mode: 0o700 }); fs.writeFileSync(file, JSON.stringify(v), { mode: 0o600 }); };
+  // FR-011 AC-817/818: true only when the user explicitly saved a provider (ai-provider.json has "provider").
+  const explicit = (): boolean => { try { const v = JSON.parse(fs.readFileSync(file, 'utf8')); return v.provider === 'copilot' || v.provider === 'foundry'; } catch { return false; } };
+  let auto: Provider | null = null; // in-memory default only; never persisted
+  const write = (v: ReturnType<typeof read>, withProvider = true) => {
+    fs.mkdirSync(dataDir, { recursive: true, mode: 0o700 });
+    const { provider, ...rest } = v;
+    fs.writeFileSync(file, JSON.stringify(withProvider ? v : rest), { mode: 0o600 });
+  };
   return {
-    provider: () => read().provider,
-    setProvider(provider: Provider) { write({ ...read(), provider }); },
+    provider: (): Provider => (explicit() ? read().provider : auto ?? read().provider),
+    isExplicit: explicit,
+    /** Auto-select a provider in memory only when none was explicitly saved. Returns whether it was applied. */
+    autoSelect(provider: Provider): boolean { if (explicit()) return false; auto = provider; return true; },
+    setProvider(provider: Provider) { auto = null; write({ ...read(), provider }); },
     view() { const v = read(); const tokenConfigured = !!vault.secret(); return { authMethod: v.authMethod, model: v.model, tokenConfigured, tokenMask: tokenConfigured ? '••••••••' : '' }; },
     config(): CopilotConfig { const v = read(); return { authMethod: v.authMethod, model: v.model, ...(v.authMethod === 'token' ? { token: vault.secret()?.key } : {}) }; },
     save(input: { authMethod: 'signin' | 'token'; model: string; token?: string }) {
       if (input.model.length > 200 || /[\r\n\x00]/.test(input.model)) throw new Error('モデル名を確認してください');
       if (input.authMethod === 'token' && input.token !== undefined && input.token.trim()) vault.save({ endpoint: 'https://github.com', deployment: 'copilot', key: input.token });
-      write({ ...read(), authMethod: input.authMethod, model: input.model.trim() });
+      write({ ...read(), authMethod: input.authMethod, model: input.model.trim() }, explicit());
     },
     removeToken() { vault.remove(); },
   };
