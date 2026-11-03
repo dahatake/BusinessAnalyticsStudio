@@ -13,6 +13,44 @@ const bash = isWin
   : 'bash';
 const launchers = isWin ? ['start.cmd', 'start.ps1', 'start.sh'] : ['start.sh'];
 
+// FR-141 AC-220: unlike the shared order-only shim, build consumes the current
+// source. Start serves only the artifact, then probes it over real loopback HTTP.
+// The probe lives in this child because runLauncher blocks the test process.
+function useSourceServingNpm(sb) {
+  fs.writeFileSync(path.join(sb.bin, 'shim.mjs'), `
+import fs from 'node:fs';
+import http from 'node:http';
+const cmd = process.argv.slice(2).join(' ');
+fs.appendFileSync(process.env.FAKE_NPM_LOG, cmd + '\\n');
+if (cmd === 'run build') {
+  const source = fs.readFileSync('source.txt', 'utf8');
+  fs.mkdirSync('dist', { recursive: true });
+  fs.writeFileSync('dist/index.html', '<html><body>' + source + '</body></html>');
+} else if (cmd === 'start') {
+  const server = http.createServer((_request, response) => {
+    response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    response.end(fs.readFileSync('dist/index.html'));
+  });
+  await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
+  const url = 'http://127.0.0.1:' + server.address().port + '/';
+  console.log('Local: ' + url);
+  try {
+    const response = await fetch(url, { signal: AbortSignal.timeout(10_000) });
+    console.log('HTTP-RESPONSE: ' + JSON.stringify({
+      status: response.status, body: await response.text(),
+    }));
+  } finally {
+    await new Promise(resolve => {
+      server.close(resolve);
+      server.closeAllConnections();
+    });
+  }
+} else {
+  throw new Error('Unexpected npm invocation: ' + cmd);
+}
+`);
+}
+
 function runLauncher(script, sb, fail = []) {
   if (script === (isWin ? 'start.cmd' : 'start.sh')) return runScript(sb, { fail });
   if (script === 'start.sh') {
@@ -43,11 +81,13 @@ for (const script of launchers) {
     test.each([true, false])('AC-220 builds before start with installed dependencies (dist=%s), including relaunch', (dist) => {
       const sb = makeSandbox({ nodeModules: true, dist });
       try {
+        useSourceServingNpm(sb);
+        const responses = [];
         for (const source of ['first source', 'changed source']) {
           fs.writeFileSync(path.join(sb.dir, 'source.txt'), source);
-          // A stale artifact must be replaced when dist already exists;
-          // leave it absent for the first run of the dist=false case.
-          if (fs.existsSync(path.join(sb.dir, 'dist'))) {
+          // Seed stale dist only initially; on relaunch preserve the first
+          // build so the changed HTTP response proves source refresh.
+          if (responses.length === 0 && fs.existsSync(path.join(sb.dir, 'dist'))) {
             fs.writeFileSync(path.join(sb.dir, 'dist/index.html'), 'STALE');
           }
           fs.rmSync(sb.log, { force: true });
@@ -56,8 +96,15 @@ for (const script of launchers) {
           expect(result.status, result.output).toBe(0);
           expect(result.calls).toEqual(['run build', 'start']);
           expect(result.output).toMatch(/http:\/\/127\.0\.0\.1:\d+/);
-          expect(fs.readFileSync(path.join(sb.dir, 'dist/index.html'), 'utf8')).not.toBe('STALE');
+          const html = `<html><body>${source}</body></html>`;
+          expect(fs.readFileSync(path.join(sb.dir, 'dist/index.html'), 'utf8')).toBe(html);
+          const probe = result.output.match(/^HTTP-RESPONSE: (.+)\r?$/m);
+          expect(probe, result.output).not.toBeNull();
+          const response = JSON.parse(probe[1]);
+          expect(response).toEqual({ status: 200, body: html });
+          responses.push(response.body);
         }
+        expect(responses[1]).not.toBe(responses[0]);
       } finally { cleanup(sb); }
     });
 
