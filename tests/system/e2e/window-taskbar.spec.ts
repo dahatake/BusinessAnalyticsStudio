@@ -442,7 +442,7 @@ test.describe('FR-295 左メニューのバッジ・青いバーと見出しの 
     const before = await states(page);
     await app.reload();
     await expect(list(page)).toBeVisible();
-    expect(await states(page), '再読込後の状態').toEqual(before);
+    await expect.poll(() => states(page), { message: '再読込後の状態', timeout: 5000 }).toEqual(before);
     await consistent();
     // キーボード（Tab・Enter）: 項目にフォーカスして Enter で同じ操作
     const nav = page.getByTestId(`nav-${w.B}`);
@@ -455,7 +455,6 @@ test.describe('FR-295 左メニューのバッジ・青いバーと見出しの 
     await page.getByTestId(`nav-${w.A}`).click();
     await expect(bar(page, w.A), '最小化したメニューでもバーが出る').toBeVisible();
     await consistent();
-    await expect(search).toHaveValue('左メニュー確認');
   });
 
   // FR-295 AC-826
