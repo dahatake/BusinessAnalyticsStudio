@@ -178,6 +178,7 @@ export default {
   // ガイド
   'はじめての方へ': 'For first-time users',
   '使い方を見る': 'See how to use',
+  'はじめての方向けの使い方（ウェルカム）を見る': 'Open the welcome guide for first-time users',
   'この説明は、いつでもここで読めます。': 'You can read this explanation here at any time.',
   '顧客パック': 'Customer pack',
   '顧客パックとは': 'What is a customer pack?',
@@ -200,7 +201,6 @@ export default {
   'お手本 {sample} を複製して、手で書き換えます。': 'Duplicate the sample {sample} and rewrite it by hand.',
   '起動したら、ブラウザーで {url} を開きます。': 'Once started, open {url} in your browser.',
   'カード {i} / {n}': 'Card {i} / {n}',
-  '次回から表示しない': 'Do not show next time',
   'スキップ': 'Skip',
   '戻る': 'Back',
   '次へ': 'Next',

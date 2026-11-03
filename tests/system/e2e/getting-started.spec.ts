@@ -1,6 +1,6 @@
 // System Test: 画面内ガイド（FR-266〜FR-268・FR-269・FR-270・FR-272。要求定義書 docs/requirements/analysis-projects.md の system レベルの AC）
 // 期待値は受入基準だけから決める。画面の探し方: 「はじめての方へ」region・「使い方を見る」button・「顧客パック」region・「使い方」button・ウェルカム dialog。
-// 取り決め: 初回ウェルカムは `?e2e=1` だけでは出さない。URL に `welcome=1` を付けたときだけ出す（既存 System Test を妨げないため）。
+// 取り決め: ウェルカムは起動時に自動では出さない（FR-267 改訂 2026-11-03）。メイン画面の右上のアイコン（名前「使い方を見る」）から開く。
 import type { Page } from '@playwright/test';
 import { test, expect, pressOpeningEscape, chooseWorkTarget } from '../support/fixtures';
 
@@ -125,47 +125,58 @@ test.describe('FR-266 「はじめての方へ」', () => {
   });
 });
 
-test.describe('FR-267 ウェルカムのダイアログ', () => {
-  // FR-267 AC-678
-  test('FR-267 AC-678 確認済みの記録がないと、ウェルカムが 1 回出て、次へ・戻るでカードが替わり、スキップで閉じる。「次回から表示しない」を選んで閉じると再読込後に出ない', async ({ page, start }) => {
-    const { app, main } = await startAtMain(page, start, '?welcome=1');
-    const dlg = page.getByRole('dialog', { name: /ウェルカム|はじめ|使い方/ });
+test.describe('FR-267 ウェルカムのウィザードの起動アイコン', () => {
+  // FR-267 AC-678（起動時は自動表示なし。右上のアイコンから開始。確認済みの記録・「次回から表示しない」はない）
+  test('FR-267 AC-678 起動すると最初はメイン画面でウェルカムは自動では出ず、右上のアイコン「使い方を見る」で開き、次へ・戻るでカードが替わり、スキップで閉じる。再読込でも自動では出ず、アイコンから再度開ける', async ({ page, start }) => {
+    const { app, main } = await startAtMain(page, start);
+    const wizard = () => page.getByRole('dialog', { name: /ウェルカム|はじめ|使い方/ });
+    // 初回起動（端末内に何も保存されていない）でも自動では出ない
+    await expect(wizard()).toHaveCount(0);
+    const icon = main.getByRole('button', { name: '使い方を見る' }).first();
+    await expect(icon).toBeVisible();
+    // 画面の右上にある（右半分・上部）
+    const box = (await icon.boundingBox())!;
+    const vp = page.viewportSize()!;
+    expect(box.x + box.width / 2, 'アイコンが右半分にない').toBeGreaterThan(vp.width / 2);
+    expect(box.y, 'アイコンが上部にない').toBeLessThan(vp.height / 4);
+    // ツールチップ・ラベル
+    expect((await icon.getAttribute('title')) ?? (await icon.getAttribute('aria-describedby')) ?? (await icon.getAttribute('aria-label')), 'ツールチップ・ラベルがない').toBeTruthy();
+    await icon.click();
+    const dlg = wizard();
     await expect(dlg).toBeVisible();
     const first = await dlg.innerText();
     await dlg.getByRole('button', { name: '次へ' }).click();
-    const second = await dlg.innerText();
-    expect(second).not.toEqual(first);
+    expect(await dlg.innerText()).not.toEqual(first);
     await dlg.getByRole('button', { name: '戻る' }).click();
     expect(await dlg.innerText()).toEqual(first);
-    await dlg.getByRole('checkbox', { name: '次回から表示しない' }).check();
+    // 「次回から表示しない」の選択肢はない（異常系: 廃止した機能が残っていない）
+    await expect(dlg.getByRole('checkbox', { name: '次回から表示しない' })).toHaveCount(0);
     await dlg.getByRole('button', { name: 'スキップ' }).click();
     await expect(dlg).toBeHidden();
     await expect(main).toBeVisible();
+    // 再読込・再起動でも自動では出ない
     await app.reload({ skipOpening: false });
     await pressOpeningEscape(page);
-    await expect(page.getByRole('dialog', { name: /ウェルカム|はじめ|使い方/ })).toHaveCount(0);
-  });
-
-  // FR-267 AC-678（異常系: 選ばずにスキップすると、次の起動で再び出る。welcome=1 なしでは出ない）
-  test('FR-267 AC-678 異常系: 「次回から表示しない」を選ばずにスキップすると、再読込で再び 1 回出る。welcome=1 がなければ出ない', async ({ page, start }) => {
-    const { app } = await startAtMain(page, start, '?welcome=1');
-    const dlg = page.getByRole('dialog', { name: /ウェルカム|はじめ|使い方/ });
-    await expect(dlg).toBeVisible();
-    await dlg.getByRole('button', { name: 'スキップ' }).click();
-    await expect(dlg).toBeHidden();
+    await expect(wizard()).toHaveCount(0);
+    // アイコンからいつでも再表示できる。Esc で閉じても次の起動で自動表示されない
+    await page.getByTestId('main-screen').getByRole('button', { name: '使い方を見る' }).first().click();
+    await expect(wizard()).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(wizard()).toBeHidden();
     await app.reload({ skipOpening: false });
     await pressOpeningEscape(page);
-    await expect(page.getByRole('dialog', { name: /ウェルカム|はじめ|使い方/ })).toBeVisible();
+    await expect(wizard()).toHaveCount(0);
   });
 
-  // FR-267 AC-678（異常系: 取り決め。e2e=1 だけでは出さない）
-  test('FR-267 AC-678 異常系: URL に welcome=1 がない（e2e=1 のみ）ときは、ウェルカムを自動では出さず、「使い方を見る」で開ける', async ({ page, start }) => {
-    const { main } = await startAtMain(page, start);
+  // FR-267 AC-678（異常系: 旧取り決めの welcome=1 を付けても自動では出ない）
+  test('FR-267 AC-678 異常系: URL に welcome=1 を付けても、ウェルカムは自動では出ず、「使い方を見る」で開ける', async ({ page, start }) => {
+    const { main } = await startAtMain(page, start, '?welcome=1');
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    await main.getByRole('button', { name: '使い方を見る' }).click();
+    await main.getByRole('button', { name: '使い方を見る' }).first().click();
     await expect(page.getByRole('dialog', { name: /ウェルカム|はじめ|使い方/ })).toBeVisible();
   });
 });
+
 
 test.describe('FR-268 顧客パックの説明カード', () => {
   // FR-268 AC-682

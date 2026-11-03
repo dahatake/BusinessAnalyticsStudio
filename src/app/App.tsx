@@ -54,7 +54,7 @@ import { ShortVideoButton, ShortVideoDialog } from '../show/ShortVideo';
 import { currentTopic } from '../store/presentation';
 import { ProjectsPanel } from '../projects/ProjectsPanel';
 import { MainScreen } from '../projects/MainScreen';
-import { GuideButton, GuideHost, WelcomeAuto } from '../guide';
+import { GuideButton, GuideHost } from '../guide';
 import { useMainScreen } from '../store/mainScreen';
 import { useSettingsModal } from '../store/settingsModal';
 import { SettingsButton, StatusAndSettings } from '../screens/SettingsButton';
@@ -171,7 +171,6 @@ export function App() {
       <>
         {!opened ? <Opening customerName={name} projectName={projectName} onDone={finishOpening} /> : null}
         <AudioDirector scene={scene} />
-        <WelcomeAuto ready={opened} />
         <GuideHost />
         <FloatingLanguageToggle />
         <MainScreen />

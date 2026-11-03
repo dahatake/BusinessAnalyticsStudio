@@ -19,9 +19,7 @@ import { usePresentationStore } from '../store/presentation';
 import { useStoryStore, type AiStory } from '../store/story';
 import { useT, tr } from '../i18n';
 import { askFoundry, fetchFoundryView } from '../ai/foundryClient';
-import { consentKeyOf } from '../ai/consent';
 import { confirmViaUi, countPersons, gatePersonConfirm } from '../ai/personConfirm';
-import { useConsentStore } from '../ai/useConsent';
 import { recordConfirmedSendKinds, confirmedSendKinds } from '../ai/sendKinds';
 import { explainLimitsNow, explainUsageNow, setExplainUsage } from '../explain/store';
 import { buildStoryMaterials } from './genai';
@@ -402,7 +400,6 @@ async function runGenai(persona: StoryPersona, runId: number, input: StoryInput,
   const data = pack.pack.data;
   const relayUrl = usePackStore.getState().runtime.relayUrl;
   const packId = data.customer.name;
-  const consentRecord = useConsentStore.getState().records[consentKeyOf(data.customer.name, data.customer.projectName)];
   // FR-140・AC-785: 実際の Project を開いているときは、その企業の「外部 AI への送信を許可する」が必要（お手本パックのデモは不要）
   const companyAllowed = companyAllowedOf(useProjects.getState());
   genaiController = new AbortController();
@@ -411,10 +408,9 @@ async function runGenai(persona: StoryPersona, runId: number, input: StoryInput,
     now: () => new Date(),
     limits: explainLimitsNow,
     usage: { get: explainUsageNow, set: setExplainUsage },
-    consent: !!consentRecord,
     companyAllowed,
     includesPerson: countPersons(data) > 0,
-    confirmPerson: () => gatePersonConfirm({ destination: 'ai', scopeLabel: tr('プレゼンテーションの生成 AI による作成（選択した生成AI接続先へ、選んだペルソナと解決策・優先順位・ROI・コスト・KPI/OKR・ユースケース・番組構成を送信）'), data, consent: consentRecord, confirm: confirmViaUi }),
+    confirmPerson: () => gatePersonConfirm({ destination: 'ai', scopeLabel: tr('プレゼンテーションの生成 AI による作成（選択した生成AI接続先へ、選んだペルソナと解決策・優先順位・ROI・コスト・KPI/OKR・ユースケース・番組構成を送信）'), data, confirm: confirmViaUi }),
     fetchView: () => fetchFoundryView(relayUrl, packId),
     confirmedKinds: () => confirmedSendKinds(packId),
     ask: (req, sig) => askFoundry(relayUrl, { packId, ...req }, undefined, sig),

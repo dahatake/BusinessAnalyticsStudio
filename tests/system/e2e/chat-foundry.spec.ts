@@ -16,7 +16,7 @@ async function chatScreen(page: Page): Promise<Locator> {
   return openScreen(page, 'chat');
 }
 
-/** 質問を送る。種別「人」の確認が出たら続行する（FR-219。了承の記録は済み） */
+/** 質問を送る。種別「人」の確認が出たら続行する（FR-219） */
 async function ask(page: Page, chat: Locator, text: string, wait = true): Promise<void> {
   await chat.getByRole('textbox', { name: /質問/ }).fill(text);
   await chat.getByRole('button', { name: '送信', exact: true }).click();
@@ -28,12 +28,11 @@ const itOnly = !process.env.FR286_IT;
 
 test.describe('FR-286 チャットの Foundry 送信', () => {
   // FR-286 AC-741
-  test('FR-286 AC-741 設定・有効・了承がそろうと、質問は /foundry/ask へ 1 回だけ送られ、Copilot の中継は 0 回で、回答が表示される', async ({ page, start }) => {
+  test('FR-286 AC-741 設定・有効がそろうと、質問は /foundry/ask へ 1 回だけ送られ、Copilot の中継は 0 回で、回答が表示される', async ({ page, start }) => {
     test.skip(itOnly, 'integration の AC。FR286_IT=1 で実行');
     const relay = await startChatFoundryStub({ foundry: 'ready' });
     try {
       await start({ relayUrl: relay.url });
-      await recordExportConsent(page);
       const chat = await chatScreen(page);
       await ask(page, chat, `${marker(1)} ${mono.issues()[0].title} の解決策は？`);
       await expect(chat.getByTestId('chat-answer').last()).toContainText(amarker(1));
@@ -46,16 +45,14 @@ test.describe('FR-286 チャットの Foundry 送信', () => {
 
   // FR-286 AC-741（異常系: 条件が欠ける）
   for (const c of [
-    { label: '未設定', foundry: 'not-configured' as const, consent: true },
-    { label: '無効', foundry: 'disabled' as const, consent: true },
-    { label: '了承なし', foundry: 'ready' as const, consent: false },
+    { label: '未設定', foundry: 'not-configured' as const },
+    { label: '無効', foundry: 'disabled' as const },
   ]) {
     test(`FR-286 AC-741 異常系: ${c.label}のときは Foundry を呼ばず、従来どおり（Copilot の中継またはモック）で答える`, async ({ page, start }) => {
     test.skip(itOnly, 'integration の AC。FR286_IT=1 で実行');
       const relay = await startChatFoundryStub({ foundry: c.foundry });
       try {
         await start({ relayUrl: relay.url });
-        if (c.consent) await recordExportConsent(page);
         const chat = await chatScreen(page);
         await ask(page, chat, `${marker(1)} ${mono.issues()[0].title} の解決策は？`);
         const answer = chat.getByTestId('chat-answer').last();
@@ -255,7 +252,6 @@ test.describe('FR-286 チャットの Foundry 送信', () => {
     { mode: 'timeout', label: 'timeout', text: /タイムアウト/ },
     { mode: 'error', label: 'error', text: /エラー/ },
     { mode: 'person-unconfirmed', label: '未確認（FR-219）', text: /確認/ },
-    { mode: 'consent', label: '了承なし', text: /了承/ },
   ];
   for (const c of FAILS) {
     test(`FR-286 AC-746 異常系: Foundry が「${c.label}」を返すと、理由が表示され、Copilot・モックへ切り替えず、利用者の操作で再送信できる`, async ({ page, start }) => {

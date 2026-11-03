@@ -7,8 +7,7 @@ import { FluentProvider, webLightTheme } from '@fluentui/react-components';
 import { GenAiScenarioScreen } from '../../src/screens/GenAiScenarioScreen';
 import { SCREENS } from '../../src/screens/registry';
 import { usePackStore } from '../../src/store/pack';
-import { useConsentStore } from '../../src/ai/useConsent';
-import { consentKeyOf } from '../../src/ai/consent';
+import { recordConfirmedSendKinds } from '../../src/ai/sendKinds';
 
 const data = {
   customer: { name: '合成株式会社', projectName: 'P' },
@@ -31,7 +30,7 @@ class RO { observe() {} unobserve() {} disconnect() {} }
 beforeEach(() => {
   fetchMock = vi.fn();
   vi.stubGlobal('fetch', fetchMock);
-  useConsentStore.setState({ records: {} });
+  localStorage.clear();
   setPack('http://127.0.0.1:8787');
 });
 afterEach(() => { cleanup(); vi.unstubAllGlobals(); });
@@ -96,12 +95,13 @@ describe('FR-284 AC-736 入力の検査と解決策の選択', () => {
 });
 
 describe('FR-285 AC-737・AC-739 実接続の条件と失敗時の代替', () => {
-  const consent = () => useConsentStore.setState({ records: { [consentKeyOf('合成株式会社', 'P')]: { confirmedOn: '2026-10-21', note: '同意書あり' } } as never });
   /** 共通接続（FR-275）の状態を返す中継の差し替え。analyze の応答は分析ごとに指定する */
   const relayMock = (cfg: { configured: boolean; enabled: boolean }, analyze: () => Response) => fetchMock.mockImplementation((u: string) =>
     Promise.resolve(String(u).includes('/foundry/config') ? new Response(JSON.stringify({ ...cfg, endpoint: 'https://x.services.ai.azure.com/openai/v1', host: 'x.services.ai.azure.com', deployment: 'd', keyMask: '••••' }), { status: 200 }) : analyze()));
-  const enable = () => consent();
-  it('AC-737 共通接続が有効でも、了承の記録がなければモックで外部呼び出し 0 回', () => {
+  // 実接続を確認して有効にした記録（この端末）。有効かどうかの中身は中継の状態（relayMock）が決める。顧客の了承の記録は条件にしない
+  const enable = () => recordConfirmedSendKinds('合成株式会社');
+  it('AC-737 中継の URL がないときはモックで外部呼び出し 0 回', () => {
+    setPack(undefined);
     relayMock({ configured: true, enabled: true }, () => new Response('{}', { status: 500 }));
     view();
     fireEvent.change(input(), { target: { value: '文章を要約する' } });
@@ -134,7 +134,7 @@ describe('FR-285 AC-737・AC-739 実接続の条件と失敗時の代替', () =>
     await waitFor(() => expect(screen.getByRole('region', { name: '分析結果' }).textContent).toContain('差し替えの理由'));
     expect(screen.queryByRole('alert')).toBeNull();
   });
-  it('AC-737 共通接続が無効（enabled=false）のときは了承ありでも /foundry/analyze を呼ばずモックで動く', async () => {
+  it('AC-737 共通接続が無効（enabled=false）のときは /foundry/analyze を呼ばずモックで動く', async () => {
     enable();
     relayMock({ configured: true, enabled: false }, () => new Response('{}', { status: 500 }));
     view();

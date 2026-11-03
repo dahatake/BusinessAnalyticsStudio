@@ -32,7 +32,7 @@ async function setup(reply: (signal?: AbortSignal | null) => Response | Promise<
   });
   open.push(relay);
   expect((await putFoundryConfig(relay.url, 'P', { endpoint: EP, deployment: 'dep1', key: DUMMY_KEY })).ok).toBe(true);
-  expect((await setFoundryConnection(relay.url, 'P', true, { consent: true, confirmed: true })).mode).toBe('connected');
+  expect((await setFoundryConnection(relay.url, 'P', true, { confirmed: true })).mode).toBe('connected');
   return { bodies, url: relay.url };
 }
 
@@ -106,7 +106,7 @@ describe('FR-276/FR-286 AC-747 利用量の記録（単体）', () => {
 
 describe('FR-286 結合（中継プロセス＋Foundry スタブ）', () => {
   const deps = (url: string, u: ReturnType<typeof usageDeps>, o: Partial<Parameters<typeof sendFoundryChat>[0]> = {}) => ({
-    relayUrl: url, packId: 'P', consent: true, includesPerson: false, confirmPerson: async () => ({ allowed: true }), usage: u.usage, ...o,
+    relayUrl: url, packId: 'P', includesPerson: false, confirmPerson: async () => ({ allowed: true }), usage: u.usage, ...o,
   });
 
   it('AC-741 そろった状態で 1 回だけ Foundry へ送られ、回答が返る', async () => {
@@ -118,10 +118,11 @@ describe('FR-286 結合（中継プロセス＋Foundry スタブ）', () => {
     expect(bodies).toHaveLength(1);
   });
 
-  it('AC-741 異常系: 了承なしは Foundry が呼ばれず（中継が拒否）理由が返る', async () => {
+  it('AC-741 異常系: 実接続が無効なら Foundry が呼ばれず（中継が拒否）理由が返る（顧客の了承の記録は条件にしない）', async () => {
     const { bodies, url } = await setup();
-    const out = await sendFoundryChat(deps(url, usageDeps(), { consent: false }), buildFoundryPrompt({ question: 'q', history: [], ...base }));
-    expect(out).toMatchObject({ kind: 'failed', reason: 'consent' });
+    await setFoundryConnection(url, 'P', false, { confirmed: false });
+    const out = await sendFoundryChat(deps(url, usageDeps()), buildFoundryPrompt({ question: 'q', history: [], ...base }));
+    expect(out).toMatchObject({ kind: 'failed', reason: 'disabled' });
     expect(bodies).toHaveLength(0);
   });
 

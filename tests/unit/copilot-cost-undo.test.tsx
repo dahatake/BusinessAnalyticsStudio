@@ -65,7 +65,7 @@ function deps(over: Partial<ReviewDeps> = {}) {
   const calls = { request: 0 };
   const u = useUsageStore.getState();
   const d: ReviewDeps = {
-    relayUrl: 'http://127.0.0.1:1', packId: 'P', consent: true, includesPerson: false,
+    relayUrl: 'http://127.0.0.1:1', packId: 'P', includesPerson: false,
     view: async () => view,
     usage: { check: () => useUsageStore.getState().check(), count: (n, out) => u.count(n, undefined, undefined, out) },
     confirmSend: async () => true,

@@ -89,7 +89,6 @@ export function foundryReasonText(reason: FoundryUnavailableReason): string {
     case 'timeout': return tr('Microsoft Foundry の応答がタイムアウトしました。しばらくしてから送信し直してください。');
     case 'error': return tr('Microsoft Foundry がエラーを返しました。設定（エンドポイント・デプロイ名・キー）を確認して送信し直してください。');
     case 'person-unconfirmed': return tr('種別「人」を含む顧客パックの送信の確認が済んでいないため、送信しませんでした。');
-    case 'consent': return '顧客の了承の記録がないため、送信しませんでした。設定画面で了承の記録を入力してください。';
     case 'disabled': return tr('Microsoft Foundry の実接続が無効のため、送信しませんでした。');
     case 'not-configured': return tr('Microsoft Foundry が未設定のため、送信しませんでした。');
     case 'relay': return tr('中継プロセスに届きませんでした。`npm run relay` で起動しているか確認して、送信し直してください。');

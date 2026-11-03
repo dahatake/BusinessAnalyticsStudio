@@ -1,10 +1,9 @@
-// メイン画面の右側の補足パネル（FR-266・FR-267・FR-268）。「はじめての方へ」と「顧客パックとは」を 1 つにまとめ、開閉ボタンで表示/非表示を切り替える。
+// メイン画面の右側の補足パネル（FR-266・FR-268。「使い方を見る」は右上の WelcomeIconButton。FR-267）。「はじめての方へ」と「顧客パックとは」を 1 つにまとめ、開閉ボタンで表示/非表示を切り替える。
 // 既定は閉じた状態（再読込後も）。開閉は短いアニメーション（PARAM-074: 500ms 以内）で、prefers-reduced-motion: reduce では 0（即時）。
 import { useEffect, useId, useRef, useState } from 'react';
 import { Button, Text, Title3, makeStyles, tokens } from '@fluentui/react-components';
 import { ChevronDown16Regular, ChevronRight16Regular } from '@fluentui/react-icons';
 import { FlowSection, PackSection, StepsSection, TermsSection, WhatSection } from './GuideParts';
-import { useGuide } from './guideStore';
 import { useT } from '../i18n';
 
 /** 開閉のアニメーションの長さ（ms。PARAM-074 の 500ms 以内） */
@@ -37,7 +36,6 @@ const reducedMotion = () => typeof window !== 'undefined' && typeof window.match
 export function GettingStarted() {
   const s = useStyles();
   const t = useT();
-  const openGuide = useGuide((g) => g.openGuide);
   const id = useId();
   const [open, setOpen] = useState(false); // 既定は閉じる（AC-675）
   const [shown, setShown] = useState(false); // 閉じるアニメーションが終わるまで描画を残す
@@ -65,8 +63,6 @@ export function GettingStarted() {
       >
         {t('はじめての方へ')}
       </Button>
-      {/* 閉じていても使える（FR-267 AC-681） */}
-      <Button onClick={() => openGuide('main')}>{t('使い方を見る')}</Button>
       </div>
       {shown ? (
         <section id={id} role="region" aria-label={t('はじめての方へ')} className={`${s.region} ${s.motion} ${open ? s.enter : s.leave}`} data-testid="getting-started">

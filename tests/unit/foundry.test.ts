@@ -35,9 +35,9 @@ async function setup(stub: (url: string, init?: RequestInit) => Promise<Response
 }
 const ready = async (url: string) => {
   expect((await putFoundryConfig(url, 'P', { endpoint: EP, deployment: 'dep1', key: DUMMY_KEY })).ok).toBe(true);
-  expect((await setFoundryConnection(url, 'P', true, { consent: true, confirmed: true })).mode).toBe('connected');
+  expect((await setFoundryConnection(url, 'P', true, { confirmed: true })).mode).toBe('connected');
 };
-const ask = (url: string, o: Partial<Parameters<typeof askFoundry>[1]> = {}) => askFoundry(url, { packId: 'P', prompt: '課題の説明', consent: true, ...o });
+const ask = (url: string, o: Partial<Parameters<typeof askFoundry>[1]> = {}) => askFoundry(url, { packId: 'P', prompt: '課題の説明', ...o });
 
 describe('FR-275 AC-704 キーの保管と送信先', () => {
   it('キーは応答・ディスクの平文のどこにも出ず、送信先は設定したエンドポイントだけ', async () => {
@@ -70,7 +70,7 @@ describe('FR-275 AC-705 変更・削除は再起動なしで次の呼び出し�
     // FR-275 AC-705: changing credentials revokes authorization until reconfirmed.
     expect(await ask(url)).toMatchObject({ mode: 'unavailable', reason: 'disabled' });
     expect(calls).toHaveLength(1);
-    await setFoundryConnection(url, 'P', true, { consent: true, confirmed: true });
+    await setFoundryConnection(url, 'P', true, { confirmed: true });
     await ask(url);
     expect(calls[1]!.url).toBe('https://other.example.invalid/v1/responses');
     expect(calls[1]!.auth).toBe('Bearer dummy-second-key-99999999');
@@ -85,31 +85,30 @@ describe('FR-275 AC-705 変更・削除は再起動なしで次の呼び出し�
     let called = 0;
     const f = (async () => { called++; return new Response('{}'); }) as typeof fetch;
     expect(await fetchFoundryView('https://evil.example', 'P', f)).toBeNull();
-    expect((await askFoundry('https://evil.example', { packId: 'P', prompt: 'x', consent: true }, f)).mode).toBe('unavailable');
+    expect((await askFoundry('https://evil.example', { packId: 'P', prompt: 'x' }, f)).mode).toBe('unavailable');
     expect(called).toBe(0);
   });
 });
 
 describe('FR-275 AC-706 条件がそろわないと呼び出し 0 回', () => {
-  it('未設定・無効・了承なし・人の未確認では 0 回、そろうと呼ぶ。了承を取り消すと次から 0 回', async () => {
+  it('未設定・無効・人の未確認では 0 回、そろうと呼ぶ。無効に戻すと次から 0 回（顧客の了承の記録は条件にしない）', async () => {
     const { calls, url } = await setup();
     expect(await ask(url)).toMatchObject({ reason: 'disabled' });
     await putFoundryConfig(url, 'P', { endpoint: EP, deployment: 'dep1', key: DUMMY_KEY });
     expect(await ask(url)).toMatchObject({ reason: 'disabled' });
-    expect((await setFoundryConnection(url, 'P', true, { consent: false, confirmed: true })).ok).toBe(false);
-    expect((await setFoundryConnection(url, 'P', true, { consent: true, confirmed: false })).ok).toBe(false);
-    await setFoundryConnection(url, 'P', true, { consent: true, confirmed: true });
-    expect(await ask(url, { consent: false })).toMatchObject({ mode: 'unavailable', reason: 'consent' });
+    expect((await setFoundryConnection(url, 'P', true, { confirmed: false })).ok).toBe(false);
+    await setFoundryConnection(url, 'P', true, { confirmed: true });
     expect(await ask(url, { includesPerson: true })).toMatchObject({ reason: 'person-unconfirmed' });
     expect(calls).toHaveLength(0);
     expect(await ask(url, { includesPerson: true, personConfirmed: true })).toMatchObject({ mode: 'connected' });
     expect(calls).toHaveLength(1);
-    expect(await ask(url, { consent: false })).toMatchObject({ reason: 'consent' });
+    await setFoundryConnection(url, 'P', false, { confirmed: false });
+    expect(await ask(url)).toMatchObject({ reason: 'disabled' });
     expect(calls).toHaveLength(1);
   });
   it('接続情報が未設定のとき、有効にできない', async () => {
     const { url } = await setup();
-    expect((await setFoundryConnection(url, 'P', true, { consent: true, confirmed: true })).ok).toBe(false);
+    expect((await setFoundryConnection(url, 'P', true, { confirmed: true })).ok).toBe(false);
   });
 });
 

@@ -129,7 +129,7 @@ export async function startAiImportRelayStub(opts: { configured?: boolean; mode?
     savedKey: () => (foundry && foundry.authMethod === 'api-key' ? foundry.key : null),
     importCalls: () => received.filter((r) => r.path === '/foundry/import').length,
     storyVideoCalls: () => received.filter((r) => r.path === '/foundry/story-video').length,
-    /** 設定画面を開かずに、中継の「有効」の状態だけを切り替える（了承の入力後に「設定だけが欠ける」状態を作るため） */
+    /** 設定画面を開かずに、中継の「有効」の状態だけを切り替える（「設定だけが欠ける」状態を作るため） */
     forceEnabled: (v: boolean) => { enabled = v; },
     close: () => new Promise<void>((r) => server.close(() => r())),
   };

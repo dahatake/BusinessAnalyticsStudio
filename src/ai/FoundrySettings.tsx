@@ -7,7 +7,6 @@ import {
 } from '@fluentui/react-components';
 import { Dialog, DialogSurface } from '../components/Dialog';
 import { usePackStore } from '../store/pack';
-import { useConsent } from './useConsent';
 import {
   DEFAULT_FOUNDRY_DEPLOYMENT, DEFAULT_FOUNDRY_ENDPOINT, ENDPOINT_FORMAT_EXAMPLES, deleteFoundryConfig, fetchFoundryView, putFoundryConfig, setFoundryConnection, testFoundry, validateFoundryEndpoint, type FoundryView,
 } from './foundryClient';
@@ -23,7 +22,6 @@ export function FoundrySettings() {
   const relayUrl = usePackStore((s) => s.runtime.relayUrl);
   const pack = usePackStore((s) => s.state);
   const packId = pack.status === 'ready' ? pack.pack.data.customer.name : '';
-  const { granted } = useConsent();
   const [view, setView] = useState<FoundryView | null>(null);
   const [endpoint, setEndpoint] = useState(DEFAULT_FOUNDRY_ENDPOINT);
   const [deployment, setDeployment] = useState(DEFAULT_FOUNDRY_DEPLOYMENT);
@@ -46,13 +44,6 @@ export function FoundrySettings() {
     return () => { alive = false; };
   }, [relayUrl, packId]);
 
-  // 了承の記録が取り消されたら、実接続を無効に戻す（FR-181・AC-706）
-  useEffect(() => {
-    if (!granted && view?.enabled && relayUrl && packId) {
-      void setFoundryConnection(relayUrl, packId, false, { consent: false, confirmed: false }).then(() => setView((v) => (v ? { ...v, enabled: false } : v)));
-    }
-  }, [granted, view?.enabled, relayUrl, packId]);
-
   const save = async () => {
     // 不正なエンドポイントは保存しない（中継へも送らない）。保存済みの値は変わらない。理由に入力値は含めない（AC-764）
     const invalid = validateFoundryEndpoint(endpoint);
@@ -71,12 +62,12 @@ export function FoundrySettings() {
   };
   const enable = async () => {
     setConfirming(false);
-    const r = await setFoundryConnection(relayUrl as string, packId, true, { consent: granted, confirmed: true });
+    const r = await setFoundryConnection(relayUrl as string, packId, true, { confirmed: true });
     if (r.ok) setView((v) => (v ? { ...v, enabled: true } : v));
     else setResult({ ok: false, text: r.message ?? t('有効にできませんでした。') });
   };
   const disable = async () => {
-    await setFoundryConnection(relayUrl as string, packId, false, { consent: granted, confirmed: false });
+    await setFoundryConnection(relayUrl as string, packId, false, { confirmed: false });
     setView((v) => (v ? { ...v, enabled: false } : v));
   };
 
@@ -139,12 +130,11 @@ export function FoundrySettings() {
       </form>
       <Switch
         checked={!!view?.enabled}
-        disabled={!relayUrl || !packId || !granted || !configured}
+        disabled={!relayUrl || !packId || !configured}
         label={t('実接続を有効にする')}
         onChange={(_, d) => { if (d.checked) setConfirming(true); else void disable(); }}
       />
       <Text size={200} data-testid="foundry-mode">{t('現在の状態:')} {view?.enabled ? t('接続済み') : t('モック（外部へは送信しません）')}</Text>
-      {!granted ? <Text size={200}>{t('この案件には顧客の了承の記録がないため、実接続は有効にできません。')}</Text> : null}
       {result ? <MessageBar intent={result.ok ? 'success' : 'warning'} role={result.ok ? 'status' : 'alert'}><MessageBarBody>{result.text}</MessageBarBody></MessageBar> : null}
       <Dialog open={confirming} modalType="alert" onOpenChange={(_, d) => setConfirming(d.open)}>
         <DialogSurface>

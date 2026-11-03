@@ -12,7 +12,7 @@ import {
   assertGitIgnored, checkResearchFreshness, loadResearchCache, reresearchSuggestion, sampleResearcher, saveResearchPart,
   type ResearchAttempt, type ResearchCache, type Researcher,
 } from './research';
-import { countPersonsInWorkDir, personConsentLine, readConsent } from './consent';
+import { countPersonsInWorkDir, personConfirmQuestion } from './persons';
 import { validateWithRepair } from './repair';
 import { Recorder } from './timing';
 import { formatVerifyReport, verifyPack, type SmokeRunner } from './verify';
@@ -26,8 +26,13 @@ export interface PipelineDeps {
   smoke?: SmokeRunner;
   /** ③の方式。既定 link（node_modules と dist をリンクで共有）、copy はフルコピー */
   cloneMode?: CloneMode;
-  /** 案件の了承の記録があるか（FR-181）。既定は作業フォルダーの consent.json。なければ実調査・外部への送信をしない */
-  consent?: (input: Inputs) => boolean;
+  /** 外部（LLM・WorkIQ・Web）へ送る実調査・生成をする（`--live`）。なければ送信 0 回で、前提を置いたサンプル・モックで進む（AC-823） */
+  live?: boolean;
+  /**
+   * 種別「人」を含む案件の確認（FR-219 AC-512）。`live` のときだけ、送る前に件数を示して呼ばれる。
+   * false・未指定（未回答）なら、外部へは何も送らない。
+   */
+  confirmPerson?: (info: { personCount: number; customer: string; projectName: string; question: string }) => Promise<boolean>;
   log?: (line: string) => void;
   now?: () => Date;
 }
@@ -63,25 +68,32 @@ function errorList(errors: readonly PackError[]): string {
 export async function runPipeline(command: Command, input: Inputs, deps: PipelineDeps): Promise<PipelineResult> {
   const { paths } = deps;
   const log = deps.log ?? (() => {});
-  const consented = deps.consent ? deps.consent(input) : readConsent(paths, input) !== undefined;
-  // FR-181: 了承の記録がない案件は、外部（LLM・WorkIQ・Web）へ送る調査・生成を使わず、サンプル・モックで進める
-  const researcher = (consented ? deps.researcher : undefined) ?? sampleResearcher;
-  const generator = (consented ? deps.generator : undefined) ?? mockGenerator;
   const launcher = deps.launcher ?? startStaticServer;
   const now = deps.now ?? (() => new Date());
 
   const ids = COMMAND_STAGES[command];
-  if (!consented && (deps.researcher || deps.generator)) {
-    log(`顧客の了承の記録がないため、実調査・外部への送信をしません（案件: ${input.customer} / ${input.projectName}）。サンプル・モックで進めます。`);
-  }
   const work = workDirOf(paths, input.customer);
-  // FR-219: 種別「人」を含み、了承の記録がある案件は、外部へ送る前に件数と確認日を出力に示してから続行する（対話の確認は出さない）
-  const announcePersons = (): void => {
-    if (!consented) return;
+  const sendsExternally = ids.some((id) => id === 'research-customer' || id === 'research-brand' || id === 'generate');
+  // AC-823: `--live` がなければ、外部（LLM・WorkIQ・Web）へは送らず、サンプル・モックで進める
+  let live = deps.live === true;
+  if (sendsExternally && !live) {
+    log('実調査をしていません（外部への送信は 0 回）。前提を置いたサンプル・モックで進めます。実調査をするときは --live を付けてください。');
+  }
+  // AC-512: `--live` で種別「人」を含む案件は、送る前に件数を示して確認する。中止・未回答なら送信しない
+  if (sendsExternally && live) {
     const n = countPersonsInWorkDir(work);
-    if (n > 0) log(personConsentLine(n, readConsent(paths, input)));
-  };
-  if (ids.some((id) => id === 'research-customer' || id === 'research-brand')) announcePersons();
+    if (n > 0) {
+      const question = personConfirmQuestion(n, input.customer, input.projectName);
+      log(question);
+      const go = deps.confirmPerson ? await deps.confirmPerson({ personCount: n, customer: input.customer, projectName: input.projectName, question }) : false;
+      if (!go) {
+        live = false;
+        log('確認が中止または未回答のため、実調査・外部への送信をしません。サンプル・モックで進めます。');
+      }
+    }
+  }
+  const researcher = (live ? deps.researcher : undefined) ?? sampleResearcher;
+  const generator = (live ? deps.generator : undefined) ?? mockGenerator;
   // 調査キャッシュと顧客パックは、コミットされない場所にだけ作る（NFR-SEC-003）。何かを書く前に確かめる
   if (ids.includes('research-customer')) assertGitIgnored(paths.repoRoot, path.join(researchCacheDir(paths, input.customer), 'meta.json'), '調査キャッシュの保存先');
   if (ids.includes('generate')) assertGitIgnored(paths.repoRoot, path.join(work, 'data', 'customer.json'), '顧客パックの作成先');
@@ -134,7 +146,6 @@ export async function runPipeline(command: Command, input: Inputs, deps: Pipelin
       const files = await generatePack(generator, input, cache, paths.samplePack);
       const written = writePack(work, files, input);
       log(`④ 顧客パックを生成しました（${written.length} 件）`);
-      announcePersons();
       // 顧客パックとしてサポートしない要望は、生成では実装せず、雛形への改善要望として記録する（FR-131）
       const requests = extractImprovementRequests(readMaterials(input.materials), supportedScreens(paths.template));
       let recorded = 0;

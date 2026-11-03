@@ -14,8 +14,6 @@ import { useStoryStore } from '../../src/store/story';
 import { useAnimation } from '../../src/store/animation';
 import { resetProjects, useProjects } from '../../src/store/projects';
 import { useUseCases } from '../../src/store/usecases';
-import { useConsentStore } from '../../src/ai/useConsent';
-import { consentKeyOf } from '../../src/ai/consent';
 import { setFoundryConnection } from '../../src/ai/foundryClient';
 import { KIND_PRESENTATION, SEND_KINDS, confirmedSendKinds, recordConfirmedSendKinds } from '../../src/ai/sendKinds';
 
@@ -51,7 +49,6 @@ describe('FR-290 「生成 AI で作成」の画面', () => {
     usePresentationStore.getState().end();
     useStoryStore.getState().reset();
     useAnimation.setState({ playing: false, choice: null });
-    useConsentStore.setState({ records: {} });
     view = { configured: true, enabled: true, provider: 'foundry' };
     calls = [];
     askHandler = async () => new Response(JSON.stringify({ answer: GOOD, mode: 'connected' }), { status: 200 });
@@ -66,7 +63,6 @@ describe('FR-290 「生成 AI で作成」の画面', () => {
   });
   afterEach(() => { cleanup(); vi.unstubAllGlobals(); vi.useRealTimers(); });
 
-  const consent = () => { useConsentStore.getState().save(consentKeyOf(pack.customer.name, pack.customer.projectName), '2026-10-25', '社内の検証で了承'); };
   const open = () => {
     usePresentationStore.getState().start([{ id: 't1', title: '議題', chapterId: 'c', chapterTitle: '章', chapterIndex: 0 }]);
     render(<FluentProvider theme={webLightTheme}><StoryHost /></FluentProvider>);
@@ -85,12 +81,14 @@ describe('FR-290 「生成 AI で作成」の画面', () => {
     expect(calls).toHaveLength(0);
   });
 
-  it('FR-290 AC-777 了承の記録がないときは呼び出し 0 回で理由と「生成 AI を使わずに開始」を示し、それで FR-179 のストーリーが始まる', async () => {
+  it('FR-290 AC-777 接続情報が未設定のときは呼び出し 0 回で理由と「生成 AI を使わずに開始」を示し、それで FR-179 のストーリーが始まる（顧客の了承の記録は条件にしない）', async () => {
+    view.configured = false;
     open();
     fireEvent.click(screen.getByRole('checkbox', { name: '生成 AI で作成' }));
     fireEvent.click(screen.getByRole('button', { name: '経営層' }));
     const err = await screen.findByTestId('story-genai-error');
-    expect(err.textContent).toMatch(/了承/);
+    expect(err.textContent).toMatch(/接続情報/);
+    expect(err.textContent).not.toMatch(/了承/);
     fireEvent.click(screen.getByRole('button', { name: '生成 AI を使わずに開始' }));
     expect(screen.getByTestId('story-scene')).toBeTruthy();
     expect(screen.queryByText('AI 生成')).toBeNull();
@@ -98,7 +96,7 @@ describe('FR-290 「生成 AI で作成」の画面', () => {
   });
 
   it('FR-290 AC-777 実接続が無効のときは呼び出し 0 回で理由（有効）を示す', async () => {
-    consent(); view.enabled = false;
+    view.enabled = false;
     open();
     fireEvent.click(screen.getByRole('checkbox', { name: '生成 AI で作成' }));
     fireEvent.click(screen.getByRole('button', { name: '経営層' }));
@@ -107,7 +105,7 @@ describe('FR-290 「生成 AI で作成」の画面', () => {
   });
 
   it('FR-290 AC-775 AC-776 条件がそろえば作成中を示し、生成 AI の見出し・語りと「AI 生成」・接続先の名前つきでストーリーが始まる。依頼の出力の上限は PARAM-132', async () => {
-    consent(); recordConfirmedSendKinds(packId); view.provider = 'copilot';
+    recordConfirmedSendKinds(packId); view.provider = 'copilot';
     let release: () => void = () => {};
     askHandler = () => new Promise((res) => { release = () => res(new Response(JSON.stringify({ answer: GOOD, mode: 'connected' }), { status: 200 })); });
     open();
@@ -115,7 +113,7 @@ describe('FR-290 「生成 AI で作成」の画面', () => {
     fireEvent.click(screen.getByRole('button', { name: '経営層' }));
     await screen.findByTestId('story-generating');
     await waitFor(() => expect(asks()).toHaveLength(1));
-    expect(JSON.parse(asks()[0]!.body!)).toMatchObject({ packId, consent: true, maxOutputTokens: 4000 });
+    expect(JSON.parse(asks()[0]!.body!)).toMatchObject({ packId, maxOutputTokens: 4000 });
     await act(async () => { release(); });
     const story = await screen.findByTestId('story');
     expect(story.textContent).toContain('AI 生成');
@@ -126,7 +124,7 @@ describe('FR-290 「生成 AI で作成」の画面', () => {
   });
 
   it('FR-290 AC-777 作成中に取り消すと開始前に戻り、後から応答が届いてもストーリーは表示されない', async () => {
-    consent(); recordConfirmedSendKinds(packId);
+    recordConfirmedSendKinds(packId);
     let release: () => void = () => {};
     askHandler = () => new Promise((res) => { release = () => res(new Response(JSON.stringify({ answer: GOOD, mode: 'connected' }), { status: 200 })); });
     open();
@@ -141,7 +139,6 @@ describe('FR-290 「生成 AI で作成」の画面', () => {
   });
 
   it('FR-290 AC-777 確認した送信情報の種類に材料が含まれなければ再確認を示し、確認するまで呼ばず、確認した後にだけ呼ぶ', async () => {
-    consent();
     localStorage.setItem('edb.ai.confirmedSendKinds', JSON.stringify({ [packId]: ['screen', 'genai-scenario', 'chat'] }));
     open();
     fireEvent.click(screen.getByRole('checkbox', { name: '生成 AI で作成' }));
@@ -156,15 +153,15 @@ describe('FR-290 「生成 AI で作成」の画面', () => {
   });
 
   it('FR-290 AC-777 実接続の有効化（確認つき）で送信情報の種類を記録し、無効にすると消す', async () => {
-    await setFoundryConnection(RELAY, 'X', true, { consent: true, confirmed: true });
+    await setFoundryConnection(RELAY, 'X', true, { confirmed: true });
     expect(confirmedSendKinds('X')).toEqual(SEND_KINDS.map((k) => k.id));
-    await setFoundryConnection(RELAY, 'X', false, { consent: true, confirmed: false });
+    await setFoundryConnection(RELAY, 'X', false, { confirmed: false });
     expect(confirmedSendKinds('X')).toEqual([]);
   });
 
   // FR-290 AC-776: すべての文を除いたときは、エラーではなく除去の通知と「生成 AI を使わずに開始」を示す
   it('FR-290 AC-776 生成文がすべて材料にない数値・名称を含むときは、エラーではなく除いた旨の通知と「生成 AI を使わずに開始」を示す', async () => {
-    consent(); recordConfirmedSendKinds(packId);
+    recordConfirmedSendKinds(packId);
     const bad = JSON.stringify({ scenes: [1, 2, 3, 4].map((p) => ({ part: p, heading: '「架空ソリューションZ」', narration: '売上が九百九十九億円増えます。' })) });
     askHandler = async () => new Response(JSON.stringify({ answer: bad, mode: 'connected' }), { status: 200 });
     open();
@@ -181,7 +178,7 @@ describe('FR-290 「生成 AI で作成」の画面', () => {
 
   // FR-290 AC-785: Project の企業が外部 AI への送信を許可していなければ呼び出し 0 回。許可すると呼ばれ、取り消すと 0 回
   it('FR-290 AC-785 開いている Project の企業が許可していない（既定）ときは呼び出し 0 回で理由（許可）と「生成 AI を使わずに開始」を示し、許可で 1 回、取り消しで 0 回', async () => {
-    consent(); recordConfirmedSendKinds(packId);
+    recordConfirmedSendKinds(packId);
     const pj = useProjects.getState();
     const co = pj.addCompany('許可合成社QB96'); if (!co.ok) throw new Error(co.reason);
     const pr = useProjects.getState().addProject(co.id, '許可案件QB96'); if (!pr.ok) throw new Error(pr.reason);

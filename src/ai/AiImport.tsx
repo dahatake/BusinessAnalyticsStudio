@@ -1,4 +1,4 @@
-// 取り込み画面の「AI 取り込み」（FR-289）。Foundry の設定済み・実接続の有効化・了承の記録がそろうときだけ選べる。
+// 取り込み画面の「AI 取り込み」（FR-289）。Foundry の設定済み・実接続の有効化がそろうときだけ選べる。
 // 欠けるときは無効にして、欠けている条件と設定画面への案内を示す（呼び出し 0 回）。送信前に費用と送信内容の確認を求め、
 // 取り込んだ内容はプレビューで確認してから反映する（確認前に既存のデータを変えない）。API キーはこの画面に来ない（中継プロセスだけが持つ）。
 import { useEffect, useState } from 'react';
@@ -6,9 +6,8 @@ import { Button, DialogActions, DialogBody, DialogContent, DialogTitle, MessageB
 import { Dialog, DialogSurface } from '../components/Dialog';
 import { usePackStore } from '../store/pack';
 import { useDataCatalog } from '../store/datacatalog';
-import { useConsent } from './useConsent';
 import { FOUNDRY_CHANGED_EVENT, fetchFoundryView, type FoundryView } from './foundryClient';
-import { AI_SCOPE_LABEL, confirmViaUi, consentOf, countPersons, gatePersonConfirm } from './personConfirm';
+import { AI_SCOPE_LABEL, confirmViaUi, countPersons, gatePersonConfirm } from './personConfirm';
 import {
   AI_IMPORT_MAX_MB, aiImportAvailability, browserUsageStore, budgetState, checkSize, currentUsage, estimateCostYen, recordCall, requestAiImport,
   type ImportEntity, type UsageStore,
@@ -23,7 +22,6 @@ export function AiImport({ projectId, store = browserUsageStore, onApplied }: { 
   const relayUrl = usePackStore((s) => s.runtime.relayUrl);
   const pack = usePackStore((s) => s.state);
   const packId = pack.status === 'ready' ? pack.pack.data.customer.name : '';
-  const { granted } = useConsent();
   const importCatalog = useDataCatalog((x) => x.importCatalog);
   const [view, setView] = useState<FoundryView | null>(null);
   const [choosing, setChoosing] = useState(false);
@@ -50,7 +48,7 @@ export function AiImport({ projectId, store = browserUsageStore, onApplied }: { 
     };
   }, [relayUrl, packId]);
 
-  const avail = aiImportAvailability(view, granted);
+  const avail = aiImportAvailability(view);
   // 条件が欠けたら、選択中の状態も閉じる（送信しない）
   useEffect(() => { if (!avail.available) { setChoosing(false); setPending(null); } }, [avail.available]);
 
@@ -71,13 +69,13 @@ export function AiImport({ projectId, store = browserUsageStore, onApplied }: { 
     const personCount = countPersons(pack.pack.data);
     const gate = await gatePersonConfirm({
       destination: 'ai', scopeLabel: tr('{scope}（AI 取り込みのファイル「{name}」の内容。個人情報が含まれうる）', { scope: AI_SCOPE_LABEL, name: file.name }),
-      data: pack.pack.data, consent: consentOf(pack.pack.data), confirm: confirmViaUi,
+      data: pack.pack.data, confirm: confirmViaUi,
     });
     if (!gate.allowed) { setError(gate.reason ?? t('送信しませんでした。')); return; }
     setBusy(true);
     try {
       recordCall(store, new Date(), estimateCostYen(file.size)); // 失敗した呼び出しも概算に算入する（FR-276・安全側）
-      const r = await requestAiImport(relayUrl, { packId, file, consent: granted, includesPerson: personCount > 0, personConfirmed: true });
+      const r = await requestAiImport(relayUrl, { packId, file, includesPerson: personCount > 0, personConfirmed: true });
       if (r.ok) { setPreview({ file, entities: r.entities }); setError(''); } else { setPreview(null); setError(r.message); }
     } finally {
       setBusy(false);
@@ -125,7 +123,7 @@ export function AiImport({ projectId, store = browserUsageStore, onApplied }: { 
           <DialogBody>
             <DialogTitle>{t('ファイルを Foundry に送信しますか')}</DialogTitle>
             <DialogContent>
-              {t('Microsoft Foundry は有料サービスで、費用が発生します（概算は今月の予算に算入します）。 送信されるのは、選んだファイル「{name}」の内容です。ファイルに個人情報が含まれうる場合は、顧客の了承の範囲で送ってください。', { name: pending?.name ?? '' })}
+              {t('Microsoft Foundry は有料サービスで、費用が発生します（概算は今月の予算に算入します）。 送信されるのは、選んだファイル「{name}」の内容です。ファイルに個人情報が含まれうる場合は、送信してよい範囲を確認してから送ってください。', { name: pending?.name ?? '' })}
             </DialogContent>
             <DialogActions>
               <Button appearance="secondary" onClick={() => setPending(null)}>{t('キャンセル')}</Button>

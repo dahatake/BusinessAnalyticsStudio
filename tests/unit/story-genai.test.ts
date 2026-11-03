@@ -62,7 +62,7 @@ async function setup(opt: { reply?: Reply; configure?: boolean; enable?: boolean
   });
   open.push(relay);
   if (opt.configure !== false) expect((await putFoundryConfig(relay.url, 'P', { endpoint: EP, deployment: 'dep1', key: KEY })).ok).toBe(true);
-  if (opt.configure !== false && opt.enable !== false) expect((await setFoundryConnection(relay.url, 'P', true, { consent: true, confirmed: true })).mode).toBe('connected');
+  if (opt.configure !== false && opt.enable !== false) expect((await setFoundryConnection(relay.url, 'P', true, { confirmed: true })).mode).toBe('connected');
   return { bodies, url: relay.url };
 }
 
@@ -74,7 +74,6 @@ function deps(url: string, opt: Partial<Omit<StoryGenaiDeps, 'limits'>> & { limi
     now: () => NOW,
     limits: () => limits ?? DEFAULT_LIMITS,
     usage: { get: () => usage, set: (s) => { usage = s; } },
-    consent: true,
     fetchView: () => fetchFoundryView(url, 'P'),
     confirmedKinds: () => SEND_KINDS.map((k) => k.id),
     ask: (req, sig) => askFoundry(url, { packId: 'P', ...req }, undefined, sig),
@@ -177,15 +176,13 @@ describe('FR-290 中継（POST /foundry/ask）を通した作成（結合。生�
     expect(out.kind === 'ai' && out.truncated).toBe(true);
     expect(Math.ceil(sentText(bodies[0]!).length / 4)).toBeLessThanOrEqual(limit + 2);
   });
-  it('FR-290 AC-777 了承の記録がない・実接続が無効・接続情報が未設定のときは呼び出し 0 回で理由を返す', async () => {
-    const a = await setup();
-    expect((await runStoryGenai(deps(a.url, { consent: false }).d, newStorySession(), materials, base))).toMatchObject({ kind: 'unavailable', reason: 'consent' });
+  it('FR-290 AC-777 実接続が無効・接続情報が未設定のときは呼び出し 0 回で理由を返す（顧客の了承の記録は条件にしない）', async () => {
     const b = await setup({ enable: false });
     expect((await runStoryGenai(deps(b.url).d, newStorySession(), materials, base))).toMatchObject({ kind: 'unavailable', reason: 'disabled' });
     const c = await setup({ configure: false });
     expect((await runStoryGenai(deps(c.url).d, newStorySession(), materials, base))).toMatchObject({ kind: 'unavailable', reason: 'not-configured' });
-    expect(a.bodies.length + b.bodies.length + c.bodies.length).toBe(0);
-    for (const r of ['consent', 'disabled', 'not-configured'] as const) expect(STORY_REASON_TEXT[r]).toMatch(/了承|有効|接続/);
+    expect(b.bodies.length + c.bodies.length).toBe(0);
+    for (const r of ['disabled', 'not-configured'] as const) expect(STORY_REASON_TEXT[r]).toMatch(/有効|接続/);
   });
   it('FR-290 AC-777 送信情報の種類に材料が含まれない有効化の状態では再確認を返し、確認するまで呼ばない', async () => {
     const { bodies, url } = await setup();
@@ -330,7 +327,7 @@ describe('FR-290 AC-776 Copilot SDK の経路にも出力の上限 PARAM-132 を
     const relay = await startRelay({ sdk, aiProvider: openAiProvider(dir, vopts), foundryVault: openFoundryVault(path.join(dir, 'foundry'), vopts) });
     open.push(relay);
     expect((await fetch(`${relay.url}/ai/provider`, { method: 'PUT', body: JSON.stringify({ provider: 'copilot' }), headers: { 'content-type': 'application/json' } })).status).toBe(200);
-    expect((await setFoundryConnection(relay.url, 'P', true, { consent: true, confirmed: true })).mode).toBe('connected');
+    expect((await setFoundryConnection(relay.url, 'P', true, { confirmed: true })).mode).toBe('connected');
     const { d } = deps(relay.url);
     const out = await runStoryGenai(d, newStorySession(), materials, base);
     expect(out).toMatchObject({ kind: 'ai', provider: 'copilot' });

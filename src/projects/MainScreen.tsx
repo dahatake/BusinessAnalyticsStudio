@@ -12,6 +12,7 @@ import { useAnalyses } from '../store/analyses';
 import { useMainScreen } from '../store/mainScreen';
 import { useSettings } from '../store/settings';
 import { GettingStarted } from '../guide/GettingStarted';
+import { WelcomeIconButton } from '../guide/WelcomeIconButton';
 import { useT } from '../i18n';
 
 const useStyles = makeStyles({
@@ -27,6 +28,7 @@ const useStyles = makeStyles({
   },
   body: { flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalL, width: '100%' },
   side: { flex: '0 1 420px', minWidth: 0, width: '100%', '@media (min-width: 721px)': { width: '420px' } },
+  top: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: tokens.spacingHorizontalM, flexWrap: 'wrap' },
   guide: { listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: tokens.spacingVerticalS },
   step: {
     display: 'flex', alignItems: 'center', gap: tokens.spacingHorizontalM, flexWrap: 'wrap',
@@ -107,7 +109,10 @@ export function MainScreen() {
 
   return (
     <main className={s.root} data-testid="main-screen" aria-label={t('メイン画面')}>
-      <Title1 as="h1">{heading}</Title1>
+      <div className={s.top}>
+        <Title1 as="h1">{heading}</Title1>
+        <WelcomeIconButton />
+      </div>
       <div className={s.layout}>
       <div className={s.body}>
       <Text>{t('企業を登録し、Project を作成して開き、分析を始めます（QuickStart の手順）。')}</Text>

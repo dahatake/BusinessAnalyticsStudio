@@ -74,7 +74,7 @@ describe('FR-291 AC-780 共通接続・送信内容・条件', () => {
   it('FR-291 AC-780 (a) 呼び出しは localhost の中継の /foundry/story-video だけ。中継以外の宛先には呼び出し 0 回', async () => {
     const urls: string[] = [];
     const f = (async (u: string) => { urls.push(u); return new Response(JSON.stringify({ scenes: SCENES, usage: { inputTokens: 1, outputTokens: 1 } }), { status: 200 }); }) as unknown as typeof fetch;
-    const base = { packId: 'P', kind: 'storyboard' as const, usecase: toPayload(ucOf(1)), consent: true, includesPerson: false, personConfirmed: false, maxOutputTokens: 100 };
+    const base = { packId: 'P', kind: 'storyboard' as const, usecase: toPayload(ucOf(1)), includesPerson: false, personConfirmed: false, maxOutputTokens: 100 };
     const ng = await requestStoryVideo('https://example.com', base, f);
     expect(ng.ok).toBe(false);
     expect(urls).toEqual([]);
@@ -82,17 +82,17 @@ describe('FR-291 AC-780 共通接続・送信内容・条件', () => {
     expect(ok.ok).toBe(true);
     expect(urls).toEqual(['http://127.0.0.1:9/foundry/story-video']);
   });
-  it('FR-291 AC-780 (c) 設定・有効化・了承のどれかが欠ける、または接続先が Copilot SDK のときは使えず、理由と直し方が示される', () => {
-    const a = storyVideoAvailability(view({ configured: false, enabled: false }), false);
+  it('FR-291 AC-780 (c) 設定・有効化のどれかが欠ける、または接続先が Copilot SDK のときは使えず、理由と直し方が示される（顧客の了承の記録は条件にしない）', () => {
+    const a = storyVideoAvailability(view({ configured: false, enabled: false }));
     expect(a.available).toBe(false);
-    expect(a.missing).toEqual(['設定', '有効化', '了承']);
+    expect(a.missing).toEqual(['設定', '有効化']);
     expect(a.guide).toContain('設定画面');
-    expect(storyVideoAvailability(view({ enabled: false }), true).missing).toEqual(['有効化']);
-    expect(storyVideoAvailability(view(), false).missing).toEqual(['了承']);
-    const c = storyVideoAvailability(view({ provider: 'copilot' }), true);
+    expect(a.guide).not.toContain('了承');
+    expect(storyVideoAvailability(view({ enabled: false })).missing).toEqual(['有効化']);
+    const c = storyVideoAvailability(view({ provider: 'copilot' }));
     expect(c.available).toBe(false);
     expect(c.guide).toContain('Foundry を選んだときだけ');
-    expect(storyVideoAvailability(view(), true).available).toBe(true);
+    expect(storyVideoAvailability(view()).available).toBe(true);
   });
 });
 
@@ -284,16 +284,15 @@ describe('FR-291 AC-780 中継プロセスの /foundry/story-video（条件が�
     return { calls, url: relay.url };
   }
   const post = (url: string, body: unknown) => fetch(`${url}/foundry/story-video`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
-  const base = { packId: 'P', kind: 'storyboard', usecase: toPayload(ucOf(2)), consent: true, confirmed: true, includesPerson: false, personConfirmed: false, maxOutputTokens: 500 };
+  const base = { packId: 'P', kind: 'storyboard',   usecase: toPayload(ucOf(2)), confirmed: true, includesPerson: false, personConfirmed: false, maxOutputTokens: 500 };
 
-  it('未設定・未有効・了承なしは Foundry を呼ばず、有効にして設定するとシーンと HTML を返し、応答にキーを含めない', async () => {
+    it('未設定・未有効は Foundry を呼ばず、有効にして設定するとシーンと HTML を返し、応答にキーを含めない', async () => {
     const { calls, url } = await setup();
     expect((await post(url, base)).status).toBe(403); // 未有効（未設定）
     await fetch(`${url}/foundry/config?packId=P`, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ endpoint: 'https://foundry.example.invalid/openai/v1', deployment: 'd', key: KEY }) });
     expect((await post(url, base)).status).toBe(403); // 未有効
-    await fetch(`${url}/foundry/connection`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ packId: 'P', enable: true, consent: true, confirmed: true }) });
-    expect((await post(url, { ...base, consent: false })).status).toBe(403);
-    expect((await post(url, { ...base, includesPerson: true })).status).toBe(403);
+    await fetch(`${url}/foundry/connection`, { method: 'POST', headers: { 'content-type': 'application/json' }, body:     JSON.stringify({ packId: 'P', enable: true, confirmed: true }) });
+        expect((await post(url, { ...base, includesPerson: true })).status).toBe(403);
     expect((await post(url, { ...base, confirmed: false })).status).toBe(400);
     expect(calls).toHaveLength(0);
     const ok = await post(url, base);
