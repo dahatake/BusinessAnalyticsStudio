@@ -1,7 +1,7 @@
 // ウェルカム／使い方のダイアログ（FR-267・FR-272）。カードを「次へ」「戻る」「スキップ」で送る。
-// 「次回から表示しない」を選んで閉じたときだけ確認済みを記録する。Esc で閉じ、閉じると焦点が開く前の位置へ戻る（components/Dialog）。
+// 確認済みの記録や「次回から表示しない」はない。Esc で閉じ、閉じると焦点が開く前の位置（アイコン）へ戻る（components/Dialog）。
 import { useState, type ReactNode } from 'react';
-import { Button, Checkbox, DialogActions, DialogBody, DialogContent, DialogTitle, Text, makeStyles, tokens } from '@fluentui/react-components';
+import { Button, DialogActions, DialogBody, DialogContent, DialogTitle, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Dialog, DialogSurface } from '../components/Dialog';
 import { useMotionAllowed } from '../motion/transitions';
 import { useGuide, type GuideVariant } from './guideStore';
@@ -28,31 +28,29 @@ function cardsFor(variant: GuideVariant): Card[] {
   return variant === 'workspace' ? [{ id: 'workspace', title: '画面の見方とよく使う操作', body: <WorkspaceSection /> }, ...shared] : shared;
 }
 
-export function WelcomeDialogView({ variant, onClose }: { variant: GuideVariant; onClose: (dontShow: boolean) => void }) {
+export function WelcomeDialogView({ variant, onClose }: { variant: GuideVariant; onClose: () => void }) {
   const s = useStyles();
   const t = useT();
   const motion = useMotionAllowed();
   const cards = cardsFor(variant);
   const [i, setI] = useState(0);
-  const [dontShow, setDontShow] = useState(false);
   const card = cards[i]!;
   const last = i === cards.length - 1;
   const name = t(variant === 'workspace' ? '使い方' : 'ウェルカム');
   return (
-    <Dialog open modalType="modal" onOpenChange={(_, d) => { if (!d.open) onClose(dontShow); }}>
+    <Dialog open modalType="modal" onOpenChange={(_, d) => { if (!d.open) onClose(); }}>
       <DialogSurface className={s.surface} aria-label={name}>
         <DialogBody>
           <DialogTitle>{name}{t('：')}{t(card.title)}</DialogTitle>
           <DialogContent>
             <Text className={s.pos} role="status" aria-live="polite" data-testid="guide-position">{t('カード {i} / {n}', { i: i + 1, n: cards.length })}</Text>
             <div key={card.id} className={`${s.card} ${motion ? s.fade : s.nofade}`} data-testid="guide-card" data-motion-ms={motion ? 150 : 0}>{card.body}</div>
-            {variant === 'main' ? <Checkbox label={t('次回から表示しない')} checked={dontShow} onChange={(_, d) => setDontShow(d.checked === true)} /> : null}
           </DialogContent>
           <DialogActions>
-            <Button appearance="secondary" onClick={() => onClose(dontShow)}>{t('スキップ')}</Button>
+            <Button appearance="secondary" onClick={onClose}>{t('スキップ')}</Button>
             <Button appearance="secondary" disabled={i === 0} onClick={() => setI(i - 1)}>{t('戻る')}</Button>
             {last
-              ? <Button appearance="primary" onClick={() => onClose(dontShow)}>{t('閉じる')}</Button>
+              ? <Button appearance="primary" onClick={onClose}>{t('閉じる')}</Button>
               : <Button appearance="primary" autoFocus onClick={() => setI(i + 1)}>{t('次へ')}</Button>}
           </DialogActions>
         </DialogBody>
@@ -61,7 +59,7 @@ export function WelcomeDialogView({ variant, onClose }: { variant: GuideVariant;
   );
 }
 
-/** App に 1 つ置く。開閉は useGuide（メイン画面の「使い方を見る」・分析画面の「使い方」・起動時の自動表示） */
+/** App に 1 つ置く。開閉は useGuide（メイン画面の「使い方を見る」・分析画面の「使い方」。起動時には自動で開かない） */
 export function GuideHost() {
   const open = useGuide((g) => g.open);
   const variant = useGuide((g) => g.variant);

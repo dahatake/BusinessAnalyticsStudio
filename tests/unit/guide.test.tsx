@@ -12,7 +12,7 @@ import { resetAnalyses } from '../../src/store/analyses';
 import { useMainScreen } from '../../src/store/mainScreen';
 import { useWorkTargetUi } from '../../src/projects/workTargetUi';
 import { GuideButton, GuideHost } from '../../src/guide';
-import { GUIDE_ACK_KEY, resetGuide, shouldAutoShow, useGuide } from '../../src/guide/guideStore';
+import { resetGuide, useGuide } from '../../src/guide/guideStore';
 import { GUIDE_STEPS, GUIDE_TERMS, PACK_COMMANDS, PACK_PROMPT_FILE, PACK_SAMPLE, PACK_URL, GUIDE_WHAT, GUIDE_WORKSPACE } from '../../src/guide/guideContent';
 
 const wrap = (ui: ReactNode) => <FluentProvider theme={webLightTheme}>{ui}</FluentProvider>;
@@ -67,26 +67,37 @@ describe('FR-266 はじめての方へ', () => {
 
 describe('FR-267 ウェルカム', () => {
   // FR-267 AC-679
-  it('FR-267 AC-679 「次回から表示しない」を選んで閉じたときだけ記録する。選ばずに閉じても記録しない', async () => {
-    render(wrap(<><GuideHost /><MainScreen /></>));
-    useGuide.getState().openGuide('main');
-    let dlg = await screen.findByRole('dialog', { name: 'ウェルカム' });
-    fireEvent.click(within(dlg).getByRole('button', { name: 'スキップ' }));
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'ウェルカム' })).toBeNull());
-    expect(localStorage.getItem(GUIDE_ACK_KEY)).toBeNull();
-    useGuide.getState().openGuide('main');
-    dlg = await screen.findByRole('dialog', { name: 'ウェルカム' });
-    fireEvent.click(within(dlg).getByRole('checkbox', { name: '次回から表示しない' }));
-    fireEvent.click(within(dlg).getByRole('button', { name: 'スキップ' }));
-    await waitFor(() => expect(localStorage.getItem(GUIDE_ACK_KEY)).toBe('1'));
+  it('FR-267 AC-679 スキップ・最後まで見る・Esc のどれで閉じても何も保存せず、新しく描画（再起動）しても自動では開かず、アイコンから再度開ける。「次回から表示しない」はない', async () => {
+    const closers: Array<(dlg: HTMLElement) => void> = [
+      (dlg) => fireEvent.click(within(dlg).getByRole('button', { name: 'スキップ' })),
+      (dlg) => { for (let i = 0; i < 3; i++) fireEvent.click(within(dlg).getByRole('button', { name: '次へ' })); fireEvent.click(within(dlg).getByRole('button', { name: '閉じる' })); },
+      (dlg) => fireEvent.keyDown(dlg, { key: 'Escape' }),
+    ];
+    for (const close of closers) {
+      resetGuide();
+      const view = render(wrap(<><GuideHost /><MainScreen /></>));
+      expect(screen.queryByRole('dialog')).toBeNull(); // 起動時（初回・再起動）は自動では開かない
+      fireEvent.click(screen.getByRole('button', { name: '使い方を見る' }));
+      const dlg = await screen.findByRole('dialog', { name: 'ウェルカム' });
+      expect(within(dlg).queryByRole('checkbox')).toBeNull();
+      expect(within(dlg).queryByText('次回から表示しない')).toBeNull();
+      close(dlg);
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      expect(localStorage.length).toBe(0); // 「確認済み」を含め、何も保存しない
+      view.unmount(); // 再読込・新しいタブ相当（画面を作り直す）
+      resetGuide();
+      render(wrap(<><GuideHost /><MainScreen /></>));
+      expect(screen.queryByRole('dialog')).toBeNull();
+      expect(screen.getByRole('button', { name: '使い方を見る' })).toBeTruthy();
+      cleanup();
+    }
   });
 
-  it('FR-267 AC-679 自動表示は、e2e=1 のときは welcome=1 のときだけ。確認済みなら出ない', () => {
-    expect(shouldAutoShow('')).toBe(true);
-    expect(shouldAutoShow('?e2e=1')).toBe(false);
-    expect(shouldAutoShow('?e2e=1&welcome=1')).toBe(true);
-    localStorage.setItem(GUIDE_ACK_KEY, '1');
-    expect(shouldAutoShow('?e2e=1&welcome=1')).toBe(false);
+  it('FR-267 AC-679 旧実装の自動表示・確認済みの保存が残っていない', () => {
+    expect(existsSync(join(ROOT, 'src/guide/WelcomeAuto.tsx'))).toBe(false);
+    const store = read('src/guide/guideStore.ts');
+    expect(store).not.toMatch(/localStorage|welcomeAck|autoOpen|shouldAutoShow/);
+    expect(read('src/guide/WelcomeDialog.tsx')).not.toMatch(/Checkbox|t\('次回から表示しない'\)/);
   });
 
   // FR-267 AC-680
@@ -103,13 +114,51 @@ describe('FR-267 ウェルカム', () => {
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'ウェルカム' })).toBeNull());
   });
 
-  // FR-267 AC-681
-  it('FR-267 AC-681 「使い方を見る」で、確認済みでも同じダイアログが開く。動きを減らすと切替は 0 ms', async () => {
-    localStorage.setItem(GUIDE_ACK_KEY, '1');
+  // FR-267 AC-680（焦点: 開くと最初の操作対象へ、閉じるとアイコンへ戻る）
+  it('FR-267 AC-680 開くとダイアログ内の最初の操作対象に焦点が移り、閉じるとアイコンに焦点が戻る', async () => {
     render(wrap(<><GuideHost /><MainScreen /></>));
-    fireEvent.click(screen.getByRole('button', { name: '使い方を見る' }));
+    const icon = screen.getByRole('button', { name: '使い方を見る' });
+    icon.focus();
+    fireEvent.click(icon);
     const dlg = await screen.findByRole('dialog', { name: 'ウェルカム' });
-    expect(within(dlg).getByTestId('guide-card').getAttribute('data-motion-ms')).toMatch(/^(0|150)$/);
+    await waitFor(() => expect(dlg.contains(document.activeElement)).toBe(true));
+    fireEvent.click(within(dlg).getByRole('button', { name: 'スキップ' }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await waitFor(() => expect(document.activeElement).toBe(icon));
+  });
+
+  // FR-267 AC-681
+  it('FR-267 AC-681 右上のアイコン「使い方を見る」は、ツールチップ・ラベルを持つキーボードで操作できるボタンで、押すと同じダイアログが開く', async () => {
+    render(wrap(<><GuideHost /><MainScreen /></>));
+    const icon = screen.getByRole('button', { name: '使い方を見る' }) as HTMLButtonElement;
+    expect(icon.tagName).toBe('BUTTON'); // ネイティブのボタン: Tab で到達し、Enter／Space で押せる
+    expect(icon.disabled).toBe(false);
+    expect(icon.tabIndex).toBeGreaterThanOrEqual(0);
+    expect(icon.querySelector('svg')).toBeTruthy(); // アイコン
+    expect(icon.textContent).toContain('使い方を見る'); // 表示ラベル
+    const heading = screen.getByRole('heading', { level: 1 });
+    expect(heading.compareDocumentPosition(icon) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy(); // 画面の先頭（見出しの行）に置く
+    icon.focus();
+    expect(document.activeElement).toBe(icon);
+    fireEvent.click(icon); // Enter／Space はブラウザーが click に変換する
+    expect(await screen.findByRole('dialog', { name: 'ウェルカム' })).toBeTruthy();
+  });
+
+  it('FR-267 AC-681 「動きを減らす」が有効なとき、カードの切替は 0 ms（アニメーションなし）。無効なときは動きを付ける', async () => {
+    const original = window.matchMedia;
+    const stub = (reduce: boolean) => { window.matchMedia = ((q: string) => ({ matches: reduce && q.includes('prefers-reduced-motion'), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false })) as unknown as typeof window.matchMedia; };
+    try {
+      for (const [reduce, ms] of [[true, '0'], [false, '150']] as const) {
+        stub(reduce);
+        render(wrap(<><GuideHost /><MainScreen /></>));
+        fireEvent.click(screen.getByRole('button', { name: '使い方を見る' }));
+        const dlg = await screen.findByRole('dialog', { name: 'ウェルカム' });
+        expect(within(dlg).getByTestId('guide-card').getAttribute('data-motion-ms')).toBe(ms);
+        fireEvent.click(within(dlg).getByRole('button', { name: '次へ' }));
+        expect(within(dlg).getByTestId('guide-card').getAttribute('data-motion-ms')).toBe(ms);
+        cleanup(); resetGuide();
+      }
+    } finally { window.matchMedia = original; }
   });
 });
 
@@ -170,6 +219,6 @@ describe('FR-272 分析画面の「使い方」', () => {
     expect(within(dlg).getByText('カード 1 / 5')).toBeTruthy();
     fireEvent.keyDown(dlg, { key: 'Escape' });
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(localStorage.getItem(GUIDE_ACK_KEY)).toBeNull();
+    expect(localStorage.length).toBe(0);
   });
 });
