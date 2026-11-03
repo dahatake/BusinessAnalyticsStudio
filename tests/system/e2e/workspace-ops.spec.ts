@@ -50,8 +50,14 @@ async function seedProjects(page: Page, company: string, names: string[]): Promi
   }
 }
 
+// 見出しの 3 ボタン（最小化・最大化／元に戻す・閉じる＝FR-295 AC-826）は window-controls、ピン止め・タブ・ビューは component-actions（AC-518）。
+// 旧名称「非表示」は「閉じる」、「通常表示」は「元に戻す」（AC-826）。
 function icon(c: Locator, name: string | RegExp): Locator {
-  return c.getByTestId('component-actions').getByRole('button', { name });
+  const g = c.locator('[data-testid="window-controls"], [data-testid="component-actions"]');
+  if (name === '非表示') return g.getByRole('button', { name: '閉じる', exact: true });
+  if (name === '通常表示') return g.getByRole('button', { name: '元に戻す', exact: true });
+  if (name === '最小化' || name === '最大化') return g.getByRole('button', { name, exact: true });
+  return g.getByRole('button', { name });
 }
 
 async function dragHeading(page: Page, c: Locator, toX: number, toY: number, release = true) {
@@ -226,7 +232,7 @@ test.describe('FR-150 操作アイコンの常時表示', () => {
     }
     await b.focus();
     await expect(icon(b, '最小化')).toBeVisible();
-    await expect(icon(a, '最小化'), 'フォーカスを外したのにアイコンの組が残っている').toBeHidden();
+    await expect(icon(a, 'タブにまとめる'), 'フォーカスを外したのにアイコンの組が残っている').toBeHidden();
     // 1 回の操作で実行
     await icon(b, '最小化').click();
     await expect(component(page, ks[1])).toHaveAttribute('data-minimized', 'true');
@@ -285,6 +291,13 @@ test.describe('FR-151 最小化と左メニューのアイコン表示', () => {
     const narrow = await box(page.getByTestId('nav-priority'));
     expect(narrow.width, 'アイコンだけの細い列になる').toBeLessThan(wide.width);
     await expect(page.getByTestId('nav-priority')).toHaveAccessibleName(/./);
+    // 項目の操作は FR-295 (a) ③: 前面の Window を持つ項目は最小化、最小化中は復元、未表示・閉じたときは表示（AC-825 が詳細を検証）。ここでは最小化中のメニューでも同じ
+    const winItem = page.locator('[data-testid="window-list-item"][data-component-key="priority"]');
+    const state0 = await winItem.getAttribute('data-state');
+    await page.getByTestId('nav-priority').focus();
+    await page.keyboard.press('Enter');
+    await expect(winItem, '最小化中の左メニューでも項目の操作で Window の状態が変わる').not.toHaveAttribute('data-state', state0 ?? '');
+    await page.getByTestId('nav-priority').press('Enter'); // 元の状態に戻す（以降の確認に影響させない）
     // 設定は左メニューに項目を持たない（FR-223 AC-774）ので、左メニューの画面「ガントチャート」で確かめる
     await page.getByTestId('nav-gantt').hover();
     await expect(page.getByRole('tooltip')).toContainText(/ガントチャート/);

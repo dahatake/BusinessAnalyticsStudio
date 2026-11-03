@@ -8,6 +8,9 @@ import { test, expect, component, selectPersona, openScreen, hook, settingsButto
 import { listScreenKeys, gotoScreen, topKeys, actions, pinButton, viewButton, openViewMenu, chooseView, box, type ViewState } from '../support/screens';
 
 const MAX_PERMANENT_BUTTONS = 6; // PARAM-073
+// 見出しの最小化・最大化（元に戻す）・閉じるは window-controls（FR-295 AC-826）、ピン止め・タブ・ビューは component-actions。常設ボタンの数は両方の合計（「その他の操作」を除く）
+const wctl = (c: Locator) => c.getByTestId('window-controls').first();
+const permanentCount = (c: Locator) => c.locator('[data-testid="window-controls"] button, [data-testid="component-actions"] button').evaluateAll((els) => els.filter((e) => !/その他の操作/.test(e.getAttribute('aria-label') ?? e.textContent ?? '')).length);
 const STEPS = ['課題定義', '現状分析', 'KPI 測定', 'ユースケース作成', '施策計画']; // PARAM-030 = 5
 const MIN_TARGET = 44; // AC-528
 const THEMES = ['light', 'dark', 'hc'] as const;
@@ -263,19 +266,21 @@ test.describe('FR-222 画面コンポーネント右上の操作アイコン', (
         await c.focus();
         if (!(await c.isVisible())) continue; // focus 後にも再確認
         shown++;
-        const a = actions(c);
-        await expect(a, `${key}/${k}: 見出しに操作アイコンがない`).toBeVisible();
+        const a = wctl(c);
+        await expect(a, `${key}/${k}: 見出しに最小化・最大化・閉じるのアイコンがない`).toBeVisible();
         const ab = await box(a);
         const cb = await box(c);
-        expect(ab.x + ab.width / 2, `${key}/${k}: 操作アイコンが見出しの右側にない`).toBeGreaterThan(cb.x + cb.width / 2);
+        expect(ab.x + ab.width / 2, `${key}/${k}: 操作アイコンが見出しの右側にない（Windows の慣習）`).toBeGreaterThan(cb.x + cb.width / 2);
         expect(ab.y - cb.y, `${key}/${k}: 操作アイコンが見出し（上部）にない`).toBeLessThanOrEqual(cb.height * 0.25);
-        const min = a.getByRole('button', { name: '最小化' });
-        const max = a.getByRole('button', { name: /^(最大化|通常表示|元に戻す)$/ });
+        const min = a.getByRole('button', { name: '最小化', exact: true });
+        const max = a.getByRole('button', { name: /^(最大化|元に戻す)$/ });
+        const close = a.getByRole('button', { name: '閉じる', exact: true });
         await expect(min, `${key}/${k}: 最小化のアイコンがない`).toBeVisible();
         await expect(max, `${key}/${k}: 最大化のアイコンがない`).toBeVisible();
-        for (const b of [min, max]) await expect(b.locator('svg, img, [data-icon-variant]').first(), `${key}/${k}: アイコンの図がない（文字だけ）`).toBeAttached();
+        await expect(close, `${key}/${k}: 閉じるのアイコンがない`).toBeVisible();
+        for (const b of [min, max, close]) await expect(b.locator('svg, img, [data-icon-variant]').first(), `${key}/${k}: アイコンの図がない（文字だけ）`).toBeAttached();
         // 常設ボタンの数（「その他の操作」を開くボタンは数えない）
-        const permanent = await a.getByRole('button').evaluateAll((els) => els.filter((e) => !/その他の操作/.test(e.getAttribute('aria-label') ?? e.textContent ?? '')).length);
+        const permanent = await permanentCount(c);
         expect(permanent, `${key}/${k}: 常設ボタンが多い`).toBeLessThanOrEqual(MAX_PERMANENT_BUTTONS);
       }
       expect(shown, `${key}: 表示中の画面コンポーネントが 1 つもない`).toBeGreaterThanOrEqual(1);
@@ -283,17 +288,17 @@ test.describe('FR-222 画面コンポーネント右上の操作アイコン', (
     // 1 つのコンポーネントで、名前（ホバー・フォーカス）と結果（FR-151 最小化・FR-013 最大化）とキーボード操作を確かめる
     const c = await openScreen(page, 'priority'); // 画面「キャンバス」は廃止（FR-012）
     await c.focus();
-    const a = actions(c);
+    const a = wctl(c);
     await a.getByRole('button', { name: '最小化' }).hover();
     await expect(page.getByRole('tooltip').filter({ hasText: '最小化' }).first(), 'ホバーで名前が出ない').toBeVisible();
     await page.mouse.move(0, 0);
-    await a.getByRole('button', { name: '最大化' }).focus();
+    await a.getByRole('button', { name: '最大化', exact: true }).focus();
     await expect(page.getByRole('tooltip').filter({ hasText: '最大化' }).first(), 'フォーカスで名前が出ない').toBeVisible();
     const before = await box(c);
     await page.keyboard.press('Enter'); // キーボードだけで最大化
     await expect(c).toHaveAttribute('data-maximized', 'true');
     expect((await box(c)).width * (await box(c)).height).toBeGreaterThan(before.width * before.height);
-    await a.getByRole('button', { name: /^(通常表示|元に戻す)$/ }).focus();
+    await a.getByRole('button', { name: '元に戻す', exact: true }).focus();
     await page.keyboard.press('Space');
     await expect(c).not.toHaveAttribute('data-maximized', 'true');
     await a.getByRole('button', { name: '最小化' }).focus();
@@ -301,29 +306,38 @@ test.describe('FR-222 画面コンポーネント右上の操作アイコン', (
     await expect(c).toHaveAttribute('data-minimized', 'true');
   });
 
-  // FR-222 AC-518（異常系: 幅を狭くしても最小化・最大化は見出しに残り、畳んだ操作は「…」メニューとコマンドパレットから実行できる）
-  test('FR-222 AC-518 異常系: 幅を狭くしても最小化・最大化は見出しに残り、常設ボタンは 6 個を超えず、畳んだ操作は「その他の操作」メニューとコマンドパレットから実行できる', async ({ page, start }) => {
-    await page.setViewportSize({ width: 480, height: 800 });
+  // FR-222 AC-518（異常系: 幅を狭くしても最小化・最大化・閉じるは見出しに残り、ピン止め・タブ・ビューだけが「…」に畳まれ、畳んだ操作は「…」メニューとコマンドパレットから実行できる）
+  test('FR-222 AC-518 異常系: 幅を狭くしても最小化・最大化・閉じるは見出しに残り、常設ボタンは 6 個を超えず、畳んだ操作（ピン止め・タブ・ビュー）は「その他の操作」メニューとコマンドパレットから実行できる', async ({ page, start }) => {
+    await page.setViewportSize({ width: 320, height: 800 }); // PARAM-029 の境界。さらに狭い 300 でも同じ
     await start();
     await selectPersona(page, '事業部門');
+    for (const width of [320, 300]) {
+      await page.setViewportSize({ width, height: 800 });
+      const [k] = await topKeys(page);
+      const c = component(page, k);
+      await c.focus();
+      const w = wctl(c);
+      await expect(w.getByRole('button', { name: '最小化', exact: true }), `${width}px: 最小化が消える`).toBeVisible();
+      await expect(w.getByRole('button', { name: /^(最大化|元に戻す)$/ }), `${width}px: 最大化が消える`).toBeVisible();
+      await expect(w.getByRole('button', { name: '閉じる', exact: true }), `${width}px: 閉じるが消える`).toBeVisible();
+      expect(await permanentCount(c), `${width}px: 常設ボタン`).toBeLessThanOrEqual(MAX_PERMANENT_BUTTONS);
+    }
     const [k] = await topKeys(page);
     const c = component(page, k);
     await c.focus();
-    const a = actions(c);
-    await expect(a.getByRole('button', { name: '最小化' }), '狭い幅で最小化が消える').toBeVisible();
-    await expect(a.getByRole('button', { name: /^(最大化|通常表示|元に戻す)$/ }), '狭い幅で最大化が消える').toBeVisible();
-    const permanent = await a.getByRole('button').evaluateAll((els) => els.filter((e) => !/その他の操作/.test(e.getAttribute('aria-label') ?? e.textContent ?? '')).length);
-    expect(permanent, '狭い幅の常設ボタン').toBeLessThanOrEqual(MAX_PERMANENT_BUTTONS);
-    await a.getByRole('button', { name: 'その他の操作' }).click();
+    // ピン止め・タブ・ビューは常設から畳まれる（見出しに直接は並ばない）
+    await expect(pinButton(c), '狭い幅でピン止めが常設のまま').toHaveCount(0);
+    await actions(c).getByRole('button', { name: 'その他の操作' }).click();
     const menu = page.getByRole('menu').last();
     await expect(menu.getByRole('menuitem').first(), '「その他の操作」に畳んだ操作がない').toBeVisible();
+    await expect(menu.getByRole('menuitem', { name: /ピン止め/ }).first(), '畳んだピン止めがメニューにない').toBeVisible();
     await page.keyboard.press('Escape');
-    // 畳んだ操作（非表示）をコマンドパレットからも実行できる
+    // 畳んだ操作（ピン止め）をコマンドパレットからも実行できる
     await page.keyboard.press('Control+k');
     const dialog = page.getByRole('dialog', { name: 'コマンドパレット' });
     await expect(dialog).toBeVisible();
-    await dialog.getByRole('combobox').fill('非表示');
-    await expect(dialog.getByRole('option', { name: /非表示/ }).first(), '畳んだ操作がコマンドパレットにない').toBeVisible();
+    await dialog.getByRole('combobox').fill('ピン止め');
+    await expect(dialog.getByRole('option', { name: /ピン止め/ }).first(), '畳んだ操作がコマンドパレットにない').toBeVisible();
   });
 });
 
