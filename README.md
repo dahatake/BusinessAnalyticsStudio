@@ -74,7 +74,7 @@ flowchart TD
 | 1 | ターミナルで `powershell -ExecutionPolicy Bypass -File scripts\setup.ps1`（macOS は `bash scripts/setup.sh`）。`-DryRun` / `--dry-run` で内容だけ確認でき、失敗時は `logs/setup.log` を見る | 必要な道具と依存パッケージがそろう | エラーなく終わる |
 | 2 | ターミナルで `npm run build` のあと `npm start`（または `start.cmd` / `./start.sh`） | 分析ボードが起動する。「お手本パックで起動しています」と出れば正常 | 起動メッセージが出る |
 | 3 | ブラウザーで http://127.0.0.1:4173 を開き、左メニューとツールバーのペルソナで画面を切り替える | 20 種類の画面の見方がわかる | 画面を一通り触れた |
-| 4 | ターミナルで `npm run pipeline -- all --customer ... --project ...`（research / build に分けて実行も可） | 顧客パックができる | `npm run check:pack` と `npm run verify:pack` が合格 |
+| 4 | ターミナルで `npm run pipeline -- all --customer ... --project ...`（research / build に分けて実行も可）。`--live` を付けたときだけ外部（LLM・WorkIQ・Web）へ送り、付けないと送信せずサンプルで進む。`--live` で種別「人」を含む案件は件数を示す y/N 確認が出る（既定は中止） | 顧客パックができる | `npm run check:pack` と `npm run verify:pack` が合格 |
 | 5 | `public/brand/brand-profile.json` などを編集（再ビルド不要）。手順は [ブランド色・ロゴ・フォント・BGM の差し替え](#4-ブランド色ロゴフォントbgmの差し替え手順) | 顧客らしい見た目になる | `npm run check:pack` が合格 |
 | 6 | ブラウザーでペルソナ切替・ホワイトボード・議論ツリーを使う。進め方は [users-guide/02-meeting-playbook.md](users-guide/02-meeting-playbook.md) | 顧客との議論を画面で進め、残せる | 議論の結果がそろった |
 | 7 | ツールバーの「エクスポート」「Engagement サマリーパック」「保存」 | Markdown やサマリーパックとして渡せる | 資料を渡した |
@@ -211,6 +211,7 @@ brand/BRAND-RESEARCH.md     ブランド調査の記録
   ```
   npm run pipeline -- all --customer "<顧客名>" --project "<Project 名>"
   ```
+  `--live` を付けたときだけ外部（LLM・WorkIQ・Web）へ送ります。付けないと外部へは送信せず、前提を置いたサンプル・モックで進みます（FR-121・AC-823）。`--live` で種別「人」を含む案件は、送る前に件数を示す y/N の確認が出ます。既定は中止で、中止・未回答なら送信しません（AC-512）。
   `research`（事前調査だけ）と `build`（複製から起動まで）に分けても実行できます。入力変数（`--intensity`・`--bgm`・`--material` など）は `.github/skills/envisioning-dashboard/SKILL.md` を見てください。
 - **手で作る**: `examples/mono/`（お手本パック）を複製して、JSON を書き換えます。`schema/` に各ファイルの JSON Schema があります。出典のない数値は置かず、AI が作ったデータには作成者の種別（AI 生成）を付けます。
 
