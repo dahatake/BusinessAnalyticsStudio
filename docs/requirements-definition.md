@@ -402,7 +402,7 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 | Twin の流れ | 現実世界とデジタル世界のエンティティを結ぶ向き付きの流れ。Data は現実世界からデジタル世界へ、Control はデジタル世界から現実世界へ（FR-239・FR-241） | なし |
 | Twin の層 | デジタル世界のエンティティが属する層。Operations（稼働・保守・自動化）、Experience（人と空間の体験）、Insights（分析・KPI・予測）（FR-239・FR-241） | なし |
 | 空間ビュー | 空間の階層（全体→拠点→フロア→部屋・設備）に KPI を重ねて見る画面（FR-240） | なし |
-| Copilot で分析実行 | 画面上部のボタンから、現在の画面のすべてのコンポーネントのデータを Microsoft Foundry の生成 AI にレビューさせ、コンポーネントごとの案を得る操作（FR-278）。名前に Copilot を含むが、使う生成 AI は設定画面で選んだ接続先（既定は Microsoft Foundry〈C-03 の例外〉。GitHub Copilot SDK も選べる。FR-275） | なし |
+| Copilot で分析実行 | 画面上部のボタンから、現在の画面のすべてのコンポーネントのデータを Microsoft Foundry の生成 AI にレビューさせ、コンポーネントごとの案を得る操作（FR-278）。名前に Copilot を含むが、使う生成 AI は設定画面で選んだ接続先（既定は Microsoft Foundry〈C-03 の例外〉。接続先が未保存で起動時に Copilot SDK が認証済みなら自動で GitHub Copilot SDK になる〈FR-011〉。GitHub Copilot SDK も選べる。FR-275） | なし |
 | Copilot の分析実行 | 「Copilot で分析実行」の 1 回の実行。実行状態と利用量を持つ（FR-278・NFR-COST-001） | なし |
 | Copilot の案 | 分析実行の結果として、コンポーネントごとに示す AI 生成の変更案。反映するまで画面・管理データを変えない（FR-279・FR-280） | なし |
 | Foundry 接続設定 | 設定画面で入力する Microsoft Foundry のエンドポイント・デプロイ名・認証方式・API キー。キーは中継プロセスが暗号化して端末内だけに保管し、再表示しない（FR-282・NFR-SEC-012） | なし |
