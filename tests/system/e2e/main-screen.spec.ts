@@ -95,6 +95,43 @@ test.describe('FR-186 メイン画面（QuickStart・チュートリアルの手
     await expect(page.getByTestId('work-target-menu')).toContainText('案件二号');
     await expect(page.getByTestId('work-target-menu')).not.toContainText('案件一号');
   });
+
+  // FR-186 AC-819（h1 は開いている Project → 直近に開いた Project → 「メイン画面」の順で決まり、本文より大きい。再読込しても同じ規則）
+  test('FR-186 AC-819 メイン画面の h1 は、未登録なら「メイン画面」、開いている Project があればその「企業名-Project名」、開いていなければ直近に開いた Project の「企業名-Project名」で、本文より大きい。再読込後も同じ規則', async ({ page, start }) => {
+    const { app, main } = await startAtMain(page, start);
+    const h1 = main.getByRole('heading', { level: 1 });
+    // 異常系: 企業・Project が未登録で開いた記録もない → 「メイン画面」。再読込しても同じ
+    await expect(h1).toHaveCount(1);
+    await expect(h1).toHaveText('メイン画面');
+    await app.reload({ skipOpening: false });
+    await pressOpeningEscape(page);
+    await expect(main.getByRole('heading', { level: 1 })).toHaveText('メイン画面');
+    // 企業・Project を登録しただけ（まだ開いていない）なら、開いた記録がないので「メイン画面」のまま
+    await registerCompanyAndProjects(page, '合成株式会社N', ['案件一号', '案件二号']);
+    await expect(h1).toHaveText('メイン画面');
+    // 1 件目 → 2 件目の順に開く。メイン画面へ戻ると、開いている（直近に開いた）2 件目の「企業名-Project名」
+    await openProject(page, '合成株式会社N', '案件一号');
+    await page.getByRole('button', { name: 'メイン画面へ戻る' }).click();
+    await expect(main).toBeVisible();
+    await expect(h1).toHaveText('合成株式会社N-案件一号');
+    await main.getByRole('button', { name: 'Project を開く' }).click();
+    const picker = page.getByRole('dialog', { name: '作業先の選択' });
+    await picker.getByRole('option', { name: /合成株式会社N.*案件二号/ }).click();
+    await expect(picker).toBeHidden();
+    await page.getByRole('button', { name: 'メイン画面へ戻る' }).click();
+    await expect(h1).toHaveText('合成株式会社N-案件二号');
+    // h1 は見出しの階層の最上位（メイン画面内に h1 より上位の見出しがなく、h1 は 1 つ）で、本文より大きい
+    const sizes = await main.evaluate((el) => {
+      const px = (e: Element | null) => (e ? parseFloat(getComputedStyle(e).fontSize) : 0);
+      return { h1: px(el.querySelector('h1')), body: px(el.querySelector('[data-testid="main-guide"] li') ?? el.querySelector('p')) };
+    });
+    expect(sizes.body, '本文の文字サイズが取れない').toBeGreaterThan(0);
+    expect(sizes.h1, 'h1 が本文より大きくない').toBeGreaterThan(sizes.body);
+    // 再読込後（開いている Project はないが、直近に開いた記録が端末内の保存先にある）も、直近の Project を表示する
+    await app.reload({ skipOpening: false });
+    await pressOpeningEscape(page);
+    await expect(page.getByTestId('main-screen').getByRole('heading', { level: 1 })).toHaveText('合成株式会社N-案件二号');
+  });
 });
 
 test.describe('FR-187 分析画面からメイン画面へ戻るボタン', () => {

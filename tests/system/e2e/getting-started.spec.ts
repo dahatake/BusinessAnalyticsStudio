@@ -21,9 +21,25 @@ function expectShortSentences(text: string, where: string) {
 
 test.describe('FR-266 「はじめての方へ」', () => {
   // FR-266 AC-675
-  test('FR-266 AC-675 メイン画面を開くと「はじめての方へ」に、できること・用語・4 手順（何をする操作か・例・次に起きること）が常に表示され、各文は 60 字以内', async ({ page, start }) => {
+  test('FR-266 AC-675 AC-820 AC-821 「はじめての方へ」は既定で閉じ、開閉ボタンは常に見えて aria-expanded が変わり Enter・Space で開閉できる。開くと、できること・用語・4 手順が表示され各文は 60 字以内。開閉は 500ms 以内の動きで、動きの軽減では即時。幅 320 では本文の下へ回る', async ({ page, start }) => {
     const { app, main } = await startAtMain(page, start);
+    const toggle = main.getByRole('button', { name: 'はじめての方へ' });
     const guide = main.getByRole('region', { name: 'はじめての方へ' });
+    // 既定（起動直後）は閉じた状態: ボタンは見え、aria-expanded=false、説明は表示されない
+    await expect(toggle).toBeVisible();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(guide).toBeHidden();
+    // キーボード: Enter で開き、Space で閉じる（aria-expanded が開閉に合わせて変わる）
+    await toggle.focus();
+    await page.keyboard.press('Enter');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(guide).toBeVisible();
+    await page.keyboard.press(' ');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(guide).toBeHidden();
+    await expect(toggle, '閉じた状態でもボタンは見える').toBeVisible();
+    await page.keyboard.press('Space');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
     await expect(guide).toBeVisible();
     const text = await guide.innerText();
     for (const t of ['企業', 'Project', 'デモ', '顧客パック']) expect(text, `用語「${t}」の説明がない`).toContain(t);
@@ -31,13 +47,58 @@ test.describe('FR-266 「はじめての方へ」', () => {
     expect((text.match(/例/g) ?? []).length, '各手順の「例」が 4 つ未満').toBeGreaterThanOrEqual(4);
     expect(text).toMatch(/次に/);
     expectShortSentences(text, '「はじめての方へ」');
+
+    // FR-266 AC-820: 開閉の動きの所要時間は 500ms（PARAM-074）以内。動きの軽減（reduce）では 0 で即時に切り替わり、状態は変わらず伝わる
+    const maxMotionMs = () => guide.evaluate((el) => {
+      let worst = 0;
+      const toMs = (v: string) => Math.max(...v.split(',').map((s) => (s.trim().endsWith('ms') ? parseFloat(s) : parseFloat(s) * 1000) || 0));
+      for (let e: Element | null = el; e && e.getAttribute('data-testid') !== 'main-screen'; e = e.parentElement) {
+        const cs = getComputedStyle(e);
+        worst = Math.max(worst, toMs(cs.transitionDuration) + toMs(cs.transitionDelay), toMs(cs.animationDuration) + toMs(cs.animationDelay));
+      }
+      return worst;
+    });
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    const normalMs = await maxMotionMs();
+    expect(normalMs, '開閉がアニメーションになっていない').toBeGreaterThan(0);
+    expect(normalMs, '開閉の所要時間が 500ms を超える').toBeLessThanOrEqual(500);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    expect(await maxMotionMs(), '動きの軽減で動きが残っている').toBe(0);
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(guide).toBeHidden({ timeout: 300 });
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(guide).toBeVisible({ timeout: 300 });
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+
+    // FR-266 AC-821: 広い画面では手順の案内の右側、幅 320（PARAM-029）では本文の下。横スクロールなしで開閉・全操作ができる
+    const open = main.getByRole('button', { name: 'Project を開く' });
+    const wide = (await guide.boundingBox())!;
+    const openBox = (await open.boundingBox())!;
+    expect(wide.x, '広い画面でパネルが手順の案内の右側にない').toBeGreaterThanOrEqual(openBox.x + openBox.width - 1);
+    await page.setViewportSize({ width: 320, height: 800 });
+    await expect(toggle).toBeVisible();
+    await expect.poll(async () => (await guide.boundingBox())!.y, { message: '狭い画面でパネルが本文の下へ回らない' }).toBeGreaterThanOrEqual((await open.boundingBox())!.y + (await open.boundingBox())!.height - 1);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth), '横スクロールが出る').toBe(true);
+    await toggle.focus();
+    await page.keyboard.press('Enter');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await page.keyboard.press('Enter');
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
+    await expect(main.getByRole('button', { name: '企業を登録' })).toBeVisible();
+    await page.setViewportSize({ width: 1280, height: 720 });
+
+    // 再読込後は、開いていても既定の閉じた状態に戻る
     await app.reload({ skipOpening: false });
     await pressOpeningEscape(page);
-    await expect(page.getByTestId('main-screen').getByRole('region', { name: 'はじめての方へ' })).toBeVisible();
+    const again = page.getByTestId('main-screen');
+    await expect(again.getByRole('button', { name: 'はじめての方へ' })).toHaveAttribute('aria-expanded', 'false');
+    await expect(again.getByRole('region', { name: 'はじめての方へ' })).toBeHidden();
   });
 
-  // FR-266 AC-675（異常系: 企業・Project を登録しても、説明が消えない）
-  test('FR-266 AC-675 異常系: 企業と Project を登録した後も「はじめての方へ」が表示され続ける', async ({ page, start }) => {
+  // FR-266 AC-675（異常系: 企業・Project を登録しても、既定は閉じたまま。開閉は登録の有無によらず同じに動く）
+  test('FR-266 AC-675 異常系: 企業と Project を登録した後も「はじめての方へ」は閉じた状態で、ボタンで開くと説明が表示される', async ({ page, start }) => {
     const { main } = await startAtMain(page, start);
     await main.getByRole('button', { name: '企業を登録' }).click();
     const dlg = page.getByRole('dialog');
@@ -45,6 +106,12 @@ test.describe('FR-266 「はじめての方へ」', () => {
     await dlg.getByRole('button', { name: '登録' }).click();
     await expect(dlg).toBeHidden();
     await expect(main.getByRole('region', { name: '企業 合成株式会社G' })).toBeVisible();
+    const toggle = main.getByRole('button', { name: 'はじめての方へ' });
+    await expect(toggle).toBeVisible();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    await expect(main.getByRole('region', { name: 'はじめての方へ' })).toBeHidden();
+    await toggle.click();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
     await expect(main.getByRole('region', { name: 'はじめての方へ' })).toBeVisible();
   });
 });
@@ -95,7 +162,11 @@ test.describe('FR-268 顧客パックの説明カード', () => {
   // FR-268 AC-682
   test('FR-268 AC-682 メイン画面の「顧客パック」の説明に、意味・デモで試せること・作り方 3 通り・確認コマンド 2 つ・起動の手順が表示される', async ({ page, start }) => {
     const { main } = await startAtMain(page, start);
-    const card = main.getByRole('region', { name: /顧客パック/ }).first();
+    // 補足パネル（既定は閉じた状態）を開いてから、パネルの中の説明カードを確かめる
+    await main.getByRole('button', { name: 'はじめての方へ' }).click();
+    const panel = main.getByRole('region', { name: 'はじめての方へ' });
+    await expect(panel).toBeVisible();
+    const card = panel.getByRole('region', { name: /顧客パック/ }).first();
     await expect(card).toBeVisible();
     const t = await card.innerText();
     expect(t).toContain('顧客パックがなくても');
@@ -117,7 +188,8 @@ test.describe('FR-268 顧客パックの説明カード', () => {
     await pressOpeningEscape(page);
     const main = page.getByTestId('main-screen');
     await expect(main).toBeVisible();
-    const card = main.getByRole('region', { name: /顧客パック/ }).first();
+    await main.getByRole('button', { name: 'はじめての方へ' }).click();
+    const card = main.getByRole('region', { name: 'はじめての方へ' }).getByRole('region', { name: /顧客パック/ }).first();
     await expect(card).toBeVisible();
     await expect(card).toContainText('顧客パックがなくても');
   });

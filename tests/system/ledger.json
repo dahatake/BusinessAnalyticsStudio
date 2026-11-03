@@ -282,9 +282,9 @@
     "AC-599": "sha256:5b8a7aaeef08816d",
     "AC-600": "sha256:ccc0ba0622a2a2a8",
     "AC-601": "sha256:6cd0c890d1d0fb1d",
-    "AC-675": "sha256:956f62d881b6cbac",
+    "AC-675": "sha256:2bfd22e084e82f46",
     "AC-678": "sha256:faa3bcdeb2d5c19b",
-    "AC-682": "sha256:08ab3ca1b73c4615",
+    "AC-682": "sha256:cd60a59383da26b4",
     "AC-685": "sha256:c9df7610f9e4b193",
     "AC-687": "sha256:ef4b678cca783521",
     "AC-690": "sha256:ae060af5d4a4546c",
@@ -355,7 +355,10 @@
     "AC-800": "sha256:424a64b846ae8547",
     "AC-803": "sha256:c2dce60d21476d33",
     "AC-797": "sha256:443f94c5875d400d",
-    "AC-802": "sha256:02aa4e81ae83c15a"
+    "AC-802": "sha256:02aa4e81ae83c15a",
+    "AC-820": "sha256:76d07de1834884f8",
+    "AC-821": "sha256:9641a1775701bbfc",
+    "AC-819": "sha256:326ac95750cd51e2"
   },
   "cases": [
     {
@@ -5090,13 +5093,14 @@
         "FR-186"
       ],
       "ac_ids": [
-        "AC-396"
+        "AC-396",
+        "AC-819"
       ],
       "title": "AC-396 分離された企業名/Project名の一致と再読込・再オープン後永続化",
       "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-396",
+      "command": "node tests/system/run.mjs AC-396 AC-819",
       "canary": true,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "69be87a",
       "last_run_at": "2026-11-01T20:25:37+09:00",
       "evidence": "work/runs/202610311329/logs/system-test/E2E-291-202611012024.log",
@@ -5118,6 +5122,18 @@
           "by": "test-designer",
           "change": "canary: False -> True",
           "reason": "名前の分離と永続化の主要導線を今回のcanaryとして先行確認"
+        },
+        {
+          "at": "2026-11-03T17:13:45+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/run.mjs AC-396' -> 'node tests/system/run.mjs AC-396 AC-819'; ac_ids: ['AC-396'] -> ['AC-396', 'AC-819']",
+          "reason": "AC-819（メイン画面の h1 に Project 名）を同じ要求・層・ファイルのケースに追加"
+        },
+        {
+          "at": "2026-11-03T17:13:47+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC-819 追加のため再実行が必要"
         }
       ]
     },
@@ -7057,7 +7073,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-675",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "df8887c",
       "last_run_at": "2026-11-01T20:08:22+09:00",
       "evidence": "work/runs/202610311329/logs/system-test/E2E-359-202611011945.log",
@@ -7067,6 +7083,24 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-03T17:13:43+09:00",
+          "by": "test-designer",
+          "change": "ac_ids: ['AC-675'] -> ['AC-675', 'AC-820', 'AC-821']",
+          "reason": "AC-675 改訂（既定は閉じた開閉パネル）に合わせ、開閉・aria-expanded・Enter/Space・AC-820 動き・AC-821 狭い幅を 1 ケースに集約"
+        },
+        {
+          "at": "2026-11-03T17:13:45+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC 改訂のため再実行が必要"
+        },
+        {
+          "at": "2026-11-03T17:14:08+09:00",
+          "by": "test-designer",
+          "change": "ac_ids: ['AC-675', 'AC-820', 'AC-821'] -> ['AC-675']",
+          "reason": "AC-820・AC-821 は検証レベル integration のため System Test の対象外（CHK-10）。実装役の結合テストで保証し、E2E の動き・幅の確認は AC-675 の追加確認として残す"
         }
       ]
     },
@@ -7153,11 +7187,11 @@
       "ac_ids": [
         "AC-682"
       ],
-      "title": "顧客パックの説明カードに意味・デモ・作り方 3 通り・確認コマンド・起動手順が表示される",
+      "title": "補足パネルを開くと顧客パックの説明カードに意味・デモ・作り方 3 通り・確認コマンド・起動手順が表示される",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-682",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "df8887c",
       "last_run_at": "2026-11-01T20:08:22+09:00",
       "evidence": "work/runs/202610311329/logs/system-test/E2E-363-202611011945.log",
@@ -7167,6 +7201,18 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-03T17:13:44+09:00",
+          "by": "test-designer",
+          "change": "title: '顧客パックの説明カードに意味・デモ・作り方 3 通り・確認コマンド・起動手順が表示される' -> '補足パネルを開くと顧客パックの説明カードに意味・デモ・作り方 3 通り・確認コマンド・起動手順が表示される'",
+          "reason": "AC-682 改訂（パネルを開いてから確認）に合わせて更新"
+        },
+        {
+          "at": "2026-11-03T17:13:46+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC 改訂のため再実行が必要"
         }
       ]
     },
