@@ -393,21 +393,16 @@ export async function waitFirstFrame(page: Page): Promise<number> {
 }
 
 /**
- * 了承の記録（FR-181 AC-375 と同じ入力欄・button「了承を保存」）を設定画面で入力する（FR-219 AC-514 の共通の手順）。
- * 種別「人」を含むパック（お手本パック mono）をエクスポートする既存ケースは、手順の冒頭でこれを呼ぶ（CONTRACT.md §22）。
+ * 【廃止の名残】了承の記録（FR-181）は 2026-11-03 に廃止された（AC-373〜375・381〜386）。実接続・エクスポートの条件に了承はない。
+ * 既存ケースの呼び出し箇所の互換のためだけに残した何もしない関数。新しいケースでは呼ばない（見つけ次第、呼び出しを消す）。
  */
-export async function recordExportConsent(page: Page, note = '顧客側の担当役員（口頭）'): Promise<void> {
-  const settings = await openScreen(page, 'settings');
-  const box = settings.getByRole('textbox', { name: /了承.*(メモ|役割)|(メモ|役割).*了承|確認した相手/ }).first();
-  await box.fill(note);
-  await settings.getByRole('button', { name: /了承.*保存|保存.*了承/ }).first().click();
-  await expect(settings.getByText(note).first()).toBeVisible();
-  await closeSettings(page); // 設定はモーダル（FR-223）。背面の覆いが以降の操作を遮るので閉じる
+export async function recordExportConsent(_page: Page, _note = ''): Promise<void> {
+  // 何もしない（了承の入力欄・「了承を保存」は存在しない）
 }
 
 /** 種別「人」の確認（FR-219 AC-514）。出ていれば続行（出力する）まで進める。出ていなければ何もしない。 */
 export async function continuePersonConfirm(page: Page, isDone: () => boolean = () => false, waitMs = 5_000): Promise<void> {
-  const confirm = page.locator('[role="alertdialog"], [role="dialog"]').filter({ hasText: /種別「人」/ }).filter({ hasText: /了承/ });
+  const confirm = page.locator('[role="alertdialog"], [role="dialog"]').filter({ hasText: /種別「人」/ }).filter({ hasText: /\d+\s*件/ });
   const proceed = confirm.getByRole('button', { name: /続行|出力する|エクスポートする/ }).first();
   const until = Date.now() + waitMs;
   while (!isDone() && Date.now() < until) {
@@ -419,7 +414,7 @@ export async function continuePersonConfirm(page: Page, isDone: () => boolean = 
   }
 }
 
-/** ダウンロードを待って中身を返す。種別「人」の確認が出たら続行する（了承の記録は recordExportConsent で先に入れておく）。 */
+/** ダウンロードを待って中身を返す。種別「人」の確認が出たら続行する。 */
 export async function captureDownload(page: Page, action: () => Promise<unknown>, timeout = 30_000): Promise<{ name: string; data: Buffer; download: Download }> {
   let done = false;
   const dlP = page.waitForEvent('download', { timeout }).finally(() => { done = true; });

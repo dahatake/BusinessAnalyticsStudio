@@ -111,9 +111,8 @@ test.describe('FR-285 Foundry 実接続の切替と失敗時の代替（差し�
     return region;
   }
 
-  /** 実接続を有効にする（設定の画面。共通接続の保存 → 了承の記録 → 有効化の確認） */
+  /** 実接続を有効にする（設定の画面。共通接続の保存 → 有効化の確認） */
   async function enableRealConnection(page: Page): Promise<void> {
-    await recordExportConsent(page);
     const region = await saveCommonConnection(page);
     await region.getByRole('switch', { name: '実接続を有効にする', exact: true }).click();
     const confirm = page.getByRole('alertdialog').or(page.getByRole('dialog').filter({ hasText: /有料/ })).last();
@@ -263,7 +262,7 @@ test.describe('FR-285 Foundry 実接続の切替と失敗時の代替（差し�
         const screen = screenOf(page);
         await screen.getByRole('textbox', { name: /解決策/ }).fill('問い合わせメールの大量の文章を要約し、担当部署へ振り分ける。');
         await screen.getByRole('button', { name: '分析実行' }).click();
-        // 種別「人」の確認が出たら続行する（FR-219。了承の記録は済み）
+        // 種別「人」の確認が出たら続行する（FR-219）
         await continuePersonConfirm(page, () => false, 1500);
 
         const notice = screen.getByRole('alert');

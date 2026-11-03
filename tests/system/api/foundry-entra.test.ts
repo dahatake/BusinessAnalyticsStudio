@@ -55,7 +55,7 @@ async function setup(o: { auth?: 'entra' | 'api-key' | 'none'; token?: () => Pro
   };
 }
 
-const enable = (e: Env, packId = 'pack-1') => e.call('POST', '/foundry/connection', { packId, enable: true, consent: true, confirmed: true });
+const enable = (e: Env, packId = 'pack-1') => e.call('POST', '/foundry/connection', { packId, enable: true, confirmed: true });
 function allFiles(dir: string): string[] { return fs.readdirSync(dir, { recursive: true, withFileTypes: true }).filter((d) => d.isFile()).map((d) => path.join(d.parentPath, d.name)); }
 const noSecrets = (label: string, s: string) => { for (const v of [TOKEN, KEY]) assert.ok(!s.includes(v), `${label} に秘密の値が含まれる`); };
 
@@ -65,7 +65,7 @@ test('FR-282 AC-761 Entra ID では、差し替えたトークン取得部品の
   try {
     assert.equal((await enable(e)).status, 200);
     const seen: string[] = [];
-    seen.push((await e.call('POST', '/foundry/ask', { packId: 'pack-1', prompt: '現状を説明して', consent: true })).text);
+    seen.push((await e.call('POST', '/foundry/ask', { packId: 'pack-1', prompt: '現状を説明して' })).text);
     seen.push((await e.call('POST', '/foundry/analyze', { packId: 'pack-1', solution: 'ソリューションの説明' })).text);
     seen.push((await e.call('POST', '/foundry/test', {})).text);
     assert.ok(e.calls.length >= 3, `Foundry への呼び出しが 3 回に満たない（${e.calls.length}）`);
@@ -84,7 +84,7 @@ test('FR-282 AC-761 異常系: トークンを取得できないとき、Foundry
   const e = await setup({ auth: 'entra', token: async () => { throw new Error(`az: not logged in ${TOKEN}`); } });
   try {
     await enable(e);
-    const ask = await e.call('POST', '/foundry/ask', { packId: 'pack-1', prompt: 'x', consent: true });
+    const ask = await e.call('POST', '/foundry/ask', { packId: 'pack-1', prompt: 'x' });
     const t = await e.call('POST', '/foundry/test', {});
     for (const r of [ask, t]) {
       assert.match(r.text, /トークンを取得できませんでした/);
@@ -138,12 +138,12 @@ test('FR-282 AC-762 Entra ID では API キーなしで /foundry/analyze が呼�
 });
 
 // FR-282 AC-763
-test('FR-282 AC-763 POST /foundry/test は保存済みの接続情報で Foundry を 1 回だけ呼び、了承・有効化がなくても動き、顧客データを送らず、キー・トークンを応答・ログに出さない', async () => {
+test('FR-282 AC-763 POST /foundry/test は保存済みの接続情報で Foundry を 1 回だけ呼び、有効化がなくても動き、顧客データを送らず、キー・トークンを応答・ログに出さない', async () => {
   const e = await setup({ auth: 'api-key' });
   try {
     const r = await e.call('POST', '/foundry/test', {});
     assert.equal(r.status, 200, `成功時の HTTP 状態: ${r.text}`);
-    assert.equal(e.calls.length, 1, 'Foundry の呼び出しが 1 回でない（了承・有効化なしでも実行できる）');
+    assert.equal(e.calls.length, 1, 'Foundry の呼び出しが 1 回でない（有効化なしでも実行できる）');
     assert.ok(e.calls[0].body.length < 2000, '最小の入力になっていない');
     noSecrets('応答', r.text);
     noSecrets('ログ', e.logs.join('\n'));

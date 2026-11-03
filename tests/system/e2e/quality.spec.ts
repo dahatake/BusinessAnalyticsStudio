@@ -274,10 +274,6 @@ test.describe('NFR-SEC-002 外部への通信の限定と明示', () => {
       // FR-132: 明示的に有効にするまではモック
       await expect(page.getByTestId('ai-status')).toContainText('AI: モック');
       const settings = await openScreen(page, 'settings');
-      // FR-132 FR-181: 実接続の有効化は了承の記録がある案件に限る。先に了承を入力して保存する
-      await settings.getByRole('textbox', { name: /了承を確認した相手の役割と方法のメモ/ }).fill('顧客側の担当役員（口頭）');
-      await settings.getByRole('button', { name: '了承の記録を保存' }).click();
-      await expect(settings.getByTestId('consent-state')).toContainText('了承あり');
       // AC-176 の対象は AI 接続（GitHub Copilot）の実接続。FR-285 の region「生成AIの活用分析の接続」のスイッチと区別するため区画に絞る
       await aiConnectionRegion(settings).getByRole('switch', { name: /実接続/ }).click();
       const confirm = page.getByRole('alertdialog');
@@ -288,8 +284,8 @@ test.describe('NFR-SEC-002 外部への通信の限定と明示', () => {
       const q = '送信内容の確認ST-176';
       await chat.getByRole('textbox', { name: /質問/ }).fill(q);
       await chat.getByRole('button', { name: '送信', exact: true }).click();
-      // FR-219 AC-511 AC-512: 種別「人」を含み了承がある案件では送信前に確認が出る。出たら続行まで進める（出なければそのまま）
-      const personConfirm = page.locator('[role="alertdialog"], [role="dialog"]').filter({ hasText: /種別「人」/ }).filter({ hasText: /了承/ });
+      // FR-219 AC-511 AC-512: 種別「人」を含む案件では送信前に確認が出る。出たら続行まで進める（出なければそのまま）
+      const personConfirm = page.locator('[role="alertdialog"], [role="dialog"]').filter({ hasText: /種別「人」/ }).filter({ hasText: /\d+\s*件/ });
       await expect(personConfirm.or(page.getByTestId('sending-indicator')).first()).toBeVisible();
       await continuePersonConfirm(page, () => false, 1_500);
       await expect(page.getByTestId('sending-indicator')).toBeVisible();
@@ -305,31 +301,29 @@ test.describe('NFR-SEC-002 外部への通信の限定と明示', () => {
   });
 });
 
-test.describe('NFR-SEC-002 実接続の有効化は了承の記録が条件（異常系）', () => {
-  // NFR-SEC-002 FR-132 FR-181 AC-176（異常系）
-  test('NFR-SEC-002 AC-176 了承の記録がない案件では実接続を有効にできない', async ({ page, start }) => {
+test.describe('NFR-SEC-002 実接続は明示的に有効にするまでモック（異常系）', () => {
+  // NFR-SEC-002 FR-132 AC-176（異常系。顧客の了承の記録は廃止: 有効化の条件にも画面にもない）
+  test('NFR-SEC-002 AC-176 実接続を有効にしていない間はモックで、質問しても中継プロセスに何も送られず、設定画面に了承の記録の欄はない', async ({ page, start }) => {
     const relay = await startRelayStub({ delayMs: 0, sourceIds: [mono.sources()[0].id] });
     try {
       await start({ relayUrl: relay.url });
       await expect(page.getByTestId('ai-status')).toContainText('AI: モック');
       const settings = await openScreen(page, 'settings');
-      await expect(settings.getByTestId('consent-state')).toContainText('記録なし');
-      await expect(settings.getByTestId('consent-required')).toContainText('実接続を有効にできません');
+      await expect(settings.getByTestId('consent-state')).toHaveCount(0);
+      await expect(settings.getByTestId('consent-required')).toHaveCount(0);
       // AC-176 の対象（AI 接続の区画）のスイッチだけを見る。FR-285 の区画のスイッチは別の要求の対象
       const sw = aiConnectionRegion(settings).getByRole('switch', { name: /実接続/ });
       await expect(sw).toHaveCount(1);
-      if (await sw.isEnabled()) await sw.click();
-      else await expect(sw).toBeDisabled();
-      await expect(page.getByRole('alertdialog')).toHaveCount(0);
+      await expect(sw, '了承の記録がなくても操作できる').toBeEnabled();
       await expect(sw).not.toBeChecked();
-      await expect(page.getByTestId('ai-status')).toContainText('AI: モック');
       await expect(page.getByTestId('ai-status')).not.toContainText('接続済み');
+      await closeSettings(page);
       // 質問してもモックの回答で、中継プロセスには何も送られない
       const chat = await openScreen(page, 'chat');
-      await chat.getByRole('textbox', { name: /質問/ }).fill('了承なしの確認ST-176');
+      await chat.getByRole('textbox', { name: /質問/ }).fill('未有効の確認ST-176');
       await chat.getByRole('button', { name: '送信', exact: true }).click();
       await expect(chat.getByTestId('chat-answer').last()).toContainText('AI 生成（モック）', { timeout: 15_000 });
-      expect(relay.received.some((r) => r.body.includes('了承なしの確認ST-176'))).toBe(false);
+      expect(relay.received.some((r) => r.body.includes('未有効の確認ST-176'))).toBe(false);
     } finally {
       await relay.close();
     }
