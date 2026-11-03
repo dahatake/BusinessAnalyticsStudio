@@ -22,6 +22,8 @@ import { TIER_APPEARANCE, TIER_LABEL } from '../workspace/tiers';
 /** これより狭いコンポーネントは、見出しの操作アイコンを出さず「…」メニューに任せる（FR-150 AC-259）。
  *  アイコン 4 個（各 24px 以上）と「…」が見出しの横に収まる幅。既定の配置の列（約 300px）でもアイコンが出る（NFR-UX-015 AC-476 のツールチップ） */
 const NARROW_PANE_PX = 240;
+/** 表示幅がこれ以下（PARAM-029 = 320px）なら、コンポーネントの幅によらずピン止め・タブ・ビューを「…」に畳む（FR-222 AC-518） */
+const NARROW_VIEWPORT_PX = 320;
 /** 配置の計算が最小の幅（PARAM-034 = 240px）ちょうどに置いた列は、描画の小数の丸めで 240 をわずかに下回って測れる（例: 239.99px）。
  *  この誤差で「狭い」と判定して見出しの操作（「ビュー」など）を隠さないよう、丸めの分（1px）だけ許す（FR-150 AC-259・FR-217 AC-499） */
 const LAYOUT_ROUNDING_PX = 1;
@@ -204,13 +206,16 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(() => {
+    const measure = () => {
       const w = el.getBoundingClientRect().width;
-      setNarrow(isNarrowPane(w));
+      // 表示幅が PARAM-029（320px）以下のときも、ピン止め・タブ・ビューは「…」に畳む（FR-222 AC-518）
+      setNarrow(isNarrowPane(w) || window.innerWidth <= NARROW_VIEWPORT_PX);
       setCompact(w < COMPACT_PANE_PX);
-    });
+    };
+    const ro = new ResizeObserver(measure);
     ro.observe(el);
-    return () => ro.disconnect();
+    window.addEventListener('resize', measure);
+    return () => { ro.disconnect(); window.removeEventListener('resize', measure); };
   }, []);
   const onFocus = () => setFocused(true);
   const onBlur = (e: FocusEvent<HTMLElement>) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false); };
