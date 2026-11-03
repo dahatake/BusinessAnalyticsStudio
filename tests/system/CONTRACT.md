@@ -56,7 +56,7 @@
 ## 10. 作業先メニュー・操作アイコン・最小化・スナップ・KPI/OKR（FR-148〜154・NFR-UX-008。workspace-ops.spec.ts が前提にする画面の探し方）
 - 作業先メニュー（FR-148）: 最上段に常時 `data-testid="work-target-menu"`（button。表示は現在の作業先）。押すと menu「作業先」。項目は menuitemradio（「デモ」「<企業名> … <Project 名>」。現在の作業先は checked）。Esc で閉じる。
 - run 202610290902 の改訂 AC-251・AC-525: 最上段の現在先の表示領域 `work-target-display`（`app-header` の中。アクセシブルな名前に企業名・Project 名）は「企業名のボタン `current-company-menu` - Project 名のボタン `work-target-menu`」から成る。企業名のボタンは menu「企業の Project」（名前は「同じ企業の Project」でも可）を開き、現在の企業（企業名のボタンで選んだ企業）の menuitemradio（企業名・Project 名。現在先のみ checked）と、企業を選ぶ button（名前は企業名 exact）を持つ。企業の選択だけでは現在先を変えず、menuitemradio の確定で切り替える。Esc で閉じて企業名のボタンにフォーカスを戻す。Project 名のボタンは従来どおり menu「作業先」（デモと全企業の Project）を開く。区切り文字や CSS の構造は期待値にしない。
-- 操作アイコン（FR-150）: フォーカス中のコンポーネントの見出しに `data-testid="component-actions"`。その中の button（名前: 最大化・通常表示・最小化・元に戻す・タブにまとめる・非表示・その他の操作）。最小化中は `data-minimized="true"`。非表示の一覧は button「非表示のコンポーネント」→ menuitem。常時見える操作部品: ミュート・アニメーションの停止/再生・編集モード・レイアウトを既定に戻す（FR-149）。
+- 操作アイコン（FR-150）: フォーカス中のコンポーネントの見出しに `data-testid="component-actions"`。その中の button（名前: タブにまとめる・ピン止め・ビュー・その他の操作）。最小化・最大化（元に戻す）・閉じる（旧名称「非表示」「通常表示」。AC-826 で改名）は §34 の見出しの `window-controls` に移った。最小化中は `data-minimized="true"`。非表示の一覧は button「非表示のコンポーネント」→ menuitem。常時見える操作部品: ミュート・アニメーションの停止/再生・編集モード・レイアウトを既定に戻す（FR-149）。
 - 左メニューの最小化（FR-151）: button「メニューを最小化」／「メニューを元の幅に戻す」。最小化中も `nav-<key>` は名前つきで表示され、ホバーで tooltip に画面名。
 - スナップ（FR-152）: 端から 32 CSS px 以内で `data-testid="snap-candidates"`（候補は button「左半分」「右半分」「上半分」「下半分」「4 分割」「3 分割」「タブ化」）と `snap-preview`（半透明。上端=最大化〔離すと `data-maximized="true"`〕・左右端=半分・角=4 分の 1。範囲外へ戻すと消える。FR-152 AC-793）。候補の上で離すと配置。
 - KPI/OKR（FR-153・154）: component key `kpi-okr`。button「OKR を定義」→ dialog「OKR の定義」（textbox「Objective」、button「Key Result を追加」、`key-result` ごとに textbox「Key Result 名」「KPI 名」「単位」、spinbutton「基準値」「目標値」「現在値」、button「保存」、検証エラーは role=alert）。達成度は `data-testid="kpi-achievement"`（「25%」または「算出できない」）。未定義は「未設定」。
@@ -149,7 +149,7 @@
 
 ## 24. 画面の操作性の刷新（FR-220〜228。ux-refresh.spec.ts が前提にする画面の探し方。run 202610192037）
 - 画面の見出し（FR-220 AC-515）: `data-testid="screen-heading"` の中の button「ビュー」（名前は「ビュー」で始まる。§21 のコンポーネントの「ビュー」と同じメニュー）。左メニュー navigation「画面」に 2D/3D の切替の項目（menuitemradio「2D」「3D」・switch・名前が「3D ビュー」だけの項目）を置かない（FR-220 の改訂で、画面「3D ビューと 2D 図面」「2D 図面」の項目は左メニューに置かない＝AC-590。§21 の開き方で開く）。
-- 操作アイコン（FR-222 AC-518）: §10 の `component-actions` の button「最小化」「最大化」（最大化中は「通常表示」か「元に戻す」）が見出しの右上に並び、図（svg か img）を持つ。名前はホバー・フォーカスで role=tooltip に出る。最大化中は `data-maximized="true"`、最小化中は `data-minimized="true"`。常設ボタン（「その他の操作」を除く）は 6 個以下（PARAM-073）。
+- 操作アイコン（FR-222 AC-518）: §34 の見出しの `window-controls` の button「最小化」「最大化」（最大化中は「元に戻す」）「閉じる」が見出しの右上（macOS の慣習では左端）に並び、幅が {PARAM-029} 未満でも残り（畳まれるのはピン止め・タブ・ビューだけ。`component-actions` の「その他の操作」とコマンドパレットから実行できる）、図（svg か img）を持つ。名前はホバー・フォーカスで role=tooltip に出る。最大化中は `data-maximized="true"`、最小化中は `data-minimized="true"`。常設ボタン（「その他の操作」を除く）は 6 個以下（PARAM-073）。
 - 設定のモーダル（FR-223 AC-519）: 上部のツールバーの `settings-button`（FR-223 AC-774。旧 `nav-settings` は廃止）で role=dialog「設定」（`aria-modal="true"`、button「閉じる」）が開く。背面の覆いは `data-testid="modal-backdrop"`（透明でない背景色）。設定は `component-settings` としてワークスペースに並ばない。
 - 設定の区画（NFR-SEC-002 AC-176・FR-285 AC-739。run 202610212134）: AI 接続（GitHub Copilot）の実接続は region「AI・音声・手書きの接続」の中の switch（名前に「実接続」を含む。例「AI の実接続を有効にする（GitHub Copilot）」）。生成AIの活用分析（FR-285）の独自の実接続 switch・region「生成AIの活用分析の接続」は廃止（2026-10-22）。Foundry の実接続は、共通接続の region「Microsoft Foundry（生成AI機能の共通接続）」（§25）の中の switch「実接続を有効にする」1 つだけ。名前「実接続」は設定の中で一意ではないため、テストは switch を必ず区画（region）に絞り、name は exact で探す。
 - サイズ変更（FR-224 AC-521）: コンポーネントの縁・角のつまみ `data-testid="resize-e"`（右の縁）・`resize-s`（下の縁）・`resize-se`（右下の角）。ホバーで利用できる。ドラッグで縦だけ・横だけ・両方が変わる。
@@ -229,7 +229,7 @@ otifications は data-suppressed=\"true\"。Focus で減光したゾーンは bu
 ## 34. 開いているコンポーネントの一覧・既定の構成・没入表示（FR-295〜297 AC-797・799・800・802・803。window-taskbar.spec.ts が前提にする画面の探し方。run 202610302230。実装前の契約案。実装役は同じ口を作る。変える場合は conductor 経由で本節を更新する）
 - 一覧（タスクバー相当）: `data-testid="window-list"`（role=toolbar、名前「開いているコンポーネント」）。項目は `data-testid="window-list-item"`（button）で、コンポーネントごとに 1 つ。属性 `data-component-key`（`component-<key>` の key）と `data-state`（`front`＝前面／`visible`＝表示中／`minimized`＝最小化／`closed`＝閉じた〔非表示〕）。見える文字（アクセシブルな名前）にコンポーネント名と状態の語（前面・表示中・最小化・閉じた）を含み、状態は文字か図（svg・img）でも区別できる（色だけにしない）。前面は常に 1 つだけ。最大化（没入）中も一覧は操作できる。
 - 項目の操作: 最小化中→元の位置・大きさで前面に復元／前面→最小化／閉じた→再表示（前面）。コンポーネントの本体・見出しを押す・フォーカスすると前面（`data-state="front"`、z 順が最上位＝計算済みの `z-index` が最大）。
-- 操作アイコン（§10 と同じ `component-actions`）の button「最小化」「非表示」を使う。「既定のレイアウトに戻す」（button）で一覧の状態・位置・大きさ・z 順が既定に戻る。
+- 見出しの `window-controls` の button「最小化」「閉じる」（旧名称「非表示」）を使う。「既定のレイアウトに戻す」（button）で一覧の状態・位置・大きさ・z 順が既定に戻る。
 - 没入（FR-297）: 最大化中は `data-maximized="true"`。背面の覆いは `data-testid="immersive-backdrop"`（背景色の alpha × opacity が PARAM-137＝0.60±0.05。背面のコンポーネントへの操作を通さない）。最大化中は一覧の前面の項目（またはその最大化したコンポーネント）の押下と `Esc` で通常表示に戻る。
 - キー（2026-10-31 統合で調整）: 切替は Ctrl+Alt+PageDown／PageUp（Playwright では Control+Alt+PageDown／PageUp）。Ctrl+Alt+方向キー（Move、§33）・Ctrl+Alt+Enter（Focus 切替）とは別。Esc の優先順は、切替の最中は切替の取消、それ以外は最大化・没入の復帰。Focus（FR-300）は Esc で解除しない。
 - 前面の強調（FR-297 AC-803）: 前面のコンポーネントの見出しに `data-testid="front-indicator"`（文字かアイコン。背面にはない）。影は計算済みの `box-shadow`（Light・Dark で前面が背面より強い）、ハイコントラスト（forced-colors）では前面の境界線（border か outline）が背面より太い。見出しの背景は透明効果が働いても、ハイコントラストでは不透明（alpha=1）。
