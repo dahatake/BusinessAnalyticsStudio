@@ -47,6 +47,47 @@ function seed() {
   return p.id;
 }
 
+describe('FR-186 メイン画面の h1', () => {
+  const h1 = () => screen.getByRole('heading', { level: 1 }).textContent;
+  // FR-186 AC-819: 開いている Project → 直近に開いた記録のある Project → 「メイン画面」
+  it('FR-186 AC-819 h1 は、開いている Project の「企業名-Project名」、開いていなければ直近に開いた Project、どちらもなければ「メイン画面」', () => {
+    render(wrap(<MainScreen />));
+    expect(h1()).toBe('メイン画面');
+    cleanup();
+    const id = seed();
+    render(wrap(<MainScreen />));
+    expect(h1()).toBe('メイン画面'); // 登録しただけで開いた記録がない
+    cleanup();
+    st().open(id);
+    render(wrap(<MainScreen />));
+    expect(h1()).toBe('合成株式会社M-案件一号');
+    cleanup();
+    st().open(null); // 開いていないが、直近に開いた記録は残る
+    expect(st().lastOpenedId).toBe(id);
+    render(wrap(<MainScreen />));
+    expect(h1()).toBe('合成株式会社M-案件一号');
+    expect(screen.getAllByRole('heading', { level: 1 }).length).toBe(1);
+  });
+
+  it('FR-186 AC-819 直近に開いた記録は端末内の保存内容として保存・復元され、アーカイブした Project は使わない', async () => {
+    const { snapshot, restore } = await import('../../src/store/persist');
+    const id = seed();
+    st().open(id);
+    st().open(null);
+    const saved = JSON.stringify(snapshot());
+    resetProjects();
+    restore({ getItem: () => saved, setItem: () => {} });
+    expect(st().openId).toBeNull();
+    expect(st().lastOpenedId).toBe(id);
+    render(wrap(<MainScreen />));
+    expect(h1()).toBe('合成株式会社M-案件一号');
+    cleanup();
+    st().setArchived(id, true);
+    render(wrap(<MainScreen />));
+    expect(h1()).toBe('メイン画面');
+  });
+});
+
 describe('FR-186 メイン画面', () => {
   // FR-186 AC-395
   it('FR-186 AC-395 手順 4 つを順に示す案内と各手順の操作があり、手順外の機能は出ない', () => {

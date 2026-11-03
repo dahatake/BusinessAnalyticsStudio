@@ -12,6 +12,7 @@ import { resetAnalyses } from '../../src/store/analyses';
 import { useMainScreen } from '../../src/store/mainScreen';
 import { useWorkTargetUi } from '../../src/projects/workTargetUi';
 import { GuideButton, GuideHost } from '../../src/guide';
+import { PANEL_MOTION_MS } from '../../src/guide/GettingStarted';
 import { resetGuide, useGuide } from '../../src/guide/guideStore';
 import { GUIDE_STEPS, GUIDE_TERMS, PACK_COMMANDS, PACK_PROMPT_FILE, PACK_PROMPT_FILE_GHCP, PACK_PROMPT_GHCP, PACK_PROMPT_M365, PACK_SAMPLE, PACK_URL, GUIDE_WHAT, GUIDE_WORKSPACE } from '../../src/guide/guideContent';
 
@@ -28,12 +29,16 @@ beforeEach(() => {
 });
 afterEach(() => cleanup());
 
+/** 補足パネルの開閉ボタン（既定は閉じている。FR-266 AC-675）を押して開く */
+const openPanel = () => { fireEvent.click(screen.getByRole('button', { name: 'はじめての方へ' })); };
 const sentences = (t: string) => t.split(/[。！？\n]/).map((s) => s.trim()).filter(Boolean);
 
 describe('FR-266 はじめての方へ', () => {
   // FR-266 AC-675
-  it('FR-266 AC-675 メイン画面に、できること・用語・4 手順（例・次に）が常に出て、各文は 60 字以内', () => {
+  it('FR-266 AC-675 補足パネルを開くと、できること・用語・4 手順（例・次に）が出て、各文は 60 字以内。既定は閉じていて説明は出ない', () => {
     render(wrap(<MainScreen />));
+    expect(screen.queryByRole('region', { name: 'はじめての方へ' })).toBeNull();
+    openPanel();
     const region = screen.getByRole('region', { name: 'はじめての方へ' });
     const text = region.textContent ?? '';
     for (const t of GUIDE_TERMS) expect(text).toContain(t.term);
@@ -47,6 +52,7 @@ describe('FR-266 はじめての方へ', () => {
   // FR-266 AC-676
   it('FR-266 AC-676 流れの図に代替テキストがあり、4 段が番号と文字で区別できる', () => {
     render(wrap(<MainScreen />));
+    openPanel();
     const svg = screen.getAllByRole('img', { name: /全体の流れ/ })[0]!;
     expect(svg.getAttribute('aria-labelledby')).toBeTruthy();
     expect(svg.querySelector('desc')?.textContent).toMatch(/1 企業を登録.*2 Project を作成.*3 Project を開く.*4 分析を開始/);
@@ -58,10 +64,71 @@ describe('FR-266 はじめての方へ', () => {
   // FR-266 AC-677
   it('FR-266 AC-677 既存の手順の操作（main-guide の 4 項目）と見出しの階層が保たれる', () => {
     render(wrap(<MainScreen />));
+    openPanel();
     expect(within(screen.getByTestId('main-guide')).getAllByRole('listitem').length).toBe(4);
     expect(screen.getAllByRole('heading', { level: 1 }).length).toBe(1);
     expect(screen.getByRole('heading', { level: 2, name: 'はじめての方へ' })).toBeTruthy();
     expect(screen.getAllByRole('heading', { level: 4 }).length).toBeGreaterThan(0);
+  });
+});
+
+describe('FR-266 補足パネルの開閉', () => {
+  const setReduce = (reduce: boolean) => {
+    window.matchMedia = ((q: string) => ({ matches: reduce && q.includes('reduce'), media: q, addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {}, onchange: null, dispatchEvent: () => false })) as unknown as typeof window.matchMedia;
+  };
+  const css = () => [...document.styleSheets].flatMap((sh) => { try { return [...sh.cssRules].map((r) => r.cssText); } catch { return []; } }).join('\n');
+
+  // FR-266 AC-675: 開閉ボタンは常に見え、aria-expanded が変わり、Enter・Space（button の既定の click）で操作できる。登録の有無によらず同じ
+  it('FR-266 AC-675 開閉ボタン（role=button・ラベル「はじめての方へ」）は既定で aria-expanded=false。押すと true で region が出て、もう一度押すと閉じる', async () => {
+    setReduce(true);
+    render(wrap(<MainScreen />));
+    const btn = screen.getByRole('button', { name: 'はじめての方へ' });
+    expect(btn.getAttribute('aria-expanded')).toBe('false');
+    fireEvent.click(btn);
+    expect(btn.getAttribute('aria-expanded')).toBe('true');
+    expect(btn.getAttribute('aria-controls')).toBe(screen.getByRole('region', { name: 'はじめての方へ' }).id);
+    expect(screen.getByTestId('getting-started')).toBeTruthy();
+    expect(screen.getByTestId('pack-guide')).toBeTruthy();
+    fireEvent.click(btn);
+    expect(btn.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('region', { name: 'はじめての方へ' })).toBeNull();
+  });
+
+  // FR-266 AC-820（integration）
+  it('FR-266 AC-820 開閉は PARAM-074（500ms）以内のアニメーション。動きの軽減（reduce）では即時に閉じ、動きの長さは 0', async () => {
+    expect(PANEL_MOTION_MS).toBeGreaterThan(0);
+    expect(PANEL_MOTION_MS).toBeLessThanOrEqual(500);
+    expect(css()).toContain(`animation-duration: ${PANEL_MOTION_MS}ms`);
+    expect(css()).toMatch(/prefers-reduced-motion: reduce[\s\S]*animation-duration: 0ms/);
+    // 通常: 閉じる動きの間は残り、終わると消える。状態（aria-expanded）は直ちに伝わる
+    setReduce(false);
+    render(wrap(<MainScreen />));
+    const btn = screen.getByRole('button', { name: 'はじめての方へ' });
+    fireEvent.click(btn);
+    fireEvent.click(btn);
+    expect(btn.getAttribute('aria-expanded')).toBe('false');
+    expect(screen.queryByRole('region', { name: 'はじめての方へ' })).not.toBeNull();
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'はじめての方へ' })).toBeNull(), { timeout: 500 });
+    // 動きの軽減: 即座に切り替わる
+    cleanup();
+    setReduce(true);
+    render(wrap(<MainScreen />));
+    const b2 = screen.getByRole('button', { name: 'はじめての方へ' });
+    fireEvent.click(b2);
+    fireEvent.click(b2);
+    expect(screen.queryByRole('region', { name: 'はじめての方へ' })).toBeNull();
+  });
+
+  // FR-266 AC-821（integration）
+  it('FR-266 AC-821 パネルは本文（手順・企業一覧）の右の aside。狭い幅では縦に並ぶ（本文の下）規則があり、開閉ボタンはその aside の中にある', () => {
+    render(wrap(<MainScreen />));
+    const main = screen.getByTestId('main-screen');
+    const aside = main.querySelector('aside')!;
+    const body = screen.getByTestId('main-guide').parentElement!;
+    expect(aside.contains(screen.getByRole('button', { name: 'はじめての方へ' }))).toBe(true);
+    expect(body.contains(aside)).toBe(false);
+    expect(body.nextElementSibling).toBe(aside); // 本文のあと（右、狭い幅では下）
+    expect(css()).toMatch(/max-width: 720px[\s\S]*flex-direction: column/);
   });
 });
 
@@ -164,8 +231,9 @@ describe('FR-267 ウェルカム', () => {
 
 describe('FR-268 顧客パックの説明', () => {
   // FR-268 AC-682
-  it('FR-268 AC-682 「顧客パック」region に意味・デモ・3 通り・確認コマンド・起動の手順が出る', () => {
+  it('FR-268 AC-682 補足パネルを開くと「顧客パック」region に意味・デモ・3 通り・確認コマンド・起動の手順が出る', () => {
     render(wrap(<MainScreen />));
+    openPanel();
     const t = screen.getByRole('region', { name: '顧客パック' }).textContent ?? '';
     for (const s of ['顧客パックがなくても', PACK_SAMPLE, PACK_PROMPT_FILE, 'npm run pipeline', 'npm run check:pack', 'npm run verify:pack', 'npm run build', 'npm start', PACK_URL]) expect(t).toContain(s);
   });
@@ -175,6 +243,7 @@ describe('FR-268 顧客パックの説明', () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     render(wrap(<MainScreen />));
+    openPanel();
     const region = screen.getByRole('region', { name: '顧客パック' });
     const buttons = within(region).getAllByRole('button', { name: /コピー/ });
     expect(buttons.length).toBe(7); // Prompt 2 つ（M365・GitHub Copilot）+ 5 コマンド（pipeline・check・verify・build・start）
