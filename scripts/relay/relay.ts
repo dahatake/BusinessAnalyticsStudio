@@ -154,7 +154,9 @@ export async function startRelay(opts: RelayOptions): Promise<Relay> {
   const speechFetch = opts.speechFetch ?? ((u, i) => fetch(u, i));
   const signedIn = async (): Promise<boolean> => (opts.sdk ? (await opts.sdk.status().catch(() => ({ signedIn: false }))).signedIn : false);
 
-  await copilotReady(); // FR-011 AC-771: startup checks actual SDK auth, never start() alone.
+  // FR-011 AC-771: startup checks actual SDK auth, never start() alone.
+  // FR-011 AC-817: authenticated + no explicitly saved provider -> Copilot SDK in memory only (nothing persisted, foundryEnabled untouched).
+  if (await copilotReady() && !provider.isExplicit()) provider.autoSelect('copilot');
   const server = http.createServer((req, res) => {
     const origin = req.headers.origin;
     const json = (status: number, obj: unknown) => {
