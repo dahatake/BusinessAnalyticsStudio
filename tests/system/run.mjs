@@ -24,8 +24,10 @@ const r = spawnSync(process.execPath, [cli, 'test', '--config', path.join(here, 
     // 時間閾値（2000ms 等）で判定する可視化の AC は、台帳が複数ケースを同時に走らせても
     // フレーム落ちで揺らがないよう、ワーカー数を絞る（ST_WORKERS 明示時はそれに従う）。
     // 実測（3 ケース同時）: 1=E2E-451 が約 25 分で実用的でない／3=3 回中 1 回失敗（約 8.8 分）／
-    // 2=3 回連続で全 9 件 pass（約 12 分）。よって既定は 2。
-    ...(process.env.ST_WORKERS || !ids.every((i) => TIMING_ACS.has(i)) ? {} : { ST_WORKERS: '2' }),
+    // 2=3 回連続で全 9 件 pass（約 12 分）。
+    // 再測定（20 コア・AC-086 単独・117 件）: 2=11.9 分／4=3 回連続で全件 pass（各 6.3 分）。よって既定は 4。
+    // （GPU 描画のフラグ `--use-angle=d3d11` は canvas の画素取得が変わり map/3D が失敗したため採用しない。）
+    ...(process.env.ST_WORKERS || !ids.every((i) => TIMING_ACS.has(i)) ? {} : { ST_WORKERS: '4' }),
   },
 });
 process.exit(r.status ?? 1);
