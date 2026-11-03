@@ -5150,10 +5150,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-396 AC-819",
       "canary": true,
-      "status": "pass",
-      "last_commit": "a9c0749",
-      "last_run_at": "2026-11-03T23:18:27+09:00",
-      "evidence": "work/runs/202611032040/logs/system-test/E2E-291-202611032316.log",
+      "status": "fail",
+      "last_commit": "039c11e",
+      "last_run_at": "2026-11-04T00:34:05+09:00",
+      "evidence": "work/runs/202611040002/logs/system-test/E2E-291-202611040034.log",
       "history": [
         {
           "at": "2026-10-15T22:31:53+09:00",
