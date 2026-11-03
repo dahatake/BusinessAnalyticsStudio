@@ -18,6 +18,8 @@ interface ProjectsState {
   projects: Project[];
   /** 開いている Project の ID */
   openId: string | null;
+  /** 端末内に保存する、直近に開いた Project の ID（FR-186 AC-819。メイン画面の h1 に使う）。開いていない間も残る */
+  lastOpenedId: string | null;
   seq: number;
   addCompany: (name: string) => Result;
   addProject: (companyId: string, name: string) => Result;
@@ -31,6 +33,7 @@ export const useProjects = create<ProjectsState>((set, get) => ({
   companies: [],
   projects: [],
   openId: null,
+  lastOpenedId: null,
   seq: 0,
   addCompany: (raw) => {
     const name = raw.trim();
@@ -77,13 +80,13 @@ export const useProjects = create<ProjectsState>((set, get) => ({
     set((s) => ({ companies: s.companies.map((c) => (c.id === companyId ? { ...c, aiAllowed: allowed } : c)) })),
   // FR-138 AC-209: 開く Project ごとにステッパーの位置を切り替える
   open: (id) => {
-    set({ openId: id });
+    set(id ? { openId: id, lastOpenedId: id } : { openId: id });
     useStepper.getState().switchTo(id);
   },
 }));
 
 /** テスト用: 状態を初期化する */
 export function resetProjects(): void {
-  useProjects.setState({ companies: [], projects: [], openId: null, seq: 0 });
+  useProjects.setState({ companies: [], projects: [], openId: null, lastOpenedId: null, seq: 0 });
   useStepper.getState().reset();
 }
