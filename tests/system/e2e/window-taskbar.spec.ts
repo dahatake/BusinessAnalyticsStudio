@@ -45,7 +45,9 @@ async function zIndex(c: Locator): Promise<number> {
 }
 async function action(c: Locator, name: string) {
   await c.focus();
-  await c.getByTestId('component-actions').getByRole('button', { name, exact: true }).click();
+  // 見出しの 3 ボタン（AC-826: 最小化・最大化／元に戻す・閉じる）。旧名称「非表示」は「閉じる」
+  const n = name === '非表示' ? '閉じる' : name;
+  await c.getByTestId('window-controls').getByRole('button', { name: n, exact: true }).click();
 }
 async function resetLayout(page: Page) {
   await page.getByRole('button', { name: '既定のレイアウトに戻す', exact: true }).click();
@@ -147,7 +149,7 @@ test.describe('FR-295 開いているコンポーネントの一覧', () => {
     await expect(item(page, a)).toHaveAttribute('data-state', 'front');
     expect(await zIndex(component(page, a)), 'a が b より前').toBeGreaterThan(await zIndex(component(page, b)));
     // 重なりで操作ボタンが覆われうるため、c・d の操作はボタンへ直接 click を送る
-    const act = async (k: string, name: string) => { await component(page, k).focus(); await component(page, k).getByTestId('component-actions').getByRole('button', { name, exact: true }).dispatchEvent('click'); };
+    const act = async (k: string, name: string) => { await component(page, k).focus(); await component(page, k).getByTestId('window-controls').getByRole('button', { name: name === '非表示' ? '閉じる' : name, exact: true }).dispatchEvent('click'); };
     await act(c, '最小化');
     await act(d, '非表示');
     const snap = async () => {
@@ -323,76 +325,67 @@ async function setOsWin(page: Page, os: '自動' | 'Windows' | 'macOS'): Promise
   await settingsDialog(page).getByRole('combobox', { name: 'OS の操作慣習' }).selectOption({ label: os });
   await closeSettings(page);
 }
-/** 画面 A（2 つの Window: 前面 + 最小化）・B（前面でない 1 つ）・C（すべて閉じた）を作る。画面は list-item の data-screen-key（左メニューの nav-<key> の key） */
+/** 画面 A（前面の Window）・B（前面でない Window）・C（すべて閉じた）を作る。画面は list-item の data-screen-key（左メニューの nav-<key> の key）。
+ *  現行の registry は 1 画面＝1 コンポーネントなので、各画面の Window は 1 つ（件数バッジ「2」は件数 2 以上のときだけ出る。単体テスト tests/unit/nav-taskbar.test.tsx が担う）。 */
 async function arrange(page: Page) {
   const all = await entries(page);
   const screens = [...new Set(all.map((e) => e.screen))];
   const by = (s: string) => all.filter((e) => e.screen === s);
-  const A = screens.find((s) => by(s).length >= 2);
-  expect(A, '2 つ以上のコンポーネントを持つ画面が必要').toBeTruthy();
-  const rest = screens.filter((s) => s !== A);
-  expect(rest.length, '画面が 3 つ以上必要').toBeGreaterThanOrEqual(2);
-  const [B, C] = rest;
+  expect(screens.length, '画面が 3 つ以上必要').toBeGreaterThanOrEqual(3);
+  const [A, B, C] = screens;
   for (const e of by(C)) if ((await states(page))[e.key] !== 'closed') await hideWin(page, e.key);
   const bs = by(B);
   for (const e of bs.slice(1)) if ((await states(page))[e.key] !== 'closed') await hideWin(page, e.key);
   if ((await states(page))[bs[0].key] === 'closed') await item(page, bs[0].key).click();
-  const as = by(A!);
-  for (const e of as.slice(2)) if ((await states(page))[e.key] !== 'closed') await hideWin(page, e.key);
-  for (const e of as.slice(0, 2)) if ((await states(page))[e.key] === 'closed') await item(page, e.key).click();
-  const [a1, a2] = as;
-  // a2 を最小化、a1 を前面にして A を「前面あり」にする（B・C は前面でない）
-  if ((await states(page))[a2.key] !== 'minimized') await component(page, a2.key).getByTestId('window-minimize').dispatchEvent('click');
+  if ((await states(page))[bs[0].key] === 'minimized') await item(page, bs[0].key).click();
+  const as = by(A);
+  for (const e of as.slice(1)) if ((await states(page))[e.key] !== 'closed') await hideWin(page, e.key);
+  const a1 = as[0];
+  if ((await states(page))[a1.key] === 'closed') await item(page, a1.key).click();
   if ((await states(page))[a1.key] === 'minimized') await item(page, a1.key).click();
+  // A を前面にする（B・C は前面でない）
   await component(page, a1.key).getByTestId('panel-body').click({ position: { x: 4, y: 4 } });
   await expect(item(page, a1.key)).toHaveAttribute('data-state', 'front');
-  await expect(item(page, a2.key)).toHaveAttribute('data-state', 'minimized');
-  return { A: A!, B, C, a1: a1.key, a2: a2.key, b1: bs[0].key };
+  await expect(item(page, bs[0].key)).not.toHaveAttribute('data-state', 'front');
+  return { A, B, C, a1: a1.key, b1: bs[0].key };
 }
 
 test.describe('FR-295 左メニューのバッジ・青いバーと見出しの 3 ボタン', () => {
-  // FR-295 AC-824
-  test('FR-295 AC-824 左メニューに Window の件数バッジ（2）と青いバー（前面あり=長い・前面なし=短い）が出て、閉じた画面には出ず、色以外でも区別でき、操作で即座に変わる', async ({ page, start }) => {
+  // FR-295 AC-824（現行の registry は 1 画面＝1 Window。件数「2」のバッジは件数 2 以上で出る＝単体テスト tests/unit/nav-taskbar.test.tsx。ここでは青いバーとバッジなし（件数 1）を検証する）
+  test('FR-295 AC-824 左メニューに青いバー（前面あり=長い・前面でないだけ=短い）が出て、件数 1 ではバッジが出ず、閉じた画面には何も出ず、色以外でも区別でき、操作で即座に変わる', async ({ page, start }) => {
     await start();
     await setup(page);
     const w = await arrange(page);
-    // ① 2 つの Window（前面 + 最小化）: 件数「2」のバッジと長い青いバー
-    await expect(badge(page, w.A)).toHaveText(/2/);
-    await expect(badge(page, w.A)).toHaveAttribute('data-count', '2');
+    // ① 前面の Window: 長い青いバー（件数 1 なのでバッジなし）
     await expect(bar(page, w.A)).toHaveAttribute('data-state', 'front');
+    await expect(badge(page, w.A), '件数 1 の画面にバッジを出さない').toHaveCount(0);
     // ② 前面でない Window だけ: 短い青いバー（バッジなし）
     await expect(bar(page, w.B)).toHaveAttribute('data-state', 'other');
     await expect(badge(page, w.B), '1 つだけの画面にバッジを出さない').toHaveCount(0);
     // ③ Window がない（閉じた）画面: バッジも青いバーも出ない（異常系）
     await expect(badge(page, w.C)).toHaveCount(0);
     await expect(bar(page, w.C)).toHaveCount(0);
-    // 文字の代替（アクセシブルな名前）と、色以外の区別（数字・バーの長さ）。Light・Dark・ハイコントラスト
+    // 文字の代替（アクセシブルな名前）と、色以外の区別（バーの長さ・名前）。Light・Dark・ハイコントラスト
     for (const mode of [{ colorScheme: 'light' as const }, { colorScheme: 'dark' as const }, { forcedColors: 'active' as const }]) {
       await page.emulateMedia(mode);
       const name = async (l: Locator) => ((await l.getAttribute('aria-label')) ?? (await l.innerText()) ?? '').trim();
-      expect(await name(badge(page, w.A)), `${JSON.stringify(mode)}: バッジの名前に件数`).toMatch(/2/);
       expect((await name(bar(page, w.A))).length, `${JSON.stringify(mode)}: 青いバー（前面）の名前`).toBeGreaterThan(0);
       expect(await name(bar(page, w.A)), '前面ありと前面なしの名前が違う').not.toBe(await name(bar(page, w.B)));
       expect((await box(bar(page, w.A))).height, 'バーが見える').toBeGreaterThan(0);
       expect((await box(bar(page, w.A))).width, `${JSON.stringify(mode)}: 前面のバーが前面でないバーより長い`).toBeGreaterThan((await box(bar(page, w.B))).width + 1);
     }
     await page.emulateMedia({ colorScheme: null, forcedColors: null });
-    // 操作で即座に変わる: 前面の Window を最小化 → 前面なし（短いバー・件数は 2 のまま）／復元 → 前面あり
+    // 操作で即座に変わる: 前面の Window を最小化 → 前面なし（短いバー）／復元 → 前面あり
     await component(page, w.a1).getByTestId('window-minimize').dispatchEvent('click');
     await expect(bar(page, w.A), '最小化の直後にバーが変わる').toHaveAttribute('data-state', 'other');
-    await expect(badge(page, w.A)).toHaveAttribute('data-count', '2');
     await item(page, w.a1).click();
     await expect(bar(page, w.A), '復元の直後にバーが変わる').toHaveAttribute('data-state', 'front');
-    // 閉じる → 件数 1（バッジが消える。バーは残る）／再表示 → 件数 2
-    await hideWin(page, w.a2);
-    await expect(badge(page, w.A), '閉じた直後にバッジが消える').toHaveCount(0);
-    await expect(bar(page, w.A)).toBeVisible();
-    await item(page, w.a2).click();
-    await expect(badge(page, w.A), '再表示の直後にバッジが戻る').toHaveAttribute('data-count', '2');
-    // すべて閉じると画面のバーも消える
+    // 閉じる → バーが消える／再表示 → 戻る（バッジは件数 1 のまま出ない）
     await hideWin(page, w.a1);
-    await hideWin(page, w.a2);
-    await expect(bar(page, w.A)).toHaveCount(0);
+    await expect(bar(page, w.A), '閉じた直後にバーが消える').toHaveCount(0);
+    await expect(badge(page, w.A)).toHaveCount(0);
+    await item(page, w.a1).click();
+    await expect(bar(page, w.A), '再表示の直後にバーが戻る').toBeVisible();
     await expect(badge(page, w.A)).toHaveCount(0);
   });
 
@@ -403,22 +396,25 @@ test.describe('FR-295 左メニューのバッジ・青いバーと見出しの 
     const w = await arrange(page);
     const search = page.getByRole('searchbox', { name: /検索/ });
     await search.fill('左メニュー確認');
-    // 最小化中の a2 を持つ画面を押す前に、画面 A の Window を前面でない状態にして確かめる
-    const min0 = await states(page);
-    expect(min0[w.a2]).toBe('minimized');
+    // A の項目: 前面の Window は最小化 → 最小化中は最小化前の位置・大きさで前面に復元 → もう一度で最小化
+    const placed0 = await box(component(page, w.a1));
+    await page.getByTestId(`nav-${w.A}`).click();
+    await expect(item(page, w.a1), '前面の Window は最小化').toHaveAttribute('data-state', 'minimized');
+    await page.getByTestId(`nav-${w.A}`).click();
+    await expect(item(page, w.a1), '最小化中だった Window が前面に復元').toHaveAttribute('data-state', 'front');
+    await sameBox(component(page, w.a1), placed0, '最小化前の位置・大きさで復元');
+    expect((await box(component(page, w.a1))).width, '復元した大きさ').toBeGreaterThanOrEqual(MIN_W - TOL);
+    await page.getByTestId(`nav-${w.A}`).click();
+    await expect(item(page, w.a1)).toHaveAttribute('data-state', 'minimized');
     // B の項目: 前面でない Window → 前面に出る（B の Window が前面）
     await page.getByTestId(`nav-${w.B}`).click();
     await expect(item(page, w.b1)).toHaveAttribute('data-state', 'front');
-    // A の項目: 最小化中のものは前面で復元（前の位置・大きさ）、前面のものは最小化
-    await page.getByTestId(`nav-${w.A}`).click();
-    const s1 = await states(page);
-    expect([s1[w.a1], s1[w.a2]].filter((s) => s === 'front').length, '画面の項目で復元した Window が前面').toBe(1);
-    expect(s1[w.a2], '最小化中だった Window が復元').not.toBe('minimized');
-    const placed = await box(component(page, w.a2));
-    expect(placed.width, '復元した大きさ').toBeGreaterThanOrEqual(MIN_W - TOL);
-    expect(placed.height).toBeGreaterThanOrEqual(MIN_H - TOL);
-    await page.getByTestId(`nav-${w.A}`).click();
-    expect((await states(page))[w.a2], '前面の Window は最小化').toBe('minimized');
+    // 没入（最大化）中も左メニューの項目を操作できる（背面の覆いに阻まれない）
+    await component(page, w.b1).getByTestId('window-maximize').dispatchEvent('click');
+    await expect(component(page, w.b1)).toHaveAttribute('data-maximized', 'true');
+    await page.getByTestId(`nav-${w.A}`).click({ trial: true });
+    await component(page, w.b1).getByTestId('window-maximize').dispatchEvent('click');
+    await expect(component(page, w.b1)).not.toHaveAttribute('data-maximized', 'true');
     // 左メニューの結果は FR-295 の一覧と常に一致（バーの状態 = 一覧の前面の有無）
     const consistent = async () => {
       const es = await entries(page);

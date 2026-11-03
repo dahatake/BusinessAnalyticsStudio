@@ -168,7 +168,7 @@ test.describe('FR-298 適応型ワークスペース', () => {
     await component(p2, k).hover();
     await component(p2, k).getByTestId('component-actions').getByRole('button', { name: '最大化' }).click();
     await expect(component(p2, k)).toHaveAttribute('data-maximized', 'true');
-    await component(p2, k).getByTestId('component-actions').getByRole('button', { name: /元に戻す|通常表示/ }).click();
+    await component(p2, k).getByTestId('window-controls').getByRole('button', { name: '元に戻す', exact: true }).click();
     await expect(component(p2, k)).not.toHaveAttribute('data-maximized', 'true');
     ratio(await areas(p2)).forEach((v, i) => expect(v, '最大化後の復元で割合が違う').toBeCloseTo(snap[i], 1));
     expect(await component(p2, k).getAttribute('data-zone'), '復元でロールが違う').toBe(roleBefore);
