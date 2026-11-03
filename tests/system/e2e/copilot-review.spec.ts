@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準だけから決める。画面の探し方は CONTRACT.md §27。
 // Foundry は差し替え部品の中継（support/review-stub.ts）。本物は呼ばない。
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, recordExportConsent, continuePersonConfirm, settingsDialog, selectPersona, reloadAndEnter } from '../support/fixtures';
+import { test, expect, openScreen, continuePersonConfirm, settingsDialog, selectPersona, reloadAndEnter } from '../support/fixtures';
 import { startReviewStub } from '../support/review-stub';
 
 const runButton = (page: Page): Locator => page.getByRole('button', { name: 'Copilot で分析実行', exact: true }).first();
@@ -28,7 +28,6 @@ test.describe('FR-278 Copilot で分析実行', () => {
       const external: string[] = [];
       page.on('request', (r) => { const u = new URL(r.url()); if (!['127.0.0.1', 'localhost'].includes(u.hostname) && /^https?:$/.test(u.protocol)) external.push(r.url()); });
       await start({ relayUrl: relay.url });
-      await recordExportConsent(page);
       await selectPersona(page, '事業部門');
       await openScreen(page, 'table');
       const btn = runButton(page);
@@ -54,7 +53,6 @@ test.describe('FR-278 結果の振り分け・案の表示', () => {
     const relay = await startReviewStub({ skipIds: ['table'] });
     try {
       await start({ relayUrl: relay.url });
-      await recordExportConsent(page);
       await openScreen(page, 'table');
       await runAnalysis(page);
       const table = page.getByTestId('component-table');
@@ -75,7 +73,6 @@ test.describe('FR-278 結果の振り分け・案の表示', () => {
     const relay = await startReviewStub();
     try {
       await start({ relayUrl: relay.url });
-      await recordExportConsent(page);
       await openScreen(page, 'table');
       const table = page.getByTestId('component-table');
       const before = await table.getByTestId('component-data').innerText();
@@ -97,7 +94,6 @@ test.describe('FR-278 結果の振り分け・案の表示', () => {
     const relay = await startReviewStub();
     try {
       await start({ relayUrl: relay.url });
-      await recordExportConsent(page);
       await openScreen(page, 'table');
       const table = page.getByTestId('component-table');
       const before = await table.getByTestId('component-data').innerText();
@@ -127,7 +123,6 @@ test.describe('FR-278 結果の振り分け・案の表示', () => {
     const relay = await startReviewStub();
     try {
       await start({ relayUrl: relay.url });
-      await recordExportConsent(page);
       await openScreen(page, 'memo');
       const memo = page.getByTestId('component-memo');
       await runAnalysis(page);
@@ -197,7 +192,6 @@ test.describe('FR-282 Foundry の接続設定・FR-283 未設定のとき', () =
     const relay = await startReviewStub({ foundry: 'not-configured' });
     try {
       await start({ relayUrl: relay.url });
-      await recordExportConsent(page);
       await openScreen(page, 'table');
       const table = page.getByTestId('component-table');
       const before = await table.getByTestId('component-data').innerText();

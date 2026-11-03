@@ -4,7 +4,7 @@
 // AC-785（integration）は企業の許可との結合を、実物の中継と差し替え部品で確かめる（末尾の describe）。
 // AC-776・AC-777 は検証レベル integration（結合テストの範囲）。ここでは AC-775 の異常系として「条件が欠けると呼ばない・代替で開始できる」だけを確かめる。
 import type { Locator, Page } from '@playwright/test';
-import { test, expect, recordExportConsent, continuePersonConfirm } from '../support/fixtures';
+import { test, expect, continuePersonConfirm } from '../support/fixtures';
 import { startGenaiRelay, chooseProvider, enableCommonConnection } from '../support/genai-relay';
 
 /** 差し替え部品が返すストーリー（CONTRACT.md §31 の形: scenes[].part・heading・narration） */
@@ -97,7 +97,6 @@ test.describe('FR-290 プレゼンテーション: 生成 AI によるストー�
     try {
       await g.saveFoundryConfig();
       await start({ relayUrl: g.url });
-      await recordExportConsent(page);
       // 接続先 Microsoft Foundry
       await chooseProvider(page, 'foundry');
       await enableCommonConnection(page);

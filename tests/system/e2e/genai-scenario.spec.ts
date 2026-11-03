@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準（docs/requirements/app-core.md）だけから決める。外部サービスは呼ばない（Foundry は差し替え部品）。
 // API キーの値はどこにも書かない。画面の探し方は tests/system/CONTRACT.md §25（実装はこれに合わせる）。
 import { test, expect } from '../support/fixtures';
-import { openScreen, closeSettings, recordExportConsent, continuePersonConfirm, component } from '../support/fixtures';
+import { openScreen, closeSettings, continuePersonConfirm, component } from '../support/fixtures';
 import { startFoundryRelayStub, startRelayStub } from '../support/relay-stub';
 import type { FoundryStubMode, RelayStub } from '../support/relay-stub';
 import type { Page, Locator } from '@playwright/test';
@@ -198,7 +198,6 @@ test.describe('FR-285 Foundry 実接続の切替と失敗時の代替（差し�
     try {
       await start({ relayUrl: relay.url });
       await openNewProject(page, '合成株式会社A', 'Project A');
-      await recordExportConsent(page);
       // (1) 未設定
       await openScreen(page, SCREEN_KEY);
       const screen = screenOf(page);

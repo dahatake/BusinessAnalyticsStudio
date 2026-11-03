@@ -392,14 +392,6 @@ export async function waitFirstFrame(page: Page): Promise<number> {
   return (await scene.info(page)).frame;
 }
 
-/**
- * 【廃止の名残】了承の記録（FR-181）は 2026-11-03 に廃止された（AC-373〜375・381〜386）。実接続・エクスポートの条件に了承はない。
- * 既存ケースの呼び出し箇所の互換のためだけに残した何もしない関数。新しいケースでは呼ばない（見つけ次第、呼び出しを消す）。
- */
-export async function recordExportConsent(_page: Page, _note = ''): Promise<void> {
-  // 何もしない（了承の入力欄・「了承を保存」は存在しない）
-}
-
 /** 種別「人」の確認（FR-219 AC-514）。出ていれば続行（出力する）まで進める。出ていなければ何もしない。 */
 export async function continuePersonConfirm(page: Page, isDone: () => boolean = () => false, waitMs = 5_000): Promise<void> {
   const confirm = page.locator('[role="alertdialog"], [role="dialog"]').filter({ hasText: /種別「人」/ }).filter({ hasText: /\d+\s*件/ });
