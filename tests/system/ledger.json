@@ -4835,11 +4835,11 @@
       "ac_ids": [
         "AC-379"
       ],
-      "title": "設定画面の実接続の説明・既定無効・キー非表示",
+      "title": "AC-379 設定画面の実接続の説明・既定無効・キー非表示（FR-181 とは独立。了承の欄はない）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-379",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "df8887c",
       "last_run_at": "2026-11-01T20:08:22+09:00",
       "evidence": "work/runs/202610311329/logs/system-test/E2E-282-202611011944.log",
@@ -4849,6 +4849,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-03T17:26:56+09:00",
+          "by": "test-designer",
+          "change": "title: '設定画面の実接続の説明・既定無効・キー非表示' -> 'AC-379 設定画面の実接続の説明・既定無効・キー非表示（FR-181 とは独立。了承の欄はない）'",
+          "reason": "FR-181 廃止（1267e60）。FR-182 単独のケースとして残し、了承の欄がない確認を含める"
         }
       ]
     },
@@ -9898,11 +9904,11 @@
       "ac_ids": [
         "AC-741"
       ],
-      "title": "AC-741 設定・有効・了承がそろうと /foundry/ask 1 回・Copilot 0 回で回答が出る。未設定・無効・了承なしは Foundry 0 回（異常系）",
+      "title": "AC-741 設定・有効がそろうと /foundry/ask 1 回・Copilot 0 回で回答が出る。未設定・無効は Foundry 0 回（異常系）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-741",
       "canary": false,
-      "status": "blocked",
+      "status": "not_run",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -9918,6 +9924,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "検証レベル=integration のため System Test の対象外（AC-741〜743・745〜747）。実装役の結合テストで検証する。差し替え部品の見本は chat-foundry.spec.ts（FR286_IT=1）"
+        },
+        {
+          "at": "2026-11-03T17:26:57+09:00",
+          "by": "test-designer",
+          "change": "title: 'AC-741 設定・有効・了承がそろうと /foundry/ask 1 回・Copilot 0 回で回答が出る。未設定・無効・了承なしは Foundry 0 回（異常系）' -> 'AC-741 設定・有効がそろうと /foundry/ask 1 回・Copilot 0 回で回答が出る。未設定・無効は Foundry 0 回（異常系）'",
+          "reason": "了承の条件の廃止（1b4128d）"
         }
       ]
     },
@@ -10047,11 +10059,11 @@
       "ac_ids": [
         "AC-746"
       ],
-      "title": "AC-746 timeout・error・未確認・了承なし・中継停止の理由表示。別の送信先へ切り替えず再送信できる（異常系）",
+      "title": "AC-746 timeout・error・未確認・中継停止の理由表示。別の送信先へ切り替えず再送信できる（異常系）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-746",
       "canary": false,
-      "status": "blocked",
+      "status": "not_run",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -10067,6 +10079,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "検証レベル=integration のため System Test の対象外（AC-741〜743・745〜747）。実装役の結合テストで検証する。差し替え部品の見本は chat-foundry.spec.ts（FR286_IT=1）"
+        },
+        {
+          "at": "2026-11-03T17:26:58+09:00",
+          "by": "test-designer",
+          "change": "title: 'AC-746 timeout・error・未確認・了承なし・中継停止の理由表示。別の送信先へ切り替えず再送信できる（異常系）' -> 'AC-746 timeout・error・未確認・中継停止の理由表示。別の送信先へ切り替えず再送信できる（異常系）'",
+          "reason": "了承の条件の廃止（1b4128d）"
         }
       ]
     },
