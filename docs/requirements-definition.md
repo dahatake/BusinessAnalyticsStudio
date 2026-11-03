@@ -813,7 +813,7 @@ ID（FR・NFR・AC・Q・PARAM）は `python scripts/next-id.py <種別>` でだ
 | FR-130 | 入力変数の指定 | 承認済み | MUST | AC-158 | [pipeline.md](requirements/pipeline.md) |
 | FR-131 | 雛形への改善要望の記録 | 承認済み | SHOULD | AC-159 | [pipeline.md](requirements/pipeline.md) |
 | FR-132 | AI 実接続の明示的な有効化 | 承認済み | MUST | AC-190〜AC-191 | [app-core.md](requirements/app-core.md) |
-| FR-181 | 顧客の了承の確認の入力・記録・表示 | 承認済み | MUST | AC-373〜AC-375 | [app-core.md](requirements/app-core.md) |
+| FR-181 | 顧客の了承の確認の入力・記録・表示 | 廃止 | MUST | AC-373〜AC-375 | [app-core.md](requirements/app-core.md) |
 | FR-182 | 音声合成・手書き認識の実接続の切替（Azure AI Speech・Azure AI Vision） | 承認済み | SHOULD | AC-376〜AC-380 | [app-core.md](requirements/app-core.md) |
 | FR-274 | 「現状の説明」ボタンとサイドパネル（AI による課題・解決策・KPI/OKR への寄与の説明） | 承認済み | SHOULD | AC-699〜AC-702 | [app-core.md](requirements/app-core.md) |
 | FR-275 | Microsoft Foundry の接続設定（エンドポイント・デプロイ名・API キー）と外部送信の条件 | 承認済み | SHOULD | AC-703〜AC-707 | [app-core.md](requirements/app-core.md) |
