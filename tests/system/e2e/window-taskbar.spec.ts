@@ -411,7 +411,7 @@ test.describe('FR-295 左メニューのバッジ・青いバーと見出しの 
     // A の項目で A を復元 → A が前面・B は前面でない
     await page.getByTestId(`nav-${w.A}`).click();
     await expect(item(page, w.a1)).toHaveAttribute('data-state', 'front');
-    await expect(item(page, w.b1)).toHaveAttribute('data-state', 'other');
+    await expect(item(page, w.b1)).toHaveAttribute('data-state', 'visible');
     // B の項目: 前面でない Window → 前面に出る（B の Window が前面）
     await page.getByTestId(`nav-${w.B}`).click();
     await expect(item(page, w.b1)).toHaveAttribute('data-state', 'front');
