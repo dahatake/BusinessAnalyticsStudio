@@ -186,7 +186,7 @@ export function App() {
   if (mainShown) {
     return (
       <>
-        {!opened ? <Opening customerName={name} projectName={projectName} onDone={finishOpening} /> : null}
+        {!opened ? <Opening onDone={finishOpening} /> : null}
         <AudioDirector scene={scene} />
         <GuideHost />
         <FloatingLanguageToggle />
@@ -196,7 +196,7 @@ export function App() {
   }
   return (
     <>
-      {!opened ? <Opening customerName={name} projectName={projectName} onDone={finishOpening} /> : null}
+      {!opened ? <Opening onDone={finishOpening} /> : null}
       <SelectionController />
       <ExportHost screens={SCREENS} />
       <SelectionAnnouncer />

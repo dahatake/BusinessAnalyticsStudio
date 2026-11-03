@@ -33,11 +33,6 @@ export function clampOpeningMs(ms: number): number {
   return Math.min(OPENING_MAX_MS, Math.max(OPENING_MIN_MS, ms));
 }
 
-/** オープニングのタイトル「{顧客名} × Microsoft — {Project名}: The Future Ahead」 */
-export function openingTitle(customerName: string, projectName: string): string {
-  return `${customerName} × Microsoft — ${projectName}: The Future Ahead`;
-}
-
 /** 演出強度を Executive→Showcase→Entertainment→Executive の順に 1 つ進める */
 export function nextIntensity(current: Intensity): Intensity {
   const i = INTENSITIES.indexOf(current);
