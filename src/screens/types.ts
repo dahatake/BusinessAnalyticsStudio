@@ -14,6 +14,8 @@ export interface ScreenDefinition {
   view?: ViewDecl;
   /** モーダルで開く画面（FR-223）。ナビゲーションには出るが、ワークスペースのコンポーネントとして並ばず、レイアウトの対象にならない */
   modal?: boolean;
+  /** このコンポーネント（Window）が属する画面（左メニューの項目）の key。省略すると自分自身の key（FR-295 AC-824。契約: CONTRACT.md §34） */
+  screenKey?: string;
   /** false なら左メニュー（AppShell）に出さない（FR-220 AC-590）。画面は廃止せず、ドック・コマンドから開ける */
   nav?: false;
 }

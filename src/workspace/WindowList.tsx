@@ -1,13 +1,15 @@
 // 開いているコンポーネントの一覧（FR-295。契約: tests/system/CONTRACT.md §34）。
 // 登録済みのコンポーネントを、状態（前面・表示中・最小化・閉じた）つきで 1 つずつ並べる。項目を押すと、最小化・閉じたものは前面に出し、表示中は前面にし、前面のものは最小化する。
 // FR-296: 既定のレイアウトに収まらないものは、閉じずに最小化として一覧に残す。
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import { pressWindow } from './windowActions';
+import { useWindowStatus } from '../store/windowStatus';
 import { Button, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
 import { Checkmark16Regular, Eye16Regular, Subtract16Regular, Dismiss16Regular } from '@fluentui/react-icons';
 import type { ScreenDefinition } from '../screens/types';
 import { useLayout } from '../store/layout';
 import { keysOf, type Layout } from './layoutModel';
-import { WINDOW_STATE_LABEL, nextSwitchIndex, switchKey, switchOrder, windowStates, type WindowState } from './windowStates';
+import { WINDOW_STATE_LABEL, nextSwitchIndex, screenKeyOf, switchKey, switchOrder, windowStates, type WindowState } from './windowStates';
 import { useT } from '../i18n';
 
 /** 没入表示中の一覧の高さ（px）。最大化したコンポーネントの上端をこの分だけ下げる */
@@ -45,20 +47,12 @@ export function WindowList({ screens, layout, minimized }: { screens: readonly S
     [items, layout, minimized, closedKeys, usedAt],
   );
   const inTree = useMemo(() => new Set(keysOf(layout)), [layout]);
-  const press = (key: string, state: WindowState) => {
-    const a = useLayout.getState();
-    if (state === 'front') {
-      if (a.maximized === key) a.setMaximized(null); // 没入表示からの復帰（FR-297 AC-802）
-      else if (inTree.has(key)) a.setMinimized(key, true);
-    } else if (state === 'visible') {
-      a.touch(key);
-    } else if (inTree.has(key)) {
-      a.setMinimized(key, false);
-      a.touch(key);
-    } else {
-      a.showComponent(key);
-    }
-  };
+  const press = (key: string, state: WindowState) => pressWindow(key, state, inTree.has(key));
+  // 左メニューのバッジ・青いバー（FR-295 AC-824）へ、同じ状態を渡す
+  const publish = useWindowStatus((st) => st.publish);
+  useLayoutEffect(() => {
+    publish({ states, inTree: [...inTree], screenOf: Object.fromEntries(items.map((i) => [i.key, screenKeyOf(i)])) });
+  }, [states, inTree, items, publish]);
   // 切替（Ctrl+Alt+PageDown／PageUp。FR-295 AC-798）。切替のキーを押している間だけ「切替の最中」で、その間の Esc は切替だけを取り消す
   const live = useRef({ states, items, inTree });
   live.current = { states, items, inTree };
@@ -122,6 +116,7 @@ export function WindowList({ screens, layout, minimized }: { screens: readonly S
             appearance="outline"
             data-testid="window-list-item"
             data-component-key={it.key}
+            data-screen-key={screenKeyOf(it)}
             data-state={st}
             aria-label={name}
             icon={ICON[st]}
