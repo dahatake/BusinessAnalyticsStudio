@@ -29,7 +29,10 @@ async function openMenuIfNarrow(page: Page, item?: Locator): Promise<void> {
 /** 左メニューの文字から画面を開く（key は実装に依存しない） */
 async function openByName(page: Page, name: string): Promise<{ key: string; c: Locator }> {
   const nav = page.getByRole('navigation', { name: '画面', exact: true });
-  const item = nav.locator('[data-testid^="nav-"]').filter({ hasText: name }).first();
+  const item = nav
+    .locator('[data-testid^="nav-"]:not([data-testid^="nav-bar-"]):not([data-testid^="nav-badge-"])')
+    .filter({ hasText: name })
+    .first();
   await openMenuIfNarrow(page, item);
   await expect(item, `左メニューに「${name}」がない`).toBeVisible();
   const key = ((await item.getAttribute('data-testid')) ?? '').replace(/^nav-/, '');
