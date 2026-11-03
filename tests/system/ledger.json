@@ -3367,7 +3367,7 @@
       "ac_ids": [
         "AC-220"
       ],
-      "title": "起動スクリプト: 導入・ビルド済みで install/build せず起動し 127.0.0.1 の URL でアプリが開く",
+      "title": "起動スクリプト: 導入済み・既存distありでも毎回現在ソースをbuildし、成功後だけstart、127.0.0.1で変更を反映",
       "layer": "e2e",
       "command": "node --test tests/system/launch/fr141-ac220.test.mjs",
       "canary": false,
@@ -3387,6 +3387,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC は検証レベル=integration で System Test の対象外（CHK-10）。テストは tests/system/launch/ に作成済みで、implementer の結合テスト検証用に流用する。検証レベルを system にする変更は rd-author へ"
+        },
+        {
+          "at": "2026-11-04T00:13:27+09:00",
+          "by": "test-designer",
+          "change": "title: '起動スクリプト: 導入・ビルド済みで install/build せず起動し 127.0.0.1 の URL でアプリが開く' -> '起動スクリプト: 導入済み・既存distありでも毎回現在ソースをbuildし、成功後だけstart、127.0.0.1で変更を反映'",
+          "reason": "現行ACの毎回build・build成功後だけstartにタイトルを整合。検証レベルintegrationのためSystem Test対象外・blockedを維持"
+        },
+        {
+          "at": "2026-11-04T00:13:28+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC は検証レベル=integration で System Test の対象外（CHK-10）。テストは tests/system/launch/ に作成済みで、implementer の結合テスト検証用に流用する。検証レベルを system にする変更は rd-author へ"
         }
       ]
     },
@@ -3398,7 +3410,7 @@
       "ac_ids": [
         "AC-221"
       ],
-      "title": "起動スクリプト: 未導入で npm install、dist なしで build、失敗時は原因表示・非0・起動しない（異常系）",
+      "title": "起動スクリプト: 未導入ならinstall後、導入済みならinstall省略、dist有無によらず毎回buildし成功後だけstart、失敗時は原因表示・非0・起動しない",
       "layer": "e2e",
       "command": "node --test tests/system/launch/fr141-ac221.test.mjs",
       "canary": false,
@@ -3415,6 +3427,18 @@
         },
         {
           "at": "2026-10-13T04:13:40+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC は検証レベル=integration で System Test の対象外（CHK-10）。テストは tests/system/launch/ に作成済みで、implementer の結合テスト検証用に流用する。検証レベルを system にする変更は rd-author へ"
+        },
+        {
+          "at": "2026-11-04T00:13:29+09:00",
+          "by": "test-designer",
+          "change": "title: '起動スクリプト: 未導入で npm install、dist なしで build、失敗時は原因表示・非0・起動しない（異常系）' -> '起動スクリプト: 未導入ならinstall後、導入済みならinstall省略、dist有無によらず毎回buildし成功後だけstart、失敗時は原因表示・非0・起動しない'",
+          "reason": "現行ACの毎回build・build成功後だけstartにタイトルを整合。検証レベルintegrationのためSystem Test対象外・blockedを維持"
+        },
+        {
+          "at": "2026-11-04T00:13:29+09:00",
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC は検証レベル=integration で System Test の対象外（CHK-10）。テストは tests/system/launch/ に作成済みで、implementer の結合テスト検証用に流用する。検証レベルを system にする変更は rd-author へ"
