@@ -94,7 +94,8 @@ export function navTarget(screen: string, states: Readonly<Record<string, Window
   const mine = Object.keys(states).filter((k) => (screenOf[k] ?? k) === screen);
   const latest = (ks: string[]) => ks.reduce<string | undefined>((best, k) => (best === undefined || (usedAt[k] ?? 0) > (usedAt[best] ?? 0) ? k : best), undefined);
   const front = mine.find((k) => states[k] === 'front');
-  if (front !== undefined) return { key: front, state: 'front' };
+  // 前面でも使用記録がない（usedAt が 0）Window は、既定で前面になっているだけなので最小化せず前面に出す（使用後に押すと最小化）
+  if (front !== undefined) return { key: front, state: (usedAt[front] ?? 0) > 0 ? 'front' : 'visible' };
   const open = latest(mine.filter((k) => states[k] !== 'closed'));
   if (open !== undefined) return { key: open, state: states[open]! };
   const closed = mine.filter((k) => states[k] === 'closed');

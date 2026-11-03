@@ -32,8 +32,14 @@ describe('FR-295 AC-824 画面ごとの件数と前面の有無', () => {
 describe('FR-295 AC-825 左メニューの項目を押したときの対象', () => {
   // FR-295 AC-825
   it('FR-295 AC-825 前面の Window があればそれを（最小化の対象として）選ぶ', () => {
-    expect(navTarget('a', S({ a1: 'front', a2: 'minimized' }), own, { a2: 9 })).toEqual({ key: 'a1', state: 'front' });
+    expect(navTarget('a', S({ a1: 'front', a2: 'minimized' }), own,     { a1: 4, a2: 9 })).toEqual({ key: 'a1', state: 'front' });
   });
+      // FR-295 AC-825
+      it('FR-295 AC-825 前面でも使用記録がない（usedAt が 0）Window は最小化せず前面に出す（visible 扱い）。使用後は最小化の対象', () => {
+        expect(navTarget('a', S({ a1: 'front' }), own, {})).toEqual({ key: 'a1', state: 'visible' });
+        expect(navTarget('a', S({ a1: 'front', a2: 'minimized' }), own, { a2: 9 })).toEqual({ key: 'a1', state: 'visible' });
+        expect(navTarget('a', S({ a1: 'front' }), own, { a1: 1 })).toEqual({ key: 'a1', state: 'front' });
+      });
   // FR-295 AC-825
   it('FR-295 AC-825 前面がなければ、開いている Window のうち最後に前面にしたものを選ぶ（最小化中は復元の対象）', () => {
     expect(navTarget('a', S({ a1: 'minimized', a2: 'minimized' }), own, { a1: 5, a2: 8 })).toEqual({ key: 'a2', state: 'minimized' });
