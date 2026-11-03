@@ -5100,9 +5100,9 @@
       "command": "node tests/system/run.mjs AC-396 AC-819",
       "canary": true,
       "status": "pass",
-      "last_commit": "19f0d35",
-      "last_run_at": "2026-11-03T18:24:58+09:00",
-      "evidence": "work/runs/202611031703/logs/system-test/E2E-291-202611031744.log",
+      "last_commit": "2a58253",
+      "last_run_at": "2026-11-03T18:37:49+09:00",
+      "evidence": "work/runs/adhoc-202611031837/logs/system-test/E2E-291-202611031837.log",
       "history": [
         {
           "at": "2026-10-15T22:31:53+09:00",
@@ -7073,9 +7073,9 @@
       "command": "node tests/system/run.mjs AC-675",
       "canary": false,
       "status": "pass",
-      "last_commit": "19f0d35",
-      "last_run_at": "2026-11-03T18:24:58+09:00",
-      "evidence": "work/runs/202611031703/logs/system-test/E2E-359-202611031744.log",
+      "last_commit": "2a58253",
+      "last_run_at": "2026-11-03T18:37:49+09:00",
+      "evidence": "work/runs/adhoc-202611031837/logs/system-test/E2E-359-202611031837.log",
       "history": [
         {
           "at": "2026-10-21T22:19:42+09:00",
@@ -7116,9 +7116,9 @@
       "command": "node tests/system/run.mjs AC-675",
       "canary": false,
       "status": "pass",
-      "last_commit": "19f0d35",
-      "last_run_at": "2026-11-03T18:24:58+09:00",
-      "evidence": "work/runs/202611031703/logs/system-test/E2E-359-202611031744.log",
+      "last_commit": "2a58253",
+      "last_run_at": "2026-11-03T18:37:49+09:00",
+      "evidence": "work/runs/adhoc-202611031837/logs/system-test/E2E-359-202611031837.log",
       "history": [
         {
           "at": "2026-10-21T22:20:06+09:00",
@@ -7191,9 +7191,9 @@
       "command": "node tests/system/run.mjs AC-682",
       "canary": false,
       "status": "pass",
-      "last_commit": "19f0d35",
-      "last_run_at": "2026-11-03T18:24:58+09:00",
-      "evidence": "work/runs/202611031703/logs/system-test/E2E-363-202611031744.log",
+      "last_commit": "2a58253",
+      "last_run_at": "2026-11-03T18:37:49+09:00",
+      "evidence": "work/runs/adhoc-202611031837/logs/system-test/E2E-363-202611031837.log",
       "history": [
         {
           "at": "2026-10-21T22:21:19+09:00",

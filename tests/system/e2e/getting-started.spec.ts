@@ -46,7 +46,16 @@ test.describe('FR-266 「はじめての方へ」', () => {
     for (const s of ['企業を登録', 'Project を作成', 'Project を開く', '分析を開始']) expect(text, `手順「${s}」がない`).toContain(s);
     expect((text.match(/例/g) ?? []).length, '各手順の「例」が 4 つ未満').toBeGreaterThanOrEqual(4);
     expect(text).toMatch(/次に/);
-    expectShortSentences(text, '「はじめての方へ」');
+    // 同じパネルにある「顧客パックとは」（FR-268）は Prompt の全文を含むので、60 字の対象は「はじめての方へ」の説明だけにする
+    const ownText = await guide.evaluate((el) => {
+      const pack = el.querySelector<HTMLElement>('[data-testid="pack-guide"]');
+      const prev = pack?.style.display ?? '';
+      if (pack) pack.style.display = 'none';
+      const out = (el as HTMLElement).innerText;
+      if (pack) pack.style.display = prev;
+      return out;
+    });
+    expectShortSentences(ownText, '「はじめての方へ」');
 
     // FR-266 AC-820: 開閉の動きの所要時間は 500ms（PARAM-074）以内。動きの軽減（reduce）では 0 で即時に切り替わり、状態は変わらず伝わる
     const maxMotionMs = () => guide.evaluate((el) => {
