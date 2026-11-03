@@ -3,7 +3,7 @@
 // 顧客パックにサンプルの項目があるときは、見出しの横に「サンプル」を明記する（FR-008）。
 import { useEffect, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
 import { Badge, Text, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
-import { Star16Filled } from '@fluentui/react-icons';
+import { AppGeneric20Regular, Star16Filled } from '@fluentui/react-icons';
 import { hasSampleData } from '../data/sample';
 import { usePackStore } from '../store/pack';
 import { useFoldClass } from '../motion/useFoldMotion';
@@ -22,6 +22,8 @@ import { TIER_APPEARANCE, TIER_LABEL } from '../workspace/tiers';
 /** これより狭いコンポーネントは、見出しの操作アイコンを出さず「…」メニューに任せる（FR-150 AC-259）。
  *  アイコン 4 個（各 24px 以上）と「…」が見出しの横に収まる幅。既定の配置の列（約 300px）でもアイコンが出る（NFR-UX-015 AC-476 のツールチップ） */
 const NARROW_PANE_PX = 240;
+/** 表示幅がこれ以下（PARAM-029 = 320px）なら、コンポーネントの幅によらずピン止め・タブ・ビューを「…」に畳む（FR-222 AC-518） */
+const NARROW_VIEWPORT_PX = 320;
 /** 配置の計算が最小の幅（PARAM-034 = 240px）ちょうどに置いた列は、描画の小数の丸めで 240 をわずかに下回って測れる（例: 239.99px）。
  *  この誤差で「狭い」と判定して見出しの操作（「ビュー」など）を隠さないよう、丸めの分（1px）だけ許す（FR-150 AC-259・FR-217 AC-499） */
 const LAYOUT_ROUNDING_PX = 1;
@@ -122,6 +124,9 @@ const useStyles = makeStyles({
   sample: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS },
   // 詰めた見出し（狭いコンポーネント）: 見出しの上下に標準の余白（h2 の既定）を足さず、上部に結論・数値を置く画面（エグゼクティブサマリーなど）が下に押し下げられないようにする
   titleCompact: { marginBlock: 0 },
+  // 左のアイコン＋タイトル（Windows 11 の見出しと同じ構成。FR-295 AC-826）
+  windowTitle: { display: 'inline-flex', alignItems: 'center', columnGap: tokens.spacingHorizontalS, minWidth: 0 },
+  windowIcon: { flexShrink: 0, color: tokens.colorNeutralForeground2 },
   // 狭い列でも「サンプル」の札が折り返して高くならない（見出しの高さを抑える）
   sampleBadge: { flexShrink: 0, whiteSpace: 'nowrap' },
   // 世界の表示の注記（FR-218）
@@ -201,13 +206,16 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof ResizeObserver === 'undefined') return;
-    const ro = new ResizeObserver(() => {
+    const measure = () => {
       const w = el.getBoundingClientRect().width;
-      setNarrow(isNarrowPane(w));
+      // 表示幅が PARAM-029（320px）以下のときも、ピン止め・タブ・ビューは「…」に畳む（FR-222 AC-518）
+      setNarrow(isNarrowPane(w) || window.innerWidth <= NARROW_VIEWPORT_PX);
       setCompact(w < COMPACT_PANE_PX);
-    });
+    };
+    const ro = new ResizeObserver(measure);
     ro.observe(el);
-    return () => ro.disconnect();
+    window.addEventListener('resize', measure);
+    return () => { ro.disconnect(); window.removeEventListener('resize', measure); };
   }, []);
   const onFocus = () => setFocused(true);
   const onBlur = (e: FocusEvent<HTMLElement>) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setFocused(false); };
@@ -265,10 +273,12 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
           <span data-testid="panel-handle-grip" className={s.grip} aria-hidden />
         </div>
       ) : null}
-      <div data-testid="panel-body" ref={bodyRef} className={mergeClasses(s.body, pane ? s.paneBody : undefined, minimized ? s.minimized : undefined)}>
+      <div data-testid={minimized ? 'panel-header-only' : 'panel-body'} ref={bodyRef} className={mergeClasses(s.body, pane ? s.paneBody : undefined, minimized ? s.minimized : undefined)}>
       <div className={s.head}>
         <div className={mergeClasses(s.headRow, pane && compact ? s.headRowCompact : undefined)}>
           <div className={mergeClasses(s.titleRow, pane && compact ? s.titleRowCompact : undefined)}>
+            <span className={s.windowTitle} data-testid={pane ? 'window-title' : undefined}>
+            {pane ? <AppGeneric20Regular aria-hidden className={s.windowIcon} /> : null}
             <Text
               as="h2"
               size={pane && compact ? 500 : 600}
@@ -283,6 +293,7 @@ export function Panel({ testId, title, description, maxWidth, children }: PanelP
             >
               {title}
             </Text>
+            </span>
             {pane?.front ? (
               // 前面の印（アイコン＋読み上げの名前）。強い影だけに頼らない（FR-297 AC-803）
               <span data-testid="front-indicator" role="img" aria-label={t('前面')} title={t('前面')} className={s.frontMark}><Star16Filled aria-hidden /></span>

@@ -25,6 +25,9 @@ import { PresentationBar, PresentationButton } from '../presentation/Presentatio
 import { StoryHost } from '../story/StoryHost';
 import { SCREENS, NAV_SCREENS, COMPONENT_SCREENS } from '../screens/registry';
 import { Stepper } from '../stepper/Stepper';
+import { useWindowStatus } from '../store/windowStatus';
+import { navTarget } from '../workspace/windowStates';
+import { pressWindow } from '../workspace/windowActions';
 import { useStepper } from '../store/stepper';
 import { SelectionController } from '../selection/SelectionController';
 import { EditModeSwitch, HistoryButton, ResetSampleButton } from '../edit/EditControls';
@@ -114,6 +117,20 @@ export function App() {
     selectComponent(key, motionRef.current);
   }, []);
 
+  // 左メニューの項目（FR-295 AC-825）: 前面の Window は最小化、最小化中は元の位置・大きさで復元して前面、閉じた・未表示は表示。複数の Window は最後に前面にしたもの。
+  // 一覧（WindowList）と同じ状態・同じ遷移（pressWindow）を使う。状態がまだ求められていない間（起動直後）は、従来どおり開くだけ
+  const onNavToggle = useCallback((key: string) => {
+    if (SCREENS.find((s) => s.key === key)?.modal) { useSettingsModal.getState().setOpen(true); return; }
+    const w = useWindowStatus.getState();
+    const target = navTarget(key, w.states, w.screenOf, useLayout.getState().usedAt);
+    if (!target) { onSelect(key); return; }
+    useStepper.getState().followScreen(key);
+    if (target.state === 'front') { pressWindow(target.key, 'front', w.inTree.includes(target.key)); return; }
+    if (target.state === 'closed') { selectComponent(target.key, motionRef.current); return; }
+    pressWindow(target.key, target.state, w.inTree.includes(target.key));
+    selectComponent(target.key, motionRef.current);
+  }, [onSelect]);
+
   useEffect(() => { void load(); }, [load]);
   // モーダルのダイアログ（メイン画面の作業先の選択など）を閉じた後に、背景（#root）の aria-hidden が残ると、画面全体が支援技術から見えなくなる。
   // 開いているモーダルがないときは外す（AppShell の背景の扱いと同じ考え方。FR-186・FR-187）
@@ -197,7 +214,7 @@ export function App() {
       <AppShell
         title={`${name} ${projectName}`}
         screens={NAV_SCREENS /* FR-220 AC-590: 左メニューには nav: false の画面を出さない */}
-        onSelect={onSelect}
+        onSelect={onNavToggle}
         stepper={<Stepper onNavigate={onSelect} />}
         headerExtra={<><LanguageToggle /><CopilotReviewButton /><GlobalSearch /><ExportButton /><DiscussionFileActions /><SelectionIndicator /><TimeAxis /><AnimationStatus /><IntensityIndicator /><ExplainButton /><StatusAndSettings><AiStatus /><SettingsButton /></StatusAndSettings></>}
         actions={<><EditModeSwitch /><HistoryButton /><ResetSampleButton /><PersonaMenu /><AutoSizeSwitch /><ScreenViewButton /><ResetLayoutButton /><ShortVideoButton /><PresentationButton /><GuideButton /></>}

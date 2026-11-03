@@ -112,7 +112,9 @@ describe('NFR-UX-018 AC-482 操作の定義の一貫性', () => {
       expect(id, '定義を参照していないボタン').toBeTruthy();
       const variant = b.getAttribute('data-icon-variant') as 'regular' | 'filled';
       const on = variant === 'filled';
-      expect(nameOf(b)).toMatch(new RegExp(`^${paneAction(id, on).label}`));
+      // Window の 3 ボタンは Windows 11 と同じ名前（FR-295 AC-826）。［閉じる］は定義「非表示」、最大化中の［元に戻す］は定義「通常表示」に対応する
+      const wn = ({ hide: '閉じる' } as Record<string, string>)[id] ?? (id === 'maximize' && on ? '元に戻す' : undefined);
+      expect(nameOf(b)).toMatch(new RegExp(`^${wn ?? paneAction(id, on).label}`));
     }
     cleanup();
     render(wrap(<ViewAsTableButton asTable={false} onToggle={() => {}} />));
@@ -457,7 +459,7 @@ describe('FR-216 AC-496 AC-505 ポインターの操作と表示上の配置', (
     fireEvent.click(within(actionsOf('a')).getByRole('button', { name: '最大化' }));
     expect(st().maximized).toBe('a');
     focus('a');
-    fireEvent.click(within(actionsOf('a')).getByRole('button', { name: '通常表示' }));
+    fireEvent.click(within(actionsOf('a')).getByRole('button', { name: '元に戻す' }));
     expect(st().maximized).toBeNull();
     check('最大化から戻す');
     focus('a');
@@ -506,7 +508,7 @@ describe('NFR-UX-018 AC-482 メニューの名前', () => {
     // 最大化中・ピン止め中は、オンの名前（見出しのボタンと同じ）
     act(() => st().setMaximized('a'));
     focus('a');
-    expect(within(actionsOf('a')).getByRole('button', { name: paneAction('maximize', true).label })).toBeTruthy();
+    expect(within(actionsOf('a')).getByRole('button', { name: '元に戻す' })).toBeTruthy(); // 最大化中の見出しのボタン（FR-295 AC-826。定義の onLabel は「通常表示」）
     names = menuNames();
     expect(has(names, paneAction('maximize', true).label)).toBe(true);
     expect(names).not.toContain('通常表示に戻す');
@@ -515,6 +517,44 @@ describe('NFR-UX-018 AC-482 メニューの名前', () => {
     fireEvent.click(pinBtn('a'));
     names = menuNames();
     expect(has(names, paneAction('pin', true).label)).toBe(true);
+  });
+});
+
+// FR-295 AC-826: Window の見出しは左にアイコン＋タイトル、右端に［最小化］［最大化／元に戻す］［閉じる］（この順）
+describe('FR-295 AC-826 見出しの 3 ボタン', () => {
+  const controls = (k: string) => within(section(k)).getByTestId('window-controls');
+  it('FR-295 AC-826 window-controls は role=group で、最小化・最大化・閉じるの順に名前つきボタンを持ち、ピン止め・メニューはその手前に残る', () => {
+    render(wrap(<Workspace screens={screens} />));
+    const c = controls('a');
+    expect(c.getAttribute('role')).toBe('group');
+    expect(c.getAttribute('aria-label')).toBe('ウィンドウの操作');
+    const btns = within(c).getAllByRole('button');
+    expect(btns.map((b) => b.getAttribute('data-testid'))).toEqual(['window-minimize', 'window-maximize', 'window-close']);
+    expect(btns.map((b) => nameOf(b))).toEqual(['最小化', '最大化', '閉じる']);
+    expect(btns.map((b) => b.getAttribute('data-action'))).toEqual(['minimize', 'maximize', 'hide']); // 既存の data-action 互換
+    expect(within(section('a')).getByTestId('window-title').textContent).toContain('パネルA');
+    // 右端: 3 ボタンの後ろに、ピン止め・メニューが来ない
+    const all = Array.from(actionsOf('a').querySelectorAll('button'));
+    expect(all.slice(-3).map((b) => b.getAttribute('data-testid'))).toEqual(['window-minimize', 'window-maximize', 'window-close']);
+    expect(within(actionsOf('a')).getByTestId('component-menu')).toBeTruthy();
+  });
+  it('FR-295 AC-826 最大化→元に戻す、最小化で復元ボタンだけ、閉じるで非表示、幅が狭くても 3 ボタンは残る', () => {
+    render(wrap(<Workspace screens={screens} />));
+    fireEvent.click(within(controls('a')).getByTestId('window-maximize'));
+    expect(st().maximized).toBe('a');
+    expect(section('a').getAttribute('data-maximized')).toBe('true');
+    fireEvent.click(within(controls('a')).getByRole('button', { name: '元に戻す' }));
+    expect(st().maximized).toBeNull();
+    fireEvent.click(within(controls('a')).getByTestId('window-minimize'));
+    expect(section('a').getAttribute('data-minimized')).toBe('true');
+    expect(within(controls('a')).getByRole('button', { name: '元に戻す' })).toBeTruthy();
+    fireEvent.click(within(controls('a')).getByTestId('window-minimize'));
+    fireEvent.click(within(controls('b')).getByTestId('window-close'));
+    expect(screen.queryByTestId('component-b')).toBeNull();
+    cleanup();
+    setup(240);
+    render(wrap(<Workspace screens={screens} />));
+    expect(within(controls('a')).getAllByRole('button')).toHaveLength(3);
   });
 });
 

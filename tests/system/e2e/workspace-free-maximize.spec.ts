@@ -36,7 +36,8 @@ async function menu(c: Locator, name: string) {
 
 async function icon(c: Locator, name: '最大化' | '通常表示') {
   await c.focus();
-  await c.getByTestId('component-actions').getByRole('button', { name, exact: true }).click();
+  // 見出しの 3 ボタン（AC-826）: 旧名称「通常表示」は「元に戻す」
+  await c.getByTestId('window-controls').getByRole('button', { name: name === '通常表示' ? '元に戻す' : name, exact: true }).click();
 }
 
 async function setup(page: Page, key: string) {
