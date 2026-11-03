@@ -3,7 +3,7 @@
 // PARAM-134=360 px（最小の幅）、PARAM-135=240 px（最小の高さ）、PARAM-136=4 個（既定の同時表示の上限）、PARAM-137=60 %（背面の減光）。
 // 画面の探し方は tests/system/CONTRACT.md §33（実装前の契約案）。実装が未着手のため、失敗は正常。
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, component, selectPersona, PERSONAS, MAIN_SCREENS, openScreen, contrastRatio } from '../support/fixtures';
+import { test, expect, component, selectPersona, PERSONAS, MAIN_SCREENS, openScreen, contrastRatio, settingsButton, settingsDialog, closeSettings } from '../support/fixtures';
 
 const MIN_W = 360; // PARAM-134
 const MIN_H = 240; // PARAM-135
@@ -297,4 +297,219 @@ test.describe('FR-297 没入表示・奥行き', () => {
       expect(contrastRatio(head.color, head.bg), '見出しの文字は AA（4.5 以上）').toBeGreaterThanOrEqual(4.5);
     });
   }
+});
+
+// ---- FR-295 AC-824〜826: 左メニューのバッジ・青いバー、見出しの 3 ボタン（契約: CONTRACT.md §34 の追補。実装前の契約案）----
+type Entry = { key: string; screen: string; state: State };
+async function entries(page: Page): Promise<Entry[]> {
+  return items(page).evaluateAll((els) => els.map((e) => ({
+    key: e.getAttribute('data-component-key') ?? '',
+    screen: e.getAttribute('data-screen-key') ?? '',
+    state: (e.getAttribute('data-state') ?? '') as State,
+  })));
+}
+const isOpen = (s: State) => s !== 'closed';
+const badge = (page: Page, screen: string) => page.getByTestId(`nav-badge-${screen}`);
+const bar = (page: Page, screen: string) => page.getByTestId(`nav-bar-${screen}`);
+/** 閉じる（最小化中なら先に復元して、見出しの［閉じる］で閉じる） */
+async function hideWin(page: Page, key: string) {
+  if ((await states(page))[key] === 'minimized') await item(page, key).click();
+  await component(page, key).focus();
+  await component(page, key).getByTestId('window-close').dispatchEvent('click');
+  await expect(item(page, key)).toHaveAttribute('data-state', 'closed');
+}
+async function setOsWin(page: Page, os: '自動' | 'Windows' | 'macOS'): Promise<void> {
+  await settingsButton(page).click();
+  await settingsDialog(page).getByRole('combobox', { name: 'OS の操作慣習' }).selectOption({ label: os });
+  await closeSettings(page);
+}
+/** 画面 A（2 つの Window: 前面 + 最小化）・B（前面でない 1 つ）・C（すべて閉じた）を作る。画面は list-item の data-screen-key（左メニューの nav-<key> の key） */
+async function arrange(page: Page) {
+  const all = await entries(page);
+  const screens = [...new Set(all.map((e) => e.screen))];
+  const by = (s: string) => all.filter((e) => e.screen === s);
+  const A = screens.find((s) => by(s).length >= 2);
+  expect(A, '2 つ以上のコンポーネントを持つ画面が必要').toBeTruthy();
+  const rest = screens.filter((s) => s !== A);
+  expect(rest.length, '画面が 3 つ以上必要').toBeGreaterThanOrEqual(2);
+  const [B, C] = rest;
+  for (const e of by(C)) if ((await states(page))[e.key] !== 'closed') await hideWin(page, e.key);
+  const bs = by(B);
+  for (const e of bs.slice(1)) if ((await states(page))[e.key] !== 'closed') await hideWin(page, e.key);
+  if ((await states(page))[bs[0].key] === 'closed') await item(page, bs[0].key).click();
+  const as = by(A!);
+  for (const e of as.slice(2)) if ((await states(page))[e.key] !== 'closed') await hideWin(page, e.key);
+  for (const e of as.slice(0, 2)) if ((await states(page))[e.key] === 'closed') await item(page, e.key).click();
+  const [a1, a2] = as;
+  // a2 を最小化、a1 を前面にして A を「前面あり」にする（B・C は前面でない）
+  if ((await states(page))[a2.key] !== 'minimized') await component(page, a2.key).getByTestId('window-minimize').dispatchEvent('click');
+  if ((await states(page))[a1.key] === 'minimized') await item(page, a1.key).click();
+  await component(page, a1.key).getByTestId('panel-body').click({ position: { x: 4, y: 4 } });
+  await expect(item(page, a1.key)).toHaveAttribute('data-state', 'front');
+  await expect(item(page, a2.key)).toHaveAttribute('data-state', 'minimized');
+  return { A: A!, B, C, a1: a1.key, a2: a2.key, b1: bs[0].key };
+}
+
+test.describe('FR-295 左メニューのバッジ・青いバーと見出しの 3 ボタン', () => {
+  // FR-295 AC-824
+  test('FR-295 AC-824 左メニューに Window の件数バッジ（2）と青いバー（前面あり=長い・前面なし=短い）が出て、閉じた画面には出ず、色以外でも区別でき、操作で即座に変わる', async ({ page, start }) => {
+    await start();
+    await setup(page);
+    const w = await arrange(page);
+    // ① 2 つの Window（前面 + 最小化）: 件数「2」のバッジと長い青いバー
+    await expect(badge(page, w.A)).toHaveText(/2/);
+    await expect(badge(page, w.A)).toHaveAttribute('data-count', '2');
+    await expect(bar(page, w.A)).toHaveAttribute('data-state', 'front');
+    // ② 前面でない Window だけ: 短い青いバー（バッジなし）
+    await expect(bar(page, w.B)).toHaveAttribute('data-state', 'other');
+    await expect(badge(page, w.B), '1 つだけの画面にバッジを出さない').toHaveCount(0);
+    // ③ Window がない（閉じた）画面: バッジも青いバーも出ない（異常系）
+    await expect(badge(page, w.C)).toHaveCount(0);
+    await expect(bar(page, w.C)).toHaveCount(0);
+    // 文字の代替（アクセシブルな名前）と、色以外の区別（数字・バーの長さ）。Light・Dark・ハイコントラスト
+    for (const mode of [{ colorScheme: 'light' as const }, { colorScheme: 'dark' as const }, { forcedColors: 'active' as const }]) {
+      await page.emulateMedia(mode);
+      const name = async (l: Locator) => ((await l.getAttribute('aria-label')) ?? (await l.innerText()) ?? '').trim();
+      expect(await name(badge(page, w.A)), `${JSON.stringify(mode)}: バッジの名前に件数`).toMatch(/2/);
+      expect((await name(bar(page, w.A))).length, `${JSON.stringify(mode)}: 青いバー（前面）の名前`).toBeGreaterThan(0);
+      expect(await name(bar(page, w.A)), '前面ありと前面なしの名前が違う').not.toBe(await name(bar(page, w.B)));
+      expect((await box(bar(page, w.A))).height, 'バーが見える').toBeGreaterThan(0);
+      expect((await box(bar(page, w.A))).width, `${JSON.stringify(mode)}: 前面のバーが前面でないバーより長い`).toBeGreaterThan((await box(bar(page, w.B))).width + 1);
+    }
+    await page.emulateMedia({ colorScheme: null, forcedColors: null });
+    // 操作で即座に変わる: 前面の Window を最小化 → 前面なし（短いバー・件数は 2 のまま）／復元 → 前面あり
+    await component(page, w.a1).getByTestId('window-minimize').dispatchEvent('click');
+    await expect(bar(page, w.A), '最小化の直後にバーが変わる').toHaveAttribute('data-state', 'other');
+    await expect(badge(page, w.A)).toHaveAttribute('data-count', '2');
+    await item(page, w.a1).click();
+    await expect(bar(page, w.A), '復元の直後にバーが変わる').toHaveAttribute('data-state', 'front');
+    // 閉じる → 件数 1（バッジが消える。バーは残る）／再表示 → 件数 2
+    await hideWin(page, w.a2);
+    await expect(badge(page, w.A), '閉じた直後にバッジが消える').toHaveCount(0);
+    await expect(bar(page, w.A)).toBeVisible();
+    await item(page, w.a2).click();
+    await expect(badge(page, w.A), '再表示の直後にバッジが戻る').toHaveAttribute('data-count', '2');
+    // すべて閉じると画面のバーも消える
+    await hideWin(page, w.a1);
+    await hideWin(page, w.a2);
+    await expect(bar(page, w.A)).toHaveCount(0);
+    await expect(badge(page, w.A)).toHaveCount(0);
+  });
+
+  // FR-295 AC-825
+  test('FR-295 AC-825 左メニューの項目で Window が復元・最小化・再表示され、一覧と一致し、選択・絞り込み・入力が変わらず、再読込で復元され、Tab+Enter と最小化メニューでも動く', async ({ page, start }) => {
+    const app = await start();
+    await setup(page);
+    const w = await arrange(page);
+    const search = page.getByRole('searchbox', { name: /検索/ });
+    await search.fill('左メニュー確認');
+    // 最小化中の a2 を持つ画面を押す前に、画面 A の Window を前面でない状態にして確かめる
+    const min0 = await states(page);
+    expect(min0[w.a2]).toBe('minimized');
+    // B の項目: 前面でない Window → 前面に出る（B の Window が前面）
+    await page.getByTestId(`nav-${w.B}`).click();
+    await expect(item(page, w.b1)).toHaveAttribute('data-state', 'front');
+    // A の項目: 最小化中のものは前面で復元（前の位置・大きさ）、前面のものは最小化
+    await page.getByTestId(`nav-${w.A}`).click();
+    const s1 = await states(page);
+    expect([s1[w.a1], s1[w.a2]].filter((s) => s === 'front').length, '画面の項目で復元した Window が前面').toBe(1);
+    expect(s1[w.a2], '最小化中だった Window が復元').not.toBe('minimized');
+    const placed = await box(component(page, w.a2));
+    expect(placed.width, '復元した大きさ').toBeGreaterThanOrEqual(MIN_W - TOL);
+    expect(placed.height).toBeGreaterThanOrEqual(MIN_H - TOL);
+    await page.getByTestId(`nav-${w.A}`).click();
+    expect((await states(page))[w.a2], '前面の Window は最小化').toBe('minimized');
+    // 左メニューの結果は FR-295 の一覧と常に一致（バーの状態 = 一覧の前面の有無）
+    const consistent = async () => {
+      const es = await entries(page);
+      for (const s of [w.A, w.B, w.C]) {
+        const open = es.filter((e) => e.screen === s && isOpen(e.state));
+        const hasFront = open.some((e) => e.state === 'front');
+        if (open.length === 0) await expect(bar(page, s), `${s}: 閉じた画面にバーがない`).toHaveCount(0);
+        else await expect(bar(page, s), `${s}: バーが一覧と一致`).toHaveAttribute('data-state', hasFront ? 'front' : 'other');
+      }
+    };
+    await consistent();
+    // 閉じた画面 C の項目: 表示される（前面）
+    await page.getByTestId(`nav-${w.C}`).click();
+    expect((await entries(page)).filter((e) => e.screen === w.C && e.state === 'front').length, '閉じた画面が表示される').toBeGreaterThanOrEqual(1);
+    await consistent();
+    // 操作の前後で絞り込みが変わらない（NFR-UX-001）
+    await expect(search).toHaveValue('左メニュー確認');
+    // 再読込後も FR-014 のとおり復元
+    const before = await states(page);
+    await app.reload();
+    await expect(list(page)).toBeVisible();
+    expect(await states(page), '再読込後の状態').toEqual(before);
+    await consistent();
+    // キーボード（Tab・Enter）: 項目にフォーカスして Enter で同じ操作
+    const nav = page.getByTestId(`nav-${w.B}`);
+    await nav.focus();
+    await page.keyboard.press('Enter');
+    const afterEnter = (await entries(page)).filter((e) => e.screen === w.B);
+    expect(afterEnter.some((e) => e.state === 'front') !== (before[w.b1] === 'front'), 'Enter で前面の有無が切り替わる').toBe(true);
+    // 左メニューが最小化（アイコンのみ）でも同じに動く（異常系）
+    await page.getByRole('button', { name: 'メニューを最小化' }).click();
+    await page.getByTestId(`nav-${w.A}`).click();
+    await expect(bar(page, w.A), '最小化したメニューでもバーが出る').toBeVisible();
+    await consistent();
+    await expect(search).toHaveValue('左メニュー確認');
+  });
+
+  // FR-295 AC-826
+  test('FR-295 AC-826 見出しの［最小化］［最大化／元に戻す］［閉じる］が Windows は右端・macOS は左端に並び、操作でき、結果が左メニューと一覧に反映される', async ({ page, start }) => {
+    await start();
+    await setup(page);
+    const [a] = await shown(page);
+    const c = component(page, a);
+    const ctl = (k: string, n: string) => component(page, k).getByTestId('window-controls').getByRole('button', { name: n, exact: true });
+    for (const os of ['Windows', 'macOS'] as const) {
+      await setOsWin(page, os);
+      const h = await box(c);
+      const mn = await box(ctl(a, '最小化'));
+      const mx = await box(ctl(a, '最大化'));
+      const cl = await box(ctl(a, '閉じる'));
+      const mid = (b: Box) => b.x + b.width / 2;
+      if (os === 'Windows') {
+        expect(mid(mn), 'Windows: 最小化・最大化・閉じるの順').toBeLessThan(mid(mx));
+        expect(mid(mx)).toBeLessThan(mid(cl));
+        expect(mid(cl), 'Windows: 右端').toBeGreaterThan(h.x + h.width * 0.75);
+        // 左のアイコン＋タイトル
+        const title = await box(c.getByTestId('window-title'));
+        expect(title.x + title.width / 2, 'Windows: タイトルは左').toBeLessThan(mid(mn));
+      } else {
+        for (const b of [mn, mx, cl]) expect(mid(b), 'macOS: 左端').toBeLessThan(h.x + h.width * 0.25);
+      }
+      // ピン止め・タブ・ビュー・メニューが見出しに残り操作できる
+      await expect(c.getByTestId('component-menu'), `${os}: メニューが残る`).toBeVisible();
+      await expect(c.getByTestId('component-actions').getByRole('button').first(), `${os}: 既存の操作が残る`).toBeEnabled();
+    }
+    await setOsWin(page, 'Windows');
+    // 最大化 → 元に戻す（位置・大きさが戻る）
+    const orig = await box(c);
+    await ctl(a, '最大化').click();
+    await expect(c).toHaveAttribute('data-maximized', 'true');
+    await ctl(a, '元に戻す').click();
+    await expect(c).not.toHaveAttribute('data-maximized', 'true');
+    await sameBox(c, orig, '元に戻すで位置・大きさが戻る');
+    // キーボードで操作できる（Tab で到達・Enter で実行）
+    await ctl(a, '最小化').focus();
+    await expect(ctl(a, '最小化')).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(item(page, a)).toHaveAttribute('data-state', 'minimized');
+    // 最小化で見出しだけに畳まれる（本体が出ない）。復元して閉じるへ
+    await expect(c.getByTestId('panel-body')).toHaveCount(0);
+    await item(page, a).click();
+    const screen = (await entries(page)).find((e) => e.key === a)!.screen;
+    const others = (await entries(page)).filter((e) => e.screen === screen && isOpen(e.state) && e.key !== a);
+    await ctl(a, '閉じる').click();
+    await expect(item(page, a), '閉じるで一覧に closed').toHaveAttribute('data-state', 'closed');
+    await expect(c, '閉じるで非表示').toBeHidden();
+    // 左メニューのバッジ・青いバーに反映（異常系: 同じ画面にほかの Window がなければバーも消える）
+    if (others.length === 0) await expect(bar(page, screen)).toHaveCount(0);
+    else await expect(bar(page, screen)).toBeVisible();
+    // 反映の確認: 再表示で戻る
+    await item(page, a).click();
+    await expect(c).toBeVisible();
+  });
 });
