@@ -406,6 +406,12 @@ test.describe('FR-295 左メニューのバッジ・青いバーと見出しの 
     expect((await box(component(page, w.a1))).width, '復元した大きさ').toBeGreaterThanOrEqual(MIN_W - TOL);
     await page.getByTestId(`nav-${w.A}`).click();
     await expect(item(page, w.a1)).toHaveAttribute('data-state', 'minimized');
+    // 前面の A を最小化すると、次に最近使った表示中の B が自動で前面になる（AC-797・798）
+    await expect(item(page, w.b1), 'A の最小化で B が自動で前面').toHaveAttribute('data-state', 'front');
+    // A の項目で A を復元 → A が前面・B は前面でない
+    await page.getByTestId(`nav-${w.A}`).click();
+    await expect(item(page, w.a1)).toHaveAttribute('data-state', 'front');
+    await expect(item(page, w.b1)).toHaveAttribute('data-state', 'other');
     // B の項目: 前面でない Window → 前面に出る（B の Window が前面）
     await page.getByTestId(`nav-${w.B}`).click();
     await expect(item(page, w.b1)).toHaveAttribute('data-state', 'front');
