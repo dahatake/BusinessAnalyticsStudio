@@ -12,13 +12,14 @@ import { startRelay, type Relay } from '../../../scripts/relay/relay';
 const SDK_TOKEN = 'SDK-CRED-DUMMY-4d8e1f3a9b7c2e50';
 
 /** 差し替えの Copilot SDK 部品。認証情報（SDK_TOKEN）を内部に持つが、中継は保存も応答もしてはならない。 */
+let completeCalls = 0;
 function sdkStub(mode: 'authenticated' | 'unauthenticated' | 'unavailable') {
   return {
     async status() {
       if (mode === 'unavailable') throw new Error('stub sdk: not available');
       return { signedIn: mode === 'authenticated', isAuthenticated: mode === 'authenticated', token: SDK_TOKEN } as { signedIn: boolean };
     },
-    async complete() { return 'stub'; },
+    async complete() { completeCalls++; return 'stub'; },
   };
 }
 
@@ -65,8 +66,14 @@ test('FR-011 AC-817 SDK が認証済みで接続先が未保存なら、起動�
     assert.notEqual(p.enabled, true, 'foundryEnabled が自動で有効になった');
     assert.notEqual(cfg.enabled, true, 'foundryEnabled が自動で有効になった');
     // 有効化していないので外部への送信（ask）は拒否され、SDK の complete も呼ばれない
+    // 契約（tests/system/CONTRACT.md）: 有効化前は 4xx、または 200 かつ応答の mode が 'unavailable'
+    completeCalls = 0;
     const ask = await e.call('POST', '/foundry/ask', { packId: 'pack-1', prompt: 'x', consent: true });
-    assert.ok(ask.status >= 400 && ask.status < 500, `有効化前の送信が拒否されない（${ask.status}）`);
+    let askMode: unknown;
+    try { askMode = (JSON.parse(ask.text) as { mode?: unknown }).mode; } catch { askMode = undefined; }
+    const refused = (ask.status >= 400 && ask.status < 500) || (ask.status === 200 && askMode === 'unavailable');
+    assert.ok(refused, `有効化前の送信が拒否されない（${ask.status} ${ask.text.slice(0, 120)}）`);
+    assert.equal(completeCalls, 0, '有効化前なのに SDK の complete が呼ばれた');
     // 認証情報の非保存・非表示
     await e.call('GET', '/copilot/config');
     await e.call('GET', '/health');
