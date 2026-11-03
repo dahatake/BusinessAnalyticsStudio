@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準（docs/requirements/app-experience.md）だけから決める。生成AIは呼ばない（中継の差し替え部品 support/ai-import-stub.ts）。
 // 画面の探し方は tests/system/CONTRACT.md §32。
 import type { Page } from '@playwright/test';
-import { test, expect, recordExportConsent, openScreen, closeSettings, continuePersonConfirm } from '../support/fixtures';
+import { test, expect, openScreen, closeSettings, continuePersonConfirm } from '../support/fixtures';
 import { startAiImportRelayStub } from '../support/ai-import-stub';
 import type { AiImportRelayStub } from '../support/ai-import-stub';
 

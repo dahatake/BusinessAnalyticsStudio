@@ -6,7 +6,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import type { Locator, Page } from '@playwright/test';
-import { test, expect, selectPersona, openScreen, settingsDialog, closeSettings, recordExportConsent } from '../support/fixtures';
+import { test, expect, selectPersona, openScreen, settingsDialog, closeSettings } from '../support/fixtures';
 import { startGenaiRelay, aiProviderStatus, chooseProvider, enableCommonConnection, GENAI_DUMMY_KEY } from '../support/genai-relay';
 import { unusedPort } from '../support/server';
 import { startRelay } from '../../../scripts/relay/relay';
@@ -202,7 +202,6 @@ test.describe('FR-275 AI の状態表示に生成AIの接続先', () => {
       await expect(st).not.toContainText('GitHub Copilot');
       await expect(st).toContainText('モック');
       // AC-706 の条件（接続情報・有効化と確認。顧客の了承の記録は条件にしない）をそろえて有効にすると、モックの表示が有効の表示に変わる
-      await recordExportConsent(page);
       await enableCommonConnection(page);
       await expect(st).toContainText('Microsoft Foundry');
       await expect(st, '実接続を有効にしてもモックのまま').not.toContainText('モック');

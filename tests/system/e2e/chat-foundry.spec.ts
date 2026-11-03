@@ -2,7 +2,7 @@
 // 期待値は要求定義書の受入基準だけから決める。画面の探し方は CONTRACT.md §26。
 // Foundry は差し替え部品の中継（support/relay-stub.ts の startChatFoundryStub。POST /foundry/ask）。本物は呼ばない。
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, closeSettings, recordExportConsent, continuePersonConfirm, settingsDialog } from '../support/fixtures';
+import { test, expect, openScreen, closeSettings, continuePersonConfirm, settingsDialog } from '../support/fixtures';
 import { startChatFoundryStub } from '../support/relay-stub';
 import type { ChatFoundryAskMode } from '../support/relay-stub';
 import { examplePack } from '../support/packs';
@@ -71,7 +71,6 @@ test.describe('FR-286 チャットの Foundry 送信', () => {
     const relay = await startChatFoundryStub();
     try {
       await start({ relayUrl: relay.url });
-      await recordExportConsent(page);
       const chat = await chatScreen(page);
       const turns = HISTORY_PAIRS + 2;
       for (let i = 1; i <= turns; i++) {
@@ -108,7 +107,6 @@ test.describe('FR-286 チャットの Foundry 送信', () => {
     const relay = await startChatFoundryStub();
     try {
       await start({ relayUrl: relay.url });
-      await recordExportConsent(page);
       const chat = await chatScreen(page);
       const filler = '長い前置きの文章です。'.repeat(500);
       for (let i = 1; i <= 3; i++) {
@@ -133,7 +131,6 @@ test.describe('FR-286 チャットの Foundry 送信', () => {
     const relay = await startChatFoundryStub();
     try {
       await start({ relayUrl: relay.url });
-      await recordExportConsent(page);
       const chat = await chatScreen(page);
       await ask(page, chat, `${mono.issues()[0].title} の解決策は？`);
       const answer = chat.getByTestId('chat-answer').last();
@@ -162,7 +159,6 @@ test.describe('FR-286 チャットの Foundry 送信', () => {
     const relay = await startChatFoundryStub();
     try {
       await start({ relayUrl: relay.url });
-      await recordExportConsent(page);
       const chat = await chatScreen(page);
       await ask(page, chat, 'ｚｑｘ存在しない語９９ について教えて');
       const answer = chat.getByTestId('chat-answer').last();
@@ -210,7 +206,6 @@ test.describe('FR-286 チャットの Foundry 送信', () => {
     const relay = await startChatFoundryStub({ delayMs: 1200 });
     try {
       await start({ relayUrl: relay.url });
-      await recordExportConsent(page);
       const chat = await chatScreen(page);
       await ask(page, chat, `${marker(1)} ${mono.issues()[0].title} について`, false);
       // 種別「人」の確認ダイアログ（FR-219）が先に出るので、続行してから送信中の表示と二重送信不可を確かめる
@@ -259,7 +254,6 @@ test.describe('FR-286 チャットの Foundry 送信', () => {
       const relay = await startChatFoundryStub({ askMode: c.mode });
       try {
         await start({ relayUrl: relay.url });
-        await recordExportConsent(page);
         const chat = await chatScreen(page);
         await ask(page, chat, `${marker(1)} ${mono.issues()[0].title} の解決策は？`);
         const notice = chat.getByTestId('chat-error');
@@ -286,7 +280,6 @@ test.describe('FR-286 チャットの Foundry 送信', () => {
     test.skip(itOnly, 'integration の AC。FR286_IT=1 で実行');
     const relay = await startChatFoundryStub();
     await start({ relayUrl: relay.url });
-    await recordExportConsent(page);
     const chat = await chatScreen(page);
     await relay.close();
     await ask(page, chat, `${marker(1)} ${mono.issues()[0].title} の解決策は？`);
@@ -302,7 +295,6 @@ test.describe('FR-286 チャットの Foundry 送信', () => {
     const relay = await startChatFoundryStub();
     try {
       await start({ relayUrl: relay.url });
-      await recordExportConsent(page);
       // 上限を 1 回にする（下げる変更は確認なし）
       const settings = await openScreen(page, 'settings');
       const usage = settings.getByTestId('ai-usage');
@@ -342,7 +334,6 @@ test.describe('FR-286 チャットの Foundry 送信', () => {
     const relay = await startChatFoundryStub({ askMode: 'error' });
     try {
       await start({ relayUrl: relay.url });
-      await recordExportConsent(page);
       const settings = await openScreen(page, 'settings');
       const usage = settings.getByTestId('ai-usage');
       await usage.getByLabel(/1 日.*(上限|回数)|(上限|回数).*1 日/).first().fill('1');

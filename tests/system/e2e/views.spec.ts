@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import JSZip from 'jszip';
 import { createRequire } from 'node:module';
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, component, entity, hook, countBadge, captureDownload, setEditMode, tableRows, gotoAndEnter, skipOpening, recordExportConsent } from '../support/fixtures';
+import { test, expect, openScreen, component, entity, hook, countBadge, captureDownload, setEditMode, tableRows, gotoAndEnter, skipOpening } from '../support/fixtures';
 import { examplePack, makeVariant, type Pack } from '../support/packs';
 
 const require = createRequire(import.meta.url);
@@ -698,7 +698,6 @@ test.describe('FR-043 ミニ・モックアプリの廃止と非破壊条件', (
       await chat.getByRole('textbox', { name: /質問/ }).fill('この課題の概要を教えて');
       await chat.getByRole('button', { name: '送信', exact: true }).click();
       await expect(chat.getByTestId('chat-answer').last()).toContainText(/\S/);
-      await recordExportConsent(page);
       await page.keyboard.press('Control+Shift+E');
       const dialog = page.getByRole('dialog', { name: /エクスポート/ });
       await expect(dialog).toBeVisible();
