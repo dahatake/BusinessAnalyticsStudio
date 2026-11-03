@@ -1,6 +1,6 @@
 #!/bin/sh
 # FR-141: Business Analytics Studio 起動スクリプト（Mac・Linux）。127.0.0.1 だけで待ち受ける。
-# 依存パッケージが未導入なら npm install、dist がなければ npm run build を行い、npm start で起動する。
+# 依存パッケージが未導入なら npm install、毎回 npm run build を行い、成功後だけ npm start で起動する。
 cd "$(dirname "$0")" || exit 1
 
 # 失敗時はダブルクリック起動でも内容が読めるよう、Enter 待ちしてから終了する。
@@ -26,7 +26,7 @@ step() {
 }
 
 [ -d node_modules ] || step "npm install（依存パッケージが未導入）" install
-[ -d dist ] || step "npm run build（dist がありません）" run build
+step "npm run build（現在のソースをビルド）" run build
 
 echo "[start] npm start で起動します（URL は次に表示されます。終了は Ctrl+C）"
 npm start

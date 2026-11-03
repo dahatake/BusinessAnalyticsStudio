@@ -146,7 +146,7 @@ npm run build
 npm start
 ```
 
-導入済みの PC では、ルートの起動スクリプトだけでも起動できます（Windows は `start.cmd`、Mac・Linux は `./start.sh`）。未導入なら `npm install`、`dist` がなければ `npm run build` を行い、`npm start` で `127.0.0.1` だけで起動します。
+導入済みの PC では、ルートの起動スクリプトだけでも起動できます（Windows は `start.cmd`、Mac・Linux は `./start.sh`）。依存パッケージが未導入なら `npm install` を行い、導入済みなら省略します。`dist` の有無にかかわらず、起動のたびに現在のソースから `npm run build` を行い、成功した後にだけ `npm start` で `127.0.0.1` だけで起動します。依存導入またはビルドが失敗した場合は原因を表示し、既存の `dist` があっても起動せず、0 以外の終了コードで終了します。
 
 表示された URL（`http://127.0.0.1:4173`）を、Edge か Chrome で開きます。顧客パックがない（`dist/data/` に JSON がない）ときは、画面に「お手本パックで起動しています」と出ます。
 
