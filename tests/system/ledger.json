@@ -132,8 +132,8 @@
     "AC-209": "sha256:d9a66fdcd8b47302",
     "AC-214": "sha256:9df9834bddfc9b2a",
     "AC-218": "sha256:32a7345c5759e758",
-    "AC-220": "sha256:183b5ad4eb50fcbe",
-    "AC-221": "sha256:164d4836ea954368",
+    "AC-220": "sha256:69622bee01c64dd5",
+    "AC-221": "sha256:6159b4d7d14eee0f",
     "AC-222": "sha256:bf881f537411b020",
     "AC-223": "sha256:33a4e1bba33a5f94",
     "AC-224": "sha256:6057a2634956231d",
@@ -2086,9 +2086,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "a9c0749",
-      "last_run_at": "2026-11-03T23:18:27+09:00",
-      "evidence": "work/runs/202611032040/logs/system-test/E2E-162-202611032316.log",
+      "last_commit": "1af9154",
+      "last_run_at": "2026-11-04T05:18:07+09:00",
+      "evidence": "work\\runs\\202611040500\\logs\\system-test\\E2E-162-202611040517.log",
       "history": [
         {
           "at": "2026-10-12T14:07:28+09:00",
@@ -3367,7 +3367,7 @@
       "ac_ids": [
         "AC-220"
       ],
-      "title": "起動スクリプト: 導入・ビルド済みで install/build せず起動し 127.0.0.1 の URL でアプリが開く",
+      "title": "起動スクリプト: 導入済み・既存distありでも毎回現在ソースをbuildし、成功後だけstart、127.0.0.1で変更を反映",
       "layer": "e2e",
       "command": "node --test tests/system/launch/fr141-ac220.test.mjs",
       "canary": false,
@@ -3387,6 +3387,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC は検証レベル=integration で System Test の対象外（CHK-10）。テストは tests/system/launch/ に作成済みで、implementer の結合テスト検証用に流用する。検証レベルを system にする変更は rd-author へ"
+        },
+        {
+          "at": "2026-11-04T00:13:27+09:00",
+          "by": "test-designer",
+          "change": "title: '起動スクリプト: 導入・ビルド済みで install/build せず起動し 127.0.0.1 の URL でアプリが開く' -> '起動スクリプト: 導入済み・既存distありでも毎回現在ソースをbuildし、成功後だけstart、127.0.0.1で変更を反映'",
+          "reason": "現行ACの毎回build・build成功後だけstartにタイトルを整合。検証レベルintegrationのためSystem Test対象外・blockedを維持"
+        },
+        {
+          "at": "2026-11-04T00:13:28+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC は検証レベル=integration で System Test の対象外（CHK-10）。テストは tests/system/launch/ に作成済みで、implementer の結合テスト検証用に流用する。検証レベルを system にする変更は rd-author へ"
         }
       ]
     },
@@ -3398,7 +3410,7 @@
       "ac_ids": [
         "AC-221"
       ],
-      "title": "起動スクリプト: 未導入で npm install、dist なしで build、失敗時は原因表示・非0・起動しない（異常系）",
+      "title": "起動スクリプト: 未導入ならinstall後、導入済みならinstall省略、dist有無によらず毎回buildし成功後だけstart、失敗時は原因表示・非0・起動しない",
       "layer": "e2e",
       "command": "node --test tests/system/launch/fr141-ac221.test.mjs",
       "canary": false,
@@ -3415,6 +3427,18 @@
         },
         {
           "at": "2026-10-13T04:13:40+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC は検証レベル=integration で System Test の対象外（CHK-10）。テストは tests/system/launch/ に作成済みで、implementer の結合テスト検証用に流用する。検証レベルを system にする変更は rd-author へ"
+        },
+        {
+          "at": "2026-11-04T00:13:29+09:00",
+          "by": "test-designer",
+          "change": "title: '起動スクリプト: 未導入で npm install、dist なしで build、失敗時は原因表示・非0・起動しない（異常系）' -> '起動スクリプト: 未導入ならinstall後、導入済みならinstall省略、dist有無によらず毎回buildし成功後だけstart、失敗時は原因表示・非0・起動しない'",
+          "reason": "現行ACの毎回build・build成功後だけstartにタイトルを整合。検証レベルintegrationのためSystem Test対象外・blockedを維持"
+        },
+        {
+          "at": "2026-11-04T00:13:29+09:00",
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC は検証レベル=integration で System Test の対象外（CHK-10）。テストは tests/system/launch/ に作成済みで、implementer の結合テスト検証用に流用する。検証レベルを system にする変更は rd-author へ"
@@ -5127,9 +5151,9 @@
       "command": "node tests/system/run.mjs AC-396 AC-819",
       "canary": true,
       "status": "pass",
-      "last_commit": "a9c0749",
-      "last_run_at": "2026-11-03T23:18:27+09:00",
-      "evidence": "work/runs/202611032040/logs/system-test/E2E-291-202611032316.log",
+      "last_commit": "1af9154",
+      "last_run_at": "2026-11-04T05:18:07+09:00",
+      "evidence": "work\\runs\\202611040500\\logs\\system-test\\E2E-291-202611040517.log",
       "history": [
         {
           "at": "2026-10-15T22:31:53+09:00",
@@ -6741,9 +6765,9 @@
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat --workers=1",
       "canary": true,
       "status": "pass",
-      "last_commit": "0981723",
-      "last_run_at": "2026-11-03T23:20:13+09:00",
-      "evidence": "work/runs/202611032040/logs/system-test/E2E-345-202611032319.log",
+      "last_commit": "1af9154",
+      "last_run_at": "2026-11-04T05:18:07+09:00",
+      "evidence": "work\\runs\\202611040500\\logs\\system-test\\E2E-345-202611040517.log",
       "history": [
         {
           "at": "2026-10-21T17:19:59+09:00",
@@ -6779,9 +6803,9 @@
       "command": "node tests/system/run.mjs AC-593",
       "canary": true,
       "status": "pass",
-      "last_commit": "a9c0749",
-      "last_run_at": "2026-11-03T23:18:27+09:00",
-      "evidence": "work/runs/202611032040/logs/system-test/E2E-346-202611032316.log",
+      "last_commit": "1af9154",
+      "last_run_at": "2026-11-04T05:18:07+09:00",
+      "evidence": "work\\runs\\202611040500\\logs\\system-test\\E2E-346-202611040517.log",
       "history": [
         {
           "at": "2026-10-21T17:32:44+09:00",
@@ -6964,9 +6988,9 @@
       "command": "node tests/system/run.mjs AC-598",
       "canary": true,
       "status": "pass",
-      "last_commit": "a9c0749",
-      "last_run_at": "2026-11-03T23:18:27+09:00",
-      "evidence": "work/runs/202611032040/logs/system-test/E2E-351-202611032316.log",
+      "last_commit": "1af9154",
+      "last_run_at": "2026-11-04T05:18:07+09:00",
+      "evidence": "work\\runs\\202611040500\\logs\\system-test\\E2E-351-202611040517.log",
       "history": [
         {
           "at": "2026-10-21T17:33:47+09:00",
