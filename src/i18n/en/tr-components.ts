@@ -195,6 +195,7 @@ export default {
   '置き場所は、public/data/ と public/brand/ ほかです。': 'It lives in public/data/, public/brand/, and others.',
   '顧客パックがなくても、デモ（お手本パック {sample}/）で試せます。': 'Even without a customer pack, you can try the demo (sample pack {sample}/).',
   'M365 Copilot で作る。{file} の Prompt を貼ります。': 'Create it with M365 Copilot. Paste the prompt from {file}.',
+  'GitHub Copilot（WorkIQ が使える状態）で作る。{file} の Prompt を、先頭の変数を書き換えて貼ります。': 'Create it with GitHub Copilot (with WorkIQ available). Edit the variables at the top of the prompt in {file}, then paste it.',
   '生成パイプラインで作る。': 'Create it with the generation pipeline.',
   'お手本 {sample} を複製して、手で書き換えます。': 'Duplicate the sample {sample} and rewrite it by hand.',
   '起動したら、ブラウザーで {url} を開きます。': 'Once started, open {url} in your browser.',

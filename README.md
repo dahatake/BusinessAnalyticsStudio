@@ -206,6 +206,7 @@ brand/BRAND-RESEARCH.md     ブランド調査の記録
   2. `schema/` と お手本（`examples/mono/`）を添付します。
   3. 出力を作業フォルダー（`work/envisioning/<顧客名>/`）に保存します。
   4. `check:pack` / `verify:pack` で検証します。
+- **GitHub Copilot（WorkIQ が使える状態）で作る**: [docs/prompts/github-copilot-workiq-customer-pack.md](docs/prompts/github-copilot-workiq-customer-pack.md) の Prompt の先頭の変数（顧客名・Project 名など）を書き換えて貼ると、ファイルの作成と検証までエージェントが行います。
 - **生成パイプライン（Skill `envisioning-dashboard`）**: リポジトリのルートで、顧客名を指定して実行します。調査 → 雛形の複製 → 顧客パックの生成 → スキーマ検証 → verify → 起動を、順に行います。
   ```
   npm run pipeline -- all --customer "<顧客名>" --project "<Project 名>"

@@ -14,7 +14,7 @@ import { useWorkTargetUi } from '../../src/projects/workTargetUi';
 import { GuideButton, GuideHost } from '../../src/guide';
 import { GUIDE_ACK_KEY, resetGuide, shouldAutoShow, useGuide } from '../../src/guide/guideStore';
 import { PANEL_MOTION_MS } from '../../src/guide/GettingStarted';
-import { GUIDE_STEPS, GUIDE_TERMS, PACK_COMMANDS, PACK_PROMPT_FILE, PACK_SAMPLE, PACK_URL, GUIDE_WHAT, GUIDE_WORKSPACE } from '../../src/guide/guideContent';
+import { GUIDE_STEPS, GUIDE_TERMS, PACK_COMMANDS, PACK_PROMPT_FILE, PACK_PROMPT_FILE_GHCP, PACK_PROMPT_GHCP, PACK_PROMPT_M365, PACK_SAMPLE, PACK_URL, GUIDE_WHAT, GUIDE_WORKSPACE } from '../../src/guide/guideContent';
 
 const wrap = (ui: ReactNode) => <FluentProvider theme={webLightTheme}>{ui}</FluentProvider>;
 const ROOT = process.cwd();
@@ -197,7 +197,7 @@ describe('FR-268 顧客パックの説明', () => {
     openPanel();
     const region = screen.getByRole('region', { name: '顧客パック' });
     const buttons = within(region).getAllByRole('button', { name: /コピー/ });
-    expect(buttons.length).toBe(6); // Prompt の要点 + 5 コマンド（pipeline・check・verify・build・start）
+    expect(buttons.length).toBe(7); // Prompt 2 つ（M365・GitHub Copilot）+ 5 コマンド（pipeline・check・verify・build・start）
     fireEvent.click(within(region).getByRole('button', { name: '形式の検査をコピー' }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(PACK_COMMANDS.check));
     await waitFor(() => expect(within(region).getByText('コピーしました')).toBeTruthy());
@@ -214,6 +214,10 @@ describe('FR-268 顧客パックの説明', () => {
     expect(PACK_COMMANDS.check).toContain('npm run check:pack');
     expect(PACK_COMMANDS.verify).toContain('npm run verify:pack');
     expect(existsSync(join(ROOT, PACK_PROMPT_FILE))).toBe(true);
+    for (const [file, text] of [[PACK_PROMPT_FILE, PACK_PROMPT_M365], [PACK_PROMPT_FILE_GHCP, PACK_PROMPT_GHCP]] as const) {
+      expect(read(file).replace(/\r\n/g, '\n')).toContain(text);
+    }
+    expect(read('users-guide/01-quick-start.md')).toContain(PACK_PROMPT_FILE_GHCP);
     expect(existsSync(join(ROOT, PACK_SAMPLE))).toBe(true);
     const readme = read('README.md');
     expect(readme).toContain(PACK_URL);
