@@ -70,7 +70,7 @@
     "AC-087": "sha256:23004fc9a7b816cd",
     "AC-088": "sha256:c6358146976b4d9e",
     "AC-091": "sha256:c5f14e2e98161df4",
-    "AC-093": "sha256:505c52848f57f1fc",
+    "AC-093": "sha256:e0f6b27bf255781c",
     "AC-094": "sha256:1254ba11f4363dd1",
     "AC-095": "sha256:09f2e7f58f8b1aa2",
     "AC-096": "sha256:826937ff5d03199d",
@@ -93,7 +93,7 @@
     "AC-119": "sha256:5f60b05a0d5aeb38",
     "AC-120": "sha256:d2b0ba110f3b78cd",
     "AC-121": "sha256:0fd0ba7fb957842a",
-    "AC-123": "sha256:e2b9afe5f28aadb7",
+    "AC-123": "sha256:ba167c15d466ad07",
     "AC-124": "sha256:4ec29b85c35e893c",
     "AC-126": "sha256:cbbe3190917eae4b",
     "AC-129": "sha256:03f883be9af3c5b2",
@@ -2424,11 +2424,11 @@
       "ac_ids": [
         "AC-093"
       ],
-      "title": "AC-093 標準の検証条件で、オープニングにお手本パックの顧客名と Project 名を含むタイトルが表示され、全体の長さが {PA",
+      "title": "AC-093 オープニングにアプリケーション名「Business Analytics Studio」が表示され、DOM に顧客名・Project 名が出ず、長さが PARAM-011〜012、スキップ/Esc で本編へ",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-093",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "19f0d35",
       "last_run_at": "2026-11-03T18:24:58+09:00",
       "evidence": "work/runs/202611031703/logs/system-test/E2E-175-202611031747.log",
@@ -2438,6 +2438,18 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-11-04T08:31:12+09:00",
+          "by": "test-designer",
+          "change": "title: 'AC-093 標準の検証条件で、オープニングにお手本パックの顧客名と Project 名を含むタイトルが表示され、全体の長さが {PA' -> 'AC-093 オープニングにアプリケーション名「Business Analytics Studio」が表示され、DOM に顧客名・Project 名が出ず、長さが PARAM-011〜012、スキップ/Esc で本編へ'",
+          "reason": "AC-093 変更（アプリ名だけを表示。顧客名・Project 名は出さない）に合わせてケースを更新"
+        },
+        {
+          "at": "2026-11-04T08:31:21+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC-093 変更に伴う再実行"
         }
       ]
     },
@@ -3005,11 +3017,11 @@
       "ac_ids": [
         "AC-123"
       ],
-      "title": "AC-123 同じ `dist/` に 2 種類のお手本パックを順に差し替えて起動すると、再ビルドせずに、それぞれの顧客名がタイトルと",
+      "title": "AC-123 同じ dist/ に 2 種類のお手本パックを差し替えても、再ビルドなしで顧客名が本編のタイトルに出る（オープニングは顧客名を出さない）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-123",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "19f0d35",
       "last_run_at": "2026-11-03T18:24:58+09:00",
       "evidence": "work/runs/202611031703/logs/system-test/E2E-198-202611031748.log",
@@ -3019,6 +3031,18 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "旧台帳(5ad1af6)からの復元。台帳が空だったため"
+        },
+        {
+          "at": "2026-11-04T08:31:13+09:00",
+          "by": "test-designer",
+          "change": "title: 'AC-123 同じ `dist/` に 2 種類のお手本パックを順に差し替えて起動すると、再ビルドせずに、それぞれの顧客名がタイトルと' -> 'AC-123 同じ dist/ に 2 種類のお手本パックを差し替えても、再ビルドなしで顧客名が本編のタイトルに出る（オープニングは顧客名を出さない）'",
+          "reason": "AC-123 変更（顧客名は本編のタイトルのみ。オープニングはアプリ名だけ）に合わせてケースを更新"
+        },
+        {
+          "at": "2026-11-04T08:31:22+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC-123 変更に伴う再実行"
         }
       ]
     },
