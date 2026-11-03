@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import { Button, makeStyles, tokens } from '@fluentui/react-components';
 import {
   FLOW_ALT, GUIDE_STEPS, GUIDE_TERMS, GUIDE_WHAT, GUIDE_WORKSPACE,
-  PACK_COMMANDS, PACK_PROMPT_FILE, PACK_PROMPT_POINTS, PACK_SAMPLE, PACK_URL,
+  PACK_COMMANDS, PACK_PROMPT_FILE, PACK_PROMPT_FILE_GHCP, PACK_PROMPT_GHCP, PACK_PROMPT_M365, PACK_SAMPLE, PACK_URL,
 } from './guideContent';
 import { useT } from '../i18n';
 
@@ -24,6 +24,7 @@ const useStyles = makeStyles({
     flex: '1 1 20ch', minWidth: 0,
   },
   pre: { whiteSpace: 'pre-wrap', margin: 0 },
+  promptBox: { maxHeight: '16em', overflowY: 'auto' },
   note: { color: tokens.colorNeutralForeground2 },
   svg: { maxWidth: '100%', height: 'auto' },
   h2: { margin: 0, fontSize: tokens.fontSizeBase500, fontWeight: tokens.fontWeightSemibold },
@@ -174,6 +175,7 @@ export function PackSection({ withHeading = true }: { withHeading?: boolean }) {
   const s = useStyles();
   const t = useT();
   const promptRef = useRef<HTMLElement>(null);
+  const promptRef2 = useRef<HTMLElement>(null);
   return (
     <div className={s.block}>
       {withHeading ? <GuideH>顧客パックとは</GuideH> : null}
@@ -184,8 +186,13 @@ export function PackSection({ withHeading = true }: { withHeading?: boolean }) {
         <li>
           <Text>{t('M365 Copilot で作る。{file} の Prompt を貼ります。', { file: PACK_PROMPT_FILE })}</Text>
           <div className={s.cmd}>
-            <pre ref={promptRef as React.RefObject<HTMLPreElement>} className={`${s.code} ${s.pre}`}>{PACK_PROMPT_POINTS}</pre>
-            <CopyButton text={PACK_PROMPT_POINTS} label="Prompt の要点" codeRef={promptRef} />
+            <pre ref={promptRef as React.RefObject<HTMLPreElement>} className={`${s.code} ${s.pre} ${s.promptBox}`} tabIndex={0}>{PACK_PROMPT_M365}</pre>
+            <CopyButton text={PACK_PROMPT_M365} label="M365 Copilot 用 Prompt" codeRef={promptRef} />
+          </div>
+          <Text>{t('GitHub Copilot（WorkIQ が使える状態）で作る。{file} の Prompt を、先頭の変数を書き換えて貼ります。', { file: PACK_PROMPT_FILE_GHCP })}</Text>
+          <div className={s.cmd}>
+            <pre ref={promptRef2 as React.RefObject<HTMLPreElement>} className={`${s.code} ${s.pre} ${s.promptBox}`} tabIndex={0}>{PACK_PROMPT_GHCP}</pre>
+            <CopyButton text={PACK_PROMPT_GHCP} label="GitHub Copilot 用 Prompt" codeRef={promptRef2} />
           </div>
         </li>
         <li><Text>{t('生成パイプラインで作る。')}</Text><CommandRow label="パイプライン" command={PACK_COMMANDS.pipeline} /></li>
