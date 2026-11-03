@@ -1,7 +1,7 @@
 // コンポーネント（パネル）がワークスペースの中にいるときの文脈と、見出しのメニュー（FR-013/FR-109）。
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Button, Menu, MenuDivider, MenuItem, MenuItemRadio, MenuList, MenuPopover, MenuTrigger, Tooltip, makeStyles, tokens } from '@fluentui/react-components';
-import { MoreHorizontal20Regular } from '@fluentui/react-icons';
+import { Dismiss20Regular, MoreHorizontal20Regular, Maximize20Regular, SquareMultiple20Regular, Subtract20Regular, type FluentIcon } from '@fluentui/react-icons';
 import type { Move } from './layoutModel';
 import { TIERS, TIER_LABEL, type Role, type Tier } from './tiers';
 import { SNAP_LABEL, type SnapKind } from './snap';
@@ -15,6 +15,8 @@ import { useT } from '../i18n';
 const useActionStyles = makeStyles({
   actions: { display: 'flex', alignItems: 'center', columnGap: tokens.spacingHorizontalXXS, flexShrink: 0 },
   group: { display: 'contents' },
+  // Window の 3 ボタン（FR-295 AC-826）。Windows 11 の見出しのボタンと同じ並び
+  controls: { display: 'inline-flex', alignItems: 'center', flexShrink: 0 },
   hint: { fontSize: tokens.fontSizeBase200, lineHeight: tokens.lineHeightBase200 },
   // macOS の慣習: 左端にウィンドウ操作、右端にそのほかの操作（FR-299）
   macBar: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', columnGap: tokens.spacingHorizontalS, width: '100%' },
@@ -206,19 +208,21 @@ export function ComponentMenu({ pane, title, open, onOpenChange, onShowTier }: {
  * 見出しの操作のボタン。名前・アイコンは操作の定義（paneActions）から取る（NFR-UX-018 AC-482）。
  * `pressed` を渡すと切替のボタンになり、押下の状態（aria-pressed）を持つ。アイコンの種類（Regular／Filled）は data-icon-variant で示す。
  */
-function ActionButton({ action, on = false, pressed, onClick, disabledReason }: { action: PaneActionId; on?: boolean; pressed?: boolean; onClick?: () => void; disabledReason?: string }) {
+function ActionButton({ action, on = false, pressed, onClick, disabledReason, label, icon, testId }: { action: PaneActionId; on?: boolean; pressed?: boolean; onClick?: () => void; disabledReason?: string; /** Window の 3 ボタン（FR-295 AC-826）: 名前・アイコン・契約の testid を Windows の見出しと同じにする */ label?: string; icon?: FluentIcon; testId?: string }) {
   const s = useActionStyles();
   const t = useT();
   const v = paneAction(action, on);
-  const Icon = v.Icon;
+  const Icon = icon ?? v.Icon;
+  const name = label ? t(label) : v.label;
   return (
-    <Tooltip content={disabledReason ? t('{label}（{reason}）', { label: v.label, reason: t(disabledReason) }) : v.label} relationship="label" withArrow>
+    <Tooltip content={disabledReason ? t('{label}（{reason}）', { label: name, reason: t(disabledReason) }) : name} relationship="label" withArrow>
       <Button
         className={s.icon}
         appearance="subtle"
         size="small"
         icon={<Icon aria-hidden />}
         data-action={action}
+        data-testid={testId}
         data-icon-variant={v.variant}
         aria-pressed={pressed}
         disabledFocusable={!!disabledReason}
@@ -267,13 +271,12 @@ export function ComponentActions({ pane, title, active, narrow, hover = false, f
   useEffect(() => { if (!hover) setEngaged(false); }, [hover]);
   const showAssign = hover && (!focused || engaged) && !pane.minimized;
   const s = useActionStyles();
-  useT(); // 言語の切替で、操作の名前（paneAction）を描き直す
+  const t = useT(); // 言語の切替で、操作の名前（paneAction）を描き直す
   // アイコンは常に描き、フォーカスのないときは隠す。隠している間は押せず、Tab でも止まらない。
   // 広いときは visibility: hidden で場所を残す（フォーカスが入った瞬間に見出しの折り返しが変わり、押そうとしたボタンが動いてクリックが外れるのを防ぐ）。狭いときは display: none。
   // フォーカスが入ると現れ、操作できる（FR-150）。最小化中は復元のアイコンだけを、フォーカスに関わらず出す
   const shown = (active && !narrow) || pane.minimized;
   // 狭いときも、最小化・最大化（元に戻す）は見出しに残す（FR-222）。ピン止め・タブ化・非表示・ビューは「…」メニューに畳む（NFR-UX-018）
-  const coreStyle = shown || narrow ? undefined : { visibility: 'hidden' as const };
   const extraStyle = shown && !narrow ? undefined : narrow ? { display: 'none' } : { visibility: 'hidden' as const };
   const TabsIcon = paneAction('tabs').Icon;
   const mac = useOs() === 'mac';
@@ -289,16 +292,15 @@ export function ComponentActions({ pane, title, active, narrow, hover = false, f
       <ActionButton action="pin" on={pane.pinned} pressed={pane.pinned} onClick={pane.togglePin} />
     </span>
   );
+  // Window の 3 ボタン（FR-295 AC-826。Windows 11 と同じ［最小化］［最大化／元に戻す］［閉じる］・Fluent の Subtract・Maximize/SquareMultiple・Dismiss）。
+  // フォーカス・幅に関わらず常に見出しに残す（幅が狭いときも畳まない。畳むのはピン止め・タブ・ビューだけ）。最小化中は復元だけを出す（FR-151）
   const coreEl = (
-    <span className={s.group} style={coreStyle}>
-      {pane.minimized ? (
-        // 最小化中は、フォーカスの有無に関わらず復元できる（見出しの操作で元の位置・大きさに戻る。FR-151）
-        <ActionButton action="minimize" on onClick={pane.toggleMinimize} />
-      ) : null}
+    <span className={s.controls} role="group" aria-label={t('ウィンドウの操作')} data-testid="window-controls">
+      <ActionButton action="minimize" on={pane.minimized} label={pane.minimized ? '元に戻す' : '最小化'} icon={pane.minimized ? Maximize20Regular : Subtract20Regular} testId="window-minimize" onClick={pane.toggleMinimize} />
       {!pane.minimized ? (
         <>
-          <ActionButton action="maximize" on={pane.maximized} onClick={pane.toggleMaximize} />
-          <ActionButton action="minimize" onClick={pane.toggleMinimize} />
+          <ActionButton action="maximize" on={pane.maximized} label={pane.maximized ? '元に戻す' : '最大化'} icon={pane.maximized ? SquareMultiple20Regular : Maximize20Regular} testId="window-maximize" onClick={pane.toggleMaximize} />
+          <ActionButton action="hide" label="閉じる" icon={Dismiss20Regular} testId="window-close" onClick={pane.hide} />
         </>
       ) : null}
     </span>
@@ -324,7 +326,6 @@ export function ComponentActions({ pane, title, active, narrow, hover = false, f
       </MenuPopover>
     </Menu>
   ) : null;
-  const hideEl = pane.minimized ? null : <ActionButton action="hide" onClick={pane.hide} />;
   // 2D/3D と世界の表示の切替を 1 つにまとめた「ビュー」（FR-217・FR-218。PARAM-073 の 6 個目）
   const viewEl = pane.minimized ? null : <ComponentViewButton paneKey={pane.key} />;
   const menuEl = <ComponentMenu pane={pane} title={title} open={menu?.open} onOpenChange={menu?.onOpenChange} onShowTier={menu?.onShowTier} />;
@@ -335,7 +336,6 @@ export function ComponentActions({ pane, title, active, narrow, hover = false, f
         <div className={s.actions} data-testid="component-actions" data-minimized={pane.minimized ? 'true' : undefined} data-os="mac">
           {assignEl}
           {coreEl}
-          <span className={s.group} style={extraStyle}>{hideEl}</span>
         </div>
         <div className={s.actions} data-testid="component-actions-extra">
           {pinEl}
@@ -350,13 +350,13 @@ export function ComponentActions({ pane, title, active, narrow, hover = false, f
       {/* ロールへの割り当ては、見出しの右寄せの並びの左端に足す（現れる・消えるときに、ほかのアイコンの位置が動かない） */}
       {assignEl}
       {pinEl}
-      {coreEl}
       <span className={s.group} style={extraStyle}>
         {tabsEl}
-        {hideEl}
         {viewEl}
       </span>
       {menuEl}
+      {/* Windows の慣習: 3 ボタンは見出しの右端（ピン止め・タブ・ビュー・メニューはその手前）。DOM 順は最小化・最大化・閉じる */}
+      {coreEl}
     </div>
   );
 }
