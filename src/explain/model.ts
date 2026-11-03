@@ -125,12 +125,11 @@ export function parseAiExplanation(answer: string, s: ExplainSnapshot): ParsedEx
 
 // ---- 使えない理由と決定的な代替説明（FR-277。AC-713・714）----
 export type UnavailableReason =
-  | 'not-configured' | 'disabled' | 'consent' | 'daily-limit' | 'budget' | 'error' | 'timeout' | 'relay' | 'person-unconfirmed' | 'invalid';
+  | 'not-configured' | 'disabled' | 'daily-limit' | 'budget' | 'error' | 'timeout' | 'relay' | 'person-unconfirmed' | 'invalid';
 
 export const REASON_TEXT: Readonly<Record<UnavailableReason, string>> = trRecord<UnavailableReason>({
   'not-configured': 'Foundry の接続情報（エンドポイント・デプロイ名・API キー）が未設定です',
   disabled: 'Foundry の実接続が有効になっていません（設定画面で有効にできます）',
-  consent: '顧客の了承の記録がないため、外部へ送信できません',
   'daily-limit': '1 日の生成の回数の上限に達しました',
   budget: '今月の概算費用が予算の停止の割合に達したため、呼び出しを停止しています',
   error: 'Foundry の呼び出しに失敗しました',

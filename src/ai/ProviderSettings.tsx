@@ -5,7 +5,6 @@ import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { Dialog, DialogSurface } from '../components/Dialog';
 import { tokens } from '../theme/tokens';
 import { usePackStore } from '../store/pack';
-import { useConsent } from './useConsent';
 import { FoundrySettings } from './FoundrySettings';
 import { fetchFoundryView, setFoundryConnection } from './foundryClient';
 import { providerRequest, type Provider, type CopilotView, type SigninView } from './providerClient';
@@ -31,7 +30,6 @@ export function CopilotSettings() {
   const relay = usePackStore(s => s.runtime.relayUrl);
   const pack = usePackStore(s => s.state);
   const packId = pack.status === 'ready' ? pack.pack.data.customer.name : '';
-  const { granted } = useConsent();
   const [view, setView] = useState<CopilotView | null>(null);
   const [model, setModel] = useState('');
   const [token, setToken] = useState('');
@@ -43,7 +41,6 @@ export function CopilotSettings() {
   const error = (e: unknown) => setMessage(e instanceof Error ? e.message : t('接続できませんでした'));
   const refresh = async () => { const v = await providerRequest<CopilotView>(relay, '/copilot/config'); setView(v); setModel(v.model); const f = await fetchFoundryView(relay, packId); setEnabled(!!f?.enabled); };
   useEffect(() => { void refresh().catch(error); }, [relay, packId]);
-  useEffect(() => { if (!granted && enabled) { setEnabled(false); void setFoundryConnection(relay ?? '', packId, false, { consent: false, confirmed: false }); } }, [granted, enabled, relay, packId]);
   useEffect(() => {
     if (signin?.status !== 'pending') return;
     let cancelled = false;
@@ -76,10 +73,9 @@ export function CopilotSettings() {
     <Field label={t('モデル名（任意）')} hint={t('空なら SDK の既定モデルを使います。')}><Input aria-label={t('モデル名（任意）')} value={model} onChange={(_,d) => setModel(d.value)}/></Field>
     <Button appearance="primary" disabled={busy || !view} onClick={() => void save()}>{t('Copilot の接続情報を保存')}</Button>
     <Text size={200}>{t('Copilot SDK の費用は利用者の GitHub Copilot の契約に従います。AI 取り込み・ファイル添付は Copilot SDK では未対応です。')}</Text>
-    <Switch label={t('実接続を有効にする')} checked={enabled} disabled={busy || !view?.signedIn || !granted || !packId} onChange={(_,d) => { if (d.checked) setConfirming(true); else { setEnabled(false); void setFoundryConnection(relay ?? '', packId, false, {consent:granted,confirmed:false}); } }}/>
+    <Switch label={t('実接続を有効にする')} checked={enabled} disabled={busy || !view?.signedIn || !packId} onChange={(_,d) => { if (d.checked) setConfirming(true); else { setEnabled(false); void setFoundryConnection(relay ?? '', packId, false, {confirmed:false}); } }}/>
     <Text>{t('現在の状態:')} {enabled ? t('接続済み') : t('モック（外部へは送信しません）')}</Text>
-    {!granted && <Text>{t('顧客の了承の記録がないため、有効にできません。')}</Text>}
     {message && <MessageBar intent="info"><MessageBarBody>{message}</MessageBarBody></MessageBar>}
-    <Dialog open={confirming} onOpenChange={(_,d) => setConfirming(d.open)}><DialogSurface><DialogBody><DialogTitle>{t('GitHub Copilot SDK への実接続を有効にしますか')}</DialogTitle><DialogContent>{t('送信先は GitHub Copilot SDK、モデルは {model} です。費用は利用者の GitHub Copilot の契約に従います。現在画面の課題・解決策・KPI/OKR、活用分析の解決策、チャットの質問・履歴・顧客パックの根拠、プレゼンテーションの生成 AI による作成で選んだペルソナと材料（解決策・優先順位・ROI・コスト・KPI/OKR・ユースケース・番組構成） が中継を通じて送られます。種別「人」は送信前に別途確認します。', { model: view?.model || t('SDK の既定') })}</DialogContent><DialogActions><Button onClick={() => setConfirming(false)}>{t('キャンセル')}</Button><Button appearance="primary" onClick={() => { setConfirming(false); setBusy(true); void setFoundryConnection(relay ?? '', packId, true, {consent:granted,confirmed:true}).then(r => { setEnabled(r.ok && r.mode === 'connected'); if (!r.ok) setMessage(r.message ?? t('有効にできませんでした')); }).finally(() => setBusy(false)); }}>{t('確認して有効にする')}</Button></DialogActions></DialogBody></DialogSurface></Dialog>
+    <Dialog open={confirming} onOpenChange={(_,d) => setConfirming(d.open)}><DialogSurface><DialogBody><DialogTitle>{t('GitHub Copilot SDK への実接続を有効にしますか')}</DialogTitle><DialogContent>{t('送信先は GitHub Copilot SDK、モデルは {model} です。費用は利用者の GitHub Copilot の契約に従います。現在画面の課題・解決策・KPI/OKR、活用分析の解決策、チャットの質問・履歴・顧客パックの根拠、プレゼンテーションの生成 AI による作成で選んだペルソナと材料（解決策・優先順位・ROI・コスト・KPI/OKR・ユースケース・番組構成） が中継を通じて送られます。種別「人」は送信前に別途確認します。', { model: view?.model || t('SDK の既定') })}</DialogContent><DialogActions><Button onClick={() => setConfirming(false)}>{t('キャンセル')}</Button><Button appearance="primary" onClick={() => { setConfirming(false); setBusy(true); void setFoundryConnection(relay ?? '', packId, true, {confirmed:true}).then(r => { setEnabled(r.ok && r.mode === 'connected'); if (!r.ok) setMessage(r.message ?? t('有効にできませんでした')); }).finally(() => setBusy(false)); }}>{t('確認して有効にする')}</Button></DialogActions></DialogBody></DialogSurface></Dialog>
   </section>;
 }

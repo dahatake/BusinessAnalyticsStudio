@@ -201,7 +201,7 @@ test.describe('FR-275 AI の状態表示に生成AIの接続先', () => {
       await expect(st).toContainText('Microsoft Foundry');
       await expect(st).not.toContainText('GitHub Copilot');
       await expect(st).toContainText('モック');
-      // AC-706 の条件（了承・接続情報・有効化と確認）をそろえて有効にすると、モックの表示が有効の表示に変わる
+      // AC-706 の条件（接続情報・有効化と確認。顧客の了承の記録は条件にしない）をそろえて有効にすると、モックの表示が有効の表示に変わる
       await recordExportConsent(page);
       await enableCommonConnection(page);
       await expect(st).toContainText('Microsoft Foundry');

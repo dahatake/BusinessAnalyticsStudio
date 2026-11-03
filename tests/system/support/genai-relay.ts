@@ -102,7 +102,7 @@ export async function chooseProvider(page: Page, provider: 'foundry' | 'copilot'
 
 /**
  * 共通接続の実接続を有効にする（設定の switch「実接続を有効にする」→ 費用・送信内容の確認 → 有効）。
- * 了承の記録（recordExportConsent）と接続情報は先にそろえておく。終わると設定を閉じる。
+ * 接続情報は先にそろえておく。終わると設定を閉じる。
  */
 export async function enableCommonConnection(page: Page): Promise<void> {
   const settings = await openScreen(page, 'settings');

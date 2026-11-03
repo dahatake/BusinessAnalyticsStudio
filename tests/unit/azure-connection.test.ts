@@ -32,7 +32,7 @@ describe('FR-182 接続部品の切替', () => {
     const { http, calls } = stub();
     const r = await relayWith({}, http);
     for (const f of ['speech', 'vision'] as const) {
-      const c = await setAzureConnection(r.url, f, 'p', true, true);
+      const c = await setAzureConnection(r.url, f, 'p', true);
       expect(c).toMatchObject({ ok: true, mode: 'mock' });
     }
     const sp = await synthesizeSpeech({ relayUrl: r.url, realEnabled: true, packId: 'p' }, '台本です');
@@ -43,31 +43,45 @@ describe('FR-182 接続部品の切替', () => {
   });
 
   // FR-182 AC-377
-  it('AC-377 ダミーのキー・了承あり・有効のときだけ差し替え部品が呼ばれる', async () => {
+  it('AC-377 ダミーのキーを設定し、実接続を有効にしたときだけ差し替え部品が呼ばれる（無効のとき・種別「人」の中止では 0 回）', async () => {
     const { http, calls } = stub();
     const r = await relayWith(cfgFull, http);
-    // 有効化の前・了承なし・無効化後は 0 回
-    await synthesizeSpeech({ relayUrl: r.url, realEnabled: true, packId: 'p' }, '台本');
-    expect((await setAzureConnection(r.url, 'speech', 'p', true, false)).ok).toBe(false);
+    // 有効化の前・無効化後は 0 回
     await synthesizeSpeech({ relayUrl: r.url, realEnabled: true, packId: 'p' }, '台本');
     expect(calls).toHaveLength(0);
-    // 有効
-    expect(await setAzureConnection(r.url, 'speech', 'p', true, true)).toMatchObject({ ok: true, mode: 'connected' });
+    // 有効（顧客の了承の記録は条件にしない）
+    expect(await setAzureConnection(r.url, 'speech', 'p', true)).toMatchObject({ ok: true, mode: 'connected' });
     const o = await synthesizeSpeech({ relayUrl: r.url, realEnabled: true, packId: 'p' }, '台本');
     expect(o.kind).toBe('audio');
     expect(calls).toHaveLength(1);
     expect(calls[0]!.url).toContain('japaneast.tts.speech.microsoft.com');
     // 無効にすると、キーがあっても 0 回
-    await setAzureConnection(r.url, 'speech', 'p', false, false);
+    await setAzureConnection(r.url, 'speech', 'p', false);
     await synthesizeSpeech({ relayUrl: r.url, realEnabled: true, packId: 'p' }, '台本');
     expect(calls).toHaveLength(1);
     // 手書き認識
-    await setAzureConnection(r.url, 'vision', 'p', true, true);
+    await setAzureConnection(r.url, 'vision', 'p', true);
     expect(await recognizeViaRelay({ relayUrl: r.url, packId: 'p' }, 'AAAA', 1)).toEqual({ text: '決定事項', mock: false });
     expect(calls).toHaveLength(2);
     expect(calls[1]!.url).toContain('imageanalysis:analyze');
     // 別の案件はモック
     expect((await recognizeViaRelay({ relayUrl: r.url, packId: 'other' }, 'AAAA', 1)).mock).toBe(true);
+    expect(calls).toHaveLength(2);
+  });
+
+  // FR-182 AC-377: 種別「人」を含む顧客パックの案件では、送信の前に FR-219 の確認が出て、中止で呼び出しが 0 回、続行で呼ばれる
+  it('AC-377 種別「人」を含む案件: 確認で中止すると呼び出し 0 回、続行すると呼ばれる（音声合成・手書き認識）', async () => {
+    const { http, calls } = stub();
+    const r = await relayWith(cfgFull, http);
+    await setAzureConnection(r.url, 'speech', 'p', true);
+    await setAzureConnection(r.url, 'vision', 'p', true);
+    const cancel = async () => ({ allowed: false, reason: '中止しました' });
+    const proceed = async () => ({ allowed: true });
+    expect((await synthesizeSpeech({ relayUrl: r.url, realEnabled: true, packId: 'p', confirmPerson: cancel }, '台本')).kind).toBe('subtitle-only');
+    await expect(recognizeViaRelay({ relayUrl: r.url, packId: 'p', confirmPerson: cancel }, 'AAAA', 1)).rejects.toThrow('中止しました');
+    expect(calls).toHaveLength(0);
+    expect((await synthesizeSpeech({ relayUrl: r.url, realEnabled: true, packId: 'p', confirmPerson: proceed }, '台本')).kind).toBe('audio');
+    expect((await recognizeViaRelay({ relayUrl: r.url, packId: 'p', confirmPerson: proceed }, 'AAAA', 1)).mock).toBe(false);
     expect(calls).toHaveLength(2);
   });
 
@@ -82,8 +96,8 @@ describe('FR-182 接続部品の切替', () => {
       seen.push(t);
       return { ok: res.ok, status: res.status, json: async () => JSON.parse(t) as unknown };
     };
-    await setAzureConnection(r.url, 'speech', 'p', true, true, spy);
-    await setAzureConnection(r.url, 'vision', 'p', true, true, spy);
+    await setAzureConnection(r.url, 'speech', 'p', true, spy);
+    await setAzureConnection(r.url, 'vision', 'p', true, spy);
     await synthesizeSpeech({ relayUrl: r.url, realEnabled: true, packId: 'p', fetchFn: spy }, '台本');
     await recognizeViaRelay({ relayUrl: r.url, packId: 'p', fetchFn: spy }, 'AAAA', 1);
     expect(seen.length).toBe(4);
@@ -95,8 +109,8 @@ describe('FR-182 接続部品の切替', () => {
   it('AC-380 エラー時は音声は字幕だけ・手書き認識は失敗として返り、キーの値はエラーに含まれない', async () => {
     const { http } = stub({ throws: true });
     const r = await relayWith(cfgFull, http);
-    await setAzureConnection(r.url, 'speech', 'p', true, true);
-    await setAzureConnection(r.url, 'vision', 'p', true, true);
+    await setAzureConnection(r.url, 'speech', 'p', true);
+    await setAzureConnection(r.url, 'vision', 'p', true);
     const sp = await synthesizeSpeech({ relayUrl: r.url, realEnabled: true, packId: 'p' }, '台本');
     expect(sp.kind).toBe('error');
     expect(JSON.stringify(sp)).not.toContain(KEY);
@@ -106,7 +120,7 @@ describe('FR-182 接続部品の切替', () => {
     // HTTP エラー状態
     const bad = stub({ status: 401 });
     const r2 = await relayWith(cfgFull, bad.http);
-    await setAzureConnection(r2.url, 'speech', 'p', true, true);
+    await setAzureConnection(r2.url, 'speech', 'p', true);
     expect((await synthesizeSpeech({ relayUrl: r2.url, realEnabled: true, packId: 'p' }, 'x')).kind).toBe('error');
   });
 
@@ -120,20 +134,20 @@ describe('FR-182 接続部品の切替', () => {
   ])('AC-377 不正な設定（region=%s / endpoint=%s）はモックへ縮退し呼び出し 0', async (region, endpoint) => {
     const { http, calls } = stub();
     const r = await relayWith({ speechKey: KEY, speechRegion: region, visionKey: KEY, visionEndpoint: endpoint }, http);
-    expect(await setAzureConnection(r.url, 'speech', 'p', true, true)).toMatchObject({ mode: 'mock' });
-    expect(await setAzureConnection(r.url, 'vision', 'p', true, true)).toMatchObject({ mode: 'mock' });
+    expect(await setAzureConnection(r.url, 'speech', 'p', true)).toMatchObject({ mode: 'mock' });
+    expect(await setAzureConnection(r.url, 'vision', 'p', true)).toMatchObject({ mode: 'mock' });
     expect((await synthesizeSpeech({ relayUrl: r.url, realEnabled: true, packId: 'p' }, 'x')).kind).toBe('subtitle-only');
     expect((await recognizeViaRelay({ relayUrl: r.url, packId: 'p' }, 'AAAA', 1)).mock).toBe(true);
     expect(calls).toHaveLength(0);
   });
 
   // FR-182 NFR-SEC-003: /azure/* の異常系
-  it('/azure/* の異常系（403・400・413・502）', async () => {
+  it('/azure/* の異常系（400・413・502。了承の記録は条件にしない）', async () => {
     const { http, calls } = stub({ status: 500 });
     const r = await relayWith(cfgFull, http);
     const post = (p: string, b: unknown) => fetch(`${r.url}${p}`, { method: 'POST', body: JSON.stringify(b) });
-    expect((await post('/azure/connection', { feature: 'speech', packId: 'p', enable: true, confirmed: true })).status).toBe(403);
-    expect((await post('/azure/connection', { feature: 'speech', packId: 'p', enable: true, consent: true })).status).toBe(400);
+    expect((await post('/azure/connection', { feature: 'speech', packId: 'p', enable: true, confirmed: true })).status).toBe(200);
+    expect((await post('/azure/connection', { feature: 'speech', packId: 'p', enable: true })).status).toBe(400);
     expect((await post('/azure/connection', { feature: 'x', packId: 'p' })).status).toBe(400);
     expect((await post('/azure/speech', { packId: 'p' })).status).toBe(400);
     expect((await post('/azure/speech', { packId: 'p', text: 'あ'.repeat(5001) })).status).toBe(413);
@@ -141,7 +155,7 @@ describe('FR-182 接続部品の切替', () => {
     for (const n of [-1, 1.5, 'a']) expect((await post('/azure/vision', { packId: 'p', image: 'AAAA', strokeCount: n })).status).toBe(400);
     expect((await post('/azure/vision', { packId: 'p', image: 'A'.repeat(4_000_004), strokeCount: 1 })).status).toBe(413);
     expect(calls).toHaveLength(0);
-    await post('/azure/connection', { feature: 'speech', packId: 'p', enable: true, consent: true, confirmed: true });
+    await post('/azure/connection', { feature: 'speech', packId: 'p', enable: true, confirmed: true });
     expect((await post('/azure/speech', { packId: 'p', text: 'x' })).status).toBe(502);
   });
 

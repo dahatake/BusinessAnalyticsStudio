@@ -63,13 +63,6 @@ test.describe('FR-291 ユースケースのストーリー動画（AI 生成・�
     relay = await startAiImportRelayStub({ configured: true, enabled: true });
     await start({ relayUrl: relay.url });
     await openProjectWithUseCases(page);
-    await recordExportConsent(page);
-    // 了承の記録で実接続の有効化が外れるため、設定画面で改めて有効にする（FR-275）
-    const settings = await openScreen(page, 'settings');
-    await settings.getByTestId('foundry-settings').getByRole('switch', { name: '実接続を有効にする', exact: true }).click();
-    await page.getByRole('alertdialog').or(page.getByRole('dialog')).getByRole('button', { name: '有効にする' }).click();
-    await expect(settings.getByTestId('foundry-mode')).toContainText('接続済み');
-    await closeSettings(page);
     await page.getByTestId('stepper').getByRole('button', { name: 'ユースケース作成' }).click();
     // ユースケースを作成しただけでは生成AIの呼び出しは 0 回
     await page.waitForTimeout(500);

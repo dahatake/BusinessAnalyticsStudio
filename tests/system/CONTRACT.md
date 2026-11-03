@@ -122,10 +122,13 @@
 
 ## 22. 種別「人」を含むパックのエクスポート前の確認（FR-219 AC-514。export-person-confirm.spec.ts が前提にする画面の探し方）
 - 入口: §21 までと同じエクスポートの画面（Ctrl+Shift+E、role=dialog「エクスポート」）の button「エクスポート」。種別「人」（`entities[].kind` が `person`）を 1 件以上含むパック（お手本 mono）では、プレビューの後・出力の前に確認（role=alertdialog か role=dialog）が出る。
-- 確認の文字: 「種別「人」」の語、「<件数> 件」、了承の記録の有無（なし: 「了承の記録なし」／あり: 確認日 YYYY-MM-DD か YYYY年M月D日）。個人名・連絡先の値は出さない。
-- 操作: button「中止」（またはキャンセル）と button「続行」（出力する）。了承の記録がないときは「続行」がないか disabled。Tab だけで両方へ到達でき、Enter で押せる。確認を開いた直後のフォーカスは確認の中。
-- 了承の記録は設定画面（§ FR-181 AC-375 と同じ入力欄・button「了承を保存」）で入力する。中止したときと了承なしのときは、ダウンロード（download イベント）が 0 件。
-- 既存のエクスポート系ケース（FR-052・054・055・056・071・094、NFR-ENV-002・NFR-A11Y-002・NFR-UX-004 など）は、手順の冒頭で `recordExportConsent(page)`（support/fixtures.ts）で了承の記録を先に入力し、確認が出たら `captureDownload` / `continuePersonConfirm` が続行まで進める（出力範囲・内容の判定は変えない）。
+- 確認の文字: 「種別「人」」の語、「<件数> 件」。個人名・連絡先の値は出さない。了承の記録の有無の表示・入力はない（FR-181 は 2026-11-03 に廃止）。
+- 操作: button「中止」（またはキャンセル）と button「続行」（出力する）。Tab だけで両方へ到達でき、Enter で押せる。確認を開いた直後のフォーカスは確認の中。
+- 中止したときは、ダウンロード（download イベント）が 0 件。続行でファイルが作られる。
+- 既存のエクスポート系ケース（FR-052・054・055・056・071・094、NFR-ENV-002・NFR-A11Y-002・NFR-UX-004 など）は、確認が出たら `captureDownload` / `continuePersonConfirm` が続行まで進める（出力範囲・内容の判定は変えない）。`recordExportConsent(page)`（support/fixtures.ts）は了承の廃止により何もしない互換の関数で、新しいケースでは呼ばない。
+
+## 22b. ウェルカムのウィザードの起動アイコン（FR-267 AC-678。getting-started.spec.ts）
+- 起動時（`?e2e=1` のみ・`welcome=1` を付けても）は、ウェルカムの dialog を自動では出さない。メイン画面（`main-screen`）の右上に、アクセシブルな名前「使い方を見る」の button（アイコン。title かツールチップ・ラベルを持つ）があり、押すと role=dialog（名前に「ウェルカム」「はじめ」「使い方」のいずれか）が開く。「次へ」「戻る」「スキップ」の button。「次回から表示しない」の checkbox と「確認済み」の保存はない。
 
 ## 23. 情報の階層に基づく自動配置・階層の分類（FR-243・FR-244 AC-584〜589。autolayout.spec.ts が前提にする画面の探し方）
 - 各コンポーネント（component-<key>）に data-tier="primary|supporting|detail"（主役・補助・詳細）。階層は文字か形でも示す（色だけにしない。data-testid="tier-label" に「主役」「補助」「詳細」）。

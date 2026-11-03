@@ -61,7 +61,7 @@ async function generateAndCheck(page: Page, tag: string, providerName: string): 
     if (await ok.isVisible().catch(() => false)) await ok.click();
   }
   const generating = page.getByTestId('story-generating');
-  const personConfirm = page.locator('[role="alertdialog"], [role="dialog"]').filter({ hasText: /種別「人」/ }).filter({ hasText: /了承/ });
+  const personConfirm = page.locator('[role="alertdialog"], [role="dialog"]').filter({ hasText: /種別「人」/ }).filter({ hasText: /\d+\s*件/ });
   await expect(personConfirm.or(generating).first()).toBeVisible();
   await continuePersonConfirm(page, () => false, 1_500);
   // 作成中の進行状況が示される
@@ -118,8 +118,8 @@ test.describe('FR-290 プレゼンテーション: 生成 AI によるストー�
     }
   });
 
-  // FR-290 AC-775（異常系: 了承の記録がなく実接続も無効のとき。AC-777 の一部と FR-179 の既定）
-  test('FR-290 AC-775 異常系: 了承の記録がなく実接続が無効のときに「生成 AI で作成」を選ぶと、どちらの接続先も呼ばれず、理由と「生成 AI を使わずに開始」が示され、それでストーリーが始まる。「生成 AI で作成」を選ばずに開始しても呼ばれない', async ({ page, start }) => {
+  // FR-290 AC-775（異常系: 実接続が無効のとき。AC-777 の一部と FR-179 の既定）
+  test('FR-290 AC-775 異常系: 実接続が無効のときに「生成 AI で作成」を選ぶと、どちらの接続先も呼ばれず、理由と「生成 AI を使わずに開始」が示され、それでストーリーが始まる。「生成 AI で作成」を選ばずに開始しても呼ばれない', async ({ page, start }) => {
     const g = await startGenaiRelay({ foundryText: storyText(F), copilotText: storyText(C) });
     try {
       await g.saveFoundryConfig();
@@ -132,7 +132,7 @@ test.describe('FR-290 プレゼンテーション: 生成 AI によるストー�
       await beginStory(page, true);
       const err = page.getByTestId('story-genai-error');
       await expect(err, '生成 AI を使えない理由が示されない').toBeVisible({ timeout: 15_000 });
-      await expect(err).toContainText(/了承|有効|接続/);
+      await expect(err).toContainText(/有効|接続/);
       const fallback = page.getByRole('button', { name: '生成 AI を使わずに開始' });
       await expect(fallback).toBeVisible();
       await fallback.click();
@@ -230,8 +230,7 @@ test.describe('FR-290 生成 AI の作成と企業の外部 AI への送信の�
     try {
       await g.saveFoundryConfig();
       await start({ relayUrl: g.url });
-      // FR-275 の条件: 了承の記録・接続先（Microsoft Foundry）・接続情報・実接続の有効化と確認。「人」の確認は作成時に出れば進める
-      await recordExportConsent(page);
+      // FR-275 の条件: 接続先（Microsoft Foundry）・接続情報・実接続の有効化と確認。「人」の確認は作成時に出れば進める
       await chooseProvider(page, 'foundry');
       await enableCommonConnection(page);
 

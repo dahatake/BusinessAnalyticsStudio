@@ -9,9 +9,6 @@ import { integrationNotice } from '../../src/integrations/sendGate';
 import { IntegrationsPanel } from '../../src/projects/IntegrationsPanel';
 import { MAX_INTEGRATIONS_PER_PROJECT, resetProjectIntegrations, useProjectIntegrations } from '../../src/store/projectIntegrations';
 
-const consentMock = vi.hoisted(() => ({ granted: false }));
-vi.mock('../../src/ai/useConsent', () => ({ useConsent: () => ({ key: 'k', record: undefined, granted: consentMock.granted }) }));
-
 const ui = (id = 'p1') => render(<FluentProvider theme={webLightTheme}><IntegrationsPanel projectId={id} /></FluentProvider>);
 const region = () => screen.getByRole('region', { name: '外部連携' });
 const box = (name: string) => within(region()).getByRole('checkbox', { name }) as HTMLInputElement;
@@ -19,7 +16,7 @@ const save = () => fireEvent.click(within(region()).getByRole('button', { name: 
 const first = (): string => names()[0] ?? '';
 const names = () => INTEGRATION_CATALOG.filter((c) => c.status !== '廃止').map((c) => c.name);
 
-beforeEach(() => { resetProjectIntegrations(); consentMock.granted = false; });
+beforeEach(() => { resetProjectIntegrations(); });
 afterEach(cleanup);
 
 describe('外部連携カタログ（docs/integration-catalog.md との一致）', () => {
@@ -113,15 +110,14 @@ describe('IntegrationsPanel', () => {
     expect(useProjectIntegrations.getState().byProject.p1!.settings[x]).toBeUndefined();
   });
   // FR-203 AC-444
-  it('FR-203 AC-444 了承が無い案件では了承を求める表示と未確認の識別が出る。選択・保存で外部送信（fetch）はしない', () => {
+  it('FR-203 AC-444 未確認の連携を選択した案件では、未確認であることが識別できる。選択・保存で外部送信（fetch）はしない（顧客の了承の表示は出さない）', () => {
     const fetchSpy = vi.fn();
     vi.stubGlobal('fetch', fetchSpy);
     const x = first();
     ui();
-    expect(screen.queryByTestId('integration-consent-notice')).toBeNull();
     fireEvent.click(box(x));
     save();
-    expect(screen.getByTestId('integration-consent-notice').textContent).toContain('了承の記録がありません');
+    expect(screen.queryByTestId('integration-consent-notice')).toBeNull();
     expect(screen.getByTestId('integration-unconfirmed').textContent).toContain(x);
     expect(fetchSpy).not.toHaveBeenCalled();
     vi.unstubAllGlobals();
@@ -131,15 +127,13 @@ describe('IntegrationsPanel', () => {
 describe('integrationNotice（FR-203）', () => {
   const cur = { selected: ['a'], names: { a: 'A' }, settings: {} };
   // FR-203 AC-444
-  it('FR-203 AC-444 了承が無ければ送信不可で了承を求める。了承があれば求めない。選択の有無で可否は変わらない', () => {
-    expect(integrationNotice(false, cur)).toMatchObject({ sendAllowed: false, unconfirmed: ['A'] });
-    expect(integrationNotice(false, cur).consentNotice).toBeTruthy();
-    expect(integrationNotice(true, cur).consentNotice).toBeUndefined();
-    expect(integrationNotice(false, undefined)).toMatchObject({ sendAllowed: false, unconfirmed: [] });
+  it('FR-203 AC-444 顧客の了承の記録を条件にせず、選択済みの連携のうち未確認のものだけを識別する', () => {
+    expect(integrationNotice(cur)).toEqual({ unconfirmed: ['A'] });
+    expect(integrationNotice(undefined)).toEqual({ unconfirmed: [] });
   });
   it('FR-203 AC-444 全項目が確認済みなら未確認として識別しない', () => {
     const ok = { status: '確認済み' as const, date: '2026-10-01' };
     const c = { ...cur, settings: { a: { integrationId: 'a', name: 'A', target: '', authMethod: '', secretStoreName: '', terms: ok, cost: ok, sla: ok } } };
-    expect(integrationNotice(true, c).unconfirmed).toEqual([]);
+    expect(integrationNotice(c).unconfirmed).toEqual([]);
   });
 });

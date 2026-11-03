@@ -2,7 +2,6 @@
 export default {
   // --- 生成 AI の接続の失敗理由（story/genaiRun）
   'この Project の企業は外部 AI への送信を許可していないため、生成 AI に接続しませんでした（企業の設定の「外部 AI への送信を許可する」で許可できます）': 'Generative AI was not contacted because this Project\'s company does not allow sending data to external AI (you can allow it with "Allow sending to external AI" in the company settings).',
-  '顧客の了承の記録がないため、生成 AI へ送信できません': 'Cannot send to generative AI because there is no record of customer consent.',
   '中継プロセスに届かないため、生成 AI に接続できません（`npm run relay` で起動しているか確認してください）': 'Cannot reach the relay process, so generative AI cannot be contacted (check that it is running with `npm run relay`).',
   '生成 AI の接続情報が未設定のため、接続できません（設定画面で設定できます）': 'Generative AI connection details are not set, so it cannot be contacted (you can set them in Settings).',
   '生成 AI の実接続が有効になっていません（設定画面で有効にできます）': 'Real connection to generative AI is not enabled (you can enable it in Settings).',
@@ -147,7 +146,6 @@ export default {
 
   // --- ストーリー動画（usecase/storyVideo・StoryVideoPanel）
   '有効化': 'Enable',
-  '了承': 'Consent',
   '接続先': 'Destination',
   'ストーリー動画は使えません（欠けている条件: 接続先）。GitHub Copilot SDK では費用を円で制御できないため、Foundry を選んだときだけ使えます。設定画面の「生成AIの接続先」で Microsoft Foundry を選択してください。': 'Story video is unavailable (missing condition: destination). Cost cannot be controlled in yen with the GitHub Copilot SDK, so it is available only when Foundry is selected. Select Microsoft Foundry under "Generative AI destination" in Settings.',
   'ストーリー動画は使えません（欠けている条件: {missing}）。': 'Story video is unavailable (missing conditions: {missing}).',

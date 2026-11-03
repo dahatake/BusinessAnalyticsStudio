@@ -192,7 +192,7 @@
     "AC-369": "sha256:c7fa23d71005adf8",
     "AC-370": "sha256:0925b2fa08c31ef4",
     "AC-371": "sha256:cd7e6150e215a10a",
-    "AC-375": "sha256:d23286728dd4824d",
+    "AC-375": "sha256:de3ae12c510c5342",
     "AC-379": "sha256:3746c38c17b1d8ba",
     "AC-387": "sha256:2a376715517e1a52",
     "AC-388": "sha256:d1a9b2b81006dfac",
@@ -245,7 +245,7 @@
     "AC-499": "sha256:737e480ca6126b4b",
     "AC-501": "sha256:d20565407fd62f48",
     "AC-503": "sha256:5bad05d89a9be885",
-    "AC-514": "sha256:e4bcac6a9a96620a",
+    "AC-514": "sha256:31e4e686784b6f35",
     "AC-515": "sha256:a9c5be66857cbac4",
     "AC-517": "sha256:0977b5bcad6f9c4a",
     "AC-518": "sha256:a2820afcf2027f8e",
@@ -283,7 +283,7 @@
     "AC-600": "sha256:ccc0ba0622a2a2a8",
     "AC-601": "sha256:6cd0c890d1d0fb1d",
     "AC-675": "sha256:956f62d881b6cbac",
-    "AC-678": "sha256:faa3bcdeb2d5c19b",
+    "AC-678": "sha256:eee90e767312a030",
     "AC-682": "sha256:08ab3ca1b73c4615",
     "AC-685": "sha256:c9df7610f9e4b193",
     "AC-687": "sha256:ef4b678cca783521",
@@ -293,7 +293,7 @@
     "AC-703": "sha256:c007971af5240b76",
     "AC-712": "sha256:0e69695d5457cad9",
     "AC-713": "sha256:706deed685a6f99e",
-    "AC-715": "sha256:b1961835ab870c28",
+    "AC-715": "sha256:303b82b09ad37d18",
     "AC-717": "sha256:99f0da860e85dff7",
     "AC-718": "sha256:c402ee881c662b1c",
     "AC-719": "sha256:a64a1960271f4733",
@@ -301,16 +301,16 @@
     "AC-725": "sha256:16746748b9a89485",
     "AC-727": "sha256:87421ea12b582983",
     "AC-733": "sha256:416fb88a5cfaff0a",
-    "AC-737": "sha256:a346e0c8a0069beb",
-    "AC-738": "sha256:cd9bca7de1d96aec",
+    "AC-737": "sha256:7960b73a40c04fc5",
+    "AC-738": "sha256:2bc0624598e58480",
     "AC-739": "sha256:7cb56a8598cb4d44",
     "AC-740": "sha256:2450e8e383f93767",
-    "AC-741": "sha256:2010ae0c69c02c30",
+    "AC-741": "sha256:e90560447c655625",
     "AC-742": "sha256:802001b934592362",
     "AC-743": "sha256:5fd42bc7f6828d5d",
     "AC-744": "sha256:2fa248bce3f0b89b",
     "AC-745": "sha256:792304841369fa02",
-    "AC-746": "sha256:9274749e736b2673",
+    "AC-746": "sha256:2421c40bc12a3a11",
     "AC-747": "sha256:e644eaf2b9a013e9",
     "AC-748": "sha256:ff19fd54de20223e",
     "AC-749": "sha256:466a20eb61523533",
@@ -320,20 +320,20 @@
     "AC-754": "sha256:1319d272e6722bfc",
     "AC-755": "sha256:689ba7bcf2746159",
     "AC-756": "sha256:a7eec8533851fffa",
-    "AC-757": "sha256:2433de09061f9b51",
-    "AC-758": "sha256:6bdf4f625ebc4469",
+    "AC-757": "sha256:62cf464bed9f823c",
+    "AC-758": "sha256:cdf0065bbf59ca9f",
     "AC-759": "sha256:38fa6ab469e791af",
     "AC-760": "sha256:3c13c06d3965be06",
     "AC-761": "sha256:2d47552f43564343",
     "AC-762": "sha256:f998e7e05e260c7e",
-    "AC-763": "sha256:1607086f31bdf245",
+    "AC-763": "sha256:5ddc3171d3b942f0",
     "AC-764": "sha256:726601016c247e6d",
     "AC-769": "sha256:4a843785b500f292",
     "AC-773": "sha256:a24907aca372f408",
     "AC-774": "sha256:b022e1c73dde6367",
-    "AC-775": "sha256:5027e48468b7da1a",
+    "AC-775": "sha256:29b67f566f7f6361",
     "AC-778": "sha256:8350fd04a65308f1",
-    "AC-785": "sha256:46c7dcb2989d1069",
+    "AC-785": "sha256:07a84f2760b4115b",
     "AC-786": "sha256:3da2b81d12c38b20",
     "AC-788": "sha256:8aa8721c94878ace",
     "AC-789": "sha256:f72da02fb23e4074",
@@ -2082,9 +2082,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "69be87a",
-      "last_run_at": "2026-11-01T20:25:37+09:00",
-      "evidence": "work/runs/202610311329/logs/system-test/E2E-162-202611012024.log",
+      "last_commit": "45b59e1",
+      "last_run_at": "2026-11-03T18:38:22+09:00",
+      "evidence": "work/runs/202611031652/logs/system-test/E2E-162-202611031837.log",
       "history": [
         {
           "at": "2026-10-12T14:07:28+09:00",
@@ -4809,7 +4809,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-375",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "df8887c",
       "last_run_at": "2026-11-01T20:08:22+09:00",
       "evidence": "work/runs/202610311329/logs/system-test/E2E-281-202611011944.log",
@@ -4819,6 +4819,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-03T17:18:15+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "FR-181 AC-375 は廃止（1b4128d。顧客の了承の記録の削除）"
         }
       ]
     },
@@ -4830,20 +4836,26 @@
       "ac_ids": [
         "AC-379"
       ],
-      "title": "設定画面の実接続の説明・既定無効・キー非表示",
+      "title": "AC-379 設定画面の実接続の説明・既定無効・キー非表示（FR-181 とは独立。了承の欄はない）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-379",
       "canary": false,
       "status": "pass",
-      "last_commit": "df8887c",
-      "last_run_at": "2026-11-01T20:08:22+09:00",
-      "evidence": "work/runs/202610311329/logs/system-test/E2E-282-202611011944.log",
+      "last_commit": "45b59e1",
+      "last_run_at": "2026-11-03T18:38:22+09:00",
+      "evidence": "work/runs/202611031652/logs/system-test/E2E-282-202611031838.log",
       "history": [
         {
           "at": "2026-10-15T12:58:31+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-03T17:26:56+09:00",
+          "by": "test-designer",
+          "change": "title: '設定画面の実接続の説明・既定無効・キー非表示' -> 'AC-379 設定画面の実接続の説明・既定無効・キー非表示（FR-181 とは独立。了承の欄はない）'",
+          "reason": "FR-181 廃止（1267e60）。FR-182 単独のケースとして残し、了承の欄がない確認を含める"
         }
       ]
     },
@@ -4855,14 +4867,14 @@
       "ac_ids": [
         "AC-176"
       ],
-      "title": "AC-176 了承の記録がない案件では実接続を有効にできない（異常系）",
+      "title": "AC-176 実接続を有効にしていない間はモックで中継に送信されず、了承の記録の欄はない（異常系）",
       "layer": "e2e",
-      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --grep \"AC-176 了承の記録がない\"",
+      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --grep \"AC-176 実接続を有効にしていない間\"",
       "canary": false,
       "status": "pass",
-      "last_commit": "df8887c",
-      "last_run_at": "2026-11-01T20:08:22+09:00",
-      "evidence": "work/runs/202610311329/logs/system-test/E2E-283-202611011943.log",
+      "last_commit": "4b08b3d",
+      "last_run_at": "2026-11-03T19:18:05+09:00",
+      "evidence": "work/runs/202611031652/logs/system-test/E2E-283-202611031917.log",
       "history": [
         {
           "at": "2026-10-15T13:17:24+09:00",
@@ -4875,6 +4887,18 @@
           "by": "test-designer",
           "change": "command: \"npx playwright test tests/system/e2e/quality.spec.ts -g 'AC-176 了承の記録がない'\" -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --grep \"AC-176 了承の記録がない\"'",
           "reason": "command をリポジトリ直下で実行できる形（tests/system の playwright 設定を指定）に修正"
+        },
+        {
+          "at": "2026-11-03T17:18:18+09:00",
+          "by": "test-designer",
+          "change": "title: 'AC-176 了承の記録がない案件では実接続を有効にできない（異常系）' -> 'AC-176 実接続を有効にしていない間はモックで中継に送信されず、了承の記録の欄はない（異常系）'",
+          "reason": "了承の条件の廃止（1b4128d）に合わせて異常系を更新"
+        },
+        {
+          "at": "2026-11-03T17:18:30+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --grep \"AC-176 了承の記録がない\"' -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --grep \"AC-176 実接続を有効にしていない間\"'",
+          "reason": "テスト名を了承の廃止に合わせて変更したため grep を更新"
         }
       ]
     },
@@ -5098,9 +5122,9 @@
       "command": "node tests/system/run.mjs AC-396",
       "canary": true,
       "status": "pass",
-      "last_commit": "69be87a",
-      "last_run_at": "2026-11-01T20:25:37+09:00",
-      "evidence": "work/runs/202610311329/logs/system-test/E2E-291-202611012024.log",
+      "last_commit": "45b59e1",
+      "last_run_at": "2026-11-03T18:38:22+09:00",
+      "evidence": "work/runs/202611031652/logs/system-test/E2E-291-202611031837.log",
       "history": [
         {
           "at": "2026-10-15T22:31:53+09:00",
@@ -5791,20 +5815,32 @@
       "ac_ids": [
         "AC-514"
       ],
-      "title": "種別「人」を含むお手本パックのエクスポート前の確認: 了承なしは件数と「了承の記録なし」が文字で出て続行できずファイルなし（異常系）、了承ありは確認日が出てキーボードだけで中止（ファイルなし）・続行（ファイルあり）",
+      "title": "AC-514 種別「人」を含むお手本パックのエクスポート前の確認: 件数が文字で出て、了承の表示・入力はなく、キーボードだけで中止（ファイルなし）・続行（ファイルあり）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-514",
       "canary": false,
       "status": "pass",
-      "last_commit": "df8887c",
-      "last_run_at": "2026-11-01T20:08:22+09:00",
-      "evidence": "work/runs/202610311329/logs/system-test/E2E-316-202611011940.log",
+      "last_commit": "4b08b3d",
+      "last_run_at": "2026-11-03T19:18:05+09:00",
+      "evidence": "work/runs/202611031652/logs/system-test/E2E-316-202611031917.log",
       "history": [
         {
           "at": "2026-10-19T04:50:41+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "run 202610190439: FR-219 AC-514 のケース（実装前・not_run）"
+        },
+        {
+          "at": "2026-11-03T17:18:18+09:00",
+          "by": "test-designer",
+          "change": "title: '種別「人」を含むお手本パックのエクスポート前の確認: 了承なしは件数と「了承の記録なし」が文字で出て続行できずファイルなし（異常系）、了承ありは確認日が出てキーボードだけで中止（ファイルなし）・続行（ファイルあり）' -> 'AC-514 種別「人」を含む基本パックのエクスポート前の確認: 件数が文字で出て、了承の表示・入力はなく、キーボードだけで中止（ファイルなし）・続行（ファイルあり）'",
+          "reason": "了承の条件の廃止（1b4128d）に合わせて期待値を AC-514 の新しい本文に更新"
+        },
+        {
+          "at": "2026-11-03T17:18:31+09:00",
+          "by": "test-designer",
+          "change": "title: 'AC-514 種別「人」を含む基本パックのエクスポート前の確認: 件数が文字で出て、了承の表示・入力はなく、キーボードだけで中止（ファイルなし）・続行（ファイルあり）' -> 'AC-514 種別「人」を含むお手本パックのエクスポート前の確認: 件数が文字で出て、了承の表示・入力はなく、キーボードだけで中止（ファイルなし）・続行（ファイルあり）'",
+          "reason": "表記の訂正"
         }
       ]
     },
@@ -6688,9 +6724,9 @@
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat --workers=1",
       "canary": true,
       "status": "pass",
-      "last_commit": "69be87a",
-      "last_run_at": "2026-11-01T20:25:37+09:00",
-      "evidence": "work/runs/202610311329/logs/system-test/E2E-345-202611012025.log",
+      "last_commit": "45b59e1",
+      "last_run_at": "2026-11-03T18:38:22+09:00",
+      "evidence": "work/runs/202611031652/logs/system-test/E2E-345-202611031838.log",
       "history": [
         {
           "at": "2026-10-21T17:19:59+09:00",
@@ -6726,9 +6762,9 @@
       "command": "node tests/system/run.mjs AC-593",
       "canary": true,
       "status": "pass",
-      "last_commit": "69be87a",
-      "last_run_at": "2026-11-01T20:25:37+09:00",
-      "evidence": "work/runs/202610311329/logs/system-test/E2E-346-202611012024.log",
+      "last_commit": "45b59e1",
+      "last_run_at": "2026-11-03T18:38:22+09:00",
+      "evidence": "work/runs/202611031652/logs/system-test/E2E-346-202611031837.log",
       "history": [
         {
           "at": "2026-10-21T17:32:44+09:00",
@@ -6911,9 +6947,9 @@
       "command": "node tests/system/run.mjs AC-598",
       "canary": true,
       "status": "pass",
-      "last_commit": "69be87a",
-      "last_run_at": "2026-11-01T20:25:37+09:00",
-      "evidence": "work/runs/202610311329/logs/system-test/E2E-351-202611012024.log",
+      "last_commit": "45b59e1",
+      "last_run_at": "2026-11-03T18:38:22+09:00",
+      "evidence": "work/runs/202611031652/logs/system-test/E2E-351-202611031837.log",
       "history": [
         {
           "at": "2026-10-21T17:33:47+09:00",
@@ -7104,20 +7140,26 @@
       "ac_ids": [
         "AC-678"
       ],
-      "title": "初回ウェルカムが 1 回出て、次へ・戻る・スキップで操作でき、次回から表示しないで再表示されない",
+      "title": "AC-678 起動時はメイン画面でウェルカムは自動表示されず、右上のアイコン「使い方を見る」から開始（次へ・戻る・スキップ・Esc）。再読込でも自動表示なし。welcome=1 でも出ない（異常系）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-678",
       "canary": false,
       "status": "pass",
-      "last_commit": "df8887c",
-      "last_run_at": "2026-11-01T20:08:22+09:00",
-      "evidence": "work/runs/202610311329/logs/system-test/E2E-361-202611011945.log",
+      "last_commit": "4b08b3d",
+      "last_run_at": "2026-11-03T19:18:05+09:00",
+      "evidence": "work/runs/202611031652/logs/system-test/E2E-361-202611031917.log",
       "history": [
         {
           "at": "2026-10-21T22:20:43+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-03T17:18:17+09:00",
+          "by": "test-designer",
+          "change": "title: '初回ウェルカムが 1 回出て、次へ・戻る・スキップで操作でき、次回から表示しないで再表示されない' -> 'AC-678 起動時はメイン画面でウェルカムは自動表示されず、右上のアイコン「使い方を見る」から開始（次へ・戻る・スキップ・Esc）。再読込でも自動表示なし。welcome=1 でも出ない（異常系）'",
+          "reason": "FR-267 の改訂（1b4128d）: 確認済みの記録・次回から表示しない・起動時の自動表示を廃止。期待値を AC-678 の新しい本文に更新"
         }
       ]
     },
@@ -7133,7 +7175,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-678",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "df8887c",
       "last_run_at": "2026-11-01T20:08:22+09:00",
       "evidence": "work/runs/202610311329/logs/system-test/E2E-361-202611011945.log",
@@ -7143,6 +7185,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-03T17:18:16+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "E2E-361 に統合（AC-678 は起動時の自動表示なし・アイコン開始に改訂。welcome=1 の異常系も同じ spec の同じ AC で E2E-361 が実行）"
         }
       ]
     },
@@ -9857,7 +9905,7 @@
       "ac_ids": [
         "AC-741"
       ],
-      "title": "AC-741 設定・有効・了承がそろうと /foundry/ask 1 回・Copilot 0 回で回答が出る。未設定・無効・了承なしは Foundry 0 回（異常系）",
+      "title": "AC-741 設定・有効がそろうと /foundry/ask 1 回・Copilot 0 回で回答が出る。未設定・無効は Foundry 0 回（異常系）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-741",
       "canary": false,
@@ -9877,6 +9925,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "検証レベル=integration のため System Test の対象外（AC-741〜743・745〜747）。実装役の結合テストで検証する。差し替え部品の見本は chat-foundry.spec.ts（FR286_IT=1）"
+        },
+        {
+          "at": "2026-11-03T17:26:57+09:00",
+          "by": "test-designer",
+          "change": "title: 'AC-741 設定・有効・了承がそろうと /foundry/ask 1 回・Copilot 0 回で回答が出る。未設定・無効・了承なしは Foundry 0 回（異常系）' -> 'AC-741 設定・有効がそろうと /foundry/ask 1 回・Copilot 0 回で回答が出る。未設定・無効は Foundry 0 回（異常系）'",
+          "reason": "了承の条件の廃止（1b4128d）"
+        },
+        {
+          "at": "2026-11-03T17:27:20+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベルが integration のため System Test の対象外（テストは FR286_IT=1 の見本として残す）"
         }
       ]
     },
@@ -10006,7 +10066,7 @@
       "ac_ids": [
         "AC-746"
       ],
-      "title": "AC-746 timeout・error・未確認・了承なし・中継停止の理由表示。別の送信先へ切り替えず再送信できる（異常系）",
+      "title": "AC-746 timeout・error・未確認・中継停止の理由表示。別の送信先へ切り替えず再送信できる（異常系）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-746",
       "canary": false,
@@ -10026,6 +10086,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "検証レベル=integration のため System Test の対象外（AC-741〜743・745〜747）。実装役の結合テストで検証する。差し替え部品の見本は chat-foundry.spec.ts（FR286_IT=1）"
+        },
+        {
+          "at": "2026-11-03T17:26:58+09:00",
+          "by": "test-designer",
+          "change": "title: 'AC-746 timeout・error・未確認・了承なし・中継停止の理由表示。別の送信先へ切り替えず再送信できる（異常系）' -> 'AC-746 timeout・error・未確認・中継停止の理由表示。別の送信先へ切り替えず再送信できる（異常系）'",
+          "reason": "了承の条件の廃止（1b4128d）"
+        },
+        {
+          "at": "2026-11-03T17:27:20+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "検証レベルが integration のため System Test の対象外（テストは FR286_IT=1 の見本として残す）"
         }
       ]
     },
@@ -10559,14 +10631,14 @@
       "ac_ids": [
         "AC-757"
       ],
-      "title": "AI取り込みは接続先・設定・有効化・了承の不足時に無効、Copilot SDKでは未対応と案内し送信0回（強制操作を含む）",
+      "title": "AC-757 AI取り込みは接続先・設定・有効化の不足で無効（了承は条件にしない）と案内し送信0回。設定済み・有効なら了承なしで選べる",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-757",
       "canary": false,
       "status": "pass",
-      "last_commit": "df8887c",
-      "last_run_at": "2026-11-01T20:08:22+09:00",
-      "evidence": "work/runs/202610311329/logs/system-test/E2E-384-202611011933.log",
+      "last_commit": "4b08b3d",
+      "last_run_at": "2026-11-03T19:18:05+09:00",
+      "evidence": "work/runs/202611031652/logs/system-test/E2E-384-202611031917.log",
       "history": [
         {
           "at": "2026-10-22T22:32:17+09:00",
@@ -10585,6 +10657,12 @@
           "by": "test-designer",
           "change": "title: 'Foundry 未設定のとき AI 取り込みは無効で案内が出て、送信は 0 回（無効のボタンの強制操作の異常系含む）' -> 'AI取り込みは接続先・設定・有効化・了承の不足時に無効、Copilot SDKでは未対応と案内し送信0回（強制操作を含む）'",
           "reason": "AC-757追加条件を既存E2E-384へ拡張。Copilot選択時の未対応表示・無効化・両接続先の送信0回、接続先変更時の再有効化を検証"
+        },
+        {
+          "at": "2026-11-03T17:18:19+09:00",
+          "by": "test-designer",
+          "change": "title: 'AI取り込みは接続先・設定・有効化・了承の不足時に無効、Copilot SDKでは未対応と案内し送信0回（強制操作を含む）' -> 'AC-757 AI取り込みは接続先・設定・有効化の不足で無効（了承は条件にしない）と案内し送信0回。設定済み・有効なら了承なしで選べる'",
+          "reason": "AC-757 から了承の条件を除去（1b4128d）。了承だけが欠けるケースを、了承なしで選べるケースに置換"
         }
       ]
     },
@@ -10596,14 +10674,14 @@
       "ac_ids": [
         "AC-758"
       ],
-      "title": "接続情報の保存で AI 取り込みを選べ、削除で再び選べず案内が出る",
+      "title": "AC-758 設定保存と実接続の有効化で AI 取り込みを選べ、削除・無効化で再び選べず案内が出る（了承は条件にしない）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-758",
       "canary": false,
       "status": "pass",
-      "last_commit": "df8887c",
-      "last_run_at": "2026-11-01T20:08:22+09:00",
-      "evidence": "work/runs/202610311329/logs/system-test/E2E-385-202611011931.log",
+      "last_commit": "4b08b3d",
+      "last_run_at": "2026-11-03T19:18:05+09:00",
+      "evidence": "work/runs/202611031652/logs/system-test/E2E-385-202611031917.log",
       "history": [
         {
           "at": "2026-10-22T22:32:20+09:00",
@@ -10616,6 +10694,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC-757/758/759 の本文が変更済み（Entra ID 両方式・実接続の有効化・了承・送信前確認・停止水準）。spec は旧本文のままで、G-5 により書き込めず未見直し。見直すまで実行対象にしない"
+        },
+        {
+          "at": "2026-11-03T17:18:20+09:00",
+          "by": "test-designer",
+          "change": "title: '接続情報の保存で AI 取り込みを選べ、削除で再び選べず案内が出る' -> 'AC-758 設定保存と実接続の有効化で AI 取り込みを選べ、削除・無効化で再び選べず案内が出る（了承は条件にしない）'",
+          "reason": "AC-758 から了承の条件を除去（1b4128d）"
         }
       ]
     },

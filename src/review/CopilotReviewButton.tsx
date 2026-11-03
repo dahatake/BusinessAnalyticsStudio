@@ -5,7 +5,6 @@ import { tr, useT } from '../i18n';
 import { Button, DialogActions, DialogBody, DialogContent, DialogTitle, Spinner, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Dialog, DialogSurface } from '../components/Dialog';
 import { useAi } from '../ai/useAi';
-import { useConsent } from '../ai/useConsent';
 import { fetchFoundryView } from '../ai/foundryClient';
 import { useUsageStore } from '../ai/foundryUsage';
 import { confirmViaUi, countPersons, gatePersonConfirm } from '../ai/personConfirm';
@@ -31,7 +30,6 @@ export function CopilotReviewButton() {
   const t = useT();
   const s = useStyles();
   const { relayUrl, packId } = useAi();
-  const { granted, record } = useConsent();
   const pack = usePackStore((st) => st.state);
   const run = useReviewStore((st) => st.run);
   const message = useReviewStore((st) => st.message);
@@ -48,13 +46,13 @@ export function CopilotReviewButton() {
       const usage = useUsageStore.getState();
       st.block(''); // 前回の案内を消す（確認の段階では「進行中」にしない）
       const out = await runReview({
-        relayUrl, packId, consent: granted,
+        relayUrl, packId,
         includesPerson: !!data && countPersons(data) > 0,
         view: () => fetchFoundryView(relayUrl, packId),
         dismissConfirm: () => answerSend(false),
         usage: { check: () => usage.check(), count: (n, out) => usage.count(n, undefined, undefined, out) },
         confirmSend: async (targets) => { const ok = await askSend(targets); if (ok) useReviewStore.getState().start(); return ok; },
-        confirmPerson: () => gatePersonConfirm({ destination: 'ai', scopeLabel: reviewScopeLabel(), data: data!, consent: record, confirm: confirmViaUi }),
+        confirmPerson: () => gatePersonConfirm({ destination: 'ai', scopeLabel: reviewScopeLabel(), data: data!, confirm: confirmViaUi }),
       }, collectTargets());
       const store = useReviewStore.getState();
       if (out.kind === 'done') store.finish(out.targets, out.proposals, out.warning);

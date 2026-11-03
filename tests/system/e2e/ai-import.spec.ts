@@ -4,7 +4,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import type { Page, Locator } from '@playwright/test';
-import { test, expect, openScreen, closeSettings, recordExportConsent } from '../support/fixtures';
+import { test, expect, openScreen, closeSettings } from '../support/fixtures';
 import { startAiImportRelayStub } from '../support/ai-import-stub';
 import type { AiImportRelayStub } from '../support/ai-import-stub';
 import { TMP_DIR } from '../support/paths';
@@ -83,14 +83,14 @@ async function deleteFoundry(page: Page): Promise<void> {
   await closeSettings(page);
 }
 
-async function expectAiImportBlocked(page: Page, relay: AiImportRelayStub, missing: '設定' | '有効化' | '了承'): Promise<void> {
+async function expectAiImportBlocked(page: Page, relay: AiImportRelayStub, missing: '設定' | '有効化'): Promise<void> {
   const { ai } = await openImportScreen(page);
   await expect(ai).toBeVisible();
   await expect(ai.getByRole('button', { name: 'AI 取り込み' })).toBeDisabled();
   const guide = ai.getByTestId('ai-import-guide');
   await expect(guide).toBeVisible();
   await expect(guide).toContainText(new RegExp(`欠けている条件[:：][^）]*${missing}`));
-  for (const other of (['設定', '有効化', '了承'] as const).filter((m) => m !== missing)) {
+  for (const other of (['設定', '有効化'] as const).filter((m) => m !== missing)) {
     await expect(guide).not.toContainText(new RegExp(`欠けている条件[:：][^）]*${other}`));
   }
   await expect(guide).toContainText(/設定画面/);
@@ -109,31 +109,30 @@ test.describe('FR-289 AI 取り込み（選べる条件）', () => {
   let relay: AiImportRelayStub;
   test.afterEach(async () => { await relay?.close(); });
 
-  // FR-289 AC-757（3 条件のうち「設定」だけが欠ける。有効化・了承はある）
-  test('FR-289 AC-757 接続設定が未設定（実接続は有効・了承あり）のとき、「AI 取り込み」は無効で、欠けている条件「設定」と設定画面への案内が示され、呼び出しは 0 回', async ({ page, start }) => {
+  // FR-289 AC-757（「設定」だけが欠ける。有効化はある）
+  test('FR-289 AC-757 接続設定が未設定（実接続は有効）のとき、「AI 取り込み」は無効で、欠けている条件「設定」と設定画面への案内が示され、呼び出しは 0 回', async ({ page, start }) => {
     relay = await startAiImportRelayStub({ configured: false, enabled: false });
     await start({ relayUrl: relay.url });
     await openNewProject(page);
-    await recordExportConsent(page);
-    relay.forceEnabled(true); // 設定画面の操作では「未設定で有効」にならないため、了承の入力後に中継の状態だけを有効にする
+    relay.forceEnabled(true); // 設定画面の操作では「未設定で有効」にならないため、中継の状態だけを有効にする
     await expectAiImportBlocked(page, relay, '設定');
   });
 
-  // FR-289 AC-757（「有効化」だけが欠ける。設定済み・了承あり）
-  test('FR-289 AC-757 実接続が無効（設定済み・了承あり）のとき、「AI 取り込み」は無効で、欠けている条件「有効化」と設定画面への案内が示され、呼び出しは 0 回', async ({ page, start }) => {
+  // FR-289 AC-757（「有効化」だけが欠ける。設定済み）
+  test('FR-289 AC-757 実接続が無効（設定済み）のとき、「AI 取り込み」は無効で、欠けている条件「有効化」と設定画面への案内が示され、呼び出しは 0 回', async ({ page, start }) => {
     relay = await startAiImportRelayStub({ configured: true, enabled: false });
     await start({ relayUrl: relay.url });
     await openNewProject(page);
-    await recordExportConsent(page);
     await expectAiImportBlocked(page, relay, '有効化');
   });
 
-  // FR-289 AC-757（「了承」だけが欠ける。設定済み・有効）
-  test('FR-289 AC-757 案件に了承の記録がない（設定済み・実接続は有効）とき、「AI 取り込み」は無効で、欠けている条件「了承」と設定画面への案内が示され、呼び出しは 0 回', async ({ page, start }) => {
+  // FR-289 AC-757（設定済み・有効なら、了承の記録がなくても選べる。了承の条件は廃止）
+  test('FR-289 AC-757 設定済み・実接続が有効なら、了承の記録の操作なしで「AI 取り込み」を選べ、案内に「了承」は出ない', async ({ page, start }) => {
     relay = await startAiImportRelayStub({ configured: true, enabled: true });
     await start({ relayUrl: relay.url });
     await openNewProject(page);
-    await expectAiImportBlocked(page, relay, '了承');
+    await expectAiImportSelectable(page);
+    await expect(page.locator('body')).not.toContainText(/了承/);
   });
 
   // FR-289 AC-757（異常系: 無効のボタンを押す操作をしても、ファイルを選ぶ欄は出ず、送信されない）
@@ -153,8 +152,7 @@ test.describe('FR-289 AI 取り込み（選べる条件）', () => {
     relay = await startAiImportRelayStub({ configured: true, enabled: true, provider: 'copilot' });
     await start({ relayUrl: relay.url });
     await openNewProject(page);
-    await recordExportConsent(page);
-    // 設定済み・有効・了承ありでも、接続先だけで取り込みを拒否する。
+    // 設定済み・有効でも、接続先だけで取り込みを拒否する。
     const assertCopilotBlocked = async () => {
       const { ai } = await openImportScreen(page);
       const button = ai.getByRole('button', { name: 'AI 取り込み', exact: true });
@@ -197,15 +195,14 @@ test.describe('FR-289 AI 取り込み（選べる条件）', () => {
 
   // FR-289 AC-758（認証方式 API キー / Microsoft Entra ID の両方）
   for (const authMethod of ['api-key', 'entra'] as const) {
-    test(`FR-289 AC-758 認証方式 ${authMethod}: 設定を保存し、実接続を有効にし、了承があると「AI 取り込み」を選べ、無効化・削除で再び選べず案内が示される`, async ({ page, start }) => {
+    test(`FR-289 AC-758 認証方式 ${authMethod}: 設定を保存し、実接続を有効にすると「AI 取り込み」を選べ、無効化・削除で再び選べず案内が示される`, async ({ page, start }) => {
       relay = await startAiImportRelayStub({ configured: false });
       await start({ relayUrl: relay.url });
       await openNewProject(page);
-      await recordExportConsent(page);
       // 保存だけ（有効化前）はまだ選べない
       await saveFoundryInSettings(page, 'dummy-key-for-system-test-0001', authMethod);
       await expectAiImportBlocked(page, relay, '有効化');
-      // 3 条件がそろうと選べる
+      // 2 条件（設定済み・有効）がそろうと選べる
       await enableFoundry(page);
       await expectAiImportSelectable(page);
       // 実接続を無効にすると再び選べない
