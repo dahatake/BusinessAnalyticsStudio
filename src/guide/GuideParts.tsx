@@ -199,7 +199,7 @@ function KitViewer() {
 }
 
 /** 顧客パックの説明（FR-268）。メイン画面の「顧客パック」region とウェルカムのカードで共有する */
-export function PackSection({ withHeading = true }: { withHeading?: boolean }) {
+export function PackSection({ withHeading = true, entry }: { withHeading?: boolean; entry?: React.ReactNode }) {
   const s = useStyles();
   const t = useT();
   const promptRef = useRef<HTMLElement>(null);
@@ -209,42 +209,53 @@ export function PackSection({ withHeading = true }: { withHeading?: boolean }) {
       {withHeading ? <GuideH>顧客パックとは</GuideH> : null}
       <Text>{t('顧客パックは、顧客ごとの課題・解決策・計画・ブランド（色・ロゴ）などをまとめたフォルダーです。')}{t('置き場所は、public/data/ と public/brand/ ほかです。')}</Text>
       <Text weight="semibold">{t('顧客パックがなくても、デモ（お手本パック {sample}/）で試せます。', { sample: PACK_SAMPLE })}</Text>
-      <GuideH level={4}>① 準備（最初の 1 回）</GuideH>
-      <Text>{t('リポジトリを取得し、必要なものを入れて、schema とお手本を 1 ファイルにまとめた kit を作ります。')}</Text>
-      <CommandRow label="リポジトリの取得" command={PACK_COMMANDS.clone} />
-      <CommandRow label="インストール" command={PACK_COMMANDS.install} />
-      <CommandRow label="kit の作成" command={PACK_COMMANDS.kit} />
+      <GuideH level={4}>作り方（画面だけで進められます）</GuideH>
+      <GuideH level={4}>① Prompt と kit をコピーする</GuideH>
       <Text>{t('顧客パックの書式の定義は、下の「kit」にまとまっています。ファイルを開く必要はなく、画面からコピーして Copilot に貼り付けるだけで使えます。書式が古いと kit は作られません。その場合は担当者に更新を依頼してください。')}</Text>
       <KitViewer />
-      <Text className={s.note}>{t('担当者向け（kit の場所: {kit}）: 更新は npm run gen:schema → npm run pack:kit の順に実行します。', { kit: PACK_KIT_FILE })}</Text>
-      <GuideH level={4}>作り方は 3 通り</GuideH>
+      <GuideH level={4}>② Copilot に貼ってファイルを作る</GuideH>
       <ol className={s.list}>
         <li>
           <Text weight="semibold">{t('方法 A: M365 Copilot で作る。')}</Text>
-          <Text>{t('① M365 Copilot（または GitHub Copilot）を開く → ② 下の Prompt をコピーして貼り、【】の部分を書き換える → ③ 続けて、上の「kit」をコピーして貼る（{kit} を添付してもかまいません）。kit がないときは、Prompt の指示で作らず kit を求められます。Prompt の元は {file} です。出力は、顧客名の作業フォルダー（例: <顧客名>/）に、パスどおりに保存します。', { kit: PACK_KIT_FILE, file: PACK_PROMPT_FILE })}</Text>
+          <Text>{t('M365 Copilot を開く → 上の「kit」をコピーして貼り付ける → 続けて、下の Prompt をコピーして貼り、【】の部分を書き換える。kit がないときは、Prompt の指示で作らず kit を求められます。出力のコードブロックは、見出しのファイル名（customer.json など 9 個と brand-profile.json）で保存します。')}</Text>
           <div className={s.cmd}>
             <pre ref={promptRef as React.RefObject<HTMLPreElement>} className={`${s.code} ${s.pre} ${s.promptBox}`} tabIndex={0}>{PACK_PROMPT_M365}</pre>
             <CopyButton text={PACK_PROMPT_M365} label="M365 Copilot 用 Prompt" codeRef={promptRef} />
           </div>
+        </li>
+        <li>
           <Text weight="semibold">{t('方法 B: GitHub Copilot ＋ WorkIQ で作る。')}</Text>
-          <Text>{t('WorkIQ が使える状態で、{file} の Prompt を、先頭の変数を書き換えて貼ります。schema はリポジトリから直接読み、ファイルの作成と検証までエージェントが行います。', { file: PACK_PROMPT_FILE_GHCP })}</Text>
+          <Text>{t('WorkIQ が使える状態で、kit を貼り付けたあと、下の Prompt を、先頭の変数を書き換えて貼ります。ファイルの作成と自己点検まで、エージェントが行います。')}</Text>
           <div className={s.cmd}>
             <pre ref={promptRef2 as React.RefObject<HTMLPreElement>} className={`${s.code} ${s.pre} ${s.promptBox}`} tabIndex={0}>{PACK_PROMPT_GHCP}</pre>
             <CopyButton text={PACK_PROMPT_GHCP} label="GitHub Copilot 用 Prompt" codeRef={promptRef2} />
           </div>
         </li>
-        <li><Text weight="semibold">{t('方法 C: 生成パイプラインで作る。')}</Text><CommandRow label="パイプライン" command={PACK_COMMANDS.pipeline} /></li>
-        <li><Text>{t('お手本 {sample} を複製して、手で書き換えることもできます。', { sample: PACK_SAMPLE })}</Text></li>
       </ol>
-      <GuideH level={4}>⑤ 作ったあとの検証</GuideH>
+      <GuideH level={4}>③ 画面からアップロードして取り込む</GuideH>
+      <Text>{t('作ったファイルを、「顧客パックを取り込む」の画面で、複数選択するか、ドラッグ＆ドロップで入れます。ファイルはこの端末の中だけで読み、外へは送りません。')}</Text>
+      {entry}
+      <GuideH level={4}>④ 検証の結果を読み、直す</GuideH>
+      <Text>{t('アップロードすると、検証の結果が出ます。エラーが出たら、表示された「ファイル名・項目名」を確かめます。その部分だけを Copilot に貼って作り直させ、もう一度アップロードします。')}</Text>
+      <GuideH level={4}>⑤ 取り込む前に、人が確かめる</GuideH>
+      <Text>{t('取り込む前に、出典の機密区分とロゴの状態を確かめます。種別「人」の個人名・連絡先や、出典のない数値がないことも確かめてから、進めます。')}</Text>
+      <GuideH level={4}>担当者向け</GuideH>
+      <Text className={s.note}>{t('担当者向け（kit の場所: {kit}）: 更新は npm run gen:schema → npm run pack:kit の順に実行します。', { kit: PACK_KIT_FILE })}</Text>
+      <Text className={s.note}>{t('Prompt の元は {file} と {file2} です。お手本パックは {sample}/ です。', { file: PACK_PROMPT_FILE, file2: PACK_PROMPT_FILE_GHCP, sample: PACK_SAMPLE })}</Text>
+      <Text>{t('準備（最初の 1 回）。リポジトリを取得し、必要なものを入れて、schema とお手本を 1 ファイルにまとめた kit を作ります。')}</Text>
+      <CommandRow label="リポジトリの取得" command={PACK_COMMANDS.clone} />
+      <CommandRow label="インストール" command={PACK_COMMANDS.install} />
+      <CommandRow label="kit の作成" command={PACK_COMMANDS.kit} />
+      <Text weight="semibold">{t('方法 C: 生成パイプラインで作る。')}</Text>
+      <CommandRow label="パイプライン" command={PACK_COMMANDS.pipeline} />
+      <Text>{t('作業フォルダーに作ったときは、検証します。')}</Text>
       <CommandRow label="形式の検査" command={PACK_COMMANDS.check} />
       <CommandRow label="受け入れ判定" command={PACK_COMMANDS.verify} />
-      <GuideH level={4}>⑥ 画面への反映</GuideH>
-      <Text>{t('検証が通った顧客パックの public/data/ と public/brand/ の中身を、このリポジトリの public/data/ と public/brand/ に置きます。顧客の情報なので、コミットしません。')}</Text>
+      <Text>{t('画面への反映（リポジトリに直接置く場合）。検証が通った顧客パックの public/data/ と public/brand/ の中身を、このリポジトリの public/data/ と public/brand/ に置きます。顧客の情報なので、コミットしません。')}</Text>
       <CommandRow label="ビルド" command={PACK_COMMANDS.build} />
       <CommandRow label="起動" command={PACK_COMMANDS.start} />
       <Text>{t('起動したら、ブラウザーで {url} を開きます。', { url: PACK_URL })}</Text>
-      <Text>{t('エラーが出たときは、画面や検査に出た「ファイル名・項目名」を確かめ、その JSON だけを直して、もう一度 npm run check:pack を実行します。直し方は M365 Copilot や GitHub Copilot にエラーの部分だけを貼って頼めます。')}</Text>
+      <Text>{t('エラーが出たときは、検査に出た「ファイル名・項目名」の JSON だけを直し、もう一度 npm run check:pack を実行します。')}</Text>
     </div>
   );
 }
