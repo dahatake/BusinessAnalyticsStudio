@@ -80,16 +80,32 @@ test.describe('FR-016 プレゼンテーションモード', () => {
 
 test.describe('FR-076 オープニング', () => {
   // FR-076 AC-093
-  test('FR-076 AC-093 オープニングに顧客名と Project 名のタイトルが出て、長さが 15〜30 秒', async ({ page, start }) => {
+  test('FR-076 AC-093 オープニングにアプリケーション名「Business Analytics Studio」だけが出て（顧客名・Project 名は DOM に出ない）、長さが 15〜30 秒', async ({ page, start }) => {
     test.setTimeout(120_000);
     await start({ skipOpening: false });
     const opening = page.getByTestId('opening');
     await expect(opening).toBeVisible();
     const t0 = Date.now();
-    await expect(opening).toContainText(mono.customerName, { timeout: 30_000 });
-    await expect(opening).toContainText(mono.projectName);
-    await expect(opening).toContainText(`${mono.customerName} × Microsoft`);
+    // 再生中の DOM（文字・属性）にお手本パックの顧客名・Project 名が一度も現れないことを、変更の監視で記録する（固定の待ちを使わない）
+    const forbidden = [mono.customerName, mono.projectName];
+    await page.evaluate((words) => {
+      const w = window as unknown as { __openingLeaks: string[] };
+      w.__openingLeaks = [];
+      const scan = () => {
+        const el = document.querySelector('[data-testid="opening"]');
+        if (!el) return;
+        const html = el.outerHTML;
+        for (const word of words) if (html.includes(word)) w.__openingLeaks.push(word);
+      };
+      scan();
+      new MutationObserver(scan).observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true });
+    }, forbidden);
+    await expect(opening).toContainText('Business Analytics Studio', { timeout: 30_000 });
+    await expect(opening).not.toContainText(mono.customerName);
+    await expect(opening).not.toContainText(mono.projectName);
+    await expect(opening).not.toContainText('× Microsoft');
     await expect(opening).toBeHidden({ timeout: 45_000 });
+    expect(await page.evaluate(() => (window as unknown as { __openingLeaks: string[] }).__openingLeaks), 'オープニングの DOM に顧客名・Project 名が出た').toEqual([]);
     const sec = (Date.now() - t0) / 1000;
     expect(sec, `オープニングの長さ ${sec} 秒`).toBeGreaterThanOrEqual(15 - 1);
     expect(sec).toBeLessThanOrEqual(30 + 1);
@@ -127,7 +143,8 @@ test.describe('FR-072 動きを減らす設定', () => {
     await start({ skipOpening: false });
     const opening = page.getByTestId('opening');
     await expect(opening).toBeVisible();
-    await expect(opening).toContainText(mono.customerName);
+    await expect(opening).toContainText('Business Analytics Studio');
+    await expect(opening).not.toContainText(mono.customerName);
     const running = await page.evaluate(() => document.getAnimations().filter((a) => a.playState === 'running').length);
     expect(running, '静止画の版なのに動いているアニメーションがある').toBe(0);
     await page.keyboard.press('Escape');

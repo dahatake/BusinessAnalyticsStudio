@@ -358,13 +358,15 @@ test.describe('FR-101 顧客パックの差し替え', () => {
     return h.digest('hex');
   }
   // FR-101 AC-123
-  test('FR-101 AC-123 同じ dist/ に 2 種類のお手本パックを順に差し替えると、再ビルドせずにそれぞれの顧客名がタイトルとオープニングに出る', async ({ page, start }) => {
+  test('FR-101 AC-123 同じ dist/ に 2 種類のお手本パックを順に差し替えると、再ビルドせずにそれぞれの顧客名が本編のタイトルに出る（オープニングはアプリケーション名だけで顧客名は出ない）', async ({ page, start }) => {
     test.setTimeout(120_000);
     expect(mono.customerName).not.toBe(koto.customerName);
     const h0 = distHash();
     for (const p of [mono, koto]) {
       await start({ pack: p, skipOpening: false });
-      await expect(page.getByTestId('opening')).toContainText(p.customerName, { timeout: 30_000 });
+      const opening = page.getByTestId('opening');
+      await expect(opening).toContainText('Business Analytics Studio', { timeout: 30_000 });
+      await expect(opening).not.toContainText(p.customerName);
       await page.keyboard.press('Escape');
       await expect(page).toHaveTitle(new RegExp(p.customerName));
     }

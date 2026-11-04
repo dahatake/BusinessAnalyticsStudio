@@ -175,6 +175,7 @@ export default {
   '完了': 'Done',
   // オープニング・アプリ
   'オープニング': 'Opening',
+  'Business Analytics Studio': 'Business Analytics Studio',
   'カウントダウン {count}': 'Countdown {count}',
   'スキップ（Esc）': 'Skip (Esc)',
   '顧客パックを読み込み中': 'Loading the customer pack',
