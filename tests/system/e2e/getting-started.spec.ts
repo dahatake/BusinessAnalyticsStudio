@@ -254,12 +254,13 @@ test.describe('FR-268 顧客パックの説明カード', () => {
     // 開くと kit の全文が読める。正本ファイルと一致する（AC-835）
     await toggle.click();
     expect(await expanded(), 'クリックで開かない').toBe(true);
-    const shown = card.locator('pre, textarea').filter({ hasText: /schema\/.*\.json|customer-pack-kit/ }).first();
+    const shown = card.locator('pre, textarea').filter({ hasText: '## schema/' }).first();
     await expect(shown, 'kit の本文が表示されない').toBeVisible();
     const body = (await shown.evaluate((e) => (e instanceof HTMLTextAreaElement ? e.value : (e as HTMLElement).textContent ?? ''))).replace(/\r\n/g, '\n');
     expect(body.trim(), '画面の kit が tools の kit と一致しない').toBe(kit.trim());
     // コピー: クリップボードに全文が入り、支援技術に「コピーしました」が伝わる
-    const copyBtn = card.locator('details, div, section').filter({ has: page.locator('pre, textarea').filter({ hasText: /schema\/.*\.json|customer-pack-kit/ }) }).last().getByRole('button', { name: /コピー/ }).first();
+    // kit の pre から見て、コピーボタンを含む最も近い祖先の中のボタン（M365 用 Prompt の枠は選ばない）
+    const copyBtn = shown.locator('xpath=ancestor::*[.//button[contains(normalize-space(.), "コピー")]][1]').getByRole('button', { name: /コピー/ }).first();
     await copyBtn.click();
     const copied = (await page.evaluate(() => navigator.clipboard.readText())).replace(/\r\n/g, '\n');
     expect(copied.trim(), 'コピーした内容が kit の全文でない').toBe(kit.trim());
@@ -277,9 +278,9 @@ test.describe('FR-268 顧客パックの説明カード', () => {
     const card = main.getByRole('region', { name: 'はじめての方へ' }).getByRole('region', { name: /顧客パック/ }).first();
     const toggle = card.locator('summary, button[aria-expanded]').filter({ hasText: /kit/i }).first();
     await toggle.click();
-    const shown = card.locator('pre, textarea').filter({ hasText: /schema\/.*\.json|customer-pack-kit/ }).first();
+    const shown = card.locator('pre, textarea').filter({ hasText: '## schema/' }).first();
     await expect(shown).toBeVisible();
-    await card.locator('details, div, section').filter({ has: page.locator('pre, textarea').filter({ hasText: /schema\/.*\.json|customer-pack-kit/ }) }).last().getByRole('button', { name: /コピー/ }).first().click();
+    await shown.locator('xpath=ancestor::*[.//button[contains(normalize-space(.), "コピー")]][1]').getByRole('button', { name: /コピー/ }).first().click();
     const alert = card.locator('[role="alert"], [role="status"]').filter({ hasText: /コピーできません|コピーに失敗|クリップボード/ }).first();
     await expect(alert, '原因と次の行動が表示されない').toBeVisible();
     await expect(alert).toContainText(/選択|手動|自分で/);
