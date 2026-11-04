@@ -237,7 +237,7 @@ test.describe('FR-268 顧客パックの説明カード', () => {
   // FR-268 AC-834（kit の折りたたみ表示・コピー・貼り付け手順。AC-835 の画面側: 画面の kit = 正本ファイル）
   test('FR-268 AC-834 AC-835 「はじめての方へ」の顧客パックの節に kit の折りたたみ表示（既定は閉）があり、開くと kit の全文が正本ファイルと一致し、「コピー」でクリップボードに全文が入り「コピーしました」が通知される。貼り付け手順も書かれている', async ({ page, context, start }) => {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
-    const kit = fs.readFileSync(path.join(process.cwd(), 'tools', 'envisioning', '_attach', 'customer-pack-kit.md'), 'utf8').replace(/\r\n/g, '\n');
+    const kit = fs.readFileSync(path.join(process.cwd(), '..', '..', 'tools', 'envisioning', '_attach', 'customer-pack-kit.md'), 'utf8').replace(/\r\n/g, '\n');
     const { main } = await startAtMain(page, start);
     await main.getByRole('button', { name: 'はじめての方へ' }).click();
     const card = main.getByRole('region', { name: 'はじめての方へ' }).getByRole('region', { name: /顧客パック/ }).first();
@@ -259,7 +259,7 @@ test.describe('FR-268 顧客パックの説明カード', () => {
     const body = (await shown.evaluate((e) => (e instanceof HTMLTextAreaElement ? e.value : (e as HTMLElement).textContent ?? ''))).replace(/\r\n/g, '\n');
     expect(body.trim(), '画面の kit が tools の kit と一致しない').toBe(kit.trim());
     // コピー: クリップボードに全文が入り、支援技術に「コピーしました」が伝わる
-    const copyBtn = card.locator('details, div, section').filter({ has: shown }).last().getByRole('button', { name: /コピー/ }).first();
+    const copyBtn = card.locator('details, div, section').filter({ has: page.locator('pre, textarea').filter({ hasText: /schema\/.*\.json|customer-pack-kit/ }) }).last().getByRole('button', { name: /コピー/ }).first();
     await copyBtn.click();
     const copied = (await page.evaluate(() => navigator.clipboard.readText())).replace(/\r\n/g, '\n');
     expect(copied.trim(), 'コピーした内容が kit の全文でない').toBe(kit.trim());
@@ -279,7 +279,7 @@ test.describe('FR-268 顧客パックの説明カード', () => {
     await toggle.click();
     const shown = card.locator('pre, textarea').filter({ hasText: /schema\/.*\.json|customer-pack-kit/ }).first();
     await expect(shown).toBeVisible();
-    await card.locator('details, div, section').filter({ has: shown }).last().getByRole('button', { name: /コピー/ }).first().click();
+    await card.locator('details, div, section').filter({ has: page.locator('pre, textarea').filter({ hasText: /schema\/.*\.json|customer-pack-kit/ }) }).last().getByRole('button', { name: /コピー/ }).first().click();
     const alert = card.locator('[role="alert"], [role="status"]').filter({ hasText: /コピーできません|コピーに失敗|クリップボード/ }).first();
     await expect(alert, '原因と次の行動が表示されない').toBeVisible();
     await expect(alert).toContainText(/選択|手動|自分で/);
@@ -304,7 +304,9 @@ test.describe('FR-268 顧客パックの説明カード', () => {
     expect(mainSentences.length).toBeGreaterThan(0);
     for (const s of mainSentences) expect(s, `主文に技術用語がある: ${s}`).not.toMatch(/リポジトリ|schema|スキーマ|コマンド|npm|\.json/i);
     // 旧パスは画面に残らない
-    expect(t).not.toContain('work/envisioning');
+    // 旧 kit パスと技術表現は残らない（Prompt の出力先 work/envisioning/<顧客>/ は正当なので検査しない）
+    expect(t).not.toContain('work/envisioning/_attach');
+    expect(t).not.toMatch(/リポジトリの\s*schema/);
   });
 });
 
