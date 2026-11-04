@@ -862,6 +862,29 @@ def split_repeat_failures(todo, runs, head, clean):
     return keep, held
 
 
+def ensure_fresh_dist(root, cases) -> None:
+    """System Test は dist/（git 管理外）を配信する。作業ツリーごとに古い dist が残り、ソースと食い違うと
+    E2E が偽の fail になる（run 202611041249 の E2E-116・168 ほか 22 件）ため、ソースより古ければ再ビルドする。"""
+    if not any("run.mjs" in str(c.get("command", "")) for c in cases):
+        return
+    root = Path(root)
+    idx = root / "dist" / "index.html"
+    newest = 0.0
+    for sub in ("src", "examples/mono/public", "index.html", "vite.config.ts", "package.json"):
+        p = root / sub
+        files = [p] if p.is_file() else (list(p.rglob("*")) if p.is_dir() else [])
+        for f in files:
+            if f.is_file():
+                newest = max(newest, f.stat().st_mtime)
+    if idx.exists() and idx.stat().st_mtime >= newest:
+        return
+    print("dist が古い（またはない）ので npm run build を実行します")
+    r = subprocess.run("npm run build", cwd=str(root), shell=True)
+    if r.returncode != 0:
+        print("ledger: npm run build に失敗しました。System Test を中止します", file=sys.stderr)
+        raise SystemExit(1)
+
+
 def cmd_run(args, root, cfg) -> int:
     data = h.load_ledger(root, cfg)
     t_start = time.time()
@@ -890,6 +913,7 @@ def cmd_run(args, root, cfg) -> int:
     lines_out = []
     stop_reason = ""
     h.apply_resource_env(root, cfg)
+    ensure_fresh_dist(root, sel)
     jobs = resolve_jobs(args.jobs, cfg)
     cerr = h.conductor_root(root, cfg)
 
