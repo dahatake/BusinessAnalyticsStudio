@@ -1,6 +1,39 @@
 // 顧客パックの取り込み画面の文言（FR-302・FR-304）。キーは日本語の原文。
 export default {
   '顧客パックを取り込む': 'Import a customer pack',
+  '作り方（画面だけで進められます）': 'How to make one (everything is done on screen)',
+  '① Prompt と kit をコピーする': '① Copy the Prompt and the kit',
+  '顧客パックの書式の定義は、下の「kit」にまとまっています。ファイルを開く必要はなく、画面からコピーして Copilot に貼り付けるだけで使えます。書式が古いと kit は作られません。その場合は担当者に更新を依頼してください。':
+    'The definition of the customer pack format is gathered in the "kit" below. You do not need to open any file: just copy it on screen and paste it into Copilot. If the format is out of date, the kit is not built; ask the person in charge to update it.',
+  '② Copilot に貼ってファイルを作る': '② Paste into Copilot to create the files',
+  '方法 A: M365 Copilot で作る。': 'Method A: create it with M365 Copilot.',
+  'M365 Copilot を開く → 上の「kit」をコピーして貼り付ける → 続けて、下の Prompt をコピーして貼り、【】の部分を書き換える。kit がないときは、Prompt の指示で作らず kit を求められます。出力のコードブロックは、見出しのファイル名（customer.json など 9 個と brand-profile.json）で保存します。':
+    'Open M365 Copilot → copy and paste the "kit" above → then copy and paste the Prompt below and rewrite the parts in 【】. If there is no kit, the Prompt tells Copilot not to create anything and to ask for the kit. Save each output code block under the file name in its heading (customer.json and 8 others, plus brand-profile.json).',
+  '方法 B: GitHub Copilot ＋ WorkIQ で作る。': 'Method B: create it with GitHub Copilot + WorkIQ.',
+  'WorkIQ が使える状態で、kit を貼り付けたあと、下の Prompt を、先頭の変数を書き換えて貼ります。ファイルの作成と自己点検まで、エージェントが行います。':
+    'With WorkIQ available, paste the kit, then paste the Prompt below after rewriting the variables at the top. The agent creates the files and checks them itself.',
+  '③ 画面からアップロードして取り込む': '③ Upload the files on screen to import them',
+  '作ったファイルを、「顧客パックを取り込む」の画面で、複数選択するか、ドラッグ＆ドロップで入れます。ファイルはこの端末の中だけで読み、外へは送りません。':
+    'On the "Import a customer pack" screen, select the files (several at once) or drag and drop them. Files are read only on this device and are never sent out.',
+  '④ 検証の結果を読み、直す': '④ Read the validation result and fix errors',
+  'アップロードすると、検証の結果が出ます。エラーが出たら、表示された「ファイル名・項目名」を確かめます。その部分だけを Copilot に貼って作り直させ、もう一度アップロードします。':
+    'After uploading, the validation result appears. If there is an error, check the file name and item name shown, paste only that part into Copilot to have it recreated, and upload again.',
+  '⑤ 取り込む前に、人が確かめる': '⑤ Check by hand before importing',
+  '取り込む前に、出典の機密区分とロゴの状態を確かめます。種別「人」の個人名・連絡先や、出典のない数値がないことも確かめてから、進めます。':
+    'Before importing, check the confidentiality class of the sources and the logo status. Also make sure there are no personal names or contact details for the "person" type and no numbers without a source.',
+  '担当者向け': 'For the person in charge',
+  '担当者向け（kit の場所: {kit}）: 更新は npm run gen:schema → npm run pack:kit の順に実行します。':
+    'For the person in charge (kit location: {kit}): to update it, run npm run gen:schema, then npm run pack:kit.',
+  'Prompt の元は {file} と {file2} です。お手本パックは {sample}/ です。': 'The Prompts come from {file} and {file2}. The sample pack is {sample}/.',
+  '準備（最初の 1 回）。リポジトリを取得し、必要なものを入れて、schema とお手本を 1 ファイルにまとめた kit を作ります。':
+    'Preparation (first time only). Get the repository, install what is needed, and build the kit that gathers the schema and the sample into one file.',
+  '方法 C: 生成パイプラインで作る。': 'Method C: create it with the generation pipeline.',
+  '作業フォルダーに作ったときは、検証します。': 'If you created it in a working folder, validate it.',
+  '画面への反映（リポジトリに直接置く場合）。検証が通った顧客パックの public/data/ と public/brand/ の中身を、このリポジトリの public/data/ と public/brand/ に置きます。顧客の情報なので、コミットしません。':
+    'Applying it to the screen (when placing it directly in the repository). Put the contents of public/data/ and public/brand/ of the validated customer pack into public/data/ and public/brand/ of this repository. It is customer information, so do not commit it.',
+  'エラーが出たときは、検査に出た「ファイル名・項目名」の JSON だけを直し、もう一度 npm run check:pack を実行します。':
+    'If an error appears, fix only the JSON named by the check (file name and item name), then run npm run check:pack again.',
+  'kit を読み込めませんでした。画面を再読み込みするか、担当者に更新を依頼してください。': 'The kit could not be loaded. Reload the screen, or ask the person in charge to update it.',
   '顧客パックの取り込み': 'Import a customer pack',
   '閉じる': 'Close',
   'Copilot で作った顧客パックのファイル（public/data の JSON 9 個と brand-profile.json。顧客調査・ブランド調査の .md は任意）を選ぶか、ここにドロップします。ファイルはこの端末の中だけで読み、外へは送りません。':

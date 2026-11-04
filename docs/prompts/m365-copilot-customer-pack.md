@@ -4,7 +4,7 @@ Microsoft 365 Copilot（Researcher / Work モード）に、顧客とブラン�
 
 ## 事前準備
 
-1. `npm run pack:kit` を実行し、アプリの画面（「はじめての方へ」の顧客パックの節）の kit の「コピー」ボタンで kit をコピーし、Copilot のチャットに貼り付けます（ファイルを開く必要はありません。`tools/envisioning/_attach/customer-pack-kit.md` を添付してもかまいません）。kit は schema 全 10 ファイルとお手本パックを 1 つにまとめたものです。
+1. アプリの画面（「はじめての方へ」の顧客パックの節）の kit の「コピー」ボタンで kit をコピーし、Copilot のチャットに貼り付けます（ファイルを開く必要はありません。`customer-pack-kit.md` を渡されているときは、それを添付してもかまいません）。kit は schema 全 10 ファイルとお手本パックを 1 つにまとめたものです。
 2. 追加資料（提案書、議事録、IR 資料など）があれば、あわせて添付します。
 3. 下の Prompt の【…】を埋めます。
 
@@ -29,10 +29,8 @@ Microsoft 365 Copilot（Researcher / Work モード）に、顧客とブラン�
 
 # 作るファイル
 次のファイルを、添付または貼り付けの customer-pack-kit.md にある schema に厳密に従って作ります。お手本パックは形式の参考だけにし、内容は流用しません。
-- public/data/: customer.json, entities.json, issues.json, products.json, plan.json, architecture.json, mocks.json, show.json, sources.json
-- public/brand/: brand-profile.json
-- data/customer-research.md（顧客調査の記録）
-- brand/BRAND-RESEARCH.md（ブランド調査の記録）
+- 顧客パックのファイル 10 個（画面からアップロードするので、フォルダー名は付けず、ファイル名だけにします）: customer.json, entities.json, issues.json, products.json, plan.json, architecture.json, mocks.json, show.json, sources.json, brand-profile.json
+- 調査の記録（任意）: customer-research.md（顧客調査）, BRAND-RESEARCH.md（ブランド調査）
 
 # 守る規則
 - 出典のない数値は置きません。
@@ -48,7 +46,7 @@ Microsoft 365 Copilot（Researcher / Work モード）に、顧客とブラン�
 # 出力の形式
 次の順で出力します。
 1. 調査の要約
-2. ファイルごとの完全なコードブロック（見出しにファイルのパス。省略記号で端折らず、全文を書く）
+2. ファイルごとの完全なコードブロック（見出しに、保存するファイル名だけを書く。省略記号で端折らず、全文を書く）
 3. 出典の一覧
 4. 確認事項（人が確かめるべきこと）
 5. 自己点検の表（上の規則ごとに、守れたかを ○ / × で示す）
@@ -56,13 +54,9 @@ Microsoft 365 Copilot（Researcher / Work モード）に、顧客とブラン�
 
 ## 出力を顧客パックにする
 
-1. 出力されたコードブロックを、ファイルのパスどおりに `work/envisioning/<顧客名>/` へ保存します。
+1. 出力されたコードブロックを、見出しのファイル名（customer.json など 9 個と brand-profile.json）で保存します。フォルダー名は付けません。調査の記録（customer-research.md・BRAND-RESEARCH.md）は任意です。
 2. 出典の機密区分（internal / shareable）とロゴの状態（logo.status）を確かめ、必要なら直します。
-3. 次のコマンドで検証します。
-   ```
-   npm run check:pack -- work/envisioning/<顧客名>
-   npm run verify:pack -- work/envisioning/<顧客名>
-   ```
-4. エラーが出たら、エラーの部分だけを Copilot に貼って、その部分だけを作り直させます。
+3. アプリの「顧客パックを取り込む」画面を開き、保存したファイルをまとめて選ぶか、ドラッグ＆ドロップでアップロードします。ファイルはこの端末の中だけで読み、外へは送りません。
+4. 検証の結果が出ます。エラーが出たら、ファイル名と項目名の部分だけを Copilot に貼って、その部分だけを作り直させ、もう一度アップロードします。
 
-顧客パックは顧客の情報です。このリポジトリにコミットしないでください。
+顧客パックは顧客の情報です。共有の場所やコード管理には置かないでください。

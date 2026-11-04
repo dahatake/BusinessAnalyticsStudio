@@ -75,8 +75,7 @@ export function GettingStarted() {
           <Text size={200}>{t('この説明は、いつでもここで読めます。')}</Text>
           <section role="region" aria-label={t('顧客パック')} className={s.card} data-testid="pack-guide">
             <Title3 as="h2">{t('顧客パックとは')}</Title3>
-            <PackSection withHeading={false} />
-            <Button appearance="primary" onClick={() => usePackUploadUi.getState().show()}>{t('顧客パックを取り込む')}</Button>
+            <PackSection withHeading={false} entry={<Button appearance="primary" onClick={() => usePackUploadUi.getState().show()}>{t('顧客パックを取り込む')}</Button>} />
           </section>
         </section>
       ) : null}
