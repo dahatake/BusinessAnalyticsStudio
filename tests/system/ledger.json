@@ -12224,7 +12224,7 @@
       "layer": "data",
       "command": "node --test tests/system/integration-demo/pack-kit.test.mjs",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "f4b5bdc",
       "last_run_at": "2026-11-04T16:03:28+09:00",
       "evidence": "work/runs/202611041249/logs/system-test/IT-087-202611041603.log",
@@ -12246,6 +12246,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC-684/828/829/830 は検証レベル integration で System Test の対象外（CHK-10）。tests/system/integration-demo/pack-kit.test.mjs は implementer が integration テストとして実行する。system に引き上げるなら rd-author が検証レベルを変更"
+        },
+        {
+          "at": "2026-11-04T16:21:19+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "AC-684/828/829/830 は検証レベル integration（System Test の対象外）。tests/system/integration-demo/pack-kit.test.mjs は implementer が integration テストとして実行済み（6/6 pass）"
         }
       ],
       "serial": true
