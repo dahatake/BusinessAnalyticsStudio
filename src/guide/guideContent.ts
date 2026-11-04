@@ -59,8 +59,11 @@ export const PACK_PROMPT_M365 = [
   '1. 顧客の事業・組織・課題・取り組みを調べます。社内情報（メール・会議・Teams・SharePoint）と公開 Web を使います。',
   '2. ブランドを調べます。優先順位は ①ブランドガイドライン ②プレスキット ③公式サイト ④IR 資料 です。出典は公式のものだけにします。分からない項目は、既定のテーマにします。',
   '',
+  '# 添付の確認',
+  '添付の customer-pack-kit.md（顧客パックの schema 全 10 ファイルとお手本パックを 1 つにまとめたもの）が見当たらないときは、顧客パックを作らず、私に添付を求めてください。',
+  '',
   '# 作るファイル',
-  '次のファイルを、添付の schema/*.json に厳密に従って作ります。',
+  '次のファイルを、添付の customer-pack-kit.md にある schema に厳密に従って作ります。お手本パックは形式の参考だけにし、内容は流用しません。',
   '- public/data/: customer.json, entities.json, issues.json, products.json, plan.json, architecture.json, mocks.json, show.json, sources.json',
   '- public/brand/: brand-profile.json',
   '- data/customer-research.md（顧客調査の記録）',
@@ -123,9 +126,15 @@ export const PACK_PROMPT_GHCP = [
 ].join('\n');
 
 export const PACK_COMMANDS = {
+  clone: 'git clone https://github.com/dahatake/BusinessAnalyticsStudio.git',
+  install: 'npm install',
+  kit: 'npm run pack:kit',
   pipeline: 'npm run pipeline -- all --customer "<顧客名>" --project "<Project 名>"',
   check: 'npm run check:pack -- <フォルダー>',
   verify: 'npm run verify:pack -- <作業フォルダー>',
   build: 'npm run build',
   start: 'npm start',
 } as const;
+
+/** schema と お手本を 1 ファイルにまとめた kit の場所（npm run pack:kit が作る。M365 Copilot にはこれだけを添付する） */
+export const PACK_KIT_FILE = 'work/envisioning/_attach/customer-pack-kit.md';

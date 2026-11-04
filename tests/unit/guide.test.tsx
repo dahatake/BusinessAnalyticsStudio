@@ -14,7 +14,7 @@ import { useWorkTargetUi } from '../../src/projects/workTargetUi';
 import { GuideButton, GuideHost } from '../../src/guide';
 import { PANEL_MOTION_MS } from '../../src/guide/GettingStarted';
 import { resetGuide, useGuide } from '../../src/guide/guideStore';
-import { GUIDE_STEPS, GUIDE_TERMS, PACK_COMMANDS, PACK_PROMPT_FILE, PACK_PROMPT_FILE_GHCP, PACK_PROMPT_GHCP, PACK_PROMPT_M365, PACK_SAMPLE, PACK_URL, GUIDE_WHAT, GUIDE_WORKSPACE } from '../../src/guide/guideContent';
+import { GUIDE_STEPS, GUIDE_TERMS, PACK_COMMANDS, PACK_KIT_FILE, PACK_PROMPT_FILE, PACK_PROMPT_FILE_GHCP, PACK_PROMPT_GHCP, PACK_PROMPT_M365, PACK_SAMPLE, PACK_URL, GUIDE_WHAT, GUIDE_WORKSPACE } from '../../src/guide/guideContent';
 
 const wrap = (ui: ReactNode) => <FluentProvider theme={webLightTheme}>{ui}</FluentProvider>;
 const ROOT = process.cwd();
@@ -246,7 +246,7 @@ describe('FR-268 顧客パックの説明', () => {
     openPanel();
     const region = screen.getByRole('region', { name: '顧客パック' });
     const buttons = within(region).getAllByRole('button', { name: /コピー/ });
-    expect(buttons.length).toBe(7); // Prompt 2 つ（M365・GitHub Copilot）+ 5 コマンド（pipeline・check・verify・build・start）
+    expect(buttons.length).toBe(10); // Prompt 2 つ（M365・GitHub Copilot）+ 8 コマンド（clone・install・pack:kit・pipeline・check・verify・build・start）
     fireEvent.click(within(region).getByRole('button', { name: '形式の検査をコピー' }));
     await waitFor(() => expect(writeText).toHaveBeenCalledWith(PACK_COMMANDS.check));
     await waitFor(() => expect(within(region).getByText('コピーしました')).toBeTruthy());
@@ -277,6 +277,28 @@ describe('FR-268 顧客パックの説明', () => {
     const qs = read('users-guide/01-quick-start.md');
     expect(qs).toContain(PACK_URL);
     expect(qs).toContain('npm run build');
+  });
+
+  // FR-268 AC-829 AC-830（単体: 文面と手順が kit の運用と一致する）
+  it('FR-268 AC-829 M365 用 Prompt は kit の schema に従い、添付がなければ作らず添付を求める。入手できない添付の記述は残らない', () => {
+    expect(PACK_PROMPT_M365).toContain('customer-pack-kit.md');
+    expect(PACK_PROMPT_M365).toMatch(/見当たらないときは、顧客パックを作らず、私に添付を求めて/);
+    for (const text of [PACK_PROMPT_M365, PACK_PROMPT_GHCP, read('users-guide/01-quick-start.md'), read(PACK_PROMPT_FILE)]) {
+      expect(text).not.toMatch(/添付の\s*`?schema\/\*\.json/);
+    }
+  });
+
+  it('FR-268 AC-830 画面の説明に ①準備〜⑥画面への反映の手順・kit の場所・コピーできるコマンドがあり、scripts と一致する', () => {
+    const scripts = JSON.parse(read('package.json')).scripts as Record<string, string>;
+    expect(scripts['pack:kit']).toContain('make-pack-kit');
+    expect(PACK_KIT_FILE).toBe('work/envisioning/_attach/customer-pack-kit.md');
+    expect(PACK_COMMANDS.kit).toBe('npm run pack:kit');
+    expect(PACK_COMMANDS.install).toBe('npm install');
+    expect(existsSync(join(ROOT, 'scripts/make-pack-kit.ts'))).toBe(true);
+    render(wrap(<MainScreen />));
+    openPanel();
+    const t = screen.getByRole('region', { name: '顧客パック' }).textContent ?? '';
+    for (const s of ['準備', '方法 A', '方法 B', '方法 C', '検証', '画面への反映', PACK_KIT_FILE, 'public/data', 'public/brand', 'エラー', 'npm install', 'npm run pack:kit']) expect(t, s).toContain(s);
   });
 });
 

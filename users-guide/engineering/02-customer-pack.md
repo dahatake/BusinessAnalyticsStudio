@@ -44,9 +44,24 @@ brand/BRAND-RESEARCH.md     ブランド調査の記録
 
 > 検証で**項目だけが誤っている**場合、その項目は無効化され、ほかは表示されます（理由は `issues` に残ります）。ファイル全体が壊れている場合は、起動時にエラーになります。
 
-## 2.3 作り方
+## 2.3 作り方（方法 A〜C の全体の手順は [1. クイックスタート 13.2](../01-quick-start.md#132-顧客パックの完全な手順)）
 
-### (a) 生成パイプライン
+### (0) 準備と schema の入手
+
+```
+git clone https://github.com/dahatake/BusinessAnalyticsStudio.git
+npm install
+npm run pack:kit
+```
+
+schema の入手先は、リポジトリの `schema/`（全 10 ファイル）と、`npm run pack:kit` が作る kit（`work/envisioning/_attach/customer-pack-kit.md`。[scripts/make-pack-kit.ts](../../scripts/make-pack-kit.ts)）です。kit は schema 全 10 ファイル・`examples/mono` の JSON・調査記録 2 本を、パスの見出し付きコードブロックで省略せずに 1 ファイルへまとめます。M365 Copilot には、この 1 ファイルだけを添付します。`schema/*.json` が古い（`npm run gen:schema -- --check` で差分がある）ときは、kit を更新せず、`npm run gen:schema` を案内して失敗します。
+
+### (m) 方法 A・B: Copilot で作る
+
+- 方法 A（M365 Copilot）: kit を添付し、[docs/prompts/m365-copilot-customer-pack.md](../../docs/prompts/m365-copilot-customer-pack.md) の Prompt を貼ります。添付が見当たらないときは、作らず添付を求めます。出力は `work/envisioning/<顧客名>/` へ保存します。
+- 方法 B（GitHub Copilot ＋ WorkIQ）: [docs/prompts/github-copilot-workiq-customer-pack.md](../../docs/prompts/github-copilot-workiq-customer-pack.md) の Prompt を貼ります。schema はリポジトリから読み、検証まで行います。
+
+### (a) 方法 C: 生成パイプライン
 
 Skill `envisioning-dashboard`（`.github/skills/envisioning-dashboard/SKILL.md`）の手順を、コマンドにしたものです。
 
@@ -86,9 +101,18 @@ npm run verify:pack -- <作業フォルダー>             # 受け入れ判定�
 
 `verify:pack` の 9 項目は、スキーマ検証エラー 0 件／起動時のページエラー 0 件／Primary 色の反映と AA コントラスト／タイトルとオープニングの顧客名・Project 名／出典のない数値項目 0 件／主要画面の「サンプル」「AI 生成」の表示／P・M・Esc の動作／Markdown のエクスポートと復元／所要時間の合計、です。失敗した項目は、原因と対処が出力されます。
 
-## 2.5 アプリへ反映する
+## 2.5 アプリへ反映する（画面への反映）
 
-顧客パックは、**このリポジトリには入れません**（`public/data/` は空のまま）。配信側が重ねます。
+検証が通った顧客パックの `public/data/` と `public/brand/` の中身を、このリポジトリの `public/data/` と `public/brand/` に置き、次のコマンドで起動します（`http://127.0.0.1:4173`）。顧客の情報なので、コミットしません。
+
+```
+npm run build
+npm start
+```
+
+エラーが出たときは、`npm run check:pack` の「ファイル名・項目名」の JSON だけを直し、もう一度検証します。`verify:pack` の失敗は、出力された原因と対処に従います。`npm run pack:kit` が失敗したら（schema が古い）`npm run gen:schema` を実行します。お手本のデータが出るときは、置いたあとで `npm run build` をやり直します。
+
+配信側で重ねる方法もあります。
 
 | 方法 | 手順 |
 |---|---|
