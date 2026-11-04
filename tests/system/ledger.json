@@ -361,10 +361,12 @@
     "AC-824": "sha256:ef26ac2849ac94f5",
     "AC-825": "sha256:c8680bf7b5e61fd8",
     "AC-826": "sha256:317bce96adcc0969",
-    "AC-830": "sha256:627663d45183f39c",
+    "AC-830": "sha256:d88eb9d75e0fd837",
     "AC-684": "sha256:940f76eeb2c118aa",
-    "AC-828": "sha256:e3b0c44298fc1c14",
-    "AC-829": "sha256:140631655cabc4d4"
+    "AC-828": "sha256:1cfb47639389f6c4",
+    "AC-829": "sha256:9c1aac9df3dc188f",
+    "AC-836": "sha256:7a05e11c89458fa4",
+    "AC-834": "sha256:a0d52a438e55db0e"
   },
   "cases": [
     {
@@ -7287,13 +7289,15 @@
         "FR-268"
       ],
       "ac_ids": [
-        "AC-682"
+        "AC-682",
+        "AC-834",
+        "AC-836"
       ],
       "title": "補足パネルを開くと顧客パックの説明カードに意味・デモ・作り方 3 通り・確認コマンド・起動手順が表示される",
       "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-682",
+      "command": "node tests/system/run.mjs AC-682 AC-834 AC-836",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "f4b5bdc",
       "last_run_at": "2026-11-04T16:03:28+09:00",
       "evidence": "work/runs/202611041249/logs/system-test/E2E-363-202611041603.log",
@@ -7327,6 +7331,24 @@
           "by": "test-designer",
           "change": "command: 'node tests/system/run.mjs AC-682 AC-830' -> 'node tests/system/run.mjs AC-682'; ac_ids: ['AC-682', 'AC-830'] -> ['AC-682']",
           "reason": "AC-830 は検証レベル integration で System Test の対象外のため戻す（画面側の確認は AC-682 のテストとして残す）"
+        },
+        {
+          "at": "2026-11-04T23:29:24+09:00",
+          "by": "test-designer",
+          "change": "ac_ids: ['AC-682'] -> ['AC-836']",
+          "reason": "FR-268 AC-834/AC-836 を同じ要求・層・ファイルのケースに追加（getting-started.spec.ts）"
+        },
+        {
+          "at": "2026-11-04T23:29:32+09:00",
+          "by": "test-designer",
+          "change": "ac_ids: ['AC-836'] -> ['AC-682', 'AC-834', 'AC-836']",
+          "reason": "FR-268 AC-834/AC-836 を同じ要求・層・ファイルのケースに追加（getting-started.spec.ts）"
+        },
+        {
+          "at": "2026-11-04T23:29:41+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/run.mjs AC-682' -> 'node tests/system/run.mjs AC-682 AC-834 AC-836'",
+          "reason": "AC-834/AC-836 を実行対象に追加"
         }
       ]
     },
