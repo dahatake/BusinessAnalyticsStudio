@@ -16,7 +16,7 @@
 //  - 失敗（検証・保存）は取り込み画面内の role=alert（原因と次の行動）。
 import type { Locator, Page } from '@playwright/test';
 import fs from 'node:fs';
-import { expect } from './fixtures';
+import { expect, pressOpeningEscape } from './fixtures';
 import { PACK_FILES, type Pack } from './packs';
 
 export interface UpFile { name: string; mimeType: string; buffer: Buffer }
@@ -42,6 +42,20 @@ export function replaced(files: UpFile[], next: UpFile): UpFile[] {
   return files.map((f) => (f.name === next.name ? next : f));
 }
 
+/** オープニング付きで起動し Esc で飛ばしてメイン画面を出す（getting-started.spec.ts の startAtMain と同じ流儀）。fixtures の既定は skipOpening が true で、メイン画面は出ない */
+export async function startAtMain(page: Page, start: (o?: { skipOpening?: boolean }) => Promise<unknown>): Promise<{ reload(o?: { skipOpening?: boolean }): Promise<void> }> {
+  const app = (await start({ skipOpening: false })) as { reload(o?: { skipOpening?: boolean }): Promise<void> };
+  await pressOpeningEscape(page);
+  await expect(page.getByTestId('main-screen'), '起動直後にメイン画面が出ない').toBeVisible();
+  return app;
+}
+
+/** 再読み込みして、オープニングを Esc で飛ばしメイン画面へ戻る */
+export async function reloadAtMain(app: { reload(o?: { skipOpening?: boolean }): Promise<void> }, page: Page): Promise<void> {
+  await app.reload({ skipOpening: false });
+  await pressOpeningEscape(page);
+  await expect(page.getByTestId('main-screen'), '再読み込み後にメイン画面が出ない').toBeVisible();
+}
 /** メイン画面の「はじめての方へ」から取り込み画面を開く */
 export async function openUploadScreen(page: Page): Promise<Locator> {
   const main = page.getByTestId('main-screen');

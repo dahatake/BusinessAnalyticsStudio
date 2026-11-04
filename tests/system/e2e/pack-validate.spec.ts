@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { test, expect } from '../support/fixtures';
 import { examplePack, PACK_FILES } from '../support/packs';
-import { openUploadScreen, selectFiles, storedPacks } from '../support/pack-upload';
+import { openUploadScreen, startAtMain, reloadAtMain, selectFiles, storedPacks } from '../support/pack-upload';
 
 type Upload = { name: string; mimeType: string; buffer: Buffer };
 
@@ -34,7 +34,7 @@ test.describe('FR-303 ブラウザー内の顧客パックの検証', () => {
   test('FR-303 AC-846 AC-849 壊れた JSON は名前と位置が日本語で示され取り込めずほかの検証も続く。結果は 合否・無効になる項目・警告 に分かれ、起動して判定する項目は合否に含めない旨が出る。正常なパックは取り込める', async ({ page, start }) => {
     const pageErrors: string[] = [];
     page.on('pageerror', (e) => pageErrors.push(String(e)));
-    await start();
+    const app = await startAtMain(page, start);
     const upload = await openUploadScreen(page);
     const importBtn = upload.getByRole('button', { name: '取り込む' });
     const box = upload.getByRole('checkbox', { name: '確かめました' });

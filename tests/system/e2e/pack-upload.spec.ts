@@ -6,7 +6,7 @@ import type { Locator, Page } from '@playwright/test';
 import { test, expect } from '../support/fixtures';
 import { examplePack, makeVariant, PACK_FILES } from '../support/packs';
 import {
-  dropFiles, fileRows, findStored, importAsNew, jsonFile, openUploadScreen, packFiles, replaced, selectFiles, storageSnapshot, storedPacks, without,
+  dropFiles, fileRows, findStored, importAsNew, jsonFile, openUploadScreen, startAtMain, reloadAtMain, packFiles, replaced, selectFiles, storageSnapshot, storedPacks, without,
 } from '../support/pack-upload';
 
 const MD_CUSTOMER = { name: 'customer-research.md', mimeType: 'text/markdown', buffer: Buffer.from('# 顧客調査（合成データ）\n\n架空の調査メモ。', 'utf8') };
@@ -14,8 +14,7 @@ const MD_BRAND = { name: 'BRAND-RESEARCH.md', mimeType: 'text/markdown', buffer:
 const SIZE_TEXT = /\d[\d,.]*\s*(KB|MB|B|バイト|bytes?)/i;
 
 async function backToMain(app: { reload(o?: { skipOpening?: boolean }): Promise<void> }, page: Page): Promise<void> {
-  await app.reload();
-  await expect(page.getByTestId('main-screen')).toBeVisible();
+  await reloadAtMain(app, page);
 }
 
 function confirmDialog(page: Page): Locator {
@@ -31,7 +30,7 @@ async function importNew(page: Page, upload: Locator, names: { company: string; 
 test.describe('FR-302 顧客パックのアップロードと取り込み', () => {
   // FR-302 AC-837
   test('FR-302 AC-837 複数選択・ドラッグ＆ドロップ・キーボードだけのどれでも同じファイル群を受け付け、ファイル名・種別・サイズの一覧で示す', async ({ page, start }) => {
-    await start();
+    const app = await startAtMain(page, start);
     const upload = await openUploadScreen(page);
     const files = [...packFiles(examplePack('mono')), MD_CUSTOMER, MD_BRAND];
 
@@ -53,7 +52,7 @@ test.describe('FR-302 顧客パックのアップロードと取り込み', () =
     await expectList('複数選択');
 
     // ② ドラッグ＆ドロップ（選び直しで置き換わるので、同じ一覧になる）
-    await page.reload();
+    await reloadAtMain(app, page);
     const upload2 = await openUploadScreen(page);
     await dropFiles(upload2, files);
     const rows2 = fileRows(upload2);
@@ -61,7 +60,7 @@ test.describe('FR-302 顧客パックのアップロードと取り込み', () =
     for (const f of files) await expect(rows2.filter({ hasText: f.name }), `ドロップ: ${f.name}`).toHaveCount(1);
 
     // ③ ドロップできない環境（キーボード・支援技術）: 選択ボタンをキーボードだけで操作し、最後まで進める
-    await page.reload();
+    await reloadAtMain(app, page);
     const upload3 = await openUploadScreen(page);
     const picker = upload3.getByRole('button', { name: 'ファイルを選ぶ' });
     await picker.focus();
@@ -80,7 +79,7 @@ test.describe('FR-302 顧客パックのアップロードと取り込み', () =
 
   // FR-302 AC-839
   test('FR-302 AC-839 取り込み先は「新規 Project を作成」と「既存の Project の顧客パックを置き換える」の 2 択。置き換えは確認（Project 名・現在の顧客パックが失われること）で「置き換える」を選ぶまで実行されない', async ({ page, start }) => {
-    const app = await start();
+    const app = await startAtMain(page, start);
     const mono = examplePack('mono');
     const koto = examplePack('koto');
     // 既存の Project を、まず mono の新規取り込みで作る
@@ -124,7 +123,7 @@ test.describe('FR-302 顧客パックのアップロードと取り込み', () =
 
   // FR-302 AC-840
   test('FR-302 AC-840 検証にエラーが 1 件でもあるときは「取り込む」が押せず理由が出て、現在の顧客パック・Project・端末内の保存はバイト単位で変わらない', async ({ page, start }) => {
-    await start();
+    const app = await startAtMain(page, start);
     const upload = await openUploadScreen(page);
     const mono = examplePack('mono');
     const files = packFiles(mono);
@@ -149,7 +148,7 @@ test.describe('FR-302 顧客パックのアップロードと取り込み', () =
 
   // FR-302 AC-841
   test('FR-302 AC-841 検証と確認を通して取り込むと、新規は Project が一覧に増え、置き換えは顧客パックだけが入れ替わる。再読み込みしても残り、ほかの Project は変わらない', async ({ page, start }) => {
-    const app = await start();
+    const app = await startAtMain(page, start);
     const mono = examplePack('mono');
     const koto = examplePack('koto');
     const variant = makeVariant('mono', 'replaced', (p) => p.edit('customer', (j) => { j.name = '置換後株式会社'; j.projectName = '置換後 Project'; }));
@@ -190,7 +189,7 @@ test.describe('FR-302 顧客パックのアップロードと取り込み', () =
 
   // FR-302 AC-843
   test('FR-302 AC-843 お手本パック mono の public/data の JSON 9 個と brand-profile.json をそのまま取り込め（エラー 0 件）、取り込んだ内容は元の JSON と一致する', async ({ page, start }) => {
-    const app = await start();
+    const app = await startAtMain(page, start);
     const mono = examplePack('mono');
     const upload = await openUploadScreen(page);
     await selectFiles(upload, packFiles(mono));
@@ -198,7 +197,7 @@ test.describe('FR-302 顧客パックのアップロードと取り込み', () =
     await upload.getByRole('radio', { name: '新規 Project を作成' }).check();
     const box = upload.getByRole('checkbox', { name: '確かめました' });
     if (await box.count()) await box.check();
-    await expect(upload.getByText(/エラー\s*0\s*件/), '検証のエラーが 0 件と示されない').toBeVisible();
+    await expect(upload.getByText(/エラー\s*0\s*件/).first(), '検証のエラーが 0 件と示されない').toBeVisible();
     await expect(upload.getByRole('button', { name: '取り込む' })).toBeEnabled();
     await upload.getByRole('button', { name: '取り込む' }).click();
     await expect.poll(async () => !!findStored(await storedPacks(page), mono), { message: '取り込んだ顧客パックが mono の JSON と一致しない（値の変化・補完・互換データの追加がある）' }).toBe(true);
