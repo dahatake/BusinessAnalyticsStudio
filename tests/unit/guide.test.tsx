@@ -291,7 +291,7 @@ describe('FR-268 顧客パックの説明', () => {
   it('FR-268 AC-830 画面の説明に ①準備〜⑥画面への反映の手順・kit の場所・コピーできるコマンドがあり、scripts と一致する', () => {
     const scripts = JSON.parse(read('package.json')).scripts as Record<string, string>;
     expect(scripts['pack:kit']).toContain('make-pack-kit');
-    expect(PACK_KIT_FILE).toBe('work/envisioning/_attach/customer-pack-kit.md');
+    expect(PACK_KIT_FILE).toBe('tools/envisioning/_attach/customer-pack-kit.md');
     expect(PACK_COMMANDS.kit).toBe('npm run pack:kit');
     expect(PACK_COMMANDS.install).toBe('npm install');
     expect(existsSync(join(ROOT, 'scripts/make-pack-kit.ts'))).toBe(true);

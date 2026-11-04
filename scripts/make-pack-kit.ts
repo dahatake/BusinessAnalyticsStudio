@@ -6,7 +6,7 @@ import path from 'node:path';
 import { buildJsonSchemas } from './gen-schema';
 import { REPO_ROOT } from './lib/pack-fs';
 
-export const KIT_REL = 'work/envisioning/_attach/customer-pack-kit.md';
+export const KIT_REL = 'tools/envisioning/_attach/customer-pack-kit.md';
 const MONO_DATA = ['architecture', 'customer', 'entities', 'issues', 'mocks', 'plan', 'products', 'show', 'sources'].map((n) => `examples/mono/public/data/${n}.json`);
 const MONO_FILES = [...MONO_DATA, 'examples/mono/public/brand/brand-profile.json', 'examples/mono/data/customer-research.md', 'examples/mono/brand/BRAND-RESEARCH.md'];
 
@@ -38,7 +38,7 @@ export function buildKit(root: string = REPO_ROOT): string {
   const head = [
     '# 顧客パックの kit（schema とお手本）',
     '',
-    'このファイル 1 つを M365 Copilot のチャットに添付してください。`schema/*.json` は顧客パックの JSON が従う JSON Schema、`examples/mono/` はお手本（デモ）パックです。',
+    'このファイル 1 つを M365 Copilot のチャットに添付するか、中身を貼り付けてください。`schema/*.json` は顧客パックの JSON が従う JSON Schema、`examples/mono/` はお手本（デモ）パックです。',
     '各ファイルは「パスの見出し＋コードブロック」で、省略せず全文を載せています。`npm run pack:kit` で再生成できます。',
     '',
   ].join('\n');
