@@ -259,8 +259,10 @@ export function validateUpload(c: ClassifiedFiles): UploadValidation {
     fatal = true;
   }
 
+  // data は保存する 9 つの JSON だけ（brandProfile は全体で 1 つのブランドなので、data には含めず brand で返す）
+  const { brandProfile: _brand, ...dataOnly } = files;
   return {
     ok, errors, warnings, checks, unsourcedNumbers: content.unsourcedNumbers, disabledIds, fatal, notJudged: NOT_JUDGED_NOTE,
-    ...(ok ? { data: files as unknown as PackData, brand: files.brandProfile as BrandProfile } : {}),
+    ...(ok ? { data: dataOnly as unknown as PackData, brand: files.brandProfile as BrandProfile } : {}),
   };
 }

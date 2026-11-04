@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { Button, MessageBar, MessageBarBody, Text, Title1, makeStyles, tokens } from '@fluentui/react-components';
 import { NameDialog, UnsavedDialog } from './dialogs';
 import { WorkTargetPicker } from './WorkTargetPicker';
+import { PackUpload } from './PackUpload';
+import { usePackUploadUi } from './packUploadUi';
 import { useWorkTargetUi } from './workTargetUi';
 import type { TargetChoice } from './workTarget';
 import { useProjects, type Company } from '../store/projects';
@@ -59,6 +61,7 @@ export function MainScreen() {
   const showDemo = useSettings((x) => x.showDemoInPicker);
   const setDemoOnly = useWorkTargetUi((u) => u.setDemoOnly);
   const [modal, setModal] = useState<Modal | null>(null);
+  const uploadOpen = usePackUploadUi((u) => u.open);
   const [pickerOpen, setPickerOpen] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [pending, setPending] = useState<{ target: string | null; demo: boolean } | null>(null);
@@ -142,6 +145,7 @@ export function MainScreen() {
           </ul>
         </section>
       ))}
+      {uploadOpen ? <PackUpload /> : null}
       </div>
       <aside className={s.side} aria-label={t('補足')}><GettingStarted /></aside>
       </div>

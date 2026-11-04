@@ -5,6 +5,7 @@ import { Button, Text, Title3, makeStyles, tokens } from '@fluentui/react-compon
 import { ChevronDown16Regular, ChevronRight16Regular } from '@fluentui/react-icons';
 import { FlowSection, PackSection, StepsSection, TermsSection, WhatSection } from './GuideParts';
 import { useT } from '../i18n';
+import { usePackUploadUi } from '../projects/packUploadUi';
 
 /** 開閉のアニメーションの長さ（ms。PARAM-074 の 500ms 以内） */
 export const PANEL_MOTION_MS = 200;
@@ -75,6 +76,7 @@ export function GettingStarted() {
           <section role="region" aria-label={t('顧客パック')} className={s.card} data-testid="pack-guide">
             <Title3 as="h2">{t('顧客パックとは')}</Title3>
             <PackSection withHeading={false} />
+            <Button appearance="primary" onClick={() => usePackUploadUi.getState().show()}>{t('顧客パックを取り込む')}</Button>
           </section>
         </section>
       ) : null}
