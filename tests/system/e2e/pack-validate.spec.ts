@@ -5,8 +5,9 @@
 import type { Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
-import { test, expect, pressOpeningEscape } from '../support/fixtures';
+import { test, expect } from '../support/fixtures';
 import { examplePack, PACK_FILES } from '../support/packs';
+import { openUploadScreen, selectFiles, storedPacks } from '../support/pack-upload';
 
 type Upload = { name: string; mimeType: string; buffer: Buffer };
 
@@ -26,20 +27,6 @@ function monoFiles(overrides: Record<string, string | null> = {}): Upload[] {
   return out;
 }
 
-async function openImportScreen(page: Page, start: (o?: { skipOpening?: boolean }) => Promise<unknown>) {
-  await start({ skipOpening: false });
-  await pressOpeningEscape(page);
-  const main = page.getByTestId('main-screen');
-  await expect(main, '起動直後にメイン画面が出ない').toBeVisible();
-  await main.getByRole('button', { name: 'はじめての方へ' }).click();
-  const card = main.getByRole('region', { name: 'はじめての方へ' }).getByRole('region', { name: /顧客パック/ }).first();
-  const entry = card.getByRole('button', { name: /取り込/ }).or(card.getByRole('link', { name: /取り込/ })).first();
-  await entry.click();
-  const input = page.locator('input[type="file"]').first();
-  await expect(input, '取り込み画面（ファイルの選択）が開かない').toBeAttached();
-  return input;
-}
-
 const body = (page: Page) => page.locator('body');
 
 test.describe('FR-303 ブラウザー内の顧客パックの検証', () => {
@@ -47,11 +34,13 @@ test.describe('FR-303 ブラウザー内の顧客パックの検証', () => {
   test('FR-303 AC-846 AC-849 壊れた JSON は名前と位置が日本語で示され取り込めずほかの検証も続く。結果は 合否・無効になる項目・警告 に分かれ、起動して判定する項目は合否に含めない旨が出る。正常なパックは取り込める', async ({ page, start }) => {
     const pageErrors: string[] = [];
     page.on('pageerror', (e) => pageErrors.push(String(e)));
-    const input = await openImportScreen(page, start);
-    const importBtn = page.getByRole('button', { name: /取り込む/ }).first();
+    await start();
+    const upload = await openUploadScreen(page);
+    const importBtn = upload.getByRole('button', { name: '取り込む' });
+    const box = upload.getByRole('checkbox', { name: '確かめました' });
 
     // ── 異常系（AC-846）: 2 つの JSON が構文エラー、ほかは正常
-    await input.setInputFiles(monoFiles({
+    await selectFiles(upload, monoFiles({
       'issues.json': '{ "issues": [ { "id": "ISS-1", ',
       'plan.json': '{ "features": [ 1, 2, ',
     }));
@@ -68,7 +57,7 @@ test.describe('FR-303 ブラウザー内の顧客パックの検証', () => {
     expect(pageErrors, 'ページエラーになった').toEqual([]);
 
     // ── 正常（AC-849）: 結果が区分けされ、日本語で表示される
-    await input.setInputFiles(monoFiles());
+    await selectFiles(upload, monoFiles());
     const ok = body(page);
     await expect(ok).toContainText(/起動して(判定|確か)/);      // 起動して判定する項目は合否に含めない旨
     await expect(ok).toContainText(/合否/);
@@ -77,16 +66,30 @@ test.describe('FR-303 ブラウザー内の顧客パックの検証', () => {
     const t2 = await ok.innerText();
     for (const s of [/スキーマ/, /Primary|プライマリ/, /AA/, /出典/, /顧客名/]) expect(t2, `検査項目 ${s} の表示がない`).toMatch(s);
     expect(t2, '古い構文エラーの結果が残っている').not.toMatch(/issues\.json[^\n]*(構文|JSON として読めません)/);
-    await expect(importBtn, 'エラー 0 件のお手本パックが取り込めない').toBeEnabled();
+    // 取り込み前の確認（AC-851・855）: 「確かめました」を選ぶまで「取り込む」は押せず、選んでから取り込める
+    await upload.getByRole('radio', { name: '新規 Project を作成' }).check();
+    await expect(box).not.toBeChecked();
+    await expect(importBtn, '確かめる前に「取り込む」が押せる').toBeDisabled();
+    await box.check();
+    await expect(importBtn, 'エラー 0 件のお手本パックで、確かめたのに取り込めない').toBeEnabled();
     expect(pageErrors, 'ページエラーになった').toEqual([]);
 
     // ── 異常系（AC-849）: 顧客名が空 → 原因（ファイル名・位置・直し方）が日本語で示され、取り込めない
     const customer = JSON.parse(fs.readFileSync(examplePack('mono').file('customer'), 'utf8'));
     customer.name = '';
-    await input.setInputFiles(monoFiles({ 'customer.json': JSON.stringify(customer) }));
+    await selectFiles(upload, monoFiles({ 'customer.json': JSON.stringify(customer) }));
     await expect(body(page)).toContainText('customer.json');
     await expect(body(page)).toContainText(/顧客名|name/);
     await expect(importBtn).toBeDisabled();
+
+    // ── 正常（AC-851・855）: お手本パックを選び直し、確かめてから取り込む
+    await selectFiles(upload, monoFiles());
+    await expect(box).not.toBeChecked();
+    await expect(importBtn, '確かめる前に「取り込む」が押せる').toBeDisabled();
+    await box.check();
+    await expect(importBtn).toBeEnabled();
+    await importBtn.click();
+    await expect.poll(async () => (await storedPacks(page)).length, { message: 'お手本パックが取り込まれない' }).toBeGreaterThan(0);
     expect(pageErrors, 'ページエラーになった').toEqual([]);
   });
 });
