@@ -12,6 +12,7 @@
     "test": "vitest run",
     "relay": "tsx scripts/relay/start.ts",
     "gen:schema": "tsx scripts/gen-schema.ts",
+    "pack:kit": "tsx scripts/make-pack-kit.ts",
     "check:pack": "tsx scripts/check-pack.ts",
     "pipeline": "tsx scripts/pipeline/cli.ts",
     "verify:pack": "tsx scripts/pipeline/verify.ts",

@@ -5,7 +5,7 @@ GitHub Copilot（VS Code / CLI。WorkIQ MCP Server が使える状態）で、�
 | 観点 | M365 Copilot 版 | この版 |
 |---|---|---|
 | 出力 | コードブロックを人が保存 | エージェントがファイルを直接書く |
-| schema | 添付が必要 | `schema/*.json` をリポジトリから読む |
+| schema | 添付が必要（`npm run pack:kit` で作る kit 1 ファイル） | `schema/*.json` をリポジトリから読む |
 | 検証 | 人が実行 | `npm run check:pack` / `verify:pack` を自動実行し、エラー箇所だけ自己修正 |
 | 社内情報 | Researcher が直接 | WorkIQ（`ask` など）で取得 |
 

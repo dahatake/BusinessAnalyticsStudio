@@ -201,6 +201,24 @@ test.describe('FR-268 顧客パックの説明カード', () => {
     await expect(card.getByRole('button', { name: /コピー/ }).first()).toBeVisible();
   });
 
+  // FR-268 AC-682（AC-830 の画面側。AC-830 は integration 層のため台帳の対象外）
+  test('FR-268 AC-682 メイン画面の「はじめての方へ」／「顧客パックとは」に、①準備〜⑥画面への反映の完全な手順が、コピーできるコマンド（npm install・npm run pack:kit）と kit の場所つきで表示される', async ({ page, start }) => {
+    const { main } = await startAtMain(page, start);
+    await main.getByRole('button', { name: 'はじめての方へ' }).click();
+    const card = main.getByRole('region', { name: 'はじめての方へ' }).getByRole('region', { name: /顧客パック/ }).first();
+    await expect(card).toBeVisible();
+    const t = await card.innerText();
+    for (const s of ['準備', '方法 A', '方法 B', '方法 C', '検証', '画面への反映']) expect(t, `手順「${s}」がない`).toContain(s);
+    for (const s of ['npm install', 'npm run pack:kit', 'work/envisioning/_attach/customer-pack-kit.md', 'public/data', 'public/brand', 'npm run build', 'npm start', 'npm run check:pack', 'npm run verify:pack']) {
+      expect(t, `「${s}」の記述がない`).toContain(s);
+    }
+    // 異常系: エラーが出たときの直し方
+    expect(t, 'エラーが出たときの直し方がない').toMatch(/エラー/);
+    // コピーできる: npm install と npm run pack:kit のコピーボタンがある
+    await expect(card.getByRole('button', { name: /コピー/ }).nth(1), 'コピーボタンが足りない').toBeVisible();
+    expect(await card.getByRole('button', { name: /コピー/ }).count()).toBeGreaterThanOrEqual(7);
+  });
+
   // FR-268 AC-682（異常系: 顧客パックが空（public/data なし）でも説明が出る）
   test('FR-268 AC-682 異常系: 顧客パックがない（pack: null）状態でも、顧客パックの説明とデモで試せる旨が表示される', async ({ page, start }) => {
     const app = await start({ skipOpening: false, pack: null });
