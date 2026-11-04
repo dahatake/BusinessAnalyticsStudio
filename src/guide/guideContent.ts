@@ -60,10 +60,10 @@ export const PACK_PROMPT_M365 = [
   '2. ブランドを調べます。優先順位は ①ブランドガイドライン ②プレスキット ③公式サイト ④IR 資料 です。出典は公式のものだけにします。分からない項目は、既定のテーマにします。',
   '',
   '# 添付の確認',
-  '添付の customer-pack-kit.md（顧客パックの schema 全 10 ファイルとお手本パックを 1 つにまとめたもの）が見当たらないときは、顧客パックを作らず、私に添付を求めてください。',
+  '添付または貼り付けの customer-pack-kit.md（顧客パックの schema 全 10 ファイルとお手本パックを 1 つにまとめたもの）が見当たらないときは、顧客パックを作らず、私に添付を求めてください。',
   '',
   '# 作るファイル',
-  '次のファイルを、添付の customer-pack-kit.md にある schema に厳密に従って作ります。お手本パックは形式の参考だけにし、内容は流用しません。',
+  '次のファイルを、添付または貼り付けの customer-pack-kit.md にある schema に厳密に従って作ります。お手本パックは形式の参考だけにし、内容は流用しません。',
   '- public/data/: customer.json, entities.json, issues.json, products.json, plan.json, architecture.json, mocks.json, show.json, sources.json',
   '- public/brand/: brand-profile.json',
   '- data/customer-research.md（顧客調査の記録）',
@@ -137,4 +137,4 @@ export const PACK_COMMANDS = {
 } as const;
 
 /** schema と お手本を 1 ファイルにまとめた kit の場所（npm run pack:kit が作る。M365 Copilot にはこれだけを添付する） */
-export const PACK_KIT_FILE = 'work/envisioning/_attach/customer-pack-kit.md';
+export const PACK_KIT_FILE = 'tools/envisioning/_attach/customer-pack-kit.md';

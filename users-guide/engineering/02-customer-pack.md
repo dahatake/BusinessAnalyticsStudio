@@ -54,7 +54,7 @@ npm install
 npm run pack:kit
 ```
 
-schema の入手先は、リポジトリの `schema/`（全 10 ファイル）と、`npm run pack:kit` が作る kit（`work/envisioning/_attach/customer-pack-kit.md`。[scripts/make-pack-kit.ts](../../scripts/make-pack-kit.ts)）です。kit は schema 全 10 ファイル・`examples/mono` の JSON・調査記録 2 本を、パスの見出し付きコードブロックで省略せずに 1 ファイルへまとめます。M365 Copilot には、この 1 ファイルだけを添付します。`schema/*.json` が古い（`npm run gen:schema -- --check` で差分がある）ときは、kit を更新せず、`npm run gen:schema` を案内して失敗します。
+schema の入手先は、リポジトリの `schema/`（全 10 ファイル）と、`npm run pack:kit` が作る kit（`tools/envisioning/_attach/customer-pack-kit.md`。[scripts/make-pack-kit.ts](../../scripts/make-pack-kit.ts)）です。kit は schema 全 10 ファイル・`examples/mono` の JSON・調査記録 2 本を、パスの見出し付きコードブロックで省略せずに 1 ファイルへまとめます。M365 Copilot には、この 1 ファイルだけを添付します。`schema/*.json` が古い（`npm run gen:schema -- --check` で差分がある）ときは、kit を更新せず、`npm run gen:schema` を案内して失敗します。
 
 ### (m) 方法 A・B: Copilot で作る
 

@@ -291,7 +291,7 @@ describe('FR-268 顧客パックの説明', () => {
   it('FR-268 AC-830 画面の説明に ①準備〜⑥画面への反映の手順・kit の場所・コピーできるコマンドがあり、scripts と一致する', () => {
     const scripts = JSON.parse(read('package.json')).scripts as Record<string, string>;
     expect(scripts['pack:kit']).toContain('make-pack-kit');
-    expect(PACK_KIT_FILE).toBe('work/envisioning/_attach/customer-pack-kit.md');
+    expect(PACK_KIT_FILE).toBe('tools/envisioning/_attach/customer-pack-kit.md');
     expect(PACK_COMMANDS.kit).toBe('npm run pack:kit');
     expect(PACK_COMMANDS.install).toBe('npm install');
     expect(existsSync(join(ROOT, 'scripts/make-pack-kit.ts'))).toBe(true);
@@ -299,6 +299,36 @@ describe('FR-268 顧客パックの説明', () => {
     openPanel();
     const t = screen.getByRole('region', { name: '顧客パック' }).textContent ?? '';
     for (const s of ['準備', '方法 A', '方法 B', '方法 C', '検証', '画面への反映', PACK_KIT_FILE, 'public/data', 'public/brand', 'エラー', 'npm install', 'npm run pack:kit']) expect(t, s).toContain(s);
+  });
+  // FR-268 AC-834 AC-835 AC-836
+  it('FR-268 AC-834 AC-835 kit は折りたたみで、開くと tools の kit（buildKit() の出力）と一致する全文が出て、コピーできる', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+    const { buildKit } = await import('../../scripts/make-pack-kit');
+    const canonical = read(PACK_KIT_FILE).replace(/\r\n/g, '\n');
+    // 古いとき: 直し方（npm run pack:kit）を示して失敗する
+    expect(canonical, '画面の kit が古い。直し方: npm run pack:kit').toBe(buildKit());
+    render(wrap(<MainScreen />));
+    openPanel();
+    const region = screen.getByRole('region', { name: '顧客パック' });
+    const details = region.querySelector('details') as HTMLDetailsElement;
+    expect(details.open).toBe(false);
+    details.open = true;
+    fireEvent(details, new Event('toggle'));
+    const btn = await within(region).findByRole('button', { name: 'kitをコピー' });
+    fireEvent.click(btn);
+    await waitFor(() => expect(writeText).toHaveBeenCalled());
+    expect((writeText.mock.calls[0]![0] as string).replace(/\r\n/g, '\n')).toBe(canonical);
+    await waitFor(() => expect(within(region).getAllByText('コピーしました').length).toBeGreaterThan(0));
+  });
+
+  it('FR-268 AC-836 schema の入手先は平易な文で、担当者向けの更新手順は別の 1 行に残る', () => {
+    render(wrap(<MainScreen />));
+    openPanel();
+    const t = screen.getByRole('region', { name: '顧客パック' }).textContent ?? '';
+    expect(t).toContain('ファイルを開く必要はなく、画面からコピーして貼り付けるだけで使えます');
+    expect(t).not.toContain('リポジトリの schema/');
+    expect(t).toContain('npm run gen:schema');
   });
 });
 

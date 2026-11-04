@@ -171,6 +171,31 @@ export function CommandRow({ label, command }: { label: string; command: string 
   );
 }
 
+/** kit の全文（FR-268 AC-834）。閉じている間は読み込まず（バンドルを肥大させない）、開いたときに動的に読み込む */
+function KitViewer() {
+  const s = useStyles();
+  const t = useT();
+  const ref = useRef<HTMLElement>(null);
+  const [kit, setKit] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  const load = (open: boolean) => {
+    if (!open || kit !== null) return;
+    import('../../tools/envisioning/_attach/customer-pack-kit.md?raw').then((m) => setKit(m.default), () => setFailed(true));
+  };
+  return (
+    <details onToggle={(e) => load((e.currentTarget as HTMLDetailsElement).open)}>
+      <summary>{t('kit（顧客パックの形式の決まりとお手本）を見る')}</summary>
+      {failed ? <Text>{t('kit を読み込めませんでした。画面を再読み込みするか、担当者に npm run pack:kit の実行を依頼してください。')}</Text> : null}
+      {kit !== null ? (
+        <div className={s.cmd}>
+          <pre ref={ref as React.RefObject<HTMLPreElement>} className={`${s.code} ${s.pre} ${s.promptBox}`} tabIndex={0}>{kit}</pre>
+          <CopyButton text={kit} label="kit" codeRef={ref} />
+        </div>
+      ) : failed ? null : <Text>{t('読み込み中です…')}</Text>}
+    </details>
+  );
+}
+
 /** 顧客パックの説明（FR-268）。メイン画面の「顧客パック」region とウェルカムのカードで共有する */
 export function PackSection({ withHeading = true }: { withHeading?: boolean }) {
   const s = useStyles();
@@ -187,12 +212,14 @@ export function PackSection({ withHeading = true }: { withHeading?: boolean }) {
       <CommandRow label="リポジトリの取得" command={PACK_COMMANDS.clone} />
       <CommandRow label="インストール" command={PACK_COMMANDS.install} />
       <CommandRow label="kit の作成" command={PACK_COMMANDS.kit} />
-      <Text>{t('schema の入手先は、リポジトリの schema/ と、kit（{kit}）です。schema が古いと kit は作られません。その場合は npm run gen:schema を実行します。', { kit: PACK_KIT_FILE })}</Text>
+      <Text>{t('顧客パックの形式の決まり（schema）とお手本は、下の「kit」にまとめてあります。ファイルを開く必要はなく、画面からコピーして貼り付けるだけで使えます。')}</Text>
+      <KitViewer />
+      <Text className={s.note}>{t('担当者向け（kit の場所: {kit}）: 形式の決まりが古いときは、npm run gen:schema → npm run pack:kit の順に実行して更新します。', { kit: PACK_KIT_FILE })}</Text>
       <GuideH level={4}>作り方は 3 通り</GuideH>
       <ol className={s.list}>
         <li>
           <Text weight="semibold">{t('方法 A: M365 Copilot で作る。')}</Text>
-          <Text>{t('{kit} だけをチャットに添付し、{file} の Prompt を貼ります。添付がないときは、Prompt の指示で作らず添付を求められます。出力は work/envisioning/<顧客名>/ に、パスどおりに保存します。', { kit: PACK_KIT_FILE, file: PACK_PROMPT_FILE })}</Text>
+          <Text>{t('① M365 Copilot（または GitHub Copilot）を開く → ② 下の Prompt をコピーして貼り、【】の部分を書き換える → ③ 続けて、上の「kit」をコピーして貼る（{kit} を添付してもかまいません）。kit がないときは、Prompt の指示で作らず kit を求められます。Prompt の元は {file} です。出力は work/envisioning/<顧客名>/ に、パスどおりに保存します。', { kit: PACK_KIT_FILE, file: PACK_PROMPT_FILE })}</Text>
           <div className={s.cmd}>
             <pre ref={promptRef as React.RefObject<HTMLPreElement>} className={`${s.code} ${s.pre} ${s.promptBox}`} tabIndex={0}>{PACK_PROMPT_M365}</pre>
             <CopyButton text={PACK_PROMPT_M365} label="M365 Copilot 用 Prompt" codeRef={promptRef} />
