@@ -151,7 +151,7 @@ export function CopyButton({ text, label, codeRef }: { text: string; label: stri
     <>
       <Button size="small" aria-label={t('{label}をコピー', { label: t(label) })} onClick={() => { void copy(); }}>{t('コピー')}</Button>
       <span role="status" aria-live="polite">
-        {state === 'ok' ? t('コピーしました') : state === 'ng' ? t('コピーできませんでした（この環境では、クリップボードを使えません）。文字列を選んだ状態にしたので、Ctrl+C でコピーしてください。') : ''}
+        {state === 'ok' ? t('コピーしました') : state === 'ng' ? t('コピーできませんでした（この環境では、クリップボードを使えません）。文字列を選択した状態にしたので、Ctrl+C でコピーしてください。') : ''}
       </span>
     </>
   );
@@ -178,13 +178,15 @@ function KitViewer() {
   const ref = useRef<HTMLElement>(null);
   const [kit, setKit] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
+  const [opened, setOpened] = useState(false);
   const load = (open: boolean) => {
+    setOpened(open);
     if (!open || kit !== null) return;
     import('../../tools/envisioning/_attach/customer-pack-kit.md?raw').then((m) => setKit(m.default), () => setFailed(true));
   };
   return (
     <details onToggle={(e) => load((e.currentTarget as HTMLDetailsElement).open)}>
-      <summary>{t('kit（顧客パックの形式の決まりとお手本）を見る')}</summary>
+      <summary aria-expanded={opened}>{t('kit（顧客パックの形式の決まりとお手本）を見る')}</summary>
       {failed ? <Text>{t('kit を読み込めませんでした。画面を再読み込みするか、担当者に npm run pack:kit の実行を依頼してください。')}</Text> : null}
       {kit !== null ? (
         <div className={s.cmd}>
@@ -212,14 +214,14 @@ export function PackSection({ withHeading = true }: { withHeading?: boolean }) {
       <CommandRow label="リポジトリの取得" command={PACK_COMMANDS.clone} />
       <CommandRow label="インストール" command={PACK_COMMANDS.install} />
       <CommandRow label="kit の作成" command={PACK_COMMANDS.kit} />
-      <Text>{t('顧客パックの形式の決まり（schema）とお手本は、下の「kit」にまとめてあります。ファイルを開く必要はなく、画面からコピーして貼り付けるだけで使えます。')}</Text>
+      <Text>{t('顧客パックの書式の定義は、下の「kit」にまとまっています。ファイルを開く必要はなく、画面からコピーして Copilot に貼り付けるだけで使えます。書式が古いと kit は作られません。その場合は担当者に更新を依頼してください。')}</Text>
       <KitViewer />
-      <Text className={s.note}>{t('担当者向け（kit の場所: {kit}）: 形式の決まりが古いときは、npm run gen:schema → npm run pack:kit の順に実行して更新します。', { kit: PACK_KIT_FILE })}</Text>
+      <Text className={s.note}>{t('担当者向け（kit の場所: {kit}）: 更新は npm run gen:schema → npm run pack:kit の順に実行します。', { kit: PACK_KIT_FILE })}</Text>
       <GuideH level={4}>作り方は 3 通り</GuideH>
       <ol className={s.list}>
         <li>
           <Text weight="semibold">{t('方法 A: M365 Copilot で作る。')}</Text>
-          <Text>{t('① M365 Copilot（または GitHub Copilot）を開く → ② 下の Prompt をコピーして貼り、【】の部分を書き換える → ③ 続けて、上の「kit」をコピーして貼る（{kit} を添付してもかまいません）。kit がないときは、Prompt の指示で作らず kit を求められます。Prompt の元は {file} です。出力は work/envisioning/<顧客名>/ に、パスどおりに保存します。', { kit: PACK_KIT_FILE, file: PACK_PROMPT_FILE })}</Text>
+          <Text>{t('① M365 Copilot（または GitHub Copilot）を開く → ② 下の Prompt をコピーして貼り、【】の部分を書き換える → ③ 続けて、上の「kit」をコピーして貼る（{kit} を添付してもかまいません）。kit がないときは、Prompt の指示で作らず kit を求められます。Prompt の元は {file} です。出力は、顧客名の作業フォルダー（例: <顧客名>/）に、パスどおりに保存します。', { kit: PACK_KIT_FILE, file: PACK_PROMPT_FILE })}</Text>
           <div className={s.cmd}>
             <pre ref={promptRef as React.RefObject<HTMLPreElement>} className={`${s.code} ${s.pre} ${s.promptBox}`} tabIndex={0}>{PACK_PROMPT_M365}</pre>
             <CopyButton text={PACK_PROMPT_M365} label="M365 Copilot 用 Prompt" codeRef={promptRef} />

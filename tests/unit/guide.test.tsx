@@ -326,8 +326,9 @@ describe('FR-268 顧客パックの説明', () => {
     render(wrap(<MainScreen />));
     openPanel();
     const t = screen.getByRole('region', { name: '顧客パック' }).textContent ?? '';
-    expect(t).toContain('ファイルを開く必要はなく、画面からコピーして貼り付けるだけで使えます');
+    expect(t).toContain('書式の定義は、下の「kit」にまとまっています');
     expect(t).not.toContain('リポジトリの schema/');
+    expect(t).toMatch(/書式が古い[\s\S]{0,60}担当者[\s\S]{0,20}依頼/);
     expect(t).toContain('npm run gen:schema');
   });
 });
