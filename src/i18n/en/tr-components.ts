@@ -191,7 +191,7 @@ export default {
   '{label}をコピー': 'Copy {label}',
   'コピー': 'Copy',
   'コピーしました': 'Copied',
-  'コピーできませんでした（この環境では、クリップボードを使えません）。文字列を選んだ状態にしたので、Ctrl+C でコピーしてください。': 'Could not copy (the clipboard is not available in this environment). The text is now selected; copy it with Ctrl+C.',
+  'コピーできませんでした（この環境では、クリップボードを使えません）。文字列を選択した状態にしたので、Ctrl+C でコピーしてください。': 'Could not copy (the clipboard is not available in this environment). The text is now selected; copy it with Ctrl+C.',
   '顧客パックは、顧客ごとの課題・解決策・計画・ブランド（色・ロゴ）などをまとめたフォルダーです。': 'A customer pack is a folder that gathers each customer\'s issues, solutions, plans, brand (colors and logo), and more. ',
   '置き場所は、public/data/ と public/brand/ ほかです。': 'It lives in public/data/, public/brand/, and others.',
   '顧客パックがなくても、デモ（お手本パック {sample}/）で試せます。': 'Even without a customer pack, you can try the demo (sample pack {sample}/).',

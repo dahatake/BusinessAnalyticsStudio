@@ -403,7 +403,7 @@ ToBe に向けた課題を「議論テーマ」にして、選択肢・提言・
 
 #### Microsoft 365 Copilot 用（[docs/prompts/m365-copilot-customer-pack.md](../docs/prompts/m365-copilot-customer-pack.md)）
 
-事前に `npm run pack:kit` で作った `work/envisioning/_attach/customer-pack-kit.md`（1 ファイルだけ）をチャットに添付し、出力を `work/envisioning/<顧客名>/` に保存して `check:pack` / `verify:pack` で検証します。完全な手順は [13.2](#132-顧客パックの完全な手順) にあります。
+事前に `npm run pack:kit` で作った `tools/envisioning/_attach/customer-pack-kit.md`（1 ファイルだけ）をチャットに添付し、出力を `work/envisioning/<顧客名>/` に保存して `check:pack` / `verify:pack` で検証します。完全な手順は [13.2](#132-顧客パックの完全な手順) にあります。
 
 ````text
 あなたは、商談の分析ボード用の「顧客パック」を作る調査・編集担当です。Researcher / 仕事（Work）モードで、私がアクセスできるメール・会議・Teams・SharePoint と、公開 Web の両方を使って調べてください。
@@ -420,10 +420,10 @@ ToBe に向けた課題を「議論テーマ」にして、選択肢・提言・
 2. ブランドを調べます。優先順位は ①ブランドガイドライン ②プレスキット ③公式サイト ④IR 資料 です。出典は公式のものだけにします。分からない項目は、既定のテーマにします。
 
 # 添付の確認
-添付の customer-pack-kit.md（顧客パックの schema 全 10 ファイルとお手本パックを 1 つにまとめたもの）が見当たらないときは、顧客パックを作らず、私に添付を求めてください。
+添付または貼り付けの customer-pack-kit.md（顧客パックの schema 全 10 ファイルとお手本パックを 1 つにまとめたもの）が見当たらないときは、顧客パックを作らず、私に添付を求めてください。
 
 # 作るファイル
-次のファイルを、添付の customer-pack-kit.md にある schema に厳密に従って作ります。お手本パックは形式の参考だけにし、内容は流用しません。
+次のファイルを、添付または貼り付けの customer-pack-kit.md にある schema に厳密に従って作ります。お手本パックは形式の参考だけにし、内容は流用しません。
 - public/data/: customer.json, entities.json, issues.json, products.json, plan.json, architecture.json, mocks.json, show.json, sources.json
 - public/brand/: brand-profile.json
 - data/customer-research.md（顧客調査の記録）
@@ -491,7 +491,7 @@ OUT = work/envisioning/${CUSTOMER}/
 
 ### 13.2 顧客パックの完全な手順
 
-schema の入手先は、リポジトリの `schema/`（全 10 ファイル）と、`npm run pack:kit` が作る kit（`work/envisioning/_attach/customer-pack-kit.md`）です。kit は schema 全 10 ファイル・お手本パック（`examples/mono`）の JSON・調査記録 2 本を、パスの見出し付きコードブロックで 1 ファイルにまとめたものです。schema が古い（`npm run gen:schema -- --check` で差分がある）ときは、kit は作られず、`npm run gen:schema` を案内して失敗します。
+schema の入手先は、リポジトリの `schema/`（全 10 ファイル）と、`npm run pack:kit` が作る kit（`tools/envisioning/_attach/customer-pack-kit.md`）です。kit は schema 全 10 ファイル・お手本パック（`examples/mono`）の JSON・調査記録 2 本を、パスの見出し付きコードブロックで 1 ファイルにまとめたものです。schema が古い（`npm run gen:schema -- --check` で差分がある）ときは、kit は作られず、`npm run gen:schema` を案内して失敗します。
 
 **① 準備（最初の 1 回）**
 
@@ -503,7 +503,7 @@ npm run pack:kit
 
 **② 方法 A: Microsoft 365 Copilot で作る**
 
-1. チャットに `work/envisioning/_attach/customer-pack-kit.md` だけを添付します（追加資料があれば、あわせて添付）。
+1. チャットに `tools/envisioning/_attach/customer-pack-kit.md` だけを添付します（追加資料があれば、あわせて添付）。
 2. 13.1 の Microsoft 365 Copilot 用 Prompt の【…】を埋めて貼ります。添付が見当たらないときは、Copilot は顧客パックを作らず、添付を求めます。
 3. 出力されたコードブロックを、パスどおりに `work/envisioning/<顧客名>/` へ保存します。
 4. ⑤ の検証をします。
