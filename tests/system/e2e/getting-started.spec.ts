@@ -2,6 +2,8 @@
 // 期待値は受入基準だけから決める。画面の探し方: 「はじめての方へ」region・「使い方を見る」button・「顧客パック」region・「使い方」button・ウェルカム dialog。
 // 取り決め: ウェルカムは起動時に自動では出さない（FR-267 改訂 2026-11-03）。メイン画面の右上のアイコン（名前「使い方を見る」）から開く。
 import type { Page } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
 import { test, expect, pressOpeningEscape, chooseWorkTarget } from '../support/fixtures';
 
 async function startAtMain(page: Page, start: (o?: { skipOpening?: boolean; path?: string }) => Promise<unknown>, path?: string) {
@@ -209,7 +211,7 @@ test.describe('FR-268 顧客パックの説明カード', () => {
     await expect(card).toBeVisible();
     const t = await card.innerText();
     for (const s of ['準備', '方法 A', '方法 B', '方法 C', '検証', '画面への反映']) expect(t, `手順「${s}」がない`).toContain(s);
-    for (const s of ['npm install', 'npm run pack:kit', 'work/envisioning/_attach/customer-pack-kit.md', 'public/data', 'public/brand', 'npm run build', 'npm start', 'npm run check:pack', 'npm run verify:pack']) {
+    for (const s of ['npm install', 'npm run pack:kit', 'tools/envisioning/_attach/customer-pack-kit.md', 'public/data', 'public/brand', 'npm run build', 'npm start', 'npm run check:pack', 'npm run verify:pack']) {
       expect(t, `「${s}」の記述がない`).toContain(s);
     }
     // 異常系: エラーが出たときの直し方
@@ -230,6 +232,82 @@ test.describe('FR-268 顧客パックの説明カード', () => {
     const card = main.getByRole('region', { name: 'はじめての方へ' }).getByRole('region', { name: /顧客パック/ }).first();
     await expect(card).toBeVisible();
     await expect(card).toContainText('顧客パックがなくても');
+  });
+
+  // FR-268 AC-834（kit の折りたたみ表示・コピー・貼り付け手順。AC-835 の画面側: 画面の kit = 正本ファイル）
+  test('FR-268 AC-834 AC-835 「はじめての方へ」の顧客パックの節に kit の折りたたみ表示（既定は閉）があり、開くと kit の全文が正本ファイルと一致し、「コピー」でクリップボードに全文が入り「コピーしました」が通知される。貼り付け手順も書かれている', async ({ page, context, start }) => {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    const kit = fs.readFileSync(path.join(process.cwd(), '..', '..', 'tools', 'envisioning', '_attach', 'customer-pack-kit.md'), 'utf8').replace(/\r\n/g, '\n');
+    const { main } = await startAtMain(page, start);
+    await main.getByRole('button', { name: 'はじめての方へ' }).click();
+    const card = main.getByRole('region', { name: 'はじめての方へ' }).getByRole('region', { name: /顧客パック/ }).first();
+    await expect(card).toBeVisible();
+    const toggle = card.locator('summary, button[aria-expanded]').filter({ hasText: /kit/i }).first();
+    await expect(toggle, 'kit の折りたたみ表示がない').toBeVisible();
+    const kitBox = card.locator('details').filter({ has: toggle }).first();
+    const isDetails = (await kitBox.count()) > 0;
+    const expanded = async () => (isDetails ? await kitBox.evaluate((e) => (e as HTMLDetailsElement).open) : (await toggle.getAttribute('aria-expanded')) === 'true');
+    expect(await expanded(), '既定は閉じた状態').toBe(false);
+    // 貼り付け手順（Prompt と kit を貼る）が画面に書かれている
+    const t = await card.innerText();
+    expect(t, 'kit を貼り付ける手順がない').toMatch(/貼り付け/);
+    // 開くと kit の全文が読める。正本ファイルと一致する（AC-835）
+    await toggle.click();
+    expect(await expanded(), 'クリックで開かない').toBe(true);
+    const shown = card.locator('pre, textarea').filter({ hasText: '## schema/' }).first();
+    await expect(shown, 'kit の本文が表示されない').toBeVisible();
+    const body = (await shown.evaluate((e) => (e instanceof HTMLTextAreaElement ? e.value : (e as HTMLElement).textContent ?? ''))).replace(/\r\n/g, '\n');
+    expect(body.trim(), '画面の kit が tools の kit と一致しない').toBe(kit.trim());
+    // コピー: クリップボードに全文が入り、支援技術に「コピーしました」が伝わる
+    // kit の pre から見て、コピーボタンを含む最も近い祖先の中のボタン（M365 用 Prompt の枠は選ばない）
+    const copyBtn = shown.locator('xpath=ancestor::*[.//button[contains(normalize-space(.), "コピー")]][1]').getByRole('button', { name: /コピー/ }).first();
+    await copyBtn.click();
+    const copied = (await page.evaluate(() => navigator.clipboard.readText())).replace(/\r\n/g, '\n');
+    expect(copied.trim(), 'コピーした内容が kit の全文でない').toBe(kit.trim());
+    await expect(page.locator('[role="status"], [aria-live]').filter({ hasText: 'コピーしました' }).first(), '「コピーしました」が支援技術に伝わらない').toBeAttached();
+  });
+
+  // FR-268 AC-834（異常系: クリップボードが使えない）
+  test('FR-268 AC-834 異常系: クリップボードが使えないとき、kit の文字列は選択できる状態で示され、原因と次の行動が表示される', async ({ page, start }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'clipboard', { value: { writeText: () => Promise.reject(new Error('denied')), write: () => Promise.reject(new Error('denied')) }, configurable: true });
+      (document as unknown as { execCommand: () => boolean }).execCommand = () => false;
+    });
+    const { main } = await startAtMain(page, start);
+    await main.getByRole('button', { name: 'はじめての方へ' }).click();
+    const card = main.getByRole('region', { name: 'はじめての方へ' }).getByRole('region', { name: /顧客パック/ }).first();
+    const toggle = card.locator('summary, button[aria-expanded]').filter({ hasText: /kit/i }).first();
+    await toggle.click();
+    const shown = card.locator('pre, textarea').filter({ hasText: '## schema/' }).first();
+    await expect(shown).toBeVisible();
+    await shown.locator('xpath=ancestor::*[.//button[contains(normalize-space(.), "コピー")]][1]').getByRole('button', { name: /コピー/ }).first().click();
+    const alert = card.locator('[role="alert"], [role="status"]').filter({ hasText: /コピーできません|コピーに失敗|クリップボード/ }).first();
+    await expect(alert, '原因と次の行動が表示されない').toBeVisible();
+    await expect(alert).toContainText(/選択|手動|自分で/);
+    const sel = await shown.evaluate((e) => getComputedStyle(e).userSelect);
+    expect(sel, '文字列が選択できない').not.toBe('none');
+  });
+
+  // FR-268 AC-836（平易な表現。技術用語を主文に使わない。担当者向け更新手順は 1 行だけ別に残る）
+  test('FR-268 AC-836 「はじめての方へ」の schema の入手先は平易な表現（kit・コピーして貼り付け・担当者へ依頼）で、担当者向けの更新手順 npm run gen:schema が 1 行だけ別に残る', async ({ page, start }) => {
+    const { main } = await startAtMain(page, start);
+    await main.getByRole('button', { name: 'はじめての方へ' }).click();
+    const card = main.getByRole('region', { name: 'はじめての方へ' }).getByRole('region', { name: /顧客パック/ }).first();
+    await expect(card).toBeVisible();
+    const t = await card.innerText();
+    expect(t, '書式の定義が kit にまとまっている旨がない').toMatch(/書式の定義[\s\S]{0,40}kit/);
+    expect(t).toMatch(/コピーして[\s\S]{0,20}貼り付け/);
+    expect(t, '書式が古いとき担当者に更新を依頼する旨がない').toMatch(/書式が古い[\s\S]{0,60}担当者[\s\S]{0,20}依頼/);
+    const lines = t.split('\n').filter((l) => l.includes('npm run gen:schema'));
+    expect(lines.length, '担当者向けの更新手順（npm run gen:schema）が 1 行だけ別にあるはず').toBe(1);
+    // 入手先の主文（gen:schema の行以外で「書式の定義」を述べる文）に技術用語がない
+    const mainSentences = t.split(/[。\n]/).filter((s) => /書式の定義/.test(s) && !s.includes('npm run'));
+    expect(mainSentences.length).toBeGreaterThan(0);
+    for (const s of mainSentences) expect(s, `主文に技術用語がある: ${s}`).not.toMatch(/リポジトリ|schema|スキーマ|コマンド|npm|\.json/i);
+    // 旧パスは画面に残らない
+    // 旧 kit パスと技術表現は残らない（Prompt の出力先 work/envisioning/<顧客>/ は正当なので検査しない）
+    expect(t).not.toContain('work/envisioning/_attach');
+    expect(t).not.toMatch(/リポジトリの\s*schema/);
   });
 });
 

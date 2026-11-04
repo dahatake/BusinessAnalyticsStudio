@@ -1,4 +1,4 @@
-// FR-268 AC-684（変更分）/ AC-828 / AC-829 / AC-830（顧客パックの schema 入手・Prompt の一致・完全な手順）。
+// FR-268 AC-684（変更分）/ AC-828 / AC-829 / AC-830 / AC-835（顧客パックの schema 入手・Prompt の一致・完全な手順・画面の kit と正本の一致）。
 // 期待値は受入基準だけから決める（実装コードは、起動方法の把握にだけ使う）。
 // 実行: node --test tests/system/integration-demo/pack-kit.test.mjs
 import assert from 'node:assert/strict';
@@ -17,7 +17,8 @@ const NPM = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
 const M365_MD = 'docs/prompts/m365-copilot-customer-pack.md';
 const GHCP_MD = 'docs/prompts/github-copilot-workiq-customer-pack.md';
-const KIT_REL = 'work/envisioning/_attach/customer-pack-kit.md';
+const KIT_REL = 'tools/envisioning/_attach/customer-pack-kit.md'; // AC-828: git にコミットする正本（旧 work/envisioning/_attach）
+const OLD_KIT_REL = 'work/envisioning/_attach/customer-pack-kit.md';
 const MONO_FILES = [
   ...['architecture', 'customer', 'entities', 'issues', 'mocks', 'plan', 'products', 'show', 'sources'].map((n) => `examples/mono/public/data/${n}.json`),
   'examples/mono/public/brand/brand-profile.json',
@@ -51,12 +52,13 @@ function npmScriptsUsed(text) {
 test('FR-268 AC-828 npm run pack:kit は kit を 1 つ作り、schema 全 10 ファイル・mono の JSON・調査記録 2 本を省略せず含む', () => {
   assert.ok(pkg.scripts['pack:kit'], 'package.json の scripts に pack:kit がない');
   const kitPath = path.join(root, KIT_REL);
-  fs.rmSync(path.dirname(kitPath), { recursive: true, force: true });
+  fs.rmSync(kitPath, { force: true }); // 正本は git 管理のため、ディレクトリごとは消さない
   const r = spawnSync(NPM, ['run', 'pack:kit'], { cwd: root, encoding: 'utf8', shell: process.platform === 'win32' });
   assert.equal(r.status, 0, `pack:kit が失敗: ${r.stdout}${r.stderr}`);
   assert.ok(fs.existsSync(kitPath), `${KIT_REL} が作られていない`);
   const kitFiles = fs.readdirSync(path.dirname(kitPath));
   assert.deepEqual(kitFiles, ['customer-pack-kit.md'], '_attach の下は kit 1 ファイルだけ（M365 には 1 ファイルだけ添付する）');
+  assert.ok(!exists(...OLD_KIT_REL.split('/')), `旧パス ${OLD_KIT_REL} に kit が作られている（tools/ へ移動したはず）`);
   const kit = fs.readFileSync(kitPath, 'utf8').replace(/\r\n/g, '\n');
   const schemas = schemaFiles();
   assert.equal(schemas.length, 10, `schema/*.json は 10 ファイルのはず: ${schemas.length}`);
@@ -135,6 +137,8 @@ test('FR-268 AC-829 Prompt 本文は 4 か所（docs/prompts・guideContent.ts�
   // M365 用: kit に従う・添付がないときは作らず添付を求める
   assert.ok(m365Md.includes('customer-pack-kit.md'), 'M365 用 Prompt に customer-pack-kit.md の記述がない');
   assert.match(m365Md, /customer-pack-kit\.md[^\n]*schema|schema[^\n]*customer-pack-kit\.md/, '「添付の customer-pack-kit.md の schema に従う」旨がない');
+  assert.match(m365Md, /添付または貼り付け/, '「添付または貼り付けの customer-pack-kit.md」の記述がない');
+  assert.ok(m365Md.includes('見当たらないときは、顧客パックを作らず、私に添付を求めてください'), '「見当たらないときは、顧客パックを作らず、私に添付を求めてください」の文言が維持されていない');
   assert.match(m365Md, /(見当たら|ない|なければ|ないとき)[\s\S]{0,80}(作らず|作成せず|作りません|作らない)[\s\S]{0,80}添付を(求め|お願い|依頼)|添付を(求め|お願い|依頼)[\s\S]{0,80}(作らず|作成せず|作りません)/, '添付が見当たらないときは作らず添付を求める旨がない');
 });
 
@@ -185,8 +189,8 @@ test('FR-268 AC-830 users-guide（01-quick-start.md・engineering/02-customer-pa
   };
   const must = [
     ['準備', /準備/], ['方法 A', /方法\s*A/], ['方法 B', /方法\s*B/], ['方法 C', /方法\s*C/], ['検証', /検証/], ['画面への反映', /画面への反映|画面に反映|アプリへ反映/],
-    ['npm install', /npm install/], ['npm run pack:kit', /npm run pack:kit/], ['kit の場所', /work\/envisioning\/_attach\/customer-pack-kit\.md/],
-    ['保存先', /work\/envisioning\//], ['check:pack', /npm run check:pack/], ['verify:pack', /npm run verify:pack/],
+    ['npm install', /npm install/], ['npm run pack:kit', /npm run pack:kit/], ['kit の場所',     /tools\/envisioning\/_attach\/customer-pack-kit\.md/],
+        ['保存先', /tools\/envisioning\//], ['check:pack', /npm run check:pack/], ['verify:pack', /npm run verify:pack/],
     ['public/data', /public\/data/], ['public/brand', /public\/brand/], ['npm run build', /npm run build/], ['npm start', /npm start/],
     ['エラー時の直し方', /エラー/],
   ];
@@ -203,4 +207,27 @@ test('FR-268 AC-830 users-guide（01-quick-start.md・engineering/02-customer-pa
   for (const c of ['npm install', 'npm run pack:kit', 'customer-pack-kit.md', 'public/data', 'public/brand', 'npm run build', 'npm start']) {
     assert.ok(guide.includes(c), `メイン画面の文面（guideContent.ts / GuideParts.tsx）に「${c}」がない`);
   }
+  assert.ok(guide.includes('tools/envisioning/_attach/customer-pack-kit.md') || !/work\/envisioning/.test(guide), '画面の文面に旧パス work/envisioning が残っている');
+  for (const [name, t] of Object.entries(docs)) assert.doesNotMatch(t, /work\/envisioning\/_attach/, `${name} に旧パス work/envisioning/_attach が残っている`);
+});
+
+// ---------------------------------------------------------------- AC-835
+test('FR-268 AC-835 正本の kit（tools/envisioning/_attach）は npm run pack:kit の出力と一致し、画面向けの kit のコピーが別にあっても正本と同じ内容である', () => {
+  assert.ok(exists(...KIT_REL.split('/')), `正本 ${KIT_REL} がない（git にコミットする）`);
+  const canonical = read(...KIT_REL.split('/'));
+  const r = spawnSync(NPM, ['run', 'pack:kit'], { cwd: root, encoding: 'utf8', shell: process.platform === 'win32' });
+  assert.equal(r.status, 0, `pack:kit が失敗: ${r.stdout}${r.stderr}`);
+  assert.equal(read(...KIT_REL.split('/')), canonical, 'pack:kit の出力が、コミット済みの正本と違う（古い）。直し方: npm run pack:kit');
+  // 画面が提供する kit（src・public・dist 配下に同名のコピーがあれば）も正本と一致する
+  const copies = [];
+  const walk = (dir) => {
+    if (!fs.existsSync(dir)) return;
+    for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+      const p = path.join(dir, e.name);
+      if (e.isDirectory()) walk(p);
+      else if (/customer-pack-kit/.test(e.name)) copies.push(p);
+    }
+  };
+  for (const d of ['src', 'public']) walk(path.join(root, d));
+  for (const p of copies) assert.equal(fs.readFileSync(p, 'utf8').replace(/\r\n/g, '\n'), canonical, `画面用の kit ${path.relative(root, p)} が正本と違う。直し方: npm run pack:kit`);
 });

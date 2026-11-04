@@ -4,7 +4,7 @@ Microsoft 365 Copilot（Researcher / Work モード）に、顧客とブラン�
 
 ## 事前準備
 
-1. `npm run pack:kit` を実行し、できた `work/envisioning/_attach/customer-pack-kit.md`（schema 全 10 ファイルとお手本パックを 1 つにまとめたもの）を、Copilot のチャットに添付します。このファイル 1 つだけを添付します。
+1. `npm run pack:kit` を実行し、アプリの画面（「はじめての方へ」の顧客パックの節）の kit の「コピー」ボタンで kit をコピーし、Copilot のチャットに貼り付けます（ファイルを開く必要はありません。`tools/envisioning/_attach/customer-pack-kit.md` を添付してもかまいません）。kit は schema 全 10 ファイルとお手本パックを 1 つにまとめたものです。
 2. 追加資料（提案書、議事録、IR 資料など）があれば、あわせて添付します。
 3. 下の Prompt の【…】を埋めます。
 
@@ -25,10 +25,10 @@ Microsoft 365 Copilot（Researcher / Work モード）に、顧客とブラン�
 2. ブランドを調べます。優先順位は ①ブランドガイドライン ②プレスキット ③公式サイト ④IR 資料 です。出典は公式のものだけにします。分からない項目は、既定のテーマにします。
 
 # 添付の確認
-添付の customer-pack-kit.md（顧客パックの schema 全 10 ファイルとお手本パックを 1 つにまとめたもの）が見当たらないときは、顧客パックを作らず、私に添付を求めてください。
+添付または貼り付けの customer-pack-kit.md（顧客パックの schema 全 10 ファイルとお手本パックを 1 つにまとめたもの）が見当たらないときは、顧客パックを作らず、私に添付を求めてください。
 
 # 作るファイル
-次のファイルを、添付の customer-pack-kit.md にある schema に厳密に従って作ります。お手本パックは形式の参考だけにし、内容は流用しません。
+次のファイルを、添付または貼り付けの customer-pack-kit.md にある schema に厳密に従って作ります。お手本パックは形式の参考だけにし、内容は流用しません。
 - public/data/: customer.json, entities.json, issues.json, products.json, plan.json, architecture.json, mocks.json, show.json, sources.json
 - public/brand/: brand-profile.json
 - data/customer-research.md（顧客調査の記録）
