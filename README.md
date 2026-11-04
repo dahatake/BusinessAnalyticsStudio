@@ -199,12 +199,24 @@ data/customer-research.md   顧客調査の記録
 brand/BRAND-RESEARCH.md     ブランド調査の記録
 ```
 
+### 画面だけで作って取り込む（利用者向け）
+
+利用者は、画面だけで次の ①〜⑤ を行えます。
+
+1. Prompt と kit をコピーする: メイン画面の「はじめての方へ」の「顧客パックとは」で、Prompt と kit の「コピー」を押します。
+2. Microsoft 365 Copilot か、GitHub Copilot ＋ WorkIQ に、kit と Prompt を貼って、顧客パックのファイル（customer.json など 9 個と brand-profile.json）を作ります。Prompt の元は [docs/prompts/m365-copilot-customer-pack.md](docs/prompts/m365-copilot-customer-pack.md) です。
+3. 「顧客パックを取り込む」で、ファイルを複数選択するか、ドラッグ＆ドロップでアップロードして取り込みます。
+4. 検証の結果を読みます。エラーが出たら、そのファイル名・項目名の部分だけを Copilot に直させ、もう一度アップロードします。
+5. 取り込む前に、出典の機密区分・ロゴの状態・個人情報を人が確かめます。
+
+### 担当者向け: 作り方 3 通りとコマンド
+
 作り方は 3 通りです。
 
 - **Microsoft 365 Copilot で作る（最もお勧め）**: 社内の情報（メール・会議・Teams・SharePoint）と Web を出典つきで使え、機密区分も付けられるためです。手順は次のとおりです。
   1. [docs/prompts/m365-copilot-customer-pack.md](docs/prompts/m365-copilot-customer-pack.md) の Prompt を貼ります。
-  2. `npm run pack:kit` で作った `tools/envisioning/_attach/customer-pack-kit.md`（schema とお手本を 1 つにまとめた kit）だけを添付します。
-  3. 出力を作業フォルダー（`work/envisioning/<顧客名>/`）に保存します。
+  2. `npm run pack:kit` で作った `tools/envisioning/_attach/customer-pack-kit.md`（schema とお手本を 1 つにまとめた kit）だけを添付します（画面の kit のコピーを貼ってもかまいません）。
+  3. 出力を、ファイル名で作業フォルダー（`work/envisioning/<顧客名>/`）に保存します（利用者は、画面からアップロードします）。
   4. `check:pack` / `verify:pack` で検証します。
 - **GitHub Copilot（WorkIQ が使える状態）で作る**: [docs/prompts/github-copilot-workiq-customer-pack.md](docs/prompts/github-copilot-workiq-customer-pack.md) の Prompt の先頭の変数（顧客名・Project 名など）を書き換えて貼ると、ファイルの作成と検証までエージェントが行います。
 - **生成パイプライン（Skill `envisioning-dashboard`）**: リポジトリのルートで、顧客名を指定して実行します。調査 → 雛形の複製 → 顧客パックの生成 → スキーマ検証 → verify → 起動を、順に行います。

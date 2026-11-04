@@ -46,7 +46,17 @@ brand/BRAND-RESEARCH.md     ブランド調査の記録
 
 ## 2.3 作り方（方法 A〜C の全体の手順は [1. クイックスタート 13.2](../01-quick-start.md#132-顧客パックの完全な手順)）
 
-### (0) 準備と schema の入手
+### 利用者向け: 画面でファイルを作ってアップロードする
+
+利用者は、画面だけで次の ①〜⑤ を行えます。
+
+1. Prompt と kit をコピーする: メイン画面の「はじめての方へ」の「顧客パックとは」カードで、Prompt と kit の「コピー」を押します。
+2. Copilot に貼ってファイルを作る: Microsoft 365 Copilot（方法 A）か、GitHub Copilot ＋ WorkIQ（方法 B）に貼って、顧客パックのファイル（customer.json など 9 個と brand-profile.json）を作ります。
+3. 画面からアップロードして取り込む: 「顧客パックを取り込む」で、ファイルを複数選択するか、ドラッグ＆ドロップで入れます。
+4. 検証の結果を読み、エラーが出たら、そのファイル名・項目名の部分だけを Copilot に直させ、もう一度アップロードします。
+5. 取り込む前に、出典の機密区分・ロゴの状態・個人情報を人が確かめます。
+
+### (0) 担当者向け: 準備と schema の入手
 
 ```
 git clone https://github.com/dahatake/BusinessAnalyticsStudio.git
@@ -56,10 +66,10 @@ npm run pack:kit
 
 schema の入手先は、リポジトリの `schema/`（全 10 ファイル）と、`npm run pack:kit` が作る kit（`tools/envisioning/_attach/customer-pack-kit.md`。[scripts/make-pack-kit.ts](../../scripts/make-pack-kit.ts)）です。kit は schema 全 10 ファイル・`examples/mono` の JSON・調査記録 2 本を、パスの見出し付きコードブロックで省略せずに 1 ファイルへまとめます。M365 Copilot には、この 1 ファイルだけを添付します。`schema/*.json` が古い（`npm run gen:schema -- --check` で差分がある）ときは、kit を更新せず、`npm run gen:schema` を案内して失敗します。
 
-### (m) 方法 A・B: Copilot で作る
+### (m) 担当者向け: 方法 A・B を作業フォルダーで行う場合
 
-- 方法 A（M365 Copilot）: kit を添付し、[docs/prompts/m365-copilot-customer-pack.md](../../docs/prompts/m365-copilot-customer-pack.md) の Prompt を貼ります。添付が見当たらないときは、作らず添付を求めます。出力は `work/envisioning/<顧客名>/` へ保存します。
-- 方法 B（GitHub Copilot ＋ WorkIQ）: [docs/prompts/github-copilot-workiq-customer-pack.md](../../docs/prompts/github-copilot-workiq-customer-pack.md) の Prompt を貼ります。schema はリポジトリから読み、検証まで行います。
+- 方法 A（M365 Copilot）: kit を添付し、[docs/prompts/m365-copilot-customer-pack.md](../../docs/prompts/m365-copilot-customer-pack.md) の Prompt を貼ります。添付が見当たらないときは、作らず添付を求めます。出力は、ファイル名で `work/envisioning/<顧客名>/` へ保存し、次節の検証をします。
+- 方法 B（GitHub Copilot ＋ WorkIQ）: [docs/prompts/github-copilot-workiq-customer-pack.md](../../docs/prompts/github-copilot-workiq-customer-pack.md) の Prompt を貼ります。kit の schema に従ってファイルを作り、自己点検まで行います。利用者は、作ったファイルを画面からアップロードします。
 
 ### (a) 方法 C: 生成パイプライン
 
@@ -102,6 +112,8 @@ npm run verify:pack -- <作業フォルダー>             # 受け入れ判定�
 `verify:pack` の 9 項目は、スキーマ検証エラー 0 件／起動時のページエラー 0 件／Primary 色の反映と AA コントラスト／タイトルとオープニングの顧客名・Project 名／出典のない数値項目 0 件／主要画面の「サンプル」「AI 生成」の表示／P・M・Esc の動作／Markdown のエクスポートと復元／所要時間の合計、です。失敗した項目は、原因と対処が出力されます。
 
 ## 2.5 アプリへ反映する（画面への反映）
+
+利用者は、「顧客パックを取り込む」から、作ったファイルを画面でアップロードして取り込みます。次は担当者向けで、検証が通った顧客パックをリポジトリに直接置く場合の手順です。
 
 検証が通った顧客パックの `public/data/` と `public/brand/` の中身を、このリポジトリの `public/data/` と `public/brand/` に置き、次のコマンドで起動します（`http://127.0.0.1:4173`）。顧客の情報なので、コミットしません。
 

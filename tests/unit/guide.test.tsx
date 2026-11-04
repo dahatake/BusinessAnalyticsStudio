@@ -279,6 +279,29 @@ describe('FR-268 顧客パックの説明', () => {
     expect(qs).toContain('npm run build');
   });
 
+  // FR-268 AC-830 AC-856（依頼 2026-11-05: 利用者向けの主文は画面だけで完結し、npm・リポジトリ・作業フォルダーを前提にしない）
+  it('FR-268 AC-682 AC-830 AC-856 主文（担当者向けより前）に npm・リポジトリ・作業フォルダーが出ず、①〜⑤ の手順と取り込みの入口があり、担当者向けにだけコマンドがある', () => {
+    render(wrap(<MainScreen />));
+    openPanel();
+    const region = screen.getByRole('region', { name: '顧客パック' });
+    const t = region.textContent ?? '';
+    const i = t.indexOf('担当者向け');
+    expect(i).toBeGreaterThan(0);
+    const head = t.slice(0, i), tail = t.slice(i);
+    expect(head).not.toMatch(/npm/i);
+    expect(head).not.toContain('リポジトリ');
+    expect(head).not.toMatch(/作業フォルダー|work\/envisioning/);
+    for (const s of ['コピー', 'M365 Copilot', 'GitHub Copilot', 'アップロード', '複数選択', 'ドラッグ', '検証の結果', '取り込む前に']) expect(head, s).toContain(s);
+    for (const s of ['npm install', 'npm run pack:kit', 'npm run pipeline', 'npm run check:pack', 'npm run verify:pack']) expect(tail, s).toContain(s);
+    // Prompt 本文は、アップロードするファイル名で示し、保存先のパスと npm を含まない
+    for (const p of [PACK_PROMPT_M365, PACK_PROMPT_GHCP]) {
+      expect(p).not.toMatch(/npm|work\/envisioning|public\/data\/|public\/brand\//);
+      for (const f of ['customer.json', 'brand-profile.json']) expect(p).toContain(f);
+    }
+    // 入口は 1 つだけ（重複させない）
+    expect(within(region).getAllByRole('button', { name: /取り込/ }).length).toBe(1);
+  });
+
   // FR-268 AC-829 AC-830（単体: 文面と手順が kit の運用と一致する）
   it('FR-268 AC-829 M365 用 Prompt は kit の schema に従い、添付がなければ作らず添付を求める。入手できない添付の記述は残らない', () => {
     expect(PACK_PROMPT_M365).toContain('customer-pack-kit.md');
