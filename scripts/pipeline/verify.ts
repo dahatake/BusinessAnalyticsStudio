@@ -9,8 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 import { UNCLASSIFIED_LABEL, countUnclassified, formatPackError, type PackError } from '../../src/schema';
-import { contrastRatio, isHexColor } from '../../src/theme/brand';
-import { buildBrandTheme } from '../../src/theme/brandTheme';
+import { judgePrimary, splitPackErrors, type Finding } from '../../src/packImport/judge';
 import { validateGeneratedPackDir, validatePackDir } from '../lib/pack-fs';
 import { PARAMS } from './common';
 import { startStaticServer } from './launch';
@@ -32,12 +31,7 @@ export type VerifyItemId = (typeof VERIFY_ITEMS)[number]['id'];
 export type BrowserItemId = 'page-errors' | 'primary' | 'names' | 'labels' | 'keys' | 'markdown';
 export const BROWSER_ITEMS: readonly BrowserItemId[] = ['page-errors', 'primary', 'names', 'labels', 'keys', 'markdown'];
 
-export interface Finding {
-  ok: boolean;
-  detail: string;
-  /** 失敗したときの対処 */
-  remedy?: string;
-}
+export type { Finding };
 
 /** ブラウザーの検査に渡す、判定の基準（顧客パックのファイルから求めたもの） */
 export interface SmokeContext {
@@ -114,45 +108,6 @@ function hasSampleItems(v: unknown): boolean {
   return o['createdBy'] === 'sample' || Object.values(o).some(hasSampleItems);
 }
 
-interface PrimaryJudgement { effective: string; finding: Finding; warnings: string[] }
-
-/** Primary 色: FR-060 の補正後の実効色が AA（白い文字との比 4.5 以上）を満たすかで合否を決め、元の値の不足は警告にする（A-18） */
-function judgePrimary(brand: unknown): PrimaryJudgement {
-  const primary = ((brand as { colors?: { primary?: unknown } } | undefined)?.colors?.primary) as string | undefined;
-  if (typeof primary !== 'string' || !isHexColor(primary)) {
-    return {
-      effective: '', warnings: [],
-      finding: { ok: false, detail: `Primary 色（public/brand/brand-profile.json の colors.primary）が色として読めません: ${String(primary)}`, remedy: 'colors.primary を #RRGGBB の形の色にしてください。' },
-    };
-  }
-  const warnings: string[] = [];
-  const problems: string[] = [];
-  let effectiveLight = '';
-  const parts: string[] = [];
-  for (const mode of ['light', 'dark'] as const) {
-    const t = buildBrandTheme(mode, primary);
-    const onBrand = (t.theme as unknown as Record<string, string>)['colorNeutralForegroundOnBrand']!;
-    const before = contrastRatio(primary, onBrand);
-    const after = contrastRatio(t.effectivePrimary, onBrand);
-    if (mode === 'light') effectiveLight = t.effectivePrimary;
-    const label = mode === 'light' ? 'ライト' : 'ダーク';
-    parts.push(`${label}: ${t.effectivePrimary}（比 ${after.toFixed(2)}）`);
-    if (after < 4.5) problems.push(`${label}テストの補正後の実効色 ${t.effectivePrimary} でも、文字との比が ${after.toFixed(2)} で AA（4.5）を満たしません`);
-    if (t.effectivePrimary.toUpperCase() !== primary.toUpperCase()) {
-      warnings.push(
-        `Primary 色の元の値 ${primary.toUpperCase()} は文字との比が ${before.toFixed(2)} で AA（4.5）を満たしません。` +
-        `${label}テストでは補正後の ${t.effectivePrimary}（比 ${after.toFixed(2)}）で表示します。`,
-      );
-    }
-  }
-  return {
-    effective: effectiveLight, warnings,
-    finding: problems.length
-      ? { ok: false, detail: problems.join(' / '), remedy: 'Primary 色を、白い文字との比が 4.5 以上になる色（明度を下げた色）にしてください。' }
-      : { ok: true, detail: `補正後の実効色は AA を満たしています（${parts.join('、')}）` },
-  };
-}
-
 const failAll = (reason: string, remedy: string): Record<BrowserItemId, Finding> =>
   Object.fromEntries(BROWSER_ITEMS.map((id) => [id, { ok: false, detail: reason, remedy }])) as Record<BrowserItemId, Finding>;
 
@@ -164,12 +119,8 @@ export async function verifyPack(opts: VerifyOptions): Promise<VerifyResult> {
   const { workDir } = opts;
 
   const validation = opts.requireClassified ? validateGeneratedPackDir(workDir) : validatePackDir(workDir);
-  const sourceErrors = validation.errors.filter((e) => e.code === 'missing-source');
-  // 数値項目の sourceIds がないことは、スキーマ違反としても報告される。同じ原因は、出典の項目（5）にだけ数える
-  const missingAt = new Set(sourceErrors.map((e) => `${e.file}\u0000${e.path}`));
-  const isSourceSchemaError = (e: PackError): boolean =>
-    e.code === 'schema' && /(^|\.)sourceIds(\[\d+\])?$/.test(e.path) && missingAt.has(`${e.file}\u0000${e.path.replace(/\.?sourceIds(\[\d+\])?$/, '')}`);
-  const schemaErrors = validation.errors.filter((e) => e.code !== 'missing-source' && !isSourceSchemaError(e));
+  // 数値項目の sourceIds がないことは、スキーマ違反としても報告される。同じ原因は、出典の項目（5）にだけ数える（src/packImport/judge.ts。ブラウザー内の検証 FR-303 と共通）
+  const { schemaErrors, sourceErrors } = splitPackErrors(validation.errors);
   const customerJson = readJson(path.join(workDir, 'public', 'data', 'customer.json')) as { name?: string; projectName?: string } | undefined;
   const brandJson = readJson(path.join(workDir, 'public', 'brand', 'brand-profile.json'));
   const customer = opts.customer ?? customerJson?.name ?? '';
