@@ -284,7 +284,7 @@
     "AC-601": "sha256:6cd0c890d1d0fb1d",
     "AC-675": "sha256:cc151bdef56542b1",
     "AC-678": "sha256:eee90e767312a030",
-    "AC-682": "sha256:9b334d3431b9b232",
+    "AC-682": "sha256:8aa727418d115ae7",
     "AC-685": "sha256:c9df7610f9e4b193",
     "AC-687": "sha256:ef4b678cca783521",
     "AC-690": "sha256:ae060af5d4a4546c",
@@ -361,12 +361,15 @@
     "AC-824": "sha256:ef26ac2849ac94f5",
     "AC-825": "sha256:c8680bf7b5e61fd8",
     "AC-826": "sha256:317bce96adcc0969",
-    "AC-830": "sha256:d88eb9d75e0fd837",
-    "AC-684": "sha256:940f76eeb2c118aa",
+    "AC-830": "sha256:ccd6756cc039bbfc",
+    "AC-684": "sha256:5e93290bad62e712",
     "AC-828": "sha256:1cfb47639389f6c4",
     "AC-829": "sha256:9c1aac9df3dc188f",
-    "AC-836": "sha256:7a05e11c89458fa4",
-    "AC-834": "sha256:a0d52a438e55db0e"
+    "AC-836": "sha256:1d0ecc4cd4049619",
+    "AC-834": "sha256:a0d52a438e55db0e",
+    "AC-856": "sha256:c994597b0029ba78",
+    "AC-849": "sha256:4ccbfce283807192",
+    "AC-846": "sha256:530289616ad6966c"
   },
   "cases": [
     {
@@ -7291,13 +7294,14 @@
       "ac_ids": [
         "AC-682",
         "AC-834",
-        "AC-836"
+        "AC-836",
+        "AC-856"
       ],
       "title": "補足パネルを開くと顧客パックの説明カードに意味・デモ・作り方 3 通り・確認コマンド・起動手順が表示される",
       "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-682 AC-834 AC-836",
+      "command": "node tests/system/run.mjs AC-682 AC-834 AC-836 AC-856",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "46f9db7",
       "last_run_at": "2026-11-05T00:00:31+09:00",
       "evidence": "work/runs/202611042322/logs/system-test/E2E-363-202611050000.log",
@@ -7349,6 +7353,18 @@
           "by": "test-designer",
           "change": "command: 'node tests/system/run.mjs AC-682' -> 'node tests/system/run.mjs AC-682 AC-834 AC-836'",
           "reason": "AC-834/AC-836 を実行対象に追加"
+        },
+        {
+          "at": "2026-11-05T05:24:23+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/run.mjs AC-682 AC-834 AC-836' -> 'node tests/system/run.mjs AC-682 AC-834 AC-836 AC-856'; ac_ids: ['AC-682', 'AC-834', 'AC-836'] -> ['AC-856']",
+          "reason": "FR-268 変更（依頼 2026-11-05）: AC-682 を画面だけで完結する作り方に直し、AC-856（取り込み画面への入口）を追加"
+        },
+        {
+          "at": "2026-11-05T05:24:36+09:00",
+          "by": "test-designer",
+          "change": "ac_ids: ['AC-856'] -> ['AC-682', 'AC-834', 'AC-836', 'AC-856']",
+          "reason": "ac_ids を 4 件に直す（--ac は最後の 1 件だけ残ったため）"
         }
       ]
     },
@@ -12277,6 +12293,38 @@
         }
       ],
       "serial": true
+    },
+    {
+      "id": "E2E-465",
+      "requirement_ids": [
+        "FR-303"
+      ],
+      "ac_ids": [
+        "AC-846",
+        "AC-849"
+      ],
+      "title": "壊れた JSON は名前と位置が日本語で示され取り込めず、結果は合否・無効項目・警告に分かれ、正常なパックは取り込める",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-846 AC-849",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-11-05T05:24:27+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "FR-303 system の AC（integration の AC-845・847・848・850 は対象外）"
+        },
+        {
+          "at": "2026-11-05T05:24:37+09:00",
+          "by": "test-designer",
+          "change": "ac_ids: ['AC-849'] -> ['AC-846', 'AC-849']",
+          "reason": "ac_ids を 2 件に直す"
+        }
+      ]
     }
   ]
 }

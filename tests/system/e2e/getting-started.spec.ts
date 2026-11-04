@@ -21,6 +21,20 @@ function expectShortSentences(text: string, where: string) {
   for (const s of sentences) expect(s.length, `${where} の文が 60 字を超える: ${s}`).toBeLessThanOrEqual(60);
 }
 
+/** カード本文を、最初の「担当者向け」の見出し／注記で、利用者向けの主文（head）と担当者向け（tail）に分ける。 */
+function splitStaffNote(text: string): { head: string; tail: string } {
+  const i = text.indexOf('担当者向け');
+  expect(i, '「担当者向け」の注記・節がない').toBeGreaterThanOrEqual(0);
+  return { head: text.slice(0, i), tail: text.slice(i) };
+}
+
+/** 利用者向けの文に出てはいけない語（依頼 2026-11-05: 画面だけで完結し、npm・リポジトリ・作業フォルダーを前提にしない）。 */
+function expectNoDeveloperTerms(text: string, where: string) {
+  expect(text, `${where}に npm が出る`).not.toMatch(/npm/i);
+  expect(text, `${where}にリポジトリが出る`).not.toMatch(/リポジトリ/);
+  expect(text, `${where}に作業フォルダーが出る`).not.toMatch(/作業フォルダー|work\/envisioning/);
+}
+
 test.describe('FR-266 「はじめての方へ」', () => {
   // FR-266 AC-675
   test('FR-266 AC-675 AC-820 AC-821 「はじめての方へ」は既定で閉じ、開閉ボタンは常に見えて aria-expanded が変わり Enter・Space で開閉できる。開くと、できること・用語・4 手順が表示され各文は 60 字以内。開閉は 500ms 以内の動きで、動きの軽減では即時。幅 320 では本文の下へ回る', async ({ page, start }) => {
@@ -182,7 +196,7 @@ test.describe('FR-267 ウェルカムのウィザードの起動アイコン', (
 
 test.describe('FR-268 顧客パックの説明カード', () => {
   // FR-268 AC-682
-  test('FR-268 AC-682 メイン画面の「顧客パック」の説明に、意味・デモで試せること・作り方 3 通り・確認コマンド 2 つ・起動の手順が表示される', async ({ page, start }) => {
+  test('FR-268 AC-682 メイン画面の「顧客パック」の説明に、意味・デモで試せること・作り方（Copilot に Prompt と kit を貼る→画面からアップロード）が主文に表示され、npm・起動の手順は主文に出ず担当者向けの注記にだけある', async ({ page, start }) => {
     const { main } = await startAtMain(page, start);
     // 補足パネル（既定は閉じた状態）を開いてから、パネルの中の説明カードを確かめる
     await main.getByRole('button', { name: 'はじめての方へ' }).click();
@@ -190,35 +204,53 @@ test.describe('FR-268 顧客パックの説明カード', () => {
     await expect(panel).toBeVisible();
     const card = panel.getByRole('region', { name: /顧客パック/ }).first();
     await expect(card).toBeVisible();
-    const t = await card.innerText();
-    expect(t).toContain('顧客パックがなくても');
-    expect(t).toContain('examples/mono');
-    expect(t).toContain('docs/prompts/m365-copilot-customer-pack.md');
-    expect(t).toContain('npm run pipeline');
-    expect(t).toContain('npm run check:pack');
-    expect(t).toContain('npm run verify:pack');
-    expect(t).toContain('npm run build');
-    expect(t).toContain('npm start');
-    expect(t).toContain('http://127.0.0.1:4173');
+    const { head, tail } = splitStaffNote(await card.innerText());
+    // 主文: 意味・デモで試せること・作り方（依頼 2026-11-05 で変更）
+    expect(head).toContain('顧客パックがなくても');
+    expect(head).toMatch(/デモ|お手本/);
+    expect(head).toContain('Copilot');
+    expect(head).toContain('Prompt');
+    expect(head).toContain('kit');
+    expect(head).toContain('アップロード');
+    expectNoDeveloperTerms(head, '主文');
+    // 担当者向けの注記には（別枠で）担当者向けのコマンドが残る
+    for (const s of ['npm run pipeline', 'npm run check:pack', 'npm run verify:pack', 'npm run pack:kit']) expect(tail, `担当者向けの注記に「${s}」がない`).toContain(s);
     await expect(card.getByRole('button', { name: /コピー/ }).first()).toBeVisible();
   });
 
-  // FR-268 AC-682（AC-830 の画面側。AC-830 は integration 層のため台帳の対象外）
-  test('FR-268 AC-682 メイン画面の「はじめての方へ」／「顧客パックとは」に、①準備〜⑥画面への反映の完全な手順が、コピーできるコマンド（npm install・npm run pack:kit）と kit の場所つきで表示される', async ({ page, start }) => {
+  // FR-268 AC-682（異常系寄りの確認: 主文に出てはいけない語。AC-830 の画面側。AC-830 自体は integration 層のため台帳の対象外）
+  test('FR-268 AC-682 メイン画面の「はじめての方へ」／「顧客パックとは」の利用者向け手順は ①Prompt と kit のコピー ②Copilot に貼る ③アップロード ④検証結果の読み方 ⑤取り込み前の確認 で、担当者向けの節にだけコピーできる npm コマンドがある', async ({ page, start }) => {
     const { main } = await startAtMain(page, start);
     await main.getByRole('button', { name: 'はじめての方へ' }).click();
     const card = main.getByRole('region', { name: 'はじめての方へ' }).getByRole('region', { name: /顧客パック/ }).first();
     await expect(card).toBeVisible();
-    const t = await card.innerText();
-    for (const s of ['準備', '方法 A', '方法 B', '方法 C', '検証', '画面への反映']) expect(t, `手順「${s}」がない`).toContain(s);
-    for (const s of ['npm install', 'npm run pack:kit', 'tools/envisioning/_attach/customer-pack-kit.md', 'public/data', 'public/brand', 'npm run build', 'npm start', 'npm run check:pack', 'npm run verify:pack']) {
-      expect(t, `「${s}」の記述がない`).toContain(s);
-    }
-    // 異常系: エラーが出たときの直し方
-    expect(t, 'エラーが出たときの直し方がない').toMatch(/エラー/);
-    // コピーできる: npm install と npm run pack:kit のコピーボタンがある
-    await expect(card.getByRole('button', { name: /コピー/ }).nth(1), 'コピーボタンが足りない').toBeVisible();
-    expect(await card.getByRole('button', { name: /コピー/ }).count()).toBeGreaterThanOrEqual(7);
+    const { head, tail } = splitStaffNote(await card.innerText());
+    expect(head, '①Prompt と kit をコピーする').toMatch(/コピー/);
+    expect(head, '②M365 Copilot または GitHub Copilot + WorkIQ に貼る').toMatch(/M365 Copilot/);
+    expect(head).toMatch(/GitHub Copilot/);
+    expect(head, '③画面からアップロード（複数選択・ドラッグ＆ドロップ）').toMatch(/複数選択/);
+    expect(head).toMatch(/ドラッグ/);
+    expect(head, '④検証の結果の読み方と直し方').toMatch(/検証[\s\S]{0,80}(結果|直し)/);
+    expect(head, '⑤取り込み前に人が確かめること').toMatch(/取り込む前[\s\S]{0,60}確か|確かめ[\s\S]{0,40}取り込/);
+    expectNoDeveloperTerms(head, '利用者向けの手順');
+    // 担当者向けの節: コピーできるコマンド
+    for (const s of ['npm install', 'npm run pack:kit', 'npm run pipeline', 'npm run check:pack', 'npm run verify:pack']) expect(tail, `担当者向けの節に「${s}」がない`).toContain(s);
+    expect(await card.getByRole('button', { name: /コピー/ }).count(), '担当者向けのコマンドのコピーボタンが足りない').toBeGreaterThanOrEqual(5);
+  });
+
+  // FR-268 AC-856（取り込み画面への入口。FR-302 の画面へ移る）
+  test('FR-268 AC-856 「はじめての方へ」の顧客パックの節に取り込み画面への入口があり、押すと取り込み画面（ファイルの選択）に移る。入口の文に npm・リポジトリ・作業フォルダーの語がない', async ({ page, start }) => {
+    const { main } = await startAtMain(page, start);
+    await main.getByRole('button', { name: 'はじめての方へ' }).click();
+    const card = main.getByRole('region', { name: 'はじめての方へ' }).getByRole('region', { name: /顧客パック/ }).first();
+    await expect(card).toBeVisible();
+    const entry = card.getByRole('button', { name: /取り込/ }).or(card.getByRole('link', { name: /取り込/ })).first();
+    await expect(entry, '取り込み画面への入口（ボタンまたはリンク）がない').toBeVisible();
+    const label = (await entry.innerText()) + ' ' + ((await entry.getAttribute('aria-label')) ?? '');
+    expectNoDeveloperTerms(label, '入口の文');
+    await entry.click();
+    await expect(page.locator('input[type="file"]').first(), '取り込み画面（ファイルの選択）に移らない').toBeAttached();
+    await expect(page.getByText(/取り込み|アップロード/).first()).toBeVisible();
   });
 
   // FR-268 AC-682（異常系: 顧客パックが空（public/data なし）でも説明が出る）
