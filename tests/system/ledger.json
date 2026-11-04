@@ -369,7 +369,14 @@
     "AC-834": "sha256:a0d52a438e55db0e",
     "AC-856": "sha256:c994597b0029ba78",
     "AC-849": "sha256:4ccbfce283807192",
-    "AC-846": "sha256:530289616ad6966c"
+    "AC-846": "sha256:530289616ad6966c",
+    "AC-837": "sha256:efc5772644968e6c",
+    "AC-839": "sha256:f4671db1c0a4ae52",
+    "AC-840": "sha256:852afaac82fa9831",
+    "AC-841": "sha256:feccbb33a57c4124",
+    "AC-843": "sha256:bd79e7ab2eceb676",
+    "AC-854": "sha256:91c53f093f5f6e80",
+    "AC-855": "sha256:153f63129f0c539d"
   },
   "cases": [
     {
@@ -12323,6 +12330,73 @@
           "by": "test-designer",
           "change": "ac_ids: ['AC-849'] -> ['AC-846', 'AC-849']",
           "reason": "ac_ids を 2 件に直す"
+        }
+      ]
+    },
+    {
+      "id": "E2E-466",
+      "requirement_ids": [
+        "FR-302"
+      ],
+      "ac_ids": [
+        "AC-837",
+        "AC-839",
+        "AC-840",
+        "AC-841",
+        "AC-843"
+      ],
+      "title": "FR-302 顧客パックのアップロードと Project への取り込み（選択・ドロップ・キーボード、2 択と置き換え確認、検証エラー時の不変、取り込みと再読込、mono の往復）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-837 AC-839 AC-840 AC-841 AC-843",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-11-05T05:29:03+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "FR-302 System Test 新規（part 1/2）"
+        },
+        {
+          "at": "2026-11-05T05:30:03+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/run.mjs AC-837 AC-838 AC-839 AC-840 AC-841 AC-842 AC-843 AC-844' -> 'node tests/system/run.mjs AC-837 AC-839 AC-840 AC-841 AC-843'; title: 'FR-302 顧客パックのアップロードと Project への取り込み（選択・ドロップ・判別・2択・検証エラー・保存失敗・mono 往復・5MB 超・通信 0 件）' -> 'FR-302 顧客パックのアップロードと Project への取り込み（選択・ドロップ・キーボード、2 択と置き換え確認、検証エラー時の不変、取り込みと再読込、mono の往復）'; ac_ids: ['AC-837', 'AC-838', 'AC-839', 'AC-840', 'AC-841', 'AC-842', 'AC-843', 'AC-844'] -> ['AC-837', 'AC-839', 'AC-840', 'AC-841', 'AC-843']",
+          "reason": "system レベルの AC だけに絞る（integration の AC-838・842・844 は System Test の対象外）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-467",
+      "requirement_ids": [
+        "FR-304"
+      ],
+      "ac_ids": [
+        "AC-854",
+        "AC-855"
+      ],
+      "title": "FR-304 取り込み前の確認（種別「人」の注意と個人名の非表示、確かめましたの前は取り込めない・記録を残さない）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-854 AC-855",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-11-05T05:29:07+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "FR-304 System Test 新規（part 1/2）"
+        },
+        {
+          "at": "2026-11-05T05:30:05+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/run.mjs AC-851 AC-852 AC-853 AC-854 AC-855' -> 'node tests/system/run.mjs AC-854 AC-855'; title: 'FR-304 取り込み前に人が確かめること（出典のない数値・機密区分・ロゴ・種別「人」・確かめました）' -> 'FR-304 取り込み前の確認（種別「人」の注意と個人名の非表示、確かめましたの前は取り込めない・記録を残さない）'; ac_ids: ['AC-851', 'AC-852', 'AC-853', 'AC-854', 'AC-855'] -> ['AC-854', 'AC-855']",
+          "reason": "system レベルの AC だけに絞る（integration の AC-851〜853 は対象外）"
         }
       ]
     }
