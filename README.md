@@ -203,7 +203,7 @@ brand/BRAND-RESEARCH.md     ブランド調査の記録
 
 - **Microsoft 365 Copilot で作る（最もお勧め）**: 社内の情報（メール・会議・Teams・SharePoint）と Web を出典つきで使え、機密区分も付けられるためです。手順は次のとおりです。
   1. [docs/prompts/m365-copilot-customer-pack.md](docs/prompts/m365-copilot-customer-pack.md) の Prompt を貼ります。
-  2. `schema/` と お手本（`examples/mono/`）を添付します。
+  2. `npm run pack:kit` で作った `work/envisioning/_attach/customer-pack-kit.md`（schema とお手本を 1 つにまとめた kit）だけを添付します。
   3. 出力を作業フォルダー（`work/envisioning/<顧客名>/`）に保存します。
   4. `check:pack` / `verify:pack` で検証します。
 - **GitHub Copilot（WorkIQ が使える状態）で作る**: [docs/prompts/github-copilot-workiq-customer-pack.md](docs/prompts/github-copilot-workiq-customer-pack.md) の Prompt の先頭の変数（顧客名・Project 名など）を書き換えて貼ると、ファイルの作成と検証までエージェントが行います。

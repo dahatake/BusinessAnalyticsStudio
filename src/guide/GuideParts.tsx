@@ -3,7 +3,7 @@ import { useRef, useState } from 'react';
 import { Button, makeStyles, tokens } from '@fluentui/react-components';
 import {
   FLOW_ALT, GUIDE_STEPS, GUIDE_TERMS, GUIDE_WHAT, GUIDE_WORKSPACE,
-  PACK_COMMANDS, PACK_PROMPT_FILE, PACK_PROMPT_FILE_GHCP, PACK_PROMPT_GHCP, PACK_PROMPT_M365, PACK_SAMPLE, PACK_URL,
+  PACK_COMMANDS, PACK_KIT_FILE, PACK_PROMPT_FILE, PACK_PROMPT_FILE_GHCP, PACK_PROMPT_GHCP, PACK_PROMPT_M365, PACK_SAMPLE, PACK_URL,
 } from './guideContent';
 import { useT } from '../i18n';
 
@@ -182,30 +182,40 @@ export function PackSection({ withHeading = true }: { withHeading?: boolean }) {
       {withHeading ? <GuideH>顧客パックとは</GuideH> : null}
       <Text>{t('顧客パックは、顧客ごとの課題・解決策・計画・ブランド（色・ロゴ）などをまとめたフォルダーです。')}{t('置き場所は、public/data/ と public/brand/ ほかです。')}</Text>
       <Text weight="semibold">{t('顧客パックがなくても、デモ（お手本パック {sample}/）で試せます。', { sample: PACK_SAMPLE })}</Text>
+      <GuideH level={4}>① 準備（最初の 1 回）</GuideH>
+      <Text>{t('リポジトリを取得し、必要なものを入れて、schema とお手本を 1 ファイルにまとめた kit を作ります。')}</Text>
+      <CommandRow label="リポジトリの取得" command={PACK_COMMANDS.clone} />
+      <CommandRow label="インストール" command={PACK_COMMANDS.install} />
+      <CommandRow label="kit の作成" command={PACK_COMMANDS.kit} />
+      <Text>{t('schema の入手先は、リポジトリの schema/ と、kit（{kit}）です。schema が古いと kit は作られません。その場合は npm run gen:schema を実行します。', { kit: PACK_KIT_FILE })}</Text>
       <GuideH level={4}>作り方は 3 通り</GuideH>
       <ol className={s.list}>
         <li>
-          <Text>{t('M365 Copilot で作る。{file} の Prompt を貼ります。', { file: PACK_PROMPT_FILE })}</Text>
+          <Text weight="semibold">{t('方法 A: M365 Copilot で作る。')}</Text>
+          <Text>{t('{kit} だけをチャットに添付し、{file} の Prompt を貼ります。添付がないときは、Prompt の指示で作らず添付を求められます。出力は work/envisioning/<顧客名>/ に、パスどおりに保存します。', { kit: PACK_KIT_FILE, file: PACK_PROMPT_FILE })}</Text>
           <div className={s.cmd}>
             <pre ref={promptRef as React.RefObject<HTMLPreElement>} className={`${s.code} ${s.pre} ${s.promptBox}`} tabIndex={0}>{PACK_PROMPT_M365}</pre>
             <CopyButton text={PACK_PROMPT_M365} label="M365 Copilot 用 Prompt" codeRef={promptRef} />
           </div>
-          <Text>{t('GitHub Copilot（WorkIQ が使える状態）で作る。{file} の Prompt を、先頭の変数を書き換えて貼ります。', { file: PACK_PROMPT_FILE_GHCP })}</Text>
+          <Text weight="semibold">{t('方法 B: GitHub Copilot ＋ WorkIQ で作る。')}</Text>
+          <Text>{t('WorkIQ が使える状態で、{file} の Prompt を、先頭の変数を書き換えて貼ります。schema はリポジトリから直接読み、ファイルの作成と検証までエージェントが行います。', { file: PACK_PROMPT_FILE_GHCP })}</Text>
           <div className={s.cmd}>
             <pre ref={promptRef2 as React.RefObject<HTMLPreElement>} className={`${s.code} ${s.pre} ${s.promptBox}`} tabIndex={0}>{PACK_PROMPT_GHCP}</pre>
             <CopyButton text={PACK_PROMPT_GHCP} label="GitHub Copilot 用 Prompt" codeRef={promptRef2} />
           </div>
         </li>
-        <li><Text>{t('生成パイプラインで作る。')}</Text><CommandRow label="パイプライン" command={PACK_COMMANDS.pipeline} /></li>
-        <li><Text>{t('お手本 {sample} を複製して、手で書き換えます。', { sample: PACK_SAMPLE })}</Text></li>
+        <li><Text weight="semibold">{t('方法 C: 生成パイプラインで作る。')}</Text><CommandRow label="パイプライン" command={PACK_COMMANDS.pipeline} /></li>
+        <li><Text>{t('お手本 {sample} を複製して、手で書き換えることもできます。', { sample: PACK_SAMPLE })}</Text></li>
       </ol>
-      <GuideH level={4}>作ったあとの確認</GuideH>
+      <GuideH level={4}>⑤ 作ったあとの検証</GuideH>
       <CommandRow label="形式の検査" command={PACK_COMMANDS.check} />
       <CommandRow label="受け入れ判定" command={PACK_COMMANDS.verify} />
-      <GuideH level={4}>画面を起動する</GuideH>
+      <GuideH level={4}>⑥ 画面への反映</GuideH>
+      <Text>{t('検証が通った顧客パックの public/data/ と public/brand/ の中身を、このリポジトリの public/data/ と public/brand/ に置きます。顧客の情報なので、コミットしません。')}</Text>
       <CommandRow label="ビルド" command={PACK_COMMANDS.build} />
       <CommandRow label="起動" command={PACK_COMMANDS.start} />
       <Text>{t('起動したら、ブラウザーで {url} を開きます。', { url: PACK_URL })}</Text>
+      <Text>{t('エラーが出たときは、画面や検査に出た「ファイル名・項目名」を確かめ、その JSON だけを直して、もう一度 npm run check:pack を実行します。直し方は M365 Copilot や GitHub Copilot にエラーの部分だけを貼って頼めます。')}</Text>
     </div>
   );
 }

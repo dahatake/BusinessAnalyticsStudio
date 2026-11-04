@@ -393,8 +393,7 @@ ToBe に向けた課題を「議論テーマ」にして、選択肢・提言・
 | 起動 | `npm run build` → `npm start`（`http://127.0.0.1:4173`） |
 | 顧客のデータ・ロゴ・色の反映 | 顧客パックを作成して `public/data/`・`public/brand/` に配置（[README の 5 章](../README.md#5-顧客パックの作成手順)） |
 | ブランドの差し替え | [README の 4 章](../README.md#4-ブランド色ロゴフォントbgmの差し替え手順)、[engineering/3. ブランドとテーマ](engineering/03-branding-and-theme.md) |
-| 実際の AI の利用 | 
-pm run relay` を起動し、`copilot` で `/login` |
+| 実際の AI の利用 | `npm run relay` を起動し、`copilot` で `/login` |
 | iPad での確認 | [README の 6 章](../README.md#6-ipad-実機での確認手順) |
 | オフライン配布 | [distribution.md](../docs/distribution.md)、[engineering/7. ビルド・配布・運用](engineering/07-build-and-distribution.md) |
 
@@ -404,7 +403,7 @@ pm run relay` を起動し、`copilot` で `/login` |
 
 #### Microsoft 365 Copilot 用（[docs/prompts/m365-copilot-customer-pack.md](../docs/prompts/m365-copilot-customer-pack.md)）
 
-事前に `schema/*.json` と `examples/mono/` を添付し、出力を `work/envisioning/<顧客名>/` に保存して `check:pack` / `verify:pack` で検証します。
+事前に `npm run pack:kit` で作った `work/envisioning/_attach/customer-pack-kit.md`（1 ファイルだけ）をチャットに添付し、出力を `work/envisioning/<顧客名>/` に保存して `check:pack` / `verify:pack` で検証します。完全な手順は [13.2](#132-顧客パックの完全な手順) にあります。
 
 ````text
 あなたは、商談の分析ボード用の「顧客パック」を作る調査・編集担当です。Researcher / 仕事（Work）モードで、私がアクセスできるメール・会議・Teams・SharePoint と、公開 Web の両方を使って調べてください。
@@ -420,8 +419,11 @@ pm run relay` を起動し、`copilot` で `/login` |
 1. 顧客の事業・組織・課題・取り組みを調べます。社内情報（メール・会議・Teams・SharePoint）と公開 Web を使います。
 2. ブランドを調べます。優先順位は ①ブランドガイドライン ②プレスキット ③公式サイト ④IR 資料 です。出典は公式のものだけにします。分からない項目は、既定のテーマにします。
 
+# 添付の確認
+添付の customer-pack-kit.md（顧客パックの schema 全 10 ファイルとお手本パックを 1 つにまとめたもの）が見当たらないときは、顧客パックを作らず、私に添付を求めてください。
+
 # 作るファイル
-次のファイルを、添付の schema/*.json に厳密に従って作ります。
+次のファイルを、添付の customer-pack-kit.md にある schema に厳密に従って作ります。お手本パックは形式の参考だけにし、内容は流用しません。
 - public/data/: customer.json, entities.json, issues.json, products.json, plan.json, architecture.json, mocks.json, show.json, sources.json
 - public/brand/: brand-profile.json
 - data/customer-research.md（顧客調査の記録）
@@ -486,6 +488,61 @@ OUT = work/envisioning/${CUSTOMER}/
 # 最終報告（10 行以内）
 調査の要約 / 検証結果（コマンドと終了コード） / 未確認・人が確かめる事項 / 自己点検（規則ごとに ○×）
 ````
+
+### 13.2 顧客パックの完全な手順
+
+schema の入手先は、リポジトリの `schema/`（全 10 ファイル）と、`npm run pack:kit` が作る kit（`work/envisioning/_attach/customer-pack-kit.md`）です。kit は schema 全 10 ファイル・お手本パック（`examples/mono`）の JSON・調査記録 2 本を、パスの見出し付きコードブロックで 1 ファイルにまとめたものです。schema が古い（`npm run gen:schema -- --check` で差分がある）ときは、kit は作られず、`npm run gen:schema` を案内して失敗します。
+
+**① 準備（最初の 1 回）**
+
+```
+git clone https://github.com/dahatake/BusinessAnalyticsStudio.git
+npm install
+npm run pack:kit
+```
+
+**② 方法 A: Microsoft 365 Copilot で作る**
+
+1. チャットに `work/envisioning/_attach/customer-pack-kit.md` だけを添付します（追加資料があれば、あわせて添付）。
+2. 13.1 の Microsoft 365 Copilot 用 Prompt の【…】を埋めて貼ります。添付が見当たらないときは、Copilot は顧客パックを作らず、添付を求めます。
+3. 出力されたコードブロックを、パスどおりに `work/envisioning/<顧客名>/` へ保存します。
+4. ⑤ の検証をします。
+
+**③ 方法 B: GitHub Copilot ＋ WorkIQ で作る**
+
+WorkIQ が使える状態で、13.1 の GitHub Copilot 用 Prompt の先頭の変数を書き換えて貼ります。schema はリポジトリから直接読まれ、ファイルの作成（`work/envisioning/<顧客名>/`）と検証まで、エージェントが行います。
+
+**④ 方法 C: 生成パイプラインで作る**
+
+```
+npm run pipeline -- all --customer "<顧客名>" --project "<Project 名>"
+```
+
+**⑤ 検証**
+
+```
+npm run check:pack -- work/envisioning/<顧客名>
+npm run verify:pack -- work/envisioning/<顧客名>
+```
+
+**⑥ 画面への反映**
+
+1. 検証が通った顧客パックの `public/data/` と `public/brand/` の中身を、このリポジトリの `public/data/` と `public/brand/` に置きます（ロゴなどは `assets/brand/`）。顧客の情報なので、コミットしません。
+2. 次のコマンドで起動し、ブラウザーで `http://127.0.0.1:4173` を開きます。
+
+```
+npm run build
+npm start
+```
+
+エラーが出たときは、次のとおり直します。
+
+- `check:pack` のエラー: 出力された「ファイル名・項目名」の JSON だけを直し、もう一度 `npm run check:pack` を実行します。直し方は、エラーの部分だけを Copilot に貼って頼めます。
+- `verify:pack` の失敗項目: 出力された原因と対処に従います。
+- `npm run pack:kit` の失敗（schema が古い）: `npm run gen:schema` を実行してから、もう一度実行します。
+- 画面にお手本のデータが出る: `public/data/` に JSON を置いたあと、`npm run build` をやり直します。
+
+詳しくは [engineering/2. 顧客パック](engineering/02-customer-pack.md) を見てください。
 
 ---
 
