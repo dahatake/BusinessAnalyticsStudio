@@ -254,7 +254,12 @@ export async function openScreen(page: Page, key: string): Promise<Locator> {
     return s;
   }
   if (await isOffMenuScreen(page, key)) await openScreenByCommand(page, key);
-  else await page.getByTestId(`nav-${key}`).click();
+  else {
+    // FR-295 AC-825: 前面の画面の項目を再び押すと最小化する。対象が前面・表示中なら押さない
+    const alreadyFront =
+      (await component(page, key).isVisible()) && (await page.getByTestId(`nav-bar-${key}`).getAttribute('data-state')) === 'front';
+    if (!alreadyFront) await page.getByTestId(`nav-${key}`).click();
+  }
   const c = component(page, key);
   await expect(c).toBeVisible();
   return c;
