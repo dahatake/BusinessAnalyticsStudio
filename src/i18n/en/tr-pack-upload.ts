@@ -96,9 +96,9 @@ export default {
   '取り込みました。「{name}」の顧客パックを置き換えました。': 'Imported. The customer pack of "{name}" was replaced.',
   '置き換える Project が見つかりません。': 'The Project to replace was not found.',
   '置き換える Project を選び直してください。': 'Choose the Project to replace again.',
-  '顧客パックを端末内に保存できませんでした（{reason}）。': 'Could not save the customer pack on this device ({reason}).',
-  '端末の保存容量とブラウザーの保存の設定（プライベートモードなど）を確かめ、不要な Project の顧客パックを減らしてから、もう一度取り込んでください。現在の顧客パックと Project は変わっていません。':
-    'Check the free storage on this device and the browser storage settings (for example private mode), remove customer packs you no longer need, and import again. The current customer packs and Projects are unchanged.',
+  '顧客パックとブランドを端末内に保存できませんでした（{reason}）。': 'Could not save the customer pack and brand on this device ({reason}).',
+  '端末の保存容量とブラウザーの保存の設定（プライベートモードなど）を確かめ、不要な Project の顧客パックを減らしてから、もう一度取り込んでください。現在の顧客パック・Project・ブランドは変わっていません。':
+    'Check the free storage on this device and the browser storage settings (for example private mode), remove customer packs you no longer need, and import again. The current customer pack, Projects, and brand are unchanged.',
   '企業名を入力し直してください。': 'Enter the company name again.',
   'Project 名を入力し直してください。': 'Enter the Project name again.',
 } as Record<string, string>;

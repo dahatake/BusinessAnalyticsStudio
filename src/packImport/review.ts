@@ -1,12 +1,10 @@
-// 取り込み前に人が確かめること（FR-304）。検証を通ったパックの、出典のない数値・機密区分・ロゴの利用条件・種別「人」を数える。
+// 取り込み前に人が確かめること（FR-304）。検証を通ったパックの、機密区分・ロゴの利用条件・種別「人」を数える（出典のない数値は検証エラーで取り込めず、確認欄の対象ではない: AC-851）。
 // 個人名・連絡先の値は返さない。確かめた旨は保存しない（FR-219）。純粋な関数だけで書く（Node 専用の API は使わない）。
 import { tr } from '../i18n';
-import { countInternal, validatePack, type BrandProfile, type PackData } from '../schema';
+import { countInternal, type BrandProfile, type PackData } from '../schema';
 import type { UploadValidation } from './validate';
 
 export interface ReviewItems {
-  /** 出典のない数値（FR-117）。0 件のときも count: 0 を返す */
-  unsourced: { count: number; locations: Array<{ file: string; path: string; id?: string }> };
   /** 機密区分の件数（`countInternal` と一致）。internal が 1 件以上のとき note に注意が入る */
   classification: { internal: number; shareable: number; note?: string };
   /** ロゴの利用条件（FR-061）。unknown のときだけ件数 1 と案内。confirmed は「確認済み」 */
@@ -28,13 +26,10 @@ export function countShareable(value: unknown): number {
 
 /** 取り込み前の確認事項を作る。検証を通ったパック（`validateUpload` の data・brand）を渡す */
 export function reviewItems(data: PackData, brand: BrandProfile): ReviewItems {
-  const v = validatePack({ ...data, brandProfile: brand });
-  const locations = v.errors.filter((e) => e.code === 'missing-source').map((e) => ({ file: e.file, path: e.path, ...(e.id ? { id: e.id } : {}) }));
   const internal = countInternal(data);
   const people = (data.entities?.entities ?? []).filter((e) => (e as { kind?: unknown }).kind === 'person').length;
   const unknownLogo = brand.logo.status === 'unknown';
   return {
-    unsourced: { count: v.unsourcedNumbers, locations },
     classification: {
       internal, shareable: countShareable(data),
       ...(internal > 0 ? { note: tr('機密区分 internal の項目は、エクスポートの際にだけ匿名化できます。外部 AI への送信時には自動では匿名化しません。') } : {}),
