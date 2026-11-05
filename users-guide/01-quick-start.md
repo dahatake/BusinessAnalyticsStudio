@@ -383,27 +383,17 @@ ToBe に向けた課題を「議論テーマ」にして、選択肢・提言・
 | 画面の文字が小さい／大きい | ブラウザーの拡大率を変更。狭い画面では、画面が縦に積まれます |
 | 画面が見づらい | 設定パネルのテーマを Light / Dark に切り替え |
 
-## 13. 準備担当者向け（セットアップと顧客パック）
+## 13. 顧客パックを作って取り込む
 
-利用者（事業部長・PM・コンサルタント）は、この章を読まなくても使えます。依頼するときの参考にしてください。
-
-| 依頼内容 | 方法 |
-|---|---|
-| 初回の環境構築 | `scripts\setup.ps1`（Windows）／ `scripts/setup.sh`（macOS）。管理者権限は不要。詳細は [README の 1 章](../README.md#1-セットアップスクリプトの使い方) |
-| 起動 | `npm run build` → `npm start`（`http://127.0.0.1:4173`） |
-| 顧客のデータ・ロゴ・色の反映 | 顧客パックを作成して `public/data/`・`public/brand/` に配置（[README の 5 章](../README.md#5-顧客パックの作成手順)） |
-| ブランドの差し替え | [README の 4 章](../README.md#4-ブランド色ロゴフォントbgmの差し替え手順)、[engineering/3. ブランドとテーマ](engineering/03-branding-and-theme.md) |
-| 実際の AI の利用 | `npm run relay` を起動し、`copilot` で `/login` |
-| iPad での確認 | [README の 6 章](../README.md#6-ipad-実機での確認手順) |
-| オフライン配布 | [distribution.md](../docs/distribution.md)、[engineering/7. ビルド・配布・運用](engineering/07-build-and-distribution.md) |
+顧客パックは、画面だけで作って取り込めます。Copilot でファイルを作り、アプリの画面からアップロードします。セットアップやコマンドの操作は、準備担当者向けの [13.3](#133-担当者向け準備担当者のセットアップとコマンド) にまとめています。
 
 ### 13.1 顧客パックを作る Prompt
 
-メイン画面の「顧客パックとは」カードにも、同じ Prompt が表示され、「コピー」ボタンで取れます。【…】や先頭の変数（顧客名・Project 名など）を書き換えて使います。正本は `docs/prompts/` です。
+メイン画面の「はじめての方へ」の「顧客パックとは」カードにも、同じ Prompt が表示され、「コピー」ボタンで取れます。【…】や先頭の変数（顧客名・Project 名など）を書き換えて使います。正本は `docs/prompts/` です。
 
 #### Microsoft 365 Copilot 用（[docs/prompts/m365-copilot-customer-pack.md](../docs/prompts/m365-copilot-customer-pack.md)）
 
-事前に `npm run pack:kit` で作った `tools/envisioning/_attach/customer-pack-kit.md`（1 ファイルだけ）をチャットに添付し、出力を `work/envisioning/<顧客名>/` に保存して `check:pack` / `verify:pack` で検証します。完全な手順は [13.2](#132-顧客パックの完全な手順) にあります。
+画面の kit の「コピー」で kit をコピーし、チャットに貼り付けてから（`customer-pack-kit.md` を渡されているときは、それを添付）、この Prompt を貼ります。出力のコードブロックは、見出しのファイル名で保存します。完全な手順は [13.2](#132-顧客パックの完全な手順) にあります。
 
 ````text
 あなたは、商談の分析ボード用の「顧客パック」を作る調査・編集担当です。Researcher / 仕事（Work）モードで、私がアクセスできるメール・会議・Teams・SharePoint と、公開 Web の両方を使って調べてください。
@@ -424,10 +414,8 @@ ToBe に向けた課題を「議論テーマ」にして、選択肢・提言・
 
 # 作るファイル
 次のファイルを、添付または貼り付けの customer-pack-kit.md にある schema に厳密に従って作ります。お手本パックは形式の参考だけにし、内容は流用しません。
-- public/data/: customer.json, entities.json, issues.json, products.json, plan.json, architecture.json, mocks.json, show.json, sources.json
-- public/brand/: brand-profile.json
-- data/customer-research.md（顧客調査の記録）
-- brand/BRAND-RESEARCH.md（ブランド調査の記録）
+- 顧客パックのファイル 10 個（画面からアップロードするので、フォルダー名は付けず、ファイル名だけにします）: customer.json, entities.json, issues.json, products.json, plan.json, architecture.json, mocks.json, show.json, sources.json, brand-profile.json
+- 調査の記録（任意）: customer-research.md（顧客調査）, BRAND-RESEARCH.md（ブランド調査）
 
 # 守る規則
 - 出典のない数値は置きません。
@@ -443,7 +431,7 @@ ToBe に向けた課題を「議論テーマ」にして、選択肢・提言・
 # 出力の形式
 次の順で出力します。
 1. 調査の要約
-2. ファイルごとの完全なコードブロック（見出しにファイルのパス。省略記号で端折らず、全文を書く）
+2. ファイルごとの完全なコードブロック（見出しに、保存するファイル名だけを書く。省略記号で端折らず、全文を書く）
 3. 出典の一覧
 4. 確認事項（人が確かめるべきこと）
 5. 自己点検の表（上の規則ごとに、守れたかを ○ / × で示す）
@@ -451,7 +439,7 @@ ToBe に向けた課題を「議論テーマ」にして、選択肢・提言・
 
 #### GitHub Copilot（WorkIQ が使える状態）用（[docs/prompts/github-copilot-workiq-customer-pack.md](../docs/prompts/github-copilot-workiq-customer-pack.md)）
 
-ファイルの作成と検証（`check:pack` / `verify:pack`）まで、エージェントが行います。
+ファイルの作成と自己点検まで、エージェントが行います。ファイルは、フォルダー名を付けずに作らせ、あとで画面からアップロードします。
 
 ````text
 # 変数（ここだけ書き換える）
@@ -460,20 +448,22 @@ PROJECT = 【Project 名】
 GOAL = 【商談の目的・論点】
 INTENSITY = 【Executive / Showcase / Entertainment。未記入なら Showcase】
 MATERIALS = 【追加資料のパス。なければ なし】
-OUT = work/envisioning/${CUSTOMER}/
+OUT = 【作ったファイルを置くフォルダー。例: 顧客パック】
 
 # 役割
 あなたは、商談の分析ボード用の「顧客パック」を作る調査・編集担当です。以降の ${CUSTOMER}・${PROJECT} は上の変数の値です。
+
+# 添付の確認
+添付または貼り付けの customer-pack-kit.md（顧客パックの schema 全 10 ファイルとお手本パックを 1 つにまとめたもの）が見当たらないときは、顧客パックを作らず、私に添付を求めてください。
 
 # 手順
 1. 社内情報の調査: WorkIQ で ${CUSTOMER} に関するメール・会議・Teams・SharePoint を調べます（${GOAL} に関係するもの優先）。取得できない項目は「未確認」と記録し、推測で埋めません。
 2. 公開情報の調査: Web で事業・組織・課題・取り組みを調べます。
 3. ブランド調査: 優先順位は ①ブランドガイドライン ②プレスキット ③公式サイト ④IR 資料。出典は公式のみ。不明な項目は既定テーマにします。
-4. 生成: `schema/*.json` と `examples/mono/`（形式の参考のみ。内容は流用しない）を読み、${OUT} に次を作ります。
-   - public/data/: customer.json, entities.json, issues.json, products.json, plan.json, architecture.json, mocks.json, show.json, sources.json
-   - public/brand/brand-profile.json
-   - data/customer-research.md, brand/BRAND-RESEARCH.md（調査記録）
-5. 検証: `npm run check:pack -- ${OUT}` と `npm run verify:pack -- ${OUT} --generated` を実行します。エラーは該当箇所だけ再生成し、最大 3 回まで繰り返します。
+4. 生成: customer-pack-kit.md の schema に厳密に従い（お手本パックは形式の参考のみ。内容は流用しない）、${OUT} に、フォルダー名を付けず、次のファイル名で作ります。
+   - 顧客パックのファイル 10 個: customer.json, entities.json, issues.json, products.json, plan.json, architecture.json, mocks.json, show.json, sources.json, brand-profile.json
+   - 調査の記録（任意）: customer-research.md, BRAND-RESEARCH.md
+5. 自己点検: 作った JSON を schema と照らし、不足・型の違い・存在しない ID の参照を探します。見つけたら該当箇所だけ作り直し、最大 3 回まで繰り返します。
 
 # 規則
 - 出典のない数値は置かない。AI が作ったデータの作成者種別は「AI生成」。
@@ -486,14 +476,57 @@ OUT = work/envisioning/${CUSTOMER}/
 - ${OUT} 以外のファイルを変更しない。コミットしない（顧客の情報のため）。
 
 # 最終報告（10 行以内）
-調査の要約 / 検証結果（コマンドと終了コード） / 未確認・人が確かめる事項 / 自己点検（規則ごとに ○×）
+調査の要約 / 自己点検の結果（直した箇所） / 未確認・人が確かめる事項 / 自己点検の表（規則ごとに ○×）
 ````
 
 ### 13.2 顧客パックの完全な手順
 
-schema の入手先は、リポジトリの `schema/`（全 10 ファイル）と、`npm run pack:kit` が作る kit（`tools/envisioning/_attach/customer-pack-kit.md`）です。kit は schema 全 10 ファイル・お手本パック（`examples/mono`）の JSON・調査記録 2 本を、パスの見出し付きコードブロックで 1 ファイルにまとめたものです。schema が古い（`npm run gen:schema -- --check` で差分がある）ときは、kit は作られず、`npm run gen:schema` を案内して失敗します。
+画面だけで、①〜⑤の順に進めます。
 
-**① 準備（最初の 1 回）**
+**① Prompt と kit をコピーする**
+
+メイン画面の「はじめての方へ」を開き、「顧客パックとは」カードの Prompt と kit の「コピー」ボタンで、それぞれコピーします。kit は、顧客パックの書式の定義とお手本を 1 つにまとめたものです。ファイルを開く必要はありません。書式が古いときは、準備担当者に更新を依頼してください。
+
+**② Copilot に貼ってファイルを作る**
+
+- 方法 A（Microsoft 365 Copilot）: チャットに kit を貼り付け（または添付）、13.1 の Microsoft 365 Copilot 用 Prompt の【…】を埋めて貼ります。kit が見当たらないときは、Copilot は顧客パックを作らず、kit を求めます。出力のコードブロックを、見出しのファイル名（customer.json など 9 個と brand-profile.json）で保存します。
+- 方法 B（GitHub Copilot ＋ WorkIQ）: WorkIQ が使える状態で、13.1 の GitHub Copilot 用 Prompt の先頭の変数を書き換えて貼ります。ファイルの作成と自己点検まで、エージェントが行います。
+
+**③ 画面からアップロードして取り込む**
+
+「はじめての方へ」の顧客パックの節の「顧客パックを取り込む」を押し、作ったファイルを、複数選択するか、ドラッグ＆ドロップで入れます。ファイルはこの端末の中だけで読み、外へは送りません。
+
+**④ 検証の結果を読み、直す**
+
+アップロードすると、検証の結果が出ます。エラーが出たら、表示された「ファイル名・項目名」を確かめます。その部分だけを Copilot に貼って作り直させ、もう一度アップロードします。
+
+**⑤ 取り込む前に人が確かめる**
+
+取り込む前に、次を確かめてから進めます。
+
+- 出典の機密区分（internal / shareable）と、ロゴの状態（logo.status）。
+- 種別「人」のエンティティに、個人名・連絡先が入っていないこと。
+- 出典のない数値がないこと。
+
+顧客パックは顧客の情報です。共有の場所やコード管理には置かないでください。
+
+### 13.3 担当者向け（準備担当者のセットアップとコマンド）
+
+利用者（事業部長・PM・コンサルタント）は、この節を読まなくても使えます。依頼するときの参考にしてください。
+
+| 依頼内容 | 方法 |
+|---|---|
+| 初回の環境構築 | `scripts\setup.ps1`（Windows）／ `scripts/setup.sh`（macOS）。管理者権限は不要。詳細は [README の 1 章](../README.md#1-セットアップスクリプトの使い方) |
+| 起動 | `npm run build` → `npm start`（`http://127.0.0.1:4173`） |
+| 顧客のデータ・ロゴ・色の反映 | 顧客パックを作成して `public/data/`・`public/brand/` に配置（[README の 5 章](../README.md#5-顧客パックの作成手順)） |
+| ブランドの差し替え | [README の 4 章](../README.md#4-ブランド色ロゴフォントbgmの差し替え手順)、[engineering/3. ブランドとテーマ](engineering/03-branding-and-theme.md) |
+| 実際の AI の利用 | `npm run relay` を起動し、`copilot` で `/login` |
+| iPad での確認 | [README の 6 章](../README.md#6-ipad-実機での確認手順) |
+| オフライン配布 | [distribution.md](../docs/distribution.md)、[engineering/7. ビルド・配布・運用](engineering/07-build-and-distribution.md) |
+
+schema の入手先は、リポジトリの `schema/`（全 10 ファイル）と、`npm run pack:kit` が作る kit（`tools/envisioning/_attach/customer-pack-kit.md`）です。kit は schema 全 10 ファイル・お手本パック（`examples/mono`）の JSON・調査記録 2 本を、パスの見出し付きコードブロックで 1 ファイルにまとめたものです。画面の kit は、このファイルと同じ内容です。schema が古い（`npm run gen:schema -- --check` で差分がある）ときは、kit は作られず、`npm run gen:schema` を案内して失敗します。
+
+**準備（最初の 1 回）**
 
 ```
 git clone https://github.com/dahatake/BusinessAnalyticsStudio.git
@@ -501,31 +534,20 @@ npm install
 npm run pack:kit
 ```
 
-**② 方法 A: Microsoft 365 Copilot で作る**
-
-1. チャットに `tools/envisioning/_attach/customer-pack-kit.md` だけを添付します（追加資料があれば、あわせて添付）。
-2. 13.1 の Microsoft 365 Copilot 用 Prompt の【…】を埋めて貼ります。添付が見当たらないときは、Copilot は顧客パックを作らず、添付を求めます。
-3. 出力されたコードブロックを、パスどおりに `work/envisioning/<顧客名>/` へ保存します。
-4. ⑤ の検証をします。
-
-**③ 方法 B: GitHub Copilot ＋ WorkIQ で作る**
-
-WorkIQ が使える状態で、13.1 の GitHub Copilot 用 Prompt の先頭の変数を書き換えて貼ります。schema はリポジトリから直接読まれ、ファイルの作成（`work/envisioning/<顧客名>/`）と検証まで、エージェントが行います。
-
-**④ 方法 C: 生成パイプラインで作る**
+**方法 C: 生成パイプラインで作る**
 
 ```
 npm run pipeline -- all --customer "<顧客名>" --project "<Project 名>"
 ```
 
-**⑤ 検証**
+**検証（作業フォルダー `work/envisioning/<顧客名>` に作ったとき）**
 
 ```
 npm run check:pack -- work/envisioning/<顧客名>
 npm run verify:pack -- work/envisioning/<顧客名>
 ```
 
-**⑥ 画面への反映**
+**画面への反映（リポジトリに直接置く場合）**
 
 1. 検証が通った顧客パックの `public/data/` と `public/brand/` の中身を、このリポジトリの `public/data/` と `public/brand/` に置きます（ロゴなどは `assets/brand/`）。顧客の情報なので、コミットしません。
 2. 次のコマンドで起動し、ブラウザーで `http://127.0.0.1:4173` を開きます。
@@ -537,7 +559,7 @@ npm start
 
 エラーが出たときは、次のとおり直します。
 
-- `check:pack` のエラー: 出力された「ファイル名・項目名」の JSON だけを直し、もう一度 `npm run check:pack` を実行します。直し方は、エラーの部分だけを Copilot に貼って頼めます。
+- `check:pack` のエラー: 出力された「ファイル名・項目名」の JSON だけを直し、もう一度 `npm run check:pack` を実行します。
 - `verify:pack` の失敗項目: 出力された原因と対処に従います。
 - `npm run pack:kit` の失敗（schema が古い）: `npm run gen:schema` を実行してから、もう一度実行します。
 - 画面にお手本のデータが出る: `public/data/` に JSON を置いたあと、`npm run build` をやり直します。

@@ -187,7 +187,7 @@ function KitViewer() {
   return (
     <details onToggle={(e) => load((e.currentTarget as HTMLDetailsElement).open)}>
       <summary aria-expanded={opened}>{t('kit（顧客パックの形式の決まりとお手本）を見る')}</summary>
-      {failed ? <Text>{t('kit を読み込めませんでした。画面を再読み込みするか、担当者に npm run pack:kit の実行を依頼してください。')}</Text> : null}
+      {failed ? <Text>{t('kit を読み込めませんでした。画面を再読み込みするか、担当者に更新を依頼してください。')}</Text> : null}
       {kit !== null ? (
         <div className={s.cmd}>
           <pre ref={ref as React.RefObject<HTMLPreElement>} className={`${s.code} ${s.pre} ${s.promptBox}`} tabIndex={0}>{kit}</pre>

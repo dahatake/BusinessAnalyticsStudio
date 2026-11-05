@@ -284,7 +284,7 @@
     "AC-601": "sha256:6cd0c890d1d0fb1d",
     "AC-675": "sha256:cc151bdef56542b1",
     "AC-678": "sha256:eee90e767312a030",
-    "AC-682": "sha256:9b334d3431b9b232",
+    "AC-682": "sha256:8aa727418d115ae7",
     "AC-685": "sha256:c9df7610f9e4b193",
     "AC-687": "sha256:ef4b678cca783521",
     "AC-690": "sha256:ae060af5d4a4546c",
@@ -361,12 +361,22 @@
     "AC-824": "sha256:ef26ac2849ac94f5",
     "AC-825": "sha256:c8680bf7b5e61fd8",
     "AC-826": "sha256:317bce96adcc0969",
-    "AC-830": "sha256:d88eb9d75e0fd837",
-    "AC-684": "sha256:940f76eeb2c118aa",
+    "AC-830": "sha256:ccd6756cc039bbfc",
+    "AC-684": "sha256:5e93290bad62e712",
     "AC-828": "sha256:1cfb47639389f6c4",
     "AC-829": "sha256:9c1aac9df3dc188f",
-    "AC-836": "sha256:7a05e11c89458fa4",
-    "AC-834": "sha256:a0d52a438e55db0e"
+    "AC-836": "sha256:1d0ecc4cd4049619",
+    "AC-834": "sha256:a0d52a438e55db0e",
+    "AC-856": "sha256:c994597b0029ba78",
+    "AC-849": "sha256:4ccbfce283807192",
+    "AC-846": "sha256:530289616ad6966c",
+    "AC-837": "sha256:efc5772644968e6c",
+    "AC-839": "sha256:f4671db1c0a4ae52",
+    "AC-840": "sha256:852afaac82fa9831",
+    "AC-841": "sha256:feccbb33a57c4124",
+    "AC-843": "sha256:bd79e7ab2eceb676",
+    "AC-854": "sha256:91c53f093f5f6e80",
+    "AC-855": "sha256:153f63129f0c539d"
   },
   "cases": [
     {
@@ -2092,9 +2102,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "46f9db7",
-      "last_run_at": "2026-11-05T00:00:31+09:00",
-      "evidence": "work/runs/202611042322/logs/system-test/E2E-162-202611042359.log",
+      "last_commit": "b817a7e",
+      "last_run_at": "2026-11-05T07:08:42+09:00",
+      "evidence": "work/runs/202611050509/logs/system-test/E2E-162-202611050707.log",
       "history": [
         {
           "at": "2026-10-12T14:07:28+09:00",
@@ -5181,9 +5191,9 @@
       "command": "node tests/system/run.mjs AC-396 AC-819",
       "canary": true,
       "status": "pass",
-      "last_commit": "46f9db7",
-      "last_run_at": "2026-11-05T00:00:31+09:00",
-      "evidence": "work/runs/202611042322/logs/system-test/E2E-291-202611042359.log",
+      "last_commit": "b817a7e",
+      "last_run_at": "2026-11-05T07:08:42+09:00",
+      "evidence": "work/runs/202611050509/logs/system-test/E2E-291-202611050707.log",
       "history": [
         {
           "at": "2026-10-15T22:31:53+09:00",
@@ -6795,9 +6805,9 @@
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat --workers=1",
       "canary": true,
       "status": "pass",
-      "last_commit": "46f9db7",
-      "last_run_at": "2026-11-05T00:00:31+09:00",
-      "evidence": "work/runs/202611042322/logs/system-test/E2E-345-202611050000.log",
+      "last_commit": "b817a7e",
+      "last_run_at": "2026-11-05T07:08:42+09:00",
+      "evidence": "work/runs/202611050509/logs/system-test/E2E-345-202611050708.log",
       "history": [
         {
           "at": "2026-10-21T17:19:59+09:00",
@@ -6833,9 +6843,9 @@
       "command": "node tests/system/run.mjs AC-593",
       "canary": true,
       "status": "pass",
-      "last_commit": "46f9db7",
-      "last_run_at": "2026-11-05T00:00:31+09:00",
-      "evidence": "work/runs/202611042322/logs/system-test/E2E-346-202611042359.log",
+      "last_commit": "b817a7e",
+      "last_run_at": "2026-11-05T07:08:42+09:00",
+      "evidence": "work/runs/202611050509/logs/system-test/E2E-346-202611050707.log",
       "history": [
         {
           "at": "2026-10-21T17:32:44+09:00",
@@ -7018,9 +7028,9 @@
       "command": "node tests/system/run.mjs AC-598",
       "canary": true,
       "status": "pass",
-      "last_commit": "46f9db7",
-      "last_run_at": "2026-11-05T00:00:31+09:00",
-      "evidence": "work/runs/202611042322/logs/system-test/E2E-351-202611042359.log",
+      "last_commit": "b817a7e",
+      "last_run_at": "2026-11-05T07:08:42+09:00",
+      "evidence": "work/runs/202611050509/logs/system-test/E2E-351-202611050707.log",
       "history": [
         {
           "at": "2026-10-21T17:33:47+09:00",
@@ -7291,16 +7301,17 @@
       "ac_ids": [
         "AC-682",
         "AC-834",
-        "AC-836"
+        "AC-836",
+        "AC-856"
       ],
       "title": "補足パネルを開くと顧客パックの説明カードに意味・デモ・作り方 3 通り・確認コマンド・起動手順が表示される",
       "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-682 AC-834 AC-836",
+      "command": "node tests/system/run.mjs AC-682 AC-834 AC-836 AC-856",
       "canary": false,
       "status": "pass",
-      "last_commit": "46f9db7",
-      "last_run_at": "2026-11-05T00:00:31+09:00",
-      "evidence": "work/runs/202611042322/logs/system-test/E2E-363-202611050000.log",
+      "last_commit": "49e818b",
+      "last_run_at": "2026-11-05T09:24:08+09:00",
+      "evidence": "work/runs/202611050509/logs/system-test/E2E-363-202611050923.log",
       "history": [
         {
           "at": "2026-10-21T22:21:19+09:00",
@@ -7349,6 +7360,18 @@
           "by": "test-designer",
           "change": "command: 'node tests/system/run.mjs AC-682' -> 'node tests/system/run.mjs AC-682 AC-834 AC-836'",
           "reason": "AC-834/AC-836 を実行対象に追加"
+        },
+        {
+          "at": "2026-11-05T05:24:23+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/run.mjs AC-682 AC-834 AC-836' -> 'node tests/system/run.mjs AC-682 AC-834 AC-836 AC-856'; ac_ids: ['AC-682', 'AC-834', 'AC-836'] -> ['AC-856']",
+          "reason": "FR-268 変更（依頼 2026-11-05）: AC-682 を画面だけで完結する作り方に直し、AC-856（取り込み画面への入口）を追加"
+        },
+        {
+          "at": "2026-11-05T05:24:36+09:00",
+          "by": "test-designer",
+          "change": "ac_ids: ['AC-856'] -> ['AC-682', 'AC-834', 'AC-836', 'AC-856']",
+          "reason": "ac_ids を 4 件に直す（--ac は最後の 1 件だけ残ったため）"
         }
       ]
     },
@@ -12277,6 +12300,105 @@
         }
       ],
       "serial": true
+    },
+    {
+      "id": "E2E-465",
+      "requirement_ids": [
+        "FR-303"
+      ],
+      "ac_ids": [
+        "AC-846",
+        "AC-849"
+      ],
+      "title": "壊れた JSON は名前と位置が日本語で示され取り込めず、結果は合否・無効項目・警告に分かれ、正常なパックは取り込める",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-846 AC-849",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "49e818b",
+      "last_run_at": "2026-11-05T09:24:08+09:00",
+      "evidence": "work/runs/202611050509/logs/system-test/E2E-465-202611050923.log",
+      "history": [
+        {
+          "at": "2026-11-05T05:24:27+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "FR-303 system の AC（integration の AC-845・847・848・850 は対象外）"
+        },
+        {
+          "at": "2026-11-05T05:24:37+09:00",
+          "by": "test-designer",
+          "change": "ac_ids: ['AC-849'] -> ['AC-846', 'AC-849']",
+          "reason": "ac_ids を 2 件に直す"
+        }
+      ]
+    },
+    {
+      "id": "E2E-466",
+      "requirement_ids": [
+        "FR-302"
+      ],
+      "ac_ids": [
+        "AC-837",
+        "AC-839",
+        "AC-840",
+        "AC-841",
+        "AC-843"
+      ],
+      "title": "FR-302 顧客パックのアップロードと Project への取り込み（選択・ドロップ・キーボード、2 択と置き換え確認、検証エラー時の不変、取り込みと再読込、mono の往復）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-837 AC-839 AC-840 AC-841 AC-843",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "49e818b",
+      "last_run_at": "2026-11-05T09:24:08+09:00",
+      "evidence": "work/runs/202611050509/logs/system-test/E2E-466-202611050923.log",
+      "history": [
+        {
+          "at": "2026-11-05T05:29:03+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "FR-302 System Test 新規（part 1/2）"
+        },
+        {
+          "at": "2026-11-05T05:30:03+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/run.mjs AC-837 AC-838 AC-839 AC-840 AC-841 AC-842 AC-843 AC-844' -> 'node tests/system/run.mjs AC-837 AC-839 AC-840 AC-841 AC-843'; title: 'FR-302 顧客パックのアップロードと Project への取り込み（選択・ドロップ・判別・2択・検証エラー・保存失敗・mono 往復・5MB 超・通信 0 件）' -> 'FR-302 顧客パックのアップロードと Project への取り込み（選択・ドロップ・キーボード、2 択と置き換え確認、検証エラー時の不変、取り込みと再読込、mono の往復）'; ac_ids: ['AC-837', 'AC-838', 'AC-839', 'AC-840', 'AC-841', 'AC-842', 'AC-843', 'AC-844'] -> ['AC-837', 'AC-839', 'AC-840', 'AC-841', 'AC-843']",
+          "reason": "system レベルの AC だけに絞る（integration の AC-838・842・844 は System Test の対象外）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-467",
+      "requirement_ids": [
+        "FR-304"
+      ],
+      "ac_ids": [
+        "AC-854",
+        "AC-855"
+      ],
+      "title": "FR-304 取り込み前の確認（種別「人」の注意と個人名の非表示、確かめましたの前は取り込めない・記録を残さない）",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-854 AC-855",
+      "canary": false,
+      "status": "pass",
+      "last_commit": "49e818b",
+      "last_run_at": "2026-11-05T09:24:08+09:00",
+      "evidence": "work/runs/202611050509/logs/system-test/E2E-467-202611050923.log",
+      "history": [
+        {
+          "at": "2026-11-05T05:29:07+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "FR-304 System Test 新規（part 1/2）"
+        },
+        {
+          "at": "2026-11-05T05:30:05+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/run.mjs AC-851 AC-852 AC-853 AC-854 AC-855' -> 'node tests/system/run.mjs AC-854 AC-855'; title: 'FR-304 取り込み前に人が確かめること（出典のない数値・機密区分・ロゴ・種別「人」・確かめました）' -> 'FR-304 取り込み前の確認（種別「人」の注意と個人名の非表示、確かめましたの前は取り込めない・記録を残さない）'; ac_ids: ['AC-851', 'AC-852', 'AC-853', 'AC-854', 'AC-855'] -> ['AC-854', 'AC-855']",
+          "reason": "system レベルの AC だけに絞る（integration の AC-851〜853 は対象外）"
+        }
+      ]
     }
   ]
 }
