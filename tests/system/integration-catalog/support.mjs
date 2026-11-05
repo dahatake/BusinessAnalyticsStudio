@@ -29,7 +29,7 @@ function makeTemplate() {
   if (template) return template;
   template = fs.mkdtempSync(path.join(os.tmpdir(), 'ic-tpl-'));
   // 管理データが参照するファイルを含めて複製する（CHK-08 などの無関係な指摘を、ベースラインから除くため）。重い・無関係なものは除く。
-  const skip = new Set(['node_modules', 'dist', '.git', 'work', 'test-results', 'EABK-Studio', 'EABK-docs', 'users-guide', 'playwright-report']);
+  const skip = new Set(['node_modules', 'dist', '.git', 'work', 'test-results', 'EABK-Studio', 'EABK-docs', 'playwright-report']);
   fs.cpSync(repoRoot, template, { recursive: true, filter: (src) => !skip.has(path.basename(src)) && !/\.png$/i.test(src) });
   return template;
 }

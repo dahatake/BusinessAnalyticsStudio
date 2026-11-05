@@ -3465,6 +3465,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC は検証レベル=integration で System Test の対象外（CHK-10）。テストは tests/system/launch/ に作成済みで、implementer の結合テスト検証用に流用する。検証レベルを system にする変更は rd-author へ"
+        },
+        {
+          "at": "2026-11-06T01:45:51+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "AC-220/221 は検証レベル integration のため System Test 対象外（CHK-10）。テストは現在の AC（毎回 build してから start）に合わせて修正済みで pass を確認。implementer の検証に使う"
         }
       ]
     },
@@ -3508,6 +3514,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC は検証レベル=integration で System Test の対象外（CHK-10）。テストは tests/system/launch/ に作成済みで、implementer の結合テスト検証用に流用する。検証レベルを system にする変更は rd-author へ"
+        },
+        {
+          "at": "2026-11-06T01:45:52+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "AC-220/221 は検証レベル integration のため System Test 対象外（CHK-10）。テストは現在の AC（毎回 build してから start）に合わせて修正済みで pass を確認。implementer の検証に使う"
         }
       ]
     },
@@ -7997,16 +8009,17 @@
         "FR-188"
       ],
       "ac_ids": [
-        "AC-403"
+        "AC-403",
+        "AC-404"
       ],
       "title": "外部連携カタログ: 外部連携カタログに連携ごとの 1 行と必要な欄がある",
       "layer": "data",
-      "command": "node --test --test-name-pattern \"AC-403\" tests/system/integration-catalog/basic.test.mjs",
+      "command": "node --test --test-name-pattern \"AC-403\" --test-name-pattern \"AC-404\" tests/system/integration-catalog/basic.test.mjs",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "c691551",
+      "last_run_at": "2026-11-06T01:40:51+09:00",
+      "evidence": "work/runs/202611052307/logs/system-test/IT-031-202611060137.log",
       "history": [
         {
           "at": "2026-10-16T05:46:17+09:00",
@@ -8019,6 +8032,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:04+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:36:43+09:00",
+          "by": "conductor",
+          "change": "command: 'node --test --test-name-pattern \"AC-403\" tests/system/integration-catalog/basic.test.mjs' -> 'node --test --test-name-pattern \"AC-403\" --test-name-pattern \"AC-404\" tests/system/integration-catalog/basic.test.mjs'; ac_ids: ['AC-403'] -> ['AC-403', 'AC-404']",
+          "reason": "同じ FR・同じファイルの AC を 1 ケースに統合"
         }
       ]
     },
@@ -8050,6 +8075,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:05+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:36:45+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "IT-031 に統合"
         }
       ]
     },
@@ -8059,16 +8096,17 @@
         "FR-189"
       ],
       "ac_ids": [
-        "AC-405"
+        "AC-405",
+        "AC-406"
       ],
       "title": "外部連携カタログ: 基本情報（相手先・方向・種別・状態・正本）の空欄は失敗し欄を示す",
       "layer": "data",
-      "command": "node --test --test-name-pattern \"AC-405\" tests/system/integration-catalog/basic.test.mjs",
+      "command": "node --test --test-name-pattern \"AC-405\" --test-name-pattern \"AC-406\" tests/system/integration-catalog/basic.test.mjs",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "c691551",
+      "last_run_at": "2026-11-06T01:40:51+09:00",
+      "evidence": "work/runs/202611052307/logs/system-test/IT-033-202611060137.log",
       "history": [
         {
           "at": "2026-10-16T05:46:23+09:00",
@@ -8081,6 +8119,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:06+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:36:47+09:00",
+          "by": "conductor",
+          "change": "command: 'node --test --test-name-pattern \"AC-405\" tests/system/integration-catalog/basic.test.mjs' -> 'node --test --test-name-pattern \"AC-405\" --test-name-pattern \"AC-406\" tests/system/integration-catalog/basic.test.mjs'; ac_ids: ['AC-405'] -> ['AC-405', 'AC-406']",
+          "reason": "同じ FR・同じファイルの AC を 1 ケースに統合"
         }
       ]
     },
@@ -8112,6 +8162,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:07+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:36:48+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "IT-033 に統合"
         }
       ]
     },
@@ -8121,16 +8183,17 @@
         "FR-190"
       ],
       "ac_ids": [
-        "AC-407"
+        "AC-407",
+        "AC-408"
       ],
       "title": "外部連携カタログ: 稼働の連携の認証・認可・資格情報の空欄は失敗する",
       "layer": "data",
-      "command": "node --test --test-name-pattern \"AC-407\" tests/system/integration-catalog/items.test.mjs",
+      "command": "node --test --test-name-pattern \"AC-407\" --test-name-pattern \"AC-408\" tests/system/integration-catalog/items.test.mjs",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "c691551",
+      "last_run_at": "2026-11-06T01:40:51+09:00",
+      "evidence": "work/runs/202611052307/logs/system-test/IT-035-202611060138.log",
       "history": [
         {
           "at": "2026-10-16T05:46:29+09:00",
@@ -8143,6 +8206,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:08+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:36:50+09:00",
+          "by": "conductor",
+          "change": "command: 'node --test --test-name-pattern \"AC-407\" tests/system/integration-catalog/items.test.mjs' -> 'node --test --test-name-pattern \"AC-407\" --test-name-pattern \"AC-408\" tests/system/integration-catalog/items.test.mjs'; ac_ids: ['AC-407'] -> ['AC-407', 'AC-408']",
+          "reason": "同じ FR・同じファイルの AC を 1 ケースに統合"
         }
       ]
     },
@@ -8174,6 +8249,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:09+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:36:52+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "IT-035 に統合"
         }
       ]
     },
@@ -8183,16 +8270,17 @@
         "FR-191"
       ],
       "ac_ids": [
-        "AC-409"
+        "AC-409",
+        "AC-410"
       ],
       "title": "外部連携カタログ: 稼働の連携のデータ項目・送信の条件の空欄は失敗する",
       "layer": "data",
-      "command": "node --test --test-name-pattern \"AC-409\" tests/system/integration-catalog/items.test.mjs",
+      "command": "node --test --test-name-pattern \"AC-409\" --test-name-pattern \"AC-410\" tests/system/integration-catalog/items.test.mjs",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "c691551",
+      "last_run_at": "2026-11-06T01:40:51+09:00",
+      "evidence": "work/runs/202611052307/logs/system-test/IT-037-202611060138.log",
       "history": [
         {
           "at": "2026-10-16T05:46:35+09:00",
@@ -8205,6 +8293,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:10+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:36:54+09:00",
+          "by": "conductor",
+          "change": "command: 'node --test --test-name-pattern \"AC-409\" tests/system/integration-catalog/items.test.mjs' -> 'node --test --test-name-pattern \"AC-409\" --test-name-pattern \"AC-410\" tests/system/integration-catalog/items.test.mjs'; ac_ids: ['AC-409'] -> ['AC-409', 'AC-410']",
+          "reason": "同じ FR・同じファイルの AC を 1 ケースに統合"
         }
       ]
     },
@@ -8236,6 +8336,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:12+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:36:56+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "IT-037 に統合"
         }
       ]
     },
@@ -8245,16 +8357,17 @@
         "FR-192"
       ],
       "ac_ids": [
-        "AC-411"
+        "AC-411",
+        "AC-412"
       ],
       "title": "外部連携カタログ: 稼働の連携の頻度・量・SLA・タイムアウトの空欄は失敗する",
       "layer": "data",
-      "command": "node --test --test-name-pattern \"AC-411\" tests/system/integration-catalog/items.test.mjs",
+      "command": "node --test --test-name-pattern \"AC-411\" --test-name-pattern \"AC-412\" tests/system/integration-catalog/items.test.mjs",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "c691551",
+      "last_run_at": "2026-11-06T01:40:51+09:00",
+      "evidence": "work/runs/202611052307/logs/system-test/IT-039-202611060138.log",
       "history": [
         {
           "at": "2026-10-16T05:46:42+09:00",
@@ -8267,6 +8380,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:14+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:36:58+09:00",
+          "by": "conductor",
+          "change": "command: 'node --test --test-name-pattern \"AC-411\" tests/system/integration-catalog/items.test.mjs' -> 'node --test --test-name-pattern \"AC-411\" --test-name-pattern \"AC-412\" tests/system/integration-catalog/items.test.mjs'; ac_ids: ['AC-411'] -> ['AC-411', 'AC-412']",
+          "reason": "同じ FR・同じファイルの AC を 1 ケースに統合"
         }
       ]
     },
@@ -8298,6 +8423,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:16+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:37:00+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "IT-039 に統合"
         }
       ]
     },
@@ -8307,16 +8444,17 @@
         "FR-193"
       ],
       "ac_ids": [
-        "AC-413"
+        "AC-413",
+        "AC-414"
       ],
       "title": "外部連携カタログ: 稼働の連携の失敗時・再試行・冪等性の空欄は失敗する",
       "layer": "data",
-      "command": "node --test --test-name-pattern \"AC-413\" tests/system/integration-catalog/items.test.mjs",
+      "command": "node --test --test-name-pattern \"AC-413\" --test-name-pattern \"AC-414\" tests/system/integration-catalog/items.test.mjs",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "c691551",
+      "last_run_at": "2026-11-06T01:40:51+09:00",
+      "evidence": "work/runs/202611052307/logs/system-test/IT-041-202611060138.log",
       "history": [
         {
           "at": "2026-10-16T05:46:48+09:00",
@@ -8329,6 +8467,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:17+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:37:01+09:00",
+          "by": "conductor",
+          "change": "command: 'node --test --test-name-pattern \"AC-413\" tests/system/integration-catalog/items.test.mjs' -> 'node --test --test-name-pattern \"AC-413\" --test-name-pattern \"AC-414\" tests/system/integration-catalog/items.test.mjs'; ac_ids: ['AC-413'] -> ['AC-413', 'AC-414']",
+          "reason": "同じ FR・同じファイルの AC を 1 ケースに統合"
         }
       ]
     },
@@ -8360,6 +8510,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:19+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:37:02+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "IT-041 に統合"
         }
       ]
     },
@@ -8369,16 +8531,17 @@
         "FR-194"
       ],
       "ac_ids": [
-        "AC-415"
+        "AC-415",
+        "AC-416"
       ],
       "title": "外部連携カタログ: 稼働の連携の版・互換・変更の通知の空欄は失敗する",
       "layer": "data",
-      "command": "node --test --test-name-pattern \"AC-415\" tests/system/integration-catalog/items.test.mjs",
+      "command": "node --test --test-name-pattern \"AC-415\" --test-name-pattern \"AC-416\" tests/system/integration-catalog/items.test.mjs",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "c691551",
+      "last_run_at": "2026-11-06T01:40:51+09:00",
+      "evidence": "work/runs/202611052307/logs/system-test/IT-043-202611060139.log",
       "history": [
         {
           "at": "2026-10-16T05:46:54+09:00",
@@ -8391,6 +8554,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:20+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:37:04+09:00",
+          "by": "conductor",
+          "change": "command: 'node --test --test-name-pattern \"AC-415\" tests/system/integration-catalog/items.test.mjs' -> 'node --test --test-name-pattern \"AC-415\" --test-name-pattern \"AC-416\" tests/system/integration-catalog/items.test.mjs'; ac_ids: ['AC-415'] -> ['AC-415', 'AC-416']",
+          "reason": "同じ FR・同じファイルの AC を 1 ケースに統合"
         }
       ]
     },
@@ -8422,6 +8597,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:22+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:37:06+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "IT-043 に統合"
         }
       ]
     },
@@ -8431,16 +8618,17 @@
         "FR-195"
       ],
       "ac_ids": [
-        "AC-417"
+        "AC-417",
+        "AC-418"
       ],
       "title": "外部連携カタログ: 稼働の連携の監視・監査ログの空欄は失敗する",
       "layer": "data",
-      "command": "node --test --test-name-pattern \"AC-417\" tests/system/integration-catalog/items.test.mjs",
+      "command": "node --test --test-name-pattern \"AC-417\" --test-name-pattern \"AC-418\" tests/system/integration-catalog/items.test.mjs",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "c691551",
+      "last_run_at": "2026-11-06T01:40:51+09:00",
+      "evidence": "work/runs/202611052307/logs/system-test/IT-045-202611060139.log",
       "history": [
         {
           "at": "2026-10-16T05:47:05+09:00",
@@ -8453,6 +8641,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:23+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:37:08+09:00",
+          "by": "conductor",
+          "change": "command: 'node --test --test-name-pattern \"AC-417\" tests/system/integration-catalog/items.test.mjs' -> 'node --test --test-name-pattern \"AC-417\" --test-name-pattern \"AC-418\" tests/system/integration-catalog/items.test.mjs'; ac_ids: ['AC-417'] -> ['AC-417', 'AC-418']",
+          "reason": "同じ FR・同じファイルの AC を 1 ケースに統合"
         }
       ]
     },
@@ -8484,6 +8684,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:25+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:37:10+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "IT-045 に統合"
         }
       ]
     },
@@ -8493,16 +8705,17 @@
         "FR-196"
       ],
       "ac_ids": [
-        "AC-419"
+        "AC-419",
+        "AC-420"
       ],
       "title": "外部連携カタログ: 規約・ライセンス・費用の空欄は失敗し TBD は失敗にしない",
       "layer": "data",
-      "command": "node --test --test-name-pattern \"AC-419\" tests/system/integration-catalog/items.test.mjs",
+      "command": "node --test --test-name-pattern \"AC-419\" --test-name-pattern \"AC-420\" tests/system/integration-catalog/items.test.mjs",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "c691551",
+      "last_run_at": "2026-11-06T01:40:51+09:00",
+      "evidence": "work/runs/202611052307/logs/system-test/IT-047-202611060139.log",
       "history": [
         {
           "at": "2026-10-16T05:47:12+09:00",
@@ -8515,6 +8728,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:27+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:37:11+09:00",
+          "by": "conductor",
+          "change": "command: 'node --test --test-name-pattern \"AC-419\" tests/system/integration-catalog/items.test.mjs' -> 'node --test --test-name-pattern \"AC-419\" --test-name-pattern \"AC-420\" tests/system/integration-catalog/items.test.mjs'; ac_ids: ['AC-419'] -> ['AC-419', 'AC-420']",
+          "reason": "同じ FR・同じファイルの AC を 1 ケースに統合"
         }
       ]
     },
@@ -8546,6 +8771,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:29+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:37:13+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "IT-047 に統合"
         }
       ]
     },
@@ -8555,16 +8792,17 @@
         "FR-197"
       ],
       "ac_ids": [
-        "AC-421"
+        "AC-421",
+        "AC-422"
       ],
       "title": "外部連携カタログ: 稼働の連携のテスト用手段・実接続の確認の空欄は失敗する",
       "layer": "data",
-      "command": "node --test --test-name-pattern \"AC-421\" tests/system/integration-catalog/items.test.mjs",
+      "command": "node --test --test-name-pattern \"AC-421\" --test-name-pattern \"AC-422\" tests/system/integration-catalog/items.test.mjs",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "c691551",
+      "last_run_at": "2026-11-06T01:40:51+09:00",
+      "evidence": "work/runs/202611052307/logs/system-test/IT-049-202611060139.log",
       "history": [
         {
           "at": "2026-10-16T05:47:19+09:00",
@@ -8577,6 +8815,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:30+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:37:15+09:00",
+          "by": "conductor",
+          "change": "command: 'node --test --test-name-pattern \"AC-421\" tests/system/integration-catalog/items.test.mjs' -> 'node --test --test-name-pattern \"AC-421\" --test-name-pattern \"AC-422\" tests/system/integration-catalog/items.test.mjs'; ac_ids: ['AC-421'] -> ['AC-421', 'AC-422']",
+          "reason": "同じ FR・同じファイルの AC を 1 ケースに統合"
         }
       ]
     },
@@ -8608,6 +8858,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:32+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:37:16+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "IT-049 に統合"
         }
       ]
     },
@@ -8617,16 +8879,18 @@
         "FR-198"
       ],
       "ac_ids": [
-        "AC-423"
+        "AC-423",
+        "AC-424",
+        "AC-425"
       ],
       "title": "外部連携カタログ: 存在しない要求 ID を関連する要求 ID に持つと失敗する",
       "layer": "data",
-      "command": "node --test --test-name-pattern \"AC-423\" tests/system/integration-catalog/wiring.test.mjs",
+      "command": "node --test --test-name-pattern \"AC-423\" --test-name-pattern \"AC-424\" --test-name-pattern \"AC-425\" tests/system/integration-catalog/wiring.test.mjs",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "c691551",
+      "last_run_at": "2026-11-06T01:40:51+09:00",
+      "evidence": "work/runs/202611052307/logs/system-test/IT-051-202611060139.log",
       "history": [
         {
           "at": "2026-10-16T05:47:28+09:00",
@@ -8639,6 +8903,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:34+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:37:18+09:00",
+          "by": "conductor",
+          "change": "command: 'node --test --test-name-pattern \"AC-423\" tests/system/integration-catalog/wiring.test.mjs' -> 'node --test --test-name-pattern \"AC-423\" --test-name-pattern \"AC-424\" --test-name-pattern \"AC-425\" tests/system/integration-catalog/wiring.test.mjs'; ac_ids: ['AC-423'] -> ['AC-423', 'AC-424', 'AC-425']",
+          "reason": "同じ FR・同じファイルの AC を 1 ケースに統合"
         }
       ]
     },
@@ -8670,6 +8946,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:36+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:37:19+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "IT-051 に統合"
         }
       ]
     },
@@ -8701,6 +8989,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:37+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:37:21+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "IT-051 に統合"
         }
       ]
     },
@@ -8710,16 +9010,19 @@
         "FR-199"
       ],
       "ac_ids": [
-        "AC-426"
+        "AC-426",
+        "AC-427",
+        "AC-428",
+        "AC-429"
       ],
       "title": "外部連携カタログ: verify --docs-only は正しいカタログで exit 0・違反で非 0 と行・欄",
       "layer": "data",
-      "command": "node --test --test-name-pattern \"AC-426\" tests/system/integration-catalog/tooling.test.mjs",
+      "command": "node --test --test-name-pattern \"AC-426\" --test-name-pattern \"AC-427\" --test-name-pattern \"AC-428\" --test-name-pattern \"AC-429\" tests/system/integration-catalog/tooling.test.mjs",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "c691551",
+      "last_run_at": "2026-11-06T01:40:51+09:00",
+      "evidence": "work/runs/202611052307/logs/system-test/IT-054-202611060139.log",
       "history": [
         {
           "at": "2026-10-16T05:47:38+09:00",
@@ -8732,6 +9035,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:39+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:37:22+09:00",
+          "by": "conductor",
+          "change": "command: 'node --test --test-name-pattern \"AC-426\" tests/system/integration-catalog/tooling.test.mjs' -> 'node --test --test-name-pattern \"AC-426\" --test-name-pattern \"AC-427\" --test-name-pattern \"AC-428\" --test-name-pattern \"AC-429\" tests/system/integration-catalog/tooling.test.mjs'; ac_ids: ['AC-426'] -> ['AC-426', 'AC-427', 'AC-428', 'AC-429']",
+          "reason": "同じ FR・同じファイルの AC を 1 ケースに統合"
         }
       ]
     },
@@ -8763,6 +9078,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:40+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:37:24+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "IT-054 に統合"
         }
       ]
     },
@@ -8794,6 +9121,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:42+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:37:26+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "IT-054 に統合"
         }
       ]
     },
@@ -8825,6 +9164,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:44+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:37:29+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "IT-054 に統合"
         }
       ]
     },
@@ -8834,16 +9185,17 @@
         "NFR-OPS-001"
       ],
       "ac_ids": [
-        "AC-431"
+        "AC-431",
+        "AC-432"
       ],
       "title": "外部連携カタログ: 最終確認日が古い・TBD は警告、不正な値は失敗",
       "layer": "data",
-      "command": "node --test --test-name-pattern \"AC-431\" tests/system/integration-catalog/tooling.test.mjs",
+      "command": "node --test --test-name-pattern \"AC-431\" --test-name-pattern \"AC-432\" tests/system/integration-catalog/tooling.test.mjs",
       "canary": false,
-      "status": "blocked",
-      "last_commit": null,
-      "last_run_at": null,
-      "evidence": null,
+      "status": "pass",
+      "last_commit": "c691551",
+      "last_run_at": "2026-11-06T01:40:51+09:00",
+      "evidence": "work/runs/202611052307/logs/system-test/IT-058-202611060140.log",
       "history": [
         {
           "at": "2026-10-16T05:47:53+09:00",
@@ -8856,6 +9208,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:45+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:37:31+09:00",
+          "by": "conductor",
+          "change": "command: 'node --test --test-name-pattern \"AC-431\" tests/system/integration-catalog/tooling.test.mjs' -> 'node --test --test-name-pattern \"AC-431\" --test-name-pattern \"AC-432\" tests/system/integration-catalog/tooling.test.mjs'; ac_ids: ['AC-431'] -> ['AC-431', 'AC-432']",
+          "reason": "同じ FR・同じファイルの AC を 1 ケースに統合"
         }
       ]
     },
@@ -8887,6 +9251,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC の検証レベルが unit／integration のため System Test の対象外（CHK-10）。テストは tests/system/integration-catalog/ に作成済みで implementer の検証に使う。system への変更は rd-author に回す"
+        },
+        {
+          "at": "2026-11-06T01:35:48+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "AC を system に変更・配線復元のため再有効化"
+        },
+        {
+          "at": "2026-11-06T01:37:33+09:00",
+          "by": "conductor",
+          "change": "blocked",
+          "reason": "IT-058 に統合"
         }
       ]
     },
