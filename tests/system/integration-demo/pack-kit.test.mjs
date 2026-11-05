@@ -182,33 +182,116 @@ test('FR-268 AC-684 説明カード・手順書に書かれた npm スクリプ�
 });
 
 // ---------------------------------------------------------------- AC-830（文書側。画面側は e2e/getting-started.spec.ts）
-test('FR-268 AC-830 users-guide（01-quick-start.md・engineering/02-customer-pack.md）と guideContent.ts に、①〜⑥の完全な手順がコピーできるコマンドと kit の場所つきで載り、コマンド・パスが実在に一致する', () => {
-  const docs = {
-    'users-guide/01-quick-start.md': read('users-guide', '01-quick-start.md'),
-    'users-guide/engineering/02-customer-pack.md': read('users-guide', 'engineering', '02-customer-pack.md'),
+/** md から「開始見出し」から「次の同じ階層以上の見出し（stop）」までを切り出す。 */
+function mdSection(md, startRe, stopRe, label) {
+  const s = md.search(startRe);
+  assert.ok(s >= 0, `${label}: 開始の見出しがない（${startRe}）`);
+  const rest = md.slice(s + 1);
+  const e = rest.search(stopRe);
+  assert.ok(e >= 0, `${label}: 終わりの見出しがない（${stopRe}）`);
+  return md.slice(s, s + 1 + e);
+}
+
+/** 画面（GuideParts.tsx の PackSection）の、担当者向けの見出しより前（利用者向け）と後（担当者向け）。 */
+function screenSections() {
+  const tsx = read('src', 'guide', 'GuideParts.tsx');
+  const from = tsx.indexOf('export function PackSection');
+  assert.ok(from >= 0, 'GuideParts.tsx に PackSection がない');
+  const body = tsx.slice(from);
+  const cut = body.indexOf('担当者向け</GuideH>');
+  assert.ok(cut >= 0, '画面に「担当者向け」の見出しがない');
+  const end = body.indexOf('\n}\n', cut);
+  return { user: body.slice(0, cut), staff: body.slice(cut, end < 0 ? undefined : end) };
+}
+
+const STEPS = [
+  ['① Prompt と kit をコピーする', /Prompt と kit/, /コピー/],
+  ['② Copilot に貼ってファイルを作る', /M365 Copilot|Microsoft 365 Copilot/, /GitHub Copilot/, /WorkIQ/, /貼/],
+  ['③ 画面からアップロードして取り込む', /アップロード/, /顧客パックを取り込む/, /複数選択/, /ドラッグ＆ドロップ/],
+  ['④ 検証の結果の読み方と直し方', /検証の結果/, /エラー/, /ファイル名/, /直/],
+  ['⑤ 取り込む前に人が確かめる', /取り込む前/, /機密区分/, /ロゴ/, /個人/],
+];
+// 手順 ①〜⑤ の代表語が、この順で現れる（先頭の語の出現位置が昇順）
+function assertSteps(name, text) {
+  let last = -1;
+  for (const [label, first, ...others] of STEPS) {
+    const m = text.slice(last + 1).search(first);
+    assert.ok(m >= 0, `${name} に手順「${label}」（${first}）が、前の手順より後ろにない`);
+    last = last + 1 + m;
+    for (const re of others) assert.match(text, re, `${name} の手順「${label}」に ${re} の記述がない`);
+  }
+}
+const FORBIDDEN = [
+  [/npm/, 'npm'], [/リポジトリ/, 'リポジトリ'], [/work\/envisioning/, '作業フォルダー work/envisioning/'], [/作業フォルダー/, '作業フォルダー'],
+  [/git clone/, 'git clone'], [/起動手順|npm start/, '起動の手順'],
+];
+
+// FR-268 AC-830: 利用者向けの手順（画面・users-guide・README）
+test('FR-268 AC-830 利用者向けの手順（README・users-guide 2 本・メイン画面）に ①〜⑤ が載り、npm・リポジトリ・作業フォルダーが出ない', () => {
+  const qs = read('users-guide', '01-quick-start.md');
+  const eng = read('users-guide', 'engineering', '02-customer-pack.md');
+  const readme = read('README.md');
+  const scr = screenSections();
+  const userParts = {
+    'README.md（5 章 利用者向け）': mdSection(readme, /^### 画面だけで作って取り込む（利用者向け）/m, /\n### /, 'README'),
+    'users-guide/01-quick-start.md（13.2）': mdSection(qs, /^### 13\.2 /m, /\n### 13\.3 /, '01-quick-start 13.2'),
+    'users-guide/engineering/02-customer-pack.md（利用者向け）': mdSection(eng, /^### 利用者向け/m, /\n### /, '02-customer-pack'),
+    'メイン画面（GuideParts.tsx PackSection の利用者向け）': scr.user,
   };
-  const must = [
-    ['準備', /準備/], ['方法 A', /方法\s*A/], ['方法 B', /方法\s*B/], ['方法 C', /方法\s*C/], ['検証', /検証/], ['画面への反映', /画面への反映|画面に反映|アプリへ反映/],
-    ['npm install', /npm install/], ['npm run pack:kit', /npm run pack:kit/], ['kit の場所',     /tools\/envisioning\/_attach\/customer-pack-kit\.md/],
-        ['保存先', /tools\/envisioning\//], ['check:pack', /npm run check:pack/], ['verify:pack', /npm run verify:pack/],
-    ['public/data', /public\/data/], ['public/brand', /public\/brand/], ['npm run build', /npm run build/], ['npm start', /npm start/],
-    ['エラー時の直し方', /エラー/],
-  ];
-  for (const [name, t] of Object.entries(docs)) {
-    for (const [label, re] of must) assert.match(t, re, `${name} に「${label}」の記述がない`);
-    // コマンドはコードブロック（コピーできる形）の中にある
-    const code = fencedBlocks(t).join('\n');
-    for (const c of ['npm install', 'npm run pack:kit', 'npm run check:pack', 'npm run verify:pack', 'npm run build', 'npm start']) {
-      assert.ok(code.includes(c), `${name} の「${c}」がコードブロック（コピーできる形）にない`);
+  for (const [name, t] of Object.entries(userParts)) {
+    assertSteps(name, t);
+    for (const [re, label] of FORBIDDEN) assert.doesNotMatch(t, re, `${name} の利用者向け手順に「${label}」が出ている`);
+  }
+  // 01-quick-start の 13 章の導入と 13.1（Prompt）も利用者向け: npm・作業フォルダーを前提にしない
+  const qsIntro = mdSection(qs, /^## 13\. /m, /\n### 13\.2 /, '01-quick-start 13 導入〜13.1');
+  for (const [re, label] of FORBIDDEN.filter(([, l]) => l !== 'リポジトリ' && l !== 'npm')) assert.doesNotMatch(qsIntro, re, `01-quick-start 13 の導入・13.1 に「${label}」が出ている`);
+  assert.doesNotMatch(qsIntro.replace(/\[[^\]]*\]\([^)]*\)/g, ''), /npm /, '01-quick-start 13 の導入・13.1 に npm が出ている');
+  // Prompt 4 か所は、保存先を作業フォルダーとせず、アップロード前提（AC-829 の同一文面は別ケース）
+  const g = guideConstants();
+  const prompts = {
+    [M365_MD]: fencedBlocks(read(...M365_MD.split('/'))).join('\n'),
+    [GHCP_MD]: fencedBlocks(read(...GHCP_MD.split('/'))).join('\n'),
+    'PACK_PROMPT_M365': g.m365,
+    'PACK_PROMPT_GHCP': g.ghcp,
+  };
+  for (const [name, t] of Object.entries(prompts)) {
+    assert.doesNotMatch(t, /work\/envisioning|作業フォルダー|npm/, `${name} の Prompt に作業フォルダー・npm が出ている（保存先は作らず、画面からアップロードする）`);
+  }
+  for (const name of [M365_MD, GHCP_MD]) assert.match(read(...name.split('/')), /アップロード/, `${name} にアップロード前提の記述がない`);
+});
+
+// FR-268 AC-830 / AC-684: 担当者向けの手順（別の節・コピーできるコマンド・scripts と実在に一致）
+test('FR-268 AC-830 AC-684 担当者向けの手順は別の節に、コピーできるコマンドで残り、package.json の scripts と実在のファイルに一致する', () => {
+  const qs = read('users-guide', '01-quick-start.md');
+  const eng = read('users-guide', 'engineering', '02-customer-pack.md');
+  const readme = read('README.md');
+  const scr = screenSections();
+  const staffCmds = ['npm install', 'npm run pack:kit', 'npm run pipeline', 'npm run check:pack', 'npm run verify:pack'];
+  const staff = {
+    'users-guide/01-quick-start.md（13.3）': { text: mdSection(qs + '\n## END', /^### 13\.3 /m, /\n## /, '01-quick-start 13.3'), copy: (t) => fencedBlocks(t).join('\n') },
+    'users-guide/engineering/02-customer-pack.md（担当者向け）': { text: mdSection(eng + '\n## END', /^### \(0\) 担当者向け/m, /\n## 2\.4 /, '02-customer-pack 担当者向け'), copy: (t) => fencedBlocks(t).join('\n') },
+    'README.md（担当者向け）': { text: mdSection(readme, /^### 担当者向け/m, /\n## /, 'README 担当者向け'), copy: (t) => fencedBlocks(t.replace(/^[ \t]+(?=`{3})/gm, '').replace(/^[ \t]+(?=npm )/gm, '')).join('\n') },
+  };
+  for (const [name, { text, copy }] of Object.entries(staff)) {
+    const code = copy(text);
+    for (const c of ['npm run pack:kit', 'npm run pipeline']) {
+      if (name.startsWith('README')) assert.ok(text.includes(c) && code.includes('npm run pipeline'), `${name} の「${c}」がない（pipeline はコピーできる形）`);
+      else assert.ok(code.includes(c), `${name} の「${c}」がコードブロック（コピーできる形）にない`);
     }
-    for (const n of npmScriptsUsed(t)) assert.ok(pkg.scripts[n], `${name} の「npm run ${n}」が package.json の scripts にない`);
+    for (const n of npmScriptsUsed(text)) assert.ok(pkg.scripts[n], `${name} の「npm run ${n}」が package.json の scripts にない`);
+    assert.match(text, /担当者向け|準備担当者/, `${name} が担当者向けと示されていない`);
   }
-  const guide = read('src', 'guide', 'guideContent.ts') + '\n' + read('src', 'guide', 'GuideParts.tsx');
-  for (const c of ['npm install', 'npm run pack:kit', 'customer-pack-kit.md', 'public/data', 'public/brand', 'npm run build', 'npm start']) {
-    assert.ok(guide.includes(c), `メイン画面の文面（guideContent.ts / GuideParts.tsx）に「${c}」がない`);
-  }
-  assert.ok(guide.includes('tools/envisioning/_attach/customer-pack-kit.md') || !/work\/envisioning/.test(guide), '画面の文面に旧パス work/envisioning が残っている');
-  for (const [name, t] of Object.entries(docs)) assert.doesNotMatch(t, /work\/envisioning\/_attach/, `${name} に旧パス work/envisioning/_attach が残っている`);
+  assert.ok(/npm install/.test(fencedBlocks(staff['users-guide/01-quick-start.md（13.3）'].text).join('\n')), '01-quick-start 13.3 の npm install がコピーできる形にない');
+  for (const c of ['npm run check:pack', 'npm run verify:pack']) assert.ok(fencedBlocks(staff['users-guide/01-quick-start.md（13.3）'].text).join('\n').includes(c), `01-quick-start 13.3 の「${c}」がコピーできる形にない`);
+  // 画面: 担当者向けの見出しの後に、コピーボタンつきのコマンド行（CommandRow）で、PACK_COMMANDS の各コマンドが載る
+  const gc = read('src', 'guide', 'guideContent.ts');
+  const cmdBlock = gc.slice(gc.indexOf('PACK_COMMANDS'));
+  for (const c of staffCmds) assert.ok(cmdBlock.includes(c), `guideContent.ts の PACK_COMMANDS に「${c}」がない`);
+  for (const key of ['install', 'kit', 'pipeline', 'check', 'verify']) assert.match(scr.staff, new RegExp(`<CommandRow[^>]*command=\\{PACK_COMMANDS\\.${key}\\}`), `画面の担当者向けに PACK_COMMANDS.${key} の CommandRow（コピーできるコマンド）がない`);
+  for (const n of npmScriptsUsed(gc + scr.staff)) assert.ok(pkg.scripts[n], `画面の文面の「npm run ${n}」が package.json の scripts にない`);
+  for (const p of ['scripts/make-pack-kit.ts', KIT_REL, 'examples/mono', 'schema']) assert.ok(exists(...p.split('/')), `担当者向けが示すパスが実在しない: ${p}`);
+  assert.ok(qs.includes(KIT_REL) && scr.staff.concat(gc).includes(KIT_REL), `kit の場所 ${KIT_REL} が、01-quick-start.md と画面の担当者向けに載っていない`);
+  assert.ok(!qs.includes('work/envisioning/_attach') && !eng.includes('work/envisioning/_attach') && !gc.includes('work/envisioning/_attach'), '旧パス work/envisioning/_attach が残っている');
 });
 
 // ---------------------------------------------------------------- AC-835

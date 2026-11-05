@@ -215,17 +215,17 @@
 - 受入基準 AC-683: Prompt の要点と kit（AC-834）に「コピー」ボタンがあり（担当者向けの注記のコマンドにも「コピー」ボタンがあってよい）、押すとその文字列がクリップボードへコピーされて「コピーしました」が支援技術にも伝わる。クリップボードが使えないときは、文字列を選択できる状態で示され、原因と次の行動が表示される。
   - 検証レベル: integration
 - 受入基準 AC-684: 説明カードの担当者向けの注記に書かれたコマンド・パス・ファイル名（`npm run pipeline`・`npm run check:pack`・`npm run verify:pack`・`npm run pack:kit`・`examples/mono`・`docs/prompts/m365-copilot-customer-pack.md`・`http://127.0.0.1:4173`）が、package.json の scripts と、リポジトリーに実在するファイル・README・users-guide/01-quick-start.md §13 の記述と一致する。利用者向けの主文は、アップロード（FR-302）の手順と食い違わない。
-  - 検証レベル: integration
+  - 検証レベル: system
 - 受入基準 AC-828: `npm run pack:kit` を実行すると、tools/envisioning/_attach/customer-pack-kit.md（git にコミットする正本。旧 work/envisioning/_attach/ からの移動、依頼 2026-11-04）が 1 つ作られ、schema/*.json の全 10 ファイルと examples/mono の public/data・public/brand の JSON・調査記録 2 本が、パスの見出し付きのコードブロックで省略されずに（元ファイルと内容が一致して）含まれる。schema/*.json が古いとき（gen:schema --check 相当で差分があるとき）は、終了コードが 0 以外で、原因と直し方（`npm run gen:schema`）が表示され、kit は更新されない。
-  - 検証レベル: integration
+  - 検証レベル: system
 - 受入基準 AC-829: docs/prompts/m365-copilot-customer-pack.md、docs/prompts/github-copilot-workiq-customer-pack.md、guideContent.ts の PACK_PROMPT_M365・PACK_PROMPT_GHCP、users-guide/01-quick-start.md §13.1 の Prompt 本文は、それぞれ同じ文面である。M365 用 Prompt は、添付または貼り付けの customer-pack-kit.md の schema に従うと述べ、見当たらないときは「顧客パックを作らず、私に添付を求めてください」と明記している（この文言は維持する）。「添付の schema/*.json」「examples/mono/ を添付」のような、入手できない添付を求める記述は残らない。
-  - 検証レベル: integration
+  - 検証レベル: system
 - 受入基準 AC-830: 標準の検証条件で、メイン画面の「はじめての方へ」／「顧客パックとは」と users-guide（01-quick-start.md と engineering/02-customer-pack.md）と README の利用者向け手順に、①Prompt と kit をコピーする ②M365 Copilot または GitHub Copilot + WorkIQ に貼ってファイルを作る ③画面からアップロードして取り込む（複数選択・ドラッグ＆ドロップ。FR-302）④検証の結果の読み方と直し方（FR-303）⑤取り込み前に人が確かめること（FR-304）の手順が載っている。これらの利用者向け手順には、`npm`・リポジトリの取得・作業フォルダー（`work/envisioning/`）への保存・`npm run build` / `npm start` が出ない。担当者向けの手順（`npm install`・`npm run pack:kit`・`npm run pipeline`・`check:pack`・`verify:pack`）は、別の「担当者向け」の節に、コピーできるコマンドで残り、package.json の scripts と実在のファイルに一致する。docs/prompts/m365-copilot-customer-pack.md と github-copilot-workiq-customer-pack.md、guideContent.ts の PACK_PROMPT_M365・PACK_PROMPT_GHCP（AC-829）も、ファイルの保存先を作業フォルダーとせず、画面からアップロードする前提の文面である（AC-829 の「同じ文面」「添付が見当たらないときは作らず添付を求める」は維持）。
-  - 検証レベル: integration
+  - 検証レベル: system
 - 受入基準 AC-834: 標準の検証条件で、メイン画面の「はじめての方へ」（顧客パックの節）に、customer-pack-kit.md の内容そのものを見られる折りたたみ表示（既定は閉じた状態。開いたときに必要な内容を読み込む）と「コピー」ボタンがあり、押すと kit の全文がクリップボードへコピーされて「コピーしました」が支援技術にも伝わる。利用者はファイルを開かず、コピーした文字列を M365 Copilot／GitHub Copilot のチャットへ貼り付けるだけで顧客パックを作れる（Prompt と kit の貼り付け手順が画面に書かれている）。クリップボードが使えないときは、文字列を選択できる状態で示され、原因と次の行動が表示される。
   - 検証レベル: system
 - 受入基準 AC-835: 画面に表示される kit の内容は、tools/envisioning/_attach/customer-pack-kit.md の内容と一致する（古くない）。`npm run pack:kit` の出力と、画面が提供する kit の内容に差分があるとき、自動検査は失敗して原因と直し方（`npm run pack:kit`）を示す。
-  - 検証レベル: integration
+  - 検証レベル: system
 - 受入基準 AC-836: 標準の検証条件で、「はじめての方へ」の schema の入手先の記載は、業務コンサルタント（ソフトウェアエンジニアではない）が読める平易な表現になり、技術用語（リポジトリ、schema、コマンド名など）を主文に使わない。例: 「顧客パックの書式の定義は、この画面の『kit』にまとまっています。コピーして Copilot に貼り付けてください。書式が古いと kit は作られません。その場合は担当者に更新を依頼してください。」。担当者向けの更新手順（`npm run gen:schema`・`npm run pack:kit`）は 1 行だけ別に残す。
   - 検証レベル: system
 - 受入基準 AC-856: 標準の検証条件で、「はじめての方へ」（顧客パックの節）に、ファイルを作ったあとの手順として、取り込み画面（FR-302）への入口（ボタンまたはリンク）があり、押すと取り込み画面に移る。入口の文は npm・リポジトリ・作業フォルダーの語を使わず、平易な表現（AC-836）である。
