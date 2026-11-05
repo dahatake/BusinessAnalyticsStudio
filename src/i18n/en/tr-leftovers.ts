@@ -175,6 +175,7 @@ export default {
   '最大化': 'Maximize',
   '通常表示': 'Normal view',
   '最小化': 'Minimize',
+  'ウィンドウの操作': 'Window controls',
   'タブにまとめる': 'Group into tabs',
   'タブから出す': 'Move out of tabs',
   '非表示': 'Hide',
