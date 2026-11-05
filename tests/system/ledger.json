@@ -1728,10 +1728,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-056",
       "canary": false,
-      "status": "blocked",
-      "last_commit": "7c429dd",
-      "last_run_at": "2026-11-05T16:53:30+09:00",
-      "evidence": "work/runs/202611051511/logs/system-test/E2E-148-202611051613.log",
+      "status": "fail",
+      "last_commit": "3384063",
+      "last_run_at": "2026-11-06T00:00:25+09:00",
+      "evidence": "work/runs/202611052307/logs/system-test/E2E-148-202611052310.log",
       "history": [
         {
           "at": "2026-10-12T14:07:07+09:00",
@@ -1768,6 +1768,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "GPU のない環境（WebGL が SwiftShader のソフトウェア描画）では 3D・性能の測定が収まらず検証できない。AC の閾値は変えない。GPU のある環境で unblock して再実行する"
+        },
+        {
+          "at": "2026-11-05T23:08:14+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "GPU あり（NVIDIA RTX Spark N1X）の環境で再実行するため unblock"
         }
       ],
       "serial": true
@@ -5140,10 +5146,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-393",
       "canary": false,
-      "status": "blocked",
-      "last_commit": "4a3c119",
-      "last_run_at": "2026-11-05T12:46:52+09:00",
-      "evidence": "work/runs/202611051159/logs/system-test/E2E-289-202611051223.log",
+      "status": "pass",
+      "last_commit": "3384063",
+      "last_run_at": "2026-11-06T00:00:25+09:00",
+      "evidence": "work/runs/202611052307/logs/system-test/E2E-289-202611060000.log",
       "history": [
         {
           "at": "2026-10-15T22:31:43+09:00",
@@ -5162,6 +5168,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "GPU のない環境（WebGL が SwiftShader のソフトウェア描画）では 3D・性能の測定が収まらず検証できない。AC の閾値は変えない。GPU のある環境で unblock して再実行する"
+        },
+        {
+          "at": "2026-11-05T23:08:16+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "GPU あり（NVIDIA RTX Spark N1X）の環境で再実行するため unblock"
         }
       ],
       "serial": true
@@ -11827,10 +11839,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-086",
       "canary": false,
-      "status": "blocked",
-      "last_commit": "7c429dd",
-      "last_run_at": "2026-11-05T16:53:30+09:00",
-      "evidence": "work/runs/202611051511/logs/system-test/E2E-451-202611051633.log",
+      "status": "fail",
+      "last_commit": "3384063",
+      "last_run_at": "2026-11-06T00:00:25+09:00",
+      "evidence": "work/runs/202611052307/logs/system-test/E2E-451-202611052335.log",
       "history": [
         {
           "at": "2026-10-30T09:19:01+09:00",
@@ -11861,6 +11873,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "GPU のない環境（WebGL が SwiftShader のソフトウェア描画）では 3D・性能の測定が収まらず検証できない。AC の閾値は変えない。GPU のある環境で unblock して再実行する"
+        },
+        {
+          "at": "2026-11-05T23:08:15+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "GPU あり（NVIDIA RTX Spark N1X）の環境で再実行するため unblock"
         }
       ]
     },

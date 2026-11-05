@@ -9,6 +9,12 @@ const outDir = runId
   ? path.join(REPO_ROOT, 'work', 'runs', runId, 'evidence', 'playwright')
   : path.join(REPO_ROOT, 'work', 'system-test', 'playwright');
 
+// ST_GPU=1 のときだけ GPU 描画（既定は SwiftShader のまま）。性能・3D の測定用（E2E-148/451/289）。
+// 既定で使うと canvas の画素取得が変わり map/3D が失敗した（run.mjs 参照）。ST_GPU_ANGLE=gl で OpenGL に替えられる。
+const gpuArgs = process.env.ST_GPU === '1'
+  ? [`--use-angle=${process.env.ST_GPU_ANGLE ?? 'd3d11'}`, '--ignore-gpu-blocklist', '--enable-gpu-rasterization']
+  : [];
+
 export default defineConfig({
   testDir: './e2e',
   // run.mjs がプロセスごとの ST_OUT_SUBDIR を渡す（並列実行で outputDir・artifacts が重ならない）
@@ -32,7 +38,11 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
-      use: { browserName: 'chromium', viewport: { width: 1600, height: 900 } },
+      use: {
+        browserName: 'chromium',
+        viewport: { width: 1600, height: 900 },
+        ...(gpuArgs.length ? { launchOptions: { args: gpuArgs } } : {}),
+      },
       grepInvert: /@perf/,
     },
     {
@@ -41,7 +51,7 @@ export default defineConfig({
       use: {
         browserName: 'chromium',
         viewport: { width: 1600, height: 900 },
-        launchOptions: { args: ['--disable-frame-rate-limit', '--disable-gpu-vsync', '--enable-unsafe-webgpu'] },
+        launchOptions: { args: ['--disable-frame-rate-limit', '--disable-gpu-vsync', '--enable-unsafe-webgpu', ...gpuArgs] },
       },
       grep: /@perf/,
       fullyParallel: false,

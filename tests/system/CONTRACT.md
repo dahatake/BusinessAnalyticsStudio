@@ -7,6 +7,8 @@
 - 1 つの AC: `node tests/system/run.mjs AC-001`（リポジトリルートから。AC ID が題名に入るテストだけを実行。0 件なら非 0）。
 - 一覧: `npm run st:list --prefix tests/system`。型検査: `npm run typecheck --prefix tests/system`。
 - 性能の AC（`@perf`、AC-117・AC-163）は `chromium-perf` プロジェクトで、並列なしで実行する。
+- GPU 描画（性能・3D の測定用。既定は SwiftShader のまま）: `ST_GPU=1`（既定 `--use-angle=d3d11`。`ST_GPU_ANGLE=gl` で OpenGL）を付ける。
+- E2E-148/451/289: `ST_GPU=1 python scripts/ledger.py --by conductor run --cases E2E-148,E2E-451,E2E-289 --jobs 1 --case-timeout 1500 --max-minutes 60`（`npm run build` の後）。
 - 証跡: `RUN_ID` があれば `work/runs/<run-id>/evidence/playwright/`。
 
 ## 2. 起動（アプリの前提）
