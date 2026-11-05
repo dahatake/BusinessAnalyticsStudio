@@ -220,15 +220,14 @@ describe('FR-304 取り込み前に人が確かめること', () => {
   const ok = () => validateUpload(classifyFiles(readUpload(MONO)));
 
   // FR-304 AC-851
-  it('FR-304 AC-851 検証エラーがあるときは確認事項を出さない。ないときは出典なしの件数（0 件）を返す', () => {
+  it('FR-304 AC-851 検証エラーがあるときは確認事項を出さない。ないときは確認事項を返す（出典のない数値は確認欄の対象ではない）', () => {
     const bad = validateUpload(classifyFiles(readUpload(MONO).filter((f) => !f.name.endsWith('issues.json'))));
     expect(reviewUpload(bad)).toBeUndefined();
     const r = reviewUpload(ok())!;
-    expect(r.unsourced.count).toBe(0);
-    expect(r.unsourced.locations).toEqual([]);
+    expect(Object.keys(r).sort()).toEqual(['classification', 'logo', 'people']);
   });
 
-  it('FR-304 AC-851 出典のない数値があれば、件数が validatePack と同じで、位置（ファイル・経路・ID）を返す', () => {
+  it('FR-304 AC-851 出典のない数値があれば検証エラーで取り込めず、確認事項には出さない（位置は検証の結果に出る）', () => {
     const v = ok();
     const data = JSON.parse(JSON.stringify(v.data));
     const strip = (o: any): boolean => {
@@ -240,10 +239,12 @@ describe('FR-304 取り込み前に人が確かめること', () => {
       return false;
     };
     if (!strip(data)) return;
-    const r = reviewItems(data, v.brand!);
-    expect(r.unsourced.count).toBeGreaterThan(0);
-    expect(r.unsourced.locations).toHaveLength(r.unsourced.count);
-    expect(r.unsourced.locations[0]!.file).toMatch(/^public\/data\//);
+    expect(Object.keys(reviewItems(data, v.brand!))).not.toContain('unsourced');
+    const files = readUpload(MONO).map((f) => (/public\/data\/(\w+)\.json$/.test(f.name) ? { ...f, text: JSON.stringify(data[f.name.replace(/^.*\/(\w+)\.json$/, '$1')]) } : f));
+    const up = validateUpload(classifyFiles(files));
+    expect(up.ok).toBe(false);
+    expect(reviewUpload(up)).toBeUndefined();
+    expect(up.errors.some((e) => e.code === 'missing-source')).toBe(true);
   });
 
   // FR-304 AC-852
@@ -287,5 +288,27 @@ describe('FR-304 取り込み前に人が確かめること', () => {
     expect(JSON.stringify(r)).not.toContain('山田太郎秘密');
     expect(JSON.stringify(r)).not.toContain('taro@example.com');
     if (base === 0) expect(none.people.note).toBeUndefined();
+  });
+});
+
+describe('FR-302 判別できないファイル・保存する原本', () => {
+  // FR-302 AC-838
+  it('FR-302 AC-838 判別できないファイルは対象から外して名前を示し、残りが検証を通れば取り込める', () => {
+    const files = [...readUpload(MONO), { name: 'logo.png', text: 'binary' }, { name: 'memo.json', text: '{"unrelated":true}' }];
+    const c = classifyFiles(files);
+    expect([...c.unknown, ...c.assets].sort()).toEqual(['logo.png', 'memo.json']);
+    const up = validateUpload(c);
+    expect(up.ok).toBe(true);
+    expect(up.warnings.some((w) => w.includes('memo.json'))).toBe(true);
+  });
+
+  // FR-302 AC-841・843
+  it('FR-302 AC-841 AC-843 保存する原本は、お手本パックの JSON と一致する（無効化の前・互換データも削らない）', () => {
+    const up = validateUpload(classifyFiles(readUpload(MONO)));
+    expect(up.ok).toBe(true);
+    for (const n of ['customer', 'entities', 'issues', 'products', 'plan', 'architecture', 'mocks', 'show', 'sources']) {
+      expect((up.data as any)[n], n).toEqual(jsonOf(`public/data/${n}.json`));
+    }
+    expect(up.brand).toEqual(jsonOf('public/brand/brand-profile.json'));
   });
 });

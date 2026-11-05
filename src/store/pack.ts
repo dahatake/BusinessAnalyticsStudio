@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 import { loadPack, loadRuntimeConfig, PackLoadError, type LoadedPack, type RuntimeConfig } from '../data/loader';
-import { formatPackError, type PackData } from '../schema';
+import { formatPackError, type BrandProfile, type PackData } from '../schema';
 import { useProjects } from './projects';
-import { readProjectPack, saveProjectPack } from './projectPacks';
+import { readProjectBrand, readProjectPack, saveProjectPack } from './projectPacks';
 
 export type PackState =
   | { status: 'loading' }
@@ -14,6 +14,8 @@ interface PackStore {
   runtime: RuntimeConfig;
   /** 読み込んだときの顧客パックのデータ（「サンプルに戻す」の戻し先: FR-046）。読み込み前は null */
   original: PackData | null;
+  /** 配信元のブランド（保存のない Project・デモで使う: AC-858）。読み込み前は null */
+  servedBrand: BrandProfile | null;
   load: () => Promise<void>;
   /**
    * 編集したデータに置き換える（FR-045）。すべてのビューはこのストアの `state.pack.data` を購読しているので、置き換えると即座に反映される。
@@ -26,6 +28,7 @@ export const usePackStore = create<PackStore>((set, get) => ({
   state: { status: 'loading' },
   runtime: {},
   original: null,
+  servedBrand: null,
   setData: (data) => {
     if (get().state.status !== 'ready') return;
     saveProjectPack(useProjects.getState().openId, data);
@@ -37,8 +40,10 @@ export const usePackStore = create<PackStore>((set, get) => ({
     const runtime = await loadRuntimeConfig(fetchFn);
     try {
       const pack = await loadPack(fetchFn);
-      const data = readProjectPack(useProjects.getState().openId, pack.brand) ?? pack.data;
-      set({ runtime, original: pack.data, state: { status: 'ready', pack: { ...pack, data }, warnings: pack.issues.map(formatPackError) } });
+      const openId = useProjects.getState().openId;
+      const brand = readProjectBrand(openId) ?? pack.brand; // AC-858: 開いている Project のブランド
+      const data = readProjectPack(openId, brand) ?? pack.data;
+      set({ runtime, original: pack.data, servedBrand: pack.brand, state: { status: 'ready', pack: { ...pack, data, brand }, warnings: pack.issues.map(formatPackError) } });
     } catch (e) {
       const messages = e instanceof PackLoadError ? e.errors.map(formatPackError) : [String(e)];
       set({ runtime, state: { status: 'error', messages } });
@@ -53,6 +58,8 @@ useProjects.subscribe((next, previous) => {
   const current = usePackStore.getState();
   if (current.state.status !== 'ready' || !current.original) return;
   const state = current.state;
-  const data = readProjectPack(next.openId, state.pack.brand) ?? current.original;
-  usePackStore.setState({ state: { ...state, pack: { ...state.pack, data } } });
+  // AC-858: Project ごとのブランドに切り替える。保存がない Project・デモは配信元のブランド
+  const brand = readProjectBrand(next.openId) ?? current.servedBrand ?? state.pack.brand;
+  const data = readProjectPack(next.openId, brand) ?? current.original;
+  usePackStore.setState({ state: { ...state, pack: { ...state.pack, data, brand } } });
 });

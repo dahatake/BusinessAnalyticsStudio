@@ -1,6 +1,6 @@
 // 顧客パックの取り込み画面（FR-302。判別・検証は src/packImport、確認事項は FR-304）。メイン画面の「はじめての方へ」の入口から開く（FR-268 AC-856）。
 // ファイルはブラウザーの中だけで読み、端末の外へは送らない（C-01）。1 ファイルが上限（PARAM-142: 5 MB）を超えるときは中身を読まない（AC-844）。
-// 検証にエラーがあるときは確認欄を出さず、「取り込む」は押せない。確かめた旨の選択は取り込みの操作のためだけで、保存しない（FR-219）。
+// 検証にエラーがあるときは確認欄を出さず、「取り込む」は押せない。確かめた旨の選択は取り込みの操作のためだけで、保存しない（FR-219）。brand-profile.json は Project ごとに保存される（AC-858）。
 import { useMemo, useRef, useState, type DragEvent } from 'react';
 import {
   Button, Checkbox, DialogActions, DialogBody, DialogContent, DialogTitle, Field, Input, MessageBar, MessageBarBody,
@@ -84,7 +84,6 @@ export function PackUpload() {
   const [project, setProject] = useState<string | null>(null);
   const [targetId, setTargetId] = useState('');
   const [confirmed, setConfirmed] = useState(false);
-  const [showLocations, setShowLocations] = useState(false);
   const [asking, setAsking] = useState(false);
   const [failure, setFailure] = useState<{ reason: string; remedy: string } | null>(null);
   const [done, setDone] = useState<string | null>(null);
@@ -111,7 +110,6 @@ export function PackUpload() {
     if (mine !== seq.current) return;
     setFiles(read);
     setConfirmed(false);
-    setShowLocations(false);
     setFailure(null);
     setDone(null);
     setCompany(null);
@@ -128,10 +126,10 @@ export function PackUpload() {
 
   const run = () => {
     setAsking(false);
-    if (!validation?.ok || !validation.data) return;
+    if (!validation?.ok || !validation.data || !validation.brand) return;
     const r = mode === 'new'
-      ? importPack({ mode: 'new', data: validation.data, company: companyValue, project: projectValue })
-      : importPack({ mode: 'replace', data: validation.data, projectId: targetId });
+      ? importPack({ mode: 'new', data: validation.data, brand: validation.brand, company: companyValue, project: projectValue })
+      : importPack({ mode: 'replace', data: validation.data, brand: validation.brand, projectId: targetId });
     if (!r.ok) { setFailure({ reason: r.reason, remedy: r.remedy }); setDone(null); return; }
     setFailure(null);
     setDone(mode === 'new' ? t('取り込みました。Project「{name}」を作成しました。', { name: projectValue.trim() }) : t('取り込みました。「{name}」の顧客パックを置き換えました。', { name: labelOf(targetId) }));
@@ -239,19 +237,6 @@ export function PackUpload() {
           <Title3 as="h3">{t('取り込み前に確かめること')}</Title3>
           <Text>{t('次の内容を、人が確かめてから取り込みます。')}</Text>
           <ul className={s.plain}>
-            <li>
-              {t('出典のない数値 {n} 件', { n: review.unsourced.count })}
-              {review.unsourced.count > 0 ? (
-                <>
-                  {' '}<Button size="small" appearance="secondary" aria-expanded={showLocations} onClick={() => setShowLocations((v) => !v)}>{t('位置を見る')}</Button>
-                  {showLocations ? (
-                    <ul className={s.list}>
-                      {review.unsourced.locations.slice(0, MAX_SHOWN).map((l, i) => <li key={i}>{l.file} {l.path}{l.id ? ` [${l.id}]` : ''}</li>)}
-                    </ul>
-                  ) : null}
-                </>
-              ) : null}
-            </li>
             <li>{t('機密区分 internal {n} 件', { n: review.classification.internal })} / {t('shareable {n} 件', { n: review.classification.shareable })}{review.classification.note ? ` ${review.classification.note}` : ''}</li>
             <li>
               {review.logo.status === 'unknown' ? t('ロゴ unknown {n} 件', { n: review.logo.unknownCount }) : t('ロゴの利用条件: 確認済み')} {review.logo.note}

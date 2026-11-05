@@ -40,6 +40,48 @@ export function saveProjectPackStrict(id: string, data: PackData): { ok: true } 
   }
 }
 
+// FR-302 AC-858: 取り込んだ brand-profile.json（ブランドの色・ロゴ）を Project ごとに端末内へ保存する。
+export const PROJECT_BRANDS_KEY = 'eabk.project-brands.v1';
+
+function readBrands(): Record<string, unknown> {
+  try {
+    const value: unknown = JSON.parse(localStorage.getItem(PROJECT_BRANDS_KEY) ?? '{}');
+    return isObject(value) ? value : {};
+  } catch { return {}; }
+}
+
+/** その Project のブランド。保存がなければ undefined（配信元のブランドを使う）。形が壊れていれば使わない */
+export function readProjectBrand(id: string | null): BrandProfile | undefined {
+  if (!id) return undefined;
+  const v = readBrands()[id];
+  if (!isObject(v) || !isObject(v.colors) || typeof v.colors.primary !== 'string' || !isObject(v.logo)) return undefined;
+  return v as unknown as BrandProfile;
+}
+
+/**
+ * 顧客パックとブランドを全か無かで保存する（AC-842・AC-858）。どちらかが失敗したら両方を保存前に戻す。
+ */
+export function saveProjectPackAndBrand(id: string, data: PackData, brand: BrandProfile): { ok: true } | { ok: false; reason: string } {
+  let packBefore: string | null = null;
+  let brandBefore: string | null = null;
+  try { packBefore = localStorage.getItem(PROJECT_PACKS_KEY); brandBefore = localStorage.getItem(PROJECT_BRANDS_KEY); } catch { /* 読めないときは保存も失敗する */ }
+  const restore = (key: string, before: string | null) => {
+    try { if (before === null) localStorage.removeItem(key); else localStorage.setItem(key, before); } catch { /* これ以上できない */ }
+  };
+  const packed = saveProjectPackStrict(id, data);
+  if (!packed.ok) { restore(PROJECT_BRANDS_KEY, brandBefore); return packed; }
+  try {
+    const next = JSON.stringify({ ...readBrands(), [id]: brand });
+    localStorage.setItem(PROJECT_BRANDS_KEY, next);
+    if (localStorage.getItem(PROJECT_BRANDS_KEY) !== next) throw new Error('read-back mismatch');
+    return { ok: true };
+  } catch (e) {
+    restore(PROJECT_BRANDS_KEY, brandBefore);
+    restore(PROJECT_PACKS_KEY, packBefore);
+    return { ok: false, reason: e instanceof Error ? e.message : String(e) };
+  }
+}
+
 export function readProjectPack(id: string | null, brand: BrandProfile): PackData | undefined {
   if (!id) return undefined;
   const value = read()[id];
