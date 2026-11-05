@@ -377,7 +377,8 @@
     "AC-843": "sha256:e896c521521b7686",
     "AC-854": "sha256:91c53f093f5f6e80",
     "AC-855": "sha256:7b7b790e0966c20e",
-    "AC-858": "sha256:32bf90c978febed5"
+    "AC-858": "sha256:32bf90c978febed5",
+    "AC-835": "sha256:b722567675472cb9"
   },
   "cases": [
     {
@@ -12270,16 +12271,17 @@
         "AC-684",
         "AC-828",
         "AC-829",
-        "AC-830"
+        "AC-830",
+        "AC-835"
       ],
       "title": "FR-268 顧客パックの kit・Prompt 一致・利用者向け手順 ①〜⑤（npm 不在）・担当者向けの一致",
       "layer": "data",
       "command": "node --test tests/system/integration-demo/pack-kit.test.mjs",
       "canary": false,
-      "status": "blocked",
-      "last_commit": "83030b7",
-      "last_run_at": "2026-11-05T11:18:11+09:00",
-      "evidence": "work/runs/202611051113/logs/system-test/IT-087-202611051117.log",
+      "status": "pass",
+      "last_commit": "1971834",
+      "last_run_at": "2026-11-05T11:21:28+09:00",
+      "evidence": "work/runs/202611051113/logs/system-test/IT-087-202611051121.log",
       "history": [
         {
           "at": "2026-11-04T12:56:08+09:00",
@@ -12316,6 +12318,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC-684/828/829/830 は検証レベル integration で System Test の対象外（CHK-10）。pack-kit.test.mjs は現行 AC に作り直し済みで 8/8 pass（2026-11-05 実行）。unblock するには rd-author が AC の検証レベルを system に変更する必要がある"
+        },
+        {
+          "at": "2026-11-05T11:21:11+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "FR-268 AC-684/828/829/830/835 の検証レベルが system に変更されたため blocked 解除 (1971834)"
+        },
+        {
+          "at": "2026-11-05T11:21:11+09:00",
+          "by": "test-designer",
+          "change": "ac_ids: ['AC-684', 'AC-828', 'AC-829', 'AC-830'] -> ['AC-684', 'AC-828', 'AC-829', 'AC-830', 'AC-835']",
+          "reason": "AC-835 を追加し FR-268 の system AC を揃える (1971834)"
         }
       ],
       "serial": true
