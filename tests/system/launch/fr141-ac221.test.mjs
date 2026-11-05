@@ -12,7 +12,15 @@ function withSandbox(state, opts, fn) {
 test('FR-141 AC-221 依存パッケージが未導入なら npm install をしてから起動する', () => {
   withSandbox({ nodeModules: false, dist: true }, {}, (r) => {
     assert.equal(r.status, 0, r.output);
-    assert.deepEqual(r.calls.map((c) => c.split(' ')[0]), ['install', 'start'], JSON.stringify(r.calls));
+    assert.deepEqual(r.calls.map((c) => c.split(' ').slice(0, 2).join(' ').replace(/^install.*/, 'install')), ['install', 'run build', 'start'], JSON.stringify(r.calls));
+  });
+});
+
+test('FR-141 AC-221 異常系: 既存の dist があっても npm run build が失敗したら start しない', () => {
+  withSandbox({ nodeModules: true, dist: true }, { fail: ['build'] }, (r) => {
+    assert.notEqual(r.status, 0, '失敗したのに exit code 0');
+    assert.match(r.output, /FAKE-CAUSE-BUILD/);
+    assert.ok(!r.calls.includes('start'), JSON.stringify(r.calls));
   });
 });
 
