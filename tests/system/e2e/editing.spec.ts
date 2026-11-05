@@ -274,7 +274,8 @@ test.describe('FR-048 議論テーマ', () => {
     await themes.getByRole('listitem').filter({ hasText: 'テーマ改名ST-060' }).getByRole('button', { name: '削除' }).click();
     await page.getByRole('alertdialog').getByRole('button', { name: /削除/ }).click();
     await expect(themes.getByRole('listitem')).toHaveCount(n - 1);
-    await page.getByRole('button', { name: '元に戻す' }).first().click();
+    // テーマ一覧のツールバーの「元に戻す」（FR-295 AC-826 の見出しの window-controls とは別。ページ全体では先に後者に当たる）
+    await themes.locator('button:not([data-testid="window-controls"] button)').filter({ hasText: /^元に戻す$/ }).click();
     await expect(themes.getByRole('listitem').filter({ hasText: 'テーマ改名ST-060' })).toHaveCount(1);
   });
 });
