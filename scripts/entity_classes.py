@@ -20,7 +20,7 @@ from typing import Dict, Iterable, List, Optional, Set, Tuple
 
 import ebaklib as h
 
-META_FILE = Path(__file__).resolve().parent / "metadata.json"
+META_FILE = Path(__file__).resolve().parent / "entity_classification.json"  # toolkit の metadata.json は更新で上書きされるため、利用側の定義は別ファイル
 ASSET_CELL_RE = re.compile(r"^(共通部品|API|イベント|テーブル|外部連携)\s*[「『]([^」』]+)[」』]$")
 INT_RE = re.compile(r"^INT-\d{3,}$")
 TWIN_RE = re.compile(r"^(.+?)\s*[（(]([^）)]*)[）)]$")
