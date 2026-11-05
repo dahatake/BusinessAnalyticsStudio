@@ -45,9 +45,15 @@ export async function gotoScreen(page: Page, key: string): Promise<Locator> {
     // 左メニューにない画面（FR-220 AC-590）は、コマンドから開く
     await openScreenByCommand(page, key);
   } else {
-    const nav = page.getByTestId(`nav-${key}`);
-    if (!(await nav.isVisible())) await page.getByRole('button', { name: 'メニュー', exact: true }).click();
-    await nav.click();
+    // FR-295 AC-825: 前面の画面の項目を押すと最小化する。対象が前面・表示中なら押さず、
+    // 最小化中・非前面・閉じているときだけ押して復元・前面化・表示する
+    const alreadyFront =
+      (await component(page, key).isVisible()) && (await page.getByTestId(`nav-bar-${key}`).getAttribute('data-state')) === 'front';
+    if (!alreadyFront) {
+      const nav = page.getByTestId(`nav-${key}`);
+      if (!(await nav.isVisible())) await page.getByRole('button', { name: 'メニュー', exact: true }).click();
+      await nav.click();
+    }
   }
   const c = component(page, key);
   await expect(c, `画面 ${key} が開かない`).toBeVisible();
