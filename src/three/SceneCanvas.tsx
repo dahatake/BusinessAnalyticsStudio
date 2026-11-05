@@ -117,9 +117,13 @@ type WebGPUModule = { WebGPURenderer: new (p: Record<string, unknown>) => { init
 /** WebGPU が使えるかを確かめ、使えるなら three/webgpu を読み込む。使えなければ null。 */
 async function detectWebGPU(): Promise<WebGPUModule | null> {
   try {
-    const gpu = (navigator as unknown as { gpu?: { requestAdapter(): Promise<unknown | null> } }).gpu;
+    const gpu = (navigator as unknown as { gpu?: { requestAdapter(): Promise<{ requestDevice(): Promise<{ destroy?: () => void }> } | null> } }).gpu;
     if (!gpu) return null;
-    if (!(await gpu.requestAdapter())) return null;
+    const adapter = await gpu.requestAdapter();
+    if (!adapter) return null;
+    // アダプターがあっても、デバイスを作れない環境（DirectX のライブラリー欠落など）がある。そのまま WebGPURenderer を使うと
+    // three が WebGL2 の代替経路に落ち、地図などが何も描かれなくなる。デバイスを作れるときだけ WebGPU を使い、作れなければ WebGL2 にする
+    (await adapter.requestDevice()).destroy?.();
     return (await import('three/webgpu')) as unknown as WebGPUModule;
   } catch {
     return null;
@@ -389,12 +393,22 @@ export function RenderCanvas({ children, cameraPosition, fov = 45, paused = fals
   useEffect(() => {
     if (kind !== 'trying-webgpu') return;
     let alive = true;
-    const t = setTimeout(() => {
+    let t: ReturnType<typeof setTimeout> | undefined;
+    const fallback = () => { if (alive) { setKind('webgl2'); setRenderer('WebGL2'); setReady(true); } };
+    // Canvas が WebGPURenderer を作る（寸法の計測の後）まで待ってから初期化する。作られる前に 1 回だけ見て
+    // 諦めると、実 GPU で WebGPU が使える環境では準備完了にならず、何も描かれないままになる。長く作られなければ WebGL2 にする
+    let tries = 0;
+    const start = () => {
+      if (!alive) return;
       const r = rendererRef.current;
-      if (!r) return;
-      r.init().then(() => { if (alive) { setRenderer('WebGPU'); setReady(true); } })
-        .catch(() => { if (alive) { setKind('webgl2'); setRenderer('WebGL2'); setReady(true); } });
-    }, 0);
+      if (!r) {
+        tries += 1;
+        if (tries > 120) fallback(); else t = setTimeout(start, 25);
+        return;
+      }
+      r.init().then(() => { if (alive) { setRenderer('WebGPU'); setReady(true); } }).catch(fallback);
+    };
+    t = setTimeout(start, 0);
     return () => { alive = false; clearTimeout(t); };
   }, [kind, setRenderer]);
 
