@@ -118,7 +118,8 @@
     "_note": "worktree に作らず、主の作業ツリーの実体へのリンク（Windows は junction）にするディレクトリ。npm ci の並列実行（各 45 分）を避ける。enabled を false にすると共有しない。",
     "enabled": true,
     "dirs": [
-      "node_modules"
+      "node_modules",
+      "tests/system/node_modules"
     ]
   },
   "prompt_prefix": {
