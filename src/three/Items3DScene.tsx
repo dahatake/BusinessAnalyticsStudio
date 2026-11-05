@@ -58,7 +58,7 @@ export default function Items3DScene({ label, items, links, selected, axes, onSe
         return <AnimatedLine key={`${l.from}>${l.to}`} points={[a, b]} color={on ? '#4fc3f7' : '#9aa5b1'} lineWidth={on ? 2.5 : 1.2} />;
       })}
       {nodeItems.map(({ item, vec, exiting }) => (
-        <ItemNode key={item.id} item={item} position={exiting ? [vec[0]!, vec[1]!, vec[2]!] : pos.get(item.id) as [number, number, number]} color={PALETTE[groups.indexOf(item.group ?? '') % PALETTE.length] ?? PALETTE[0]!} selected={!exiting && selected.has(item.id)} exiting={exiting} showLabel={!exiting && (showAll || selected.has(item.id))} heavy={heavy} onSelect={onSelect} />
+        <ItemNode key={item.id} item={item} position={exiting ? [vec[0]!, vec[1]!, vec[2]!] : pos.get(item.id) as [number, number, number]} color={PALETTE[groups.indexOf(item.group ?? '') % PALETTE.length] ?? PALETTE[0]!} selected={!exiting && selected.has(item.id)} exiting={exiting} showLabel={showAll || selected.has(item.id) || exiting} heavy={heavy} onSelect={onSelect} />
       ))}
     </DiagramCanvas>
   );
@@ -90,13 +90,13 @@ function ItemNode({ item, position, color, selected, exiting, showLabel, heavy, 
         <sphereGeometry args={[1, heavy ? 6 : 16, heavy ? 4 : 12]} />
         <meshStandardMaterial color={color} emissive={selected ? color : '#000000'} emissiveIntensity={selected ? 0.6 : 0} />
       </mesh>
-      {showLabel ? <Html center position={[0, radius + 0.25, 0]} zIndexRange={[5, 0]}><FadeLabel title={item.label} entityId={exiting ? undefined : item.id}>{labelText}</FadeLabel></Html> : null}
+      {showLabel ? <Html center position={[0, radius + 0.25, 0]} zIndexRange={[5, 0]}><FadeLabel title={item.label} entityId={item.id} leaving={exiting}>{labelText}</FadeLabel></Html> : null}
     </group>
   );
 }
 
 // 追加された項目のラベルは、動きが許可されるとき、現れる遷移（不透明度）を経て表示する（FR-070 AC-086）。停止中・動きの軽減中は即時。
-function FadeLabel({ title, entityId, children }: { title: string; entityId: string | undefined; children: React.ReactNode }) {
+function FadeLabel({ title, entityId, leaving, children }: { title: string; entityId: string | undefined; leaving: boolean; children: React.ReactNode }) {
   const allowed = useSceneMotionAllowed();
   const tempo = useMotionProfile().tempo;
   const [entered, setEntered] = useState(!allowed);
@@ -107,6 +107,6 @@ function FadeLabel({ title, entityId, children }: { title: string; entityId: str
     return () => { cancelAnimationFrame(r1); cancelAnimationFrame(r2); };
   }, [entered]);
   return (
-    <span style={{ ...sceneLabelStyle, opacity: entered ? 1 : 0, transition: allowed ? `opacity ${scaledDuration(DURATION.gentle, tempo, allowed)}ms ${EASING.decelerateMid}` : undefined }} title={title} data-entity-id={entityId}>{children}</span>
+    <span style={{ ...sceneLabelStyle, opacity: entered && !leaving ? 1 : 0, transition: allowed ? `opacity ${scaledDuration(DURATION.gentle, tempo, allowed)}ms ${EASING.decelerateMid}` : undefined }} title={title} data-entity-id={entityId}>{children}</span>
   );
 }
