@@ -204,4 +204,103 @@ test.describe('FR-302 顧客パックのアップロードと取り込み', () =
     await backToMain(app, page);
     expect(findStored(await storedPacks(page), mono), '再読み込みのあとも内容が一致する').toBeTruthy();
   });
+
+  // FR-302 AC-858（ブランドは Project ごとに端末内へ保存・再読み込みで復元・保存に失敗したら全か無か）
+  test('FR-302 AC-858 取り込んだ brand-profile.json のブランドは Project ごとに端末内へ保存されて再読み込み後も復元され、メイン画面（配信元）は変わらない。ブランドの保存に失敗したら顧客パックも保存されず、原因と次の行動が出る', async ({ page, start }) => {
+    const app = await startAtMain(page, start);
+    const COLOR_A = '#C2410C';
+    const COLOR_B = '#0F766E';
+    const COLOR_FAIL = '#B45309';
+    const brandPack = (label: string, primary: string, status: string) => makeVariant('mono', label, (p) => p.editBrand((b) => { b.colors.primary = primary; b.logo.status = status; }));
+    const packA = brandPack('brand-a', COLOR_A, 'confirmed');
+    const packB = brandPack('brand-b', COLOR_B, 'unknown');
+    const packFail = brandPack('brand-fail', COLOR_FAIL, 'confirmed');
+
+    // 画面のブランド（主要な色とロゴ）を読む
+    const brandView = () => page.evaluate(() => {
+      const el = document.querySelector('[data-appearance="primary"], [data-testid="primary-action"], [data-testid="accent"]');
+      const cs = el ? getComputedStyle(el) : null;
+      return {
+        color: cs ? [cs.backgroundColor, cs.color, cs.borderTopColor].join('|') : '',
+        logo: document.querySelectorAll('img[data-testid="customer-logo"]').length,
+        unknownLogo: document.body.innerText.includes('LOGO（要許諾確認）'),
+      };
+    });
+    const openProject = async (company: string, project: string) => {
+      await page.getByRole('region', { name: `企業 ${company}` }).getByRole('link', { name: project }).click();
+      await expect(page.getByTestId('stepper'), `${project} が開かない`).toBeVisible();
+    };
+
+    // 配信元（デモ）のブランド: メイン画面で測る
+    const served = await brandView();
+    expect(served.logo, '前提: 配信元（お手本パックの logo は unknown）にはロゴ画像が出ない').toBe(0);
+
+    // 2 つの Project を取り込む（ブランドが別）
+    for (const [company, project, pack] of [['ブランドA株式会社', 'ブランドA案件', packA], ['ブランドB株式会社', 'ブランドB案件', packB]] as const) {
+      const up = await openUploadScreen(page);
+      await selectFiles(up, packFiles(pack));
+      await importNew(page, up, { company, project });
+      await expect.poll(async () => (await storedPacks(page)).length, { message: `${project} が保存されない` }).toBeGreaterThan(0);
+      await backToMain(app, page);
+    }
+    // ブランドが端末内に保存されている（保存の形に依らず、ファイルの色が端末内のどこかにある）
+    const stored = await page.evaluate(() => JSON.stringify(Object.entries(localStorage)));
+    expect(stored.toLowerCase(), 'A のブランドが端末内に保存されていない').toContain(COLOR_A.toLowerCase());
+    expect(stored.toLowerCase(), 'B のブランドが端末内に保存されていない').toContain(COLOR_B.toLowerCase());
+
+    // Project を開いている間は、その Project のブランドが使われる（A と B で別）
+    await openProject('ブランドA株式会社', 'ブランドA案件');
+    const a1 = await brandView();
+    expect(a1.logo, 'A（ロゴ confirmed）のロゴ画像が出ない').toBeGreaterThan(0);
+    expect(a1.color, 'A の色が空').not.toBe('');
+    await backToMain(app, page);
+    await openProject('ブランドB株式会社', 'ブランドB案件');
+    const b1 = await brandView();
+    expect(b1.logo, 'B（ロゴ unknown）にロゴ画像が出ている').toBe(0);
+    expect(b1.unknownLogo, 'B（ロゴ unknown）に「LOGO（要許諾確認）」が出ない').toBe(true);
+    expect(b1.color, 'A と B のブランドの色が同じ（Project ごとに保存・適用されていない）').not.toBe(a1.color);
+
+    // 再読み込み後も同じブランドで復元され、メイン画面（配信元）のブランドは変わらない
+    await backToMain(app, page);
+    expect(await brandView(), '取り込み後のメイン画面が配信元のブランドと違う').toEqual(served);
+    await openProject('ブランドA株式会社', 'ブランドA案件');
+    expect(await brandView(), '再読み込み後に A のブランドが復元されない').toEqual(a1);
+    await backToMain(app, page);
+    await openProject('ブランドB株式会社', 'ブランドB案件');
+    expect(await brandView(), '再読み込み後に B のブランドが復元されない').toEqual(b1);
+    await backToMain(app, page);
+
+    // 異常系: ブランドの保存だけが失敗する（そのブランドの色を含む書き込み・brand を含むキーが拒否される）。全か無か
+    const before = await storageSnapshot(page);
+    const storedBefore = (await storedPacks(page)).length;
+    await page.evaluate((marker) => {
+      const orig = Storage.prototype.setItem;
+      (window as any).__origSetItem = orig;
+      Storage.prototype.setItem = function (k: string, v: string) {
+        if (/brand/i.test(String(k)) || String(v).toLowerCase().includes(marker)) throw new DOMException('quota', 'QuotaExceededError');
+        return orig.call(this, k, v);
+      };
+    }, COLOR_FAIL.toLowerCase());
+    const up = await openUploadScreen(page);
+    await selectFiles(up, packFiles(packFail));
+    await up.getByRole('radio', { name: '新規 Project を作成' }).check();
+    await up.getByRole('textbox', { name: '企業名' }).fill('ブランド失敗株式会社');
+    await up.getByRole('textbox', { name: 'Project 名' }).fill('ブランド失敗案件');
+    const box = up.getByRole('checkbox', { name: '確かめました' });
+    if (await box.count()) await box.check();
+    await up.getByRole('button', { name: '取り込む' }).click();
+    const alert = up.getByRole('alert').filter({ hasText: /失敗|保存できません|取り込めません/ });
+    await expect(alert.first(), '保存に失敗したのに原因が表示されない').toBeVisible();
+    const alertText = await alert.first().innerText();
+    expect(alertText, '原因（保存できない旨）がない').toMatch(/保存/);
+    expect(alertText, '次の行動（容量を空ける・もう一度など）がない').toMatch(/容量|空け|削除|もう一度|再度|やり直|別の/);
+    await page.evaluate(() => { Storage.prototype.setItem = (window as any).__origSetItem; });
+    expect((await storedPacks(page)).length, '保存に失敗したのに顧客パックが保存された').toBe(storedBefore);
+    expect(await storageSnapshot(page), '保存に失敗したのに端末内の保存が変わった（全か無かでない）').toBe(before);
+    await backToMain(app, page);
+    await expect(page.getByRole('region', { name: '企業 ブランド失敗株式会社' }), '保存に失敗した Project が一覧に出る').toHaveCount(0);
+    expect(await brandView(), '失敗のあと配信元のブランドが変わった').toEqual(served);
+    await openProject('ブランドA株式会社', 'ブランドA案件');
+    expect(await brandView(), '失敗のあと A のブランドが変わった').toEqual(a1);
+  });
 });
