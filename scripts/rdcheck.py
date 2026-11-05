@@ -29,8 +29,7 @@ sys.dont_write_bytecode = True  # FR-1062 AC-343: 導出は読み取り専用。
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import ebaklib as h  # noqa: E402
 import entities as ent  # noqa: E402
-import entity_classes as ec  # noqa: E402
-import integration_catalog as ic  # noqa: E402
+import extpoints  # noqa: E402
 
 # requirements that must have a row in the function table of the catalog (same as rdfix.CATALOG_STATES)
 CATALOG_STATES = ("承認済み", "承認待ち", "保留")
@@ -148,7 +147,7 @@ class Checker:
         for fn in (self.chk01_02, self.chk03, self.chk04, self.chk05, self.chk06_22, self.chk07_08,
                    self.chk09, self.chk10_11, self.chk12, self.chk13_14_15, self.chk16, self.chk17,
                    self.chk18, self.chk19, self.chk20, self.chk21, self.chk23, self.chk25, self.chk26,
-                   self.chk27, self.chk24, self.chk28, self.chk28_catalog, self.chk29, self.chk30, self.chk31, self.chk32, self.chk33, self.chk34):
+                   self.chk27, self.chk24, self.chk28, self.chk29, self.chk30, self.chk31, self.chk32, self.chk33, self.chk34):
             fn()
         return self.findings
 
@@ -792,11 +791,6 @@ class Checker:
 
 
     # ------------------------------------------------------------------ CHK-28 (FR-1035 / FR-1036)
-    def chk28_catalog(self) -> None:
-        """外部連携カタログ（FR-188〜FR-199・NFR-SEC-006・NFR-OPS-001）の欄・資格情報形式の検査。INT-xxx の chk28 とは独立で、同じ CHK-28 に出す。"""
-        for level, loc, msg in ic.check(self.root, self.cfg, self.doc):
-            self.add(level, "CHK-28", loc, msg)
-
     def chk28(self) -> None:
         """外部連携カタログ（任意）の形式・ID・観点の欄・秘密値・要求との対応。カタログがなければ何も報告しない。"""
         cat = self.integ
@@ -938,13 +932,6 @@ class Checker:
 
     # CHK-29 (FR-1058 AC-318/320): metadata definition (scripts/metadata.json)
     def chk29(self) -> None:
-        # FR-212 AC-487/488: 欄のメタデータ検査と分類表の検査を両方行う。
-        _, _, irows = ic.parse(self.root, self.cfg)
-        int_ids = set(self.integ.by_id()) if self.integ.exists else set()
-        problems = ec.check(self.doc, ec.load_definition(), self.catalog_names(),
-                            int_ids, [r.name for r in irows if r.name])
-        for f, ln, msg in problems:
-            self.err("CHK-29", self.loc(f, ln), msg)
         defs = h.requirement_field_defs()
         if not defs:
             return
@@ -1103,15 +1090,24 @@ def cmd_check(args, root, cfg) -> int:
         run_id = h.current_run(h.conductor_root(root, cfg), cfg)
     ck = Checker(root, cfg, base, run_id, args.strict, True if args.strict_ledger else (False if args.no_strict_ledger else None))
     findings = ck.run_all()
+    # FR-1082: project-specific extensions (extensions.checks / scripts/ext/*.py) run with the standard checks
+    ext_results, ext_skipped, ext_errors = extpoints.run(root, cfg, "rdcheck")
+    findings += [Finding(*f) for f in extpoints.all_findings(ext_results, ext_errors)]
+    ext_lines = [r.line("rdcheck") for r in ext_results]
+    ext_lines += [f"EXT-WARN {e.name} target={e.target} result=not-called 登録されていますが rdcheck では呼ばれません（対象が {e.target}）"
+                  for e in ext_skipped]
     findings.sort(key=lambda f: (f.level != "ERROR", f.chk, f.loc))
     errors = sum(1 for f in findings if f.level == "ERROR")
     warns = len(findings) - errors
     if args.json:
-        print(json.dumps({"errors": errors, "warnings": warns, "findings": [f.__dict__ for f in findings]}, ensure_ascii=False, indent=2))
+        print(json.dumps({"errors": errors, "warnings": warns, "findings": [f.__dict__ for f in findings],
+                          "extensions": ext_lines}, ensure_ascii=False, indent=2))
     else:
         shown = [f for f in findings if f.level == "ERROR" or not args.errors_only]
         for f in shown:
             print(f.line())
+        for l in ext_lines:
+            print(l)
         if getattr(ck, "area_info", None) is not None and ck.doc.exists and not args.errors_only:
             if ck.area_assignment() is None:
                 print(f"INFO 領域未所属の要求: {ck.area_info} 件（領域の割り当て表の承認まで任意）")
@@ -1161,13 +1157,6 @@ def cmd_show(args, root, cfg) -> int:
 
 def cmd_list(args, root, cfg) -> int:
     doc = h.parse_requirements(root, cfg)
-    if args.kind in ("外部連携", "IC"):  # FR-199 AC-428: 外部連携カタログの一覧
-        _, _, rows = ic.parse(root, cfg)
-        for r in rows:
-            if args.state and ic._clean(r.get("状態")) != args.state:
-                continue
-            print(f"{r.name}\t{ic._clean(r.get('状態')) or '-'}\t{ic._clean(r.get('関連する要求 ID')) or '-'}\t{ic.path_of(cfg)}:{r.line}")
-        return 0
     reqs: list = []
     if args.kind == "AC" or args.level:
         for ac in doc.acs.values():
@@ -1559,12 +1548,6 @@ def trace_one(ck: "Checker", key: str, code: Dict[str, Set[str]]) -> dict:
                         if ln == names[kind][key]:
                             reqs = sorted(set(reqs) | set(h.REQ_ID_RE.findall(" ".join(cells))))
             return {"id": key, "kind": label, "at": f"{h.mf(ck.cfg, 'catalog')}:{names[kind][key]}", "requirements": reqs}
-    t = ic.trace(ck.root, ck.cfg, doc, key)
-    if t:
-        return {"id": key, "kind": "外部連携", "at": t["at"], "state": "", "priority": "",
-                "requirements": [f"{q['id']} {q['title']}" for q in t["requirements"]],
-                "acceptance": [f"{a}（{q['id']}）" for q in t["requirements"] for a in q["acs"]],
-                "catalog_row": f"{t['at']}（状態: {t['state'] or '-'}、最終確認日: {t['date'] or '-'}）"}
     return {"id": key, "kind": "not_found"}
 
 
