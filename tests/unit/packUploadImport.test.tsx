@@ -10,7 +10,7 @@ import { REPO_ROOT } from '../../scripts/lib/pack-fs';
 import { classifyFiles, validateUpload, type UploadFile } from '../../src/packImport';
 import { importPack } from '../../src/projects/importPack';
 import { PackUpload } from '../../src/projects/PackUpload';
-import { PROJECT_PACKS_KEY, saveProjectPackStrict } from '../../src/store/projectPacks';
+import { PROJECT_BRANDS_KEY, PROJECT_PACKS_KEY, readProjectBrand, saveProjectPackStrict } from '../../src/store/projectPacks';
 import { resetProjects, useProjects } from '../../src/store/projects';
 
 const MONO = path.join(REPO_ROOT, 'examples', 'mono');
@@ -20,11 +20,13 @@ const upload = (): UploadFile[] => [
   ...NAMES.map((n) => ({ name: `${n}.json`, text: fs.readFileSync(path.join(MONO, 'public', 'data', `${n}.json`), 'utf8') })),
   { name: 'brand-profile.json', text: fs.readFileSync(path.join(MONO, 'public', 'brand', 'brand-profile.json'), 'utf8') },
 ];
-const goodData = () => {
+const goodValidation = () => {
   const v = validateUpload(classifyFiles(upload()));
-  if (!v.ok || !v.data) throw new Error('前提: お手本パックは取り込める');
-  return v.data;
+  if (!v.ok || !v.data || !v.brand) throw new Error('前提: お手本パックは取り込める');
+  return v;
 };
+const goodData = () => goodValidation().data!;
+const goodBrand = () => goodValidation().brand!;
 
 /** jsdom の File は text() を持たないので足す（読んだ回数も数える） */
 function makeFile(f: UploadFile, spy?: () => void): File {
@@ -53,7 +55,7 @@ describe('FR-302 取り込みの保存（原子性）', () => {
     const before = snapshot();
     const state = useProjects.getState();
     const spy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('quota', 'QuotaExceededError'); });
-    const r = importPack({ mode: 'new', data: goodData(), company: '新規株式会社', project: '新規 Project' });
+    const r = importPack({ mode: 'new', data: goodData(), brand: goodBrand(), company: '新規株式会社', project: '新規 Project' });
     spy.mockRestore();
     expect(r.ok).toBe(false);
     if (!r.ok) { expect(r.reason).toContain('保存できませんでした'); expect(r.remedy).not.toBe(''); }
@@ -84,20 +86,20 @@ describe('FR-302 取り込みの保存（原子性）', () => {
     if (!a.ok) throw new Error();
     const p = useProjects.getState().addProject(a.id, 'P');
     if (!p.ok) throw new Error();
-    expect(importPack({ mode: 'replace', data: goodData(), projectId: p.id }).ok).toBe(true);
+    expect(importPack({ mode: 'replace', data: goodData(), brand: goodBrand(), projectId: p.id }).ok).toBe(true);
     const before = snapshot();
     const orig = Storage.prototype.setItem;
     vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, k: string, v: string) {
       if (k === PROJECT_PACKS_KEY) throw new DOMException('quota', 'QuotaExceededError');
       return orig.call(this, k, v);
     });
-    const r = importPack({ mode: 'replace', data: { ...goodData(), customer: { ...(goodData().customer as object), name: '別' } } as never, projectId: p.id });
+    const r = importPack({ mode: 'replace', data: { ...goodData(), customer: { ...(goodData().customer as object), name: '別' } } as never, brand: goodBrand(), projectId: p.id });
     expect(r.ok).toBe(false);
     expect(snapshot()).toBe(before);
   });
 
-  it('FR-302 AC-841 新規の取り込みは Project を増やし、顧客パックを Project ごとに保存する（ブランドは保存しない）', () => {
-    const r = importPack({ mode: 'new', data: goodData(), company: '新規株式会社', project: '新規 Project' });
+  it('FR-302 AC-841 新規の取り込みは Project を増やし、顧客パックを Project ごとに保存する（ブランドは別に保存する: AC-858）', () => {
+    const r = importPack({ mode: 'new', data: goodData(), brand: goodBrand(), company: '新規株式会社', project: '新規 Project' });
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(useProjects.getState().projects.map((x) => x.name)).toContain('新規 Project');
@@ -134,7 +136,7 @@ describe('FR-302 取り込み画面', () => {
 
     await choose(upload().map((f) => makeFile(f)));
     const region = await screen.findByRole('region', { name: '取り込み前に確かめること' });
-    expect(region.textContent).toMatch(/出典のない数値 0 件/);
+    expect(region.textContent).not.toContain('出典のない数値');
     expect(region.textContent).toMatch(/internal \d+ 件/);
     expect(region.textContent).toMatch(/shareable \d+ 件/);
     const submit = screen.getByRole('button', { name: '取り込む' });
@@ -219,5 +221,53 @@ describe('FR-302 取り込み画面', () => {
     fireEvent.click(screen.getByRole('button', { name: '取り込む' }));
     await waitFor(() => expect(useProjects.getState().projects).toHaveLength(1));
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+});
+
+describe('FR-302 AC-858 ブランドの保存・復元・全か無か', () => {
+  const redBrand = () => { const b = structuredClone(goodBrand()); b.colors.primary = '#C2410C'; return b; };
+
+  // FR-302 AC-858
+  it('FR-302 AC-858 取り込んだブランドは Project ごとに保存され、読み戻せる。ほかの Project には影響しない', () => {
+    const r = importPack({ mode: 'new', data: goodData(), brand: redBrand(), company: '色株式会社', project: '色案件' });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(readProjectBrand(r.projectId)?.colors.primary).toBe('#C2410C');
+    expect(readProjectBrand('other')).toBeUndefined();
+    expect(Object.keys(JSON.parse(localStorage.getItem(PROJECT_BRANDS_KEY) ?? '{}'))).toEqual([r.projectId]);
+  });
+
+  it('FR-302 AC-858 ブランドの保存だけが失敗したら、顧客パックも保存されず、企業・Project も戻り、原因と次の行動を返す', () => {
+    const before = snapshot();
+    const state = useProjects.getState();
+    const orig = Storage.prototype.setItem;
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, k: string, v: string) {
+      if (k === PROJECT_BRANDS_KEY) throw new DOMException('quota', 'QuotaExceededError');
+      return orig.call(this, k, v);
+    });
+    const r = importPack({ mode: 'new', data: goodData(), brand: redBrand(), company: '失敗株式会社', project: '失敗案件' });
+    expect(r.ok).toBe(false);
+    if (!r.ok) { expect(r.reason).toContain('保存できませんでした'); expect(r.remedy).toContain('容量'); }
+    vi.restoreAllMocks();
+    expect(snapshot()).toBe(before);
+    expect(useProjects.getState().projects).toEqual(state.projects);
+  });
+
+  it('FR-302 AC-858 置き換えでブランドの保存が失敗したら、以前のパックとブランドがそのまま残る', () => {
+    const a = useProjects.getState().addCompany('B 株式会社');
+    if (!a.ok) throw new Error();
+    const p = useProjects.getState().addProject(a.id, 'P');
+    if (!p.ok) throw new Error();
+    expect(importPack({ mode: 'replace', data: goodData(), brand: goodBrand(), projectId: p.id }).ok).toBe(true);
+    const before = snapshot();
+    const orig = Storage.prototype.setItem;
+    vi.spyOn(Storage.prototype, 'setItem').mockImplementation(function (this: Storage, k: string, v: string) {
+      if (k === PROJECT_BRANDS_KEY) throw new DOMException('quota', 'QuotaExceededError');
+      return orig.call(this, k, v);
+    });
+    const changed = { ...goodData(), customer: { ...(goodData().customer as object), name: '別' } } as never;
+    expect(importPack({ mode: 'replace', data: changed, brand: redBrand(), projectId: p.id }).ok).toBe(false);
+    vi.restoreAllMocks();
+    expect(snapshot()).toBe(before);
   });
 });
