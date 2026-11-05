@@ -69,8 +69,6 @@ export default {
   '警告 {n} 件': 'Warnings: {n}',
   '取り込み前に確かめること': 'Things to check before importing',
   '次の内容を、人が確かめてから取り込みます。': 'A person checks the following before importing.',
-  '出典のない数値 {n} 件': 'Numbers without a source: {n}',
-  '位置を見る': 'Show locations',
   '機密区分 internal {n} 件': 'Classification internal: {n}',
   'shareable {n} 件': 'shareable: {n}',
   'ロゴ unknown {n} 件': 'Logo unknown: {n}',
