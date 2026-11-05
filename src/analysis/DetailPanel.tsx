@@ -27,6 +27,8 @@ const useStyles = makeStyles({
     border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke2}`,
     borderRadius: tokens.borderRadiusMedium,
     minWidth: 0,
+    // 縦に並ぶ親（高さの決まったコンポーネント）の中で 0 まで縮まない。縮むと中身が枠からあふれ、下の説明の文字と重なる（NFR-A11Y-009 AC-483）
+    flexShrink: 0,
     // 詳細が親のコンポーネントより大きな領域を占めないよう高さに上限を設け、超えた分は内側でスクロールする（FR-110 AC-135: 最大の領域は主役のコンポーネント）
     maxHeight: 'min(40vh, 360px)',
     overflowY: 'auto',
