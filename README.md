@@ -227,7 +227,15 @@ brand/BRAND-RESEARCH.md     ブランド調査の記録
   `research`（事前調査だけ）と `build`（複製から起動まで）に分けても実行できます。入力変数（`--intensity`・`--bgm`・`--material` など）は `.github/skills/envisioning-dashboard/SKILL.md` を見てください。
 - **手で作る**: `examples/mono/`（お手本パック）を複製して、JSON を書き換えます。`schema/` に各ファイルの JSON Schema があります。出典のない数値は置かず、AI が作ったデータには作成者の種別（AI 生成）を付けます。
 
-作成後は、`npm run check:pack -- <顧客パックのフォルダー>`（検証）と `npm run verify:pack -- <作業フォルダー>`（受け入れ判定）で確かめます。顧客パックは、顧客ごとの作業フォルダー（既定は `work/envisioning/`）に置き、このリポジトリ（`public/data/`・`public/brand/`・`assets/brand/`）には入れません。
+pack:kit は schema が最新のときだけ kit を作ります。古いときは先に `npm run gen:schema` を実行します。
+
+```
+npm run pack:kit
+npm run check:pack -- <顧客パックのフォルダー>
+npm run verify:pack -- <作業フォルダー>
+```
+
+check:pack は検証、verify:pack は受け入れ判定です。顧客パックは、顧客ごとの作業フォルダー（既定は `work/envisioning/`）に置き、このリポジトリ（`public/data/`・`public/brand/`・`assets/brand/`）には入れません。
 
 ## 6. iPad 実機での確認手順
 
