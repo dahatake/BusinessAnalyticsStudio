@@ -1728,10 +1728,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-056",
       "canary": false,
-      "status": "fail",
-      "last_commit": "4a3c119",
-      "last_run_at": "2026-11-05T12:46:52+09:00",
-      "evidence": "work/runs/202611051159/logs/system-test/E2E-148-202611051214.log",
+      "status": "blocked",
+      "last_commit": "7c429dd",
+      "last_run_at": "2026-11-05T16:53:30+09:00",
+      "evidence": "work/runs/202611051511/logs/system-test/E2E-148-202611051613.log",
       "history": [
         {
           "at": "2026-10-12T14:07:07+09:00",
@@ -1762,6 +1762,12 @@
           "by": "test-designer",
           "change": "serial: None -> True",
           "reason": "時間・fps の閾値計測が並列負荷で揺れるため単独実行（閾値は変更しない）"
+        },
+        {
+          "at": "2026-11-05T16:54:00+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "GPU のない環境（WebGL が SwiftShader のソフトウェア描画）では 3D・性能の測定が収まらず検証できない。AC の閾値は変えない。GPU のある環境で unblock して再実行する"
         }
       ],
       "serial": true
@@ -5134,7 +5140,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-393",
       "canary": false,
-      "status": "fail",
+      "status": "blocked",
       "last_commit": "4a3c119",
       "last_run_at": "2026-11-05T12:46:52+09:00",
       "evidence": "work/runs/202611051159/logs/system-test/E2E-289-202611051223.log",
@@ -5150,6 +5156,12 @@
           "by": "test-designer",
           "change": "serial: None -> True",
           "reason": "時間・fps の閾値計測が並列負荷で揺れるため単独実行（閾値は変更しない）"
+        },
+        {
+          "at": "2026-11-05T16:54:01+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "GPU のない環境（WebGL が SwiftShader のソフトウェア描画）では 3D・性能の測定が収まらず検証できない。AC の閾値は変えない。GPU のある環境で unblock して再実行する"
         }
       ],
       "serial": true
@@ -11815,10 +11827,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-086",
       "canary": false,
-      "status": "fail",
-      "last_commit": "4a3c119",
-      "last_run_at": "2026-11-05T12:46:52+09:00",
-      "evidence": "work/runs/202611051159/logs/system-test/E2E-451-202611051240.log",
+      "status": "blocked",
+      "last_commit": "7c429dd",
+      "last_run_at": "2026-11-05T16:53:30+09:00",
+      "evidence": "work/runs/202611051511/logs/system-test/E2E-451-202611051633.log",
       "history": [
         {
           "at": "2026-10-30T09:19:01+09:00",
@@ -11843,6 +11855,12 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "テスト拡張のため未実行へ"
+        },
+        {
+          "at": "2026-11-05T16:54:01+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "GPU のない環境（WebGL が SwiftShader のソフトウェア描画）では 3D・性能の測定が収まらず検証できない。AC の閾値は変えない。GPU のある環境で unblock して再実行する"
         }
       ]
     },
