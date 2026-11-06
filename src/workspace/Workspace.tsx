@@ -42,6 +42,7 @@ import { stepZone } from './immersive';
 import { isEditableTarget } from '../components/panelKeys';
 import { tr, useLang, useT } from '../i18n';
 import { FLIP_PREPARE_EVENT, SPATIAL_MOTION_EASING, SPATIAL_MOTION_MS } from './spatialMotion';
+import { LAYOUT_DWELL_MS, availableLayouts, isTopCenterHit, layoutBase, layoutDef, layoutZones, remainingZones, zoneFractions, zoneNames, type LayoutId, type Rect as LayoutRect } from './snapLayouts';
 
 const useStyles = makeStyles({
   // ドラッグ中に、置ける場所をドロップの前に示す（FR-142）。Fluent 2 のブランドの色トークンと 4px グリッド
@@ -75,6 +76,26 @@ const useStyles = makeStyles({
   },
   // 隣り合って配置されたコンポーネントの共有する境界のつまみ（FR-152 AC-796）。両側が同時にリサイズされる
   floatSep: { position: 'absolute', zIndex: 700, backgroundColor: 'transparent' },
+  // レイアウトの雛形のポップアップ（FR-305。Snap Layouts 相当）。上端の中央のすぐ下に出す。Fluent 2 のトークンと 4px グリッド
+  layoutsPop: {
+    position: 'fixed', zIndex: 1003, display: 'grid', gridTemplateColumns: 'repeat(4, 128px)', columnGap: tokens.spacingHorizontalM, rowGap: tokens.spacingVerticalM,
+    padding: tokens.spacingHorizontalM, borderRadius: tokens.borderRadiusXLarge, boxShadow: tokens.shadow28, transform: 'translateX(-50%)',
+    backgroundColor: tokens.colorNeutralBackground1, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`, touchAction: 'none',
+  },
+  layoutThumb: { position: 'relative', width: '128px', height: '80px' },
+  // 区画の操作の対象（24×24 CSS px 以上。WCAG 2.2 の 2.5.8。AC-862）。フォーカスは見える輪郭で示す
+  layoutZone: {
+    position: 'absolute', boxSizing: 'border-box', margin: 0, padding: 0, cursor: 'pointer', minWidth: '24px', minHeight: '24px',
+    backgroundColor: tokens.colorNeutralBackground3, border: `${tokens.strokeWidthThin} solid ${tokens.colorNeutralStroke1}`, borderRadius: tokens.borderRadiusMedium,
+    ':hover': { backgroundColor: tokens.colorBrandBackground2, border: `${tokens.strokeWidthThin} solid ${tokens.colorBrandStroke1}` },
+    ':focus-visible': { outline: `${tokens.strokeWidthThick} solid ${tokens.colorStrokeFocus2}`, outlineOffset: '1px' },
+  },
+  layoutZoneOn: { backgroundColor: tokens.colorBrandBackground, border: `${tokens.strokeWidthThin} solid ${tokens.colorBrandStroke1}` },
+  // 順次の埋めで次に埋める区画の強調（FR-305 AC-864）。操作を通す（候補の外の押下で閉じるため）
+  assistZone: {
+    position: 'absolute', zIndex: 1001, pointerEvents: 'none', boxSizing: 'border-box', opacity: 0.6,
+    backgroundColor: tokens.colorBrandBackground2, border: `${tokens.strokeWidthThick} solid ${tokens.colorBrandStroke1}`, borderRadius: tokens.borderRadiusMedium,
+  },
   snapPreview: {
     position: 'fixed', zIndex: 1000, pointerEvents: 'none', boxSizing: 'border-box', opacity: 0.6, // 配置後の領域を半透明で示す（FR-152 AC-793）
     backgroundColor: tokens.colorBrandBackground2, border: `${tokens.strokeWidthThick} solid ${tokens.colorBrandStroke1}`, borderRadius: tokens.borderRadiusMedium,
@@ -320,6 +341,9 @@ function Separator({ a, b, dir, size, onActive }: { a: string; b: string; dir: '
 export function Workspace({ screens }: { screens: readonly ScreenDefinition[] }) {
   const s = useStyles();
   const t = useT();
+  /** 雛形の区画の名前（「<雛形名> の<区画名>」。支援技術で読み上げる。FR-305 AC-863） */
+  const layoutZoneName = (id: LayoutId, zone: number): string =>
+    t('{layout} の{zone}', { layout: t(layoutDef(id).name), zone: t(zoneNames(id)[zone - 1] ?? '') });
   const lang = useLang((st) => st.lang);
   const persona = useLayout((st) => st.persona);
   const stored = useLayout((st) => st.layouts);
@@ -430,17 +454,32 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   const [drag, setDrag] = useState<DragState | null>(null);
   /** スナップ前の大きさ（作業領域に対する割合。保存しない）。端から引き離したとき、この大きさへ戻す。スナップしたものは、ほかのスナップで動かさない（FR-152 AC-795） */
   const snapMem = useRef(new Map<string, { w: number; h: number }>());
-  /** スナップした直後に、残った領域を埋めるコンポーネントを選ぶ候補（FR-152 AC-794） */
-  const [assist, setAssist] = useState<{ key: string; rect: FloatRect } | null>(null);
-  // 残った領域の候補は、選ばずに閉じても配置は変わらない。Esc・候補の外の操作で閉じる（FR-152 AC-794）
+  /** スナップした直後に、残った領域を埋めるコンポーネントを選ぶ候補（FR-152 AC-794）。
+   * 雛形（FR-305）のときは、いま埋める区画（zone）と、その後に順に埋める区画（rest）、配置済みのコンポーネント（used）を持つ（AC-864） */
+  const [assist, setAssist] = useState<{ key: string; rect: FloatRect; layout?: LayoutId; zone?: number; rest?: { zone: number; rect: FloatRect }[]; used?: string[] } | null>(null);
+  // 残った領域の候補は、選ばずに閉じても配置は変わらない。Esc・候補の外の操作で閉じる（FR-152 AC-794）。
+  // Esc はこれだけを閉じる（没入・最大化は保つ。FR-305 AC-866・FR-295 の Esc の優先順）ので、捕捉の段階で受けて先へ渡さない
   useEffect(() => {
     if (!assist) return;
-    const onKey = (e: globalThis.KeyboardEvent) => { if (e.key === 'Escape') setAssist(null); };
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      setAssist(null);
+    };
     const onDown = (e: globalThis.PointerEvent) => { if (!(e.target as Element | null)?.closest?.('[data-testid="snap-assist"]')) setAssist(null); };
-    window.addEventListener('keydown', onKey);
+    window.addEventListener('keydown', onKey, true);
     window.addEventListener('pointerdown', onDown, true);
-    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('pointerdown', onDown, true); };
+    return () => { window.removeEventListener('keydown', onKey, true); window.removeEventListener('pointerdown', onDown, true); };
   }, [assist]);
+  /** レイアウトの雛形のポップアップ（FR-305）。drag: ドラッグで上端の中央にとどめて開いた。keys: Ctrl+Alt+Z・メニュー・コマンドパレットで開いた（AC-863）。
+   * base は雛形を当てる矩形（作業領域の左上が原点の px） */
+  const [layoutsPop, setLayoutsPop] = useState<{ mode: 'drag' | 'keys'; key: string; base: LayoutRect; ids: LayoutId[]; restore?: HTMLElement | null } | null>(null);
+  const [layoutHover, setLayoutHover] = useState<string | null>(null);
+  const layoutsRef = useRef<HTMLDivElement>(null);
+  /** 区画に配置されなかったコンポーネント（背面。重なり・押し出し・最小化の対象外。FR-305 AC-865） */
+  const behindKeys = useLayout((st) => st.behind[st.persona]);
+  const behindSet = useMemo(() => new Set(behindKeys ?? []), [behindKeys]);
   const dragRef = useRef<DragState | null>(null);
   dragRef.current = drag;
   // 幅が狭い（または拡大率が高い）ときは、分割を縦に積む。レイアウトの木は変えず、描き方だけを替える。
@@ -496,9 +535,9 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   const floatBorders = useMemo<Border[]>(() => {
     if (expandedOut || maximized !== null || drag || floatKeys.length < 2) return [];
     const rects: Record<string, FloatRect> = {};
-    for (const k of floatKeys) { const r = pinnedMap?.[k] ?? floatMap?.[k]; if (r) rects[k] = r; }
+    for (const k of floatKeys) { if (behindSet.has(k)) continue; const r = pinnedMap?.[k] ?? floatMap?.[k]; if (r) rects[k] = r; }
     return sharedBorders(rects);
-  }, [expandedOut, maximized, drag, floatKeys, floatMap, pinnedMap]);
+  }, [expandedOut, maximized, drag, floatKeys, floatMap, pinnedMap, behindSet]);
   const treeBase = useMemo(() => (outKeys.length === 0 ? base : prune(base, new Set([...baseKeys].filter((k) => !outKeys.includes(k))))), [base, baseKeys, outKeys]);
   const inset = expandedOut ? expandInset(expandPos, width, height, treeTop) : undefined;
   // 拡大表示中は「操作中」の更新を止める（復帰したとき、拡大前と同じ大きさに戻すため。FR-174）
@@ -621,6 +660,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       },
       toggleDirection: () => (pinned ? announce(PIN_MOVE_REASON) : a.toggleDirection(key)),
       snapTo: (kind) => applySnap(key, kind, { tabTarget: keysOf(layout).find((k) => !group.includes(k) && !pinSet.has(k)) }),
+      ...(compact ? {} : { openLayouts: () => openLayouts(key) }),
       snapKinds: snapKindsFor(compact),
       mergeInto: (t) => (pinned || pinSet.has(t) ? announce(PIN_TABS_REASON) : a.mergeTabs(key, t)),
       untab: () => (pinned ? announce(PIN_TABS_REASON) : a.untab(key)),
@@ -715,6 +755,13 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   };
   const toFractions = (m: PxMap, b: { w: number; h: number }): Record<string, FloatRect> =>
     Object.fromEntries(Object.entries(m).map(([k, r]) => [k, { x: r.x / b.w, y: r.y / b.h, w: r.w / b.w, h: r.h / b.h }]));
+  /** 雛形の区画に配置されなかった背面のもの（`key` 以外）を除いた配置。重なりの判定・押し出しでは非表示として扱う（FR-305 AC-865） */
+  const frontOnly = (rects: PxMap, key: string): PxMap => {
+    const st = useLayout.getState();
+    const bh = new Set(st.behind[st.persona] ?? []);
+    if (bh.size === 0) return rects;
+    return Object.fromEntries(Object.entries(rects).filter(([k]) => k === key || !bh.has(k)));
+  };
   /** `key` を `target` に置き、すべてを自由配置として保存する（FR-173・FR-184）。`push` のときは、ぶつかるものを押し出す。
    * 自由な移動（`push` なし）は、Windows のウィンドウと同様に重なりを許し、掴んだものを手前に出す（Q-066 B 2026-10-27）。 */
   const commitFree = (key: string, target: PxRect, m: NonNullable<ReturnType<typeof measureAll>>, push = true): boolean => {
@@ -730,7 +777,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       return true;
     }
     // ピン止めしたものは動かさない。置き場所が残っていなければ、元の位置のまま理由を示す（FR-216 AC-496・AC-505）
-    const next = resolveAround({ ...m.rects, [key]: target }, key, m.bounds, pinSet, manualSet());
+    // 区画に配置されなかった背面のものは押し出さない（FR-305 AC-865）
+    const next = resolveAround({ ...frontOnly(m.rects, key), [key]: target }, key, m.bounds, pinSet, manualSet());
     if (!next) { announce(PIN_NO_ROOM_REASON); return false; }
     actions().setFloats(toFractions(next, m.bounds));
     actions().markMoved(key);
@@ -741,8 +789,9 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   const placeSnapped = (key: string, target: PxRect, m: NonNullable<ReturnType<typeof measureAll>>): boolean => {
     const cur = m.rects[key];
     if (!cur) return false;
-    const anchors = new Set([...snapMem.current.keys()].filter((k) => k !== key && k in m.rects));
-    const next = planSnap(m.rects, key, target, m.bounds, { fixed: pinSet, anchors, keep: manualSet() });
+    const front = frontOnly(m.rects, key);
+    const anchors = new Set([...snapMem.current.keys()].filter((k) => k !== key && k in front));
+    const next = planSnap(front, key, target, m.bounds, { fixed: pinSet, anchors, keep: manualSet() });
     if (!next) { announce(PIN_NO_ROOM_REASON); return false; }
     if (!snapMem.current.has(key)) snapMem.current.set(key, { w: cur.w / m.bounds.w, h: cur.h / m.bounds.h });
     actions().setFloats(toFractions(next, m.bounds));
@@ -778,7 +827,113 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     setAssist(null);
     const m = measureAll();
     if (!a || !m || !m.rects[key]) return;
+    if (a.zone !== undefined) {
+      // 雛形の順次の埋め（FR-305 AC-864）: 選んだものをその区画いっぱいに置き（ほかは動かさない）、次の区画へ進む
+      const st = actions();
+      const cur = m.rects[key]!;
+      if (!snapMem.current.has(key)) snapMem.current.set(key, { w: cur.w / m.bounds.w, h: cur.h / m.bounds.h });
+      st.setFloats({ [key]: a.rect });
+      st.raise(key);
+      st.markMoved(key);
+      markManual(key);
+      const used = [...(a.used ?? []), key];
+      const [next, ...rest] = a.rest ?? [];
+      if (next && assistCandidates(used).length > 0) setAssist({ ...a, key, rect: next.rect, zone: next.zone, rest, used });
+      return;
+    }
     placeSnapped(key, { x: a.rect.x * m.bounds.w, y: a.rect.y * m.bounds.h, w: a.rect.w * m.bounds.w, h: a.rect.h * m.bounds.h }, m);
+  };
+  /** 順次の埋めの候補: 表示中（最小化・閉じたものを除く）で、ピン止め中・配置済みを除くほかのコンポーネント（FR-305 AC-864） */
+  const assistCandidates = (used: readonly string[]): string[] =>
+    [...baseKeys].filter((k) => !used.includes(k) && !pinSet.has(k) && !minSet.has(k) && !!byKey(k)?.component && !zoneHidden.has(k));
+  /** 雛形を当てる矩形（作業領域の左上が原点の px）と、そこで成り立つ雛形。表示中のピン止め（`except` 以外）を除いた最大の空き矩形（FR-305 AC-860・AC-861） */
+  const layoutTarget = (except: string): { base: LayoutRect; ids: LayoutId[] } | null => {
+    const root = rootRef.current;
+    if (!root || compact) return null;
+    const a = root.getBoundingClientRect();
+    if (a.width <= 0 || a.height <= 0) return null;
+    const pins: LayoutRect[] = [...pinSet].filter((k) => k !== except && baseKeys.has(k) && !minSet.has(k)).flatMap((k) => {
+      const r = root.querySelector(`[data-testid="component-${k}"]`)?.getBoundingClientRect();
+      return r && r.width > 0 && r.height > 0 ? [{ x: r.left - a.left, y: r.top - a.top, w: r.width, h: r.height }] : [];
+    });
+    const base = layoutBase({ x: 0, y: 0, w: a.width, h: a.height }, pins);
+    if (!base) return null;
+    const ids = availableLayouts(base);
+    return ids.length > 0 ? { base, ids } : null;
+  };
+  /** 雛形の区画へ `key` を置く（FR-305）。区画に配置されなかったものは背面へ回し（押し出さず、最小化もしない。AC-865）、残りの区画を順に埋める候補を出す（AC-864） */
+  const placeLayout = (key: string, id: LayoutId, zone: number, base: LayoutRect, m: NonNullable<ReturnType<typeof measureAll>> | null): void => {
+    if (!m || pinSet.has(key)) return;
+    const st = actions();
+    const zs = layoutZones(id, base);
+    const zr = zs[zone - 1];
+    if (!zr) return;
+    const frac = (r: LayoutRect): FloatRect => ({ x: r.x / m.bounds.w, y: r.y / m.bounds.h, w: r.w / m.bounds.w, h: r.h / m.bounds.h });
+    setAssist(null);
+    if (st.maximized) st.setMaximized(null);
+    const cur = m.rects[key];
+    if (cur && !snapMem.current.has(key)) snapMem.current.set(key, { w: cur.w / m.bounds.w, h: cur.h / m.bounds.h });
+    st.setFloats(toFractions({ ...m.rects, [key]: zr }, m.bounds));
+    st.raise(key);
+    st.markMoved(key);
+    markManual(key);
+    st.setBehind(Object.keys(m.rects).filter((k) => k !== key && !pinSet.has(k)));
+    const rest = remainingZones(id, zone).map((z) => ({ zone: z, rect: frac(zs[z - 1]!) }));
+    const [first, ...others] = rest;
+    if (first && assistCandidates([key]).length > 0) setAssist({ key, rect: first.rect, layout: id, zone: first.zone, rest: others, used: [key] });
+  };
+  /** ドラッグを使わずに雛形のポップアップを開く（Ctrl+Alt+Z・見出しのメニュー・コマンドパレット。FR-305 AC-863） */
+  const openLayouts = (key: string): void => {
+    if (pinSet.has(key)) { announce(PIN_MOVE_REASON); return; }
+    const lt = layoutTarget(key);
+    if (!lt) { announce(tr('この大きさの作業領域では、レイアウトの雛形を使えません')); return; }
+    // 戻り先: 開く前の要素。コマンドパレット（閉じかけのダイアログ）・メニューの中・body のときは、操作中のコンポーネントにする（消える要素へ戻さない）
+    const open = () => setLayoutsPop({ mode: 'keys', key, base: lt.base, ids: lt.ids, restore: layoutsRestoreTarget(key) });
+    // メニュー・コマンドパレット（閉じかけのダイアログ）から開いたときは、それが閉じてフォーカスが戻ってから開く
+    // （ダイアログが閉じるときのフォーカスの復帰が、ポップアップの区画へ移したフォーカスを奪わないように。Esc で閉じたとき、開く前の要素へ戻すため）
+    const ae = document.activeElement;
+    if (!ae || ae === document.body || ae.closest('[role="menu"],[role="dialog"],[role="alertdialog"]')) requestAnimationFrame(() => requestAnimationFrame(open));
+    else open();
+  };
+  /** ポップアップを閉じる。キーボードで開いたときは、開く前の要素へフォーカスを戻す（AC-863） */
+  const closeLayouts = (refocus: boolean): void => {
+    const pop = layoutsPop;
+    setLayoutsPop(null);
+    setLayoutHover(null);
+    if (!refocus || !pop) return;
+    const el = pop.restore?.isConnected ? pop.restore : layoutsRestoreTarget(pop.key);
+    el?.focus();
+  };
+  /** ポップアップを閉じたときのフォーカスの戻り先（AC-863）。開く前の要素が残る要素ならそれ、そうでなければ操作中のコンポーネント */
+  const layoutsRestoreTarget = (key: string): HTMLElement | null => {
+    const a = document.activeElement;
+    if (a instanceof HTMLElement && a !== document.body && a.isConnected && !a.closest('[role="dialog"],[role="menu"],[role="alertdialog"]')) return a;
+    return rootRef.current?.querySelector<HTMLElement>(`[data-testid="component-${key}"]`) ?? null;
+  };
+  // キーボードで開いたポップアップ: 最初の区画へフォーカスを移す。Esc はこれだけを閉じ（没入・最大化は保つ。AC-866）、外を押しても閉じる
+  useEffect(() => {
+    if (!layoutsPop || layoutsPop.mode !== 'keys') return;
+    layoutsRef.current?.querySelector<HTMLElement>('[data-testid="snap-layout-zone"]')?.focus();
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      closeLayouts(true);
+    };
+    const onDown = (e: globalThis.PointerEvent) => { if (!(e.target as Element | null)?.closest?.('[data-testid="snap-layouts"]')) closeLayouts(false); };
+    window.addEventListener('keydown', onKey, true);
+    window.addEventListener('pointerdown', onDown, true);
+    return () => { window.removeEventListener('keydown', onKey, true); window.removeEventListener('pointerdown', onDown, true); };
+  }, [layoutsPop]);
+  /** 方向キーで区画を移る（AC-863。並びは雛形の順、雛形の中は区画の番号の順） */
+  const keyLayouts = (e: KeyboardEvent<HTMLDivElement>): void => {
+    const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+    if (step === 0) return;
+    e.preventDefault();
+    const all = [...(layoutsRef.current?.querySelectorAll<HTMLElement>('[data-testid="snap-layout-zone"]') ?? [])];
+    if (all.length === 0) return;
+    const i = all.indexOf(document.activeElement as HTMLElement);
+    all[(i + step + all.length) % all.length]!.focus();
   };
 
   /** 共有する境界のドラッグ・キーボードでの移動。境界の両側が同時に変わり、隙間も重なりも生じない（FR-152 AC-796） */
@@ -1282,7 +1437,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     };
     const onMove = (ev: globalThis.PointerEvent) => {
       const target = resizeRect(self, edge, ev.clientX - sx, ev.clientY - sy, start.bounds);
-      const next = resolveAround({ ...start.rects, [key]: target }, key, start.bounds, pinSet, manualSet());
+      const next = resolveAround({ ...frontOnly(start.rects, key), [key]: target }, key, start.bounds, pinSet, manualSet());
       if (next) { markManual(key); actions().setFloats(toFractions(next, start.bounds)); }
     };
     document.body.style.userSelect = 'none';
@@ -1323,6 +1478,13 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     /** つかんだ位置の、コンポーネントの幅に対する割合。大きさが変わっても（最大化・スナップを引き離したとき）同じ相対位置を掴んだままにする */
     const grabFx = grabRect && grabRect.width > 0 ? (sx - grabRect.left) / grabRect.width : 0;
     const offY0 = grabRect ? sy - grabRect.top : 0;
+    // 動かし始める前の前後関係（雛形のポップアップを Esc・区画の外のドロップで閉じたとき、操作の前と同じに戻す。FR-305 AC-866）
+    const before0 = (() => {
+      const pre = preDownOrder.current;
+      preDownOrder.current = null;
+      if (pre) return pre; // 同じ押下で手前に出す前（onPointerDownRaise が控えた）
+      const st = useLayout.getState(); return { zOrder: [...st.zOrder], behind: st.behind[st.persona] };
+    })();
     useLayout.getState().raise(key);
     /** ポインターの位置に動かしているコンポーネントを置いた配置（作業領域に対する割合）を求める。自由な移動は、Windows のウィンドウと同様に重なりを許し、
      * ほかを押し出さない（掴んだものが手前に出る。FR-173・Q-066 B）。スナップ・最大化したものは、スナップ前の大きさへ戻る（FR-152 AC-795） */
@@ -1344,7 +1506,32 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     let noRoom = false;
     let lastLive: DragState['live'] = null;
     let lastDrag: DragState | null = null;
+    // 上端の中央の雛形（FR-305）: 命中範囲にとどまった時間を測るタイマー、いまの命中、開いたポップアップ（雛形を当てる矩形）
+    let dwell: number | null = null;
+    let curHit: { base: LayoutRect; ids: LayoutId[] } | null = null;
+    let popBase: LayoutRect | null = null;
+    let lastX = sx;
+    let lastY = sy;
+    const clearDwell = () => { if (dwell !== null) { window.clearTimeout(dwell); dwell = null; } };
+    const closePop = () => { popBase = null; setLayoutsPop(null); setLayoutHover(null); };
+    /** 雛形のポップアップを閉じて、前後関係・最大化を操作の前に戻す（位置・大きさはドロップしないので変わらない。AC-866） */
+    const restoreBefore = () => {
+      useLayout.setState((st) => {
+        const behind = { ...st.behind };
+        if (before0.behind) behind[st.persona] = before0.behind; else delete behind[st.persona];
+        return { zOrder: before0.zOrder, behind };
+      });
+      if (wasMax) actions().setMaximized(key);
+    };
+    /** ポインターの下の雛形の区画 */
+    const zoneAt = (x: number, y: number): { id: LayoutId; zone: number } | null => {
+      const el = document.elementsFromPoint(x, y).find((e) => e.getAttribute('data-testid') === 'snap-layout-zone');
+      const id = Number(el?.getAttribute('data-layout'));
+      const zone = Number(el?.getAttribute('data-zone'));
+      return el && id >= 1 && id <= 8 && zone >= 1 ? { id: id as LayoutId, zone } : null;
+    };
     const stop = () => {
+      clearDwell();
       window.removeEventListener('pointermove', onMove, true);
       window.removeEventListener('pointerup', onUp, true);
       window.removeEventListener('pointercancel', onCancel, true);
@@ -1362,21 +1549,65 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
           hitRects = snapshotRects();
         }
       }
+      lastX = ev.clientX;
+      lastY = ev.clientY;
       const hitAny = hitTest(ev.clientX, ev.clientY, key, hitRects);
       // ピン止めしたコンポーネントの上は置き先にならない（置き先の表示も出さない。FR-216 AC-496）
       const hitPinned = pinRects.some((r) => ev.clientX >= r.left && ev.clientX <= r.right && ev.clientY >= r.top && ev.clientY <= r.bottom);
       const overPinned = hitPinned;
       const hit = overPinned ? null : hitAny;
       const snap = snapAt(ev.clientX, ev.clientY, key, hit?.key ?? null, skipEdges);
+      // 上端の中央の命中範囲（FR-305）。ほかの端・角・動かし始めにいた上端（離れるまで）は除く。成り立つ雛形がなければ FR-152 の最大化のまま（AC-861）
+      const area = rootRef.current?.getBoundingClientRect();
+      const edgesNow = edgesAtPoint(ev.clientX, ev.clientY);
+      curHit = area && !skipEdges.has('top') && edgesNow.length === 1 && edgesNow[0] === 'top' && isTopCenterHit(ev.clientX, ev.clientY, area) ? layoutTarget(key) : null;
+      if (popBase) {
+        // ポップアップを表示中: 命中範囲かポップアップの上（とその周り）にいる間は開いたまま。区画の上を強調する
+        const pr = layoutsRef.current?.getBoundingClientRect();
+        const near = !!pr && ev.clientX >= pr.left - SNAP_KEEP_PX && ev.clientX <= pr.right + SNAP_KEEP_PX && ev.clientY >= (area?.top ?? pr.top) - SNAP_KEEP_PX && ev.clientY <= pr.bottom + SNAP_KEEP_PX;
+        if (curHit || near) {
+          const z = zoneAt(ev.clientX, ev.clientY);
+          setLayoutHover(z ? `${z.id}-${z.zone}` : null);
+          lastLive = liveAt(ev.clientX, ev.clientY);
+          lastDrag = { key, target: null, snap: null, live: lastLive, overPinned };
+          setDrag(lastDrag);
+          return;
+        }
+        // 離れた: ポップアップを閉じ、通常のドラッグに戻る
+        closePop();
+      }
+      if (curHit && dwell === null) {
+        dwell = window.setTimeout(() => {
+          dwell = null;
+          if (!curHit || !active) return;
+          // PARAM-144 ms とどまった: 最大化のプレビューをポップアップに替える（AC-859）
+          popBase = curHit.base;
+          setLayoutsPop({ mode: 'drag', key, base: curHit.base, ids: curHit.ids });
+          lastDrag = { key, target: null, snap: null, live: lastLive, overPinned: lastDrag?.overPinned };
+          setDrag(lastDrag);
+        }, LAYOUT_DWELL_MS);
+      } else if (!curHit) clearDwell();
       // 分割へ入れる置き場所（上下左右の辺）でなければ、ポインターに追従して置く（端のスナップの候補を示している間も追従する。自由配置は重なりを許す。FR-152・FR-173）
       const docking = !!snap || (hit !== null && (hit.zone !== 'tabs' || compact));
       lastLive = docking && !snap ? null : liveAt(ev.clientX, ev.clientY);
       lastDrag = { key, target: hit && !snap && docking ? { key: hit.key, zone: hit.zone, rect: hit.rect } : null, snap, live: lastLive, overPinned };
       setDrag(lastDrag);
     };
-    const onUp = () => {
+    const onUp = (ev: globalThis.PointerEvent) => {
       const d = lastDrag;
       stop();
+      if (popBase) {
+        // 雛形のポップアップを表示中に離した: 区画の上ならその区画へ置く。区画の外（命中範囲・余白を含む）なら操作の前に戻す（AC-859・AC-866）
+        const base = popBase;
+        const z = zoneAt(ev.clientX, ev.clientY) ?? zoneAt(lastX, lastY);
+        closePop();
+        flushSync(() => {
+          setDrag(null);
+          if (z) placeLayout(key, z.id, z.zone, base, start);
+          else restoreBefore();
+        });
+        return;
+      }
       // 放した時点で、置いた位置を画面に反映する（flushSync）。動かしていたものは遅れなく最終の位置になり、押し出されたものだけが動き続ける
       flushSync(() => {
         setDrag(null);
@@ -1396,13 +1627,20 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       });
       if (active && lastLive && !d?.target) window.setTimeout(() => setSettling(null), 420);
     };
-    const onCancel = () => { stop(); setDrag(null); };
+    const onCancel = () => {
+      stop();
+      setDrag(null);
+      // ドラッグを取りやめた（ポップアップの表示中）: 操作の前に戻す（AC-866）
+      if (popBase) { closePop(); restoreBefore(); }
+    };
     const onKey = (ev: globalThis.KeyboardEvent) => {
       if (ev.key !== 'Escape') return;
       ev.preventDefault();
       ev.stopPropagation();
       stop();
       setDrag(null);
+      // ポップアップの表示中の Esc は、それだけを取り消す（前後関係も操作の前へ。FR-295 の Esc の優先順で最優先。AC-866）
+      if (popBase) { closePop(); restoreBefore(); }
     };
     window.addEventListener('pointermove', onMove, true);
     window.addEventListener('pointerup', onUp, true);
@@ -1495,8 +1733,12 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     }
   };
 
+  /** 押す直前の前後関係（押下で手前に出す前。雛形のポップアップを閉じたとき、ドラッグの開始より前の前後関係へ戻すために startDrag が使う。FR-305 AC-866） */
+  const preDownOrder = useRef<{ zOrder: string[]; behind: string[] | undefined } | null>(null);
   /** 操作した（押した）コンポーネントを手前に出す（FR-173。重なったときは直近に操作したものが手前） */
   const onPointerDownRaise = (e: PointerEvent<HTMLDivElement>) => {
+    const s0 = useLayout.getState();
+    preDownOrder.current = { zOrder: [...s0.zOrder], behind: s0.behind[s0.persona] };
     for (let n: Element | null = e.target as Element; n && n !== e.currentTarget; n = n.parentElement) {
       const id = n.getAttribute('data-testid') ?? '';
       if (id.startsWith('component-') && id !== 'component-menu' && id !== 'component-actions') { actions().raise(id.slice('component-'.length)); return; }
@@ -1541,7 +1783,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
           </Text>
         </div>
       ) : null}
-      {drag && !drag.target && !drag.snap && !drag.overPinned && drag.live?.[drag.key] ? (() => {
+      {drag && !layoutsPop && !drag.target && !drag.snap && !drag.overPinned && drag.live?.[drag.key] ? (() => {
         const area = rootRef.current?.getBoundingClientRect();
         const lr = drag.live![drag.key]!;
         if (!area) return null;
@@ -1644,21 +1886,78 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
           onKeyDown={(e) => keyBorder(bd, e)}
         />
       ))}
+      {assist && !drag && assist.zone !== undefined ? (
+        // 順次の埋めで次に埋める区画の強調（FR-305 AC-864）
+        <div
+          data-testid="snap-assist-zone"
+          data-layout={assist.layout}
+          data-zone={assist.zone}
+          aria-hidden
+          className={s.assistZone}
+          style={{ left: `${assist.rect.x * 100}%`, top: `${assist.rect.y * 100}%`, width: `${assist.rect.w * 100}%`, height: `${assist.rect.h * 100}%` }}
+        />
+      ) : null}
       {assist && !drag ? (
         <div
           data-testid="snap-assist"
           role="group"
-          aria-label={t('残った領域に置くコンポーネントを選ぶ')}
+          aria-label={assist.zone !== undefined && assist.layout ? t('{zone} に置くコンポーネントを選ぶ', { zone: layoutZoneName(assist.layout, assist.zone) }) : t('残った領域に置くコンポーネントを選ぶ')}
           className={s.snapAssist}
-          style={{ left: `calc(${(assist.rect.x + assist.rect.w / 2) * 100}%)`, maxWidth: `calc(${assist.rect.w * 100}% - 16px)` }}
+          style={{
+            left: `calc(${(assist.rect.x + assist.rect.w / 2) * 100}%)`, maxWidth: `calc(${assist.rect.w * 100}% - 16px)`,
+            // 雛形の区画のときは、その区画の下端に出す（ほかのコンポーネントの見出しを覆わない）
+            ...(assist.zone !== undefined ? { bottom: `calc(${(1 - assist.rect.y - assist.rect.h) * 100}% + ${tokens.spacingVerticalS})` } : {}),
+          }}
         >
-          <Text size={200}>{t('残った領域に置く:')}</Text>
-          {[...baseKeys].filter((k) => k !== assist.key && !pinSet.has(k) && !!byKey(k)?.component).map((k) => (
-            <Button key={k} size="small" onClick={() => fillRemaining(k)}>{byKey(k)?.label ?? k}</Button>
+          <Text size={200}>{assist.zone !== undefined ? t('この区画に置く:') : t('残った領域に置く:')}</Text>
+          {(assist.zone !== undefined ? assistCandidates(assist.used ?? [assist.key]) : [...baseKeys].filter((k) => k !== assist.key && !pinSet.has(k) && !!byKey(k)?.component)).map((k) => (
+            <Button key={k} size="small" data-component-key={k} onClick={() => fillRemaining(k)}>{byKey(k)?.label ?? k}</Button>
           ))}
           <Button size="small" appearance="subtle" onClick={() => setAssist(null)}>{t('閉じる')}</Button>
         </div>
       ) : null}
+      {layoutsPop ? (() => {
+        // レイアウトの雛形のポップアップ（FR-305 AC-859・AC-862・AC-863）。上端の中央のすぐ下。成り立つ雛形だけを ①〜⑧ の順に示す
+        const area = rootRef.current?.getBoundingClientRect();
+        if (!area) return null;
+        const keys = layoutsPop.mode === 'keys';
+        return (
+          <div
+            ref={layoutsRef}
+            data-testid="snap-layouts"
+            role="dialog"
+            aria-label={t('レイアウトの雛形')}
+            className={mergeClasses(s.layoutsPop, snapMotion.appear)}
+            style={{
+              // 上端の中央のすぐ下（スナップの候補と同じ 40px = 32px + 8px。Fluent 2 の間隔のトークン）
+              left: area.left + area.width / 2, top: `calc(${area.top}px + ${tokens.spacingVerticalXXXL} + ${tokens.spacingVerticalS})`,
+            }}
+            onKeyDown={keyLayouts}
+          >
+            {layoutsPop.ids.map((id) => (
+              <div key={id} role="group" aria-label={t(layoutDef(id).name)} className={s.layoutThumb}>
+                {zoneFractions(id).map((f, i) => {
+                  const zone = i + 1;
+                  return (
+                    <button
+                      key={zone}
+                      type="button"
+                      data-testid="snap-layout-zone"
+                      data-layout={id}
+                      data-zone={zone}
+                      aria-label={layoutZoneName(id, zone)}
+                      tabIndex={keys ? 0 : -1}
+                      className={mergeClasses(s.layoutZone, layoutHover === `${id}-${zone}` ? s.layoutZoneOn : undefined)}
+                      style={{ left: `calc(${f.x * 100}% + 2px)`, top: `calc(${f.y * 100}% + 2px)`, width: `calc(${f.w * 100}% - 4px)`, height: `calc(${f.h * 100}% - 4px)` }}
+                      onClick={keys ? () => { const pop = layoutsPop; closeLayouts(false); placeLayout(pop.key, id, zone, pop.base, measureAll()); } : undefined}
+                    />
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        );
+      })() : null}
       {parkedKeys.length > 0 ? (
         // visibility:hidden: Tabster は display:none の中の SVG 要素（offsetParent を持たない。グラフのノード）を「見えている」と見なして Tab の行き先にし、フォーカスが動かない罠になる（NFR-A11Y-001 AC-170）。visibility は継承され、Tabster も見る
         <div hidden aria-hidden data-testid="parked-windows" style={{ visibility: 'hidden' }}>

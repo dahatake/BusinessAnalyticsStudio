@@ -1,0 +1,22 @@
+// 上端の中央のレイアウトの雛形（FR-305。Snap Layouts 相当）の英語辞書（FR-294）。
+export default {
+  'レイアウトの雛形': 'Snap layouts',
+  'レイアウトの雛形を開く': 'Open snap layouts',
+  '{layout} の{zone}': '{layout}: {zone}',
+  '左 1/2・右 1/2': 'Left 1/2, right 1/2',
+  '左 2/3・右 1/3': 'Left 2/3, right 1/3',
+  '左 1/3・右 2/3': 'Left 1/3, right 2/3',
+  '左 1/2・右 上下 2 段': 'Left 1/2, right split top and bottom',
+  '左 上下 2 段・右 1/2': 'Left split top and bottom, right 1/2',
+  '2×2': '2 x 2 grid',
+  '3 列等分': 'Three equal columns',
+  '1/4・1/2・1/4': '1/4, 1/2, 1/4',
+  '中央': 'center',
+  '左上': 'top left',
+  '左下': 'bottom left',
+  '右上': 'top right',
+  '右下': 'bottom right',
+  '{zone} に置くコンポーネントを選ぶ': 'Choose a component for {zone}',
+  'この区画に置く:': 'Place in this zone:',
+  'この大きさの作業領域では、レイアウトの雛形を使えません': 'Snap layouts are not available at this workspace size',
+} as Record<string, string>;

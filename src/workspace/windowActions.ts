@@ -9,7 +9,8 @@ export function pressWindow(key: string, state: WindowState, inTree: boolean): v
     if (a.maximized === key) a.setMaximized(null); // 没入表示からの復帰（FR-297 AC-802）
     else if (inTree) a.setMinimized(key, true);
   } else if (state === 'visible') {
-    a.touch(key);
+    // 前面に出す（重なりの手前へ。雛形の区画に配置されなかった背面の扱いからも外す。FR-305 AC-865）
+    a.raise(key);
   } else if (inTree) {
     a.setMinimized(key, false);
     a.touch(key);

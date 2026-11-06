@@ -6,6 +6,10 @@ import { test, expect, component, selectPersona } from '../support/fixtures';
 
 const SNAP_EDGE = 32; // PARAM-042
 const TOL = 0.06;
+// PARAM-143=40%: 上端の中央 40% の幅は FR-305 の雛形のポップアップの命中範囲で、AC-793 の上端（最大化）から除く。
+// 上端の最大化は、命中範囲の外（左の 30% の中央＝左端から 15% の位置。角〔左右端から PARAM-042 以内〕にも当たらない）で確かめる。
+const HIT_RATIO = 0.4;
+const topOffCenterX = (ws: { x: number; width: number }) => ws.x + (ws.width * (1 - HIT_RATIO)) / 4;
 
 type Box = { x: number; y: number; width: number; height: number };
 async function box(loc: Locator): Promise<Box> {
@@ -51,15 +55,15 @@ function near(actual: Box, expected: Box, ws: Box, msg: string) {
 test.describe('FR-152 Windows 風スナップのプレビューと最大化・共有境界のリサイズ', () => {
   // FR-296 AC-800/801: 既定の構成の下限（360x240）と作業領域のゾーンにより、1600x900 では 2 行目が画面外になるため、画面の高さを広げて前提を揃える（検証内容は変えない）。
   test.use({ viewport: { width: 1600, height: 1400 } });
-  // FR-152 AC-793（上端=最大化。ほかのコンポーネントは重ならず背面か非表示）
-  test('FR-152 AC-793 上端へ近づけると最大化のプレビューが半透明で出て、離すと作業領域いっぱいに最大化され、ほかのものは重ならず背面か非表示', async ({ page, start }) => {
+  // FR-152 AC-793（上端〔中央 PARAM-143% の命中範囲を除く〕=最大化。ほかのコンポーネントは重ならず背面か非表示）
+  test('FR-152 AC-793 上端（中央の命中範囲の外）へ近づけると最大化のプレビューが半透明で出て、離すと作業領域いっぱいに最大化され、ほかのものは重ならず背面か非表示', async ({ page, start }) => {
     await start();
     await selectPersona(page, '事業部門');
     const ks = await topKeys(page);
     expect(ks.length, 'コンポーネントが 2 つ以上必要').toBeGreaterThanOrEqual(2);
     const [a, b] = ks;
     const ws = await box(workspace(page));
-    await grabTo(page, component(page, a), ws.x + ws.width / 2, ws.y + SNAP_EDGE / 2, false);
+    await grabTo(page, component(page, a), topOffCenterX(ws), ws.y + SNAP_EDGE / 2, false);
     const preview = page.getByTestId('snap-preview');
     await expect(preview, '最大化のプレビューが出ない').toBeVisible();
     near(await box(preview), ws, ws, '最大化のプレビュー');
@@ -112,7 +116,7 @@ test.describe('FR-152 Windows 風スナップのプレビューと最大化・�
     const ws = await box(workspace(page));
     const c = component(page, a);
     const before = await box(c);
-    await grabTo(page, c, ws.x + ws.width / 2, ws.y + SNAP_EDGE / 2, false);
+    await grabTo(page, c, topOffCenterX(ws), ws.y + SNAP_EDGE / 2, false);
     await expect(page.getByTestId('snap-preview')).toBeVisible();
     await page.mouse.move(ws.x + ws.width / 2, ws.y + ws.height / 2, { steps: 8 });
     await expect(page.getByTestId('snap-preview'), '範囲外でプレビューが消えない').toBeHidden();
