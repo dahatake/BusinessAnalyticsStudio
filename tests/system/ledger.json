@@ -13294,6 +13294,12 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "quickPassShowsNoPopup: 前提(滞在<300ms)をページ内の pointermove 時刻で測り、崩れた試行は数えず最大3回やり直す（負荷で前提が崩れた fail への対処。判定は不変）"
+        },
+        {
+          "at": "2026-11-07T01:15:28+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "quickReleaseMaximizes: 前提(入って離すまで<300ms)をページ内の pointermove/pointerup 時刻で測り、プレビューの確認をページ内に移して測定に Node の往復を含めない。崩れた試行は区画に置き直して元に戻し最大3回やり直す（判定は不変）"
         }
       ]
     }

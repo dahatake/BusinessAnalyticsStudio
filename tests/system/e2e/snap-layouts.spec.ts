@@ -222,27 +222,94 @@ async function quickPassShowsNoPopup(page: Page, p: Pointer, c: Locator, ws: Box
   expect(await c.getAttribute('data-maximized'), `${label}: 通り過ぎただけで最大化された`).not.toBe('true');
 }
 
-/** 異常系（AC-859）: 命中範囲に入って PARAM-144 ms 未満で離すと、最大化のプレビューのとおり最大化され（AC-793 の上端と同じ）、ポップアップは出ない。 */
-async function quickReleaseMaximizes(page: Page, p: Pointer, c: Locator, ws: Box, label: string) {
-  const h = centerOf(await box(heading(c)));
+/**
+ * 異常系（AC-859）: 命中範囲に入って PARAM-144 ms 未満で離すと、最大化のプレビューのとおり最大化され（AC-793 の上端と同じ）、ポップアップは出ない。
+ * 前提（入ってから離すまでが PARAM-144 ms 未満）は負荷で崩れうる。滞在はページ内の時刻（pointermove／pointerup の timeStamp と
+ * 処理時の performance.now() の大きい方）で測り、プレビューの確認はページ内で記録して測定時間に Node との往復を含めない。
+ * 崩れた試行は判定に数えず、restore（元の配置に戻す）をしてから最大 TRIES 回やり直す。判定（最大化・プレビュー・ポップアップなし）は緩めない。
+ */
+async function quickReleaseMaximizes(page: Page, p: Pointer, c: Locator, ws: Box, label: string, restore: () => Promise<void>) {
+  const TRIES = 3;
+  const GO_BEFORE = DWELL_MS - 100; // 離す操作の往復の余裕。これを過ぎてからは離さず、中央で離して元に戻す
   const mid = centerOf(ws);
   const hit = hitPoint(ws);
-  await p.down(h.x, h.y);
-  await glide(p, h, mid);
-  const read = await watch(page, ['snap-layouts']);
-  const t0 = Date.now();
-  await p.move(hit.x, hit.y);
-  await expect(preview(page), `${label}: 命中範囲に入っても最大化のプレビューが示されない`).toBeVisible();
-  expectRect(await box(preview(page)), ws, ws, `${label}: 最大化のプレビュー`);
-  const stayed = Date.now() - t0;
-  expect(stayed, `${label}: 前提（${DWELL_MS} ms 未満で離す）を作れなかった`).toBeLessThan(DWELL_MS);
-  await p.up(hit.x, hit.y);
-  await expect(c, `${label}: ${DWELL_MS} ms 未満で離したのに最大化されない`).toHaveAttribute('data-maximized', 'true');
-  expectRect(await box(c), ws, ws, `${label}: 最大化の配置（作業領域いっぱい）`);
-  await expect(popup(page)).toHaveCount(0);
-  expect((await read())['snap-layouts'].first, `${label}: ${DWELL_MS} ms 未満で離したのにポップアップが出た`).toBeNull();
+  const edge = ws.y + SNAP_EDGE;
+  const tried: string[] = [];
+  for (let i = 0; i < TRIES; i++) {
+    const h = centerOf(await box(heading(c)));
+    await p.down(h.x, h.y);
+    await glide(p, h, mid);
+    const read = await watch(page, ['snap-preview', 'snap-layouts']);
+    await page.evaluate(() => {
+      type Ev = { k: string; y: number; ts: number; now: number };
+      const w = window as unknown as { __stEv: Ev[]; __stEvOff?: () => void };
+      w.__stEvOff?.();
+      w.__stEv = [];
+      const on = (e: PointerEvent) => { w.__stEv.push({ k: e.type, y: e.clientY, ts: e.timeStamp, now: performance.now() }); };
+      for (const t of ['pointermove', 'pointerup', 'pointercancel']) window.addEventListener(t, on as EventListener, true);
+      w.__stEvOff = () => { for (const t of ['pointermove', 'pointerup', 'pointercancel']) window.removeEventListener(t, on as EventListener, true); };
+    });
+    const t0 = Date.now();
+    await p.move(hit.x, hit.y);
+    // 入った時刻から GO_BEFORE ms までに最大化のプレビューが示されるかを、ページ内で（1 回の往復で）待つ
+    const gate = await page.evaluate(({ edge, limit }) => new Promise<{ seen: boolean; elapsed: number | null }>((resolve) => {
+      type Ev = { k: string; y: number; ts: number; now: number };
+      const w = window as unknown as { __stEv: Ev[] };
+      const start = performance.now();
+      const tick = () => {
+        const e = w.__stEv.find((x) => x.k === 'pointermove' && x.y <= edge);
+        const el = document.querySelector('[data-testid="snap-preview"]') as HTMLElement | null;
+        const r = el?.getBoundingClientRect();
+        const seen = !!(el && r && r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden');
+        const elapsed = e ? performance.now() - Math.min(e.now, e.ts) : null;
+        if (seen && elapsed !== null) return resolve({ seen, elapsed });
+        if ((elapsed ?? performance.now() - start) >= limit) return resolve({ seen, elapsed });
+        requestAnimationFrame(tick);
+      };
+      tick();
+    }), { edge, limit: GO_BEFORE });
+    if (!gate.seen || gate.elapsed === null || gate.elapsed >= GO_BEFORE) {
+      // 前提が崩れた試行（離す前）: 中央で離し、ポップアップが閉じるのを待って元の配置に戻す
+      tried.push(`離す前 ${gate.elapsed === null ? '入場未観測' : Math.round(gate.elapsed)} ms${gate.seen ? '' : '・プレビュー未表示'}`);
+      await glide(p, hit, mid, 3);
+      await p.up(mid.x, mid.y);
+      await page.evaluate(() => (window as unknown as { __stEvOff?: () => void }).__stEvOff?.());
+      await expect(popup(page)).toBeHidden();
+      await restore();
+      continue;
+    }
+    await p.up(hit.x, hit.y);
+    const nodeStayed = Date.now() - t0;
+    const pageStayed = await page.evaluate((edge) => {
+      type Ev = { k: string; y: number; ts: number; now: number };
+      const w = window as unknown as { __stEv: Ev[]; __stEvOff?: () => void };
+      w.__stEvOff?.();
+      const m = w.__stEv;
+      const iIn = m.findIndex((e) => e.k === 'pointermove' && e.y <= edge);
+      const up = iIn < 0 ? undefined : m.slice(iIn + 1).find((e) => e.k !== 'pointermove');
+      return iIn < 0 || !up ? null : Math.max(up.ts - m[iIn].ts, up.now - m[iIn].now);
+    }, edge);
+    // ページ内で入る・離すの両方を観測できなかったときは Node 側の時間（プレビューの確認を含むので長めに出る）で代える
+    const stayed = pageStayed ?? nodeStayed;
+    if (stayed >= DWELL_MS) {
+      // 前提が崩れた試行（離した後）: 結果は判定に数えず、元の配置に戻してやり直す
+      tried.push(`離すまで ${Math.round(stayed)} ms`);
+      await expect(popup(page)).toBeHidden();
+      await restore();
+      continue;
+    }
+    tried.push(`${Math.round(stayed)} ms`);
+    await expect(c, `${label}: ${DWELL_MS} ms 未満（${Math.round(stayed)} ms）で離したのに最大化されない`).toHaveAttribute('data-maximized', 'true');
+    expectRect(await box(c), ws, ws, `${label}: 最大化の配置（作業領域いっぱい）`);
+    await expect(popup(page)).toHaveCount(0);
+    const s = await read();
+    expect(s['snap-preview'].first, `${label}: 命中範囲に入っても最大化のプレビューが示されない`).not.toBeNull();
+    expectRect(s['snap-preview'].rect!, ws, ws, `${label}: 最大化のプレビュー`);
+    expect(s['snap-layouts'].first, `${label}: ${DWELL_MS} ms 未満で離したのにポップアップが出た`).toBeNull();
+    return;
+  }
+  throw new Error(`${label}: 前提（命中範囲に入って最大化のプレビューが示され、${DWELL_MS} ms 未満で離す）を ${TRIES} 回とも作れなかった（${tried.join(' / ')}）`);
 }
-
 async function pin(c: Locator) {
   await c.focus();
   const b = pinButton(c);
@@ -280,7 +347,11 @@ test.describe('FR-305 上端の中央へのドラッグでのレイアウトの�
     expectRect(await box(component(page, a)), zoneRect(ws2, '1', 2), ws2, '再読込後も ① の右 1/2');
 
     // 異常系 2: 300 ms 未満で離すと最大化（ポップアップは出ない）
-    await quickReleaseMaximizes(page, m, component(page, a), ws2, 'マウス');
+    // 前提が崩れた試行の後は、a を ① の右 1/2 に置き直して元の配置に戻す
+    await quickReleaseMaximizes(page, m, component(page, a), ws2, 'マウス', async () => {
+      await dropOnZone(page, m, await dragToHitAndDwell(page, m, component(page, a), ws2, 'マウス（元に戻す）'), '1', 2);
+      expectRect(await box(component(page, a)), zoneRect(ws2, '1', 2), ws2, '元の配置（① の右 1/2）に戻す');
+    });
   });
 
   // FR-305 AC-864（3 区画以上の雛形の順次の埋め。正常系: 次の区画の強調・候補〔表示中・ピン止め以外〕・選ぶと配置され次へ。
@@ -412,7 +483,11 @@ test.describe('FR-305 上端の中央へのドラッグでのレイアウトの�
     expectRect(await box(component(page, a)), zoneRect(ws2, '1', 1), ws2, `再読込後も ${kind}で置いた a は ① の左 1/2`);
 
     // 異常系: 300 ms 未満で離すと最大化（ポップアップは出ない）。a は区画に置かれた手前のコンポーネントなので見出しを掴める
-    await quickReleaseMaximizes(page, ptr, component(page, a), ws2, kind);
+    // 前提が崩れた試行の後は、a を ① の左 1/2 に置き直して元の配置に戻す
+    await quickReleaseMaximizes(page, ptr, component(page, a), ws2, kind, async () => {
+      await dropOnZone(page, ptr, await dragToHitAndDwell(page, ptr, component(page, a), ws2, `${kind}（元に戻す）`), '1', 1);
+      expectRect(await box(component(page, a)), zoneRect(ws2, '1', 1), ws2, '元の配置（① の左 1/2）に戻す');
+    });
     expect(await view(), `${kind}のドラッグでページがスクロール・ズームした`).toEqual(v0);
   });
   }
