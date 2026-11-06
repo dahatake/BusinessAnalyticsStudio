@@ -105,6 +105,7 @@ describe('FR-305 AC-865 区画に配置されなかったコンポーネント�
 });
 
 describe('FR-305 AC-866 ポップアップを Esc・区画の外のドロップで閉じたときの復元', () => {
+  // ストアの復元の単体。本番の Workspace（startDrag の restoreBefore）を通す結合は snap-layouts-workspace.test.tsx
   it('FR-305 AC-866 操作の前の前後関係（zOrder・背面）をそのまま戻すと、配置・前後関係は操作の前と同じ', async () => {
     const { useLayout } = await freshStore();
     useLayout.getState().raise('summary');

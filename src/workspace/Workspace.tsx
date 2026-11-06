@@ -887,9 +887,12 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     if (pinSet.has(key)) { announce(PIN_MOVE_REASON); return; }
     const lt = layoutTarget(key);
     if (!lt) { announce(tr('この大きさの作業領域では、レイアウトの雛形を使えません')); return; }
-    const open = () => setLayoutsPop({ mode: 'keys', key, base: lt.base, ids: lt.ids, restore: document.activeElement instanceof HTMLElement ? document.activeElement : null });
-    // メニューから開いたときは、メニューが閉じて見出しへフォーカスが戻ってから開く（Esc で閉じたとき、開く前の要素へ戻すため）
-    if (document.activeElement?.closest('[role="menu"]')) requestAnimationFrame(() => requestAnimationFrame(open));
+    // 戻り先: 開く前の要素。コマンドパレット（閉じかけのダイアログ）・メニューの中・body のときは、操作中のコンポーネントにする（消える要素へ戻さない）
+    const open = () => setLayoutsPop({ mode: 'keys', key, base: lt.base, ids: lt.ids, restore: layoutsRestoreTarget(key) });
+    // メニュー・コマンドパレット（閉じかけのダイアログ）から開いたときは、それが閉じてフォーカスが戻ってから開く
+    // （ダイアログが閉じるときのフォーカスの復帰が、ポップアップの区画へ移したフォーカスを奪わないように。Esc で閉じたとき、開く前の要素へ戻すため）
+    const ae = document.activeElement;
+    if (!ae || ae === document.body || ae.closest('[role="menu"],[role="dialog"],[role="alertdialog"]')) requestAnimationFrame(() => requestAnimationFrame(open));
     else open();
   };
   /** ポップアップを閉じる。キーボードで開いたときは、開く前の要素へフォーカスを戻す（AC-863） */
@@ -897,7 +900,15 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     const pop = layoutsPop;
     setLayoutsPop(null);
     setLayoutHover(null);
-    if (refocus && pop?.restore?.isConnected) pop.restore.focus();
+    if (!refocus || !pop) return;
+    const el = pop.restore?.isConnected ? pop.restore : layoutsRestoreTarget(pop.key);
+    el?.focus();
+  };
+  /** ポップアップを閉じたときのフォーカスの戻り先（AC-863）。開く前の要素が残る要素ならそれ、そうでなければ操作中のコンポーネント */
+  const layoutsRestoreTarget = (key: string): HTMLElement | null => {
+    const a = document.activeElement;
+    if (a instanceof HTMLElement && a !== document.body && a.isConnected && !a.closest('[role="dialog"],[role="menu"],[role="alertdialog"]')) return a;
+    return rootRef.current?.querySelector<HTMLElement>(`[data-testid="component-${key}"]`) ?? null;
   };
   // キーボードで開いたポップアップ: 最初の区画へフォーカスを移す。Esc はこれだけを閉じ（没入・最大化は保つ。AC-866）、外を押しても閉じる
   useEffect(() => {
@@ -1468,7 +1479,12 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     const grabFx = grabRect && grabRect.width > 0 ? (sx - grabRect.left) / grabRect.width : 0;
     const offY0 = grabRect ? sy - grabRect.top : 0;
     // 動かし始める前の前後関係（雛形のポップアップを Esc・区画の外のドロップで閉じたとき、操作の前と同じに戻す。FR-305 AC-866）
-    const before0 = (() => { const st = useLayout.getState(); return { zOrder: [...st.zOrder], behind: st.behind[st.persona] }; })();
+    const before0 = (() => {
+      const pre = preDownOrder.current;
+      preDownOrder.current = null;
+      if (pre) return pre; // 同じ押下で手前に出す前（onPointerDownRaise が控えた）
+      const st = useLayout.getState(); return { zOrder: [...st.zOrder], behind: st.behind[st.persona] };
+    })();
     useLayout.getState().raise(key);
     /** ポインターの位置に動かしているコンポーネントを置いた配置（作業領域に対する割合）を求める。自由な移動は、Windows のウィンドウと同様に重なりを許し、
      * ほかを押し出さない（掴んだものが手前に出る。FR-173・Q-066 B）。スナップ・最大化したものは、スナップ前の大きさへ戻る（FR-152 AC-795） */
@@ -1717,8 +1733,12 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     }
   };
 
+  /** 押す直前の前後関係（押下で手前に出す前。雛形のポップアップを閉じたとき、ドラッグの開始より前の前後関係へ戻すために startDrag が使う。FR-305 AC-866） */
+  const preDownOrder = useRef<{ zOrder: string[]; behind: string[] | undefined } | null>(null);
   /** 操作した（押した）コンポーネントを手前に出す（FR-173。重なったときは直近に操作したものが手前） */
   const onPointerDownRaise = (e: PointerEvent<HTMLDivElement>) => {
+    const s0 = useLayout.getState();
+    preDownOrder.current = { zOrder: [...s0.zOrder], behind: s0.behind[s0.persona] };
     for (let n: Element | null = e.target as Element; n && n !== e.currentTarget; n = n.parentElement) {
       const id = n.getAttribute('data-testid') ?? '';
       if (id.startsWith('component-') && id !== 'component-menu' && id !== 'component-actions') { actions().raise(id.slice('component-'.length)); return; }
@@ -1886,7 +1906,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
           style={{
             left: `calc(${(assist.rect.x + assist.rect.w / 2) * 100}%)`, maxWidth: `calc(${assist.rect.w * 100}% - 16px)`,
             // 雛形の区画のときは、その区画の下端に出す（ほかのコンポーネントの見出しを覆わない）
-            ...(assist.zone !== undefined ? { bottom: `calc(${(1 - assist.rect.y - assist.rect.h) * 100}% + 8px)` } : {}),
+            ...(assist.zone !== undefined ? { bottom: `calc(${(1 - assist.rect.y - assist.rect.h) * 100}% + ${tokens.spacingVerticalS})` } : {}),
           }}
         >
           <Text size={200}>{assist.zone !== undefined ? t('この区画に置く:') : t('残った領域に置く:')}</Text>
@@ -1908,7 +1928,10 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
             role="dialog"
             aria-label={t('レイアウトの雛形')}
             className={mergeClasses(s.layoutsPop, snapMotion.appear)}
-            style={{ left: area.left + area.width / 2, top: area.top + 40 }}
+            style={{
+              // 上端の中央のすぐ下（スナップの候補と同じ 40px = 32px + 8px。Fluent 2 の間隔のトークン）
+              left: area.left + area.width / 2, top: `calc(${area.top}px + ${tokens.spacingVerticalXXXL} + ${tokens.spacingVerticalS})`,
+            }}
             onKeyDown={keyLayouts}
           >
             {layoutsPop.ids.map((id) => (
