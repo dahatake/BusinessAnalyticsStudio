@@ -171,21 +171,53 @@ async function dropOnZone(page: Page, p: Pointer, from: Pt, layout: '1' | '6', z
 
 /** 異常系（AC-859）: PARAM-144 ms に満たずに命中範囲を離れると、ポップアップが出ない。 */
 async function quickPassShowsNoPopup(page: Page, p: Pointer, c: Locator, ws: Box, label: string) {
-  const h = centerOf(await box(heading(c)));
+  // 前提（命中範囲の滞在が PARAM-144 ms 未満）は負荷で崩れうる。崩れた試行は判定に数えず、最大 PASS_TRIES 回やり直す。
+  // 滞在時間はアプリが実際に処理した時刻（ページ内の pointermove の timeStamp と処理時の performance.now() の大きい方）で測る。
+  const PASS_TRIES = 3;
   const mid = centerOf(ws);
   const hit = hitPoint(ws);
-  await p.down(h.x, h.y);
-  await glide(p, h, mid);
-  const read = await watch(page, ['snap-layouts']);
-  const t0 = Date.now();
-  await p.move(hit.x, hit.y);
-  await p.move(mid.x, mid.y);
-  const stayed = Date.now() - t0;
-  expect(stayed, `${label}: 前提（命中範囲にとどまった時間が ${DWELL_MS} ms 未満）を作れなかった`).toBeLessThan(DWELL_MS);
-  // 不在の確認には時間の経過が要る（滞留時間 + 余裕だけ、命中範囲の外で掴んだまま待つ）
-  await page.waitForTimeout(DWELL_MS + 300);
-  await p.up(mid.x, mid.y);
-  expect((await read())['snap-layouts'].first, `${label}: ${DWELL_MS} ms に満たずに離れたのにポップアップが出た`).toBeNull();
+  const tried: number[] = [];
+  for (let i = 0; i < PASS_TRIES; i++) {
+    const h = centerOf(await box(heading(c)));
+    await p.down(h.x, h.y);
+    await glide(p, h, mid);
+    const read = await watch(page, ['snap-layouts']);
+    await page.evaluate(() => {
+      const w = window as unknown as { __stMoves: { y: number; ts: number; now: number }[]; __stMoveOff?: () => void };
+      w.__stMoveOff?.();
+      w.__stMoves = [];
+      const on = (e: PointerEvent) => { w.__stMoves.push({ y: e.clientY, ts: e.timeStamp, now: performance.now() }); };
+      window.addEventListener('pointermove', on, true);
+      w.__stMoveOff = () => window.removeEventListener('pointermove', on, true);
+    });
+    const t0 = Date.now();
+    await p.move(hit.x, hit.y);
+    await p.move(mid.x, mid.y);
+    const nodeStayed = Date.now() - t0;
+    const pageStayed = await page.evaluate((edge) => {
+      const w = window as unknown as { __stMoves: { y: number; ts: number; now: number }[]; __stMoveOff?: () => void };
+      w.__stMoveOff?.();
+      const m = w.__stMoves;
+      const iIn = m.findIndex((e) => e.y <= edge);
+      const out = iIn < 0 ? undefined : m.slice(iIn + 1).find((e) => e.y > edge);
+      return iIn < 0 || !out ? null : Math.max(out.ts - m[iIn].ts, out.now - m[iIn].now);
+    }, ws.y + SNAP_EDGE);
+    // ページ内で入る・出るの両方を観測できなかったときは Node 側の時間で代える
+    const stayed = pageStayed ?? nodeStayed;
+    tried.push(Math.round(stayed));
+    if (stayed >= DWELL_MS) {
+      // 前提が崩れた試行: 中央で離して（ポップアップが閉じるのを待って）やり直す
+      await p.up(mid.x, mid.y);
+      await expect(popup(page)).toBeHidden();
+      continue;
+    }
+    // 不在の確認には時間の経過が要る（滞留時間 + 余裕だけ、命中範囲の外で掴んだまま待つ）
+    await page.waitForTimeout(DWELL_MS + 300);
+    await p.up(mid.x, mid.y);
+    expect((await read())['snap-layouts'].first, `${label}: ${DWELL_MS} ms に満たずに離れたのにポップアップが出た`).toBeNull();
+    break;
+  }
+  expect(Math.min(...tried), `${label}: 前提（命中範囲にとどまった時間が ${DWELL_MS} ms 未満）を ${PASS_TRIES} 回とも作れなかった（実測 ${tried.join(', ')} ms）`).toBeLessThan(DWELL_MS);
   // 中央で離すのは自由配置の移動（FR-173）なので位置は変わりうる。最大化にならないことだけを確かめる
   expect(await c.getAttribute('data-maximized'), `${label}: 通り過ぎただけで最大化された`).not.toBe('true');
 }
