@@ -490,12 +490,15 @@ test.describe('NFR-UX-017 Fluent 2 のモーション', () => {
     for (const key of keys) {
       // 動きの軽減なしの情報と操作
       await page.emulateMedia({ reducedMotion: 'no-preference' });
+      // 比較条件を揃える: 通常側も reduce 側と同じ訪問手順（別画面から戻して復元。FR-150・FR-295 AC-825 によりペインにフォーカスがある状態）で取る
+      const other = keys.find((k) => k !== key)!;
+      await gotoScreen(page, key);
+      await gotoScreen(page, other);
       const c0 = await gotoScreen(page, key);
       await page.waitForTimeout(MOTION_MAX_MS + 100);
       const normal = await screenSnapshot(c0);
       // 動きの軽減あり
       await page.emulateMedia({ reducedMotion: 'reduce' });
-      const other = keys.find((k) => k !== key)!;
       await gotoScreen(page, other);
       await markAnimations(page);
       // 左メニューの項目（左メニューにない画面はコマンド。FR-220 AC-590）で切り替える
