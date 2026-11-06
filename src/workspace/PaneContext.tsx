@@ -99,6 +99,8 @@ export interface PaneInfo {
   snapZone?: () => void;
   /** 同じグループのコンポーネントを、同じゾーンへまとめる（FR-299 Group） */
   groupZone?: () => void;
+  /** レイアウトの雛形のポップアップを開く（FR-305 AC-863。Ctrl+Alt+Z・見出しのメニュー・コマンドパレット） */
+  openLayouts?: () => void;
   /** 最後にゾーンの操作（Move・Snap・Group）をしたコンポーネントか（ゾーンの選択を保つ印） */
   zoneSelected?: boolean;
 }
@@ -155,6 +157,7 @@ export function ComponentMenu({ pane, title, open, onOpenChange, onShowTier }: {
             </MenuPopover>
           </Menu>
           )}
+          {pane.openLayouts ? <MenuItem disabled={pane.pinned} secondaryContent={pane.pinned ? pinNote : hint(chordLabel(os, 'layouts'))} onClick={() => pane.openLayouts?.()}>{t('レイアウトの雛形を開く')}</MenuItem> : null}
           <MenuItem disabled={pane.pinned} secondaryContent={resizeNote} onClick={() => pane.resizeBy('w', 1)}>{t('幅を広げる')}</MenuItem>
           <MenuItem disabled={pane.pinned} secondaryContent={resizeNote} onClick={() => pane.resizeBy('w', -1)}>{t('幅を狭める')}</MenuItem>
           <MenuItem disabled={pane.pinned} secondaryContent={resizeNote} onClick={() => pane.resizeBy('h', 1)}>{t('高さを広げる')}</MenuItem>

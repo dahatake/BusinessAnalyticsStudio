@@ -41,7 +41,7 @@ export function currentEnv(): OsEnv {
 }
 
 /** ゾーンの操作（5 つ）と、その補助（Move の逆向き・Focus の切替） */
-export type ZoneOp = 'snap' | 'group' | 'switch' | 'expand' | 'move' | 'moveBack' | 'focus';
+export type ZoneOp = 'snap' | 'group' | 'switch' | 'expand' | 'move' | 'moveBack' | 'focus' | 'layouts';
 
 interface Chord { code: string; label: string }
 /** 操作 → 物理キーと、キーの表記。修飾キーは Ctrl+Alt（macOS の表示は ⌃⌥）で共通 */
@@ -53,6 +53,8 @@ export const ZONE_CHORDS: Record<ZoneOp, Chord> = {
   group: { code: 'KeyG', label: 'G' },
   switch: { code: 'KeyW', label: 'W' },
   focus: { code: 'Enter', label: 'Enter' },
+  // レイアウトの雛形のポップアップ（FR-305 AC-863）。編集の取り消し（Ctrl+Z）とは Alt の有無で区別する（editKeyAction は Alt つきを取り消しにしない）
+  layouts: { code: 'KeyZ', label: 'Z' },
 };
 
 /** 修飾キーの表記 */

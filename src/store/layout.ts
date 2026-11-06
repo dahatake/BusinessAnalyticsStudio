@@ -138,6 +138,10 @@ interface LayoutState {
   autoUndo: AutoSnapshot | null;
   /** 非表示にしたコンポーネントの、直前の自由配置の位置と大きさ（保存しない）。再表示したとき、ほかを動かさずに同じ場所へ戻す（FR-243） */
   hiddenRects: Partial<Record<Persona, Record<string, FloatRect>>>;
+  /** レイアウトの雛形（FR-305）で区画に配置されなかったコンポーネント（ペルソナ別。保存する）。背面にあり、重なりの判定では非表示として扱い、
+   * FR-184 の押し出しと FR-296 の最小化の対象にしない。前面に出す（raise）と外れ、FR-173 の自由配置の重なりとして扱う */
+  behind: Partial<Record<Persona, string[]>>;
+  setBehind: (keys: string[]) => void;
   /** 取り消し用に、いまの状態を覚える */
   saveAutoUndo: () => void;
   /** 自動配置を取り消し、実行前の状態へ戻す。戻せたら true */
@@ -310,7 +314,16 @@ export const useLayout = create<LayoutState>()(
           }
           return { views: { ...s.views, [s.persona]: cur }, screenView: { ...s.screenView, [s.persona]: { ...(s.screenView[s.persona] ?? {}), ...screen } } };
         }),
-        raise: (key) => set((s) => (s.zOrder[s.zOrder.length - 1] === key ? { usedAt: { ...s.usedAt, [key]: ++useClock } } : { zOrder: [...s.zOrder.filter((k) => k !== key), key], usedAt: { ...s.usedAt, [key]: ++useClock } })),
+        raise: (key) => set((s) => {
+          // 前面に出したものは、雛形の背面の扱い（FR-305）から外れる
+          const bh = s.behind[s.persona];
+          const behind = bh?.includes(key) ? { behind: { ...s.behind, [s.persona]: bh.filter((k) => k !== key) } } : {};
+          return s.zOrder[s.zOrder.length - 1] === key
+            ? { usedAt: { ...s.usedAt, [key]: ++useClock }, ...behind }
+            : { zOrder: [...s.zOrder.filter((k) => k !== key), key], usedAt: { ...s.usedAt, [key]: ++useClock }, ...behind };
+        }),
+        behind: {},
+        setBehind: (keys) => set((s) => ({ behind: { ...s.behind, [s.persona]: [...new Set(keys)] } })),
         setExpanded: (key) => set((s) => ({
           expanded: key,
           ...(key ? { maximized: null, minimized: { ...s.minimized, [s.persona]: (s.minimized[s.persona] ?? []).filter((k) => k !== key) } } : {}),
@@ -368,7 +381,8 @@ export const useLayout = create<LayoutState>()(
             const st = get();
             if (areaSize.w <= 0) return;
             const cur = effectiveLayout(st);
-            const { layout, dropped } = makeRoom(cur, areaSize.w, { protect: [key], pinned: new Set(Object.keys(st.pinned[st.persona] ?? {})), usedAt: st.usedAt });
+            // 雛形の背面のもの（FR-305）は最小化の対象にしない
+            const { layout, dropped } = makeRoom(cur, areaSize.w, { protect: [key, ...(st.behind[st.persona] ?? [])], pinned: new Set(Object.keys(st.pinned[st.persona] ?? {})), usedAt: st.usedAt });
             if (dropped.length === 0) return;
             for (const k of dropped) dropFloat(k);
             set({ layouts: { ...st.layouts, [st.persona]: layout }, parked: { ...st.parked, [st.persona]: [...new Set([...(st.parked[st.persona] ?? []), ...dropped])] } });
@@ -429,7 +443,9 @@ export const useLayout = create<LayoutState>()(
           delete moved[s.persona];
           const userLaid = { ...s.userLaid };
           delete userLaid[s.persona];
-          return { layouts, manual, minimized, closed, floats, pinned, views, screenView, tiers, moved, userLaid, navMin: false, maximized: null, expanded: null, resetCount: s.resetCount + 1 };
+          const behind = { ...s.behind };
+          delete behind[s.persona];
+          return { layouts, manual, minimized, closed, floats, pinned, views, screenView, tiers, moved, userLaid, behind, navMin: false, maximized: null, expanded: null, resetCount: s.resetCount + 1 };
         }),
         tiers: {},
         setTier: (key, tier) => set((s) => {
@@ -496,13 +512,14 @@ export const useLayout = create<LayoutState>()(
       name: 'edb.layout',
       version: 1,
       storage: layoutStorage as never,
-      partialize: (s) => ({ persona: s.persona, floats: s.floats, pinned: s.pinned, views: s.views, screenView: s.screenView, zOrder: s.zOrder, usedAt: s.usedAt, layouts: s.layouts, autoSize: s.autoSize, manual: s.manual, minimized: s.minimized, closed: s.closed, navMin: s.navMin, tiers: s.tiers, autoOff: s.autoOff, moved: s.moved, userLaid: s.userLaid }),
+      partialize: (s) => ({ persona: s.persona, floats: s.floats, pinned: s.pinned, views: s.views, screenView: s.screenView, zOrder: s.zOrder, usedAt: s.usedAt, layouts: s.layouts, autoSize: s.autoSize, manual: s.manual, minimized: s.minimized, closed: s.closed, navMin: s.navMin, tiers: s.tiers, autoOff: s.autoOff, moved: s.moved, userLaid: s.userLaid, behind: s.behind }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<Pick<LayoutState, 'persona' | 'floats' | 'pinned' | 'views' | 'screenView' | 'zOrder' | 'usedAt' | 'layouts' | 'autoSize' | 'manual' |         'minimized' | 'navMin' | 'tiers' | 'autoOff' | 'moved' | 'userLaid'>>;
                 const tiers: Partial<Record<Persona, TierOverrides>> = {};
                 const autoOff: Partial<Record<Persona, boolean>> = {};
                 const moved: Partial<Record<Persona, string[]>> = {};
                 const userLaid: Partial<Record<Persona, boolean>> = {};
+                const behind: Partial<Record<Persona, string[]>> = {};
                 for (const name of PERSONAS) {
                   const t = (p.tiers as Record<string, unknown> | undefined)?.[name];
                   if (t && typeof t === 'object') {
@@ -514,6 +531,8 @@ export const useLayout = create<LayoutState>()(
                   if ((p.userLaid as Record<string, unknown> | undefined)?.[name] === true) userLaid[name] = true;
                   const mv = (p.moved as Record<string, unknown> | undefined)?.[name];
                   if (Array.isArray(mv) && mv.every((k) => typeof k === 'string')) moved[name] = mv as string[];
+                  const bh = ((p as { behind?: Record<string, unknown> }).behind)?.[name];
+                  if (Array.isArray(bh) && bh.every((k) => typeof k === 'string')) behind[name] = bh as string[];
                 }
                 const minimized: Partial<Record<Persona, string[]>> = {};
         for (const name of PERSONAS) {
@@ -571,7 +590,7 @@ export const useLayout = create<LayoutState>()(
         const zOrder = Array.isArray(p.zOrder) && p.zOrder.every((k) => typeof k === 'string') ? p.zOrder : [];
         const usedAt: Record<string, number> = {};
         if (p.usedAt && typeof p.usedAt === 'object') for (const [k, v] of Object.entries(p.usedAt)) if (typeof v === 'number' && Number.isFinite(v) && v > 0) { usedAt[k] = v; if (v > useClock) useClock = v; }
-        return { ...current, usedAt, tiers, autoOff, moved, userLaid, floats, pinned, views, screenView, zOrder, persona, layouts, manual, minimized, closed, navMin: p.navMin === true, autoSize: typeof p.autoSize === 'boolean' ? p.autoSize : true };
+        return { ...current, usedAt, tiers, autoOff, moved, userLaid, behind, floats, pinned, views, screenView, zOrder, persona, layouts, manual, minimized, closed, navMin: p.navMin === true, autoSize: typeof p.autoSize === 'boolean' ? p.autoSize : true };
       },
     },
   ),
