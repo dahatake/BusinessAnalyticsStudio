@@ -354,6 +354,80 @@ test.describe('FR-305 上端の中央へのドラッグでのレイアウトの�
     });
   });
 
+  // FR-305 AC-866 AC-867（検証レベルは integration のため台帳の ac_ids には入れない。AC-859 のポップアップの表示・消去の延長として、同じ run.mjs の AC-859 で実行する）。
+  // Q-073 A。ポップアップの表示後の離し方（commit 640c9ff の改訂）。マウス（実入力）で確かめる。
+  // ① ポップアップ（または命中範囲）の内側で離す → ポップアップが閉じ、配置は操作の前と同じ（AC-866）。
+  // ② 外へ出て、どの端・角の範囲でもない位置で離す → ポップアップは外へ出た時点で閉じ、離しても最大化・半分にならない（AC-867）。戻らない間は再表示されない。
+  // ③ 外へ出て左端（端から PARAM-042 以内）で離す → ポップアップは外へ出た時点で閉じ、AC-793 の左半分になる（AC-867）。
+  // ④ 外へ出たあと同じドラッグで命中範囲へ戻り PARAM-144 ms とどまる → 再び表示され、区画で離すとその配置になる（AC-867）。
+  // ポップアップを出すまでは dragToHitAndDwell が PARAM-144 ms の滞留・プレビュー→ポップアップの順を確かめる。
+  // 再表示までの時間は、ページ内の pointermove の時刻（timeStamp と performance.now の小さい方を入場時刻とする）と
+  // 毎フレームの表示記録の差で測り、Node の往復を含めない（負荷で下限の判定が緩む向きにだけずれる）。
+  test('FR-305 AC-859 AC-866 AC-867 マウスでポップアップの内側で離すと配置不変、外へ出ると閉じて端・角ならスナップ（左端は左半分）・端でない位置なら配置不変、戻って 300 ms とどまると再表示される', async ({ page, start }) => {
+    await start();
+    await selectPersona(page, '事業部門');
+    const [a] = await topKeys(page);
+    const c = component(page, a);
+    const ws = await box(workspace(page));
+    const m = mousePointer(page);
+    const mid = centerOf(ws);
+    const leftEdge: Pt = { x: ws.x + SNAP_EDGE / 2, y: ws.y + ws.height / 2 }; // 左端から PARAM-042 以内で、角ではない
+    const before = await box(c);
+
+    // ① AC-866: 命中範囲の内側で離す → ポップアップが閉じ、配置は操作の前と同じ
+    const hit = await dragToHitAndDwell(page, m, c, ws, 'マウス（命中範囲の内側）');
+    await m.up(hit.x, hit.y);
+    await expect(popup(page), '命中範囲の内側で離したのにポップアップが閉じない').toBeHidden();
+    await expect(c, '命中範囲の内側で離したときに最大化された').not.toHaveAttribute('data-maximized', 'true');
+    expectRect(await box(c), before, ws, '命中範囲の内側で離したあとの配置（操作の前と同じ）');
+
+    // ② AC-867: 外へ出て、端・角のどの範囲でもない位置（作業領域の中央）で離す → 閉じる・配置の大きさは変わらない
+    await dragToHitAndDwell(page, m, c, ws, 'マウス（端でない位置で離す）');
+    await glide(m, hit, mid, 4);
+    await expect(popup(page), '外へ出てもポップアップが閉じない').toBeHidden();
+    await page.waitForTimeout(DWELL_MS + 300); // 戻らない間は再表示されない（不在の確認には時間の経過が要る）
+    await expect(popup(page), '外に出たままなのにポップアップが再表示された').toBeHidden();
+    await m.up(mid.x, mid.y);
+    await expect(popup(page)).toBeHidden();
+    const afterB = await box(c);
+    expect(Math.abs(afterB.width - before.width), '端でない位置で離して幅が変わった（スナップ・最大化された）').toBeLessThanOrEqual(tol(ws.width));
+    expect(Math.abs(afterB.height - before.height), '端でない位置で離して高さが変わった（スナップ・最大化された）').toBeLessThanOrEqual(tol(ws.height));
+    await expect(c, '端でない位置で離して最大化された').not.toHaveAttribute('data-maximized', 'true');
+
+    // ③ AC-867: 外へ出て左端で離す → ポップアップは外へ出た時点で閉じ、AC-793 の左半分になる
+    const hit3 = await dragToHitAndDwell(page, m, c, ws, 'マウス（左端で離す）');
+    await glide(m, hit3, leftEdge, 6);
+    await expect(popup(page), '外へ出て左端へ動かしてもポップアップが閉じない').toBeHidden();
+    await m.up(leftEdge.x, leftEdge.y);
+    await expect(popup(page)).toBeHidden();
+    expectRect(await box(c), zoneRect(ws, '1', 1), ws, '左端で離したときの配置（AC-793: 左半分）');
+
+    // ④ AC-867: 外へ出て閉じたあと、同じドラッグで命中範囲へ戻り PARAM-144 ms とどまると再表示され、区画で離すとその配置になる
+    const hit4 = await dragToHitAndDwell(page, m, c, ws, 'マウス（再表示）');
+    await glide(m, hit4, mid, 4);
+    await expect(popup(page), '外へ出てもポップアップが閉じない（再表示の前提）').toBeHidden();
+    const readD = await watch(page, ['snap-layouts']);
+    await page.evaluate((edgeY) => {
+      const w = window as unknown as { __stRe?: number; __stReOff?: () => void };
+      w.__stReOff?.();
+      w.__stRe = undefined;
+      const on = (e: PointerEvent) => {
+        if (w.__stRe === undefined && e.clientY <= edgeY) w.__stRe = Math.min(e.timeStamp, performance.now());
+      };
+      window.addEventListener('pointermove', on, true);
+      w.__stReOff = () => window.removeEventListener('pointermove', on, true);
+    }, ws.y + SNAP_EDGE);
+    await glide(m, mid, hit4, 4);
+    await expect(popup(page), `命中範囲へ戻って ${DWELL_MS} ms とどまっても再表示されない`).toBeVisible();
+    const reEntered = await page.evaluate(() => (window as unknown as { __stRe?: number; __stReOff?: () => void }).__stRe);
+    await page.evaluate(() => (window as unknown as { __stReOff?: () => void }).__stReOff?.());
+    const reSeen = (await readD())['snap-layouts'].first;
+    expect(reEntered, '命中範囲へ戻った時刻をページ内で観測できない').not.toBeUndefined();
+    expect(reSeen! - reEntered!, `命中範囲へ戻ってから ${DWELL_MS} ms 経つ前に再表示された`).toBeGreaterThanOrEqual(DWELL_MS - 30);
+    await dropOnZone(page, m, hit4, '1', 2);
+    expectRect(await box(c), zoneRect(ws, '1', 2), ws, '再表示した ① の右 1/2 に配置');
+  });
+
   // FR-305 AC-864（3 区画以上の雛形の順次の埋め。正常系: 次の区画の強調・候補〔表示中・ピン止め以外〕・選ぶと配置され次へ。
   // 異常系: Esc・候補の外の押下で閉じると配置は変わらず、残りの区画はどのコンポーネントにも割り当てられない）
   test('FR-305 AC-864 2×2 の雛形に置くと残りの区画が左の列から順に強調され表示中でピン止め以外の候補が出て、選ぶとその区画いっぱいに置かれ次へ進み、Esc や候補の外を押して閉じると配置は変わらず残りの区画は割り当てられない', async ({ page, start }) => {
