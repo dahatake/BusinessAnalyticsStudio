@@ -1157,14 +1157,6 @@ def cmd_show(args, root, cfg) -> int:
 
 def cmd_list(args, root, cfg) -> int:
     doc = h.parse_requirements(root, cfg)
-    if args.kind in ("外部連携", "IC"):  # PROJECT-WIRING: FR-199 AC-428 外部連携カタログの一覧
-        import integration_catalog as ic  # noqa: E402
-        _, _, rows = ic.parse(root, cfg)
-        for r in rows:
-            if args.state and ic._clean(r.get("状態")) != args.state:
-                continue
-            print(f"{r.name}\t{ic._clean(r.get('状態')) or '-'}\t{ic._clean(r.get('関連する要求 ID')) or '-'}\t{ic.path_of(cfg)}:{r.line}")
-        return 0
     reqs: list = []
     if args.kind == "AC" or args.level:
         for ac in doc.acs.values():
@@ -1556,14 +1548,6 @@ def trace_one(ck: "Checker", key: str, code: Dict[str, Set[str]]) -> dict:
                         if ln == names[kind][key]:
                             reqs = sorted(set(reqs) | set(h.REQ_ID_RE.findall(" ".join(cells))))
             return {"id": key, "kind": label, "at": f"{h.mf(ck.cfg, 'catalog')}:{names[kind][key]}", "requirements": reqs}
-    # PROJECT-WIRING(最後の手段。toolkit 更新で脱落する→toolkit 本体への依頼あり): FR-199 AC-428 外部連携カタログの trace
-    import integration_catalog as ic  # noqa: E402
-    t = ic.trace(ck.root, ck.cfg, doc, key)
-    if t:
-        return {"id": key, "kind": "外部連携", "at": t["at"], "state": "", "priority": "",
-                "requirements": [f"{q['id']} {q['title']}" for q in t["requirements"]],
-                "acceptance": [f"{a}（{q['id']}）" for q in t["requirements"] for a in q["acs"]],
-                "catalog_row": f"{t['at']}（状態: {t['state'] or '-'}、最終確認日: {t['date'] or '-'}）"}
     return {"id": key, "kind": "not_found"}
 
 
