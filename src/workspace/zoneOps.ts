@@ -27,6 +27,7 @@ export function runZoneOp(op: ZoneOp, p: PaneInfo | null, notify: (text: string)
   if (op === 'move') { p.moveZone?.(1); return; }
   if (op === 'moveBack') { p.moveZone?.(-1); return; }
   if (op === 'snap') { p.snapZone?.(); return; }
+  if (op === 'layouts') { p.openLayouts?.(); return; }
   if (op === 'group') { p.groupZone?.(); }
 }
 
@@ -51,5 +52,7 @@ export function zoneOpCommands(current: () => PaneInfo | null, notify: (text: st
     mk('zone.move', 'move', '移動: 次のゾーンへ移す', ['移動', 'move'], true),
     mk('zone.move.back', 'moveBack', '移動: 前のゾーンへ移す', ['移動', 'move'], true),
     mk('zone.focus', 'focus', 'Focus モードの切替', ['Focus', '集中', '没入', 'immersive'], false),
+    // レイアウトの雛形（FR-305 AC-863）。ドラッグを使わずに、上端の中央へのドラッグと同じポップアップを開く
+    mk('zone.layouts', 'layouts', 'レイアウトの雛形を開く', ['レイアウト', '雛形', 'スナップ', 'Snap Layouts', 'snap', 'layout'], true),
   ];
 }

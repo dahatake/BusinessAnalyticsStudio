@@ -613,7 +613,7 @@ export function BoardSurface({ boardId, testId = 'board-surface', ariaLabel, ove
     if (e.target instanceof HTMLTextAreaElement) return;
     const st = useInk.getState();
     const mod = e.ctrlKey || e.metaKey;
-    if (mod && (e.key === 'z' || e.key === 'Z')) {
+    if (mod && !e.altKey && (e.key === 'z' || e.key === 'Z')) {
       e.preventDefault(); e.stopPropagation();
       if (e.shiftKey) st.redo(boardId); else st.undo(boardId);
     } else if (mod && (e.key === 'y' || e.key === 'Y')) {
