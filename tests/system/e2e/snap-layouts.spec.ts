@@ -333,16 +333,18 @@ test.describe('FR-305 上端の中央へのドラッグでのレイアウトの�
 
   // FR-305 AC-862（タッチ・ペンで AC-859 と同じ結果〔最大化のプレビュー→ポップアップ、区画どおりの配置と再読込、300 ms 未満の通過は出ない・
   // 300 ms 未満の離しは最大化〕。区画の操作の対象は 24×24 CSS px 以上。ドラッグ中にページのスクロール・ズームが起きない）
-  test('FR-305 AC-862 タッチとペンでも上端の中央でまず最大化のプレビュー、とどめると雛形のポップアップに替わり区画どおりに配置され、300 ms 未満では出ず、区画は 24×24 CSS px 以上、ドラッグ中にページのスクロールやズームが起きない', async ({ page, start }) => {
+  // 入力の種類ごとに初期配置から始める（独立した事前条件）。1 つのテストで続けると、先に区画へ置いたコンポーネントが、
+  // 区画に置かれていないほかのコンポーネントを AC-865 のとおり背面に回して覆い、次の入力で掴めなくなるため。
+  // どちらも AC-859 と同じ操作（掴む対象は初期配置の最初のコンポーネント、置く先は ① の左 1/2）で、結果も同じであることを確かめる。
+  for (const kind of ['タッチ', 'ペン'] as const) {
+  test(`FR-305 AC-862 ${kind}でも上端の中央でまず最大化のプレビュー、とどめると雛形のポップアップに替わり区画どおりに配置され再読込後も同じ、300 ms 未満では出ず 300 ms 未満の離しは最大化、区画は 24×24 CSS px 以上、ドラッグ中にページのスクロールやズームが起きない`, async ({ page, start }) => {
     const app = await start();
     await selectPersona(page, '事業部門');
-    const ks = await topKeys(page);
-    expect(ks.length, 'コンポーネントが 2 つ以上必要').toBeGreaterThanOrEqual(2);
-    const [a, b] = ks;
+    const [a] = await topKeys(page);
+    expect(a, 'コンポーネントが 1 つ以上必要').toBeTruthy();
     const ws = await box(workspace(page));
     const cdp = await page.context().newCDPSession(page);
-    const touch = touchPointer(cdp);
-    const pen = penPointer(cdp);
+    const ptr = kind === 'タッチ' ? touchPointer(cdp) : penPointer(cdp);
 
     const view = () => page.evaluate(() => ({
       sx: window.scrollX, sy: window.scrollY,
@@ -352,11 +354,11 @@ test.describe('FR-305 上端の中央へのドラッグでのレイアウトの�
     }));
     const v0 = await view();
 
-    // 異常系: タッチで命中範囲を 300 ms 未満で通り過ぎるとポップアップが出ない
-    await quickPassShowsNoPopup(page, touch, component(page, a), ws, 'タッチ');
+    // 異常系: 命中範囲を 300 ms 未満で通り過ぎるとポップアップが出ない
+    await quickPassShowsNoPopup(page, ptr, component(page, a), ws, kind);
 
-    // タッチ: 最大化のプレビュー→とどめるとポップアップ。区画の操作の対象は 24×24 CSS px 以上
-    const hit = await dragToHitAndDwell(page, touch, component(page, a), ws, 'タッチ');
+    // 正常系: 最大化のプレビュー→とどめるとポップアップ。区画の操作の対象は 24×24 CSS px 以上
+    const hit = await dragToHitAndDwell(page, ptr, component(page, a), ws, kind);
     const zones = popup(page).locator('[data-testid="snap-layout-zone"]');
     const n = await zones.count();
     expect(n, 'ポップアップに区画がない').toBeGreaterThan(0);
@@ -367,28 +369,19 @@ test.describe('FR-305 上端の中央へのドラッグでのレイアウトの�
       expect(zb.width, `区画 ${name} の幅が 24 CSS px 未満`).toBeGreaterThanOrEqual(MIN_TARGET);
       expect(zb.height, `区画 ${name} の高さが 24 CSS px 未満`).toBeGreaterThanOrEqual(MIN_TARGET);
     }
-    expect(await view(), 'タッチのドラッグ中にページがスクロール・ズームした').toEqual(v0);
-    await dropOnZone(page, touch, hit, '1', 1);
-    expectRect(await box(component(page, a)), zoneRect(ws, '1', 1), ws, 'タッチで ① の左 1/2 に配置');
-    expect(await view(), 'タッチのドラッグでページがスクロール・ズームした').toEqual(v0);
-
-    // ペン: 同じ操作で ① の右 1/2 へ
-    const hitPen = await dragToHitAndDwell(page, pen, component(page, b), ws, 'ペン');
-    await dropOnZone(page, pen, hitPen, '1', 2);
-    expectRect(await box(component(page, b)), zoneRect(ws, '1', 2), ws, 'ペンで ① の右 1/2 に配置');
-    expect(await view(), 'ペンのドラッグでページがスクロール・ズームした').toEqual(v0);
+    expect(await view(), `${kind}のドラッグ中にページがスクロール・ズームした`).toEqual(v0);
+    await dropOnZone(page, ptr, hit, '1', 1);
+    expectRect(await box(component(page, a)), zoneRect(ws, '1', 1), ws, `${kind}で ① の左 1/2 に配置`);
+    expect(await view(), `${kind}のドラッグでページがスクロール・ズームした`).toEqual(v0);
 
     // 再読込しても同じ配置（AC-859 と同じ結果）
     await app.reload();
     const ws2 = await box(workspace(page));
-    expectRect(await box(component(page, a)), zoneRect(ws2, '1', 1), ws2, '再読込後も a は ① の左 1/2');
-    expectRect(await box(component(page, b)), zoneRect(ws2, '1', 2), ws2, '再読込後も b は ① の右 1/2');
+    expectRect(await box(component(page, a)), zoneRect(ws2, '1', 1), ws2, `再読込後も ${kind}で置いた a は ① の左 1/2`);
 
-    // 異常系: ペン・タッチで 300 ms 未満で離すと最大化（ポップアップは出ない）
-    await quickReleaseMaximizes(page, pen, component(page, b), ws2, 'ペン');
-    await page.keyboard.press('Escape'); // 最大化（没入）を通常表示に戻す（FR-297。Esc の優先順）
-    await expect(component(page, b)).not.toHaveAttribute('data-maximized', 'true');
-    await quickReleaseMaximizes(page, touch, component(page, a), ws2, 'タッチ');
-    expect(await view(), 'ドラッグでページがスクロール・ズームした').toEqual(v0);
+    // 異常系: 300 ms 未満で離すと最大化（ポップアップは出ない）。a は区画に置かれた手前のコンポーネントなので見出しを掴める
+    await quickReleaseMaximizes(page, ptr, component(page, a), ws2, kind);
+    expect(await view(), `${kind}のドラッグでページがスクロール・ズームした`).toEqual(v0);
   });
+  }
 });
