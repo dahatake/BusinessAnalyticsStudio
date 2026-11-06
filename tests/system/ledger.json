@@ -5230,10 +5230,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-393",
       "canary": false,
-      "status": "fail",
-      "last_commit": "e65dd56",
-      "last_run_at": "2026-11-06T02:25:31+09:00",
-      "evidence": "work/runs/202611052307/logs/system-test/E2E-289-202611060225.log",
+      "status": "pass",
+      "last_commit": "e05c9ee",
+      "last_run_at": "2026-11-06T11:08:23+09:00",
+      "evidence": "work/runs/202611061055/logs/system-test/E2E-289-202611061108.log",
       "history": [
         {
           "at": "2026-10-15T22:31:43+09:00",
