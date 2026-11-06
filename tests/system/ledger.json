@@ -337,7 +337,7 @@
     "AC-786": "sha256:3da2b81d12c38b20",
     "AC-788": "sha256:8aa8721c94878ace",
     "AC-789": "sha256:f72da02fb23e4074",
-    "AC-793": "sha256:600d5f10e2a101ff",
+    "AC-793": "sha256:1caecdd88ba23593",
     "AC-796": "sha256:de40dbe6ed01a69c",
     "AC-086": "sha256:8b67fccb0f0188f0",
     "AC-805": "sha256:0daafe8ddd44aab0",
@@ -378,7 +378,10 @@
     "AC-854": "sha256:91c53f093f5f6e80",
     "AC-855": "sha256:7b7b790e0966c20e",
     "AC-858": "sha256:32bf90c978febed5",
-    "AC-835": "sha256:b722567675472cb9"
+    "AC-835": "sha256:b722567675472cb9",
+    "AC-859": "sha256:e5fad8df58e2e5b8",
+    "AC-862": "sha256:e92cfde29c26147d",
+    "AC-864": "sha256:7384db98a8ec338b"
   },
   "cases": [
     {
@@ -12540,11 +12543,11 @@
       "ac_ids": [
         "AC-793"
       ],
-      "title": "Windows 風スナップ: 上端=最大化・左右端=半分・角=1/4 のプレビューと配置、範囲外で消える、最大化で他は重ならない",
+      "title": "Windows 風スナップ: 上端（中央 PARAM-143% の命中範囲の外）=最大化・左右端=半分・角=1/4 のプレビューと配置、範囲外で消える、最大化で他は重ならない",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-793",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "f4b5bdc",
       "last_run_at": "2026-11-04T14:48:22+09:00",
       "evidence": "work/runs/202611041249/logs/system-test/E2E-449-202611041333.log",
@@ -12554,6 +12557,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-06T23:51:53+09:00",
+          "by": "test-designer",
+          "change": "title: 'Windows 風スナップ: 上端=最大化・左右端=半分・角=1/4 のプレビューと配置、範囲外で消える、最大化で他は重ならない' -> 'Windows 風スナップ: 上端（中央 PARAM-143% の命中範囲の外）=最大化・左右端=半分・角=1/4 のプレビューと配置、範囲外で消える、最大化で他は重ならない'",
+          "reason": "AC-793 の改訂（依頼 2026-11-06。上端の中央の命中範囲は FR-305）に合わせ、上端の最大化を命中範囲の外（左から 15%）で確かめる"
         }
       ]
     },
@@ -13246,6 +13255,33 @@
           "by": "test-designer",
           "change": "command: 'node tests/system/run.mjs AC-851 AC-852 AC-853 AC-854 AC-855' -> 'node tests/system/run.mjs AC-854 AC-855'; title: 'FR-304 取り込み前に人が確かめること（出典のない数値・機密区分・ロゴ・種別「人」・確かめました）' -> 'FR-304 取り込み前の確認（種別「人」の注意と個人名の非表示、確かめましたの前は取り込めない・記録を残さない）'; ac_ids: ['AC-851', 'AC-852', 'AC-853', 'AC-854', 'AC-855'] -> ['AC-854', 'AC-855']",
           "reason": "system レベルの AC だけに絞る（integration の AC-851〜853 は対象外）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-468",
+      "requirement_ids": [
+        "FR-305"
+      ],
+      "ac_ids": [
+        "AC-859",
+        "AC-862",
+        "AC-864"
+      ],
+      "title": "雛形のポップアップ（Snap Layouts）: 上端の中央に 300ms でポップアップ・区画どおりの配置と再読込、タッチ・ペン（24px 以上・スクロール/ズームなし）、2x2 の順次の埋め（ピン止め除外）、異常系: 300ms 未満で出ない・Esc/外の押下で配置不変",
+      "layer": "e2e",
+      "command": "node tests/system/run.mjs AC-859 AC-862 AC-864",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-11-06T23:51:44+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "受入基準からケースを作成"
         }
       ]
     }
