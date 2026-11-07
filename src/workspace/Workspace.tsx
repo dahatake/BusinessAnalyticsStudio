@@ -662,7 +662,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       toggleDirection: () => (pinned ? announce(PIN_MOVE_REASON) : a.toggleDirection(key)),
       snapTo: (kind) => applySnap(key, kind, { tabTarget: keysOf(layout).find((k) => !group.includes(k) && !pinSet.has(k)) }),
       ...(compact ? {} : { openLayouts: () => openLayouts(key) }),
-      snapKinds: snapKindsFor(compact),
+      // 最小の大きさ（PARAM-134・135）を下回る候補は、メニュー・コマンド・キーボードでも示さず選べない（FR-152 AC-267・AC-867）
+      snapKinds: menuSnapKinds(),
       mergeInto: (t) => (pinned || pinSet.has(t) ? announce(PIN_TABS_REASON) : a.mergeTabs(key, t)),
       untab: () => (pinned ? announce(PIN_TABS_REASON) : a.untab(key)),
       startDrag: (e) => startDrag(key, e),
@@ -804,6 +805,11 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   /** 候補（左半分・右半分・上半分・下半分・4 分割・3 分割・タブ化・最大化）の配置を行う。ドラッグ・メニュー・キーボード・コマンドで共通（FR-152 AC-265・AC-266） */
   const applySnap = (key: string, kind: SnapKind, opts: SnapOpts, from?: NonNullable<ReturnType<typeof measureAll>> | null): void => {
     if (pinSet.has(key)) { announce(PIN_MOVE_REASON); return; }
+    // どの手段から呼ばれても、最小の大きさを下回る配置は行わない（FR-152 AC-267・AC-867）
+    if (!compact) {
+      const a0 = from ? { w: from.bounds.w, h: from.bounds.h } : (() => { const r = rootRef.current?.getBoundingClientRect(); return r ? { w: r.width, h: r.height } : null; })();
+      if (a0 && a0.w > 0 && a0.h > 0 && !snapFitsMin(kind, opts, a0, MIN_WINDOW_W, MIN_WINDOW_H)) { announce(tr('この大きさの作業領域では、その配置にできません')); return; }
+    }
     const st = actions();
     setAssist(null);
     // 最大化: ほかのコンポーネントは元の配置のまま背面へ回る（解除・引き離しで元の配置に戻る。A-75）
@@ -1371,6 +1377,15 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       else if (area.bottom - y <= SNAP_EDGE_PX) out.push('bottom');
     }
     return out;
+  };
+  /** 見出しのメニュー・コマンドに示す候補（最小の大きさを下回るものを除く。タブ化・最大化は残る） */
+  const menuKindsRef = useRef<readonly SnapKind[]>([]);
+  const menuSnapKinds = (): readonly SnapKind[] => {
+    const next = compact || width <= 0 || height <= 0 ? snapKindsFor(compact) : fittingSnapKinds({}, { width, height });
+    // 内容が同じなら同じ配列を返す（見出しの操作の組が毎回作り直されないように）
+    if (next.length === menuKindsRef.current.length && next.every((k, i) => k === menuKindsRef.current[i])) return menuKindsRef.current;
+    menuKindsRef.current = next;
+    return next;
   };
   /** 直近の snapAt が、最小の大きさを下回るために候補を出さなかった（その間は置き場所を変えない。FR-152 AC-267・AC-867） */
   const snapBlocked = useRef(false);
