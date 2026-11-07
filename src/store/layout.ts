@@ -115,7 +115,8 @@ interface LayoutState {
   hideComponent: (key: string) => void;
   showComponent: (key: string) => void;
   moveComponent: (key: string, dir: Move) => void;
-  toggleDirection: (key: string) => void;
+  /** 向きを変える。幅が足りず最小化できる対象もないときは取り消して false（FR-296 AC-886） */
+  toggleDirection: (key: string) => boolean;
   mergeTabs: (key: string, target: string) => void;
   untab: (key: string) => void;
   resizeAt: (path: Path, index: number, delta: number) => void;
@@ -453,7 +454,30 @@ export const useLayout = create<LayoutState>()(
           fit();
         },
         moveComponent: (key, dir) => { if (!isPinned(get(), key)) apply((l) => move(l, key, dir)); },
-        toggleDirection: (key) => { if (!isPinned(get(), key)) apply((l) => toggleDirection(l, key)); },
+        toggleDirection: (key) => {
+          const s = get();
+          if (isPinned(s, key)) return true;
+          const cur = effectiveLayout(s);
+          const next = cur ? toggleDirection(cur, key) : cur;
+          // 向きの変更で幅が足りなくなるとき（縦に並べたものを横にするなど）は、再表示と同じく、最小化できる対象（ピン止めでも背面でもない。最も長く使っていないもの）を 1 つずつ最小化して収める。
+          // 対象が 1 つもなくて収まらなければ、操作を取り消して直前の状態のままにする（FR-296 AC-886・AC-801）
+          if (!next || areaSize.w <= 0 || fitsWidth(next, areaSize.w)) { apply(() => next); return true; }
+          const pinnedSet = new Set(Object.keys(s.pinned[s.persona] ?? {}));
+          const behindSet = new Set(s.behind[s.persona] ?? []);
+          let layout: Layout = next;
+          const dropped: string[] = [];
+          while (layout && !fitsWidth(layout, areaSize.w)) {
+            const inTree = keysOf(layout);
+            const victim = pickOldest(inTree.filter((k) => k !== key && !pinnedSet.has(k) && !behindSet.has(k)), s.usedAt);
+            if (victim === undefined) return false;
+            dropped.push(victim);
+            layout = makeRoom(layout, areaSize.w, { protect: inTree.filter((k) => k !== victim), maxDrop: 1 }).layout;
+          }
+          for (const k of dropped) dropFloat(k);
+          apply(() => layout);
+          set((st) => ({ parked: { ...st.parked, [st.persona]: [...new Set([...(st.parked[st.persona] ?? []), ...dropped])] } }));
+          return true;
+        },
         mergeTabs: (key, target) => { if (isPinned(get(), key) || isPinned(get(), target)) return; dropFloat(key); apply((l) => mergeIntoTabs(l, key, target)); },
         untab: (key) => { if (isPinned(get(), key)) return; dropFloat(key); apply((l) => splitFromTabs(l, key)); },
         resizeAt: (path, index, delta) => {

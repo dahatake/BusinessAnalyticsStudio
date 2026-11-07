@@ -660,7 +660,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
         const next = clampFloat({ ...cur, x: cur.x + (d === 'right' ? step : d === 'left' ? -step : 0), y: cur.y + (d === 'down' ? step : d === 'up' ? -step : 0) });
         commitFree(key, { x: next.x * m.bounds.w, y: next.y * m.bounds.h, w: next.w * m.bounds.w, h: next.h * m.bounds.h }, m, false);
       },
-      toggleDirection: () => (pinned ? announce(PIN_MOVE_REASON) : a.toggleDirection(key)),
+      toggleDirection: () => { if (pinned) announce(PIN_MOVE_REASON); else if (!a.toggleDirection(key)) announce('領域が足りず、最小化できるコンポーネントもないため、並べる方向の変更を取り消しました'); },
       snapTo: (kind) => applySnap(key, kind, { tabTarget: keysOf(layout).find((k) => !group.includes(k) && !pinSet.has(k)) }),
       ...(compact ? {} : { openLayouts: () => openLayouts(key) }),
       // 最小の大きさ（PARAM-134・135）を下回る候補は、メニュー・コマンド・キーボードでも示さず選べない（FR-152 AC-267・AC-867）
