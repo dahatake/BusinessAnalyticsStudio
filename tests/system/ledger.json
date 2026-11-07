@@ -5209,9 +5209,9 @@
       "command": "node tests/system/run.mjs AC-392",
       "canary": false,
       "status": "pass",
-      "last_commit": "6ad11c3",
-      "last_run_at": "2026-11-07T23:42:56+09:00",
-      "evidence": "work/runs/202611072115/logs/system-test/E2E-288-202611072339.log",
+      "last_commit": "561112d",
+      "last_run_at": "2026-11-08T07:05:23+09:00",
+      "evidence": "work/runs/202611080659/logs/system-test/E2E-288-202611080705.log",
       "history": [
         {
           "at": "2026-10-15T22:31:38+09:00",
@@ -5236,14 +5236,14 @@
       "ac_ids": [
         "AC-393"
       ],
-      "title": "リサイズ中に連続して変わり 30fps 以上（異常系: 大きく動かしても枠外に出ない）",
+      "title": "リサイズ中に大きさが連続して変わり（judgeContinuity で連続性を検証）30fps 以上（異常系: 大きく動かしても枠外に出ない・瞬間的に切り替わらない）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-393",
       "canary": false,
       "status": "pass",
-      "last_commit": "6ad11c3",
-      "last_run_at": "2026-11-07T23:42:56+09:00",
-      "evidence": "work/runs/202611072115/logs/system-test/E2E-289-202611072338.log",
+      "last_commit": "561112d",
+      "last_run_at": "2026-11-08T07:05:23+09:00",
+      "evidence": "work/runs/202611080659/logs/system-test/E2E-289-202611080704.log",
       "history": [
         {
           "at": "2026-10-15T22:31:43+09:00",
@@ -5268,6 +5268,12 @@
           "by": "conductor",
           "change": "status -> not_run",
           "reason": "GPU あり（NVIDIA RTX Spark N1X）の環境で再実行するため unblock"
+        },
+        {
+          "at": "2026-11-08T07:04:21+09:00",
+          "by": "test-designer",
+          "change": "title: 'リサイズ中に連続して変わり 30fps 以上（異常系: 大きく動かしても枠外に出ない）' -> 'リサイズ中に大きさが連続して変わり（judgeContinuity で連続性を検証）30fps 以上（異常系: 大きく動かしても枠外に出ない・瞬間的に切り替わらない）'",
+          "reason": "AUD-250: 連続性の検証（judgeContinuity）を含むことが題名から分かるよう台帳の記述を直す（ケースの内容・AC は不変）"
         }
       ],
       "serial": true
