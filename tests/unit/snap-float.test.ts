@@ -83,8 +83,14 @@ describe('FR-152 AC-265 スナップの配置は重ならない（自由配置�
   // FR-216（ピン止め）
   it('FR-152 AC-265 ピン止めしたものがある領域には置けず（null）、ピン止めしたものは動かない', () => {
     expect(planSnap(INIT, 'a', half('right'), B, { fixed: new Set(['b']) })).toBeNull();
-    const out = planSnap(INIT, 'a', half('left'), B, { fixed: new Set(['d']) })!;
+    // 最小の大きさ（FR-296）を満たすには、右上の 600x400 に b と c の 2 つは入らない（300 幅 < 360）。
+    // そこで c を除いた 3 つで確かめる（d を動かさず、残りが最小の大きさで収まる場合は置ける）
+    const { c: _c, ...three } = INIT;
+    const out = planSnap(three, 'a', half('left'), B, { fixed: new Set(['d']) })!;
+    expect(out).not.toBeNull();
     expect(out.d).toEqual(INIT.d);
+    expect(out.a).toEqual(half('left'));
+    expectNoOverlap(out);
   });
 });
 
@@ -216,5 +222,17 @@ describe('FR-152 AC-266 ドラッグなしの手段（メニュー・キーボ�
     expect(c, '最大化のコマンドがない').toBeTruthy();
     c!.run();
     expect(snapTo).toHaveBeenCalledWith('maximize');
+  });
+  // FR-152 AC-267・AC-867: 置く先が最小の大きさ以上なら、残りが最小の大きさに入りきらなくても、置いたものは指定の大きさのまま（縮めない）
+  it('FR-152 AC-267 AC-867 残りが入りきらなくても、右半分に置いたものは作業領域の高さいっぱいのまま（縮めない）', () => {
+    const b = { w: 1380, h: 306 };
+    const input: PxMap = {
+      a: { x: 0, y: 44, w: 850, h: 262 }, b: { x: 0, y: 48, w: 850, h: 258 },
+      c: { x: 858, y: 46, w: 521, h: 260 }, d: { x: 858, y: 46, w: 521, h: 260 },
+    };
+    const target = { x: 690, y: 0, w: 690, h: 306 };
+    const out = planSnap(input, 'a', target, b)!;
+    expect(out.a).toEqual(target);
+    for (const k of ['b', 'c', 'd']) expect(overlapArea(out.a!, out[k]!), k).toBeLessThanOrEqual(1);
   });
 });

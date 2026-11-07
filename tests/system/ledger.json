@@ -902,9 +902,9 @@
       "command": "node tests/system/run.mjs AC-017",
       "canary": false,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-116-202611070913.log",
+      "last_commit": "af98e76",
+      "last_run_at": "2026-11-07T11:37:08+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-116-202611071130.log",
       "history": [
         {
           "at": "2026-10-12T14:06:02+09:00",
@@ -2131,9 +2131,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-162-202611070912.log",
+      "last_commit": "89caa23",
+      "last_run_at": "2026-11-07T11:29:16+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-162-202611071128.log",
       "history": [
         {
           "at": "2026-10-12T14:07:28+09:00",
@@ -3185,9 +3185,9 @@
       "command": "node tests/system/run.mjs AC-134",
       "canary": false,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-202-202611070917.log",
+      "last_commit": "af98e76",
+      "last_run_at": "2026-11-07T11:37:08+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-202-202611071130.log",
       "history": [
         {
           "at": "2026-10-12T14:08:38+09:00",
@@ -3210,9 +3210,9 @@
       "command": "node tests/system/run.mjs AC-135",
       "canary": false,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-203-202611070917.log",
+      "last_commit": "af98e76",
+      "last_run_at": "2026-11-07T11:37:08+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-203-202611071130.log",
       "history": [
         {
           "at": "2026-10-12T14:08:40+09:00",
@@ -4257,9 +4257,9 @@
       "command": "node tests/system/run.mjs AC-261",
       "canary": false,
       "status": "pass",
-      "last_commit": "5ccdd1f",
-      "last_run_at": "2026-11-07T10:09:31+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-235-202611070959.log",
+      "last_commit": "76afd21",
+      "last_run_at": "2026-11-07T11:13:38+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-235-202611071103.log",
       "history": [
         {
           "at": "2026-10-14T05:25:47+09:00",
@@ -4288,9 +4288,9 @@
       "command": "node tests/system/run.mjs AC-264",
       "canary": false,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-236-202611070912.log",
+      "last_commit": "af98e76",
+      "last_run_at": "2026-11-07T11:37:08+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-236-202611071130.log",
       "history": [
         {
           "at": "2026-10-14T05:25:50+09:00",
@@ -4570,9 +4570,9 @@
       "command": "node tests/system/run.mjs AC-348",
       "canary": false,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-268-202611070919.log",
+      "last_commit": "af98e76",
+      "last_run_at": "2026-11-07T11:37:08+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-268-202611071130.log",
       "history": [
         {
           "at": "2026-10-15T05:31:37+09:00",
@@ -5159,9 +5159,9 @@
       "command": "node tests/system/run.mjs AC-390",
       "canary": false,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-287-202611070920.log",
+      "last_commit": "af98e76",
+      "last_run_at": "2026-11-07T11:37:08+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-287-202611071130.log",
       "history": [
         {
           "at": "2026-10-15T22:31:33+09:00",
@@ -5304,9 +5304,9 @@
       "command": "node tests/system/run.mjs AC-396 AC-819",
       "canary": true,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-291-202611070912.log",
+      "last_commit": "89caa23",
+      "last_run_at": "2026-11-07T11:29:16+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-291-202611071128.log",
       "history": [
         {
           "at": "2026-10-15T22:31:53+09:00",
@@ -5740,9 +5740,9 @@
       "command": "node tests/system/run.mjs AC-480",
       "canary": false,
       "status": "pass",
-      "last_commit": "5ccdd1f",
-      "last_run_at": "2026-11-07T10:09:31+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-307-202611071006.log",
+      "last_commit": "76afd21",
+      "last_run_at": "2026-11-07T11:13:38+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-307-202611071110.log",
       "history": [
         {
           "at": "2026-10-17T22:06:37+09:00",
@@ -5896,9 +5896,9 @@
       "command": "node tests/system/run.mjs AC-495",
       "canary": false,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-312-202611070922.log",
+      "last_commit": "af98e76",
+      "last_run_at": "2026-11-07T11:37:08+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-312-202611071130.log",
       "history": [
         {
           "at": "2026-10-17T22:07:09+09:00",
@@ -6325,9 +6325,9 @@
       "command": "node tests/system/run.mjs AC-562",
       "canary": false,
       "status": "pass",
-      "last_commit": "5ccdd1f",
-      "last_run_at": "2026-11-07T10:09:31+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-327-202611071008.log",
+      "last_commit": "76afd21",
+      "last_run_at": "2026-11-07T11:13:38+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-327-202611071112.log",
       "history": [
         {
           "at": "2026-10-19T23:53:36+09:00",
@@ -6918,9 +6918,9 @@
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat --workers=1",
       "canary": true,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-345-202611070912.log",
+      "last_commit": "89caa23",
+      "last_run_at": "2026-11-07T11:29:16+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-345-202611071128.log",
       "history": [
         {
           "at": "2026-10-21T17:19:59+09:00",
@@ -6956,9 +6956,9 @@
       "command": "node tests/system/run.mjs AC-593",
       "canary": true,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-346-202611070912.log",
+      "last_commit": "89caa23",
+      "last_run_at": "2026-11-07T11:29:16+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-346-202611071128.log",
       "history": [
         {
           "at": "2026-10-21T17:32:44+09:00",
@@ -7141,9 +7141,9 @@
       "command": "node tests/system/run.mjs AC-598",
       "canary": true,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-351-202611070912.log",
+      "last_commit": "89caa23",
+      "last_run_at": "2026-11-07T11:29:16+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-351-202611071128.log",
       "history": [
         {
           "at": "2026-10-21T17:33:47+09:00",
@@ -7788,9 +7788,9 @@
       "command": "node tests/system/run.mjs AC-174",
       "canary": false,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/IT-022-202611070927.log",
+      "last_commit": "af98e76",
+      "last_run_at": "2026-11-07T11:37:08+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/IT-022-202611071130.log",
       "history": [
         {
           "at": "2026-10-12T14:09:06+09:00",
@@ -7894,9 +7894,9 @@
       "command": "node tests/system/run.mjs AC-185",
       "canary": false,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/IT-026-202611070927.log",
+      "last_commit": "af98e76",
+      "last_run_at": "2026-11-07T11:37:08+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/IT-026-202611071130.log",
       "history": [
         {
           "at": "2026-10-12T14:09:12+09:00",
@@ -12543,14 +12543,14 @@
       "ac_ids": [
         "AC-793"
       ],
-      "title": "Windows 風スナップ: 上端（中央 PARAM-143% の命中範囲の外）=最大化・左右端=半分・角=1/4 のプレビューと配置、範囲外で消える、最大化で他は重ならない",
+      "title": "Windows 風スナップ: 上端（中央 PARAM-143% の命中範囲の外）=最大化・左右端=半分・角=1/4 のプレビューと配置、範囲外で離すと不変、最大化で他は重ならない、作業領域が低く 1/4 が PARAM-135 を下回るときは角の候補が出ず離しても不変で左右端の半分・上端の最大化は残る（AC-267・867 は integration のため ac_ids 外）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-793",
       "canary": false,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-449-202611070912.log",
+      "last_commit": "af98e76",
+      "last_run_at": "2026-11-07T11:37:08+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-449-202611071130.log",
       "history": [
         {
           "at": "2026-10-27T23:31:36+09:00",
@@ -12563,6 +12563,12 @@
           "by": "test-designer",
           "change": "title: 'Windows 風スナップ: 上端=最大化・左右端=半分・角=1/4 のプレビューと配置、範囲外で消える、最大化で他は重ならない' -> 'Windows 風スナップ: 上端（中央 PARAM-143% の命中範囲の外）=最大化・左右端=半分・角=1/4 のプレビューと配置、範囲外で消える、最大化で他は重ならない'",
           "reason": "AC-793 の改訂（依頼 2026-11-06。上端の中央の命中範囲は FR-305）に合わせ、上端の最大化を命中範囲の外（左から 15%）で確かめる"
+        },
+        {
+          "at": "2026-11-07T10:26:29+09:00",
+          "by": "test-designer",
+          "change": "title: 'Windows 風スナップ: 上端（中央 PARAM-143% の命中範囲の外）=最大化・左右端=半分・角=1/4 のプレビューと配置、範囲外で消える、最大化で他は重ならない' -> 'Windows 風スナップ: 上端（中央 PARAM-143% の命中範囲の外）=最大化・左右端=半分・角=1/4 のプレビューと配置、範囲外で離すと不変、最大化で他は重ならない、作業領域が低く 1/4 が PARAM-135 を下回るときは角の候補が出ず離しても不変で左右端の半分・上端の最大化は残る（AC-267・867 は integration のため ac_ids 外）'",
+          "reason": "commit 60ff46b（Q-075 A）: PARAM-134・135 未満の角の候補は示さず、上端の最大化は残る、のテストを追加"
         }
       ]
     },
@@ -12579,9 +12585,9 @@
       "command": "node tests/system/run.mjs AC-796",
       "canary": false,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-450-202611070912.log",
+      "last_commit": "af98e76",
+      "last_run_at": "2026-11-07T11:37:08+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-450-202611071130.log",
       "history": [
         {
           "at": "2026-10-27T23:31:40+09:00",
@@ -12604,9 +12610,9 @@
       "command": "node tests/system/run.mjs AC-086",
       "canary": false,
       "status": "pass",
-      "last_commit": "5ccdd1f",
-      "last_run_at": "2026-11-07T10:09:31+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-451-202611070959.log",
+      "last_commit": "af98e76",
+      "last_run_at": "2026-11-07T11:37:08+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-451-202611071130.log",
       "history": [
         {
           "at": "2026-10-30T09:19:01+09:00",
@@ -12663,9 +12669,9 @@
       "command": "node tests/system/run.mjs AC-797 AC-799 AC-824 AC-825 AC-826",
       "canary": false,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-452-202611070932.log",
+      "last_commit": "af98e76",
+      "last_run_at": "2026-11-07T11:37:08+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-452-202611071131.log",
       "history": [
         {
           "at": "2026-10-30T22:45:31+09:00",
@@ -12718,9 +12724,9 @@
       "command": "node tests/system/run.mjs AC-800",
       "canary": false,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-453-202611070932.log",
+      "last_commit": "af98e76",
+      "last_run_at": "2026-11-07T11:37:08+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-453-202611071131.log",
       "history": [
         {
           "at": "2026-10-30T22:45:34+09:00",
@@ -12876,9 +12882,9 @@
       "command": "node tests/system/run.mjs AC-810",
       "canary": false,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-459-202611070933.log",
+      "last_commit": "af98e76",
+      "last_run_at": "2026-11-07T11:37:08+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-459-202611071131.log",
       "history": [
         {
           "at": "2026-10-30T23:01:49+09:00",
@@ -12901,9 +12907,9 @@
       "command": "node tests/system/run.mjs AC-811",
       "canary": false,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-460-202611070933.log",
+      "last_commit": "af98e76",
+      "last_run_at": "2026-11-07T11:37:08+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-460-202611071131.log",
       "history": [
         {
           "at": "2026-10-30T23:01:52+09:00",
@@ -12926,9 +12932,9 @@
       "command": "node tests/system/run.mjs AC-813",
       "canary": false,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-461-202611070933.log",
+      "last_commit": "af98e76",
+      "last_run_at": "2026-11-07T11:37:08+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-461-202611071131.log",
       "history": [
         {
           "at": "2026-10-30T23:01:55+09:00",
@@ -13268,14 +13274,14 @@
         "AC-862",
         "AC-864"
       ],
-      "title": "雛形のポップアップ（Snap Layouts）: 上端の中央に 300ms でポップアップ・区画どおりの配置と再読込、タッチ・ペンは入力ごとに初期配置から独立に（24px 以上・スクロール/ズームなし）、2x2 の順次の埋め（ピン止め除外）、異常系: 300ms 未満で出ない・300ms 未満の離しは最大化・Esc/外の押下で配置不変、ポップアップ表示後の離し方（内側は配置不変、外へ出ると閉じて左端は左半分・端でない位置は配置不変、戻って 300ms で再表示。AC-866・867 は integration のため ac_ids 外）",
+      "title": "雛形のポップアップ（Snap Layouts）: 上端の中央で 300ms でポップアップ・区画の配置と再読込、タッチ・ペン、2x2 の順次の埋め、異常系: 300ms 未満の通過は出ず離すと最大化、Esc・外の押下で配置不変、ポップアップ表示後の離し方（内側は掴む前へ戻る・外へ出ると閉じて端・角ならスナップ・戻って 300ms で再表示）、Esc はポップアップを閉じドラッグも取りやめ再表示されず配置不変、外へ出て閉じたあと戻って 300ms 未満で離すと最大化（AC-866・867・868・870・871 は integration のため ac_ids 外）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-859 AC-862 AC-864",
       "canary": false,
       "status": "pass",
-      "last_commit": "877d1f5",
-      "last_run_at": "2026-11-07T09:59:23+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-468-202611070912.log",
+      "last_commit": "af98e76",
+      "last_run_at": "2026-11-07T11:37:08+09:00",
+      "evidence": "work/runs/202611071017/logs/system-test/E2E-468-202611071130.log",
       "history": [
         {
           "at": "2026-11-06T23:51:44+09:00",
@@ -13324,6 +13330,12 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "AC-866・867 の改訂に合わせ、ポップアップ表示後の離し方のテストを追加（未実行）"
+        },
+        {
+          "at": "2026-11-07T10:26:29+09:00",
+          "by": "test-designer",
+          "change": "title: '雛形のポップアップ（Snap Layouts）: 上端の中央に 300ms でポップアップ・区画どおりの配置と再読込、タッチ・ペンは入力ごとに初期配置から独立に（24px 以上・スクロール/ズームなし）、2x2 の順次の埋め（ピン止め除外）、異常系: 300ms 未満で出ない・300ms 未満の離しは最大化・Esc/外の押下で配置不変、ポップアップ表示後の離し方（内側は配置不変、外へ出ると閉じて左端は左半分・端でない位置は配置不変、戻って 300ms で再表示。AC-866・867 は integration のため ac_ids 外）' -> '雛形のポップアップ（Snap Layouts）: 上端の中央で 300ms でポップアップ・区画の配置と再読込、タッチ・ペン、2x2 の順次の埋め、異常系: 300ms 未満の通過は出ず離すと最大化、Esc・外の押下で配置不変、ポップアップ表示後の離し方（内側は掴む前へ戻る・外へ出ると閉じて端・角ならスナップ・戻って 300ms で再表示）、Esc はポップアップを閉じドラッグも取りやめ再表示されず配置不変、外へ出て閉じたあと戻って 300ms 未満で離すと最大化（AC-866・867・868・870・871 は integration のため ac_ids 外）'",
+          "reason": "commit 60ff46b（Q-074〜077 A）に合わせ、AC-866（取りやめ・区画外で掴む前へ戻る）・AC-868（Esc は再表示しない）・AC-870（Esc＝取りやめ）・AC-871（再突入して滞留前に離すと最大化）のテストを同じファイルに追加（AC-859 の run.mjs で実行）"
         }
       ]
     }

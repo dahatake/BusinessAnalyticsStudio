@@ -125,6 +125,18 @@ export function planSnap(input: PxMap, key: string, target: PxRect, b: Bounds, o
   if (fixed.size > 0) return null;
   const others = Object.keys(r0).filter((k) => k !== key && !anchors.has(k));
   if (others.length === 0) return r0;
+  // 置く先が最小の大きさ（PARAM-134・135）以上のときは、置いたものを縮めない（半分・3 分割は指定どおりの大きさ。FR-152 AC-267・AC-867）。
+  // 残りは、空いた領域へ詰める（最小の大きさに満たない分は、描くときに最小へ補正され、互いに重なってよい）
+  if (t.w >= MIN_COMPONENT_WIDTH - 1 && t.h >= MIN_H - 1) {
+    const free = largestEmpty([t, ...[...anchors].map((k) => r0[k]!)], b);
+    if (free) {
+      const kept: PxMap = { [key]: t };
+      for (const k of anchors) kept[k] = r0[k]!;
+      const g = packGrid(Object.fromEntries(others.map((k) => [k, r0[k]!])), { w: free.w, h: free.h });
+      for (const k of others) kept[k] = inset({ x: free.x + g[k]!.x, y: free.y + g[k]!.y, w: g[k]!.w, h: g[k]!.h });
+      return kept;
+    }
+  }
   const sh = Math.max(b.h * STRIP, MIN_H);
   const scale = Math.max(0.1, (b.h - sh) / b.h);
   const out: PxMap = {};
