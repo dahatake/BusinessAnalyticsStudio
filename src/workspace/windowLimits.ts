@@ -111,6 +111,15 @@ export function isLimitHeld(pinnedShown: number, slotsShown: number, max = MAX_D
   return pinnedShown + slotsShown > max;
 }
 
+/**
+ * 雛形の順次の埋めの終了時（完了または途中で閉じた時点）に、背面へ回すもの（FR-305 AC-865・AC-876。Q-089 A）。
+ * remaining: 表示中（最小化・閉じた・ピン止め中・すでに背面のものを除く）のうち、配置済み（掴んだもの・選んだもの）を除いて残ったもの。
+ * emptyZones: その時点で空の区画の数。残りが空の区画より多いときだけ、残り全部を背面へ回す（選んだものは含まない。少ないなら表示中のまま）。
+ */
+export function decideLeftover(remaining: readonly string[], emptyZones: number): string[] {
+  return remaining.length > Math.max(0, emptyZones) ? [...remaining] : [];
+}
+
 /** 最も長く使っていないもの（usedAt が小さいもの。同じなら並びの後ろ）。候補がなければ undefined */
 export function pickOldest(keys: readonly string[], usedAt: Readonly<Record<string, number>> = {}): string | undefined {
   let victim: string | undefined;

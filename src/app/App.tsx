@@ -122,7 +122,7 @@ export function App() {
   const onNavToggle = useCallback((key: string) => {
     if (SCREENS.find((s) => s.key === key)?.modal) { useSettingsModal.getState().setOpen(true); return; }
     const w = useWindowStatus.getState();
-    const target = navTarget(key, w.states, w.screenOf, useLayout.getState().usedAt);
+    const target = navTarget(key, w.states, w.screenOf, useLayout.getState().usedAt, useLayout.getState().behind[useLayout.getState().persona] ?? []);
     if (!target) { onSelect(key); return; }
     useStepper.getState().followScreen(key);
     if (target.state === 'front') { pressWindow(target.key, 'front', w.inTree.includes(target.key)); return; }
