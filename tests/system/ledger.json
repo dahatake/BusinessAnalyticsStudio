@@ -6326,10 +6326,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-562",
       "canary": false,
-      "status": "fail",
-      "last_commit": "44b4f1e",
-      "last_run_at": "2026-11-07T02:48:49+09:00",
-      "evidence": "work/runs/202611062335/logs/system-test/E2E-327-202611070248.log",
+      "status": "pass",
+      "last_commit": "7683349",
+      "last_run_at": "2026-11-07T09:06:40+09:00",
+      "evidence": "work/runs/202611070837/logs/system-test/E2E-327-202611070905.log",
       "history": [
         {
           "at": "2026-10-19T23:53:36+09:00",
