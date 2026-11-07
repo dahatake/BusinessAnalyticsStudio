@@ -5,13 +5,13 @@ import { Button, Tab, TabList, Text, makeStyles, mergeClasses, tokens } from '@f
 import { MOTION, followDurationOverride } from '../theme/tokens';
 import { useSnapMotion, motionAllowed } from '../motion/useFoldMotion';
 import { prefersReducedMotion, useAnimation } from '../store/animation';
-import { SNAP_LABEL, defaultSnapKind, nearestCorner, snapKindsFor, snapRect, type Edge, type SnapKind, type SnapOpts } from './snap';
+import { SNAP_LABEL, defaultSnapKind, nearestCorner, snapFitsMin, snapKindsFor, snapRect, type Edge, type SnapKind, type SnapOpts } from './snap';
 import type { ScreenDefinition } from '../screens/types';
 import { effectiveLayout, personaKeys, useLayout, clampFloat, isPinned, setWorkspaceArea, holdLayoutPersist, type FloatRect } from '../store/layout';
 import { EXPAND_RATIO, useSettings, type ExpandPosition } from '../store/settings';
 import { keysOf, prune, type DropZone, type LayoutNode, type Path, type SplitNode } from './layoutModel';
 import { MIN_COMPONENT_WIDTH, applyAutoSize, fitMinWidth } from './autosize';
-import { enforceMin, floorFloat, needHeight } from './windowLimits';
+import { MIN_WINDOW_H, MIN_WINDOW_W, enforceMin, floorFloat, needHeight } from './windowLimits';
 import { WindowList } from './WindowList';
 import { IMMERSIVE_DIM_PERCENT, windowStates } from './windowStates';
 import { withOpacity } from '../theme/frameMaterial';
@@ -1368,7 +1368,10 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     }
     return out;
   };
+  /** 直近の snapAt が、最小の大きさを下回るために候補を出さなかった（その間は置き場所を変えない。FR-152 AC-267・AC-867） */
+  const snapBlocked = useRef(false);
   const snapAt = (x: number, y: number, key: string, hitKey: string | null, skip: Set<Edge>): SnapState | null => {
+    snapBlocked.current = false;
     const root = rootRef.current;
     if (!root) return null;
     const area = root.getBoundingClientRect();
@@ -1381,9 +1384,6 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     const inPanel = !!panel && x >= panel.left - SNAP_KEEP_PX && x <= panel.right + SNAP_KEEP_PX && y >= panel.top - SNAP_KEEP_PX && y <= panel.bottom + SNAP_KEEP_PX;
     if (edges.length === 0 && !(prev && inPanel)) return null;
     const useEdges = edges.length > 0 ? edges : prev!.edges;
-    const kinds = snapKindsFor(compact);
-    const over = document.elementsFromPoint(x, y).find((el) => el.hasAttribute('data-snap-kind'))?.getAttribute('data-snap-kind') as SnapKind | null | undefined;
-    const kind = over && kinds.includes(over) ? over : edges.length > 0 ? defaultSnapKind(useEdges, compact) : prev!.kind;
     const horizontal = useEdges.find((e) => e === 'left' || e === 'right');
     const vertical = useEdges.find((e) => e === 'top' || e === 'bottom');
     const opts: SnapOpts = {
@@ -1395,8 +1395,16 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     };
     // タブ化の相手にピン止めしたものを選ばない（FR-216 AC-496・AC-505）
     if (opts.tabTarget === key || (opts.tabTarget && pinSet.has(opts.tabTarget))) opts.tabTarget = keysOf(layout).find((k) => k !== key && !pinSet.has(k));
+    // 最小の大きさ（PARAM-134・135）を下回る候補は示さない。上端の最大化・タブ化は残す（FR-152 AC-267・AC-867）
+    const kinds = fittingSnapKinds(opts, area);
+    const over = document.elementsFromPoint(x, y).find((el) => el.hasAttribute('data-snap-kind'))?.getAttribute('data-snap-kind') as SnapKind | null | undefined;
+    const kind = over && kinds.includes(over) ? over : edges.length > 0 ? defaultSnapKind(useEdges, compact) : prev!.kind;
+    if (!kinds.includes(kind)) { snapBlocked.current = true; return null; }
     return { edges: useEdges, kind, opts, px: edges.length > 0 ? x : prev!.px, py: edges.length > 0 ? y : prev!.py };
   };
+  /** 最小の大きさを下回る候補だけを除いた、いまの作業領域で成り立つ候補（FR-152 AC-267・AC-867） */
+  const fittingSnapKinds = (opts: SnapOpts, area: { width: number; height: number }): readonly SnapKind[] =>
+    snapKindsFor(compact).filter((k) => compact || snapFitsMin(k, opts, { w: area.width, h: area.height }, MIN_WINDOW_W, MIN_WINDOW_H));
 
   /** キーボード・コマンドでの大きさの変更（FR-224 AC-522）。縦・横を独立に、作業領域の 5% ずつ変える */
   const resizeByStep = (key: string, axis: 'w' | 'h', dir: 1 | -1) => {
@@ -1589,8 +1597,10 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       } else if (!curHit) clearDwell();
       // 分割へ入れる置き場所（上下左右の辺）でなければ、ポインターに追従して置く（端のスナップの候補を示している間も追従する。自由配置は重なりを許す。FR-152・FR-173）
       const docking = !!snap || (hit !== null && (hit.zone !== 'tabs' || compact));
-      lastLive = docking && !snap ? null : liveAt(ev.clientX, ev.clientY);
-      lastDrag = { key, target: hit && !snap && docking ? { key: hit.key, zone: hit.zone, rect: hit.rect } : null, snap, live: lastLive, overPinned };
+      // 最小の大きさを下回る端・角の候補は出さず、離しても配置は変わらない（AC-267・AC-867）
+      const blocked = snapBlocked.current;
+      lastLive = blocked ? null : docking && !snap ? null : liveAt(ev.clientX, ev.clientY);
+      lastDrag = { key, target: !blocked && hit && !snap && docking ? { key: hit.key, zone: hit.zone, rect: hit.rect } : null, snap, live: lastLive, overPinned };
       setDrag(lastDrag);
     };
     const onUp = (ev: globalThis.PointerEvent) => {
@@ -1810,7 +1820,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
           <>
             <div data-testid="snap-preview" aria-hidden className={s.snapPreview} style={{ left: pr.left, top: pr.top, width: pr.width, height: pr.height }} />
             <div data-testid="snap-candidates" role="group" aria-label={t('配置の候補')} className={mergeClasses(s.snapPanel, h ? undefined : s.snapPanelRow, snapMotion.appear)} style={panelPos}>
-              {snapKindsFor(compact).map((k) => (
+              {fittingSnapKinds(sn.opts, area).map((k) => (
                 <Button
                   key={k}
                   data-snap-kind={k}
