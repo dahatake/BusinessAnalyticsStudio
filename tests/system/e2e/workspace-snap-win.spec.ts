@@ -221,3 +221,41 @@ test.describe('FR-152 Windows 風スナップのプレビューと最大化・�
     expect(pb.x + pb.width, 'b がキャンバスの外').toBeLessThanOrEqual(ws.x + ws.width + 2);
   });
 });
+
+// FR-152 AC-793 の延長（AC-267・AC-867。検証レベルは integration のため台帳の ac_ids には入れず、AC-793 と同じ run.mjs で実行する）。
+// commit 60ff46b（Q-075 A）: 作業領域が狭く、角の 4 分の 1 の配置が PARAM-134（幅 360）・PARAM-135（高さ 240）を下回るとき、
+// その候補は示されず、そこで離すと配置は変わらない。上端の最大化・左右端の半分（成り立つ候補）は残る。
+// 作業領域の高さだけを低くして（幅は広いまま）、角（高さの 1/2 < 240）だけが成り立たない状態にする。
+test.describe('FR-152 下限未満の候補は示されない（AC-793・AC-267・AC-867）', () => {
+  test.use({ viewport: { width: 1600, height: 520 } });
+  test('FR-152 AC-793 AC-267 AC-867 作業領域が低く 4 分の 1 が PARAM-135 を下回るとき、角のプレビューは出ず離しても配置は変わらないが、左右端の半分と上端の最大化は示される', async ({ page, start }) => {
+    await start();
+    await selectPersona(page, '事業部門');
+    const [a] = await topKeys(page);
+    const c = component(page, a);
+    const ws = await box(workspace(page));
+    expect(ws.height / 2 < 240 && ws.height >= 240 && ws.width / 2 >= 360, `前提: 4 分の 1 だけが下限（360×240）を下回る作業領域（${Math.round(ws.width)}×${Math.round(ws.height)}）`).toBe(true);
+    const preview = page.getByTestId('snap-preview');
+    const before = await box(c);
+    // 左上の角: 候補（4 分の 1）が出ない・離しても配置は変わらない
+    await grabTo(page, c, ws.x + SNAP_EDGE / 2, ws.y + SNAP_EDGE / 2, false);
+    await page.waitForTimeout(400); // 不在の確認には時間の経過が要る
+    await expect(preview, '下限未満の角の候補（4 分の 1）のプレビューが出ている').toBeHidden();
+    await page.mouse.up();
+    expect(await c.getAttribute('data-maximized'), '下限未満の角で離したのに最大化された').not.toBe('true');
+    near(await box(c), before, ws, '下限未満の角で離したあとの配置（変わらない）');
+    // 右端（高さいっぱいの半分は成り立つ）: 右半分のプレビューが出て、離すと配置される
+    const right: Box = { x: ws.x + ws.width / 2, y: ws.y, width: ws.width / 2, height: ws.height };
+    await grabTo(page, c, ws.x + ws.width - SNAP_EDGE / 2, ws.y + ws.height / 2, false);
+    await expect(preview, '成り立つ右半分のプレビューが出ない').toBeVisible();
+    near(await box(preview), right, ws, '右半分のプレビュー');
+    await page.mouse.up();
+    near(await box(c), right, ws, '右半分に配置');
+    // 上端（命中範囲の外）の最大化は残る
+    await grabTo(page, c, topOffCenterX(ws), ws.y + SNAP_EDGE / 2, false);
+    await expect(preview, '上端の最大化のプレビューが出ない').toBeVisible();
+    near(await box(preview), ws, ws, '最大化のプレビュー');
+    await page.mouse.up();
+    await expect(c).toHaveAttribute('data-maximized', 'true');
+  });
+});

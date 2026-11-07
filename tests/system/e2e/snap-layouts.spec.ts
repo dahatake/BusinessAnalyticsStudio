@@ -440,6 +440,100 @@ test.describe('FR-305 上端の中央へのドラッグでのレイアウトの�
     expectRect(await box(c), ws, ws, '命中範囲の外の上端で離したときの配置（AC-793: 最大化＝作業領域いっぱい）');
   });
 
+  // FR-305 AC-866 AC-868 AC-870 AC-871（検証レベルはいずれも integration のため台帳の ac_ids には入れない。AC-859 のポップアップの延長として
+  // 同じ run.mjs の AC-859 で実行する）。commit 60ff46b（Q-074〜077 A）の改訂に合わせる。
+  // ① Esc（AC-870・866）: ポップアップが閉じ、ドラッグも取りやめになり、掴んでいたコンポーネントは掴む前の位置・大きさへ戻る。
+  //    その後ポインターを動かしても、命中範囲・左端・命中範囲の外の上端で離しても配置は何も変わらない（最大化・半分にならない）。
+  // ② Esc で閉じたものは、命中範囲へ戻って PARAM-144 ms 経っても再表示されない（AC-868）。
+  // ③ 外へ出て閉じたあと、同じドラッグで命中範囲へ戻り PARAM-144 ms に満たずに離すと、上端の最大化（AC-793 の上端と同じ配置）になる。
+  //    ポップアップは再表示されない（AC-871・AC-868）。
+  test('FR-305 AC-859 AC-866 AC-868 AC-870 AC-871 Esc でポップアップが閉じドラッグも取りやめて掴む前の位置・大きさへ戻り再表示されず離しても配置不変、外へ出て閉じたあと命中範囲へ戻り PARAM-144 ms 未満で離すと最大化', async ({ page, start }) => {
+    await start();
+    await selectPersona(page, '事業部門');
+    const [a] = await topKeys(page);
+    const c = component(page, a);
+    const ws = await box(workspace(page));
+    const m = mousePointer(page);
+    const mid = centerOf(ws);
+    const leftEdge: Pt = { x: ws.x + SNAP_EDGE / 2, y: ws.y + ws.height / 2 };
+    const topOutside: Pt = { x: ws.x + ws.width * 0.1, y: ws.y + SNAP_EDGE / 2 };
+    const before = await box(c);
+    const expectUnchanged = async (msg: string) => {
+      await expect(popup(page), `${msg}: ポップアップが残っている`).toBeHidden();
+      await expect(c, `${msg}: 最大化された`).not.toHaveAttribute('data-maximized', 'true');
+      expectRect(await box(c), before, ws, `${msg}: 掴む前の位置・大きさ`);
+    };
+
+    // ① AC-870・866: Esc でポップアップが閉じ、ドラッグも取りやめ（掴む前の位置・大きさへ戻る）
+    const hit = await dragToHitAndDwell(page, m, c, ws, 'マウス（Esc）');
+    await page.keyboard.press('Escape');
+    await expect(popup(page), 'Esc でポップアップが閉じない').toBeHidden();
+    await expect(preview(page), 'Esc のあとに最大化のプレビューが出ている').toBeHidden();
+    expectRect(await box(c), before, ws, 'Esc で取りやめたあとの位置・大きさ（掴む前へ戻る）');
+    // ② AC-868: Esc で閉じたものは、命中範囲へ戻って PARAM-144 ms 経っても再表示されない
+    await glide(m, hit, mid, 4);
+    await glide(m, mid, hit, 4);
+    await page.waitForTimeout(DWELL_MS + 300); // 不在の確認には時間の経過が要る
+    await expect(popup(page), 'Esc で閉じたのに命中範囲へ戻ると再表示された').toBeHidden();
+    // 取りやめたあとは、端・角・命中範囲で離しても配置は何も変わらない（AC-870）
+    await glide(m, hit, leftEdge, 6);
+    await m.up(leftEdge.x, leftEdge.y);
+    await expectUnchanged('Esc のあと左端で離した');
+    // もう一度: Esc のあと命中範囲の外の上端で離しても最大化されない
+    const hit1b = await dragToHitAndDwell(page, m, c, ws, 'マウス（Esc のあと上端）');
+    await page.keyboard.press('Escape');
+    await expect(popup(page)).toBeHidden();
+    await glide(m, hit1b, topOutside, 8);
+    await m.up(topOutside.x, topOutside.y);
+    await expectUnchanged('Esc のあと命中範囲の外の上端で離した');
+
+    // ③ AC-871・868: 外へ出て閉じたあと、命中範囲へ戻って PARAM-144 ms に満たずに離す → 上端の最大化
+    // 前提（戻ってから離すまでが PARAM-144 ms 未満）は負荷で崩れうる。滞在はページ内の時刻（pointermove／pointerup の timeStamp と
+    // 処理時の performance.now() の大きい方）で測る。崩れた試行（命中範囲の内側で離す＝配置不変、AC-866）はやり直す。判定は緩めない。
+    const TRIES = 3;
+    const hitEdge = ws.y + SNAP_EDGE;
+    const tried: number[] = [];
+    let done = false;
+    for (let i = 0; i < TRIES && !done; i++) {
+      const hit3 = await dragToHitAndDwell(page, m, c, ws, 'マウス（再突入して滞留前に離す）');
+      await glide(m, hit3, mid, 4);
+      await expect(popup(page), '外へ出てもポップアップが閉じない（再突入の前提）').toBeHidden();
+      const read = await watch(page, ['snap-layouts']);
+      await page.evaluate(() => {
+        type Ev = { k: string; y: number; ts: number; now: number };
+        const w = window as unknown as { __stEv3: Ev[]; __stEv3Off?: () => void };
+        w.__stEv3Off?.();
+        w.__stEv3 = [];
+        const on = (e: PointerEvent) => { w.__stEv3.push({ k: e.type, y: e.clientY, ts: e.timeStamp, now: performance.now() }); };
+        for (const t of ['pointermove', 'pointerup']) window.addEventListener(t, on as EventListener, true);
+        w.__stEv3Off = () => { for (const t of ['pointermove', 'pointerup']) window.removeEventListener(t, on as EventListener, true); };
+      });
+      await m.move(hit3.x, hit3.y);
+      await m.up(hit3.x, hit3.y);
+      const stayed = await page.evaluate((edge) => {
+        const w = window as unknown as { __stEv3: { k: string; y: number; ts: number; now: number }[]; __stEv3Off?: () => void };
+        w.__stEv3Off?.();
+        const ev = w.__stEv3;
+        const iIn = ev.findIndex((e) => e.k === 'pointermove' && e.y <= edge);
+        const up = ev.find((e) => e.k === 'pointerup');
+        return iIn < 0 || !up ? null : Math.max(up.ts - ev[iIn].ts, up.now - ev[iIn].now);
+      }, hitEdge);
+      const seen = (await read())['snap-layouts'].first;
+      tried.push(stayed === null ? -1 : Math.round(stayed));
+      if (stayed === null || stayed >= DWELL_MS - 50) {
+        // 前提が崩れた試行: 命中範囲の内側で離しているので配置は変わらない（AC-866）。確かめてやり直す
+        await expectUnchanged('前提が崩れた試行（命中範囲の内側で離した）');
+        continue;
+      }
+      expect(seen, `戻って ${DWELL_MS} ms に満たずに離したのにポップアップが再表示された`).toBeNull();
+      await expect(popup(page)).toBeHidden();
+      await expect(c, '再突入して滞留前に離したのに上端の最大化にならない（AC-871）').toHaveAttribute('data-maximized', 'true');
+      expectRect(await box(c), ws, ws, '再突入して滞留前に離したときの配置（AC-793 の上端: 最大化＝作業領域いっぱい）');
+      done = true;
+    }
+    expect(done, `前提（戻ってから離すまでが ${DWELL_MS} ms 未満）を ${TRIES} 回とも作れなかった（実測 ${tried.join(', ')} ms）`).toBe(true);
+  });
+
   // FR-305 AC-864（3 区画以上の雛形の順次の埋め。正常系: 次の区画の強調・候補〔表示中・ピン止め以外〕・選ぶと配置され次へ。
   // 異常系: Esc・候補の外の押下で閉じると配置は変わらず、残りの区画はどのコンポーネントにも割り当てられない）
   test('FR-305 AC-864 2×2 の雛形に置くと残りの区画が左の列から順に強調され表示中でピン止め以外の候補が出て、選ぶとその区画いっぱいに置かれ次へ進み、Esc や候補の外を押して閉じると配置は変わらず残りの区画は割り当てられない', async ({ page, start }) => {
