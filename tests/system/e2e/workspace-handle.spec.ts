@@ -255,12 +255,20 @@ async function sampleDrag(page: Page, c: Locator, act: () => Promise<void>): Pro
   const rows = await page.evaluate(() => { const w = window as any; w.__stRun = false; return w.__stPos as number[][]; });
   let changed = 0;
   let maxJump = 0;
+  let first = -1;
+  let last = -1;
   for (let i = 1; i < rows.length; i++) {
     const d = Math.abs(rows[i][1] - rows[i - 1][1]) + Math.abs(rows[i][2] - rows[i - 1][2]) + Math.abs(rows[i][3] - rows[i - 1][3]) + Math.abs(rows[i][4] - rows[i - 1][4]);
-    if (d > 0.5) changed++;
+    // 追従は小数の px で補間されて変わる（ポインターが遅いと 1 フレームの変化は 0.5px 未満）。サブピクセルの変化も「変化したフレーム」と数える。
+    if (d > 0.01) {
+      changed++;
+      if (first < 0) first = i;
+      last = i;
+    }
     maxJump = Math.max(maxJump, d);
   }
-  const seconds = (rows[rows.length - 1][0] - rows[0][0]) / 1000;
+  // 操作中（最初に変わったフレームから最後に変わったフレームまで）の、1 秒あたりに変わったフレーム数。操作の前後の待ち（ポインターを置く前・離した後の静止）は含めない。
+  const seconds = first >= 0 ? (rows[last][0] - rows[first - 1][0]) / 1000 : 0;
   return { fps: seconds > 0 ? changed / seconds : 0, maxJump, frames: rows.length };
 }
 
@@ -338,6 +346,8 @@ test.describe('FR-185 移動中・リサイズ中の滑らかなアニメーシ�
       await page.mouse.up();
     });
     expect(r.fps, `リサイズ中のフレームレート ${r.fps.toFixed(1)}fps`).toBeGreaterThanOrEqual(MIN_FPS);
+    // 連続して変わる: 1 フレームの最大の変化（飛び）が、ドラッグの総量（約 120px）に比べて小さい
+    expect(r.maxJump, `リサイズ中に大きさが飛んだ（1 フレームの最大変化 ${r.maxJump.toFixed(1)}px）`).toBeLessThanOrEqual(40);
     const a = await box(c);
     expect(Math.abs(a.width - b.width) + Math.abs(a.height - b.height), '大きさが変わっていない').toBeGreaterThan(2);
   });
