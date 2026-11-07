@@ -93,7 +93,7 @@ export function navSummary(states: Readonly<Record<string, WindowState>>, screen
  * 前面の Window があればそれ（→最小化）、なければ最後に前面にした開いている Window（最小化中→復元、表示中→前面へ）、
  * 開いているものがなければ閉じた Window（最後に使ったもの。なければ画面と同じ key のもの、なければ先頭）を表示する。属する Window がなければ null
  */
-export function navTarget(screen: string, states: Readonly<Record<string, WindowState>>, screenOf: Readonly<Record<string, string>>, usedAt: Readonly<Record<string, number>>): { key: string; state: WindowState } | null {
+export function navTarget(screen: string, states: Readonly<Record<string, WindowState>>, screenOf: Readonly<Record<string, string>>, usedAt: Readonly<Record<string, number>>, behindOrder: readonly string[] = []): { key: string; state: WindowState } | null {
   const mine = Object.keys(states).filter((k) => (screenOf[k] ?? k) === screen);
   const latest = (ks: string[]) => ks.reduce<string | undefined>((best, k) => (best === undefined || (usedAt[k] ?? 0) > (usedAt[best] ?? 0) ? k : best), undefined);
   const front = mine.find((k) => states[k] === 'front');
@@ -101,6 +101,12 @@ export function navTarget(screen: string, states: Readonly<Record<string, Window
   if (front !== undefined) return { key: front, state: (usedAt[front] ?? 0) > 0 ? 'front' : 'visible' };
   const open = latest(mine.filter((k) => states[k] !== 'closed' && states[k] !== 'behind'));
   if (open !== undefined) return { key: open, state: states[open]! };
+  // 背面だけの画面（Q-084 A）: 最後に背面へ回ったもの（behindOrder の最後）を前面に出す（一覧と同じ遷移）
+  const behind = mine.filter((k) => states[k] === 'behind');
+  if (behind.length > 0) {
+    const lastBehind = [...behind].sort((a, b) => behindOrder.indexOf(a) - behindOrder.indexOf(b)).pop()!;
+    return { key: lastBehind, state: 'behind' };
+  }
   const closed = mine.filter((k) => states[k] === 'closed');
   const key = latest(closed.filter((k) => (usedAt[k] ?? 0) > 0)) ?? (closed.includes(screen) ? screen : closed[0]);
   return key === undefined ? null : { key, state: 'closed' };

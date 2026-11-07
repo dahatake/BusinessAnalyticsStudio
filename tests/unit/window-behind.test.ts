@@ -2,7 +2,7 @@
 // AC-797・AC-824・AC-872・AC-873・AC-874
 import { describe, expect, it } from 'vitest';
 import { leaf, split } from '../../src/workspace/layoutModel';
-import { MAX_DEFAULT_VISIBLE } from '../../src/workspace/windowLimits';
+import { MAX_DEFAULT_VISIBLE, decideLeftover } from '../../src/workspace/windowLimits';
 import { navSummary, navTarget, shownCount, switchOrder, windowStates, WINDOW_STATE_LABEL } from '../../src/workspace/windowStates';
 
 const layout = split('row', [leaf('a'), leaf('b'), leaf('c'), leaf('d')]);
@@ -50,9 +50,25 @@ describe('FR-295 背面（非表示扱い）', () => {
     expect(order).toContain('d');
   });
 
-  it('FR-295 AC-873 左メニューの項目は背面を前面に出さない（背面だけの画面は対象なし）', () => {
-    const st = windowStates({ ...base, behind: new Set(['c']) });
-    expect(navTarget('S2', st, { c: 'S2' }, base.usedAt)).toBeNull();
+  it('FR-295 AC-873 ⑦ 左メニューの項目は、背面だけの画面では最後に背面へ回ったものを前面に出す（Q-084 A）', () => {
+    const st = windowStates({ ...base, behind: new Set(['c', 'd']) });
+    expect(navTarget('S2', st, { c: 'S2', d: 'S2' }, base.usedAt, ['d', 'c'])).toEqual({ key: 'c', state: 'behind' });
+    expect(navTarget('S2', st, { c: 'S2', d: 'S2' }, base.usedAt, ['c', 'd'])).toEqual({ key: 'd', state: 'behind' });
+    // 開いているものがあれば背面は対象にしない（開いているもの優先）
+    expect(navTarget('S1', st, { a: 'S1', c: 'S1' }, base.usedAt, ['c'])?.key).toBe('a');
+  });
+});
+
+describe('FR-305 AC-865 AC-876 余りを背面へ回す時点（順次の埋めの終了時。Q-089 A）', () => {
+  it('FR-305 AC-865 途中で閉じた例: 残り 4・空の区画 2 → 残り 4 が背面へ（選んだものは含まない）', () => {
+    expect(decideLeftover(['c', 'd', 'e', 'f'], 2)).toEqual(['c', 'd', 'e', 'f']);
+  });
+  it('FR-305 AC-865 AC-876 残りが空の区画以下なら背面へ回るものはない（残り 2・空の区画 2）', () => {
+    expect(decideLeftover(['e', 'f'], 2)).toEqual([]);
+    expect(decideLeftover([], 0)).toEqual([]);
+  });
+  it('FR-305 AC-865 完了時（空の区画 0）に残りがあれば背面へ', () => {
+    expect(decideLeftover(['e'], 0)).toEqual(['e']);
   });
 });
 

@@ -11,7 +11,7 @@ import { effectiveLayout, personaKeys, useLayout, clampFloat, isPinned, setWorks
 import { EXPAND_RATIO, useSettings, type ExpandPosition } from '../store/settings';
 import { keysOf, prune, type DropZone, type LayoutNode, type Path, type SplitNode } from './layoutModel';
 import { MIN_COMPONENT_WIDTH, applyAutoSize, fitMinWidth } from './autosize';
-import { MIN_WINDOW_H, MIN_WINDOW_W, enforceMin, floorFloat, isLimitHeld, needHeight, planPinRestore } from './windowLimits';
+import { MIN_WINDOW_H, MIN_WINDOW_W, decideLeftover, enforceMin, floorFloat, isLimitHeld, needHeight, planPinRestore } from './windowLimits';
 import { WindowList } from './WindowList';
 import { IMMERSIVE_DIM_PERCENT, windowStates } from './windowStates';
 import { withOpacity } from '../theme/frameMaterial';
@@ -462,13 +462,14 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   // Esc はこれだけを閉じる（没入・最大化は保つ。FR-305 AC-866・FR-295 の Esc の優先順）ので、捕捉の段階で受けて先へ渡さない
   useEffect(() => {
     if (!assist) return;
+    const closeFill = (): void => { if (assist.zone !== undefined) finishFillRef.current(assist.used ?? [assist.key], 1 + (assist.rest?.length ?? 0)); setAssist(null); };
     const onKey = (e: globalThis.KeyboardEvent) => {
       if (e.key !== 'Escape') return;
       e.preventDefault();
       e.stopImmediatePropagation();
-      setAssist(null);
+      closeFill();
     };
-    const onDown = (e: globalThis.PointerEvent) => { if (!(e.target as Element | null)?.closest?.('[data-testid="snap-assist"]')) setAssist(null); };
+    const onDown = (e: globalThis.PointerEvent) => { if (!(e.target as Element | null)?.closest?.('[data-testid="snap-assist"]')) closeFill(); };
     window.addEventListener('keydown', onKey, true);
     window.addEventListener('pointerdown', onDown, true);
     return () => { window.removeEventListener('keydown', onKey, true); window.removeEventListener('pointerdown', onDown, true); };
@@ -846,6 +847,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       const used = [...(a.used ?? []), key];
       const [next, ...rest] = a.rest ?? [];
       if (next && assistCandidates(used).length > 0) setAssist({ ...a, key, rect: next.rect, zone: next.zone, rest, used });
+      else finishFill(used, (next ? 1 : 0) + rest.length);
       return;
     }
     placeSnapped(key, { x: a.rect.x * m.bounds.w, y: a.rect.y * m.bounds.h, w: a.rect.w * m.bounds.w, h: a.rect.h * m.bounds.h }, m);
@@ -884,14 +886,24 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     st.raise(key);
     st.markMoved(key);
     markManual(key);
-    // 背面へ回すのは、表示中のものが区画より多いときだけ（区画が余るなら空の区画のまま残し、背面は生じない。AC-876）
-    const shownNow = Object.keys(m.rects).filter((k) => !pinSet.has(k) && !minSet.has(k) && !behindSet.has(k) && !zoneHidden.has(k) && !!byKey(k)?.component);
-    if (!shownNow.includes(key)) shownNow.push(key);
-    if (shownNow.length > zs.length) st.setBehind(Object.keys(m.rects).filter((k) => k !== key && !pinSet.has(k)));
+    // 背面へ回すのは、順次の埋めの終了時（完了または途中で閉じた時点。Q-089 A）。区画が余るなら空の区画のまま残し、背面は生じない（AC-876）
     const rest = remainingZones(id, zone).map((z) => ({ zone: z, rect: frac(zs[z - 1]!) }));
     const [first, ...others] = rest;
     if (first && assistCandidates([key]).length > 0) setAssist({ key, rect: first.rect, layout: id, zone: first.zone, rest: others, used: [key] });
+    else finishFill([key], rest.length);
   };
+  /** 雛形の順次の埋めの終了時に、選ばれずに残った表示中のもの（最小化・閉じた・ピン止め中・すでに背面にあるものを除く）を、空の区画より多いときだけ背面へ回す（FR-305 AC-865・AC-876）。
+   * 背面は、直近に回ったものを最後に並べる（FR-295 Q-084 A） */
+  const finishFill = (used: readonly string[], emptyZones: number): void => {
+    const remaining = [...baseKeys].filter((k) => !used.includes(k) && !pinSet.has(k) && !minSet.has(k) && !behindSet.has(k) && !zoneHidden.has(k) && !!byKey(k)?.component);
+    const go = decideLeftover(remaining, emptyZones);
+    if (go.length === 0) return;
+    const s0 = useLayout.getState();
+    const ordered = [...go].sort((a, b) => (s0.usedAt[a] ?? 0) - (s0.usedAt[b] ?? 0));
+    s0.setBehind([...(s0.behind[s0.persona] ?? []), ...ordered]);
+  };
+  const finishFillRef = useRef(finishFill);
+  finishFillRef.current = finishFill;
   /** ドラッグを使わずに雛形のポップアップを開く（Ctrl+Alt+Z・見出しのメニュー・コマンドパレット。FR-305 AC-863） */
   const openLayouts = (key: string): void => {
     if (pinSet.has(key)) { announce(PIN_MOVE_REASON); return; }
@@ -1956,7 +1968,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
           {(assist.zone !== undefined ? assistCandidates(assist.used ?? [assist.key]) : [...baseKeys].filter((k) => k !== assist.key && !pinSet.has(k) && !!byKey(k)?.component)).map((k) => (
             <Button key={k} size="small" data-component-key={k} onClick={() => fillRemaining(k)}>{byKey(k)?.label ?? k}</Button>
           ))}
-          <Button size="small" appearance="subtle" onClick={() => setAssist(null)}>{t('閉じる')}</Button>
+          <Button size="small" appearance="subtle" onClick={() => { if (assist.zone !== undefined) finishFill(assist.used ?? [assist.key], 1 + (assist.rest?.length ?? 0)); setAssist(null); }}>{t('閉じる')}</Button>
         </div>
       ) : null}
       {layoutsPop ? (() => {

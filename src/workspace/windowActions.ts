@@ -8,7 +8,10 @@ export function pressWindow(key: string, state: WindowState, inTree: boolean): v
   if (state === 'front') {
     if (a.maximized === key) a.setMaximized(null); // 没入表示からの復帰（FR-297 AC-802）
     else if (inTree) a.setMinimized(key, true);
-  } else if (state === 'visible' || state === 'behind') {
+  } else if (state === 'behind') {
+    // 背面は一覧・左メニューからの呼び出しでだけ前面に出る。背面へ回る前の位置・大きさで出し、上限を超えるときは最も長く使っていないものを最小化（FR-295 Q-083 A）
+    a.bringFromBehind(key);
+  } else if (state === 'visible') {
     // 背面は、一覧からの呼び出しでだけ前面に出て通常の表示中になる（raise が背面の扱いを外す。ほかの配置は動かさない。FR-295 AC-872・873）
     // 前面に出す（重なりの手前へ。雛形の区画に配置されなかった背面の扱いからも外す。FR-305 AC-865）
     a.raise(key);
