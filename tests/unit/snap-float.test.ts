@@ -217,4 +217,16 @@ describe('FR-152 AC-266 ドラッグなしの手段（メニュー・キーボ�
     c!.run();
     expect(snapTo).toHaveBeenCalledWith('maximize');
   });
+  // FR-152 AC-267・AC-867: 置く先が最小の大きさ以上なら、残りが最小の大きさに入りきらなくても、置いたものは指定の大きさのまま（縮めない）
+  it('FR-152 AC-267 AC-867 残りが入りきらなくても、右半分に置いたものは作業領域の高さいっぱいのまま（縮めない）', () => {
+    const b = { w: 1380, h: 306 };
+    const input: PxMap = {
+      a: { x: 0, y: 44, w: 850, h: 262 }, b: { x: 0, y: 48, w: 850, h: 258 },
+      c: { x: 858, y: 46, w: 521, h: 260 }, d: { x: 858, y: 46, w: 521, h: 260 },
+    };
+    const target = { x: 690, y: 0, w: 690, h: 306 };
+    const out = planSnap(input, 'a', target, b)!;
+    expect(out.a).toEqual(target);
+    for (const k of ['b', 'c', 'd']) expect(overlapArea(out.a!, out[k]!), k).toBeLessThanOrEqual(1);
+  });
 });

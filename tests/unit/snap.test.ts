@@ -2,7 +2,7 @@
 // FR-152 AC-264 AC-265 AC-266 AC-267
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { defaultLayout, keysOf, type Layout, type LayoutNode } from '../../src/workspace/layoutModel';
-import { SNAP_LABEL, defaultSnapKind, nearestCorner, snapKindsFor, snapLayout, snapRect, type SnapKind } from '../../src/workspace/snap';
+import { SNAP_LABEL, defaultSnapKind, nearestCorner, snapFitsMin, snapKindsFor, snapLayout, snapRect, type SnapKind } from '../../src/workspace/snap';
 
 /** 葉（コンポーネントまたはタブのまとまり）の矩形を、木と作業領域から求める（重なりの検査用）。 */
 function rects(node: LayoutNode, x = 0, y = 0, w = 1, h = 1): Array<{ keys: string[]; x: number; y: number; w: number; h: number }> {
@@ -167,5 +167,29 @@ describe('FR-152 配置の保存・復元・既定へ', () => {
     a.useLayout.getState().setMinimized('table', true);
     a.useLayout.getState().snapTo('gantt', 'quad', { corner: 'tl' });
     expect(a.useLayout.getState().minimized['事業部門']).toContain('table');
+  });
+});
+
+// FR-152 AC-267 AC-867（Q-075 A）: PARAM-134（幅 360）・PARAM-135（高さ 240）を下回る端・角の候補は成り立たない。最大化・タブ化は残る。
+describe('snapFitsMin（最小の大きさを下回る候補。FR-152 AC-267・AC-867）', () => {
+  it('4 分の 1 は、幅・高さの半分が 360×240 以上のときだけ成り立つ（高さ 480 まで）', () => {
+    expect(snapFitsMin('quad', { corner: 'tl' }, { w: 1600, h: 480 }, 360, 240)).toBe(true);
+    expect(snapFitsMin('quad', { corner: 'tl' }, { w: 1600, h: 479 }, 360, 240)).toBe(false);
+    expect(snapFitsMin('quad', { corner: 'tl' }, { w: 719, h: 600 }, 360, 240)).toBe(false);
+  });
+  it('左右端の半分は高さ全体・幅の半分で判定する。上下の半分は幅全体・高さの半分', () => {
+    expect(snapFitsMin('left', {}, { w: 1600, h: 300 }, 360, 240)).toBe(true);
+    expect(snapFitsMin('left', {}, { w: 700, h: 300 }, 360, 240)).toBe(false);
+    expect(snapFitsMin('top', {}, { w: 1600, h: 479 }, 360, 240)).toBe(false);
+    expect(snapFitsMin('bottom', {}, { w: 1600, h: 480 }, 360, 240)).toBe(true);
+  });
+  it('3 分割は端の向きで判定する（左右は幅の 1/3、上下は高さの 1/3）', () => {
+    expect(snapFitsMin('third', { edge: 'left' }, { w: 1080, h: 300 }, 360, 240)).toBe(true);
+    expect(snapFitsMin('third', { edge: 'left' }, { w: 1079, h: 300 }, 360, 240)).toBe(false);
+    expect(snapFitsMin('third', { edge: 'top' }, { w: 1600, h: 719 }, 360, 240)).toBe(false);
+  });
+  it('最大化・タブ化はどんなに狭くても成り立つ（上端の最大化は残る）', () => {
+    expect(snapFitsMin('maximize', {}, { w: 100, h: 100 }, 360, 240)).toBe(true);
+    expect(snapFitsMin('tabs', {}, { w: 100, h: 100 }, 360, 240)).toBe(true);
   });
 });

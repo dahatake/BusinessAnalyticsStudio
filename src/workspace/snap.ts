@@ -28,6 +28,22 @@ export function snapKindsFor(compact: boolean): readonly SnapKind[] {
   return compact ? COMPACT_KINDS : ALL_KINDS;
 }
 
+/**
+ * 候補の配置が、最小の大きさ（幅 minW・高さ minH。PARAM-134・PARAM-135）以上になるか（FR-152 AC-267・AC-867）。
+ * 最大化・タブ化は大きさを縮めないので常に成り立つ。
+ */
+export function snapFitsMin(kind: SnapKind, opts: SnapOpts, area: { w: number; h: number }, minW: number, minH: number): boolean {
+  const eps = 1e-6;
+  const ok = (w: number, h: number) => w + eps >= minW && h + eps >= minH;
+  switch (kind) {
+    case 'left': case 'right': return ok(area.w / 2, area.h);
+    case 'top': case 'bottom': return ok(area.w, area.h / 2);
+    case 'quad': return ok(area.w / 2, area.h / 2);
+    case 'third': return opts.edge === 'top' || opts.edge === 'bottom' ? ok(area.w, area.h / 3) : ok(area.w / 3, area.h);
+    default: return true;
+  }
+}
+
 /** 近づけた端（1 つ、または角の 2 つ）から、ドロップ前に見せる既定の候補を決める。 */
 export function defaultSnapKind(edges: readonly Edge[], compact: boolean): SnapKind {
   const h = edges.find((e) => e === 'left' || e === 'right');
