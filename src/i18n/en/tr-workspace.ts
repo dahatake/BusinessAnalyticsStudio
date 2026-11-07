@@ -60,6 +60,7 @@ export default {
   'ピン止め・手で動かした配置と重ならない場所がないため、自動配置を取りやめました': 'Auto layout was cancelled because there is no space that does not overlap pinned or manually moved panes',
   // ピン止めの理由・通知
   'ピン止めを外すと移動できます': 'Unpin to move',
+  '領域が足りず、最小化できるコンポーネントもないため、並べる方向の変更を取り消しました': 'Not enough space and nothing can be minimized, so the direction change was undone',
   'ピン止めを外すと大きさを変更できます': 'Unpin to resize',
   'この画面の幅では、コンポーネントの大きさは変更できません': 'Components cannot be resized at this screen width',
   'ピンを外すとタブにまとめられます': 'Unpin to group into tabs',

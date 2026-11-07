@@ -44,9 +44,10 @@ export function WindowList({ screens, layout, minimized }: { screens: readonly S
   const immersive = useLayout((st) => st.maximized !== null);
   const items = useMemo(() => screens.filter((sc) => !!sc.component && !sc.modal), [screens]);
   const behindKeys = useLayout((st) => st.behind[st.persona]);
+  const maximized = useLayout((st) => st.maximized);
   const states = useMemo(
-    () => windowStates({ keys: items.map((i) => i.key), layout, minimized, closed: new Set(closedKeys ?? []), behind: new Set(behindKeys ?? []), usedAt }),
-    [items, layout, minimized, closedKeys, behindKeys, usedAt],
+    () => windowStates({ keys: items.map((i) => i.key), layout, minimized, closed: new Set(closedKeys ?? []), behind: new Set(behindKeys ?? []), usedAt, maximized }),
+    [items, layout, minimized, closedKeys, behindKeys, usedAt, maximized],
   );
   const inTree = useMemo(() => new Set(keysOf(layout)), [layout]);
   const press = (key: string, state: WindowState) => pressWindow(key, state, inTree.has(key));
