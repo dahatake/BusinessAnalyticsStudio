@@ -46,6 +46,9 @@ async function graphScreens(page: Page): Promise<string[]> {
   const out: string[] = [];
   for (const key of await listScreenKeys(page)) {
     const c = await gotoScreen(page, key);
+    // FR-150: 見出しの「ビュー」ボタンはペインにフォーカスがあるときだけ表示される。前面のまま開いている画面（例: 事業部門の issue-solution）は
+    // gotoScreen が nav を押さずフォーカスが入らない（FR-295 AC-825）ので、数える前にフォーカスする
+    await c.focus();
     // AC-562 の対象は「Graph の表現を持つ画面」。見出しに「ビュー」を持たない画面（FR-223 のモーダルの設定など）は表現の切替がないので対象外
     if ((await viewButton(c).count()) === 0) {
       await closeSettings(page);

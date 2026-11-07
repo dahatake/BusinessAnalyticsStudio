@@ -265,6 +265,45 @@ describe('FR-305 AC-861 AC-867・FR-152 AC-793 ポップアップが出ない場
     });
   }
 
+  // Q-073 A: ポップアップの表示後にポップアップと命中範囲の外へ出たら閉じ、端・角で離すと FR-152 のスナップ、端でない位置なら最大化・スナップにならない
+  it('FR-305 AC-867 Q-073 A ポップアップを出してから左端へ出ると、ポップアップは外へ出た時点で閉じ、離すと FR-152 の左半分になる（AC-793）', async () => {
+    render(wrap(<Workspace screens={screens} />));
+    await dragTo('b', 600, 100, 600, 5);
+    expect(popup(), 'ポップアップが出ない').not.toBeNull();
+    ptr(window, 'pointermove', 300, 300);
+    ptr(window, 'pointermove', 5, 400);
+    expect(popup(), '外へ出てもポップアップが閉じない').toBeNull();
+    ptr(window, 'pointerup', 5, 400);
+    expect(popup()).toBeNull();
+    close(floats().b, { x: 0, y: 0, w: 0.5, h: 1 });
+  });
+
+  it('FR-305 AC-867 Q-073 A 外へ出て端・角でない位置で離すと、ポップアップは閉じたまま再表示されず、最大化もスナップもされない', async () => {
+    render(wrap(<Workspace screens={screens} />));
+    await dragTo('b', 600, 100, 600, 5);
+    expect(popup()).not.toBeNull();
+    ptr(window, 'pointermove', 600, 400);
+    expect(popup()).toBeNull();
+    await wait(LAYOUT_DWELL_MS + 100);
+    expect(popup(), '外に出たままなのに再表示された').toBeNull();
+    ptr(window, 'pointerup', 600, 400);
+    expect(st().maximized).toBeNull();
+    const f = floats().b;
+    if (f) { expect(f.w).toBeCloseTo(1 / 3, 2); expect(f.h).toBeCloseTo(0.5, 2); }
+  });
+
+  it('FR-305 AC-867 Q-073 A 閉じたポップアップは、同じドラッグで命中範囲へ戻って PARAM-144 ms とどまったときだけ再表示される', async () => {
+    render(wrap(<Workspace screens={screens} />));
+    await dragTo('b', 600, 100, 600, 5);
+    ptr(window, 'pointermove', 600, 400);
+    expect(popup()).toBeNull();
+    ptr(window, 'pointermove', 600, 5);
+    expect(popup(), '戻った直後に再表示された').toBeNull();
+    await wait(LAYOUT_DWELL_MS + 100);
+    expect(popup(), '命中範囲へ戻って待っても再表示されない').not.toBeNull();
+    fireEvent.keyDown(window, { key: 'Escape' });
+  });
+
   it('FR-305 AC-867 雛形の区画どうしの共有する境界を動かすと、両側が同時に変わり、背面のものは変わらない', async () => {
     render(wrap(<Workspace screens={screens} />));
     await dragTo('b', 600, 100, 600, 5);
