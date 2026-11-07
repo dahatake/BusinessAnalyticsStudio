@@ -354,11 +354,11 @@
     "AC-799": "sha256:524795ae22a23f1c",
     "AC-800": "sha256:424a64b846ae8547",
     "AC-803": "sha256:c2dce60d21476d33",
-    "AC-797": "sha256:443f94c5875d400d",
+    "AC-797": "sha256:cb00d39f408dab6e",
     "AC-802": "sha256:02aa4e81ae83c15a",
     "AC-819": "sha256:e339ec798ef6655b",
     "AC-817": "sha256:eb1b44e001e8c6f4",
-    "AC-824": "sha256:ef26ac2849ac94f5",
+    "AC-824": "sha256:e0ce1d0fc7eda7ed",
     "AC-825": "sha256:c8680bf7b5e61fd8",
     "AC-826": "sha256:317bce96adcc0969",
     "AC-830": "sha256:ccd6756cc039bbfc",
@@ -381,7 +381,8 @@
     "AC-835": "sha256:b722567675472cb9",
     "AC-859": "sha256:26297345cda36ba0",
     "AC-862": "sha256:e92cfde29c26147d",
-    "AC-864": "sha256:b4c2076514da5ad5"
+    "AC-864": "sha256:b4c2076514da5ad5",
+    "AC-872": "sha256:cd21f8d8135ce96a"
   },
   "cases": [
     {
@@ -12662,13 +12663,14 @@
         "AC-799",
         "AC-824",
         "AC-825",
-        "AC-826"
+        "AC-826",
+        "AC-872"
       ],
       "title": "FR-295 開いているコンポーネントの一覧・切替・状態の保存復元・既定に戻す（E2E）",
       "layer": "e2e",
-      "command": "node tests/system/run.mjs AC-797 AC-799 AC-824 AC-825 AC-826",
+      "command": "node tests/system/run.mjs AC-797 AC-799 AC-824 AC-825 AC-826 AC-872",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "af98e76",
       "last_run_at": "2026-11-07T11:37:08+09:00",
       "evidence": "work/runs/202611071017/logs/system-test/E2E-452-202611071131.log",
@@ -12708,6 +12710,18 @@
           "by": "script",
           "change": "ac_ids: ['AC-826'] -> ['AC-797', 'AC-799', 'AC-824', 'AC-825', 'AC-826']",
           "reason": "AC-824 は現行 registry に合わせ青いバー・バッジなしを E2E、件数 2 のバッジは単体テスト。AC-825 に没入中の操作を追加。見出しボタン名を AC-826 に更新"
+        },
+        {
+          "at": "2026-11-07T12:31:52+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/run.mjs AC-797 AC-799 AC-824 AC-825 AC-826' -> 'node tests/system/run.mjs AC-797 AC-799 AC-824 AC-825 AC-826 AC-872'; ac_ids: ['AC-797', 'AC-799', 'AC-824', 'AC-825', 'AC-826'] -> ['AC-797', 'AC-799', 'AC-824', 'AC-825', 'AC-826', 'AC-872']",
+          "reason": "commit 1838d94: 背面の状態（AC-797・824 の改訂）と AC-872（背面から前面への呼び出し）を window-taskbar.spec.ts に追加"
+        },
+        {
+          "at": "2026-11-07T12:32:14+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "AC 改訂・追加に合わせて拡張（未実行）"
         }
       ]
     },

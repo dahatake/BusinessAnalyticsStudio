@@ -12,7 +12,7 @@ const DIM = 0.6; // PARAM-137
 const TOL = 2;
 
 type Box = { x: number; y: number; width: number; height: number };
-type State = 'front' | 'visible' | 'minimized' | 'closed';
+type State = 'front' | 'visible' | 'minimized' | 'closed' | 'behind'; // behind＝背面（FR-305 の雛形で配置して背面に回ったもの。AC-797・872）
 
 const list = (page: Page) => page.getByTestId('window-list');
 const items = (page: Page) => list(page).getByTestId('window-list-item');
@@ -86,7 +86,7 @@ test.describe('FR-295 開いているコンポーネントの一覧', () => {
       await expect(it, `${k}: 一覧の項目`).toBeVisible();
       expect((await it.innerText()).trim().length, `${k}: 名前の文字`).toBeGreaterThan(0);
       const name = (await it.getAttribute('aria-label')) ?? (await it.innerText());
-      expect(name, `${k}: 状態の語`).toMatch(/前面|表示中|最小化|閉じた/);
+      expect(name, `${k}: 状態の語`).toMatch(/前面|表示中|最小化|閉じた|背面/);
     }
     expect(Object.values(s).filter((v) => v === 'front').length, '前面は 1 つだけ').toBe(1);
     // 最小化中の項目 → 元の位置・大きさで前面に復元
@@ -310,7 +310,8 @@ async function entries(page: Page): Promise<Entry[]> {
     state: (e.getAttribute('data-state') ?? '') as State,
   })));
 }
-const isOpen = (s: State) => s !== 'closed';
+// バッジ・青いバーの数に含まれる Window（AC-824: 閉じた・未表示、または背面だけの項目には出さない。背面は前面に出すと数に含まれる〔AC-872〕）
+const isOpen = (s: State) => s !== 'closed' && s !== 'behind';
 const badge = (page: Page, screen: string) => page.getByTestId(`nav-badge-${screen}`);
 const bar = (page: Page, screen: string) => page.getByTestId(`nav-bar-${screen}`);
 /** 閉じる（最小化中なら先に復元して、見出しの［閉じる］で閉じる） */
@@ -512,5 +513,82 @@ test.describe('FR-295 左メニューのバッジ・青いバーと見出しの 
     // 反映の確認: 再表示で戻る
     await item(page, a).click();
     await expect(c).toBeVisible();
+  });
+});
+
+// ---- FR-295 AC-797・AC-824・AC-872: 雛形（FR-305）で配置して背面に回ったコンポーネントの一覧の状態・左メニュー・前面への呼び出し ----
+// 背面の状態は §34 の追補（data-state="behind"、文字は「背面」）。背面の作り方は AC-865 の前提（区画より表示中のコンポーネントが多い）。
+// 注: AC-865・873・874・875・876 は integration のためこのケースの ac_ids に入れない（ここでは前提として使うだけ）。
+test.describe('FR-295 背面（雛形で配置して背面に回ったコンポーネント）', () => {
+  test('FR-295 AC-797 AC-824 AC-872 雛形で配置して背面に回ったコンポーネントが一覧に「背面」と区別して並び、左メニューのバッジ・バーに出ず、項目を押すと前面に出て通常の表示中になりバー・バッジの数に含まれる', async ({ page, start }) => {
+    await start();
+    await setup(page);
+    const ks = await shown(page);
+    expect(ks.length, '2 区画の雛形に対し表示中が 3 つ以上必要（背面に回るものを作る）').toBeGreaterThanOrEqual(3);
+    const [a, b, ...rest] = ks;
+    const ws = (await page.getByTestId('workspace').boundingBox())!;
+    expect(ws, 'workspace').not.toBeNull();
+    const mid = { x: ws.x + ws.width / 2, y: ws.y + ws.height / 2 };
+    const hit = { x: ws.x + ws.width / 2, y: ws.y + 16 }; // 上端から PARAM-042 以内・中央
+    const hb = (await component(page, a).getByRole('heading').first().boundingBox())!;
+    const h = { x: hb.x + hb.width / 2, y: hb.y + hb.height / 2 };
+    const glide = async (from: { x: number; y: number }, to: { x: number; y: number }, n = 6) => {
+      for (let i = 1; i <= n; i++) await page.mouse.move(from.x + ((to.x - from.x) * i) / n, from.y + ((to.y - from.y) * i) / n);
+    };
+    // ① 左 1/2・右 1/2 の雛形（FR-305）で a を左、b を順次の埋めで右に置く
+    await page.mouse.move(h.x, h.y);
+    await page.mouse.down();
+    await glide(h, mid);
+    await glide(mid, hit);
+    const zone1 = page.locator('[data-testid="snap-layouts"] [data-testid="snap-layout-zone"][data-layout="1"][data-zone="1"]');
+    await expect(zone1, '300 ms とどめると雛形のポップアップが出る').toBeVisible();
+    const zb = (await zone1.boundingBox())!;
+    const z = { x: zb.x + zb.width / 2, y: zb.y + zb.height / 2 };
+    await glide(hit, z, 4);
+    await page.mouse.up();
+    const assist = page.getByTestId('snap-assist');
+    await expect(assist, '配置の直後に残りの区画の候補が出る').toBeVisible();
+    await assist.locator(`[data-component-key="${b}"]`).click();
+    // 区画に配置されなかった表示中のコンポーネントは背面に回る（閉じず・最小化せず）
+    for (const k of rest) {
+      await expect(item(page, k), `${k}: 一覧で背面`).toHaveAttribute('data-state', 'behind');
+      const it = item(page, k);
+      const name = (await it.getAttribute('aria-label')) ?? (await it.innerText());
+      expect(name, `${k}: 状態の語「背面」が文字で区別できる`).toMatch(/背面/);
+      expect((await it.innerText()).trim().length, `${k}: 名前つき`).toBeGreaterThan(0);
+    }
+    expect(await items(page).count(), '一覧にすべてのコンポーネントが残る（背面も閉じた扱いにならない）').toBeGreaterThanOrEqual(ks.length);
+    const s0 = await states(page);
+    expect(Object.values(s0).filter((v) => v === 'front').length, '前面は 1 つだけ').toBe(1);
+    expect(s0[a] === 'front' || s0[a] === 'visible', 'a は配置されて前面か表示中').toBe(true);
+    expect(s0[b] === 'front' || s0[b] === 'visible', 'b は配置されて前面か表示中').toBe(true);
+    const aBox = (await component(page, a).boundingBox())!;
+    const bBox = (await component(page, b).boundingBox())!;
+
+    // AC-824 ③: 背面だけの画面の項目には、バッジも青いバーも出ない（異常系）
+    const es = await entries(page);
+    const screenOf = (k: string) => es.find((e) => e.key === k)!.screen;
+    const behindOnly = [...new Set(rest.map(screenOf))].filter((sc) =>
+      es.filter((e) => e.screen === sc && e.state !== 'closed').every((e) => e.state === 'behind'));
+    expect(behindOnly.length, '背面だけの画面が 1 つ以上ある').toBeGreaterThan(0);
+    for (const sc of behindOnly) {
+      await expect(badge(page, sc), `${sc}: 背面だけの画面にバッジを出さない`).toHaveCount(0);
+      await expect(bar(page, sc), `${sc}: 背面だけの画面に青いバーを出さない`).toHaveCount(0);
+    }
+
+    // AC-872: 背面の項目を押すと前面に出て、通常の表示中になる（FR-173 の自由配置の重なりとして扱われ、ほかを動かさない）
+    const r = rest.find((k) => behindOnly.includes(screenOf(k)))!;
+    await item(page, r).click();
+    await expect(item(page, r), '押すと前面に出る').toHaveAttribute('data-state', /^(front|visible)$/);
+    await expect(component(page, r)).toBeVisible();
+    expect(await item(page, r).getAttribute('aria-label') ?? await item(page, r).innerText(), '状態が「背面」でなくなる').not.toMatch(/背面/);
+    // 前面に出した後は、左メニューのバッジ・青いバーの数に含まれる（その画面に Window は 1 つ以上）
+    await expect(bar(page, screenOf(r)), '前面に出すとバーに含まれる').toBeVisible();
+    // ほかのコンポーネントは動かされず、背面のままのものは背面のまま
+    for (const [k, was] of [[a, aBox], [b, bBox]] as const) {
+      const now = (await component(page, k).boundingBox())!;
+      expect(Math.max(Math.abs(now.x - was.x), Math.abs(now.y - was.y), Math.abs(now.width - was.width), Math.abs(now.height - was.height)), `${k}: 呼び出しで配置が動いた`).toBeLessThanOrEqual(TOL);
+    }
+    for (const k of rest.filter((x) => x !== r)) await expect(item(page, k), `${k}: ほかの背面は背面のまま`).toHaveAttribute('data-state', 'behind');
   });
 });
