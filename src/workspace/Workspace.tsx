@@ -11,7 +11,7 @@ import { effectiveLayout, personaKeys, useLayout, clampFloat, isPinned, setWorks
 import { EXPAND_RATIO, useSettings, type ExpandPosition } from '../store/settings';
 import { keysOf, prune, type DropZone, type LayoutNode, type Path, type SplitNode } from './layoutModel';
 import { MIN_COMPONENT_WIDTH, applyAutoSize, fitMinWidth } from './autosize';
-import { MIN_WINDOW_H, MIN_WINDOW_W, enforceMin, floorFloat, needHeight } from './windowLimits';
+import { MIN_WINDOW_H, MIN_WINDOW_W, enforceMin, floorFloat, isLimitHeld, needHeight, planPinRestore } from './windowLimits';
 import { WindowList } from './WindowList';
 import { IMMERSIVE_DIM_PERCENT, windowStates } from './windowStates';
 import { withOpacity } from '../theme/frameMaterial';
@@ -1078,6 +1078,14 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
         // ピン止めしたものが再表示されたとき: ピン止めした比率の位置に戻し、そこにあるものを押し出す（FR-216 AC-505）
         const others = new Set([...pinSet].filter((p) => p !== k && p in rects));
         const at = { x: pr.x * b.w, y: pr.y * b.h, w: pr.w * b.w, h: pr.h * b.h };
+        // 保留中（ピン止めと区画の合計が PARAM-136 を超える間）も通常時も、重なった区画だけをリサイズし、下限未満になるものだけを最小化する（FR-216 AC-884）
+        const slotsN = Object.keys(rects).filter((o) => !pinSet.has(o) && !minSet.has(o) && !behindSet.has(o)).length;
+        if (isLimitHeld([...pinSet].filter((p) => p === k || p in rects).length, slotsN)) {
+          const plan = planPinRestore(rects, k, at, others);
+          rects = plan.rects;
+          for (const m of plan.minimized) actions().setMinimized(m, true);
+          continue;
+        }
         rects = resolveAround({ ...rects, [k]: at }, k, b, others) ?? resolveOverlaps({ ...rects, [k]: at }, k, b);
       } else {
         // ピン止めしたものと、利用者が手で動かしたものは、新しく置くもののために動かさない（FR-243 AC-585）
