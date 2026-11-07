@@ -86,7 +86,7 @@ describe('FR-014 AC-017 / FR-110 AC-135 レイアウトのストア', () => {
     first.useLayout.getState().hideComponent('gantt');
     const raw = first.storage.getItem('edb.layout');
     expect(raw).toBeTruthy();
-    expect(JSON.parse(raw!).state.maximized).toBeUndefined(); // 最大化は保存しない
+    expect(JSON.parse(raw!).state.maximized ?? null).toBeNull(); // 最大化していなければ最大化は保存されない（最大化中の再読込は Q-098 で復元する。window-maximized-q097-099.test.ts）
     const second = await freshStore(ALL, raw!);
     const st = second.useLayout.getState();
     expect(st.persona).toBe('事業部門');
