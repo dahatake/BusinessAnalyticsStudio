@@ -1,10 +1,10 @@
 // 開いているコンポーネントの一覧（FR-295）の状態の求め方。React に依存しない純粋な計算。
-// 一覧の状態: front（前面）／visible（表示中）／minimized（最小化）／closed（閉じた＝非表示にした）。
+// 一覧の状態: front（前面）／visible（表示中）／minimized（最小化）／closed（閉じた＝非表示にした）／behind（背面＝非表示扱い。FR-305 の雛形・FR-152 の最大化で背面へ回ったもの。AC-797・872）。
 // FR-296: 既定のレイアウトに収まらない・領域が足りなくなって外したコンポーネントは、閉じずに最小化として一覧に残す。
 import { keysOf, type Layout } from './layoutModel';
 
-export type WindowState = 'front' | 'visible' | 'minimized' | 'closed';
-export const WINDOW_STATE_LABEL: Readonly<Record<WindowState, string>> = { front: '前面', visible: '表示中', minimized: '最小化', closed: '閉じた' };
+export type WindowState = 'front' | 'visible' | 'minimized' | 'closed' | 'behind';
+export const WINDOW_STATE_LABEL: Readonly<Record<WindowState, string>> = { front: '前面', visible: '表示中', minimized: '最小化', closed: '閉じた', behind: '背面' };
 
 /** 没入表示（FR-297）で、最大化したコンポーネントの背面を暗くする割合（%）。PARAM-137 */
 export const IMMERSIVE_DIM_PERCENT = 60;
@@ -18,6 +18,8 @@ export interface WindowStateInput {
   minimized: ReadonlySet<string>;
   /** 利用者が閉じた（非表示にした）もの */
   closed: ReadonlySet<string>;
+  /** 雛形で配置して背面へ回ったもの（非表示扱い。一覧からの呼び出しまで背面のまま。FR-305 AC-865・FR-295 AC-872） */
+  behind?: ReadonlySet<string>;
   /** 最後に使った順の目印（大きいほど最近） */
   usedAt: Readonly<Record<string, number>>;
 }
@@ -30,6 +32,7 @@ export function windowStates(input: WindowStateInput): Record<string, WindowStat
   for (const k of input.keys) {
     if (inTree.has(k)) {
       if (input.minimized.has(k)) out[k] = 'minimized';
+      else if (input.behind?.has(k)) out[k] = 'behind';
       else { out[k] = 'visible'; shown.push(k); }
     } else {
       out[k] = input.closed.has(k) ? 'closed' : 'minimized';
@@ -43,7 +46,7 @@ export function windowStates(input: WindowStateInput): Record<string, WindowStat
 
 /** 切替（Ctrl+Alt+PageDown／PageUp。FR-295 AC-798）の候補。閉じたものを除き、前面に近い順（前面が先頭） */
 export function switchOrder(states: Readonly<Record<string, WindowState>>, usedAt: Readonly<Record<string, number>>): string[] {
-  const keys = Object.keys(states).filter((k) => states[k] !== 'closed');
+  const keys = Object.keys(states).filter((k) => states[k] !== 'closed' && states[k] !== 'behind'); // 背面は巡回に含めない（AC-872）
   const rank = (k: string) => (states[k] === 'front' ? Infinity : usedAt[k] ?? 0);
   return keys.map((k, i) => ({ k, i })).sort((a, b) => (rank(b.k) - rank(a.k)) || a.i - b.i).map((x) => x.k);
 }
@@ -77,7 +80,7 @@ export interface NavSummary {
 export function navSummary(states: Readonly<Record<string, WindowState>>, screenOf: Readonly<Record<string, string>>): Record<string, NavSummary> {
   const out: Record<string, NavSummary> = {};
   for (const [k, st] of Object.entries(states)) {
-    if (st === 'closed') continue;
+    if (st === 'closed' || st === 'behind') continue; // 背面は閉じたものと同じ非表示扱いで数えない（AC-797・824）
     const sc = screenOf[k] ?? k;
     const cur = out[sc] ?? { count: 0, hasFront: false };
     out[sc] = { count: cur.count + 1, hasFront: cur.hasFront || st === 'front' };
@@ -96,14 +99,15 @@ export function navTarget(screen: string, states: Readonly<Record<string, Window
   const front = mine.find((k) => states[k] === 'front');
   // 前面でも使用記録がない（usedAt が 0）Window は、既定で前面になっているだけなので最小化せず前面に出す（使用後に押すと最小化）
   if (front !== undefined) return { key: front, state: (usedAt[front] ?? 0) > 0 ? 'front' : 'visible' };
-  const open = latest(mine.filter((k) => states[k] !== 'closed'));
+  const open = latest(mine.filter((k) => states[k] !== 'closed' && states[k] !== 'behind'));
   if (open !== undefined) return { key: open, state: states[open]! };
   const closed = mine.filter((k) => states[k] === 'closed');
   const key = latest(closed.filter((k) => (usedAt[k] ?? 0) > 0)) ?? (closed.includes(screen) ? screen : closed[0]);
   return key === undefined ? null : { key, state: 'closed' };
 }
 
-/** 表示中（前面・表示中）のコンポーネントの数 */
+/** 表示中（前面・表示中）のコンポーネントの数。背面・最小化・閉じたものは数えない（PARAM-136・AC-874） */
 export function shownCount(states: Readonly<Record<string, WindowState>>): number {
   return Object.values(states).filter((s) => s === 'front' || s === 'visible').length;
 }
+

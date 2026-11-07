@@ -5,7 +5,7 @@ import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { pressWindow } from './windowActions';
 import { useWindowStatus } from '../store/windowStatus';
 import { Button, makeStyles, mergeClasses, tokens } from '@fluentui/react-components';
-import { Checkmark16Regular, Eye16Regular, Subtract16Regular, Dismiss16Regular } from '@fluentui/react-icons';
+import { ArrowDown16Regular, Checkmark16Regular, Eye16Regular, Subtract16Regular, Dismiss16Regular } from '@fluentui/react-icons';
 import type { ScreenDefinition } from '../screens/types';
 import { useLayout } from '../store/layout';
 import { keysOf, type Layout } from './layoutModel';
@@ -33,6 +33,7 @@ const ICON: Record<WindowState, JSX.Element> = {
   visible: <Eye16Regular aria-hidden />,
   minimized: <Subtract16Regular aria-hidden />,
   closed: <Dismiss16Regular aria-hidden />,
+  behind: <ArrowDown16Regular aria-hidden />,
 };
 
 export function WindowList({ screens, layout, minimized }: { screens: readonly ScreenDefinition[]; layout: Layout; minimized: ReadonlySet<string> }) {
@@ -42,9 +43,10 @@ export function WindowList({ screens, layout, minimized }: { screens: readonly S
   const usedAt = useLayout((st) => st.usedAt);
   const immersive = useLayout((st) => st.maximized !== null);
   const items = useMemo(() => screens.filter((sc) => !!sc.component && !sc.modal), [screens]);
+  const behindKeys = useLayout((st) => st.behind[st.persona]);
   const states = useMemo(
-    () => windowStates({ keys: items.map((i) => i.key), layout, minimized, closed: new Set(closedKeys ?? []), usedAt }),
-    [items, layout, minimized, closedKeys, usedAt],
+    () => windowStates({ keys: items.map((i) => i.key), layout, minimized, closed: new Set(closedKeys ?? []), behind: new Set(behindKeys ?? []), usedAt }),
+    [items, layout, minimized, closedKeys, behindKeys, usedAt],
   );
   const inTree = useMemo(() => new Set(keysOf(layout)), [layout]);
   const press = (key: string, state: WindowState) => pressWindow(key, state, inTree.has(key));
@@ -120,7 +122,7 @@ export function WindowList({ screens, layout, minimized }: { screens: readonly S
             data-state={st}
             aria-label={name}
             icon={ICON[st]}
-            className={mergeClasses(s.item, st === 'front' ? s.front : undefined, st === 'minimized' || st === 'closed' ? s.dim : undefined)}
+            className={mergeClasses(s.item, st === 'front' ? s.front : undefined, st === 'minimized' || st === 'closed' || st === 'behind' ? s.dim : undefined)}
             onClick={() => press(it.key, st)}
           >
             {t(it.label)}（{t(WINDOW_STATE_LABEL[st])}）
