@@ -13,7 +13,7 @@ import { CommandPalette } from '../../src/commands/CommandPalette';
 import { useCommandUi } from '../../src/commands/ui';
 import { pressWindow } from '../../src/workspace/windowActions';
 import { LAYOUT_DWELL_MS } from '../../src/workspace/snapLayouts';
-import { setAvailableComponents, useLayout, type FloatRect } from '../../src/store/layout';
+import { setAvailableComponents, setWorkspaceArea, useLayout, type FloatRect } from '../../src/store/layout';
 import type { ScreenDefinition } from '../../src/screens/types';
 
 const A = () => <Panel testId="component-a" title="パネルA"><input aria-label="入力A" /></Panel>;
@@ -25,11 +25,12 @@ const screens: ScreenDefinition[] = [
   { key: 'c', label: 'C', icon: (() => null) as never, component: C },
 ];
 const st = () => useLayout.getState();
+const initialLayoutState = useLayout.getState();
 const persona = () => st().persona;
 const floats = () => st().floats[persona()] ?? {};
 const behind = () => st().behind[persona()] ?? [];
 const rect = (x: number, y: number, w: number, h: number) => ({ x, y, left: x, top: y, width: w, height: h, right: x + w, bottom: y + h, toJSON: () => ({}) }) as DOMRect;
-const AREA_H = 800;
+let AREA_H = 800;
 let areaW = 1200;
 let under: Element[] = [];
 let spy: ReturnType<typeof vi.spyOn>;
@@ -52,6 +53,9 @@ function setup(width = 1200) {
 }
 
 beforeEach(() => {
+  AREA_H = 800;
+  setWorkspaceArea(1200, 800);
+  useLayout.setState(initialLayoutState, true);
   setup();
   under = [];
   efp = (document as unknown as { elementsFromPoint?: unknown }).elementsFromPoint;
@@ -234,6 +238,70 @@ describe('FR-305 AC-863 ドラッグを使わない 3 つの入口・方向キ�
     expect(document.activeElement?.isConnected).toBe(true);
     expect(document.activeElement).not.toBe(document.body);
     expect(section('a').contains(document.activeElement), 'フォーカスが操作中のコンポーネントへ戻らない').toBe(true);
+  });
+});
+
+// FR-152 AC-266 AC-267 AC-867（Q-079 A）: 最小の大きさ（PARAM-134 幅 360・PARAM-135 高さ 240）を下回る配置は、ドラッグだけでなくメニュー・コマンドでも出さず選べない
+describe('FR-152 AC-266 AC-267 AC-867 最小の大きさを下回る配置は、メニュー・コマンドでも出さず選べない', () => {
+  const openSnapMenu = async () => {
+    focus('a');
+    fireEvent.click(within(section('a')).getByTestId('component-menu'));
+    fireEvent.click(screen.getByRole('menuitem', { name: '画面に配置' }));
+    await wait(50);
+    return screen.getAllByRole('menuitem').map((e) => e.textContent ?? '');
+  };
+  it('FR-152 AC-267 AC-867 幅 1000（3 分割は 333 < 360）では「3 分割」だけが出ず、ほかの成り立つ候補は残る', async () => {
+    setup(1000);
+    render(wrap(<Workspace screens={screens} />));
+    const items = await openSnapMenu();
+    expect(items, '3 分割が出ている').not.toContain('3 分割');
+    for (const n of ['左半分', '右半分', '上半分', '下半分', '4 分割', 'タブ化', '最大化']) expect(items, `${n}が出ていない`).toContain(n);
+  });
+  it('FR-152 AC-267 AC-867 高さ 400（上下の半分 200 < 240）では、上半分・下半分・4 分割は出ず、左半分・右半分・タブ化・最大化は残る', async () => {
+    AREA_H = 400;
+    render(wrap(<Workspace screens={screens} />));
+    const items = await openSnapMenu();
+    for (const n of ['上半分', '下半分', '4 分割']) expect(items, `${n}が出ている`).not.toContain(n);
+    for (const n of ['左半分', '右半分', 'タブ化', '最大化']) expect(items, `${n}が出ていない`).toContain(n);
+  });
+  it('FR-152 AC-267 幅 1200 では、成り立つ候補がすべて出る', async () => {
+    render(wrap(<Workspace screens={screens} />));
+    const items = await openSnapMenu();
+    for (const n of ['左半分', '右半分', '上半分', '下半分', '4 分割', '3 分割']) expect(items).toContain(n);
+  });
+  it('FR-152 AC-266 AC-867 幅 1000 でコマンドパレットから「3 分割」を実行しても、配置は変わらない（候補の外の手段でも選べない）', async () => {
+    setup(700);
+    const user = userEvent.setup();
+    render(wrap(<><Workspace screens={screens} /><CommandPalette /></>));
+    focus('a');
+    const before = JSON.stringify(st().layouts) + JSON.stringify(floats());
+    act(() => useCommandUi.getState().setPaletteOpen(true));
+    const box = await screen.findByRole('combobox', { name: 'コマンドを検索' });
+    await user.click(box);
+    await user.type(box, '画面に配置: 3 分割');
+    await user.keyboard('{Enter}');
+    await wait(80);
+    expect(JSON.stringify(st().layouts) + JSON.stringify(floats())).toBe(before);
+    expect(floats().a).toBeUndefined();
+  });
+});
+
+// FR-305 AC-875（Q-081 A）: 上端の命中範囲に入るたびに PARAM-144 の滞留を 0 から数え直す（出て入り直したら合算しない）
+describe('FR-305 AC-875 上端の滞留は、入るたびに 0 から数え直す', () => {
+  it('FR-305 AC-875 PARAM-144 の途中で出て入り直しても合算せず、入り直してから PARAM-144 ms たったときだけ出る', async () => {
+    render(wrap(<Workspace screens={screens} />));
+    ptr(handle('b'), 'pointerdown', 600, 100);
+    ptr(window, 'pointermove', 600, 400);
+    ptr(window, 'pointermove', 600, 5);
+    await wait(LAYOUT_DWELL_MS * 0.6);
+    ptr(window, 'pointermove', 600, 400); // 出る
+    await wait(50);
+    ptr(window, 'pointermove', 600, 5); // 入り直す
+    await wait(LAYOUT_DWELL_MS * 0.6); // 合算なら 0.6+0.6 > 1 で出てしまう
+    expect(popup(), '出る前の滞留を合算している').toBeNull();
+    await wait(LAYOUT_DWELL_MS * 0.6);
+    expect(popup(), '入り直してから PARAM-144 ms たっても出ない').not.toBeNull();
+    fireEvent.keyDown(window, { key: 'Escape' });
   });
 });
 
