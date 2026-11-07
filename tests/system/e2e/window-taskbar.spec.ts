@@ -591,11 +591,17 @@ test.describe('FR-295 背面（雛形で配置して背面に回ったコンポ�
     }
     await stay('本体・見出しを押す・フォーカスしても背面のまま');
     // AC-872（改訂・異常系）: Ctrl+Alt+PageDown／PageUp の切替の巡回に背面が現れない（巡回は表示中のものだけ。何周しても背面は前面にならない）
+    // 注（AC-798）: 巡回は最小化中のものも含み、Playwright は 1 press ごとに修飾キーを離すため PageUp は最小化中のものを復元したまま確定する。
+    // その復元は PARAM-136 の上限で a・b を最小化することがある（巡回の対象に背面が現れた結果ではない）。ここでは「背面が前面にならない・背面のまま」だけを断言し、
+    // a・b の位置は巡回の後に取り直した基準で呼び出しの前後を比べる（上限の押し出しに影響されない）。
     for (const key of ['Control+Alt+PageDown', 'Control+Alt+PageUp']) {
       for (let i = 0; i < ks.length + 2; i++) {
         await page.keyboard.press(key);
         const cur = await states(page);
-        for (const k of rest) expect(cur[k], `${key} ${i + 1} 回目: ${k} は巡回に現れず背面のまま`).toBe('behind');
+        for (const k of rest) {
+          expect(cur[k], `${key} ${i + 1} 回目: ${k} は巡回に現れず背面のまま`).toBe('behind');
+          expect(cur[k] === 'front', `${key} ${i + 1} 回目: 背面の ${k} は前面にならない`).toBe(false);
+        }
       }
       await page.keyboard.press('Escape'); // 切替の最中なら取消（優先順は §32）
     }
@@ -603,6 +609,9 @@ test.describe('FR-295 背面（雛形で配置して背面に回ったコンポ�
     expect(Object.values(await states(page)).filter((v) => v === 'front').length, '前面は 1 つだけ').toBe(1);
     // AC-872: 背面の項目を押すと前面に出て、通常の表示中になる（FR-173 の自由配置の重なりとして扱われ、ほかを動かさない）
     const r = rest.find((k) => behindOnly.includes(screenOf(k)))!;
+    // 巡回のあとの基準（表示中のものだけ。巡回で最小化されたものは比べない）
+    const base: Array<readonly [string, { x: number; y: number; width: number; height: number }]> = [];
+    for (const k of [a, b]) if ((await component(page, k).count()) && (await component(page, k).isVisible())) base.push([k, (await component(page, k).boundingBox())!]);
     await item(page, r).click();
     await expect(item(page, r), '押すと前面に出る').toHaveAttribute('data-state', /^(front|visible)$/);
     await expect(component(page, r)).toBeVisible();
@@ -610,7 +619,8 @@ test.describe('FR-295 背面（雛形で配置して背面に回ったコンポ�
     // 前面に出した後は、左メニューのバッジ・青いバーの数に含まれる（その画面に Window は 1 つ以上）
     await expect(bar(page, screenOf(r)), '前面に出すとバーに含まれる').toBeVisible();
     // ほかのコンポーネントは動かされず、背面のままのものは背面のまま
-    for (const [k, was] of [[a, aBox], [b, bBox]] as const) {
+    expect(aBox && bBox, '呼び出し前に a・b を配置した').toBeTruthy();
+    for (const [k, was] of base) {
       const now = (await component(page, k).boundingBox())!;
       expect(Math.max(Math.abs(now.x - was.x), Math.abs(now.y - was.y), Math.abs(now.width - was.width), Math.abs(now.height - was.height)), `${k}: 呼び出しで配置が動いた`).toBeLessThanOrEqual(TOL);
     }
