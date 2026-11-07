@@ -489,8 +489,8 @@ test.describe('FR-305 上端の中央へのドラッグでのレイアウトの�
 
     // ③ AC-871・868: 外へ出て閉じたあと、命中範囲へ戻って PARAM-144 ms に満たずに離す → 上端の最大化
     // 前提（戻ってから離すまでが PARAM-144 ms 未満）は負荷で崩れうる。滞在はページ内の時刻（pointermove／pointerup の timeStamp と
-    // 処理時の performance.now() の大きい方）で測る。崩れた試行（命中範囲の内側で離す＝配置不変、AC-866）はやり直す。判定は緩めない。
-    const TRIES = 3;
+    // 処理時の performance.now() の大きい方）で測る。崩れた試行は断言せず後始末してやり直す（最大 5 回）。前提が満たされた試行の判定は緩めない。
+    const TRIES = 5;
     const hitEdge = ws.y + SNAP_EDGE;
     const tried: number[] = [];
     let done = false;
@@ -521,8 +521,11 @@ test.describe('FR-305 上端の中央へのドラッグでのレイアウトの�
       const seen = (await read())['snap-layouts'].first;
       tried.push(stayed === null ? -1 : Math.round(stayed));
       if (stayed === null || stayed >= DWELL_MS - 50) {
-        // 前提が崩れた試行: 命中範囲の内側で離しているので配置は変わらない（AC-866）。確かめてやり直す
-        await expectUnchanged('前提が崩れた試行（命中範囲の内側で離した）');
+        // 前提が崩れた試行（負荷で滞在が PARAM-144 ms に近い・超えた）: 離した時点がポップアップの表示と競合し結果が一意でないため、
+        // 何も断言しない（AC-866 は上の ①・② で確かめ済み）。最大化のままやり直すと偽の pass になるので、① の左 1/2 に置いて未最大化へ戻す
+        await expect(popup(page)).toBeHidden();
+        await dropOnZone(page, m, await dragToHitAndDwell(page, m, c, ws, 'マウス（前提が崩れた試行の後始末）'), '1', 1);
+        await expect(c, '後始末のあとも最大化のまま').not.toHaveAttribute('data-maximized', 'true');
         continue;
       }
       expect(seen, `戻って ${DWELL_MS} ms に満たずに離したのにポップアップが再表示された`).toBeNull();
