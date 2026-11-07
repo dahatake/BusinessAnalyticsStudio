@@ -21,3 +21,20 @@ export function stackedLeaves(layout: Layout): Array<Extract<LayoutNode, { kind:
   if (layout) walk(layout);
   return out;
 }
+
+/**
+ * 縮退の縦積みの表示単位。ピン止めしたコンポーネントはタブ化せず、1 つずつ単独の単位にして先頭へ置く（FR-216 AC-497・AC-886 Q-101 A）。
+ * タブのまとまりにピン止めしたものが混ざっていれば、ピン止めしたものを取り出し、残りはタブのまとまりのまま後ろへ置く。
+ */
+export function stackedCells(layout: Layout, pinned: ReadonlySet<string>): Array<Extract<LayoutNode, { kind: 'tabs' }>> {
+  const pins: Array<Extract<LayoutNode, { kind: 'tabs' }>> = [];
+  const rest: Array<Extract<LayoutNode, { kind: 'tabs' }>> = [];
+  for (const l of stackedLeaves(layout)) {
+    const mine = l.tabs.filter((k) => pinned.has(k));
+    for (const k of mine) pins.push({ kind: 'tabs', tabs: [k], active: k });
+    const others = l.tabs.filter((k) => !pinned.has(k));
+    if (others.length === l.tabs.length) rest.push(l);
+    else if (others.length > 0) rest.push({ kind: 'tabs', tabs: others, active: others.includes(l.active) ? l.active : others[0]! });
+  }
+  return [...pins, ...rest];
+}
