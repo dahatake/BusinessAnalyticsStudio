@@ -366,10 +366,11 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   const minimizedKeys = useLayout((st) => st.minimized[st.persona]);
   const minSet = useMemo(() => new Set(minimizedKeys ?? []), [minimizedKeys]);
   // 前面のコンポーネント（FR-295 の一覧と同じ求め方。FR-297 AC-803: 前面の見出しの強調に使う）
+  const behindForFront = useLayout((st) => st.behind[st.persona]);
   const frontKey = useMemo(() => {
-    const st = windowStates({ keys: screens.filter((sc) => !!sc.component && !sc.modal).map((sc) => sc.key), layout: base, minimized: minSet, closed: new Set(), usedAt });
+    const st = windowStates({ keys: screens.filter((sc) => !!sc.component && !sc.modal).map((sc) => sc.key), layout: base, minimized: minSet, closed: new Set(), behind: new Set(behindForFront ?? []), usedAt });
     return Object.keys(st).find((k) => st[k] === 'front') ?? null;
-  }, [screens, base, minSet, usedAt]);
+  }, [screens, base, minSet, behindForFront, usedAt]);
   // 没入表示（FR-297 AC-802）: 最大化中の Esc は、ほかの処理（切替の取消・ドラッグの中止・コンポーネント内の Esc）が先に使わなかったときだけ通常表示に戻す
   useEffect(() => {
     if (maximized === null) return;
@@ -661,7 +662,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
       toggleDirection: () => (pinned ? announce(PIN_MOVE_REASON) : a.toggleDirection(key)),
       snapTo: (kind) => applySnap(key, kind, { tabTarget: keysOf(layout).find((k) => !group.includes(k) && !pinSet.has(k)) }),
       ...(compact ? {} : { openLayouts: () => openLayouts(key) }),
-      snapKinds: snapKindsFor(compact),
+      // 最小の大きさ（PARAM-134・135）を下回る候補は、メニュー・コマンド・キーボードでも示さず選べない（FR-152 AC-267・AC-867）
+      snapKinds: menuSnapKinds(),
       mergeInto: (t) => (pinned || pinSet.has(t) ? announce(PIN_TABS_REASON) : a.mergeTabs(key, t)),
       untab: () => (pinned ? announce(PIN_TABS_REASON) : a.untab(key)),
       startDrag: (e) => startDrag(key, e),
@@ -803,6 +805,11 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   /** 候補（左半分・右半分・上半分・下半分・4 分割・3 分割・タブ化・最大化）の配置を行う。ドラッグ・メニュー・キーボード・コマンドで共通（FR-152 AC-265・AC-266） */
   const applySnap = (key: string, kind: SnapKind, opts: SnapOpts, from?: NonNullable<ReturnType<typeof measureAll>> | null): void => {
     if (pinSet.has(key)) { announce(PIN_MOVE_REASON); return; }
+    // どの手段から呼ばれても、最小の大きさを下回る配置は行わない（FR-152 AC-267・AC-867）
+    if (!compact) {
+      const a0 = from ? { w: from.bounds.w, h: from.bounds.h } : (() => { const r = rootRef.current?.getBoundingClientRect(); return r ? { w: r.width, h: r.height } : null; })();
+      if (a0 && a0.w > 0 && a0.h > 0 && !snapFitsMin(kind, opts, a0, MIN_WINDOW_W, MIN_WINDOW_H)) { announce(tr('この大きさの作業領域では、その配置にできません')); return; }
+    }
     const st = actions();
     setAssist(null);
     // 最大化: ほかのコンポーネントは元の配置のまま背面へ回る（解除・引き離しで元の配置に戻る。A-75）
@@ -877,7 +884,10 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     st.raise(key);
     st.markMoved(key);
     markManual(key);
-    st.setBehind(Object.keys(m.rects).filter((k) => k !== key && !pinSet.has(k)));
+    // 背面へ回すのは、表示中のものが区画より多いときだけ（区画が余るなら空の区画のまま残し、背面は生じない。AC-876）
+    const shownNow = Object.keys(m.rects).filter((k) => !pinSet.has(k) && !minSet.has(k) && !behindSet.has(k) && !zoneHidden.has(k) && !!byKey(k)?.component);
+    if (!shownNow.includes(key)) shownNow.push(key);
+    if (shownNow.length > zs.length) st.setBehind(Object.keys(m.rects).filter((k) => k !== key && !pinSet.has(k)));
     const rest = remainingZones(id, zone).map((z) => ({ zone: z, rect: frac(zs[z - 1]!) }));
     const [first, ...others] = rest;
     if (first && assistCandidates([key]).length > 0) setAssist({ key, rect: first.rect, layout: id, zone: first.zone, rest: others, used: [key] });
@@ -1368,6 +1378,15 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     }
     return out;
   };
+  /** 見出しのメニュー・コマンドに示す候補（最小の大きさを下回るものを除く。タブ化・最大化は残る） */
+  const menuKindsRef = useRef<readonly SnapKind[]>([]);
+  const menuSnapKinds = (): readonly SnapKind[] => {
+    const next = compact || width <= 0 || height <= 0 ? snapKindsFor(compact) : fittingSnapKinds({}, { width, height });
+    // 内容が同じなら同じ配列を返す（見出しの操作の組が毎回作り直されないように）
+    if (next.length === menuKindsRef.current.length && next.every((k, i) => k === menuKindsRef.current[i])) return menuKindsRef.current;
+    menuKindsRef.current = next;
+    return next;
+  };
   /** 直近の snapAt が、最小の大きさを下回るために候補を出さなかった（その間は置き場所を変えない。FR-152 AC-267・AC-867） */
   const snapBlocked = useRef(false);
   const snapAt = (x: number, y: number, key: string, hitKey: string | null, skip: Set<Edge>): SnapState | null => {
@@ -1429,6 +1448,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   /** 縁・角のドラッグで、縦横を独立に大きさを変える（FR-224 AC-521）。ぶつかるものは押し出す（FR-184） */
   const startResize = (key: string, edge: ResizeEdge, e: { button: number; clientX: number; clientY: number }) => {
     if (e.button !== 0) return;
+    if (behindSet.has(key)) return;
     if (pinSet.has(key)) { announce(PIN_RESIZE_REASON); return; }
     const start = measureAll();
     const self = start?.rects[key];
@@ -1458,6 +1478,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   /** 見出しのドラッグでコンポーネントを動かす。置ける場所を移動中に示し、Esc で中止する（FR-142 AC-224）。 */
   const startDrag = (key: string, e: { button: number; clientX: number; clientY: number }) => {
     if (e.button !== 0) return;
+    if (behindSet.has(key)) return; // 背面は非表示扱い。掴んでも前面に出ない（一覧からの呼び出しだけ。FR-295 AC-872）
     const sx = e.clientX;
     const sy = e.clientY;
     if (pinSet.has(key)) {
@@ -1735,7 +1756,7 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     for (let n: Element | null = e.target as Element; n && n !== e.currentTarget; n = n.parentElement) {
       const id = n.getAttribute('data-testid') ?? '';
       const k = id.startsWith('component-') ? id.slice('component-'.length) : '';
-      if (k && visible.has(k)) {
+      if (k && visible.has(k) && !behindSet.has(k)) {
         if (pointerDown.current) pendingFocus.current = k;
         else setFocusKey(k);
         return;
@@ -1751,7 +1772,11 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     preDownOrder.current = { zOrder: [...s0.zOrder], behind: s0.behind[s0.persona] };
     for (let n: Element | null = e.target as Element; n && n !== e.currentTarget; n = n.parentElement) {
       const id = n.getAttribute('data-testid') ?? '';
-      if (id.startsWith('component-') && id !== 'component-menu' && id !== 'component-actions') { actions().raise(id.slice('component-'.length)); return; }
+      if (id.startsWith('component-') && id !== 'component-menu' && id !== 'component-actions') {
+        // 背面は非表示扱い。押しても前面に出ない（一覧からの呼び出しだけ。FR-295 AC-872）
+        if (!behindSet.has(id.slice('component-'.length))) actions().raise(id.slice('component-'.length));
+        return;
+      }
     }
   };
 

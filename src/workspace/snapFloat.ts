@@ -126,8 +126,11 @@ export function planSnap(input: PxMap, key: string, target: PxRect, b: Bounds, o
   const others = Object.keys(r0).filter((k) => k !== key && !anchors.has(k));
   if (others.length === 0) return r0;
   // 置く先が最小の大きさ（PARAM-134・135）以上のときは、置いたものを縮めない（半分・3 分割は指定どおりの大きさ。FR-152 AC-267・AC-867）。
-  // 残りは、空いた領域へ詰める（最小の大きさに満たない分は、描くときに最小へ補正され、互いに重なってよい）
-  if (t.w >= MIN_COMPONENT_WIDTH - 1 && t.h >= MIN_H - 1) {
+  // 残りは、空いた領域へ詰める（最小の大きさに満たない分は、描くときに最小へ補正され、互いに重なってよい）。
+  // ただし縦に詰めても置いたものが最小の高さを下回らないときは、従来どおり詰める（最小化・復元・既定に戻すときの位置を変えない。FR-295 AC-799・AC-825）
+  const sh = Math.max(b.h * STRIP, MIN_H);
+  const scale = Math.max(0.1, (b.h - sh) / b.h);
+  if (t.w >= MIN_COMPONENT_WIDTH - 1 && t.h >= MIN_H - 1 && t.h * scale < MIN_H - 1) {
     const free = largestEmpty([t, ...[...anchors].map((k) => r0[k]!)], b);
     if (free) {
       const kept: PxMap = { [key]: t };
@@ -137,8 +140,6 @@ export function planSnap(input: PxMap, key: string, target: PxRect, b: Bounds, o
       return kept;
     }
   }
-  const sh = Math.max(b.h * STRIP, MIN_H);
-  const scale = Math.max(0.1, (b.h - sh) / b.h);
   const out: PxMap = {};
   for (const k of [key, ...anchors]) out[k] = { ...r0[k]!, y: r0[k]!.y * scale, h: r0[k]!.h * scale };
   const grid = packGrid(Object.fromEntries(others.map((k) => [k, r0[k]!])), { w: b.w, h: sh });
