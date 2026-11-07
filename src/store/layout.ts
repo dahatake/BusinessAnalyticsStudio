@@ -11,7 +11,7 @@ import { snapLayout, type SnapKind, type SnapOpts } from '../workspace/snap';
 import { autoTree } from '../workspace/autoLayout';
 import { TIERS, classify, type Tier, type TierOverrides } from '../workspace/tiers';
 import { VIEW_MODES, WORLD_VIEWS, type ViewMode, type WorldView } from '../view/viewModel';
-import { MIN_WINDOW_H, MIN_WINDOW_W, makeRoom } from '../workspace/windowLimits';
+import { MIN_WINDOW_H, MIN_WINDOW_W, decideShortage, isLimitHeld, makeRoom } from '../workspace/windowLimits';
 
 /** コンポーネントごとのビューの切替の状態（FR-217・FR-218）。持たない項目は既定（表示モードは画面の既定、世界の表示は「両方」） */
 export interface ViewSetting { mode?: ViewMode; world?: WorldView }
@@ -382,7 +382,21 @@ export const useLayout = create<LayoutState>()(
             if (areaSize.w <= 0) return;
             const cur = effectiveLayout(st);
             // 雛形の背面のもの（FR-305）は最小化の対象にしない
-            const { layout, dropped } = makeRoom(cur, areaSize.w, { protect: [key, ...(st.behind[st.persona] ?? [])], pinned: new Set(Object.keys(st.pinned[st.persona] ?? {})), usedAt: st.usedAt });
+            const behindSet = new Set(st.behind[st.persona] ?? []);
+            const pinnedSet = new Set(Object.keys(st.pinned[st.persona] ?? {}));
+            // 上限判定の保留（FR-296 Q-082 B）: ピン止めと区画の合計が PARAM-136 を超える間は、領域不足のとき最も長く使っていない 1 つだけを最小化し、対象がなければ取り消す
+            const off = new Set([...(st.closed[st.persona] ?? []), ...(st.parked[st.persona] ?? []), ...(st.minimized[st.persona] ?? [])]);
+            // 区画は自由配置（雛形の区画も自由配置）のものだけ。木の配置だけのときは雛形の区画がなく、保留はない
+            const floatKeys = Object.keys(st.floats[st.persona] ?? {});
+            const shown = [...new Set([...keysOf(cur), ...floatKeys])].filter((k) => !off.has(k) && !behindSet.has(k));
+            const pinnedShownN = shown.filter((k) => pinnedSet.has(k)).length;
+            const held = floatKeys.length > 0 && pinnedShownN > 0 && isLimitHeld(pinnedShownN, shown.length - pinnedShownN);
+            const { layout, dropped, fits } = makeRoom(cur, areaSize.w, { protect: [key, ...behindSet], pinned: pinnedSet, usedAt: st.usedAt, ...(held ? { maxDrop: 1 } : {}) });
+            if (held && !fits && dropped.length === 0 && decideShortage({ held, candidates: shown.filter((k) => k !== key), pinned: pinnedSet, behind: behindSet, usedAt: st.usedAt }).action === 'cancel') {
+              // 最小化できる対象が 1 つもない: 操作を取り消して直前の状態へ戻す（上限超過は許さない）
+              set({ closed: s.closed, parked: s.parked, minimized: s.minimized, layouts: s.layouts, floats: s.floats, revealed: null });
+              return;
+            }
             if (dropped.length === 0) return;
             for (const k of dropped) dropFloat(k);
             set({ layouts: { ...st.layouts, [st.persona]: layout }, parked: { ...st.parked, [st.persona]: [...new Set([...(st.parked[st.persona] ?? []), ...dropped])] } });

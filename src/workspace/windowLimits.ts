@@ -83,14 +83,14 @@ export function fitsWidth(layout: Layout, width: number, minW = MIN_WINDOW_W): b
  * `protect` は外さない（いま見せたもの）。`usedAt` は大きいほど最近（なければ 0）。外したものは最小化として一覧に残す（閉じない）。
  * 戻り値は、収まった木と、外したコンポーネントのキー（外した順）。
  */
-export function makeRoom(layout: Layout, width: number, opts: { protect?: readonly string[]; pinned?: ReadonlySet<string>; usedAt?: Readonly<Record<string, number>>; minW?: number } = {}): { layout: Layout; dropped: string[] } {
+export function makeRoom(layout: Layout, width: number, opts: { protect?: readonly string[]; pinned?: ReadonlySet<string>; usedAt?: Readonly<Record<string, number>>; minW?: number; maxDrop?: number } = {}): { layout: Layout; dropped: string[]; fits: boolean } {
   const minW = opts.minW ?? MIN_WINDOW_W;
   let cur: Layout = layout ? clone(layout) : layout;
   const dropped: string[] = [];
   const protect = new Set(opts.protect ?? []);
   const pinned = opts.pinned ?? new Set<string>();
   const usedAt = opts.usedAt ?? {};
-  while (cur && !fitsWidth(cur, width, minW)) {
+  while (cur && !fitsWidth(cur, width, minW) && dropped.length < (opts.maxDrop ?? Infinity)) {
     const keys = keysOf(cur);
     const victims = keys.filter((k) => !protect.has(k) && !pinned.has(k));
     if (victims.length === 0) break;
@@ -100,7 +100,66 @@ export function makeRoom(layout: Layout, width: number, opts: { protect?: readon
     dropped.push(victim);
     cur = removeKey(cur, victim);
   }
-  return { layout: cur, dropped };
+  return { layout: cur, dropped, fits: !cur || fitsWidth(cur, width, minW) };
+}
+
+/**
+ * 上限判定の保留（FR-296。Q-078 A・Q-082 B）。ピン止め（表示中）と雛形の区画（表示中で背面でないもの）の合計が PARAM-136 を超える間は、
+ * 上限を超える分の最小化（上限判定）そのものを保留する。モードの切替・ゾーンの結合・前面化・再表示でも同じ。合計が上限以下になれば通常に戻る。
+ */
+export function isLimitHeld(pinnedShown: number, slotsShown: number, max = MAX_DEFAULT_VISIBLE): boolean {
+  return pinnedShown + slotsShown > max;
+}
+
+/** 最も長く使っていないもの（usedAt が小さいもの。同じなら並びの後ろ）。候補がなければ undefined */
+export function pickOldest(keys: readonly string[], usedAt: Readonly<Record<string, number>> = {}): string | undefined {
+  let victim: string | undefined;
+  for (const k of keys) if (victim === undefined || (usedAt[k] ?? 0) <= (usedAt[victim] ?? 0)) victim = k;
+  return victim;
+}
+
+/**
+ * 保留中に領域が足りなくなったときの決定（FR-296 AC-883。ピン止めの復元は含めない。復元は planPinRestore＝AC-884）。
+ * 最小化できる対象（ピン止めでも背面でもない）のうち最も長く使っていないものを 1 つ最小化する（空の区画として残す）。対象が 1 つもなければ取り消す。
+ * 保留でないとき（通常時）は、この規則の対象外で 'none'（現状維持。Q-093）。
+ */
+export function decideShortage(opts: { held: boolean; candidates: readonly string[]; pinned?: ReadonlySet<string>; behind?: ReadonlySet<string>; usedAt?: Readonly<Record<string, number>> }):
+  { action: 'none' } | { action: 'minimize'; key: string } | { action: 'cancel' } {
+  if (!opts.held) return { action: 'none' };
+  const pinned = opts.pinned ?? new Set<string>();
+  const behind = opts.behind ?? new Set<string>();
+  const key = pickOldest(opts.candidates.filter((k) => !pinned.has(k) && !behind.has(k)), opts.usedAt);
+  return key === undefined ? { action: 'cancel' } : { action: 'minimize', key };
+}
+
+type PRect = { x: number; y: number; w: number; h: number };
+
+/**
+ * ピン止めの復元（FR-216。AC-884。保留中かどうかによらない）。ピン止めの領域と重なる区画だけを、重ならないようにリサイズし
+ * （残る面積が最大になる辺で切る）、{PARAM-134}・{PARAM-135} 未満になる区画だけを最小化として返す（rects から外す。閉じず、下限未満にも縮めない）。
+ * 重ならない区画は、最後に使った時刻が古くても大きさを変えない。ピン止め（`fixed`）は動かさない。
+ */
+export function planPinRestore(rects: Readonly<Record<string, PRect>>, pinKey: string, pinRect: PRect, fixed: ReadonlySet<string> = new Set(), minW = MIN_WINDOW_W, minH = MIN_WINDOW_H): { rects: Record<string, PRect>; minimized: string[] } {
+  const out: Record<string, PRect> = {};
+  const minimized: string[] = [];
+  const p = pinRect;
+  for (const [k, r] of Object.entries(rects)) {
+    if (k === pinKey) continue;
+    const ox = Math.min(r.x + r.w, p.x + p.w) - Math.max(r.x, p.x);
+    const oy = Math.min(r.y + r.h, p.y + p.h) - Math.max(r.y, p.y);
+    if (fixed.has(k) || ox <= 0.5 || oy <= 0.5) { out[k] = { ...r }; continue; }
+    const opts: PRect[] = [
+      { x: r.x, y: r.y, w: p.x - r.x, h: r.h },
+      { x: p.x + p.w, y: r.y, w: r.x + r.w - (p.x + p.w), h: r.h },
+      { x: r.x, y: r.y, w: r.w, h: p.y - r.y },
+      { x: r.x, y: p.y + p.h, w: r.w, h: r.y + r.h - (p.y + p.h) },
+    ].filter((o) => o.w > 0.5 && o.h > 0.5);
+    const best = opts.sort((a, b) => b.w * b.h - a.w * a.h)[0];
+    if (!best || best.w + 0.5 < minW || best.h + 0.5 < minH) minimized.push(k);
+    else out[k] = best;
+  }
+  out[pinKey] = { ...p };
+  return { rects: out, minimized };
 }
 
 function removeKey(layout: LayoutNode, key: string): Layout {
