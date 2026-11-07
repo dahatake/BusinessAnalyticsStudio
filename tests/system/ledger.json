@@ -12670,10 +12670,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-797 AC-799 AC-824 AC-825 AC-826 AC-872",
       "canary": false,
-      "status": "not_run",
-      "last_commit": "af98e76",
-      "last_run_at": "2026-11-07T11:37:08+09:00",
-      "evidence": "work/runs/202611071017/logs/system-test/E2E-452-202611071131.log",
+      "status": "pass",
+      "last_commit": "2fae78c",
+      "last_run_at": "2026-11-07T12:59:42+09:00",
+      "evidence": "work/runs/202611071221/logs/system-test/E2E-452-202611071259.log",
       "history": [
         {
           "at": "2026-10-30T22:45:31+09:00",
