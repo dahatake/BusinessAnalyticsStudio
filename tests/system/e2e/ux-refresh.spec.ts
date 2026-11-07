@@ -352,7 +352,7 @@ test.describe('FR-223 設定のモーダル表示', () => {
   }
 
   // FR-223 AC-519
-  test('FR-223 AC-519 「設定」を開くと背面のすべてのコンポーネントが暗くなって操作できず、固定の大きさの設定画面が前面に出て、キャンバスのコンポーネントとして並ばず、既定のレイアウトに戻す・再読込の対象にならない', async ({ page, start }) => {
+  test('FR-223 AC-519 「設定」を開くと奥のすべてのコンポーネントが暗くなって操作できず、固定の大きさの設定画面が前面に出て、キャンバスのコンポーネントとして並ばず、既定のレイアウトに戻す・再読込の対象にならない', async ({ page, start }) => {
     const app = await start();
     await selectPersona(page, '事業部門');
     const before = await topKeys(page);
@@ -364,14 +364,14 @@ test.describe('FR-223 設定のモーダル表示', () => {
     await expect(backdrop).toBeVisible();
     const bg = await backdrop.evaluate((e) => getComputedStyle(e).backgroundColor);
     expect(bg, 'バックドロップが透明').not.toMatch(/rgba\(\s*\d+,\s*\d+,\s*\d+,\s*0\s*\)|transparent/);
-    // 背面のすべてのコンポーネントは、その中心の点でバックドロップが受ける（操作できない）
+    // 奥のすべてのコンポーネントは、その中心の点でバックドロップが受ける（操作できない）
     for (const k of before) {
       const b = await box(component(page, k));
       const hit = await page.evaluate(([x, y]) => {
         const e = document.elementFromPoint(x, y);
         return { backdrop: !!e?.closest('[data-testid="modal-backdrop"]'), modal: !!e?.closest('[role="dialog"]') };
       }, [b.x + b.width / 2, b.y + b.height / 2] as const);
-      expect(hit.backdrop || hit.modal, `${k}: 背面のコンポーネントが操作できる状態`).toBe(true);
+      expect(hit.backdrop || hit.modal, `${k}: 奥のコンポーネントが操作できる状態`).toBe(true);
     }
     // 前面の固定の大きさ（画面の大きさが変わっても同じ。画面に収まる範囲）
     const size1 = await box(modal);
@@ -391,8 +391,8 @@ test.describe('FR-223 設定のモーダル表示', () => {
     expect(await topKeys(page)).not.toContain('settings');
   });
 
-  // FR-223 AC-519（異常系: 設定を開いている間にキーボードで背面を操作できない）
-  test('FR-223 AC-519 異常系: 設定を開いている間、Tab を何度押しても焦点は背面のコンポーネントに出ず、閉じると背面が操作できる', async ({ page, start }) => {
+  // FR-223 AC-519（異常系: 設定を開いている間にキーボードで奥のコンポーネントを操作できない）
+  test('FR-223 AC-519 異常系: 設定を開いている間、Tab を何度押しても焦点は奥のコンポーネントに出ず、閉じると奥のコンポーネントが操作できる', async ({ page, start }) => {
     await start();
     await selectPersona(page, '事業部門');
     const modal = await openSettings(page);
