@@ -83,8 +83,14 @@ describe('FR-152 AC-265 スナップの配置は重ならない（自由配置�
   // FR-216（ピン止め）
   it('FR-152 AC-265 ピン止めしたものがある領域には置けず（null）、ピン止めしたものは動かない', () => {
     expect(planSnap(INIT, 'a', half('right'), B, { fixed: new Set(['b']) })).toBeNull();
-    const out = planSnap(INIT, 'a', half('left'), B, { fixed: new Set(['d']) })!;
+    // 最小の大きさ（FR-296）を満たすには、右上の 600x400 に b と c の 2 つは入らない（300 幅 < 360）。
+    // そこで c を除いた 3 つで確かめる（d を動かさず、残りが最小の大きさで収まる場合は置ける）
+    const { c: _c, ...three } = INIT;
+    const out = planSnap(three, 'a', half('left'), B, { fixed: new Set(['d']) })!;
+    expect(out).not.toBeNull();
     expect(out.d).toEqual(INIT.d);
+    expect(out.a).toEqual(half('left'));
+    expectNoOverlap(out);
   });
 });
 
