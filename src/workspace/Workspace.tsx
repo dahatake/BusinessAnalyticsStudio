@@ -368,9 +368,9 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   // 前面のコンポーネント（FR-295 の一覧と同じ求め方。FR-297 AC-803: 前面の見出しの強調に使う）
   const behindForFront = useLayout((st) => st.behind[st.persona]);
   const frontKey = useMemo(() => {
-    const st = windowStates({ keys: screens.filter((sc) => !!sc.component && !sc.modal).map((sc) => sc.key), layout: base, minimized: minSet, closed: new Set(), behind: new Set(behindForFront ?? []), usedAt });
+    const st = windowStates({ keys: screens.filter((sc) => !!sc.component && !sc.modal).map((sc) => sc.key), layout: base, minimized: minSet, closed: new Set(), behind: new Set(behindForFront ?? []), usedAt, maximized });
     return Object.keys(st).find((k) => st[k] === 'front') ?? null;
-  }, [screens, base, minSet, behindForFront, usedAt]);
+  }, [screens, base, minSet, behindForFront, usedAt, maximized]);
   // 没入表示（FR-297 AC-802）: 最大化中の Esc は、ほかの処理（切替の取消・ドラッグの中止・コンポーネント内の Esc）が先に使わなかったときだけ通常表示に戻す
   useEffect(() => {
     if (maximized === null) return;

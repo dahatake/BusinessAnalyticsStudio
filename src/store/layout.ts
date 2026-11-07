@@ -11,7 +11,7 @@ import { snapLayout, type SnapKind, type SnapOpts } from '../workspace/snap';
 import { autoTree } from '../workspace/autoLayout';
 import { TIERS, classify, type Tier, type TierOverrides } from '../workspace/tiers';
 import { VIEW_MODES, WORLD_VIEWS, type ViewMode, type WorldView } from '../view/viewModel';
-import { MAX_DEFAULT_VISIBLE, MIN_WINDOW_H, MIN_WINDOW_W, decideShortage, isLimitHeld, makeRoom, pickOldest } from '../workspace/windowLimits';
+import { MAX_DEFAULT_VISIBLE, MIN_WINDOW_H, MIN_WINDOW_W, fitsWidth, isLimitHeld, makeRoom, pickOldest } from '../workspace/windowLimits';
 
 /** コンポーネントごとのビューの切替の状態（FR-217・FR-218）。持たない項目は既定（表示モードは画面の既定、世界の表示は「両方」） */
 export interface ViewSetting { mode?: ViewMode; world?: WorldView }
@@ -417,13 +417,25 @@ export const useLayout = create<LayoutState>()(
             const shown = [...new Set([...keysOf(cur), ...floatKeys])].filter((k) => !off.has(k) && !behindSet.has(k));
             const pinnedShownN = shown.filter((k) => pinnedSet.has(k)).length;
             const held = floatKeys.length > 0 && pinnedShownN > 0 && isLimitHeld(pinnedShownN, shown.length - pinnedShownN);
-            const { layout, dropped, fits } = makeRoom(cur, areaSize.w, { protect: [key, ...behindSet], pinned: pinnedSet, usedAt: st.usedAt, ...(held ? { maxDrop: 1 } : {}) });
-            if (held && !fits && dropped.length === 0 && decideShortage({ held, candidates: shown.filter((k) => k !== key), pinned: pinnedSet, behind: behindSet, usedAt: st.usedAt }).action === 'cancel') {
-              // 最小化できる対象が 1 つもない: 操作を取り消して直前の状態へ戻す（上限超過は許さない）
-              set({ closed: s.closed, parked: s.parked, minimized: s.minimized, layouts: s.layouts, floats: s.floats, revealed: null });
+            // 最小化の対象は、区画のコンポーネントと区画外の自由配置を含む表示中のもの全体（ピン止め・背面・いま見せたものを除く）のうち、最後に使った時刻が最も古い 1 つ（Q-094 A）。
+            // 領域が足りる（収まる）まで 1 つずつ。保留中は 1 つだけ。保留中でも通常時でも、対象が 1 つもなくて収まらなければ取り消す（Q-093 A・AC-886）
+            let layout: Layout = cur;
+            const dropped: string[] = [];
+            while (layout && !fitsWidth(layout, areaSize.w) && dropped.length < (held ? 1 : Infinity)) {
+              const inTree = keysOf(layout);
+              const cands = [...new Set([...inTree, ...floatKeys])].filter((k) => k !== key && (inTree.includes(k) || !off.has(k)) && !pinnedSet.has(k) && !behindSet.has(k) && !dropped.includes(k)); // 木に残る最小化中のものも、幅を空けるために外せる（従来どおり）
+              const victim = pickOldest(cands, st.usedAt);
+              if (victim === undefined) break;
+              dropped.push(victim);
+              if (inTree.includes(victim)) layout = makeRoom(layout, areaSize.w, { protect: inTree.filter((k) => k !== victim), maxDrop: 1 }).layout; // 区画外の自由配置は、木から外すものがない
+            }
+            if (dropped.length === 0) {
+              if (layout && !fitsWidth(layout, areaSize.w)) {
+                // 最小化できる対象が 1 つもない: 操作（再表示）を自動のサイズ調整も含めて取り消し、直前の状態へ戻す（上限超過は許さない）
+                set({ closed: s.closed, parked: s.parked, minimized: s.minimized, layouts: s.layouts, floats: s.floats, usedAt: s.usedAt, revealed: null });
+              }
               return;
             }
-            if (dropped.length === 0) return;
             for (const k of dropped) dropFloat(k);
             set({ layouts: { ...st.layouts, [st.persona]: layout }, parked: { ...st.parked, [st.persona]: [...new Set([...(st.parked[st.persona] ?? []), ...dropped])] } });
           };
