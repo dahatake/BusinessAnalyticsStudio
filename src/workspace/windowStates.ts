@@ -22,6 +22,8 @@ export interface WindowStateInput {
   behind?: ReadonlySet<string>;
   /** 最後に使った順の目印（大きいほど最近） */
   usedAt: Readonly<Record<string, number>>;
+  /** 最大化中のコンポーネント（FR-013・FR-152 のどちらでも同じ。AC-887）。表示中のほかのコンポーネントは常に「背面」（非表示にしない） */
+  maximized?: string | null;
 }
 
 /** コンポーネントごとの状態。前面は、表示中のうち最も最近使ったもの 1 つだけ（使った記録がなければ、並びの先頭の表示中） */
@@ -29,17 +31,19 @@ export function windowStates(input: WindowStateInput): Record<string, WindowStat
   const inTree = new Set(keysOf(input.layout));
   const out: Record<string, WindowState> = {};
   const shown: string[] = [];
+  const max = input.maximized && inTree.has(input.maximized) && !input.minimized.has(input.maximized) ? input.maximized : null;
   for (const k of input.keys) {
     if (inTree.has(k)) {
       if (input.minimized.has(k)) out[k] = 'minimized';
+      else if (max !== null && k !== max) out[k] = 'behind'; // 最大化中は、ほかの表示中のものは背面（AC-887。最小化したものは最小化のまま）
       else if (input.behind?.has(k)) out[k] = 'behind';
       else { out[k] = 'visible'; shown.push(k); }
     } else {
       out[k] = input.closed.has(k) ? 'closed' : 'minimized';
     }
   }
-  let front: string | undefined;
-  for (const k of shown) if (front === undefined || (input.usedAt[k] ?? 0) > (input.usedAt[front] ?? 0)) front = k;
+  let front: string | undefined = max ?? undefined;
+  if (front === undefined) for (const k of shown) if (front === undefined || (input.usedAt[k] ?? 0) > (input.usedAt[front] ?? 0)) front = k;
   if (front !== undefined) out[front] = 'front';
   return out;
 }
@@ -104,7 +108,7 @@ export function navTarget(screen: string, states: Readonly<Record<string, Window
   // 背面だけの画面（Q-084 A）: 最後に背面へ回ったもの（behindOrder の最後）を前面に出す（一覧と同じ遷移）
   const behind = mine.filter((k) => states[k] === 'behind');
   if (behind.length > 0) {
-    const lastBehind = [...behind].sort((a, b) => behindOrder.indexOf(a) - behindOrder.indexOf(b)).pop()!;
+    const lastBehind = [...behind].sort((a, b) => (behindOrder.indexOf(a) - behindOrder.indexOf(b)) || ((usedAt[a] ?? 0) - (usedAt[b] ?? 0))).pop()!;
     return { key: lastBehind, state: 'behind' };
   }
   const closed = mine.filter((k) => states[k] === 'closed');
