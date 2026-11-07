@@ -588,7 +588,7 @@ export const useLayout = create<LayoutState>()(
       name: 'edb.layout',
       version: 1,
       storage: layoutStorage as never,
-      partialize: (s) => ({ persona: s.persona, floats: s.floats, pinned: s.pinned, views: s.views, screenView: s.screenView, zOrder: s.zOrder, usedAt: s.usedAt, layouts: s.layouts, autoSize: s.autoSize, manual: s.manual, minimized: s.minimized, closed: s.closed, navMin: s.navMin, tiers: s.tiers, autoOff: s.autoOff, moved: s.moved, userLaid: s.userLaid, behind: s.behind }),
+      partialize: (s) => ({ persona: s.persona, floats: s.floats, pinned: s.pinned, views: s.views, screenView: s.screenView, zOrder: s.zOrder, usedAt: s.usedAt, layouts: s.layouts, autoSize: s.autoSize, manual: s.manual, minimized: s.minimized, closed: s.closed, navMin: s.navMin, tiers: s.tiers, autoOff: s.autoOff, moved: s.moved, userLaid: s.userLaid, behind: s.behind, maximized: s.maximized }),
       merge: (persisted, current) => {
         const p = (persisted ?? {}) as Partial<Pick<LayoutState, 'persona' | 'floats' | 'pinned' | 'views' | 'screenView' | 'zOrder' | 'usedAt' | 'layouts' | 'autoSize' | 'manual' |         'minimized' | 'navMin' | 'tiers' | 'autoOff' | 'moved' | 'userLaid'>>;
                 const tiers: Partial<Record<Persona, TierOverrides>> = {};
@@ -666,7 +666,10 @@ export const useLayout = create<LayoutState>()(
         const zOrder = Array.isArray(p.zOrder) && p.zOrder.every((k) => typeof k === 'string') ? p.zOrder : [];
         const usedAt: Record<string, number> = {};
         if (p.usedAt && typeof p.usedAt === 'object') for (const [k, v] of Object.entries(p.usedAt)) if (typeof v === 'number' && Number.isFinite(v) && v > 0) { usedAt[k] = v; if (v > useClock) useClock = v; }
-        return { ...current, usedAt, tiers, autoOff, moved, userLaid, behind, floats, pinned, views, screenView, zOrder, persona, layouts, manual, minimized, closed, navMin: p.navMin === true, autoSize: typeof p.autoSize === 'boolean' ? p.autoSize : true };
+        // 最大化中の再読込は、最大化を復元する（FR-014・AC-887 ⑦・Q-098 A）。最大化前の配置・最大化由来の背面は、保存済みの配置と最大化の状態から導かれる
+        const mx = (p as { maximized?: unknown }).maximized;
+        const maximized = typeof mx === 'string' && !(minimized[persona] ?? []).includes(mx) && !(closed[persona] ?? []).includes(mx) ? mx : null;
+        return { ...current, maximized, usedAt, tiers, autoOff, moved, userLaid, behind, floats, pinned, views, screenView, zOrder, persona, layouts, manual, minimized, closed, navMin: p.navMin === true, autoSize: typeof p.autoSize === 'boolean' ? p.autoSize : true };
       },
     },
   ),
