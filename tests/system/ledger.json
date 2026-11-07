@@ -5040,7 +5040,7 @@
       "layer": "e2e",
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --grep \"AC-176 実接続を有効にしていない間\"",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/E2E-283-202611070138.log",
@@ -5068,6 +5068,12 @@
           "by": "test-designer",
           "change": "command: 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --grep \"AC-176 了承の記録がない\"' -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --grep \"AC-176 実接続を有効にしていない間\"'",
           "reason": "テスト名を了承の廃止に合わせて変更したため grep を更新"
+        },
+        {
+          "at": "2026-11-07T09:35:19+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "IT-023 に統合（run.mjs AC-176 が grep \"AC-176\" で同じテストを実行）"
         }
       ]
     },
@@ -6824,11 +6830,11 @@
       "ac_ids": [
         "AC-592"
       ],
-      "title": "自由配置の全画面（mock-app 廃止後）で最大化/復元の矩形を確認（E2E-343）",
+      "title": "自由配置の全画面で最大化/復元の矩形と、Shift+F/Esc 反復で保存配置を汚さない異常系（E2E-343・344・345 を統合）",
       "layer": "e2e",
-      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button --workers=1",
+      "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep \"restore-button|restore-escape|keyboard-repeat\" --workers=1",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/E2E-343-202611070201.log",
@@ -6856,6 +6862,12 @@
           "by": "test-designer",
           "change": "title: '全25画面で見出し通常表示による自由配置矩形復元と同一ペルソナ再読込の保存非破壊' -> '自由配置の全画面（mock-app 廃止後）で最大化/復元の矩形を確認（E2E-343）'",
           "reason": "FR-043 AC-054 で mock-app を廃止（63f4363）。対象画面から mock-app を除外"
+        },
+        {
+          "at": "2026-11-07T09:35:11+09:00",
+          "by": "test-designer",
+          "change": "command: 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-button --workers=1' -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep \"restore-button|restore-escape|keyboard-repeat\" --workers=1'; title: '自由配置の全画面（mock-app 廃止後）で最大化/復元の矩形を確認（E2E-343）' -> '自由配置の全画面で最大化/復元の矩形と、Shift+F/Esc 反復で保存配置を汚さない異常系（E2E-343・344・345 を統合）'",
+          "reason": "AC-592: 同じ spec の 3 ケースを統合（grep を和集合に）"
         }
       ],
       "serial": true
@@ -6872,7 +6884,7 @@
       "layer": "e2e",
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep restore-escape --workers=1",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/E2E-344-202611070206.log",
@@ -6900,6 +6912,12 @@
           "by": "test-designer",
           "change": "title: '全25画面でEscによる自由配置矩形復元と同一ペルソナ再読込の保存非破壊' -> '自由配置の全画面（mock-app 廃止後）で最大化/復元の矩形を確認（E2E-344）'",
           "reason": "FR-043 AC-054 で mock-app を廃止（63f4363）。対象画面から mock-app を除外"
+        },
+        {
+          "at": "2026-11-07T09:35:14+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "E2E-343 に統合（restore-escape を 343 の grep に含める）"
         }
       ],
       "serial": true
@@ -6910,14 +6928,13 @@
         "FR-013"
       ],
       "ac_ids": [
-        "AC-016",
         "AC-592"
       ],
       "title": "異常系・回帰: 課題-解決策分析のShift+F/Esc反復で最大化矩形が保存配置を汚さない",
       "layer": "e2e",
       "command": "node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat --workers=1",
       "canary": true,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "f2212a6",
       "last_run_at": "2026-11-07T09:11:09+09:00",
       "evidence": "work/runs/202611070837/logs/system-test/E2E-345-202611070910.log",
@@ -6939,6 +6956,18 @@
           "by": "test-designer",
           "change": "command: 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat' -> 'node tests/system/node_modules/@playwright/test/cli.js test --config tests/system/playwright.config.ts --project chromium --grep keyboard-repeat --workers=1'",
           "reason": "共有preview環境でPlaywright内部並列によるタイムアウトを防ぐためworkers=1で実行"
+        },
+        {
+          "at": "2026-11-07T09:35:12+09:00",
+          "by": "test-designer",
+          "change": "ac_ids: ['AC-016', 'AC-592'] -> ['AC-592']",
+          "reason": "AC-016 は E2E-115 が保証するため外す（CHK-33）"
+        },
+        {
+          "at": "2026-11-07T09:35:15+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "E2E-343 に統合（keyboard-repeat を 343 の grep に含める）"
         }
       ],
       "serial": true
@@ -7284,11 +7313,11 @@
       "ac_ids": [
         "AC-675"
       ],
-      "title": "メイン画面の「はじめての方へ」が常時表示され、できること・用語・4 手順・各文 60 字以内を満たす",
+      "title": "メイン画面の「はじめての方へ」が常時表示され、できること・用語・4 手順・各文 60 字以内を満たす。異常系: 企業を登録しても消えない（E2E-360 を統合）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-675",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/E2E-359-202611070144.log",
@@ -7316,6 +7345,12 @@
           "by": "test-designer",
           "change": "ac_ids: ['AC-675', 'AC-820', 'AC-821'] -> ['AC-675']",
           "reason": "AC-820・AC-821 は検証レベル integration のため System Test の対象外（CHK-10）。実装役の結合テストで保証し、E2E の動き・幅の確認は AC-675 の追加確認として残す"
+        },
+        {
+          "at": "2026-11-07T09:35:16+09:00",
+          "by": "test-designer",
+          "change": "title: 'メイン画面の「はじめての方へ」が常時表示され、できること・用語・4 手順・各文 60 字以内を満たす' -> 'メイン画面の「はじめての方へ」が常時表示され、できること・用語・4 手順・各文 60 字以内を満たす。異常系: 企業を登録しても消えない（E2E-360 を統合）'",
+          "reason": "AC-675: 同じコマンドの 2 ケースを統合"
         }
       ]
     },
@@ -7331,7 +7366,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-675",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/E2E-359-202611070144.log",
@@ -7341,6 +7376,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-07T09:35:17+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "E2E-359 に統合（同じ run.mjs AC-675 が両方を実行）"
         }
       ]
     },
@@ -7387,7 +7428,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-678",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/E2E-361-202611070144.log",
@@ -7403,6 +7444,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "E2E-361 に統合（AC-678 は起動時の自動表示なし・アイコン開始に改訂。welcome=1 の異常系も同じ spec の同じ AC で E2E-361 が実行）"
+        },
+        {
+          "at": "2026-11-07T09:35:18+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "E2E-361 に統合（同じ run.mjs AC-678 が両方を実行。題名に異常系を含む）"
         }
       ]
     },
@@ -9277,11 +9324,11 @@
       "ac_ids": [
         "AC-430"
       ],
-      "title": "外部連携カタログ秘密検査: Bearer・api_key=・token=・password=・32 文字以上の英数字・-----BEGIN の各形式を検出し失敗する",
+      "title": "外部連携カタログ秘密検査（secrets.test.mjs 全件: 形式・ダミー値・ハッシュ除外・最小長などの正常系と異常系）",
       "layer": "nonfunctional",
-      "command": "node --test --test-name-pattern \"AC-430 \\[形式:\" tests/system/integration-catalog/secrets.test.mjs",
+      "command": "node --test tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/IT-060-202611070145.log",
@@ -9303,6 +9350,18 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "AC-430 の検証レベルが system に変更されたため blocked 解除（password= 形式として扱う）"
+        },
+        {
+          "at": "2026-11-07T09:34:54+09:00",
+          "by": "test-designer",
+          "change": "command: 'node --test --test-name-pattern \"AC-430 \\\\[形式:\" tests/system/integration-catalog/secrets.test.mjs' -> 'node --test tests/system/integration-catalog/secrets.test.mjs'",
+          "reason": "AC-430: 同じテストファイルの 17 ケースを 1 ケースに統合（ファイル全体を実行）"
+        },
+        {
+          "at": "2026-11-07T09:35:34+09:00",
+          "by": "test-designer",
+          "change": "title: '外部連携カタログ秘密検査: Bearer・api_key=・token=・password=・32 文字以上の英数字・-----BEGIN の各形式を検出し失敗する' -> '外部連携カタログ秘密検査（secrets.test.mjs 全件: 形式・ダミー値・ハッシュ除外・最小長などの正常系と異常系）'",
+          "reason": "統合した 17 ケースの題名を整理"
         }
       ]
     },
@@ -9318,7 +9377,7 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[欄を問わない\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/IT-061-202611070145.log",
@@ -9340,6 +9399,12 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "AC-430 の検証レベルが system に変更されたため blocked 解除（password= 形式として扱う）"
+        },
+        {
+          "at": "2026-11-07T09:34:55+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "IT-060 に統合（同じファイル secrets.test.mjs を IT-060 が全件実行）"
         }
       ]
     },
@@ -9355,7 +9420,7 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[ハッシュ除外\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/IT-062-202611070145.log",
@@ -9377,6 +9442,12 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "AC-430 の検証レベルが system に変更されたため blocked 解除（password= 形式として扱う）"
+        },
+        {
+          "at": "2026-11-07T09:34:56+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "IT-060 に統合（同じファイル secrets.test.mjs を IT-060 が全件実行）"
         }
       ]
     },
@@ -9392,7 +9463,7 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[「例」行\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/IT-063-202611070145.log",
@@ -9414,6 +9485,12 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "AC-430 の検証レベルが system に変更されたため blocked 解除（password= 形式として扱う）"
+        },
+        {
+          "at": "2026-11-07T09:34:57+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "IT-060 に統合（同じファイル secrets.test.mjs を IT-060 が全件実行）"
         }
       ]
     },
@@ -9429,7 +9506,7 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[ダミー値\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/IT-064-202611070145.log",
@@ -9451,6 +9528,12 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "AC-430 の検証レベルが system に変更されたため blocked 解除（password= 形式として扱う）"
+        },
+        {
+          "at": "2026-11-07T09:34:58+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "IT-060 に統合（同じファイル secrets.test.mjs を IT-060 が全件実行）"
         }
       ]
     },
@@ -9466,7 +9549,7 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[語だけの説明文\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/IT-065-202611070145.log",
@@ -9488,6 +9571,12 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "AC-430 の検証レベルが system に変更されたため blocked 解除（password= 形式として扱う）"
+        },
+        {
+          "at": "2026-11-07T09:34:59+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "IT-060 に統合（同じファイル secrets.test.mjs を IT-060 が全件実行）"
         }
       ]
     },
@@ -9503,7 +9592,7 @@
       "layer": "data",
       "command": "node --test tests/system/integration-catalog/secrets.test.mjs --test-name-pattern=\"\\[山括弧の抜け道\\]\"",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/IT-066-202611070145.log",
@@ -9513,6 +9602,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-07T09:35:00+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "IT-060 に統合（同じファイル secrets.test.mjs を IT-060 が全件実行）"
         }
       ]
     },
@@ -9528,7 +9623,7 @@
       "layer": "data",
       "command": "node --test tests/system/integration-catalog/secrets.test.mjs --test-name-pattern=\"\\[引用符付き\\]\"",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/IT-067-202611070146.log",
@@ -9538,6 +9633,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-07T09:35:01+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "IT-060 に統合（同じファイル secrets.test.mjs を IT-060 が全件実行）"
         }
       ]
     },
@@ -9553,7 +9654,7 @@
       "layer": "data",
       "command": "node --test tests/system/integration-catalog/secrets.test.mjs --test-name-pattern=\"\\[BEGIN 単独行\\]\"",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/IT-068-202611070146.log",
@@ -9563,6 +9664,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-07T09:35:02+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "IT-060 に統合（同じファイル secrets.test.mjs を IT-060 が全件実行）"
         }
       ]
     },
@@ -9578,7 +9685,7 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[最小長\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/IT-069-202611070146.log",
@@ -9588,6 +9695,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-07T09:35:03+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "IT-060 に統合（同じファイル secrets.test.mjs を IT-060 が全件実行）"
         }
       ]
     },
@@ -9603,7 +9716,7 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[ダミー x の下限\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/IT-070-202611070146.log",
@@ -9613,6 +9726,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-07T09:35:04+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "IT-060 に統合（同じファイル secrets.test.mjs を IT-060 が全件実行）"
         }
       ]
     },
@@ -9628,7 +9747,7 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[Bearer 一般語\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/IT-071-202611070146.log",
@@ -9638,6 +9757,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-07T09:35:05+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "IT-060 に統合（同じファイル secrets.test.mjs を IT-060 が全件実行）"
         }
       ]
     },
@@ -9653,7 +9778,7 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[Bearer 一般語の抜け道なし\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/IT-072-202611070146.log",
@@ -9663,6 +9788,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-07T09:35:06+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "IT-060 に統合（同じファイル secrets.test.mjs を IT-060 が全件実行）"
         }
       ]
     },
@@ -9678,7 +9809,7 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[使う文字 2 種以下\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/IT-073-202611070146.log",
@@ -9688,6 +9819,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-07T09:35:07+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "IT-060 に統合（同じファイル secrets.test.mjs を IT-060 が全件実行）"
         }
       ]
     },
@@ -9703,7 +9840,7 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[使う文字 3 種\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/IT-074-202611070146.log",
@@ -9713,6 +9850,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-07T09:35:08+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "IT-060 に統合（同じファイル secrets.test.mjs を IT-060 が全件実行）"
         }
       ]
     },
@@ -9728,7 +9871,7 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[ハッシュ桁数\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/IT-075-202611070146.log",
@@ -9738,6 +9881,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-07T09:35:09+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "IT-060 に統合（同じファイル secrets.test.mjs を IT-060 が全件実行）"
         }
       ]
     },
@@ -9753,7 +9902,7 @@
       "layer": "nonfunctional",
       "command": "node --test --test-name-pattern \"AC-430 \\[ハッシュ桁数の外\\]\" tests/system/integration-catalog/secrets.test.mjs",
       "canary": false,
-      "status": "pass",
+      "status": "blocked",
       "last_commit": "ad7ffa1",
       "last_run_at": "2026-11-07T02:11:39+09:00",
       "evidence": "work/runs/202611062335/logs/system-test/IT-076-202611070146.log",
@@ -9763,6 +9912,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-07T09:35:10+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "IT-060 に統合（同じファイル secrets.test.mjs を IT-060 が全件実行）"
         }
       ]
     },
@@ -12548,9 +12703,9 @@
       "command": "node tests/system/run.mjs AC-793",
       "canary": false,
       "status": "pass",
-      "last_commit": "f2212a6",
-      "last_run_at": "2026-11-07T09:11:09+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-449-202611070910.log",
+      "last_commit": "f07e033",
+      "last_run_at": "2026-11-07T09:36:33+09:00",
+      "evidence": "work/runs/202611070837/logs/system-test/E2E-449-202611070936.log",
       "history": [
         {
           "at": "2026-10-27T23:31:36+09:00",
@@ -13268,14 +13423,14 @@
         "AC-862",
         "AC-864"
       ],
-      "title": "雛形のポップアップ（Snap Layouts）: 上端の中央に 300ms でポップアップ・区画どおりの配置と再読込、タッチ・ペンは入力ごとに初期配置から独立に（24px 以上・スクロール/ズームなし）、2x2 の順次の埋め（ピン止め除外）、異常系: 300ms 未満で出ない・300ms 未満の離しは最大化・Esc/外の押下で配置不変、ポップアップ表示後の離し方（内側は配置不変、外へ出ると閉じて左端は左半分・端でない位置は配置不変、戻って 300ms で再表示。AC-866・867 は integration のため ac_ids 外）",
+      "title": "雛形のポップアップ（Snap Layouts）: 上端の中央に PARAM-144 ms とどめるとポップアップ・区画どおりの配置と再読込、タッチ・ペンは入力ごとに初期配置から独立に（24px 以上・スクロール/ズームなし）、2x2 の順次の埋め（ピン止め除外）、異常系: PARAM-144 ms 未満で出ない・PARAM-144 ms 未満の離しは最大化・Esc/外の押下で配置不変。同じ実行で、ポップアップ表示後に外へ出て離す場合（内側は配置不変、左端は左半分、命中範囲の外の上端は最大化、端でない位置は配置不変、戻って PARAM-144 ms で再表示）も確かめる",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-859 AC-862 AC-864",
       "canary": false,
       "status": "pass",
-      "last_commit": "f2212a6",
-      "last_run_at": "2026-11-07T09:11:09+09:00",
-      "evidence": "work/runs/202611070837/logs/system-test/E2E-468-202611070910.log",
+      "last_commit": "f07e033",
+      "last_run_at": "2026-11-07T09:36:33+09:00",
+      "evidence": "work/runs/202611070837/logs/system-test/E2E-468-202611070936.log",
       "history": [
         {
           "at": "2026-11-06T23:51:44+09:00",
@@ -13324,6 +13479,12 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "AC-866・867 の改訂に合わせ、ポップアップ表示後の離し方のテストを追加（未実行）"
+        },
+        {
+          "at": "2026-11-07T09:35:35+09:00",
+          "by": "test-designer",
+          "change": "title: '雛形のポップアップ（Snap Layouts）: 上端の中央に 300ms でポップアップ・区画どおりの配置と再読込、タッチ・ペンは入力ごとに初期配置から独立に（24px 以上・スクロール/ズームなし）、2x2 の順次の埋め（ピン止め除外）、異常系: 300ms 未満で出ない・300ms 未満の離しは最大化・Esc/外の押下で配置不変、ポップアップ表示後の離し方（内側は配置不変、外へ出ると閉じて左端は左半分・端でない位置は配置不変、戻って 300ms で再表示。AC-866・867 は integration のため ac_ids 外）' -> '雛形のポップアップ（Snap Layouts）: 上端の中央に PARAM-144 ms とどめるとポップアップ・区画どおりの配置と再読込、タッチ・ペンは入力ごとに初期配置から独立に（24px 以上・スクロール/ズームなし）、2x2 の順次の埋め（ピン止め除外）、異常系: PARAM-144 ms 未満で出ない・PARAM-144 ms 未満の離しは最大化・Esc/外の押下で配置不変。同じ実行で、ポップアップ表示後に外へ出て離す場合（内側は配置不変、左端は左半分、命中範囲の外の上端は最大化、端でない位置は配置不変、戻って PARAM-144 ms で再表示）も確かめる'",
+          "reason": "f07e033 の AC-867・868・869 への分割に合わせる。ケース ⑤（命中範囲の外の上端で最大化）を追加。誤解を招く AC を題名から外し、300 ms の直書きを PARAM-144 に"
         }
       ]
     }

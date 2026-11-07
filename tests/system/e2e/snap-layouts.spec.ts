@@ -354,16 +354,18 @@ test.describe('FR-305 上端の中央へのドラッグでのレイアウトの�
     });
   });
 
-  // FR-305 AC-866 AC-867（検証レベルは integration のため台帳の ac_ids には入れない。AC-859 のポップアップの表示・消去の延長として、同じ run.mjs の AC-859 で実行する）。
-  // Q-073 A。ポップアップの表示後の離し方（commit 640c9ff の改訂）。マウス（実入力）で確かめる。
+  // FR-305 AC-866 AC-867 AC-868（検証レベルはいずれも integration のため台帳の ac_ids には入れない。AC-859 のポップアップの表示・消去の延長として、同じ run.mjs の AC-859 で実行する）。
+  // Q-073 A。ポップアップの表示後の離し方（commit 640c9ff の改訂、f07e033 で AC-867・868・869 に分割）。マウス（実入力）で確かめる。
+  // AC-869（共有する境界のリサイズ）は FR-152 の AC-796 と同じ挙動で integration のため、ここでは扱わない。
   // ① ポップアップ（または命中範囲）の内側で離す → ポップアップが閉じ、配置は操作の前と同じ（AC-866）。
   // ② 外へ出て、どの端・角の範囲でもない位置で離す → ポップアップは外へ出た時点で閉じ、離しても最大化・半分にならない（AC-867）。戻らない間は再表示されない。
   // ③ 外へ出て左端（端から PARAM-042 以内）で離す → ポップアップは外へ出た時点で閉じ、AC-793 の左半分になる（AC-867）。
-  // ④ 外へ出たあと同じドラッグで命中範囲へ戻り PARAM-144 ms とどまる → 再び表示され、区画で離すとその配置になる（AC-867）。
+  // ④ 外へ出たあと同じドラッグで命中範囲へ戻り PARAM-144 ms とどまる → 再び表示され、区画で離すとその配置になる（AC-868）。
+  // ⑤ 外へ出て、命中範囲の外の上端で離す → ポップアップは閉じ、AC-793 の最大化になる（AC-867）。
   // ポップアップを出すまでは dragToHitAndDwell が PARAM-144 ms の滞留・プレビュー→ポップアップの順を確かめる。
   // 再表示までの時間は、ページ内の pointermove の時刻（timeStamp と performance.now の小さい方を入場時刻とする）と
   // 毎フレームの表示記録の差で測り、Node の往復を含めない（負荷で下限の判定が緩む向きにだけずれる）。
-  test('FR-305 AC-859 AC-866 AC-867 マウスでポップアップの内側で離すと配置不変、外へ出ると閉じて端・角ならスナップ（左端は左半分）・端でない位置なら配置不変、戻って 300 ms とどまると再表示される', async ({ page, start }) => {
+  test('FR-305 AC-859 AC-866 AC-867 AC-868 マウスでポップアップの内側で離すと配置不変、外へ出ると閉じて端・角ならスナップ（左端は左半分・命中範囲の外の上端は最大化）・端でない位置なら配置不変、戻って PARAM-144 ms とどまると再表示される', async ({ page, start }) => {
     await start();
     await selectPersona(page, '事業部門');
     const [a] = await topKeys(page);
@@ -402,7 +404,7 @@ test.describe('FR-305 上端の中央へのドラッグでのレイアウトの�
     await expect(popup(page)).toBeHidden();
     expectRect(await box(c), zoneRect(ws, '1', 1), ws, '左端で離したときの配置（AC-793: 左半分）');
 
-    // ④ AC-867: 外へ出て閉じたあと、同じドラッグで命中範囲へ戻り PARAM-144 ms とどまると再表示され、区画で離すとその配置になる
+    // ④ AC-868: 外へ出て閉じたあと、同じドラッグで命中範囲へ戻り PARAM-144 ms とどまると再表示され、区画で離すとその配置になる
     const hit4 = await dragToHitAndDwell(page, m, c, ws, 'マウス（再表示）');
     await glide(m, hit4, mid, 4);
     await expect(popup(page), '外へ出てもポップアップが閉じない（再表示の前提）').toBeHidden();
@@ -426,6 +428,16 @@ test.describe('FR-305 上端の中央へのドラッグでのレイアウトの�
     expect(reSeen! - reEntered!, `命中範囲へ戻ってから ${DWELL_MS} ms 経つ前に再表示された`).toBeGreaterThanOrEqual(DWELL_MS - 30);
     await dropOnZone(page, m, hit4, '1', 2);
     expectRect(await box(c), zoneRect(ws, '1', 2), ws, '再表示した ① の右 1/2 に配置');
+
+    // ⑤ AC-867: 外へ出て、命中範囲の外の上端（上端から PARAM-042 以内で、中央の幅の外。角ではない）で離す → ポップアップは閉じ、AC-793 の最大化になる
+    const hit5 = await dragToHitAndDwell(page, m, c, ws, 'マウス（命中範囲の外の上端で離す）');
+    const topOutside: Pt = { x: ws.x + ws.width * 0.1, y: ws.y + SNAP_EDGE / 2 };
+    await glide(m, hit5, topOutside, 8);
+    await expect(popup(page), '外へ出て命中範囲の外の上端へ動かしてもポップアップが閉じない').toBeHidden();
+    await m.up(topOutside.x, topOutside.y);
+    await expect(popup(page)).toBeHidden();
+    await expect(c, '命中範囲の外の上端で離したのに最大化されない（AC-793）').toHaveAttribute('data-maximized', 'true');
+    expectRect(await box(c), ws, ws, '命中範囲の外の上端で離したときの配置（AC-793: 最大化＝作業領域いっぱい）');
   });
 
   // FR-305 AC-864（3 区画以上の雛形の順次の埋め。正常系: 次の区画の強調・候補〔表示中・ピン止め以外〕・選ぶと配置され次へ。
