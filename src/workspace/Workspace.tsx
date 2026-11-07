@@ -21,7 +21,7 @@ import { useAreaViewport } from './useAreaViewport';
 import { PresentationInkLayer } from './PresentationInkLayer';
 import { WorkspaceOverview } from './WorkspaceOverview';
 import { PaneContext, type PaneInfo } from './PaneContext';
-import { COMPACT_CELL_HEIGHT, isCompactWidth, stackedLeaves } from './compact';
+import { COMPACT_CELL_HEIGHT, isCompactWidth, stackedCells } from './compact';
 import { clampInto, nearestFree, overlapArea, placeNew, resizeRect, resolveAround, resolveOverlaps, type PxMap, type PxRect, type ResizeEdge } from './freeLayout';
 import { minBorderSize, moveBorder, planSnap, remainingRegion, sharedBorders, type Border } from './snapFloat';
 import { PIN_MOVE_REASON, PIN_NO_ROOM_REASON, PIN_RESIZE_REASON, PIN_TABS_REASON, NO_RESIZE_REASON } from './paneActions';
@@ -1343,8 +1343,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
 
   const renderStack = (root: LayoutNode): JSX.Element => (
     <div className={s.stack}>
-      {/* ピン止めしたものを先頭に置く（FR-216 AC-497） */}
-      {[...stackedLeaves(root)].sort((x, y) => Number(y.tabs.some((k) => pinSet.has(k))) - Number(x.tabs.some((k) => pinSet.has(k)))).map((leafNode, i) => (
+      {/* ピン止めしたものはタブ化せず、縦積みの先頭に置く（FR-216 AC-497・AC-886 Q-101 A） */}
+      {stackedCells(root, pinSet).map((leafNode, i) => (
         <div key={`k${leafNode.tabs.join('+')}`} className={s.stackCell} data-stacked={i} style={leafNode.tabs.every((k) => minSet.has(k)) && maximized === null ? { height: MINIMIZED_HEIGHT } : undefined}>
           {render(leafNode, [i])}
         </div>

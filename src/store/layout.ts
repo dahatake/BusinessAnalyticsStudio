@@ -144,6 +144,8 @@ interface LayoutState {
   behind: Partial<Record<Persona, string[]>>;
   setBehind: (keys: string[]) => void;
   bringFromBehind: (key: string) => void;
+  /** 前面に出した key 以外で上限（PARAM-136）を超える分を、最小化できる対象があれば 1 つ最小化する（なければ超過を許す） */
+  trimOverLimit: (key: string) => void;
   /** 取り消し用に、いまの状態を覚える */
   saveAutoUndo: () => void;
   /** 自動配置を取り消し、実行前の状態へ戻す。戻せたら true */
@@ -338,15 +340,20 @@ export const useLayout = create<LayoutState>()(
           const st = get();
           const behindNow = st.behind[st.persona] ?? [];
           if (!behindNow.includes(key)) { st.raise(key); return; }
+          st.raise(key); // 背面の扱いを外し、前面へ（通常の表示中）
+          get().trimOverLimit(key);
+        },
+        // 前面に出したあと、表示中（背面・最小化・閉じたものを除く）が PARAM-136 を超えるときは、key 以外で最も長く使っていない（ピン止めしていない）ものを 1 つ最小化する。
+        // 最小化できる対象がなければ超過を許す（FR-296・AC-886 Q-102 A）。上限判定の保留中は最小化しない（AC-883）
+        trimOverLimit: (key) => {
+          const st = get();
           const off = new Set([...(st.closed[st.persona] ?? []), ...(st.parked[st.persona] ?? []), ...(st.minimized[st.persona] ?? [])]);
-          const behindSet = new Set(behindNow);
+          const behindSet = new Set(st.behind[st.persona] ?? []);
           const pinnedSet = new Set(Object.keys(st.pinned[st.persona] ?? {}));
           const shownBefore = [...new Set([...keysOf(effectiveLayout(st)), ...Object.keys(st.floats[st.persona] ?? {})])].filter((k) => !off.has(k) && !behindSet.has(k) && k !== key);
           const pinnedN = shownBefore.filter((k) => pinnedSet.has(k)).length;
           const held = isLimitHeld(pinnedN, shownBefore.length - pinnedN);
-          const over = shownBefore.length + 1 > MAX_DEFAULT_VISIBLE;
-          st.raise(key); // 背面の扱いを外し、前面へ（通常の表示中）
-          if (over && !held) {
+          if (shownBefore.length + 1 > MAX_DEFAULT_VISIBLE && !held) {
             const victim = pickOldest(shownBefore.filter((k) => !pinnedSet.has(k)), st.usedAt);
             if (victim !== undefined) get().setMinimized(victim, true);
           }

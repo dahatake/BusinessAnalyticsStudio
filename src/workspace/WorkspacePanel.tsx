@@ -9,6 +9,7 @@ import { Add20Regular, WindowArrowUp20Regular } from '@fluentui/react-icons';
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
 import { recentWorkspaces, useActiveWorkspace, useTaskWorkspaces, workspaceLabel } from '../store/taskWorkspaces';
 import { useImmersion } from '../store/immersion';
+import { useLayout } from '../store/layout';
 import { useOs } from '../store/osConvention';
 import { chordLabel } from './os';
 import { frameSurfaceStyle } from '../theme/frameMaterial';
@@ -77,9 +78,13 @@ export function WorkspacePanel() {
   const t = useT();
   const items = useTaskWorkspaces((st) => st.items);
   const active = useActiveWorkspace();
-  const setMode = useTaskWorkspaces((st) => st.setMode);
+  const setModeRaw = useTaskWorkspaces((st) => st.setMode);
+  // 最大化中のモードの切替・ゾーンの結合は、先に最大化を解いてから行う（FR-295 AC-887 ⑨・Q-103 A）
+  const unmaximize = (): void => { const l = useLayout.getState(); if (l.maximized !== null) l.setMaximized(null); };
+  const setMode: typeof setModeRaw = (m) => { unmaximize(); setModeRaw(m); };
   const setRatio = useTaskWorkspaces((st) => st.setRatio);
-  const merge = useTaskWorkspaces((st) => st.merge);
+  const mergeRaw = useTaskWorkspaces((st) => st.merge);
+  const merge: typeof mergeRaw = (z) => { unmaximize(); mergeRaw(z); };
   const unmerge = useTaskWorkspaces((st) => st.unmerge);
   const [picked, setPicked] = useState<ReadonlySet<ZoneName>>(new Set());
   const os = useOs();
