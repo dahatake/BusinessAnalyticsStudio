@@ -145,6 +145,8 @@ const useStyles = makeStyles({
     '& [data-cell="true"]': {
       ...followDurationOverride,
       transitionProperty: 'flex-grow',
+      // 大きさが毎フレーム変わる間、セルの中の変化を外へ広げず、描画のまとまりを細かくしない（1 フレームの描画を軽くする。FR-185 AC-393）
+      contain: 'layout style',
       // ポインターへの追従: 等速・短時間（Q-039 A。遷移のアニメーションの対象外）
       transitionDuration: MOTION.follow.duration,
       transitionTimingFunction: MOTION.follow.easing,
