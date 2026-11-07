@@ -207,6 +207,70 @@ describe('FR-296 AC-883 上限判定の保留', () => {
   });
 });
 
+// FR-296 AC-883 の例: ピン止め 2・区画 4（合計 6 > PARAM-136=4）の保留状態。区画は雛形の区画（自由配置）として置く
+describe('FR-296 AC-883 保留状態でのリサイズ・結合・前面化・再表示（ストア）', () => {
+  const SLOTS = ['issue-solution', 'discussion-tree', 'table', 'gantt'];
+  async function heldStore() {
+    const { useLayout, setWorkspaceArea } = await freshStore();
+    setWorkspaceArea(1280, 800);
+    const st = () => useLayout.getState();
+    st().setPersona('事業部門');
+    st().setPinned('summary', { x: 0, y: 0, w: 0.3, h: 0.3 });
+    st().setPinned('kpi-okr', { x: 0.7, y: 0, w: 0.3, h: 0.3 });
+    const grid = [[0, 0.3], [0.5, 0.3], [0, 0.65], [0.5, 0.65]] as const;
+    SLOTS.forEach((k, i) => st().setFloat(k, { x: grid[i]![0], y: grid[i]![1], w: 0.5, h: 0.35 }));
+    const snap = () => JSON.stringify([st().closed, st().parked, st().minimized]);
+    return { st, snap };
+  }
+  const slotRects = (st: () => ReturnType<Awaited<ReturnType<typeof freshStore>>['useLayout']['getState']>) => SLOTS.map((k) => st().floats[st().persona]![k]);
+  it('FR-296 AC-883 前面化（raise）・区画の再配置（リサイズ）・結合（タブ）でも、区画は最小化・閉じられず、ピン止めは動かない', async () => {
+    const { st, snap } = await heldStore();
+    const before = snap();
+    const pinsBefore = JSON.stringify(st().pinned);
+    for (const k of SLOTS) st().raise(k);
+    expect(snap()).toBe(before);
+    // リサイズ（区画の矩形を大きくする）
+    st().setFloats({ gantt: { x: 0.5, y: 0.65, w: 0.5, h: 0.3 } });
+    expect(snap()).toBe(before);
+    // 結合（区画 2 つを同じタブへ）
+    st().mergeTabs('table', 'gantt');
+    expect(snap()).toBe(before);
+    expect(JSON.stringify(st().pinned)).toBe(pinsBefore);
+    for (const k of SLOTS) expect(st().closed[st().persona] ?? []).not.toContain(k);
+  });
+  it('FR-296 AC-883 モードの切替（ペルソナの切替と戻し）でも区画は上限超過を理由に最小化されず、位置のまま残る', async () => {
+    const { st, snap } = await heldStore();
+    const before = snap();
+    const rects = JSON.stringify(slotRects(st));
+    st().setPersona('IT'); st().setPersona('事業部門');
+    expect(snap()).toBe(before);
+    expect(JSON.stringify(slotRects(st))).toBe(rects);
+  });
+  it('FR-296 AC-883 保留中に領域が足りなくなる再表示では、ピン止めでないものが 1 つだけ最小化され、ピン止めは動かず、閉じられない', async () => {
+    const { useLayout, setWorkspaceArea } = await freshStore();
+    setWorkspaceArea(W, 530);
+    const st = () => useLayout.getState();
+    st().setPersona('事業部門');
+    st().setPinned('summary', { x: 0, y: 0, w: 0.3, h: 0.3 });
+    st().setPinned('kpi-okr', { x: 0.7, y: 0, w: 0.3, h: 0.3 });
+    const pins = JSON.stringify(st().pinned);
+    st().showComponent('priority');
+    const off = [...(st().parked[st().persona] ?? []), ...(st().minimized[st().persona] ?? [])];
+    expect(off.length).toBeLessThanOrEqual(1);
+    expect(st().closed[st().persona] ?? []).toEqual([]);
+    expect(off).not.toContain('summary');
+    expect(off).not.toContain('kpi-okr');
+    expect(JSON.stringify(st().pinned)).toBe(pins);
+  });
+  it('FR-296 AC-883 保留中でも領域が足りるなら再表示で何も最小化されない（上限超過を理由にしない）', async () => {
+    const { st } = await heldStore();
+    const before = JSON.stringify(st().minimized);
+    st().showComponent('priority');
+    expect(JSON.stringify(st().minimized)).toBe(before);
+    expect(st().closed[st().persona] ?? []).not.toContain('priority');
+  });
+});
+
 describe('FR-216 AC-884 ピン止めの復元（保留中かどうかによらない）', () => {
   const R = (x: number, y: number, w: number, h: number) => ({ x, y, w, h });
   it('FR-216 AC-884 重なった区画だけリサイズし、下限未満になる区画だけ最小化する。重ならない区画は変えない', () => {
