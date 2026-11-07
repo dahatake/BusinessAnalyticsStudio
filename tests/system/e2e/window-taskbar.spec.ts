@@ -520,7 +520,7 @@ test.describe('FR-295 左メニューのバッジ・青いバーと見出しの 
 // 背面の状態は §34 の追補（data-state="behind"、文字は「背面」）。背面の作り方は AC-865 の前提（区画より表示中のコンポーネントが多い）。
 // 注: AC-865・873・874・875・876 は integration のためこのケースの ac_ids に入れない（ここでは前提として使うだけ）。
 test.describe('FR-295 背面（雛形で配置して背面に回ったコンポーネント）', () => {
-  test('FR-295 AC-797 AC-824 AC-872 雛形で配置して背面に回ったコンポーネントが一覧に「背面」と区別して並び、左メニューのバッジ・バーに出ず、項目を押すと前面に出て通常の表示中になりバー・バッジの数に含まれる', async ({ page, start }) => {
+  test('FR-295 AC-797 AC-824 AC-872 雛形で配置して背面に回ったコンポーネントが一覧に「背面」と区別して並び、左メニューのバッジ・バーに出ず、項目を押すと前面に出て通常の表示中になりバー・バッジの数に含まれる。背面のままでは押す・フォーカス・Ctrl+Alt+PageDown／PageUp の巡回で前面に出ない', async ({ page, start }) => {
     await start();
     await setup(page);
     const ks = await shown(page);
@@ -576,6 +576,31 @@ test.describe('FR-295 背面（雛形で配置して背面に回ったコンポ�
       await expect(bar(page, sc), `${sc}: 背面だけの画面に青いバーを出さない`).toHaveCount(0);
     }
 
+    // AC-872（改訂・異常系）: 背面のままのコンポーネントは、本体・見出しを押す／フォーカスしても前面に出ない（一覧からの呼び出し以外では背面のまま。AC-873）
+    // 背面のコンポーネントは区画の裏にあるため、座標でなく要素へ直接イベントを送る（空の区画から見える場合の操作と同じ結果を期待する）。
+    const stay = async (msg: string) => {
+      for (const k of rest) await expect(item(page, k), `${k}: ${msg}`).toHaveAttribute('data-state', 'behind');
+    };
+    for (const k of rest) {
+      await component(page, k).dispatchEvent('pointerdown');
+      await component(page, k).dispatchEvent('mousedown');
+      await component(page, k).dispatchEvent('click');
+      await component(page, k).getByRole('heading').first().dispatchEvent('click');
+      await component(page, k).focus().catch(() => {});
+      await component(page, k).getByRole('heading').first().focus().catch(() => {});
+    }
+    await stay('本体・見出しを押す・フォーカスしても背面のまま');
+    // AC-872（改訂・異常系）: Ctrl+Alt+PageDown／PageUp の切替の巡回に背面が現れない（巡回は表示中のものだけ。何周しても背面は前面にならない）
+    for (const key of ['Control+Alt+PageDown', 'Control+Alt+PageUp']) {
+      for (let i = 0; i < ks.length + 2; i++) {
+        await page.keyboard.press(key);
+        const cur = await states(page);
+        for (const k of rest) expect(cur[k], `${key} ${i + 1} 回目: ${k} は巡回に現れず背面のまま`).toBe('behind');
+      }
+      await page.keyboard.press('Escape'); // 切替の最中なら取消（優先順は §32）
+    }
+    await stay('切替の巡回のあとも背面のまま');
+    expect(Object.values(await states(page)).filter((v) => v === 'front').length, '前面は 1 つだけ').toBe(1);
     // AC-872: 背面の項目を押すと前面に出て、通常の表示中になる（FR-173 の自由配置の重なりとして扱われ、ほかを動かさない）
     const r = rest.find((k) => behindOnly.includes(screenOf(k)))!;
     await item(page, r).click();
