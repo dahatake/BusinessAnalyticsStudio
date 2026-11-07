@@ -239,7 +239,7 @@ test.describe('FR-184 移動中の他のコンポーネントの自動の押し�
 });
 
 /** ドラッグ中に、rAF ごとの位置を記録し、位置が変わったフレーム数から fps を求める。 */
-async function sampleDrag(page: Page, c: Locator, act: () => Promise<void>): Promise<{ fps: number; maxJump: number; frames: number }> {
+async function sampleDrag(page: Page, c: Locator, act: () => Promise<void>): Promise<{ fps: number; maxJump: number; frames: number; deltas: number[] }> {
   await c.evaluate((el) => {
     const w = window as any;
     w.__stPos = [];
@@ -255,6 +255,7 @@ async function sampleDrag(page: Page, c: Locator, act: () => Promise<void>): Pro
   const rows = await page.evaluate(() => { const w = window as any; w.__stRun = false; return w.__stPos as number[][]; });
   let changed = 0;
   let maxJump = 0;
+  const deltas: number[] = [];
   let first = -1;
   let last = -1;
   for (let i = 1; i < rows.length; i++) {
@@ -262,6 +263,7 @@ async function sampleDrag(page: Page, c: Locator, act: () => Promise<void>): Pro
     // 追従は小数の px で補間されて変わる（ポインターが遅いと 1 フレームの変化は 0.5px 未満）。サブピクセルの変化も「変化したフレーム」と数える。
     if (d > 0.01) {
       changed++;
+      deltas.push(d);
       if (first < 0) first = i;
       last = i;
     }
@@ -269,10 +271,42 @@ async function sampleDrag(page: Page, c: Locator, act: () => Promise<void>): Pro
   }
   // 操作中（最初に変わったフレームから最後に変わったフレームまで）の、1 秒あたりに変わったフレーム数。操作の前後の待ち（ポインターを置く前・離した後の静止）は含めない。
   const seconds = first >= 0 ? (rows[last][0] - rows[first - 1][0]) / 1000 : 0;
-  return { fps: seconds > 0 ? changed / seconds : 0, maxJump, frames: rows.length };
+  return { fps: seconds > 0 ? changed / seconds : 0, maxJump, frames: rows.length, deltas };
+}
+
+/**
+ * 連続性の判定（FR-185 AC-393）。1 フレームの最大変化（maxJump）は、負荷でメインスレッドが 1 回止まると大きく見えるため使わない。
+ * 変化したフレームごとの変化量 deltas について、総変化量に占める割合で見る:
+ *  - 変化したフレームが 10 以上ある（動きが複数のフレームに分かれている）
+ *  - 最大の 1 フレームが総変化量の 50% 以下
+ *  - 総変化量の 25% を超えるフレームが 1 つ以下（止まりが 1 回あっても通る。瞬間的な切り替えは 1 フレームに大半が集まるので落ちる）
+ */
+function judgeContinuity(deltas: number[]): { ok: boolean; reason: string } {
+  const total = deltas.reduce((s, v) => s + v, 0);
+  if (deltas.length < 10 || total <= 0) return { ok: false, reason: `変化したフレームが ${deltas.length} 個しかない` };
+  const maxShare = Math.max(...deltas) / total;
+  const big = deltas.filter((v) => v > total * 0.25).length;
+  if (maxShare > 0.5) return { ok: false, reason: `1 フレームに総変化量の ${(maxShare * 100).toFixed(0)}% が集中している` };
+  if (big > 1) return { ok: false, reason: `総変化量の 25% を超えるフレームが ${big} 個ある` };
+  return { ok: true, reason: '' };
 }
 
 test.describe('FR-185 移動中・リサイズ中の滑らかなアニメーション', () => {
+  // FR-185 AC-393（判定関数の自己検証。合成データ）
+  test('FR-185 AC-393 連続性の判定関数: 連続した変化・1 回の止まりは通り、瞬間的な切り替えは落ちる', () => {
+    const smooth = Array.from({ length: 40 }, () => 3.6);
+    expect(judgeContinuity(smooth).ok, '等速').toBe(true);
+    const stalled = [...smooth.slice(0, 20), 62.5, ...smooth.slice(21)]; // 負荷で 1 回止まり 1 フレームだけ大きい（実測 62.5px）
+    expect(judgeContinuity(stalled).ok, '1 回の止まり').toBe(true);
+    const twoStalls = [...smooth.slice(0, 10), 40, 40, ...smooth.slice(12)];
+    expect(judgeContinuity(twoStalls).ok, '2 回の止まり（総量 ~180 のうち各 22%）').toBe(true);
+    const instant = [...Array.from({ length: 20 }, () => 0.2), 120, ...Array.from({ length: 20 }, () => 0.2)];
+    expect(judgeContinuity(instant).ok, '1 フレームで総量の大半を飛ぶ').toBe(false);
+    const twoJumps = [...Array.from({ length: 20 }, () => 0.2), 60, ...Array.from({ length: 10 }, () => 0.2), 60, ...Array.from({ length: 10 }, () => 0.2)];
+    expect(judgeContinuity(twoJumps).ok, '大きな飛びが 2 回').toBe(false);
+    expect(judgeContinuity([100, 5, 5]).ok, '変化が数フレームしかない').toBe(false);
+  });
+
   // FR-185 AC-392
   test('FR-185 AC-392 ハンドルのドラッグ中、ポインターに追従して連続して動き、操作中のフレームレートが 30fps 以上で、ドロップの瞬間に位置が飛ばない', async ({ page, start }) => {
     await start();
@@ -346,7 +380,9 @@ test.describe('FR-185 移動中・リサイズ中の滑らかなアニメーシ�
       await page.mouse.up();
     });
     expect(r.fps, `リサイズ中のフレームレート ${r.fps.toFixed(1)}fps`).toBeGreaterThanOrEqual(MIN_FPS);
-    // 「瞬間的に切り替わらず連続して動く」は異常系のテストが見る（1 フレームの最大変化は、負荷でメインスレッドが止まると大きく見えるため、ここでは確認しない）
+    // 連続性: 最大の 1 フレームではなく、総変化量に占める割合で判定する（負荷で 1 回止まっても通る）
+    const cont = judgeContinuity(r.deltas);
+    expect(cont.ok, `大きさが連続して変わっていない: ${cont.reason}`).toBe(true);
     const a = await box(c);
     expect(Math.abs(a.width - b.width) + Math.abs(a.height - b.height), '大きさが変わっていない').toBeGreaterThan(2);
   });
@@ -374,5 +410,7 @@ test.describe('FR-185 移動中・リサイズ中の滑らかなアニメーシ�
     const a = await box(c);
     expect(a.x + a.width, '右端がキャンバスの外').toBeLessThanOrEqual(ws.x + ws.width + 2);
     expect(r.frames, 'フレームが記録されていない').toBeGreaterThan(5);
+    const cont = judgeContinuity(r.deltas);
+    expect(cont.ok, `瞬間的に切り替わった: ${cont.reason}`).toBe(true);
   });
 });
