@@ -11,7 +11,7 @@ import { snapLayout, type SnapKind, type SnapOpts } from '../workspace/snap';
 import { autoTree } from '../workspace/autoLayout';
 import { TIERS, classify, type Tier, type TierOverrides } from '../workspace/tiers';
 import { VIEW_MODES, WORLD_VIEWS, type ViewMode, type WorldView } from '../view/viewModel';
-import { MIN_WINDOW_H, MIN_WINDOW_W, makeRoom } from '../workspace/windowLimits';
+import { MAX_DEFAULT_VISIBLE, MIN_WINDOW_H, MIN_WINDOW_W, decideShortage, isLimitHeld, makeRoom, pickOldest } from '../workspace/windowLimits';
 
 /** コンポーネントごとのビューの切替の状態（FR-217・FR-218）。持たない項目は既定（表示モードは画面の既定、世界の表示は「両方」） */
 export interface ViewSetting { mode?: ViewMode; world?: WorldView }
@@ -142,6 +142,7 @@ interface LayoutState {
    * FR-184 の押し出しと FR-296 の最小化の対象にしない。前面に出す（raise）と外れ、FR-173 の自由配置の重なりとして扱う */
   behind: Partial<Record<Persona, string[]>>;
   setBehind: (keys: string[]) => void;
+  bringFromBehind: (key: string) => void;
   /** 取り消し用に、いまの状態を覚える */
   saveAutoUndo: () => void;
   /** 自動配置を取り消し、実行前の状態へ戻す。戻せたら true */
@@ -323,7 +324,32 @@ export const useLayout = create<LayoutState>()(
             : { zOrder: [...s.zOrder.filter((k) => k !== key), key], usedAt: { ...s.usedAt, [key]: ++useClock }, ...behind };
         }),
         behind: {},
-        setBehind: (keys) => set((s) => ({ behind: { ...s.behind, [s.persona]: [...new Set(keys)] } })),
+        // 背面の並びは「背面へ回った順」（最後が直近。FR-295 Q-084 A: 左メニューは最後に背面へ回ったものを前面に出す）。すでに背面のものは順を保ち、新しく加わるものを後ろへ足す
+        setBehind: (keys) => set((s) => {
+          const prev = s.behind[s.persona] ?? [];
+          const next = [...new Set(keys)];
+          const ordered = [...prev.filter((k) => next.includes(k)), ...next.filter((k) => !prev.includes(k))];
+          return { behind: { ...s.behind, [s.persona]: ordered } };
+        }),
+        // 一覧・左メニューから背面のものを前面に出す（FR-295 Q-083 A）。位置・大きさは背面へ回る前のまま（floats に残している）。
+        // 表示中（背面を除く）が PARAM-136 を超えるときは、前面に出したもの以外で最も長く使っていない（ピン止めしていない）ものを 1 つ最小化する。上限判定の保留中は最小化しない（AC-883）
+        bringFromBehind: (key) => {
+          const st = get();
+          const behindNow = st.behind[st.persona] ?? [];
+          if (!behindNow.includes(key)) { st.raise(key); return; }
+          const off = new Set([...(st.closed[st.persona] ?? []), ...(st.parked[st.persona] ?? []), ...(st.minimized[st.persona] ?? [])]);
+          const behindSet = new Set(behindNow);
+          const pinnedSet = new Set(Object.keys(st.pinned[st.persona] ?? {}));
+          const shownBefore = [...new Set([...keysOf(effectiveLayout(st)), ...Object.keys(st.floats[st.persona] ?? {})])].filter((k) => !off.has(k) && !behindSet.has(k) && k !== key);
+          const pinnedN = shownBefore.filter((k) => pinnedSet.has(k)).length;
+          const held = isLimitHeld(pinnedN, shownBefore.length - pinnedN);
+          const over = shownBefore.length + 1 > MAX_DEFAULT_VISIBLE;
+          st.raise(key); // 背面の扱いを外し、前面へ（通常の表示中）
+          if (over && !held) {
+            const victim = pickOldest(shownBefore.filter((k) => !pinnedSet.has(k)), st.usedAt);
+            if (victim !== undefined) get().setMinimized(victim, true);
+          }
+        },
         setExpanded: (key) => set((s) => ({
           expanded: key,
           ...(key ? { maximized: null, minimized: { ...s.minimized, [s.persona]: (s.minimized[s.persona] ?? []).filter((k) => k !== key) } } : {}),
@@ -382,7 +408,21 @@ export const useLayout = create<LayoutState>()(
             if (areaSize.w <= 0) return;
             const cur = effectiveLayout(st);
             // 雛形の背面のもの（FR-305）は最小化の対象にしない
-            const { layout, dropped } = makeRoom(cur, areaSize.w, { protect: [key, ...(st.behind[st.persona] ?? [])], pinned: new Set(Object.keys(st.pinned[st.persona] ?? {})), usedAt: st.usedAt });
+            const behindSet = new Set(st.behind[st.persona] ?? []);
+            const pinnedSet = new Set(Object.keys(st.pinned[st.persona] ?? {}));
+            // 上限判定の保留（FR-296 Q-082 B）: ピン止めと区画の合計が PARAM-136 を超える間は、領域不足のとき最も長く使っていない 1 つだけを最小化し、対象がなければ取り消す
+            const off = new Set([...(st.closed[st.persona] ?? []), ...(st.parked[st.persona] ?? []), ...(st.minimized[st.persona] ?? [])]);
+            // 区画は自由配置（雛形の区画も自由配置）のものだけ。木の配置だけのときは雛形の区画がなく、保留はない
+            const floatKeys = Object.keys(st.floats[st.persona] ?? {});
+            const shown = [...new Set([...keysOf(cur), ...floatKeys])].filter((k) => !off.has(k) && !behindSet.has(k));
+            const pinnedShownN = shown.filter((k) => pinnedSet.has(k)).length;
+            const held = floatKeys.length > 0 && pinnedShownN > 0 && isLimitHeld(pinnedShownN, shown.length - pinnedShownN);
+            const { layout, dropped, fits } = makeRoom(cur, areaSize.w, { protect: [key, ...behindSet], pinned: pinnedSet, usedAt: st.usedAt, ...(held ? { maxDrop: 1 } : {}) });
+            if (held && !fits && dropped.length === 0 && decideShortage({ held, candidates: shown.filter((k) => k !== key), pinned: pinnedSet, behind: behindSet, usedAt: st.usedAt }).action === 'cancel') {
+              // 最小化できる対象が 1 つもない: 操作を取り消して直前の状態へ戻す（上限超過は許さない）
+              set({ closed: s.closed, parked: s.parked, minimized: s.minimized, layouts: s.layouts, floats: s.floats, revealed: null });
+              return;
+            }
             if (dropped.length === 0) return;
             for (const k of dropped) dropFloat(k);
             set({ layouts: { ...st.layouts, [st.persona]: layout }, parked: { ...st.parked, [st.persona]: [...new Set([...(st.parked[st.persona] ?? []), ...dropped])] } });

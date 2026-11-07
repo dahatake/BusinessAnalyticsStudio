@@ -222,7 +222,7 @@ test.describe('FR-296 既定の構成と最小サイズ', () => {
 
 test.describe('FR-297 没入表示・奥行き', () => {
   // FR-297 AC-802
-  test('FR-297 AC-802 最大化で背面が 60% 暗くなり操作できず全体を占め、Esc と一覧の操作で戻り、絞り込みが変わらない', async ({ page, start }) => {
+  test('FR-297 AC-802 最大化で奥のコンポーネントが 60% 暗くなり操作できず全体を占め、Esc と一覧の操作で戻り、絞り込みが変わらない', async ({ page, start }) => {
     await start();
     await setup(page);
     const [a, b] = await shown(page);
@@ -263,7 +263,7 @@ test.describe('FR-297 没入表示・奥行き', () => {
 
   // FR-297 AC-803
   for (const theme of ['light', 'dark', 'hc'] as const) {
-    test(`FR-297 AC-803 ${theme}: 前面は背面より強い影か境界線と見出しの強調（文字かアイコン）で区別でき、見出しの文字が AA`, async ({ page, start }) => {
+    test(`FR-297 AC-803 ${theme}: 前面は奥のコンポーネントより強い影か境界線と見出しの強調（文字かアイコン）で区別でき、見出しの文字が AA`, async ({ page, start }) => {
       await start();
       if (theme === 'hc') await page.emulateMedia({ forcedColors: 'active' });
       else await page.emulateMedia({ colorScheme: theme, forcedColors: 'none' });
