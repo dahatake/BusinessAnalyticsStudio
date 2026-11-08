@@ -6332,7 +6332,7 @@
       "ac_ids": [
         "AC-529"
       ],
-      "title": "実UIの手動位置・ピン・取消しと大小を観測（工程順・関連判定は対応表待ち）",
+      "title": "Q-115 全条件: analysis 対応・取消し直前状態の根拠待ち",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-529",
       "canary": false,
@@ -6388,6 +6388,24 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC-529・A-65 の5ステップと画面の対応、関連集合および工程順は承認済み要求に具体的な対応表がなく、要求担当の明文化待ち"
+        },
+        {
+          "at": "2026-11-08T19:37:22+09:00",
+          "by": "test-designer",
+          "change": "title: '実UIの手動位置・ピン・取消しと大小を観測（工程順・関連判定は対応表待ち）' -> 'Q-115 全条件: analysis 対応・取消し直前状態の根拠待ち'",
+          "reason": "run 202611081851: A-65 の登録済み画面の順序と実遷移は E2E-469 に分離し、未確認の analysis と取消し両条件の直前観測をこのケースに残す"
+        },
+        {
+          "at": "2026-11-08T19:37:23+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "A-65 の analysis は登録済み画面との対応が未確認。候補なし／候補を尽くす両条件で画面遷移後・再配置前の位置・サイズ・最小化・前後関係を実 UI から分離して観測できる根拠が不足し、現状の受動観測は同一バッチの再配置・取消しを拒否するため保留"
+        },
+        {
+          "at": "2026-11-08T19:40:01+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "A-65 の analysis は登録済み画面との対応が未確認。候補なし／候補を尽くす両条件で画面遷移後・再配置前の位置・サイズ・最小化・前後関係を実 UI から分離して観測できる根拠が不足し、z-index と DOM 順だけでは複雑な stacking context の真の前後関係も証明できない"
         }
       ]
     },
@@ -13637,11 +13655,11 @@
       "ac_ids": [
         "AC-529"
       ],
-      "title": "Q-115 手動位置・選択入力の保持と候補なし／候補尽くしの原子取消し",
+      "title": "Q-115 登録済み画面の遷移・工程順と手動位置・サイズ・選択入力の保持",
       "layer": "e2e",
       "command": "node tests/system/run-q115.mjs",
       "canary": false,
-      "status": "blocked",
+      "status": "not_run",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -13663,6 +13681,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "現状分析→knowledge-graph と KPI 測定→priority の2遷移先は要求で明示されず、テストの前提に根拠不足。対応表の決定待ち"
+        },
+        {
+          "at": "2026-11-08T19:39:09+09:00",
+          "by": "test-designer",
+          "change": "title: 'Q-115 手動位置・選択入力の保持と候補なし／候補尽くしの原子取消し' -> 'Q-115 登録済み画面の遷移・工程順と手動位置・サイズ・選択入力の保持'",
+          "reason": "run 202611081851: A-65 の確認済み画面だけで実遷移と順序を判定し、マウス・タッチの手動位置とサイズおよび選択・入力を独立検証。未確認 analysis と取消し直前の完全な復帰は E2E-326 に残す"
         }
       ]
     }
