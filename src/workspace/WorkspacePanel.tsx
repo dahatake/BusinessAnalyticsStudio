@@ -7,7 +7,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button, Checkbox, Input, Tab, TabList, Text, makeStyles, tokens } from '@fluentui/react-components';
 import { Add20Regular, WindowArrowUp20Regular } from '@fluentui/react-icons';
 import { Radio, RadioGroup } from '../components/ChoiceRadio';
-import { recentWorkspaces, useActiveWorkspace, useTaskWorkspaces, workspaceLabel } from '../store/taskWorkspaces';
+import { activeWorkspace, recentWorkspaces, useActiveWorkspace, useTaskWorkspaces, workspaceLabel } from '../store/taskWorkspaces';
 import { useImmersion } from '../store/immersion';
 import { useLayout } from '../store/layout';
 import { useOs } from '../store/osConvention';
@@ -80,11 +80,13 @@ export function WorkspacePanel() {
   const active = useActiveWorkspace();
   const setModeRaw = useTaskWorkspaces((st) => st.setMode);
   // 最大化中のモードの切替・ゾーンの結合は、先に最大化を解いてから行う（FR-295 AC-887 ⑨・Q-103 A）
-  const unmaximize = (): void => { const l = useLayout.getState(); if (l.maximized !== null) l.setMaximized(null); };
-  const setMode: typeof setModeRaw = (m) => { unmaximize(); setModeRaw(m); };
+  // 切替・結合が AC-886 で取り消されたとき（操作の結果が変わらなかったとき）は、解いた最大化も元の最大化中へ戻す（AC-887 ⑨・Q-106 A）
+  const unmaximize = (): string | null => { const l = useLayout.getState(); const prev = l.maximized; if (prev !== null) l.setMaximized(null); return prev; };
+  const restoreMax = (prev: string | null, cancelled: boolean): void => { if (prev !== null && cancelled) useLayout.getState().setMaximized(prev); };
+  const setMode: typeof setModeRaw = (m) => { const prev = unmaximize(); setModeRaw(m); restoreMax(prev, activeWorkspace(useTaskWorkspaces.getState()).mode !== m); };
   const setRatio = useTaskWorkspaces((st) => st.setRatio);
   const mergeRaw = useTaskWorkspaces((st) => st.merge);
-  const merge: typeof mergeRaw = (z) => { unmaximize(); mergeRaw(z); };
+  const merge: typeof mergeRaw = (z) => { const prev = unmaximize(); mergeRaw(z); restoreMax(prev, activeWorkspace(useTaskWorkspaces.getState()).merged.length !== z.length); };
   const unmerge = useTaskWorkspaces((st) => st.unmerge);
   const [picked, setPicked] = useState<ReadonlySet<ZoneName>>(new Set());
   const os = useOs();

@@ -27,7 +27,8 @@ export function pressWindow(key: string, state: WindowState, inTree: boolean): v
     a.touch(key);
     if (wasMaximized) useLayout.getState().trimOverLimit(key); // 最大化中からの前面化は、上限を超えるとき FR-296 の規則に従う（AC-887 ⑧）
   } else {
-    a.showComponent(key);
+    // 最大化中に閉じた項目を再表示するときは、AC-886 の取り消しの対象にせず、上限超過を許す（AC-887 ⑧・Q-107 A）
+    a.showComponent(key, wasMaximized ? { noCancel: true } : undefined);
     if (wasMaximized) useLayout.getState().trimOverLimit(key);
   }
 }

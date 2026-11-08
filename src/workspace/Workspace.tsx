@@ -10,7 +10,7 @@ import type { ScreenDefinition } from '../screens/types';
 import { effectiveLayout, personaKeys, useLayout, clampFloat, isPinned, setWorkspaceArea, holdLayoutPersist, type FloatRect } from '../store/layout';
 import { EXPAND_RATIO, useSettings, type ExpandPosition } from '../store/settings';
 import { keysOf, prune, type DropZone, type LayoutNode, type Path, type SplitNode } from './layoutModel';
-import { MIN_COMPONENT_WIDTH, applyAutoSize, fitMinWidth } from './autosize';
+import { applyAutoSize, fitMinWidth } from './autosize';
 import { MIN_WINDOW_H, MIN_WINDOW_W, decideLeftover, enforceMin, floorFloat, isLimitHeld, needHeight, planPinRestore } from './windowLimits';
 import { WindowList } from './WindowList';
 import { IMMERSIVE_DIM_PERCENT, windowStates } from './windowStates';
@@ -507,8 +507,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   }, [taskWs.mode, taskWs.roles, zones, baseKeys, tierInfo]);
   const zonePlan = useMemo(() => placeByRole(zones, effectiveRoles, [...baseKeys]), [zones, effectiveRoles, baseKeys]);
   const zoneHidden = useMemo(() => new Set(zonePlan.hidden), [zonePlan]);
-  // 縮退: 幅が狭いとき、または、ピン止めの比率から求めた幅が最小の幅（PARAM-034）を下回るときは、縦積みにする（FR-216 AC-497）
-  const pinTooNarrow = width > 0 && Object.entries(pinnedMap ?? {}).some(([k, r]) => baseKeys.has(k) && r.w * width < MIN_COMPONENT_WIDTH);
+  // 縮退: 幅が狭いとき、または、ピン止めの比率から求めた幅が最小の幅（PARAM-134 = MIN_WINDOW_W）を下回るときは、縦積みにする（FR-216 AC-497・AC-801。PARAM-034 の 240 は、ピン止め以外のタブ化・自動配置の境界）
+  const pinTooNarrow = width > 0 && Object.entries(pinnedMap ?? {}).some(([k, r]) => baseKeys.has(k) && r.w * width < MIN_WINDOW_W);
   const compact = narrowWs || pinTooNarrow;
   const expandedOut = expandedKey !== null && baseKeys.has(expandedKey) ? expandedKey : null;
   const live = drag?.live ?? null;
