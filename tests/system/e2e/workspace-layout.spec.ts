@@ -1,15 +1,16 @@
 // System Test: コンポーネントのドラッグ移動・自動サイズ調整・作業先（デモ／実 Project）の選択・Fluent 2 の適用
 // 期待値は要求定義書の受入基準（docs/requirements/app-experience.md の FR-142〜144・NFR-UX-007）だけから決める。
-// 画面の探し方は tests/system/CONTRACT.md §9。PARAM-033=1.5 倍、PARAM-034=240 CSS px、PARAM-035=12 CSS px。
+// 画面の探し方は tests/system/CONTRACT.md §9。PARAM-033=1.5 倍、PARAM-134=360 CSS px、PARAM-035=12 CSS px。
 import type { Page, Locator } from '@playwright/test';
 import { test, expect, openScreen, component, selectPersona, pressOpeningEscape, closeSettings } from '../support/fixtures';
 import { examplePack } from '../support/packs';
+import { layoutTest } from '../support/layout-fixture';
 
 const mono = examplePack('mono');
 
 const SCALE = 1.5; // PARAM-033
-const MIN_WIDTH = 240; // PARAM-034
 const MIN_FONT = 12; // PARAM-035
+const MIN_COMPONENT_WIDTH = 360; // PARAM-134（AC-235）
 
 async function box(loc: Locator) {
   const b = await loc.boundingBox();
@@ -17,6 +18,36 @@ async function box(loc: Locator) {
   return b!;
 }
 const area = (b: { width: number; height: number }) => b.width * b.height;
+
+/** 同じ描画矩形が続くまで待ち、基準サイズに遷移途中の値を使わない。 */
+async function settledBoxes(page: Page, keys: string[]) {
+  let previous = '';
+  let same = 0;
+  let boxes: Record<string, { x: number; y: number; width: number; height: number }> = {};
+  await expect.poll(async () => {
+    boxes = await page.getByTestId('workspace').evaluate((ws, wanted) => {
+      const out: Record<string, { x: number; y: number; width: number; height: number }> = {};
+      for (const key of wanted) {
+        const el = ws.querySelector(`[data-testid="component-${CSS.escape(key)}"]`);
+        if (!el) continue;
+        const r = el.getBoundingClientRect();
+        if (r.width > 0 && r.height > 0) out[key] = { x: r.x, y: r.y, width: r.width, height: r.height };
+      }
+      return out;
+    }, keys);
+    const current = JSON.stringify(boxes);
+    same = current === previous ? same + 1 : 0;
+    previous = current;
+    return Object.keys(boxes).length === keys.length ? same : 0;
+  }, { message: '表示中のコンポーネントの矩形が安定する', timeout: 10_000, intervals: [200] }).toBeGreaterThanOrEqual(2);
+  return boxes;
+}
+
+async function shownKeys(page: Page): Promise<string[]> {
+  const states: Record<string, string> = await page.getByTestId('window-list').getByTestId('window-list-item').evaluateAll((els) =>
+    Object.fromEntries(els.map((el) => [el.getAttribute('data-component-key') ?? '', el.getAttribute('data-state') ?? ''])));
+  return (await topKeys(page)).filter((key) => ['front', 'visible'].includes(states[key]));
+}
 
 function visibleComponents(page: Page): Locator {
   return page.getByTestId('workspace').locator('[data-testid^="component-"]:not([data-testid="component-menu"]):not([data-testid="component-actions"]):not([data-testid="component-data"])');
@@ -154,55 +185,74 @@ test.describe('FR-142 すべてのコンポーネントのドラッグでの移�
   });
 });
 
-test.describe('FR-143 操作中のコンポーネントを大きくする自動のサイズ調整', () => {
+layoutTest.describe('FR-143 操作中のコンポーネントを大きくする自動のサイズ調整', () => {
+  layoutTest.describe.configure({ mode: 'default' });
   // FR-296 AC-800/801: 既定の構成の各コンポーネントは 360x240 以上で、2 行目が 1600x900 の画面外になるため、画面の高さを広げて前提を揃える（検証内容は変えない）。
-  test.use({ viewport: { width: 1600, height: 1400 } });
+  layoutTest.use({ viewport: { width: 1600, height: 1400 } });
   // FR-143 AC-226
-  test('FR-143 AC-226 操作したコンポーネントの面積が基準の 1.5 倍になり、別のコンポーネントを操作すると大きいものが移る', async ({ page, start }) => {
-    await start();
+  layoutTest('FR-143 AC-226 操作したコンポーネントの面積が基準の 1.5 倍になり、別のコンポーネントを操作すると大きいものが移る', async ({ page, layoutApp }, testInfo) => {
+    expect(layoutApp.initialStorage.origins, '前提: 保存したレイアウトのない文脈').toEqual([]);
     await selectPersona(page, '事業部門');
-    const ks = await topKeys(page);
+    await expect(page.getByRole('switch', { name: 'サイズの自動調整' })).toBeChecked();
+    const ks = await shownKeys(page);
     expect(ks.length, '4 つ以上のコンポーネントが必要').toBeGreaterThanOrEqual(4);
-    const base: Record<string, number> = {};
-    for (const k of ks) base[k] = area(await box(component(page, k)));
+    // 新しいブラウザー文脈で手動サイズ変更は行わない。ピンの確認はフォーカスを移さず UI の名前から読む。
+    for (const k of ks) {
+      const pin = component(page, k).getByTestId('component-actions').locator('button[aria-label^="ピン止め"]');
+      await expect(pin, `${k}: ピン止めしていない`).toHaveAttribute('aria-label', 'ピン止めする');
+    }
+    const base = await settledBoxes(page, ks);
     // FR-296: 既定の構成では、作業領域の幅の半分を超える左の列のコンポーネントは、列の幅の上限（PARAM-134 を割らない範囲）で
     // 面積を 1.5 倍にする余地が小さい。余地のある（幅が半分以下の）右の列の 2 つで、1.5 倍と「大きいものが移る」を検証する。
     const ws = await box(page.getByTestId('workspace'));
-    const narrow: string[] = [];
-    for (const k of ks) if ((await box(component(page, k))).width <= ws.width / 2 + 1) narrow.push(k);
+    const narrow = ks.filter((k) => base[k].width <= ws.width / 2 + 1);
     expect(narrow.length, '幅が半分以下のコンポーネントが 2 つ以上必要').toBeGreaterThanOrEqual(2);
     const [a, b] = narrow;
     await component(page, a).focus();
-    await expect.poll(async () => area(await box(component(page, a))) / base[a], { timeout: 5_000 }).toBeCloseTo(SCALE, 1);
+    await expect(component(page, a)).toBeFocused();
+    const afterA = await settledBoxes(page, ks);
     await component(page, b).focus();
-    await expect.poll(async () => area(await box(component(page, b))) / base[b], { timeout: 5_000 }).toBeCloseTo(SCALE, 1);
-    await expect.poll(async () => area(await box(component(page, a))) / base[a]).toBeLessThan(SCALE - 0.2);
+    await expect(component(page, b)).toBeFocused();
+    const afterB = await settledBoxes(page, ks);
+    const ratios = { first: area(afterA[a]) / area(base[a]), second: area(afterB[b]) / area(base[b]), firstAfterSwitch: area(afterB[a]) / area(base[a]) };
+    await testInfo.attach('AC-226-geometry', { body: JSON.stringify({ workspace: ws, keys: [a, b], base, afterA, afterB, ratios }, null, 2), contentType: 'application/json' });
+    // Chromium の CSS レイアウト座標の 1/64px 量子化に由来する最大面積誤差だけを許す。
+    const expectScaled = (key: string, before: { width: number; height: number }, after: { width: number; height: number }) => {
+      const q = 1 / 64;
+      const roundingBound = q * (after.width + after.height + SCALE * (before.width + before.height)) + (1 + SCALE) * q * q;
+      expect(Math.abs(area(after) - SCALE * area(before)), `${key}: 基準に対する 1.5 倍の誤差`).toBeLessThanOrEqual(roundingBound);
+    };
+    expectScaled(a, base[a], afterA[a]);
+    expectScaled(b, base[b], afterB[b]);
+    expect(ratios.firstAfterSwitch, `${a}: 操作対象を移すと拡大が戻る`).toBeLessThan(SCALE - 0.2);
   });
 
   // FR-143 AC-226（ペルソナの既定の情報表現は標準より小さくならない）
-  test('FR-143 AC-226 ペルソナの既定の情報表現のコンポーネントは、標準のコンポーネントより小さくならない', async ({ page, start }) => {
-    await start();
+  layoutTest('FR-143 AC-226 ペルソナの既定の情報表現のコンポーネントは、標準のコンポーネントより小さくならない', async ({ page, layoutApp }) => {
+    expect(layoutApp.initialStorage.origins).toEqual([]);
     await selectPersona(page, '経営層');
     await expect(component(page, 'matrix')).toBeVisible();
-    const ks = (await topKeys(page)).filter((k) => k !== 'matrix');
+    const ks = (await shownKeys(page)).filter((k) => k !== 'matrix');
     expect(ks.length).toBeGreaterThanOrEqual(3);
     await component(page, ks[0]).focus();
-    const primary = area(await box(component(page, 'matrix')));
+    const boxes = await settledBoxes(page, ['matrix', ...ks]);
+    const primary = area(boxes.matrix);
     for (const k of ks.slice(1)) {
-      expect(primary, `matrix が ${k} より小さい`).toBeGreaterThanOrEqual(area(await box(component(page, k))) - 1);
+      expect(primary, `matrix が ${k} より小さい`).toBeGreaterThanOrEqual(area(boxes[k]) - 1);
     }
   });
 
   // FR-143 AC-226（異常系: 自動調整を切ると変わらない。AC-228 の一部を system で確認）
-  test('FR-143 AC-226 異常系: 自動の調整を切ると、操作しても大きさが変わらない', async ({ page, start }) => {
-    await start();
+  layoutTest('FR-143 AC-226 異常系: 自動の調整を切ると、操作しても大きさが変わらない', async ({ page, layoutApp }) => {
+    expect(layoutApp.initialStorage.origins).toEqual([]);
     await selectPersona(page, '事業部門');
-    const ks = await keys(page);
+    const ks = await shownKeys(page);
+    expect(ks.length, '表示中のコンポーネントが必要').toBeGreaterThan(0);
     await page.getByRole('switch', { name: 'サイズの自動調整' }).uncheck();
-    const before = area(await box(component(page, ks[0])));
+    const before = area((await settledBoxes(page, ks))[ks[0]]);
     await component(page, ks[0]).focus();
-    await page.waitForTimeout(500);
-    expect(Math.abs(area(await box(component(page, ks[0]))) - before)).toBeLessThanOrEqual(2);
+    const after = area((await settledBoxes(page, ks))[ks[0]]);
+    expect(Math.abs(after - before)).toBeLessThanOrEqual(2);
   });
 });
 
@@ -462,15 +512,83 @@ test.describe('NFR-UX-007 画面とレイアウト操作への Fluent 2 の適�
   });
 
   // NFR-UX-007 AC-235
-  test('NFR-UX-007 AC-235 コンポーネントを最小の幅（240px）近くまで縮めても、本文の文字は 12px 以上', async ({ page, start }) => {
+  test('NFR-UX-007 AC-235 コンポーネントを 360px 近くまで実際に縮めても、表示された本文の文字は 12px 以上', async ({ page, start }) => {
     await start();
     await selectPersona(page, '事業部門');
-    await page.setViewportSize({ width: MIN_WIDTH * 5, height: 900 }); // 並ぶ数が増え、各幅が最小に近づく
+    await page.setViewportSize({ width: 2000, height: 1200 });
+    const autoSize = page.getByRole('switch', { name: 'サイズの自動調整' });
+    if (await autoSize.isChecked()) await autoSize.uncheck();
     const ks = await keys(page);
-    for (const k of ks) {
+    const states: Record<string, string> = await page.getByTestId('window-list').getByTestId('window-list-item').evaluateAll((els) =>
+      Object.fromEntries(els.map((e) => [e.getAttribute('data-component-key') ?? '', e.getAttribute('data-state') ?? ''])));
+    // ビューポートを狭くしただけでは 360px 近傍に到達した保証にならない。
+    const candidates = await Promise.all(ks.filter((k) => ['front', 'visible'].includes(states[k]))
+      .map(async (k) => ({ key: k, rect: await box(component(page, k)) })));
+    const wide = candidates.find(({ rect }) => rect.width > MIN_COMPONENT_WIDTH + 20);
+    expect(wide, '前提: 縮小前に 360px より十分広いコンポーネントが必要').toBeTruthy();
+    const target = component(page, wide!.key);
+    await target.hover();
+    const handle = target.getByTestId('resize-e').first();
+    await expect(handle).toBeVisible();
+    const h = await box(handle);
+    const x = h.x + h.width / 2;
+    const y = h.y + h.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x - (wide!.rect.width - MIN_COMPONENT_WIDTH + 40), y, { steps: 10 });
+    await page.mouse.up();
+    await expect.poll(async () => (await box(target)).width, { message: '360px 近傍に縮める' })
+      .toBeLessThanOrEqual(MIN_COMPONENT_WIDTH + 5);
+    const measuredWidth = (await box(target)).width;
+    expect(measuredWidth, '前提: PARAM-134 の幅未満にならない').toBeGreaterThanOrEqual(MIN_COMPONENT_WIDTH);
+    expect(measuredWidth, '前提: 実際に幅が縮まった').toBeLessThan(wide!.rect.width - 10);
+    const bodySizes = await target.evaluate((el) => {
+      const sizes: number[] = [];
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        const p = n.parentElement;
+        if (!p || !(n.textContent ?? '').trim() || p.closest('h1,h2,h3,h4,button,[role="button"],[role="tab"]')) continue;
+        const range = document.createRange();
+        range.selectNodeContents(n);
+        let rects = [...range.getClientRects()].map((r) => ({
+          left: Math.max(0, r.left), top: Math.max(0, r.top),
+          right: Math.min(innerWidth, r.right), bottom: Math.min(innerHeight, r.bottom),
+        }));
+        let hidden = false;
+        // 親の透明化・非表示と overflow による切り取りも考慮し、画面上に見える文字だけを数える。
+        for (let ancestor: Element | null = p; ancestor; ancestor = ancestor.parentElement) {
+          const s = getComputedStyle(ancestor);
+          if (s.display === 'none' || s.visibility !== 'visible' || Number(s.opacity) === 0) { hidden = true; break; }
+          const clipX = /^(auto|scroll|hidden|clip)$/.test(s.overflowX);
+          const clipY = /^(auto|scroll|hidden|clip)$/.test(s.overflowY);
+          if (clipX || clipY) {
+            const r = ancestor.getBoundingClientRect();
+            rects = rects.map((v) => ({
+              left: clipX ? Math.max(v.left, r.left) : v.left,
+              right: clipX ? Math.min(v.right, r.right) : v.right,
+              top: clipY ? Math.max(v.top, r.top) : v.top,
+              bottom: clipY ? Math.min(v.bottom, r.bottom) : v.bottom,
+            }));
+          }
+        }
+        const visible = rects.some((r) => {
+          if (r.right <= r.left || r.bottom <= r.top) return false;
+          const hit = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
+          return !!hit && (hit === p || p.contains(hit) || hit.contains(p));
+        });
+        if (hidden || !visible) continue;
+        sizes.push(parseFloat(getComputedStyle(p).fontSize));
+      }
+      return sizes;
+    });
+    expect(bodySizes.length, '360px 近傍で表示された本文を実際に測定する').toBeGreaterThan(0);
+    expect(Math.min(...bodySizes), '縮小したコンポーネントの本文').toBeGreaterThanOrEqual(MIN_FONT);
+
+    // 従来の、ほかの表示中コンポーネントも含む独立した文字サイズの検証を残す。
+    for (const { key: k } of candidates) {
       const c = component(page, k);
       const w = (await box(c)).width;
-      expect(w, `${k} が最小の幅未満`).toBeGreaterThanOrEqual(MIN_WIDTH - 1);
+      expect(w, `${k} が最小の幅未満`).toBeGreaterThanOrEqual(MIN_COMPONENT_WIDTH);
     }
     const small = await visibleComponents(page).evaluateAll((els, min) => {
       const out: string[] = [];
@@ -492,7 +610,7 @@ test.describe('NFR-UX-007 画面とレイアウト操作への Fluent 2 の適�
   test('NFR-UX-007 AC-235 異常系: 画面を狭くして収まらないコンポーネントがタブにまとめられても、本文は 12px 以上', async ({ page, start }) => {
     await start();
     await selectPersona(page, '事業部門');
-    await page.setViewportSize({ width: MIN_WIDTH * 2, height: 800 });
+    await page.setViewportSize({ width: 480, height: 800 }); // 狭い表示幅の試験条件（コンポーネントの下限ではない）
     const sizes = await page.getByTestId('workspace').locator('h1,h2,h3,[role=tab],p,li,td,span').evaluateAll((els) =>
       els.filter((e) => (e as HTMLElement).offsetParent && (e.textContent ?? '').trim()).map((e) => parseFloat(getComputedStyle(e).fontSize)));
     expect(sizes.length).toBeGreaterThan(0);

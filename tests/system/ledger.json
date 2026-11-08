@@ -141,7 +141,7 @@
     "AC-229": "sha256:757a6385fc0d83bd",
     "AC-230": "sha256:ca4aa5ac5751ef3a",
     "AC-234": "sha256:630f15947acc625b",
-    "AC-235": "sha256:afc67c60e861de2c",
+    "AC-235": "sha256:c00c627058ffb391",
     "AC-237": "sha256:8143d725234c7d1f",
     "AC-239": "sha256:fb769267b42432fa",
     "AC-240": "sha256:9a9a76c37b5a77fe",
@@ -255,7 +255,7 @@
     "AC-525": "sha256:9babebd03ffec9e2",
     "AC-526": "sha256:972af3511eec95dd",
     "AC-528": "sha256:a3fad302aa45bbdc",
-    "AC-529": "sha256:862c46ce942f320c",
+    "AC-529": "sha256:6ba9e5b9133a3cac",
     "AC-549": "sha256:01b6831c02ec87a4",
     "AC-554": "sha256:677cf952b7bd9f66",
     "AC-555": "sha256:fe47980480f5bdaf",
@@ -265,7 +265,7 @@
     "AC-568": "sha256:b7a95992b45217ae",
     "AC-571": "sha256:9874b9b2370c8c1d",
     "AC-572": "sha256:a4807895f7152c20",
-    "AC-584": "sha256:9f7e4137b3e04bef",
+    "AC-584": "sha256:af3e9ec680e9b729",
     "AC-585": "sha256:3e38cb21f654c9a6",
     "AC-586": "sha256:d69c569d032e0362",
     "AC-587": "sha256:e77ad03e7a14c4c0",
@@ -398,9 +398,9 @@
       "command": "node tests/system/run.mjs AC-195",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-098-202611081147.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-098-202611081820.log",
       "history": [
         {
           "at": "2026-10-12T13:42:24+09:00",
@@ -429,9 +429,9 @@
       "command": "node tests/system/run.mjs AC-197",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-099-202611081212.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-099-202611081820.log",
       "history": [
         {
           "at": "2026-10-12T13:42:26+09:00",
@@ -479,9 +479,9 @@
       "command": "node tests/system/run.mjs AC-200",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-100-202611081147.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-100-202611081821.log",
       "history": [
         {
           "at": "2026-10-12T13:42:28+09:00",
@@ -504,9 +504,9 @@
       "command": "node tests/system/run.mjs AC-202",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-101-202611081147.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-101-202611081821.log",
       "history": [
         {
           "at": "2026-10-12T13:42:30+09:00",
@@ -529,9 +529,9 @@
       "command": "node tests/system/run.mjs AC-203",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-102-202611081147.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-102-202611081821.log",
       "history": [
         {
           "at": "2026-10-12T13:42:32+09:00",
@@ -554,9 +554,9 @@
       "command": "node tests/system/run.mjs AC-205",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-103-202611081147.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-103-202611081821.log",
       "history": [
         {
           "at": "2026-10-12T13:42:34+09:00",
@@ -579,9 +579,9 @@
       "command": "node tests/system/run.mjs AC-001",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-104-202611081147.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-104-202611081821.log",
       "history": [
         {
           "at": "2026-10-12T14:05:45+09:00",
@@ -604,9 +604,9 @@
       "command": "node tests/system/run.mjs AC-002",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-105-202611081147.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-105-202611081821.log",
       "history": [
         {
           "at": "2026-10-12T14:05:46+09:00",
@@ -629,9 +629,9 @@
       "command": "node tests/system/run.mjs AC-003",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-106-202611081147.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-106-202611081822.log",
       "history": [
         {
           "at": "2026-10-12T14:05:47+09:00",
@@ -654,9 +654,9 @@
       "command": "node tests/system/run.mjs AC-004",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-107-202611081147.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-107-202611081822.log",
       "history": [
         {
           "at": "2026-10-12T14:05:49+09:00",
@@ -679,9 +679,9 @@
       "command": "node tests/system/run.mjs AC-005",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-108-202611081147.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-108-202611081822.log",
       "history": [
         {
           "at": "2026-10-12T14:05:50+09:00",
@@ -704,9 +704,9 @@
       "command": "node tests/system/run.mjs AC-006",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-109-202611081147.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-109-202611081822.log",
       "history": [
         {
           "at": "2026-10-12T14:05:52+09:00",
@@ -729,9 +729,9 @@
       "command": "node tests/system/run.mjs AC-007",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-110-202611081147.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-110-202611081822.log",
       "history": [
         {
           "at": "2026-10-12T14:05:53+09:00",
@@ -754,9 +754,9 @@
       "command": "node tests/system/run.mjs AC-008",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-111-202611081147.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-111-202611081822.log",
       "history": [
         {
           "at": "2026-10-12T14:05:55+09:00",
@@ -779,9 +779,9 @@
       "command": "node tests/system/run.mjs AC-009",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-112-202611081147.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-112-202611081822.log",
       "history": [
         {
           "at": "2026-10-12T14:05:56+09:00",
@@ -804,9 +804,9 @@
       "command": "node tests/system/run.mjs AC-013",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-113-202611081147.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-113-202611081823.log",
       "history": [
         {
           "at": "2026-10-12T14:05:57+09:00",
@@ -872,9 +872,9 @@
       "command": "node tests/system/run.mjs AC-016",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-115-202611081147.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-115-202611081823.log",
       "history": [
         {
           "at": "2026-10-12T14:06:01+09:00",
@@ -902,10 +902,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-017",
       "canary": false,
-      "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-116-202611081146.log",
+      "status": "fail",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-116-202611081823.log",
       "history": [
         {
           "at": "2026-10-12T14:06:02+09:00",
@@ -928,9 +928,9 @@
       "command": "node tests/system/run.mjs AC-018",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-117-202611081147.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-117-202611081823.log",
       "history": [
         {
           "at": "2026-10-12T14:06:04+09:00",
@@ -959,9 +959,9 @@
       "command": "node tests/system/run.mjs AC-019",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-118-202611081147.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-118-202611081823.log",
       "history": [
         {
           "at": "2026-10-12T14:06:05+09:00",
@@ -990,9 +990,9 @@
       "command": "node tests/system/run.mjs AC-192",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-119-202611081147.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-119-202611081824.log",
       "history": [
         {
           "at": "2026-10-12T14:06:07+09:00",
@@ -1021,9 +1021,9 @@
       "command": "node tests/system/run.mjs AC-020",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-120-202611081147.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-120-202611081824.log",
       "history": [
         {
           "at": "2026-10-12T14:06:09+09:00",
@@ -1046,9 +1046,9 @@
       "command": "node tests/system/run.mjs AC-021",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-121-202611081148.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-121-202611081824.log",
       "history": [
         {
           "at": "2026-10-12T14:06:11+09:00",
@@ -1071,9 +1071,9 @@
       "command": "node tests/system/run.mjs AC-022",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-122-202611081148.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-122-202611081824.log",
       "history": [
         {
           "at": "2026-10-12T14:06:13+09:00",
@@ -1096,9 +1096,9 @@
       "command": "node tests/system/run.mjs AC-023",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-123-202611081148.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-123-202611081824.log",
       "history": [
         {
           "at": "2026-10-12T14:06:15+09:00",
@@ -1158,9 +1158,9 @@
       "command": "node tests/system/run.mjs AC-025",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-125-202611081148.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-125-202611081824.log",
       "history": [
         {
           "at": "2026-10-12T14:06:19+09:00",
@@ -1183,9 +1183,9 @@
       "command": "node tests/system/run.mjs AC-026",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-126-202611081148.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-126-202611081824.log",
       "history": [
         {
           "at": "2026-10-12T14:06:22+09:00",
@@ -1208,9 +1208,9 @@
       "command": "node tests/system/run.mjs AC-027",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-127-202611081148.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-127-202611081824.log",
       "history": [
         {
           "at": "2026-10-12T14:06:24+09:00",
@@ -1232,10 +1232,10 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-030",
       "canary": false,
-      "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-128-202611081148.log",
+      "status": "fail",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-128-202611081825.log",
       "history": [
         {
           "at": "2026-10-12T14:06:26+09:00",
@@ -1264,9 +1264,9 @@
       "command": "node tests/system/run.mjs AC-031",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-129-202611081148.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-129-202611081826.log",
       "history": [
         {
           "at": "2026-10-12T14:06:28+09:00",
@@ -1289,9 +1289,9 @@
       "command": "node tests/system/run.mjs AC-032",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-130-202611081148.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-130-202611081827.log",
       "history": [
         {
           "at": "2026-10-12T14:06:30+09:00",
@@ -1314,9 +1314,9 @@
       "command": "node tests/system/run.mjs AC-033",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-131-202611081148.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-131-202611081827.log",
       "history": [
         {
           "at": "2026-10-12T14:06:32+09:00",
@@ -1339,9 +1339,9 @@
       "command": "node tests/system/run.mjs AC-034",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-132-202611081148.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-132-202611081827.log",
       "history": [
         {
           "at": "2026-10-12T14:06:34+09:00",
@@ -1364,9 +1364,9 @@
       "command": "node tests/system/run.mjs AC-035",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-133-202611081148.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-133-202611081827.log",
       "history": [
         {
           "at": "2026-10-12T14:06:37+09:00",
@@ -1389,9 +1389,9 @@
       "command": "node tests/system/run.mjs AC-040",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-134-202611081148.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-134-202611081827.log",
       "history": [
         {
           "at": "2026-10-12T14:06:39+09:00",
@@ -2132,9 +2132,9 @@
       "command": "node tests/system/run.mjs AC-071",
       "canary": true,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-162-202611081146.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-162-202611081819.log",
       "history": [
         {
           "at": "2026-10-12T14:07:28+09:00",
@@ -3646,20 +3646,26 @@
       "ac_ids": [
         "AC-226"
       ],
-      "title": "操作中コンポーネントの 1.5 倍拡大・移動・自動調整オフ",
+      "title": "4件以上・ピンなしの安定基準で操作対象の1.5倍と移動を確認",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-226",
       "canary": false,
-      "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-217-202611081152.log",
+      "status": "not_run",
+      "last_commit": "277f789",
+      "last_run_at": "2026-11-08T15:31:44+09:00",
+      "evidence": "work/runs/202611081257/logs/system-test/E2E-217-202611081527.log",
       "history": [
         {
           "at": "2026-10-13T05:45:09+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-08T16:35:31+09:00",
+          "by": "test-designer",
+          "change": "title: '操作中コンポーネントの 1.5 倍拡大・移動・自動調整オフ' -> '4件以上・ピンなしの安定基準で操作対象の1.5倍と移動を確認'",
+          "reason": "AC-226: 遷移途中の基準採取を修正し、独立した基準と量子化誤差で比較する"
         }
       ]
     },
@@ -3777,20 +3783,32 @@
       "ac_ids": [
         "AC-235"
       ],
-      "title": "縮小時も本文 12px 以上",
+      "title": "360px近傍に実際に縮めた本文12px以上と狭幅での可読性",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-235",
       "canary": false,
-      "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-221-202611081152.log",
+      "status": "not_run",
+      "last_commit": "277f789",
+      "last_run_at": "2026-11-08T15:31:44+09:00",
+      "evidence": "work/runs/202611081257/logs/system-test/E2E-221-202611081527.log",
       "history": [
         {
           "at": "2026-10-13T05:45:25+09:00",
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-08T13:50:16+09:00",
+          "by": "test-designer",
+          "change": "title: '縮小時も本文 12px 以上' -> '360px 近傍へ実際に縮小した表示中の本文を測定し、12px 以上と非空を確認'",
+          "reason": "Q-114 A: AC-235 の下限を PARAM-134 に合わせ、到達と可視本文の非空を検証する"
+        },
+        {
+          "at": "2026-11-08T16:35:32+09:00",
+          "by": "test-designer",
+          "change": "title: '360px 近傍へ実際に縮小した表示中の本文を測定し、12px 以上と非空を確認' -> '360px近傍に実際に縮めた本文12px以上と狭幅での可読性'",
+          "reason": "Q-114 A: 縮小の到達と表示中の本文を条件待ちで確認する"
         }
       ]
     },
@@ -4208,9 +4226,9 @@
       "command": "node tests/system/run.mjs AC-257",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-233-202611081152.log",
+      "last_commit": "277f789",
+      "last_run_at": "2026-11-08T15:31:44+09:00",
+      "evidence": "work/runs/202611081257/logs/system-test/E2E-233-202611081527.log",
       "history": [
         {
           "at": "2026-10-14T05:25:41+09:00",
@@ -5317,9 +5335,9 @@
       "command": "node tests/system/run.mjs AC-396 AC-819",
       "canary": true,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-291-202611081146.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-291-202611081819.log",
       "history": [
         {
           "at": "2026-10-15T22:31:53+09:00",
@@ -6176,9 +6194,9 @@
       "command": "node tests/system/run.mjs AC-521",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-321-202611081158.log",
+      "last_commit": "277f789",
+      "last_run_at": "2026-11-08T15:31:44+09:00",
+      "evidence": "work/runs/202611081257/logs/system-test/E2E-321-202611081527.log",
       "history": [
         {
           "at": "2026-10-19T20:56:56+09:00",
@@ -6314,14 +6332,14 @@
       "ac_ids": [
         "AC-529"
       ],
-      "title": "ステップのクリックでの再配置: 工程の順・重要度の大きさ・関連しないものは後ろで最小／ピン止めと手で変えた大きさは不変・消えない（異常系）",
+      "title": "Q-115 全条件: analysis 対応・取消し直前状態の根拠待ち",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-529",
       "canary": false,
-      "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-326-202611081146.log",
+      "status": "blocked",
+      "last_commit": "277f789",
+      "last_run_at": "2026-11-08T15:31:44+09:00",
+      "evidence": "work/runs/202611081257/logs/system-test/E2E-326-202611081527.log",
       "history": [
         {
           "at": "2026-10-19T20:57:12+09:00",
@@ -6334,6 +6352,60 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "Q-110/111 A: 下限を PARAM-134・135（360x240）に更新（旧 PARAM-085 の 240x120 廃止）。テスト修正のため再実行"
+        },
+        {
+          "at": "2026-11-08T13:50:26+09:00",
+          "by": "test-designer",
+          "change": "title: 'ステップのクリックでの再配置: 工程の順・重要度の大きさ・関連しないものは後ろで最小／ピン止めと手で変えた大きさは不変・消えない（異常系）' -> '工程順・最小寸法・選択等を保ち、マウスとタッチの手動位置を保持し、領域不足では原子的に復帰'",
+          "reason": "Q-115 (1) A・(2) A: 手動位置の除外と保持、候補なし／候補を尽くした後の取消しを追加"
+        },
+        {
+          "at": "2026-11-08T15:25:38+09:00",
+          "by": "test-designer",
+          "change": "title: '工程順・最小寸法・選択等を保ち、マウスとタッチの手動位置を保持し、領域不足では原子的に復帰' -> '工程順・最小寸法・選択等保持、マウスとタッチの手動位置・領域不足時の復帰（同寸条件と直前観測は要修正）'",
+          "reason": "AC-529 更新を確認したが同寸の例外と移動後・再配置直前の UI 観測は未完成。既存の hook と画面名の前提も未修正で、Q-115 実装は次 run"
+        },
+        {
+          "at": "2026-11-08T16:38:21+09:00",
+          "by": "test-designer",
+          "change": "title: '工程順・最小寸法・選択等保持、マウスとタッチの手動位置・領域不足時の復帰（同寸条件と直前観測は要修正）' -> '実UIの手動位置・ピン・取消しと大小を観測（工程順・関連判定は対応表待ち）'",
+          "reason": "Q-115: マウスとタッチ、候補なし／候補ありの遷移後のUI観測を分離。未実装フックを使わない"
+        },
+        {
+          "at": "2026-11-08T16:38:21+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-529・A-65 は STEPS.screens の関連集合と工程順を参照するが承認済み要求に具体的な対応・順がなく、製品の data-step 属性を正解とせず独立に判定できない。要求の対応表を明文化する決定待ち"
+        },
+        {
+          "at": "2026-11-08T17:46:08+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-529・A-65 の関連集合と工程順の具体的な対応は要求本文にないため独立に判定できず、要求担当の明文化待ち。依存しない Q-115 の手動位置・取消し・選択入力は E2E-469 で独立実行する。"
+        },
+        {
+          "at": "2026-11-08T18:16:00+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-529・A-65 の5ステップと画面の対応、関連集合および工程順は承認済み要求に具体的な対応表がなく、要求担当の明文化待ち"
+        },
+        {
+          "at": "2026-11-08T19:37:22+09:00",
+          "by": "test-designer",
+          "change": "title: '実UIの手動位置・ピン・取消しと大小を観測（工程順・関連判定は対応表待ち）' -> 'Q-115 全条件: analysis 対応・取消し直前状態の根拠待ち'",
+          "reason": "run 202611081851: A-65 の登録済み画面の順序と実遷移は E2E-469 に分離し、未確認の analysis と取消し両条件の直前観測をこのケースに残す"
+        },
+        {
+          "at": "2026-11-08T19:37:23+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "A-65 の analysis は登録済み画面との対応が未確認。候補なし／候補を尽くす両条件で画面遷移後・再配置前の位置・サイズ・最小化・前後関係を実 UI から分離して観測できる根拠が不足し、現状の受動観測は同一バッチの再配置・取消しを拒否するため保留"
+        },
+        {
+          "at": "2026-11-08T19:40:01+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "A-65 の analysis は登録済み画面との対応が未確認。候補なし／候補を尽くす両条件で画面遷移後・再配置前の位置・サイズ・最小化・前後関係を実 UI から分離して観測できる根拠が不足し、z-index と DOM 順だけでは複雑な stacking context の真の前後関係も証明できない"
         }
       ]
     },
@@ -6577,14 +6649,14 @@
       "ac_ids": [
         "AC-584"
       ],
-      "title": "保存済みレイアウトなしで 4 つ以上を置くと主役が最大・補助と詳細が右か下・重ならず最小幅以上・再現する（各ペルソナ）。異常系: 非表示後の再表示でも重ならない",
+      "title": "主役の LRU・手動固定の可能／不可能・上限・下限・一覧・再現性",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-584",
       "canary": false,
-      "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-336-202611081146.log",
+      "status": "blocked",
+      "last_commit": "277f789",
+      "last_run_at": "2026-11-08T15:31:44+09:00",
+      "evidence": "work/runs/202611081257/logs/system-test/E2E-336-202611081527.log",
       "history": [
         {
           "at": "2026-10-20T05:39:18+09:00",
@@ -6603,6 +6675,48 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "Q-110/111 A: 下限を PARAM-134・135（360x240）に更新（旧 PARAM-085 の 240x120 廃止）。テスト修正のため再実行"
+        },
+        {
+          "at": "2026-11-08T13:50:36+09:00",
+          "by": "test-designer",
+          "change": "title: '保存済みレイアウトなしで 4 つ以上を置くと主役が最大・補助と詳細が右か下・重ならず最小幅以上・再現する（各ペルソナ）。異常系: 非表示後の再表示でも重ならない' -> '5 個追加時の上限・360x240 の下限・最小化・一覧からの到達と再現性を確認'",
+          "reason": "Q-114 A: AC-584 の下限・上限超過と領域不足を実際の追加操作と再現で確認する"
+        },
+        {
+          "at": "2026-11-08T15:25:37+09:00",
+          "by": "test-designer",
+          "change": "title: '5 個追加時の上限・360x240 の下限・最小化・一覧からの到達と再現性を確認' -> '5 個追加時の上限・下限・最小化・一覧・再現性を、ピンなし前提と安定後の矩形で確認'",
+          "reason": "実 UI のアクセシブルなピン状態と FR-296 の保留条件で前提を確認し、遷移後の安定矩形を比較。面積差は許容せず失敗のまま"
+        },
+        {
+          "at": "2026-11-08T16:35:33+09:00",
+          "by": "test-designer",
+          "change": "title: '5 個追加時の上限・下限・最小化・一覧・再現性を、ピンなし前提と安定後の矩形で確認' -> 'ピン・保留なしで5件追加し主役・上限・下限・一覧到達・再現性を検証'",
+          "reason": "AC-584: 実UIのピンと状態を確認し、安定後の矩形・一覧到達を厳密に比較する"
+        },
+        {
+          "at": "2026-11-08T17:31:08+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-584 の表示中の主役最大と FR-143・FR-243 の手動固定サイズ優先が、主役が補助より小さい場合に矛盾する。要求担当の整合・判定待ち。テストと AC digest は未同期のまま保全する。"
+        },
+        {
+          "at": "2026-11-08T17:37:19+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-584 本文 digest の同期は文面の記録のみで、テストは未同期。主役最大と手動固定サイズの矛盾は要求担当の整合まで blocked を維持する。"
+        },
+        {
+          "at": "2026-11-08T18:15:58+09:00",
+          "by": "test-designer",
+          "change": "title: 'ピン・保留なしで5件追加し主役・上限・下限・一覧到達・再現性を検証' -> '主役の LRU・手動固定の可能／不可能・上限・下限・一覧・再現性'",
+          "reason": "d035ded の AC-584 を見直し、主役と補助の手動固定の可能例・不可能例と、主役が最古の領域不足を既存テストに追加。混在区画の LRU は未完成"
+        },
+        {
+          "at": "2026-11-08T18:15:59+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "主役が区画外で別の最小化候補が雛形の区画内にある混在条件は未実装。追加ケースは収集のみで未実行。区画内外を含む全候補の LRU 判定を実 UI で独立検証するまで保全"
         }
       ]
     },
@@ -7011,9 +7125,9 @@
       "command": "node tests/system/run.mjs AC-593",
       "canary": true,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-346-202611081146.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-346-202611081820.log",
       "history": [
         {
           "at": "2026-10-21T17:32:44+09:00",
@@ -7196,9 +7310,9 @@
       "command": "node tests/system/run.mjs AC-598",
       "canary": true,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-351-202611081146.log",
+      "last_commit": "7338d357",
+      "last_run_at": "2026-11-08T18:27:49+09:00",
+      "evidence": "work/runs/202611081551/logs/system-test/E2E-351-202611081820.log",
       "history": [
         {
           "at": "2026-10-21T17:33:47+09:00",
@@ -9090,9 +9204,9 @@
       "command": "node --test --test-name-pattern \"AC-426\" --test-name-pattern \"AC-427\" --test-name-pattern \"AC-428\" --test-name-pattern \"AC-429\" tests/system/integration-catalog/tooling.test.mjs",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/IT-054-202611081202.log",
+      "last_commit": "277f789",
+      "last_run_at": "2026-11-08T15:31:44+09:00",
+      "evidence": "work/runs/202611081257/logs/system-test/IT-054-202611081527.log",
       "history": [
         {
           "at": "2026-10-16T05:47:38+09:00",
@@ -12717,9 +12831,9 @@
       "command": "node tests/system/run.mjs AC-793",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-449-202611081146.log",
+      "last_commit": "277f789",
+      "last_run_at": "2026-11-08T15:31:44+09:00",
+      "evidence": "work/runs/202611081257/logs/system-test/E2E-449-202611081527.log",
       "history": [
         {
           "at": "2026-10-27T23:31:36+09:00",
@@ -13473,9 +13587,9 @@
       "command": "node tests/system/run.mjs AC-859 AC-862 AC-864",
       "canary": false,
       "status": "pass",
-      "last_commit": "7b153dc",
-      "last_run_at": "2026-11-08T12:26:02+09:00",
-      "evidence": "work/runs/202611081053/logs/system-test/E2E-468-202611081146.log",
+      "last_commit": "277f789",
+      "last_run_at": "2026-11-08T15:31:44+09:00",
+      "evidence": "work/runs/202611081257/logs/system-test/E2E-468-202611081527.log",
       "history": [
         {
           "at": "2026-11-06T23:51:44+09:00",
@@ -13530,6 +13644,49 @@
           "by": "test-designer",
           "change": "title: '雛形のポップアップ（Snap Layouts）: 上端の中央に 300ms でポップアップ・区画どおりの配置と再読込、タッチ・ペンは入力ごとに初期配置から独立に（24px 以上・スクロール/ズームなし）、2x2 の順次の埋め（ピン止め除外）、異常系: 300ms 未満で出ない・300ms 未満の離しは最大化・Esc/外の押下で配置不変、ポップアップ表示後の離し方（内側は配置不変、外へ出ると閉じて左端は左半分・端でない位置は配置不変、戻って 300ms で再表示。AC-866・867 は integration のため ac_ids 外）' -> '雛形のポップアップ（Snap Layouts）: 上端の中央で 300ms でポップアップ・区画の配置と再読込、タッチ・ペン、2x2 の順次の埋め、異常系: 300ms 未満の通過は出ず離すと最大化、Esc・外の押下で配置不変、ポップアップ表示後の離し方（内側は掴む前へ戻る・外へ出ると閉じて端・角ならスナップ・戻って 300ms で再表示）、Esc はポップアップを閉じドラッグも取りやめ再表示されず配置不変、外へ出て閉じたあと戻って 300ms 未満で離すと最大化（AC-866・867・868・870・871 は integration のため ac_ids 外）'",
           "reason": "commit 60ff46b（Q-074〜077 A）に合わせ、AC-866（取りやめ・区画外で掴む前へ戻る）・AC-868（Esc は再表示しない）・AC-870（Esc＝取りやめ）・AC-871（再突入して滞留前に離すと最大化）のテストを同じファイルに追加（AC-859 の run.mjs で実行）"
+        }
+      ]
+    },
+    {
+      "id": "E2E-469",
+      "requirement_ids": [
+        "FR-228"
+      ],
+      "ac_ids": [
+        "AC-529"
+      ],
+      "title": "Q-115 登録済み画面の遷移・工程順と手動位置・サイズ・選択入力の保持",
+      "layer": "e2e",
+      "command": "node tests/system/run-q115.mjs",
+      "canary": false,
+      "status": "not_run",
+      "last_commit": null,
+      "last_run_at": null,
+      "evidence": null,
+      "history": [
+        {
+          "at": "2026-11-08T17:45:27+09:00",
+          "by": "test-designer",
+          "change": "追加",
+          "reason": "関連集合と工程順の決定を要しない Q-115 の条件を独立実行する。工程順・関連判定は E2E-326 で blocked のまま残す"
+        },
+        {
+          "at": "2026-11-08T17:45:27+09:00",
+          "by": "test-designer",
+          "change": "同じ要求・同じ層の既存ケースと別に追加",
+          "reason": "E2E-326 は対応表待ちで blocked。対応表に依存しない Q-115 を実装前に独立して実行する必要がある"
+        },
+        {
+          "at": "2026-11-08T18:16:01+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "現状分析→knowledge-graph と KPI 測定→priority の2遷移先は要求で明示されず、テストの前提に根拠不足。対応表の決定待ち"
+        },
+        {
+          "at": "2026-11-08T19:39:09+09:00",
+          "by": "test-designer",
+          "change": "title: 'Q-115 手動位置・選択入力の保持と候補なし／候補尽くしの原子取消し' -> 'Q-115 登録済み画面の遷移・工程順と手動位置・サイズ・選択入力の保持'",
+          "reason": "run 202611081851: A-65 の確認済み画面だけで実遷移と順序を判定し、マウス・タッチの手動位置とサイズおよび選択・入力を独立検証。未確認 analysis と取消し直前の完全な復帰は E2E-326 に残す"
         }
       ]
     }

@@ -50,6 +50,10 @@
         "run": "python -m pytest tests/toolkit/test_integration_catalog.py tests/toolkit/test_integration_fields_a.py tests/toolkit/test_integration_fields_b.py tests/toolkit/test_integration_secrets_boundary.py tests/toolkit/test_management_gate_wiring.py -q --deselect tests/toolkit/test_management_gate_wiring.py::test_rdcheck_cli_catalog_secret_detection"
       },
       {
+        "name": "toolkit-id-registry",
+        "run": "python -m pytest tests/toolkit/test_next_id_params.py -q"
+      },
+      {
         "name": "build",
         "run": "npm run build"
       },
