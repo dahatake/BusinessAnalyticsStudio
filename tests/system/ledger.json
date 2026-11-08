@@ -141,7 +141,7 @@
     "AC-229": "sha256:757a6385fc0d83bd",
     "AC-230": "sha256:ca4aa5ac5751ef3a",
     "AC-234": "sha256:630f15947acc625b",
-    "AC-235": "sha256:afc67c60e861de2c",
+    "AC-235": "sha256:c00c627058ffb391",
     "AC-237": "sha256:8143d725234c7d1f",
     "AC-239": "sha256:fb769267b42432fa",
     "AC-240": "sha256:9a9a76c37b5a77fe",
@@ -255,7 +255,7 @@
     "AC-525": "sha256:9babebd03ffec9e2",
     "AC-526": "sha256:972af3511eec95dd",
     "AC-528": "sha256:a3fad302aa45bbdc",
-    "AC-529": "sha256:862c46ce942f320c",
+    "AC-529": "sha256:58e3ac70dd64b260",
     "AC-549": "sha256:01b6831c02ec87a4",
     "AC-554": "sha256:677cf952b7bd9f66",
     "AC-555": "sha256:fe47980480f5bdaf",
@@ -265,7 +265,7 @@
     "AC-568": "sha256:b7a95992b45217ae",
     "AC-571": "sha256:9874b9b2370c8c1d",
     "AC-572": "sha256:a4807895f7152c20",
-    "AC-584": "sha256:9f7e4137b3e04bef",
+    "AC-584": "sha256:af1a6d7e766acc77",
     "AC-585": "sha256:3e38cb21f654c9a6",
     "AC-586": "sha256:d69c569d032e0362",
     "AC-587": "sha256:e77ad03e7a14c4c0",
@@ -3777,11 +3777,11 @@
       "ac_ids": [
         "AC-235"
       ],
-      "title": "縮小時も本文 12px 以上",
+      "title": "360px 近傍へ実際に縮小した表示中の本文を測定し、12px 以上と非空を確認",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-235",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "7b153dc",
       "last_run_at": "2026-11-08T12:26:02+09:00",
       "evidence": "work/runs/202611081053/logs/system-test/E2E-221-202611081152.log",
@@ -3791,6 +3791,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "受入基準からケースを作成"
+        },
+        {
+          "at": "2026-11-08T13:50:16+09:00",
+          "by": "test-designer",
+          "change": "title: '縮小時も本文 12px 以上' -> '360px 近傍へ実際に縮小した表示中の本文を測定し、12px 以上と非空を確認'",
+          "reason": "Q-114 A: AC-235 の下限を PARAM-134 に合わせ、到達と可視本文の非空を検証する"
         }
       ]
     },
@@ -6314,11 +6320,11 @@
       "ac_ids": [
         "AC-529"
       ],
-      "title": "ステップのクリックでの再配置: 工程の順・重要度の大きさ・関連しないものは後ろで最小／ピン止めと手で変えた大きさは不変・消えない（異常系）",
+      "title": "工程順・最小寸法・選択等を保ち、マウスとタッチの手動位置を保持し、領域不足では原子的に復帰",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-529",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "7b153dc",
       "last_run_at": "2026-11-08T12:26:02+09:00",
       "evidence": "work/runs/202611081053/logs/system-test/E2E-326-202611081146.log",
@@ -6334,6 +6340,12 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "Q-110/111 A: 下限を PARAM-134・135（360x240）に更新（旧 PARAM-085 の 240x120 廃止）。テスト修正のため再実行"
+        },
+        {
+          "at": "2026-11-08T13:50:26+09:00",
+          "by": "test-designer",
+          "change": "title: 'ステップのクリックでの再配置: 工程の順・重要度の大きさ・関連しないものは後ろで最小／ピン止めと手で変えた大きさは不変・消えない（異常系）' -> '工程順・最小寸法・選択等を保ち、マウスとタッチの手動位置を保持し、領域不足では原子的に復帰'",
+          "reason": "Q-115 (1) A・(2) A: 手動位置の除外と保持、候補なし／候補を尽くした後の取消しを追加"
         }
       ]
     },
@@ -6577,11 +6589,11 @@
       "ac_ids": [
         "AC-584"
       ],
-      "title": "保存済みレイアウトなしで 4 つ以上を置くと主役が最大・補助と詳細が右か下・重ならず最小幅以上・再現する（各ペルソナ）。異常系: 非表示後の再表示でも重ならない",
+      "title": "5 個追加時の上限・360x240 の下限・最小化・一覧からの到達と再現性を確認",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-584",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "7b153dc",
       "last_run_at": "2026-11-08T12:26:02+09:00",
       "evidence": "work/runs/202611081053/logs/system-test/E2E-336-202611081146.log",
@@ -6603,6 +6615,12 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "Q-110/111 A: 下限を PARAM-134・135（360x240）に更新（旧 PARAM-085 の 240x120 廃止）。テスト修正のため再実行"
+        },
+        {
+          "at": "2026-11-08T13:50:36+09:00",
+          "by": "test-designer",
+          "change": "title: '保存済みレイアウトなしで 4 つ以上を置くと主役が最大・補助と詳細が右か下・重ならず最小幅以上・再現する（各ペルソナ）。異常系: 非表示後の再表示でも重ならない' -> '5 個追加時の上限・360x240 の下限・最小化・一覧からの到達と再現性を確認'",
+          "reason": "Q-114 A: AC-584 の下限・上限超過と領域不足を実際の追加操作と再現で確認する"
         }
       ]
     },

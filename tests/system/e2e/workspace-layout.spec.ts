@@ -1,6 +1,6 @@
 // System Test: コンポーネントのドラッグ移動・自動サイズ調整・作業先（デモ／実 Project）の選択・Fluent 2 の適用
 // 期待値は要求定義書の受入基準（docs/requirements/app-experience.md の FR-142〜144・NFR-UX-007）だけから決める。
-// 画面の探し方は tests/system/CONTRACT.md §9。PARAM-033=1.5 倍、PARAM-034=240 CSS px、PARAM-035=12 CSS px。
+// 画面の探し方は tests/system/CONTRACT.md §9。PARAM-033=1.5 倍、PARAM-134=360 CSS px、PARAM-035=12 CSS px。
 import type { Page, Locator } from '@playwright/test';
 import { test, expect, openScreen, component, selectPersona, pressOpeningEscape, closeSettings } from '../support/fixtures';
 import { examplePack } from '../support/packs';
@@ -8,8 +8,8 @@ import { examplePack } from '../support/packs';
 const mono = examplePack('mono');
 
 const SCALE = 1.5; // PARAM-033
-const MIN_WIDTH = 240; // PARAM-034
 const MIN_FONT = 12; // PARAM-035
+const MIN_COMPONENT_WIDTH = 360; // PARAM-134（AC-235）
 
 async function box(loc: Locator) {
   const b = await loc.boundingBox();
@@ -462,15 +462,83 @@ test.describe('NFR-UX-007 画面とレイアウト操作への Fluent 2 の適�
   });
 
   // NFR-UX-007 AC-235
-  test('NFR-UX-007 AC-235 コンポーネントを最小の幅（240px）近くまで縮めても、本文の文字は 12px 以上', async ({ page, start }) => {
+  test('NFR-UX-007 AC-235 コンポーネントを 360px 近くまで実際に縮めても、表示された本文の文字は 12px 以上', async ({ page, start }) => {
     await start();
     await selectPersona(page, '事業部門');
-    await page.setViewportSize({ width: MIN_WIDTH * 5, height: 900 }); // 並ぶ数が増え、各幅が最小に近づく
+    await page.setViewportSize({ width: 2000, height: 1200 });
+    const autoSize = page.getByRole('switch', { name: 'サイズの自動調整' });
+    if (await autoSize.isChecked()) await autoSize.uncheck();
     const ks = await keys(page);
-    for (const k of ks) {
+    const states: Record<string, string> = await page.getByTestId('window-list').getByTestId('window-list-item').evaluateAll((els) =>
+      Object.fromEntries(els.map((e) => [e.getAttribute('data-component-key') ?? '', e.getAttribute('data-state') ?? ''])));
+    // ビューポートを狭くしただけでは 360px 近傍に到達した保証にならない。
+    const candidates = await Promise.all(ks.filter((k) => ['front', 'visible'].includes(states[k]))
+      .map(async (k) => ({ key: k, rect: await box(component(page, k)) })));
+    const wide = candidates.find(({ rect }) => rect.width > MIN_COMPONENT_WIDTH + 20);
+    expect(wide, '前提: 縮小前に 360px より十分広いコンポーネントが必要').toBeTruthy();
+    const target = component(page, wide!.key);
+    await target.hover();
+    const handle = target.getByTestId('resize-e').first();
+    await expect(handle).toBeVisible();
+    const h = await box(handle);
+    const x = h.x + h.width / 2;
+    const y = h.y + h.height / 2;
+    await page.mouse.move(x, y);
+    await page.mouse.down();
+    await page.mouse.move(x - (wide!.rect.width - MIN_COMPONENT_WIDTH + 40), y, { steps: 10 });
+    await page.mouse.up();
+    await expect.poll(async () => (await box(target)).width, { message: '360px 近傍に縮める' })
+      .toBeLessThanOrEqual(MIN_COMPONENT_WIDTH + 5);
+    const measuredWidth = (await box(target)).width;
+    expect(measuredWidth, '前提: PARAM-134 の幅未満にならない').toBeGreaterThanOrEqual(MIN_COMPONENT_WIDTH);
+    expect(measuredWidth, '前提: 実際に幅が縮まった').toBeLessThan(wide!.rect.width - 10);
+    const bodySizes = await target.evaluate((el) => {
+      const sizes: number[] = [];
+      const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        const p = n.parentElement;
+        if (!p || !(n.textContent ?? '').trim() || p.closest('h1,h2,h3,h4,button,[role="button"],[role="tab"]')) continue;
+        const range = document.createRange();
+        range.selectNodeContents(n);
+        let rects = [...range.getClientRects()].map((r) => ({
+          left: Math.max(0, r.left), top: Math.max(0, r.top),
+          right: Math.min(innerWidth, r.right), bottom: Math.min(innerHeight, r.bottom),
+        }));
+        let hidden = false;
+        // 親の透明化・非表示と overflow による切り取りも考慮し、画面上に見える文字だけを数える。
+        for (let ancestor: Element | null = p; ancestor; ancestor = ancestor.parentElement) {
+          const s = getComputedStyle(ancestor);
+          if (s.display === 'none' || s.visibility !== 'visible' || Number(s.opacity) === 0) { hidden = true; break; }
+          const clipX = /^(auto|scroll|hidden|clip)$/.test(s.overflowX);
+          const clipY = /^(auto|scroll|hidden|clip)$/.test(s.overflowY);
+          if (clipX || clipY) {
+            const r = ancestor.getBoundingClientRect();
+            rects = rects.map((v) => ({
+              left: clipX ? Math.max(v.left, r.left) : v.left,
+              right: clipX ? Math.min(v.right, r.right) : v.right,
+              top: clipY ? Math.max(v.top, r.top) : v.top,
+              bottom: clipY ? Math.min(v.bottom, r.bottom) : v.bottom,
+            }));
+          }
+        }
+        const visible = rects.some((r) => {
+          if (r.right <= r.left || r.bottom <= r.top) return false;
+          const hit = document.elementFromPoint((r.left + r.right) / 2, (r.top + r.bottom) / 2);
+          return !!hit && (hit === p || p.contains(hit) || hit.contains(p));
+        });
+        if (hidden || !visible) continue;
+        sizes.push(parseFloat(getComputedStyle(p).fontSize));
+      }
+      return sizes;
+    });
+    expect(bodySizes.length, '360px 近傍で表示された本文を実際に測定する').toBeGreaterThan(0);
+    expect(Math.min(...bodySizes), '縮小したコンポーネントの本文').toBeGreaterThanOrEqual(MIN_FONT);
+
+    // 従来の、ほかの表示中コンポーネントも含む独立した文字サイズの検証を残す。
+    for (const { key: k } of candidates) {
       const c = component(page, k);
       const w = (await box(c)).width;
-      expect(w, `${k} が最小の幅未満`).toBeGreaterThanOrEqual(MIN_WIDTH - 1);
+      expect(w, `${k} が最小の幅未満`).toBeGreaterThanOrEqual(MIN_COMPONENT_WIDTH);
     }
     const small = await visibleComponents(page).evaluateAll((els, min) => {
       const out: string[] = [];
@@ -492,7 +560,7 @@ test.describe('NFR-UX-007 画面とレイアウト操作への Fluent 2 の適�
   test('NFR-UX-007 AC-235 異常系: 画面を狭くして収まらないコンポーネントがタブにまとめられても、本文は 12px 以上', async ({ page, start }) => {
     await start();
     await selectPersona(page, '事業部門');
-    await page.setViewportSize({ width: MIN_WIDTH * 2, height: 800 });
+    await page.setViewportSize({ width: 480, height: 800 }); // 狭い表示幅の試験条件（コンポーネントの下限ではない）
     const sizes = await page.getByTestId('workspace').locator('h1,h2,h3,[role=tab],p,li,td,span').evaluateAll((els) =>
       els.filter((e) => (e as HTMLElement).offsetParent && (e.textContent ?? '').trim()).map((e) => parseFloat(getComputedStyle(e).fontSize)));
     expect(sizes.length).toBeGreaterThan(0);

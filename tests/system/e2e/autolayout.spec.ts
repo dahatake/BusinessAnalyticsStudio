@@ -1,12 +1,14 @@
 // System Test: 情報の階層に基づく自動配置（FR-243 AC-584）と、ペルソナ別の主役・補助・詳細の分類（FR-244 AC-587）
 // 期待値は要求定義書の受入基準（docs/requirements/app-experience.md の FR-243・FR-244）だけから決める。
-// 画面の探し方は tests/system/CONTRACT.md §23。下限は PARAM-134=360（CSS px。FR-243・FR-296。Q-110 A）。AC-584 本文の PARAM-034=240 は PARAM-134 以上で満たされる。
-import type { Page, Locator } from '@playwright/test';
-import { test, expect, component, selectPersona, PERSONAS } from '../support/fixtures';
+// 画面の探し方は tests/system/CONTRACT.md §23・§34。PARAM-134=360、PARAM-135=240、PARAM-136=4。
+import type { Browser, Page, Locator } from '@playwright/test';
+import { test, expect, component, selectPersona, PERSONAS, gotoAndEnter } from '../support/fixtures';
 import { examplePack } from '../support/packs';
 
 const mono = examplePack('mono');
-const MIN_WIDTH = 360; // PARAM-134（AC-584 本文の PARAM-034=240 以上を含意）
+const MIN_WIDTH = 360; // PARAM-134
+const MIN_HEIGHT = 240; // PARAM-135
+const MAX_VISIBLE = 4; // PARAM-136
 
 /** §7 の表の既定の情報表現（ペルソナ → 主役。標準の検証条件はモノ） */
 const DEFAULT_PRIMARY: Record<string, string> = {
@@ -35,12 +37,26 @@ async function layout(page: Page): Promise<Record<string, Box>> {
 const overlap = (a: Box, b: Box) => Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x)) * Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
 const area = (b: Box) => b.width * b.height;
 
-function expectNoOverlapAndMinWidth(boxes: Record<string, Box>) {
+async function windowStates(page: Page): Promise<Record<string, string>> {
+  return page.getByTestId('window-list').getByTestId('window-list-item').evaluateAll((els) =>
+    Object.fromEntries(els.map((e) => [e.getAttribute('data-component-key') ?? '', e.getAttribute('data-state') ?? ''])));
+}
+
+/** 最小化の見出し・閉じたもの・背面は同時表示の数に含めない（PARAM-136）。 */
+async function shownLayout(page: Page): Promise<Record<string, Box>> {
+  const [all, states] = await Promise.all([layout(page), windowStates(page)]);
+  const visible = Object.keys(states).filter((k) => ['front', 'visible'].includes(states[k]));
+  for (const k of visible) expect(all[k], `${k}: 表示中の矩形が必要`).toBeTruthy();
+  return Object.fromEntries(visible.map((k) => [k, all[k]]));
+}
+
+function expectNoOverlapAndMinimum(boxes: Record<string, Box>) {
   const names = Object.keys(boxes);
   for (let i = 0; i < names.length; i++) {
-    expect(boxes[names[i]].width, `${names[i]} が最小の幅（${MIN_WIDTH}px）未満`).toBeGreaterThanOrEqual(MIN_WIDTH - 1);
+    expect(boxes[names[i]].width, `${names[i]} が最小の幅（${MIN_WIDTH}px）未満`).toBeGreaterThanOrEqual(MIN_WIDTH);
+    expect(boxes[names[i]].height, `${names[i]} が最小の高さ（${MIN_HEIGHT}px）未満`).toBeGreaterThanOrEqual(MIN_HEIGHT);
     for (let j = i + 1; j < names.length; j++) {
-      expect(overlap(boxes[names[i]], boxes[names[j]]), `${names[i]} と ${names[j]} が重なる`).toBeLessThanOrEqual(4);
+      expect(overlap(boxes[names[i]], boxes[names[j]]), `${names[i]} と ${names[j]} が重なる`).toBeLessThanOrEqual(0.01);
     }
   }
 }
@@ -49,17 +65,19 @@ const tierOf = (c: Locator) => c.getAttribute('data-tier');
 
 test.describe('FR-243 コンポーネントの配置時の、情報の階層に基づく自動配置', () => {
   // FR-243 AC-584
-  test('FR-243 AC-584 保存済みのレイアウトがない状態で 4 つ以上のコンポーネントを置くと、主役が最大・補助と詳細が主役の右か下・重ならず最小の幅以上で、同じ操作は同じ配置', async ({ page, start }) => {
+  test('FR-243 AC-584 各ペルソナの配置と、5 個追加時の上限・下限・最小化・一覧・再現性', async ({ page, start, browser }) => {
+    test.setTimeout(360_000);
     const app = await start();
     for (const p of PERSONAS) {
       await selectPersona(page, p);
-      const boxes = await layout(page);
+      const boxes = await shownLayout(page);
       const keys = Object.keys(boxes);
-      expect(keys.length, `${p}: コンポーネントが 4 つ以上必要`).toBeGreaterThanOrEqual(4);
+      expect(keys.length, `${p}: 表示中のコンポーネント`).toBeGreaterThan(0);
+      expect(keys.length, `${p}: 同時表示の上限`).toBeLessThanOrEqual(MAX_VISIBLE);
       const primary = DEFAULT_PRIMARY[p];
       expect(boxes[primary], `${p}: 主役 ${primary} が表示されている`).toBeTruthy();
       // 主役が最大の領域
-      for (const k of keys) if (k !== primary) expect(area(boxes[primary]), `${p}: 主役が ${k} より大きい`).toBeGreaterThan(area(boxes[k]));
+      for (const k of keys) if (k !== primary) expect(area(boxes[primary]), `${p}: 主役が ${k} 以上の領域`).toBeGreaterThanOrEqual(area(boxes[k]));
       // 補助・詳細は主役の読む順序の後ろ（右か下）。主役より左上へは出ない
       for (const k of keys) {
         if (k === primary) continue;
@@ -68,11 +86,11 @@ test.describe('FR-243 コンポーネントの配置時の、情報の階層に�
         const after = b.x >= pb.x + pb.width - 4 || b.y >= pb.y + pb.height - 4 || b.x >= pb.x - 4 && b.y >= pb.y - 4;
         expect(after, `${p}: ${k} が主役の前（左上）に置かれている`).toBe(true);
       }
-      expectNoOverlapAndMinWidth(boxes);
+      expectNoOverlapAndMinimum(boxes);
       // 同じ操作を繰り返すと同じ配置（再読込後に同じペルソナを選び直す）
       await app.reload();
       await selectPersona(page, p);
-      const again = await layout(page);
+      const again = await shownLayout(page);
       expect(Object.keys(again).sort()).toEqual(keys.sort());
       for (const k of keys) {
         expect(Math.abs(again[k].x - boxes[k].x), `${p}: ${k} の x`).toBeLessThanOrEqual(2);
@@ -81,24 +99,131 @@ test.describe('FR-243 コンポーネントの配置時の、情報の階層に�
         expect(Math.abs(again[k].height - boxes[k].height), `${p}: ${k} の高さ`).toBeLessThanOrEqual(2);
       }
     }
+    await verifyOverflowAndReplay(app, browser);
   });
 
   // FR-243 AC-584（異常系: 非表示にしてから再表示した（追加した）コンポーネントも、重ならず最小の幅以上で置かれる）
   test('FR-243 AC-584 異常系: コンポーネントを非表示にして再表示しても、重ならず最小の幅以上で、主役は最大のまま', async ({ page, start }) => {
     await start();
     await selectPersona(page, '事業部門');
-    const before = await layout(page);
+    const before = await shownLayout(page);
     const hideKey = Object.keys(before).find((k) => k !== DEFAULT_PRIMARY['事業部門'])!;
     const target = component(page, hideKey);
     await target.focus();
     await page.keyboard.press('h');
     await expect(target).toBeHidden();
     await page.getByTestId('dock').getByRole('button').first().click();
-    await expect.poll(async () => Object.keys(await layout(page)).length, { timeout: 5_000 }).toBeGreaterThanOrEqual(Object.keys(before).length);
-    const after = await layout(page);
-    expectNoOverlapAndMinWidth(after);
-    for (const k of Object.keys(after)) if (k !== DEFAULT_PRIMARY['事業部門']) expect(area(after[DEFAULT_PRIMARY['事業部門']])).toBeGreaterThan(area(after[k]));
+    await expect.poll(async () => Object.keys(await shownLayout(page)).length, { timeout: 5_000 }).toBeGreaterThanOrEqual(Object.keys(before).length);
+    const after = await shownLayout(page);
+    expectNoOverlapAndMinimum(after);
+    for (const k of Object.keys(after)) if (k !== DEFAULT_PRIMARY['事業部門']) expect(area(after[DEFAULT_PRIMARY['事業部門']])).toBeGreaterThanOrEqual(area(after[k]));
   });
+
+  // FR-243 AC-584: 5 回の追加、上限超過と領域不足、一覧からの到達、同一操作の再現。
+  // 最初の検証の配信サーバーを再利用し、保存だけは試行ごとに分ける。
+  async function verifyOverflowAndReplay(app: { url: string }, browser: Browser) {
+    const added = ['issue-solution', 'table', 'gantt', 'architecture', 'knowledge-graph'];
+    const conditions = [
+      { name: '上限超過', viewport: { width: 1600, height: 1400 }, shortage: false },
+      { name: '領域不足', viewport: { width: 720, height: 420 }, shortage: true },
+    ];
+    type Result = { states: Record<string, string>; boxes: Record<string, Box>; restored: string };
+    for (const condition of conditions) {
+      const results: Result[] = [];
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const context = await browser.newContext({ viewport: condition.viewport, locale: 'ja-JP', timezoneId: 'Asia/Tokyo' });
+        const p = await context.newPage();
+        try {
+          // 新しい context は保存済みデータを共有しない。画面の起動は同じ app.url を再利用。
+          await gotoAndEnter(p, app.url);
+          await selectPersona(p, '事業部門');
+          await expect(p.getByTestId('workspace')).toHaveAttribute('data-limit-pending', 'false');
+          let initial = await windowStates(p);
+          for (const k of Object.keys(initial).filter((key) => ['front', 'visible', 'minimized'].includes(initial[key]))) {
+            await expect(component(p, k), `${condition.name}: ピンなし`).toHaveAttribute('data-pinned', 'false');
+          }
+          if (condition.shortage) {
+            const ws = await p.getByTestId('workspace').boundingBox();
+            expect(ws, '作業領域').not.toBeNull();
+            expect(ws!.width, '幅が 360px 未満の例外ではない').toBeGreaterThanOrEqual(MIN_WIDTH);
+            expect(ws!.width * ws!.height, '前提: 下限の 4 個分が作業領域に収まらない').toBeLessThan(MAX_VISIBLE * MIN_WIDTH * MIN_HEIGHT);
+          }
+
+          // 既定で開いた同名の項目も一度閉じ、以下の 5 回を実際の追加操作にする。
+          for (const k of added) {
+            initial = await windowStates(p);
+            if (initial[k] === 'minimized') {
+              await p.getByTestId('window-list').locator(`[data-testid="window-list-item"][data-component-key="${k}"]`).click();
+              await expect.poll(async () => (await windowStates(p))[k]).toMatch(/^(front|visible)$/);
+            }
+            if (['front', 'visible'].includes((await windowStates(p))[k])) {
+              await component(p, k).getByTestId('window-controls').getByRole('button', { name: '閉じる', exact: true }).click();
+              await expect.poll(async () => (await windowStates(p))[k]).toBe('closed');
+            }
+          }
+          await expect(p.getByTestId('workspace'), '追加直前も上限判定の保留なし').toHaveAttribute('data-limit-pending', 'false');
+          const beforeAdd = await windowStates(p);
+          for (const k of added) {
+            expect(beforeAdd[k] === undefined || beforeAdd[k] === 'closed', `${k}: 追加前は開いていない`).toBe(true);
+          }
+          for (const k of Object.keys(beforeAdd).filter((key) => ['front', 'visible', 'minimized'].includes(beforeAdd[key]))) {
+            await expect(component(p, k), `${k}: 追加直前もピンなし`).toHaveAttribute('data-pinned', 'false');
+          }
+          for (const k of added) {
+            const nav = p.getByTestId(`nav-${k}`);
+            if (!(await nav.isVisible())) await p.getByRole('button', { name: 'メニュー', exact: true }).click();
+            await nav.click();
+            await expect.poll(async () => (await windowStates(p))[k], { message: `${k}: 追加後に一覧に残る` })
+              .toMatch(/^(front|visible|minimized)$/);
+          }
+          const states = await windowStates(p);
+          for (const k of added) expect(states[k], `${k}: 追加したものを閉じたり背面にしたりしない`).toMatch(/^(front|visible|minimized)$/);
+          const boxes = await shownLayout(p);
+          const keys = Object.keys(boxes);
+          expect(keys.length, '同時表示が 0 件').toBeGreaterThan(0);
+          expect(keys.length, '同時表示の上限').toBeLessThanOrEqual(MAX_VISIBLE);
+          if (condition.shortage) expect(keys.length, '下限で収まらない分は最小化').toBeLessThan(MAX_VISIBLE);
+          const primary = DEFAULT_PRIMARY['事業部門'];
+          expect(boxes[primary], '主役が表示される').toBeTruthy();
+          for (const k of keys.filter((key) => key !== primary)) {
+            expect(area(boxes[primary]), `主役が ${k} 以上の領域`).toBeGreaterThanOrEqual(area(boxes[k]));
+            expect(boxes[k].x >= boxes[primary].x + boxes[primary].width - 1 || boxes[k].y >= boxes[primary].y + boxes[primary].height - 1,
+              `${k}: 主役の右または下`).toBe(true);
+          }
+          expectNoOverlapAndMinimum(boxes);
+          const minimized = added.filter((k) => states[k] === 'minimized').sort();
+          expect(minimized.length, '超過・領域不足の項目が最小化される').toBeGreaterThan(0);
+          for (const k of minimized) {
+            await expect(p.getByTestId('window-list').locator(`[data-testid="window-list-item"][data-component-key="${k}"]`), `${k}: 一覧に残る`).toBeVisible();
+          }
+          const restored = minimized[0];
+          const item = p.getByTestId('window-list').locator(`[data-testid="window-list-item"][data-component-key="${restored}"]`);
+          await item.click();
+          await expect(item, '一覧から最小化した項目に到達できる').toHaveAttribute('data-state', /^(front|visible)$/);
+          await expect(component(p, restored), '復元した内容').toBeVisible();
+          const afterAccess = await windowStates(p);
+          expect(Object.values(afterAccess).filter((state) => state === 'front' || state === 'visible').length,
+            'ピンも保留もない一覧からの到達後も上限内').toBeLessThanOrEqual(MAX_VISIBLE);
+          const restoredBox = await component(p, restored).boundingBox();
+          expect(restoredBox, '復元した項目の矩形').not.toBeNull();
+          expect(restoredBox!.width, '復元後の幅の下限').toBeGreaterThanOrEqual(MIN_WIDTH);
+          expect(restoredBox!.height, '復元後の高さの下限').toBeGreaterThanOrEqual(MIN_HEIGHT);
+          results.push({ states: Object.fromEntries(added.map((k) => [k, states[k]])), boxes, restored });
+        } finally {
+          await context.close();
+        }
+      }
+      const [first, second] = results;
+      expect(second.states, `${condition.name}: 同じ追加で同じ最小化状態`).toEqual(first.states);
+      expect(second.restored, `${condition.name}: 一覧から到達する対象`).toBe(first.restored);
+      expect(Object.keys(second.boxes).sort(), `${condition.name}: 表示中の集合`).toEqual(Object.keys(first.boxes).sort());
+      for (const k of Object.keys(first.boxes)) {
+        for (const field of ['x', 'y', 'width', 'height'] as const) {
+          expect(Math.abs(first.boxes[k][field] - second.boxes[k][field]), `${condition.name}: ${k}.${field} の再現`).toBeLessThanOrEqual(2);
+        }
+      }
+    }
+  }
 });
 
 test.describe('FR-244 情報の階層（主役・補助・詳細）の分類', () => {
