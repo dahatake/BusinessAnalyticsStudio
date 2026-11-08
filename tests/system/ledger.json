@@ -10105,11 +10105,11 @@
       "ac_ids": [
         "AC-739"
       ],
-      "title": "Foundry 実接続の設定表示と、キー未設定・接続不可・タイムアウト・非2xx 時の代替表示（差し替え部品）",
+      "title": "Foundry 共通接続の空の既定エンドポイント・設定表示と、キー未設定・接続不可・タイムアウト・非2xx 時の代替表示（差し替え部品）",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-739",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "7b153dc",
       "last_run_at": "2026-11-08T12:26:02+09:00",
       "evidence": "work/runs/202611081053/logs/system-test/E2E-373-202611081202.log",
@@ -10125,6 +10125,12 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "Foundry 共通接続への仕様更新で期待値を変更"
+        },
+        {
+          "at": "2026-11-08T23:58:12+09:00",
+          "by": "test-designer",
+          "change": "title: 'Foundry 実接続の設定表示と、キー未設定・接続不可・タイムアウト・非2xx 時の代替表示（差し替え部品）' -> 'Foundry 共通接続の空の既定エンドポイント・設定表示と、キー未設定・接続不可・タイムアウト・非2xx 時の代替表示（差し替え部品）'",
+          "reason": "FR-275・FR-285 の既定 URL 廃止に合わせ AC-739 の画面期待値を変更したため、変更後のケースは未実施に戻す"
         }
       ]
     },
