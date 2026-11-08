@@ -17,6 +17,9 @@ const gpuArgs = process.env.ST_GPU === '1'
 
 export default defineConfig({
   testDir: './e2e',
+  // Q-115 shares one ephemeral static server across parallel workers.
+  globalSetup: process.env.ST_Q115_SHARED_LAYOUT === '1'
+    ? path.join(REPO_ROOT, 'tests', 'system', 'support', 'q115-global-setup.ts') : undefined,
   // run.mjs がプロセスごとの ST_OUT_SUBDIR を渡す（並列実行で outputDir・artifacts が重ならない）
   outputDir: path.join(outDir, process.env.ST_OUT_SUBDIR ?? '_default'),
   timeout: 90_000,

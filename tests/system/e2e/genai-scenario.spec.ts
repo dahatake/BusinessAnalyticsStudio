@@ -122,9 +122,19 @@ test.describe('FR-285 Foundry 実接続の切替と失敗時の代替（差し�
   }
 
   // FR-285 AC-739（設定画面の表示）
-  test('FR-285 AC-739 設定画面の Foundry の設定パネルは共通接続の 1 つだけで、独自の設定パネル・エンドポイント・デプロイ名・実接続スイッチはなく、有料・送信情報・実接続の既定無効が出て、キーの値は出ない', async ({ page, start }) => {
+  test('FR-285 AC-739 設定画面の Foundry の設定パネルは共通接続の 1 つだけで、独自の設定パネル・エンドポイント・デプロイ名・実接続スイッチはなく、有料・送信情報・実接続の既定無効と空のエンドポイントが出て、キーの値は出ない', async ({ page, start }) => {
     const relay = await startFoundryRelayStub('ok');
+    const blockedExternalHosts: string[] = [];
     try {
+      // 本物の Foundry を含む外部通信は、アプリの実装にかかわらず送らない。
+      await page.route('**/*', (route) => {
+        const url = new URL(route.request().url());
+        if (['http:', 'https:'].includes(url.protocol) && ['127.0.0.1', 'localhost', '[::1]'].includes(url.hostname)) {
+          return route.continue();
+        }
+        blockedExternalHosts.push(url.hostname || url.protocol);
+        return route.abort('blockedbyclient');
+      });
       await start({ relayUrl: relay.url });
       const settings = await openScreen(page, 'settings');
       const region = settings.getByRole('region', { name: COMMON_PANEL });
@@ -151,13 +161,17 @@ test.describe('FR-285 Foundry 実接続の切替と失敗時の代替（差し�
       const sw = region.getByRole('switch', { name: '実接続を有効にする', exact: true });
       await expect(sw).toBeVisible();
       await expect(sw).not.toBeChecked();
-      // 既定のエンドポイントとデプロイ名が見え、変更できる（FR-285）
-      await expect(region.getByRole('textbox', { name: 'エンドポイント', exact: true })).toHaveValue('https://GraphcRecordingPanel.services.ai.azure.com/openai/v1');
+      // FR-285 AC-739: 共通接続の新規・未設定時はエンドポイントが空（FR-275 AC-705 は integration）。
+      await expect(region.getByRole('textbox', { name: 'エンドポイント', exact: true })).toHaveValue('');
       await expect(region.getByRole('textbox', { name: 'デプロイ名', exact: true })).toHaveValue('gpt-chat-latest');
+      await expect(region.getByText('設定済み', { exact: true })).toHaveCount(0);
       // キーの値は出さない（入力欄・表示・ページ全体）。環境変数名だけの説明は許す
       const html = await page.content();
       expect(html).not.toMatch(/FOUNDRY_API_KEY/);
       expect(html).not.toMatch(/\bsk-[A-Za-z0-9]{16,}/);
+      expect(analyzeCalls(relay), '未設定の画面表示で分析要求が送られた').toBe(0);
+      expect(relay.modelCalls).toBe(0);
+      expect(blockedExternalHosts, 'localhost 以外への通信が試みられた').toEqual([]);
     } finally {
       await relay.close();
     }

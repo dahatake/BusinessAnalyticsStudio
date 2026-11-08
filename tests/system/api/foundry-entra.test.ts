@@ -60,15 +60,15 @@ function allFiles(dir: string): string[] { return fs.readdirSync(dir, { recursiv
 const noSecrets = (label: string, s: string) => { for (const v of [TOKEN, KEY]) assert.ok(!s.includes(v), `${label} に秘密の値が含まれる`); };
 
 // FR-282 AC-761
-test('FR-282 AC-761 Entra ID では、差し替えたトークン取得部品の値で /foundry/ask・/foundry/analyze・接続テストを呼び、トークンとキーはどの応答・ログ・保管ファイルにも出ない', async () => {
+test('FR-282 AC-761 未承認の場合は Entra の接続情報があっても呼び出さず、トークンとキーを応答・ログ・保管ファイルに出さない', async () => {
   const e = await setup({ auth: 'entra' });
   try {
-    assert.equal((await enable(e)).status, 200);
+    await enable(e);
     const seen: string[] = [];
     seen.push((await e.call('POST', '/foundry/ask', { packId: 'pack-1', prompt: '現状を説明して' })).text);
     seen.push((await e.call('POST', '/foundry/analyze', { packId: 'pack-1', solution: 'ソリューションの説明' })).text);
     seen.push((await e.call('POST', '/foundry/test', {})).text);
-    assert.ok(e.calls.length >= 3, `Foundry への呼び出しが 3 回に満たない（${e.calls.length}）`);
+    assert.equal(e.calls.length, 0, '未承認の用途で Foundry を呼んだ');
     for (const c of e.calls) {
       assert.ok(Object.values(c.headers).some((v) => v === `Bearer ${TOKEN}`), 'Authorization: Bearer <取得したトークン> で呼んでいない');
     }
@@ -80,15 +80,13 @@ test('FR-282 AC-761 Entra ID では、差し替えたトークン取得部品の
 });
 
 // FR-282 AC-761（異常系: トークンを取得できない）
-test('FR-282 AC-761 異常系: トークンを取得できないとき、Foundry を呼ばず「トークンを取得できませんでした」と az login の案内を示す（接続テスト・ask）', async () => {
+test('FR-282 AC-761 異常系: 未承認かつトークンを取得できないときは Foundry を呼ばず、秘密を出さない', async () => {
   const e = await setup({ auth: 'entra', token: async () => { throw new Error(`az: not logged in ${TOKEN}`); } });
   try {
     await enable(e);
     const ask = await e.call('POST', '/foundry/ask', { packId: 'pack-1', prompt: 'x' });
     const t = await e.call('POST', '/foundry/test', {});
     for (const r of [ask, t]) {
-      assert.match(r.text, /トークンを取得できませんでした/);
-      assert.match(r.text, /az login/);
       noSecrets('応答', r.text);
     }
     assert.equal(e.calls.length, 0, 'トークンなしで Foundry を呼んだ');
@@ -106,7 +104,7 @@ test('FR-282 AC-761 scripts/relay/start.ts は startRelay にトークン取得�
 });
 
 // FR-282 AC-762
-test('FR-282 AC-762 Entra ID では API キーなしで /foundry/analyze が呼け、/health の keyConfigured は未設定扱いにならない。API キー方式ではキー保存の有無を返し、値は応答に含まれない', async () => {
+test('FR-282 AC-762 Entra の資格情報は設定済み扱いだが未承認なら呼び出さず、キー・トークンは応答に含めない', async () => {
   const e = await setup({ auth: 'entra' });
   try {
     await enable(e);
@@ -114,7 +112,7 @@ test('FR-282 AC-762 Entra ID では API キーなしで /foundry/analyze が呼�
     assert.equal(h.foundry.keyConfigured, true, 'Entra で keyConfigured が未設定扱い');
     const a = await e.call('POST', '/foundry/analyze', { packId: 'pack-1', solution: 'ソリューションの説明' });
     assert.ok(!/key-missing/.test(a.text), 'Entra ID なのに「キーなし」で拒否された');
-    assert.ok(e.calls.length >= 1, 'Foundry が呼ばれていない');
+    assert.equal(e.calls.length, 0, '未承認の用途で Foundry を呼んだ');
     noSecrets('analyze 応答', a.text);
   } finally { await e.cleanup(); }
   // 異常系: Entra でも他の条件（有効化 FR-285）が欠ければ呼ばない
@@ -137,81 +135,24 @@ test('FR-282 AC-762 Entra ID では API キーなしで /foundry/analyze が呼�
   } finally { await n.cleanup(); }
 });
 
-// FR-282 AC-763
-test('FR-282 AC-763 POST /foundry/test は保存済みの接続情報で Foundry を 1 回だけ呼び、有効化がなくても動き、顧客データを送らず、キー・トークンを応答・ログに出さない', async () => {
-  const e = await setup({ auth: 'api-key' });
-  try {
-    const r = await e.call('POST', '/foundry/test', {});
-    assert.equal(r.status, 200, `成功時の HTTP 状態: ${r.text}`);
-    assert.equal(e.calls.length, 1, 'Foundry の呼び出しが 1 回でない（有効化なしでも実行できる）');
-    assert.ok(e.calls[0].body.length < 2000, '最小の入力になっていない');
-    noSecrets('応答', r.text);
-    noSecrets('ログ', e.logs.join('\n'));
-  } finally { await e.cleanup(); }
-});
-
-// FR-282 AC-763（異常系: 原因種別）
-test('FR-282 AC-763 異常系: 成功・認証失敗・デプロイ不明・接続先不正・タイムアウトは互いに異なる応答で返り、上流の本文・キーは含まれない', async () => {
-  const bodies = new Map<string, string>();
-  const cases: Array<[string, Reply]> = [['ok', { status: 200, text: 'OK' }], ['auth', { status: 401 }], ['deploy', { status: 404 }], ['network', 'network'], ['timeout', 'timeout']];
-  for (const [name, reply] of cases) {
-    const e = await setup({ auth: 'api-key', reply: () => reply, timeoutMs: 300 });
+// FR-282 AC-763 / FR-275 AC-706: 実際の C-03 行は未確定。
+// 架空の承認済み行・契約確認を与える仕組みと、画面・取消・成功/失敗の
+// 検証は別途必要。この未承認の負例だけで AC-763 全体を満たしたとはしない。
+test('FR-282 AC-763 未承認の接続テストは保存済みの接続情報や直接要求でも呼び出し 0 回', async () => {
+  for (const auth of ['api-key', 'entra', 'none'] as const) {
+    const e = await setup({ auth });
     try {
-      const r = await e.call('POST', '/foundry/test', {});
-      assert.equal(e.calls.length, 1, `${name}: 呼び出しが 1 回でない`);
-      assert.ok(!r.text.includes(UPSTREAM_BODY), `${name}: 上流の応答本文が含まれる`);
-      noSecrets(name, r.text);
-      noSecrets(`${name} ログ`, e.logs.join('\n'));
-      bodies.set(name, r.text);
+      // 確認を装う直接要求や架空の内部情報でも C-03 の未承認を迂回できない。
+      const r = await e.call('POST', '/foundry/test', {
+        confirmed: true,
+        information: { classification: 'internal', text: 'SYNTHETIC-HIDDEN-INTERNAL-763' },
+      });
+      assert.equal(e.calls.length, 0, `${auth}: 未承認なのに Foundry を呼んだ`);
+      assert.match(r.text, /未確定|未承認|許可|利用でき|確認|制限/, `${auth}: 利用できない理由がない`);
+      noSecrets('応答', r.text);
+      noSecrets('ログ', e.logs.join('\n'));
+      assert.ok(!r.text.includes(UPSTREAM_BODY), '上流の応答本文が含まれる');
+      assert.ok(!e.logs.join('\n').includes(UPSTREAM_BODY), 'ログに上流の応答本文が含まれる');
     } finally { await e.cleanup(); }
   }
-  assert.equal(new Set(bodies.values()).size, cases.length, `原因種別が区別されていない: ${JSON.stringify([...bodies])}`);
-});
-
-// FR-282 AC-763（未設定: 呼び出し 0 回）
-test('FR-282 AC-763 異常系: 未設定のときは Foundry を呼ばず（0 回）、成功とは異なる応答（未設定）を返す', async () => {
-  const ok = await setup({ auth: 'api-key' });
-  let okBody = '';
-  try { okBody = (await ok.call('POST', '/foundry/test', {})).text; } finally { await ok.cleanup(); }
-  const e = await setup({ auth: 'none' });
-  try {
-    const r = await e.call('POST', '/foundry/test', {});
-    assert.equal(e.calls.length, 0, '未設定なのに Foundry を呼んだ');
-    assert.notEqual(r.text, okBody, '未設定と成功の応答が同じ');
-  } finally { await e.cleanup(); }
-});
-
-// FR-282 AC-763（中継側: 停止・間隔は判定せず、受けた要求ごとに Foundry を 1 回だけ呼ぶ。間隔・予算停止の 0 回は画面側の責任）と最小の出力トークン上限
-test('FR-282 AC-763 中継側: 間隔内に続けて受けた要求も間隔を判定せず 1 要求につき Foundry を 1 回呼び、1 回の呼び出しは最小の出力トークン上限を付ける', async () => {
-  const e = await setup({ auth: 'api-key' });
-  try {
-    const first = await e.call('POST', '/foundry/test', {});
-    assert.equal(first.status, 200, first.text);
-    assert.equal(e.calls.length, 1);
-    const sent = JSON.parse(e.calls[0].body);
-    assert.equal(typeof sent.max_output_tokens, 'number', '出力トークンの上限が付いていない');
-    assert.ok(sent.max_output_tokens > 0 && sent.max_output_tokens <= 100, `出力トークン上限が最小ではない: ${sent.max_output_tokens}`);
-    const second = await e.call('POST', '/foundry/test', {});
-    assert.equal(second.status, 200, second.text);
-    assert.equal(e.calls.length, 2, '中継側が間隔を判定して Foundry を呼ばなかった（判定は画面側）');
-    assert.equal(JSON.parse(e.calls[1].body).max_output_tokens, sent.max_output_tokens);
-    noSecrets('応答', second.text);
-  } finally { await e.cleanup(); }
-});
-
-// FR-282 AC-763 AC-761（未設定 = Entra でトークンを取得できない。認証失敗とは区別され、Foundry は 0 回）
-test('FR-282 AC-763 AC-761 異常系: Entra ID でトークンを取得できないときは「未設定」として Foundry を 0 回で返し、成功・認証失敗の応答とは異なる', async () => {
-  const bodies: string[] = [];
-  for (const reply of [{ status: 200, text: 'OK' }, { status: 401 }] as Reply[]) {
-    const e = await setup({ auth: 'entra', reply: () => reply });
-    try { bodies.push((await e.call('POST', '/foundry/test', {})).text); } finally { await e.cleanup(); }
-  }
-  const e = await setup({ auth: 'entra', token: async () => { throw new Error(`az: not logged in ${TOKEN}`); } });
-  try {
-    const r = await e.call('POST', '/foundry/test', {});
-    assert.equal(e.calls.length, 0, 'トークンなしで Foundry を呼んだ');
-    assert.ok(!bodies.includes(r.text), '未設定が成功・認証失敗と区別されていない');
-    noSecrets('応答', r.text);
-    noSecrets('ログ', e.logs.join('\n'));
-  } finally { await e.cleanup(); }
 });
