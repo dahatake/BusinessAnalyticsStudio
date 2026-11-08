@@ -4,7 +4,7 @@ import { createElement } from 'react';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { FluentProvider, webLightTheme } from '@fluentui/react-components';
-import { planStepFlow, stepRelevance } from '../../src/stepper/flow';
+import { planStepFlow, planStepFlowFit, stepRelevance } from '../../src/stepper/flow';
 import { STEPS } from '../../src/stepper/model';
 import { Stepper } from '../../src/stepper/Stepper';
 import { useLayout } from '../../src/store/layout';
@@ -35,6 +35,35 @@ describe('FR-228 AC-529 stepRelevance / planStepFlow', () => {
     expect(area('ranking')).toBeGreaterThanOrEqual(area('gantt'));
     expect(area('gantt')).toBe(area('summary'));
     expect(keys.every((k) => k in out)).toBe(true); // 非表示にしない
+  });
+
+  it('FR-228 AC-529 Q-111 関連しないものは幅 PARAM-134（360）・高さ PARAM-135（240）の下限、重要・通常も下限未満にならない（旧 240×120 ではない）', () => {
+    const out = planStepFlow({ step: KPI, keys: ['priority', 'ranking', 'gantt', 'summary'], bounds: { w: 1000, h: 1200 }, pinned: {}, manual: {} });
+    expect(out.gantt).toMatchObject({ w: 360, h: 240 });
+    for (const r of Object.values(out)) { expect(r.w).toBeGreaterThanOrEqual(360); expect(r.h).toBeGreaterThanOrEqual(240); }
+    const small = planStepFlow({ step: KPI, keys: ['priority', 'ranking'], bounds: { w: 1000, h: 400 }, pinned: {}, manual: {} });
+    expect(small.ranking!.h).toBeGreaterThanOrEqual(240); // 0.4×400=160 は下限へ補正
+  });
+
+  it('FR-228 AC-529 Q-111 下限で収まらないときは縮めず、最も長く使っていない（ピン止め・手で変えたもの・重要なものを除く）ものを最小化する', () => {
+    const keys = ['priority', 'ranking', 'gantt', 'summary', 'matrix'];
+    const bounds = { w: 800, h: 560 };
+    const { rects, minimized } = planStepFlowFit({ step: KPI, keys, bounds, pinned: {}, manual: {}, usedAt: { gantt: 5, summary: 2, matrix: 9 } });
+    expect(minimized.length).toBeGreaterThan(0);
+    expect(minimized[0]).toBe('summary'); // 関連しないもののうち最も古い
+    expect(minimized).not.toContain('priority');
+    for (const k of minimized) expect(k in rects).toBe(false);
+    for (const r of Object.values(rects)) { expect(r.w).toBeGreaterThanOrEqual(360); expect(r.h).toBeGreaterThanOrEqual(240); expect(r.y + r.h).toBeLessThanOrEqual(bounds.h + 1); }
+    const rs = Object.values(rects);
+    for (let i = 0; i < rs.length; i++) for (let j = i + 1; j < rs.length; j++) {
+      const a = rs[i]!, b = rs[j]!;
+      expect(a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h).toBe(false);
+    }
+  });
+
+  it('FR-228 AC-529 Q-111 収まるときは最小化しない', () => {
+    const { minimized } = planStepFlowFit({ step: KPI, keys: ['priority', 'ranking', 'gantt'], bounds: { w: 1200, h: 900 }, pinned: {}, manual: {} });
+    expect(minimized).toEqual([]);
   });
 
   it('FR-228 AC-529 ピン止めは結果に含めず避けて並べ、手で変えた大きさは保つ', () => {

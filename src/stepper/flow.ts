@@ -2,7 +2,7 @@
 // 対応と大きさの比は [ASSUMPTION] A-65: 関連 = ステップの screens、工程の順 = screens の並び、重要 = ステップの作業画面（screen）。
 import { STEPS } from './model';
 import type { PxRect } from '../workspace/freeLayout';
-import { MIN_COMPONENT_WIDTH } from '../workspace/autosize';
+import { MIN_WINDOW_H, MIN_WINDOW_W, pickOldest } from '../workspace/windowLimits';
 
 export interface StepRelevance { relevant: boolean; rank: number; importance: 'high' | 'normal' }
 
@@ -10,8 +10,8 @@ export interface StepRelevance { relevant: boolean; rank: number; importance: 'h
 export const IRRELEVANT_RANK_BASE = 100;
 /** 並べる間隔（px） */
 export const FLOW_GAP = 8;
-/** 関連しないコンポーネントの最小の大きさ（幅は最小の幅 PARAM-034 と同じ） */
-export const FLOW_MIN_H = 120;
+/** 関連しないコンポーネントの最小の大きさ（FR-224 の最小の大きさ＝幅 PARAM-134・高さ PARAM-135。旧 PARAM-085 の 240×120 は廃止。Q-111 A） */
+export const FLOW_MIN_H = MIN_WINDOW_H;
 /** 重要なものの幅・高さの比（作業領域に対する）と、そのほかの関連するものの比 */
 export const FLOW_HIGH = { w: 0.5, h: 0.5 } as const;
 export const FLOW_NORMAL = { w: 0.3, h: 0.4 } as const;
@@ -55,9 +55,10 @@ export function planStepFlow(input: FlowInput): Record<string, PxRect> {
   const sizeOf = (it: (typeof items)[number]): { w: number; h: number } => {
     const m = manual[it.key];
     if (m) return { w: Math.min(b.w, m.w), h: Math.min(b.h, m.h) };
-    if (!it.rel.relevant) return { w: Math.min(b.w, MIN_COMPONENT_WIDTH), h: FLOW_MIN_H };
+    if (!it.rel.relevant) return { w: Math.min(b.w, MIN_WINDOW_W), h: FLOW_MIN_H };
+    // 重要・通常の大きさが作業領域に対し下限（幅 PARAM-134・高さ PARAM-135）を下回るときは、その下限へ補正する
     const r = it.rel.importance === 'high' ? FLOW_HIGH : FLOW_NORMAL;
-    return { w: Math.min(b.w, Math.max(MIN_COMPONENT_WIDTH, b.w * r.w)), h: Math.max(FLOW_MIN_H + 40, b.h * r.h) };
+    return { w: Math.min(b.w, Math.max(MIN_WINDOW_W, b.w * r.w)), h: Math.max(FLOW_MIN_H, b.h * r.h) };
   };
   for (const it of items) {
     const { w, h } = sizeOf(it);
@@ -77,8 +78,37 @@ export function planStepFlow(input: FlowInput): Record<string, PxRect> {
   if (total > b.h && total > 0) {
     const f = b.h / total;
     for (const [k, r] of Object.entries(out)) {
-      out[k] = manual[k] ? { ...r, y: Math.min(r.y * f, Math.max(0, b.h - r.h)) } : { ...r, y: r.y * f, h: Math.max(48, r.h * f) };
+      out[k] = manual[k] ? { ...r, y: Math.min(r.y * f, Math.max(0, b.h - r.h)) } : { ...r, y: r.y * f, h: Math.max(Math.min(FLOW_MIN_H, r.h), r.h * f) };
     }
   }
   return out;
+}
+
+/** 領域をはみ出す、または下限で縮めても重なるとき true（収まらない） */
+const overflows = (rects: Record<string, PxRect>, bounds: { h: number }): boolean => {
+  const rs = Object.values(rects);
+  if (rs.some((r) => r.y + r.h > bounds.h + 1)) return true;
+  return rs.some((a, i) => rs.some((c, j) => j > i && overlaps(a, c)));
+};
+
+/**
+ * 下限（幅 PARAM-134・高さ PARAM-135）を保ったまま領域に収まらないときは、縮めず、最も長く使っていない（ピン止め・手で変えた大きさ・重要でないもの優先で、
+ * 重要なものは最後）ものを最小化して収める（FR-228・FR-143・FR-296。Q-111 A）。収まるまで 1 つずつ。`minimized` は最小化するキー。
+ */
+export function planStepFlowFit(input: FlowInput & { usedAt?: Readonly<Record<string, number>> }): { rects: Record<string, PxRect>; minimized: string[] } {
+  const minimized: string[] = [];
+  let keys = input.keys;
+  let rects = planStepFlow({ ...input, keys });
+  while (overflows(rects, input.bounds)) {
+    const cands = keys.filter((k) => !(k in input.pinned) && !(k in input.manual));
+    const rel = (k: string) => stepRelevance(input.step, k, input.keys);
+    const low = cands.filter((k) => !rel(k).relevant);
+    const mid = cands.filter((k) => rel(k).relevant && rel(k).importance !== 'high');
+    const victim = pickOldest(low.length > 0 ? low : mid, input.usedAt ?? {});
+    if (victim === undefined) break;
+    minimized.push(victim);
+    keys = keys.filter((k) => k !== victim);
+    rects = planStepFlow({ ...input, keys });
+  }
+  return { rects, minimized };
 }
