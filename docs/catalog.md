@@ -244,7 +244,7 @@
 | FR-196 | 利用規約・ライセンス・コスト | 承認済み | scripts/integration_catalog.py (check の欄ごとの検査), docs/integration-catalog.md | tests/toolkit/test_integration_fields_b.py (AC-419, AC-420) | 外部連携カタログの検査 |
 | FR-197 | テスト用のスタブ・モック | 承認済み | scripts/integration_catalog.py (check の欄ごとの検査), docs/integration-catalog.md | tests/toolkit/test_integration_fields_b.py (AC-421, AC-422) | 外部連携カタログの検査 |
 | FR-198 | 要求定義書との結線（連携の追加・変更・廃止の要求） | 承認済み | scripts/integration_catalog.py (check の欄ごとの検査), docs/integration-catalog.md | tests/toolkit/test_integration_fields_b.py (AC-423, AC-424, AC-425) | 外部連携カタログの検査 |
-| FR-199 | 外部連携カタログの検査・一覧・影響確認（既存の検査への組み込み） | 承認済み | scripts/rdcheck.py (chk28・trace・list --kind 外部連携), scripts/rdfix.py (fix_integration), scripts/ebaklib.py, scripts/integration_catalog.py | tests/toolkit/test_integration_catalog.py, tests/system/integration-catalog/tooling.test.mjs | 外部連携カタログの検査 |
+| FR-199 | 外部連携カタログの検査・一覧・影響確認（既存の検査への組み込み） | 承認済み | scripts/rdcheck.py (chk28・trace・list --kind 外部連携), scripts/rdfix.py (fix_integration・fix_registry), scripts/ebaklib.py, scripts/next-id.py (plan_sync), scripts/integration_catalog.py | tests/toolkit/test_integration_catalog.py, tests/toolkit/test_next_id_params.py (Q-114・Q-111 の ID 台帳部分), tests/system/integration-catalog/tooling.test.mjs | 外部連携カタログの検査, ID 台帳同期 |
 | NFR-SEC-006 | 外部連携カタログに秘密情報と個人情報の実データを書かない | 承認済み | scripts/integration_catalog.py (secret_kinds・dummy_x_min（PARAM-067 を読む）・check の資格情報形式の検出), scripts/rdcheck.py (chk28_catalog・CHK-28) | tests/toolkit/test_integration_secrets.py (AC-430), tests/toolkit/test_integration_secrets_boundary.py (AC-433), tests/toolkit/test_management_gate_wiring.py (AC-430, AC-433), tests/system/integration-catalog/secrets.test.mjs | 外部連携カタログの検査 |
 | NFR-OPS-001 | 外部連携カタログの鮮度 | 承認済み | scripts/integration_catalog.py (check の最終確認日の鮮度) | tests/toolkit/test_integration_catalog.py, tests/system/integration-catalog/tooling.test.mjs | 外部連携カタログの検査 |
 | FR-201 | Project ごとの外部連携の選択 | 承認済み | src/store/projectIntegrations.ts (select・deselect・selectionView・MAX_INTEGRATIONS_PER_PROJECT), src/store/persist.ts, src/integrations/catalog.ts, src/projects/IntegrationsPanel.tsx, src/projects/ProjectsPanel.tsx | tests/unit/project-integrations.test.ts (AC-441, AC-448), tests/unit/project-integrations-ui.test.tsx (AC-440, AC-441, AC-448), tests/system/e2e/project-integrations.spec.ts (E2E-304) | Project の連携の選択と設定, 外部連携カタログの取り込み, デザイン基盤, 企業・Project の端末内保存 |
@@ -372,6 +372,7 @@
 
 | 部品名 | ファイル | 用途 | 使っている要求 ID |
 |---|---|---|---|
+| ID 台帳同期 | scripts/next-id.py, scripts/ebaklib.py | 要求定義書の決定状態とテスト・連携の ID を ID 台帳へ同期・取り込み。PARAM は現行の決定状態列で廃止を判定する | FR-199 |
 | ブランド表示部品 | src/components/Brand.tsx | ロゴ（確認済みのみ）とプレースホルダー、「顧客名 × Microsoft」、等幅数字の KpiValue（KPI の数値はこれで表示する） | FR-039, FR-061, FR-062 |
 | ブランドテーマ | src/theme/brand.ts, src/theme/brandTheme.ts, src/theme/useBrand.ts | ブランドランプ（16 段階）の生成、コントラストの検証と補正（補正は記録）、Light/Dark のテーマへの適用、フォントの順、Primary 色の上書き | FR-059, FR-060, FR-062, FR-064, FR-127, NFR-UX-016 |
 | 表示言語の基盤 | src/i18n/index.ts, src/i18n/README.md | useT()・tr()（日本語原文がキー）、en/*.ts の辞書の自動統合、LanguageToggle、言語ストア（localStorage・html lang） | FR-294 |
