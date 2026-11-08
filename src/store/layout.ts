@@ -113,7 +113,8 @@ interface LayoutState {
   resetCount: number;
   setPersona: (p: Persona) => void;
   hideComponent: (key: string) => void;
-  showComponent: (key: string) => void;
+  /** opts.noCancel: 最小化できる対象がなくても取り消さず上限超過を許す（最大化中に閉じた項目を再表示するとき。FR-295 AC-887 ⑧・Q-107 A） */
+  showComponent: (key: string, opts?: { noCancel?: boolean }) => void;
   moveComponent: (key: string, dir: Move) => void;
   /** 向きを変える。幅が足りず最小化できる対象もないときは取り消して false（FR-296 AC-886） */
   toggleDirection: (key: string) => boolean;
@@ -407,7 +408,7 @@ export const useLayout = create<LayoutState>()(
           set((s) => ({ closed: { ...s.closed, [s.persona]: [...new Set([...(s.closed[s.persona] ?? []), key])] }, parked: { ...s.parked, [s.persona]: (s.parked[s.persona] ?? []).filter((k) => k !== key) } }));
           dropFloat(key); if (get().expanded === key) set({ expanded: null }); apply((l) => hide(l, key), get().maximized === key ? null : get().maximized, false);
         },
-        showComponent: (key) => {
+        showComponent: (key, opts) => {
           const s = get();
           set((st) => ({ closed: { ...st.closed, [st.persona]: (st.closed[st.persona] ?? []).filter((k) => k !== key) }, parked: { ...st.parked, [st.persona]: (st.parked[st.persona] ?? []).filter((k) => k !== key) }, usedAt: { ...st.usedAt, [key]: ++useClock } }));
           // 領域が足りなくなったら、最も長く使っていない（ピン止めしていない）ものを最小化して収める。閉じず、縮めない（FR-296 AC-801）
@@ -438,7 +439,7 @@ export const useLayout = create<LayoutState>()(
               if (inTree.includes(victim)) layout = makeRoom(layout, areaSize.w, { protect: inTree.filter((k) => k !== victim), maxDrop: 1 }).layout; // 区画外の自由配置は、木から外すものがない
             }
             if (dropped.length === 0) {
-              if (layout && !fitsWidth(layout, areaSize.w)) {
+              if (layout && !fitsWidth(layout, areaSize.w) && !opts?.noCancel) {
                 // 最小化できる対象が 1 つもない: 操作（再表示）を自動のサイズ調整も含めて取り消し、直前の状態へ戻す（上限超過は許さない）
                 set({ closed: s.closed, parked: s.parked, minimized: s.minimized, layouts: s.layouts, floats: s.floats, usedAt: s.usedAt, revealed: null });
               }
