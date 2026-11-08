@@ -94,15 +94,17 @@ async function expectAiImportBlocked(page: Page, relay: AiImportRelayStub, missi
     await expect(guide).not.toContainText(new RegExp(`欠けている条件[:：][^）]*${other}`));
   }
   await expect(guide).toContainText(/設定画面/);
-  await page.waitForTimeout(500);
   expect(relay.importCalls(), `${missing}が欠けているのに Foundry への取り込み要求が送られた`).toBe(0);
 }
 
-async function expectAiImportSelectable(page: Page): Promise<void> {
+// FR-289 AC-758: 実際の C-03 行は未確定。設定・有効化だけでは選べない。
+async function expectAiImportUnauthorized(page: Page, relay: AiImportRelayStub): Promise<void> {
   const { ai } = await openImportScreen(page);
-  await expect(ai.getByRole('button', { name: 'AI 取り込み' })).toBeVisible();
-  await expect(ai.getByTestId('ai-import-guide')).toHaveCount(0);
-  await expect(ai.getByRole('button', { name: 'AI 取り込み' })).toBeEnabled();
+  await expect(ai.getByRole('button', { name: 'AI 取り込み' })).toBeDisabled();
+  const guide = ai.getByTestId('ai-import-guide');
+  await expect(guide).toBeVisible();
+  await expect(guide).toContainText(/未確定|未承認|許可|確認|制限/);
+  expect(relay.importCalls(), '未承認の取り込みが呼び出された').toBe(0);
 }
 
 test.describe('FR-289 AI 取り込み（選べる条件）', () => {
@@ -126,13 +128,12 @@ test.describe('FR-289 AI 取り込み（選べる条件）', () => {
     await expectAiImportBlocked(page, relay, '有効化');
   });
 
-  // FR-289 AC-757（設定済み・有効なら、了承の記録がなくても選べる。了承の条件は廃止）
-  test('FR-289 AC-757 設定済み・実接続が有効なら、了承の記録の操作なしで「AI 取り込み」を選べ、案内に「了承」は出ない', async ({ page, start }) => {
+  // FR-289 AC-757 AC-758（設定・有効化は用途の許可ではない）
+  test('FR-289 AC-757 AC-758 設定済み・有効でも未承認なら AI 取り込みを選べず呼び出し 0 回', async ({ page, start }) => {
     relay = await startAiImportRelayStub({ configured: true, enabled: true });
     await start({ relayUrl: relay.url });
     await openNewProject(page);
-    await expectAiImportSelectable(page);
-    await expect(page.locator('body')).not.toContainText(/了承/);
+    await expectAiImportUnauthorized(page, relay);
   });
 
   // FR-289 AC-757（異常系: 無効のボタンを押す操作をしても、ファイルを選ぶ欄は出ず、送信されない）
@@ -164,7 +165,6 @@ test.describe('FR-289 AI 取り込み（選べる条件）', () => {
       await button.dispatchEvent('click');
       await expect(ai.getByLabel('AI 取り込みのファイル')).toHaveCount(0);
       await expect(guide).toBeVisible();
-      await page.waitForTimeout(500);
       expect(relay.importCalls()).toBe(0);
       expect(relay.received.filter((r) =>
         r.method === 'POST' && /^\/(?:ask|foundry\/(?:ask|review|analyze|import))$/.test(r.path),
@@ -180,7 +180,7 @@ test.describe('FR-289 AI 取り込み（選べる条件）', () => {
     await closeSettings(page);
     await expectAiImportBlocked(page, relay, '有効化');
     await enableFoundry(page);
-    await expectAiImportSelectable(page);
+    await expectAiImportUnauthorized(page, relay);
 
     settings = await openScreen(page, 'settings');
     await settings.getByRole('radiogroup', { name: '生成AIの接続先' })
@@ -195,22 +195,22 @@ test.describe('FR-289 AI 取り込み（選べる条件）', () => {
 
   // FR-289 AC-758（認証方式 API キー / Microsoft Entra ID の両方）
   for (const authMethod of ['api-key', 'entra'] as const) {
-    test(`FR-289 AC-758 認証方式 ${authMethod}: 設定を保存し、実接続を有効にすると「AI 取り込み」を選べ、無効化・削除で再び選べず案内が示される`, async ({ page, start }) => {
+    test(`FR-289 AC-758 認証方式 ${authMethod}: 未承認なら保存・有効化しても AI 取り込みを選べない`, async ({ page, start }) => {
       relay = await startAiImportRelayStub({ configured: false });
       await start({ relayUrl: relay.url });
       await openNewProject(page);
       // 保存だけ（有効化前）はまだ選べない
       await saveFoundryInSettings(page, 'dummy-key-for-system-test-0001', authMethod);
       await expectAiImportBlocked(page, relay, '有効化');
-      // 2 条件（設定済み・有効）がそろうと選べる
+      // 保存・有効化だけでは、未確定の用途を許可したことにならない。
       await enableFoundry(page);
-      await expectAiImportSelectable(page);
+      await expectAiImportUnauthorized(page, relay);
       // 実接続を無効にすると再び選べない
       await disableFoundry(page);
       await expectAiImportBlocked(page, relay, '有効化');
-      // 再び有効にして選べることを確かめ、接続情報を削除すると再び選べない
+      // 再び有効にしても未承認のまま。接続情報の削除後も選べない。
       await enableFoundry(page);
-      await expectAiImportSelectable(page);
+      await expectAiImportUnauthorized(page, relay);
       await deleteFoundry(page);
       const { ai } = await openImportScreen(page);
       await expect(ai.getByRole('button', { name: 'AI 取り込み' })).toBeDisabled();
