@@ -10831,7 +10831,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-741 AC-742 AC-743 AC-745 AC-746 AC-747",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "7b153dc",
       "last_run_at": "2026-11-08T12:26:02+09:00",
       "evidence": "work/runs/202611081053/logs/system-test/E2E-377-202611081203.log",
@@ -10871,6 +10871,12 @@
           "by": "conductor",
           "change": "command: 'node tests/system/run.mjs AC-741' -> 'node tests/system/run.mjs AC-741 AC-742 AC-743 AC-745 AC-746 AC-747'; ac_ids: ['AC-741'] -> ['AC-741', 'AC-742', 'AC-743', 'AC-745', 'AC-746', 'AC-747']",
           "reason": "FR-286 の system AC を 1 ケースに統合（E2E-378/379/381/382/383 を寄せる）"
+        },
+        {
+          "at": "2026-11-08T23:10:29+09:00",
+          "by": "conductor",
+          "change": "status -> not_run",
+          "reason": "前回証跡は14件すべてskipでありpassの証拠にならない。AC-747のQ-059も一部未回答のため、受入基準とテストを整合後に再実行する"
         }
       ]
     },
