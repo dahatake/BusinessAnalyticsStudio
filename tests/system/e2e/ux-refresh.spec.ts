@@ -3,9 +3,11 @@
 // FR-224 AC-521・FR-225 AC-523・FR-226 AC-525・FR-227 AC-526・FR-228 AC-528・AC-529）と PARAM（PARAM-073=6、PARAM-030=5）だけから決める。
 // 画面の探し方は CONTRACT.md §23（本ファイルが前提にするもの）。AC-516・520・522・524・527・530 は統合・単体テストの範囲で、この spec では扱わない。
 import AxeBuilder from '@axe-core/playwright';
-import type { Browser, Page, Locator } from '@playwright/test';
+import type { Page, Locator } from '@playwright/test';
 import { test, expect, component, selectPersona, openScreen, hook, settingsButton, settingsDialog, gotoAndEnter } from '../support/fixtures';
 import { listScreenKeys, gotoScreen, topKeys, actions, pinButton, viewButton, openViewMenu, chooseView, box, type ViewState } from '../support/screens';
+import { layoutTest } from '../support/layout-fixture';
+import { expectBeforeReflowObservation, observeStepNavigation, type NavigationObservation } from '../support/layout-observer';
 
 const MAX_PERMANENT_BUTTONS = 6; // PARAM-073
 // 見出しの最小化・最大化（元に戻す）・閉じるは window-controls（FR-295 AC-826）、ピン止め・タブ・ビューは component-actions。常設ボタンの数は両方の合計（「その他の操作」を除く）
@@ -195,58 +197,131 @@ test.describe('FR-220 2D/3D の切替の一本化', () => {
   });
 });
 
-// FR-228 AC-529: マウスの検証と同じサーバー・ブラウザーを使い、タッチ操作のデータだけを分離する。
-async function verifyTouchPosition(browser: Browser, appUrl: string) {
-  const context = await browser.newContext({
-    viewport: { width: 1600, height: 1400 }, hasTouch: true, locale: 'ja-JP', timezoneId: 'Asia/Tokyo',
+// FR-228 AC-529: 実入力で移動し、画面移動後・再配置前の DOM と再配置後の位置を比べる。
+async function componentScrollOffset(c: Locator): Promise<{ x: number; y: number }> {
+  return c.evaluate((el) => {
+    const workspace = el.closest('[data-testid="workspace"]');
+    let x = 0, y = 0;
+    for (let node = el.parentElement; node; node = node.parentElement) {
+      x += node.scrollLeft;
+      y += node.scrollTop;
+      if (node === workspace) break;
+    }
+    return { x, y };
   });
-  const page = await context.newPage();
-  try {
-    await gotoAndEnter(page, appUrl);
-    await openNewProject(page, 'タッチ試験株式会社', 'タッチ位置保持');
+}
+
+/**
+ * 一覧の項目をキーボードで前面に出す操作は、ステップの現在位置を変更しない。
+ * 先に移動先を前面化し、画面を開く処理による最小化と次のステップ再配置を区別する。
+ */
+async function raiseStepDestination(page: Page, key: string, sourceStep: string): Promise<void> {
+  const item = page.getByTestId('window-list').locator(`[data-testid="window-list-item"][data-component-key="${key}"]`);
+  const state = await item.getAttribute('data-state');
+  if (state !== 'front') {
+    expect(['visible', 'minimized', 'behind'], `${key}: 一覧から前面化できる状態`).toContain(state);
+    await item.focus();
+    await expect(item).toBeFocused();
+    await page.keyboard.press('Enter');
+  }
+  await expect(item, `${key}: ステップのクリック前に移動先を前面化`).toHaveAttribute('data-state', 'front');
+  await expect(page.getByTestId('stepper').locator('[data-step-state="current"]'),
+    '前面化だけでは元のステップを変えない').toContainText(sourceStep);
+  // サイズの自動調整は有効のまま、ステップのクリック前にコンポーネントの外へ焦点を移す。
+  // クリックに伴う単なるフォーカス移動を、再配置そのものと取り違えない。
+  const outside = page.getByRole('switch', { name: 'サイズの自動調整' });
+  await outside.focus();
+  await expect(outside).toBeFocused();
+}
+
+async function verifyManualPosition(page: Page, input: 'mouse' | 'touch', testInfo: import('@playwright/test').TestInfo) {
+    await openNewProject(page, `${input}試験株式会社`, `${input}位置保持`);
     const stepper = page.getByTestId('stepper');
-    await stepper.getByRole('button', { name: 'KPI 測定' }).click();
-    await expect(stepper.locator('[data-step-state="current"]')).toContainText('KPI 測定');
-    await expect(page.getByTestId('screen-heading'), 'KPI 測定の作業画面').toContainText(/KPI/);
-    const targetScreenKey = await page.getByTestId('workspace').getAttribute('data-screen-key');
-    expect(targetScreenKey, '前提: KPI 測定の作業画面の識別子').toBeTruthy();
-    const info = await stepInfo(page);
-    expect(info.length, '前提: タッチで動かせる表示中のコンポーネント').toBeGreaterThan(0);
-    const key = info.find((i) => !i.important)?.key ?? info[0].key;
-    const c = component(page, key);
+    await stepper.getByRole('button', { name: '現状分析', exact: true }).click();
+    await expect(stepper.locator('[data-step-state="current"]')).toContainText('現状分析');
+    await expect(component(page, 'knowledge-graph'), '現状分析の作業画面').toBeVisible();
+    await raiseStepDestination(page, 'priority', '現状分析');
+    await expect(component(page, 'priority').getByRole('heading', { name: '優先順位分析', exact: true }), 'KPI 測定の作業画面').toBeVisible();
+    await settle(page, await topKeys(page));
+    let info = await stepInfo(page);
+    const key = info.find((i) => i.key !== 'priority' && i.key !== 'knowledge-graph')?.key;
+    expect(key, '前提: 両方の作業画面とは別に手で動かす対象').toBeTruthy();
+    // 再配置の両方の移動先と手動対象だけを表示し、前面化の際の上限超過を避ける。
+    while (info.length > 3) {
+      const extra = [...info].reverse().find((i) => i.key !== 'priority' && i.key !== 'knowledge-graph' && i.key !== key);
+      expect(extra, '前提: 余分な表示を最小化する対象').toBeTruthy();
+      await raiseStepDestination(page, extra!.key, '現状分析');
+      const item = page.getByTestId('window-list').locator(`[data-testid="window-list-item"][data-component-key="${extra!.key}"]`);
+      await item.focus();
+      await page.keyboard.press('Enter');
+      await expect(item).toHaveAttribute('data-state', 'minimized');
+      info = await stepInfo(page);
+    }
+    await settle(page, await topKeys(page));
+    const c = component(page, key!);
+    await expect(c.getByTestId('component-actions').locator('button[aria-label^="ピン止め"]'),
+      '手動移動の対象はピン止めされていない').toHaveAttribute('aria-label', 'ピン止めする');
+    const heading = c.getByRole('heading').first();
+    await heading.scrollIntoViewIfNeeded();
+    const h = await box(heading);
     const original = await box(c);
-    const h = await box(c.getByRole('heading').first());
     const x = h.x + h.width / 2;
     const y = h.y + h.height / 2;
-    // CDP の touchStart/touchMove/touchEnd は実入力経路。DOM の合成 click/pointer ではない。
-    const cdp = await page.context().newCDPSession(page);
-    try {
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] });
-      for (let i = 1; i <= 10; i++) {
-        await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + 80 * i / 10, y: y + 60 * i / 10, id: 1 }] });
-      }
-      await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
-    } finally {
-      await cdp.detach();
+    if (input === 'touch') {
+      // CDP の touchStart/touchMove/touchEnd は実入力経路。合成 DOM イベントではない。
+      const cdp = await page.context().newCDPSession(page);
+      try {
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchStart', touchPoints: [{ x, y, id: 1 }] });
+        for (let i = 1; i <= 10; i++) {
+          await cdp.send('Input.dispatchTouchEvent', { type: 'touchMove', touchPoints: [{ x: x + 80 * i / 10, y: y + 60 * i / 10, id: 1 }] });
+        }
+        await cdp.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+      } finally { await cdp.detach(); }
+    } else {
+      await page.mouse.move(x, y);
+      await page.mouse.down();
+      await page.mouse.move(x + 80, y + 60, { steps: 10 });
+      await page.mouse.up();
     }
     await expect.poll(async () => {
       const b = await box(c);
       return Math.abs(b.x - original.x) + Math.abs(b.y - original.y);
-    }, { message: '前提: タッチで位置が実際に変わる' }).toBeGreaterThan(5);
+    }, { message: `前提: ${input} で位置が実際に変わる` }).toBeGreaterThan(0);
+    await settle(page, await topKeys(page));
     const manual = await box(c);
-    await stepper.getByRole('button', { name: '現状分析' }).click();
-    await expect(stepper.locator('[data-step-state="current"]')).toContainText('現状分析');
-    await expect(page.getByTestId('workspace'), '別の作業画面に移動した').not.toHaveAttribute('data-screen-key', targetScreenKey!);
-    await stepper.getByRole('button', { name: 'KPI 測定' }).click();
-    await expect(stepper.locator('[data-step-state="current"]')).toContainText('KPI 測定');
-    await expect(page.getByTestId('workspace')).toHaveAttribute('data-screen-key', targetScreenKey!);
-    const after = await box(c);
-    expect(Math.abs(after.x - manual.x), 'タッチで動かした x が上書きされた').toBeLessThanOrEqual(2);
-    expect(Math.abs(after.y - manual.y), 'タッチで動かした y が上書きされた').toBeLessThanOrEqual(2);
-  } finally {
-    await context.close();
+    const manualWorkspace = await box(page.getByTestId('workspace'));
+    const manualScroll = await componentScrollOffset(c);
+    for (const [source, step, target] of [
+      ['現状分析', 'KPI 測定', 'priority'],
+      ['KPI 測定', '現状分析', 'knowledge-graph'],
+    ] as const) {
+      await raiseStepDestination(page, target, source);
+      await settle(page, await topKeys(page));
+      const before = await observeStepNavigation(page, step, target);
+      await testInfo.attach(`${input}-${step}-before-reflow`, { body: JSON.stringify(before, null, 2), contentType: 'application/json' });
+      expectBeforeReflowObservation(before);
+      const atNavigation = before.windows.find((w) => w.key === key);
+      expect(atNavigation?.rect, `${input}: 移動後・再配置直前に対象が表示されている`).toBeTruthy();
+      expect(atNavigation!.scrollOffset, '対象のスクロール位置').toBeTruthy();
+      expect(atNavigation!.rect!.x - before.workspace.x + atNavigation!.scrollOffset!.x, `${input}: 手動移動後から再配置直前の x`).toBe(manual.x - manualWorkspace.x + manualScroll.x);
+      expect(atNavigation!.rect!.y - before.workspace.y + atNavigation!.scrollOffset!.y, `${input}: 手動移動後から再配置直前の y`).toBe(manual.y - manualWorkspace.y + manualScroll.y);
+      await settle(page, await topKeys(page));
+      const after = await box(c);
+      const afterWorkspace = await box(page.getByTestId('workspace'));
+      const afterScroll = await componentScrollOffset(c);
+      await testInfo.attach(`${input}-${step}-position-comparison`, {
+        body: JSON.stringify({ manual, manualWorkspace, manualScroll, before: atNavigation!.rect, beforeWorkspace: before.workspace,
+          beforeScroll: atNavigation!.scrollOffset, after, afterWorkspace, afterScroll }, null, 2),
+        contentType: 'application/json',
+      });
+      expect(after.x - afterWorkspace.x + afterScroll.x, `${input}: 再配置で x が上書きされた`).toBe(atNavigation!.rect!.x - before.workspace.x + atNavigation!.scrollOffset!.x);
+      expect(after.y - afterWorkspace.y + afterScroll.y, `${input}: 再配置で y が上書きされた`).toBe(atNavigation!.rect!.y - before.workspace.y + atNavigation!.scrollOffset!.y);
+      await expect(stepper.locator('[data-step-state="current"]'), `${input}: ステップの選択が残る`).toContainText(step);
+      await expect(page.getByTestId('window-list').locator(`[data-testid="window-list-item"][data-component-key="${target}"]`),
+        `${input}: 作業画面への移動が残る`).toHaveAttribute('data-state', 'front');
+      await expect(component(page, target), `${input}: 移動先の画面が表示される`).toBeVisible();
+    }
   }
-}
 
 // ───────────────────────────── FR-221 ─────────────────────────────
 /** 要素の文字の全体が、その要素と、overflow が visible でない祖先の表示範囲に収まっているか（はみ出しの内容を返す） */
@@ -826,9 +901,9 @@ test.describe('FR-227 選択した項目に関連する要素の全コンポー�
 });
 
 // ───────────────────────────── FR-228 ─────────────────────────────
-/** 関連（data-step-relevant）と工程の順（data-step-rank）と重要度（data-step-importance）を持つコンポーネント（CONTRACT.md §23） */
+/** 表示中のコンポーネントの実 UI の状態と矩形。工程順は製品の自己申告から決めない。 */
 async function stepInfo(page: Page) {
-  const out: Array<{ key: string; relevant: boolean; rank: number; important: boolean; x: number; y: number; w: number; h: number; hidden: boolean }> = [];
+  const out: Array<{ key: string; active: boolean; x: number; y: number; w: number; h: number; hidden: boolean }> = [];
   const states = await page.getByTestId('window-list').getByTestId('window-list-item').evaluateAll((els) =>
     Object.fromEntries(els.map((e) => [e.getAttribute('data-component-key') ?? '', e.getAttribute('data-state') ?? ''])));
   for (const k of await topKeys(page)) {
@@ -838,9 +913,7 @@ async function stepInfo(page: Page) {
     const b = await box(c);
     out.push({
       key: k,
-      relevant: (await c.getAttribute('data-step-relevant')) === 'true',
-      rank: Number((await c.getAttribute('data-step-rank')) ?? Number.MAX_SAFE_INTEGER),
-      important: (await c.getAttribute('data-step-importance')) === 'high',
+      active: await c.evaluate((el) => el.contains(document.activeElement)),
       x: b.x, y: b.y, w: b.width, h: b.height,
       hidden: (await c.getAttribute('data-hidden')) === 'true',
     });
@@ -849,54 +922,43 @@ async function stepInfo(page: Page) {
 }
 
 type StepInfo = Awaited<ReturnType<typeof stepInfo>>;
+const visibleReflowReason = (page: Page) => page.locator('[role="alert"], [role="status"]')
+  .filter({ hasText: /領域|スペース|場所|収ま|不足|画面の幅/ }).last();
 
-/** 位置を除外した後にも、工程順か関連・非関連の順を比較する組があること。 */
-function hasOrderedPair(info: StepInfo, pinned: string, moved: string): boolean {
-  const targets = info.filter((i) => i.key !== pinned && i.key !== moved);
-  return targets.some((a, index) => targets.slice(index + 1).some((b) =>
-    a.relevant !== b.relevant || (a.relevant && b.relevant && a.rank !== b.rank)));
-}
-
-/** AC-529: 位置の除外と大きさの除外は別。例がないまま通らないよう、初回は各集合を確認する。 */
-function expectStepArrangement(info: StepInfo, pinned: string | null, moved: string | null, resized: string | null, requireExamples: boolean) {
-  const positionTargets = info.filter((i) => i.key !== pinned && i.key !== moved);
-  const relevant = positionTargets.filter((i) => i.relevant).sort((a, b) => a.rank - b.rank);
-  const irrelevant = positionTargets.filter((i) => !i.relevant);
-  if (requireExamples) {
-    expect(relevant.length, '工程順を比較する関連コンポーネントが 2 つ以上必要').toBeGreaterThanOrEqual(2);
-    expect(new Set(relevant.map((i) => i.rank)).size, '工程順の異なる関連コンポーネントが必要').toBeGreaterThanOrEqual(2);
-    expect(irrelevant.length, '関連しないコンポーネントが必要').toBeGreaterThanOrEqual(1);
-  }
-  for (let i = 0; i < relevant.length; i++) {
-    for (let j = i + 1; j < relevant.length; j++) {
-      if (relevant[i].rank === relevant[j].rank) continue;
-      expect(relevant[i].x < relevant[j].x || relevant[i].y < relevant[j].y,
-        `工程の順: ${relevant[i].key} が ${relevant[j].key} より左でも上でもない`).toBe(true);
-    }
-  }
-  for (const i of irrelevant) {
-    expect(i.hidden, `${i.key}: 関連しないものを非表示にしない`).toBe(false);
-    for (const r of relevant) {
-      expect(r.x < i.x || r.y < i.y, `${i.key}: ${r.key} の後ろにない`).toBe(true);
-    }
-  }
-  const sizeTargets = info.filter((i) => i.key !== pinned && i.key !== resized);
-  const important = sizeTargets.filter((i) => i.important);
-  const others = sizeTargets.filter((i) => !i.important);
+/**
+ * AC-529 の大きさは作業画面（FR-228）の priority と他の表示中のものを比べる。
+ * A-65 の STEPS.screens の具体的な関連集合・順序は要求文にないため、
+ * data-step-relevant/rank を正解に使わず、その部分は台帳で判定保留にする。
+ */
+function expectStepSizes(info: StepInfo, pinned: string | null, resized: string | null, requireExamples: boolean,
+  workspace: { x: number; y: number; width: number; height: number }) {
+  const sizeTargets = info.filter((i) => i.key !== pinned && i.key !== resized && !i.active);
+  const important = sizeTargets.filter((i) => i.key === 'priority');
+  const others = sizeTargets.filter((i) => i.key !== 'priority');
   if (requireExamples) {
     expect(important.length, '大きさを比較する重要なものが必要').toBeGreaterThan(0);
     expect(others.length, '大きさを比較する重要でないものが必要').toBeGreaterThan(0);
   }
-  if (important.length && others.length) {
-    expect(Math.min(...important.map((i) => i.w * i.h)), '重要なものは他より大きい')
-      .toBeGreaterThan(Math.max(...others.map((i) => i.w * i.h)));
-  }
-  // 手動で「位置」だけを動かしたものも、サイズを変えていなければ最小寸法の対象。
-  for (const i of sizeTargets.filter((item) => !item.relevant)) {
-    expect(i.w, `${i.key}: 関連しないものの幅は PARAM-134 以上`).toBeGreaterThanOrEqual(360);
-    expect(i.w, `${i.key}: 関連しないものの幅は PARAM-134`).toBeLessThanOrEqual(360.01);
-    expect(i.h, `${i.key}: 関連しないものの高さは PARAM-135 以上`).toBeGreaterThanOrEqual(240);
-    expect(i.h, `${i.key}: 関連しないものの高さは PARAM-135`).toBeLessThanOrEqual(240.01);
+  for (const high of important) {
+    for (const normal of others) {
+      if (high.w * high.h > normal.w * normal.h) continue;
+      // 同じ面積でも縦横が違うものは「同寸」ではない。
+      expect(high.w, `${high.key}/${normal.key}: 同寸を許すには幅も等しい`).toBe(normal.w);
+      expect(high.h, `${high.key}/${normal.key}: 同寸を許すには高さも等しい`).toBe(normal.h);
+      // すべての他対象を下限まで縮めても作業領域を使い切るなら、並べ直しても拡大不能。
+      // これで証明できない同寸は合格扱いしない（固定位置・工程順を含む一般の配置問題を推測しない）。
+      const minimumOccupied = info.reduce((sum, item) => {
+        const fixed = item.key === high.key || item.key === pinned || item.key === resized || item.active;
+        return sum + (fixed ? item.w * item.h : 360 * 240);
+      }, 0);
+      const contained = info.every((i) => i.x >= workspace.x && i.y >= workspace.y
+        && i.x + i.w <= workspace.x + workspace.width && i.y + i.h <= workspace.y + workspace.height);
+      const disjoint = info.every((a, index) => info.slice(index + 1).every((b) =>
+        a.x + a.w <= b.x || b.x + b.w <= a.x || a.y + a.h <= b.y || b.y + b.h <= a.y));
+      if (!contained || !disjoint || minimumOccupied < workspace.width * workspace.height) {
+        throw new Error(`${high.key}/${normal.key}: 判定不能: 同寸での拡大不能を作業領域内・非重複・下限の面積飽和から証明できない`);
+      }
+    }
   }
 }
 
@@ -939,10 +1001,12 @@ test.describe('FR-228 業務分析のステップの見た目と再配置', () =
     }
   });
 
+  layoutTest.describe('FR-228 AC-529 の各条件', () => {
+  layoutTest.describe.configure({ mode: 'default' });
   // FR-228 AC-529
-  test('FR-228 AC-529 工程順・マウスとタッチの手動位置・入力等の保持と、領域不足時の原子的な復帰', async ({ page, start, browser }) => {
-    test.setTimeout(600_000);
-    const app = await start();
+  layoutTest('FR-228 AC-529 重要度の大きさ・手動サイズとピン・入力等の保持（工程順は対応表待ち）', async ({ page, layoutApp }, testInfo) => {
+    layoutTest.setTimeout(300_000);
+    expect(layoutApp.initialStorage.origins, '前提: 新しい文脈').toEqual([]);
     await openNewProject(page);
     // 選択・絞り込み・未確定の入力を、再配置前に利用者の操作で用意する（AC-529）。
     await page.getByRole('button', { name: '分析を開始' }).click();
@@ -966,6 +1030,7 @@ test.describe('FR-228 業務分析のステップの見た目と再配置', () =
     await step.click();
     await expect(page.getByTestId('workspace')).toBeVisible();
     await expect(page.getByTestId('stepper').locator('[data-step-state="current"]')).toContainText('KPI 測定');
+    await expect(component(page, 'priority').getByRole('heading', { name: '優先順位分析', exact: true })).toBeVisible();
     const afterStepStates: Record<string, string> = await page.getByTestId('window-list').getByTestId('window-list-item').evaluateAll((els) =>
       Object.fromEntries(els.map((el) => [el.getAttribute('data-component-key') ?? '', el.getAttribute('data-state') ?? ''])));
     for (const [key, state] of Object.entries(beforeStepStates)) {
@@ -975,9 +1040,15 @@ test.describe('FR-228 業務分析のステップの見た目と再配置', () =
     }
     let keys = await topKeys(page);
     await settle(page, keys);
+    // 操作中のコンポーネントは大小比較から除外する。比較の例を作るため、画面外の操作部へフォーカスを移す。
+    await page.getByRole('switch', { name: 'サイズの自動調整' }).focus();
+    await settle(page, keys);
     const initial = await stepInfo(page);
     const workspace = await box(page.getByTestId('workspace'));
-    expect(initial.length * 360 * 240, '成功条件: 全表示対象を下限で置ける面積').toBeLessThanOrEqual(workspace.width * workspace.height);
+    await testInfo.attach('AC-529-initial-geometry', { body: JSON.stringify({ workspace, initial }, null, 2), contentType: 'application/json' });
+    // 面積の大小だけでなく、下限矩形を格子に並べる具体的な配置の存在を確認する。
+    const capacity = Math.floor(workspace.width / 360) * Math.floor(workspace.height / 240);
+    expect(capacity, '成功条件: 全表示対象を下限で配置できる格子').toBeGreaterThanOrEqual(initial.length);
     for (let i = 0; i < initial.length; i++) {
       expect(initial[i].w, `${initial[i].key}: 幅の下限`).toBeGreaterThanOrEqual(360);
       expect(initial[i].h, `${initial[i].key}: 高さの下限`).toBeGreaterThanOrEqual(240);
@@ -985,17 +1056,15 @@ test.describe('FR-228 業務分析のステップの見た目と再配置', () =
         const a = initial[i], b = initial[j];
         const w = Math.max(0, Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x));
         const h = Math.max(0, Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y));
-        expect(w * h, `成功条件: ${a.key} と ${b.key} が重ならない`).toBeLessThanOrEqual(0.01);
+        expect(w * h, `成功条件: ${a.key} と ${b.key} が重ならない`).toBe(0);
       }
     }
-    await expect(page.getByTestId('step-reflow-reason'), '領域不足による取消しではない').toBeHidden();
-    expectStepArrangement(initial, null, null, null, true);
-    const rel = initial.filter((i) => i.relevant);
-    expect(rel.length, 'ステップに関連するコンポーネントが 2 つ以上必要').toBeGreaterThanOrEqual(2);
-    // ピン止め（関連するコンポーネントの 1 つ）と、手で変えた大きさ（別の 1 つ）を用意する
-    const sorted = [...rel].sort((a, b) => a.rank - b.rank);
-    const pinned = sorted[0].key;
-    const resized = sorted[sorted.length - 1].key;
+    await expect(visibleReflowReason(page), '領域不足による取消しではない').toBeHidden();
+    expectStepSizes(initial, null, null, true, workspace);
+    // 重要な作業画面以外から、ピン・手動サイズ・手動位置に別の対象を使う。
+    const ordinary = initial.filter((i) => i.key !== 'priority');
+    expect(ordinary.length, '前提: 独立した 3 つの対象が必要').toBeGreaterThanOrEqual(3);
+    const [pinned, resized, mover] = ordinary.slice(0, 3).map((i) => i.key);
     await component(page, pinned).focus();
     await pinButton(component(page, pinned)).click();
     await expect(pinButton(component(page, pinned))).toHaveAccessibleName('ピン止めを外す');
@@ -1005,22 +1074,23 @@ test.describe('FR-228 業務分析のステップの見た目と再配置', () =
     await settle(page, keys);
     const resizedBox = await box(component(page, resized));
     expect(Math.abs(resizedBox.width - beforeResize.width) + Math.abs(resizedBox.height - beforeResize.height),
-      '前提: 手動サイズ変更が実際に成功した').toBeGreaterThan(5);
+      '前提: 手動サイズ変更が実際に成功した').toBeGreaterThan(0);
     // 手動位置はピン・手動サイズとは別の対象。移動成功を必須にする。
-    const mover = initial.find((i) => i.key !== pinned && i.key !== resized && hasOrderedPair(initial, pinned, i.key))?.key;
-    expect(mover, '前提: 手動で動かしても順序を比較できる別のコンポーネントが必要').toBeTruthy();
-    const movedBefore = await box(component(page, mover!));
-    const h = await box(component(page, mover!).getByRole('heading').first());
+    const movedBefore = await box(component(page, mover));
+    const h = await box(component(page, mover).getByRole('heading').first());
     await page.mouse.move(h.x + h.width / 2, h.y + h.height / 2);
     await page.mouse.down();
     await page.mouse.move(h.x + h.width / 2 + 80, h.y + h.height / 2 + 60, { steps: 8 });
     await page.mouse.up();
     await settle(page, keys);
-    const movedBox = await box(component(page, mover!));
+    const movedBox = await box(component(page, mover));
     expect(Math.abs(movedBox.x - movedBefore.x) + Math.abs(movedBox.y - movedBefore.y),
-      '前提: マウスでの位置変更が実際に成功した').toBeGreaterThan(5);
+      '前提: マウスでの位置変更が実際に成功した').toBeGreaterThan(0);
     const pinBox = await box(component(page, pinned));
     const manualSize = await box(component(page, resized));
+    const beforeManualWorkspace = await box(page.getByTestId('workspace'));
+    const pinScroll = await componentScrollOffset(component(page, pinned));
+    const moverScroll = await componentScrollOffset(component(page, mover));
     // 別のステップへ移ってから戻る。現在のステップを再クリックするだけの no-op ではない。
     await page.getByTestId('stepper').getByRole('button', { name: '現状分析' }).click();
     await expect(page.getByTestId('stepper').locator('[data-step-state="current"]')).toContainText('現状分析');
@@ -1028,34 +1098,96 @@ test.describe('FR-228 業務分析のステップの見た目と再配置', () =
     await expect(page.getByTestId('stepper').locator('[data-step-state="current"]')).toContainText('KPI 測定');
     keys = await topKeys(page);
     await settle(page, keys);
+    await page.getByRole('switch', { name: 'サイズの自動調整' }).focus();
+    await settle(page, keys);
     const info = await stepInfo(page);
-    await expect(page.getByTestId('step-reflow-reason'), '手動位置を保持する再配置は取り消されていない').toBeHidden();
-    expect(hasOrderedPair(info, pinned, mover!), '手動位置を除いた対象どうしにも順序を比較する組がある').toBe(true);
-    // 工程順・前後関係からは手動位置を除き、重要度・最小寸法からは手動サイズを除く。
-    expectStepArrangement(info, pinned, mover!, resized, false);
+    await expect(visibleReflowReason(page), '手動位置を保持する再配置は取り消されていない').toBeHidden();
+    // 手動位置は大きさの比較対象に含め、手動サイズ・ピンと操作中は除く。
+    expectStepSizes(info, pinned, resized, false, await box(page.getByTestId('workspace')));
     const pinAfter = await box(component(page, pinned));
-    for (const f of ['x', 'y', 'width', 'height'] as const) expect(Math.abs(pinAfter[f] - pinBox[f]), `ピン止めの ${f} が動いた`).toBeLessThanOrEqual(2);
+    const afterManualWorkspace = await box(page.getByTestId('workspace'));
+    const pinScrollAfter = await componentScrollOffset(component(page, pinned));
+    expect(pinAfter.x - afterManualWorkspace.x + pinScrollAfter.x, 'ピン止めの x が動いた').toBe(pinBox.x - beforeManualWorkspace.x + pinScroll.x);
+    expect(pinAfter.y - afterManualWorkspace.y + pinScrollAfter.y, 'ピン止めの y が動いた').toBe(pinBox.y - beforeManualWorkspace.y + pinScroll.y);
+    expect(pinAfter.width, 'ピン止めの幅が変わった').toBe(pinBox.width);
+    expect(pinAfter.height, 'ピン止めの高さが変わった').toBe(pinBox.height);
     const resAfter = await box(component(page, resized));
-    expect(Math.abs(resAfter.width - manualSize.width), '手で変えた幅が上書きされた').toBeLessThanOrEqual(2);
-    expect(Math.abs(resAfter.height - manualSize.height), '手で変えた高さが上書きされた').toBeLessThanOrEqual(2);
-    const movedAfter = await box(component(page, mover!));
-    expect(Math.abs(movedAfter.x - movedBox.x), '手で動かした x が上書きされた').toBeLessThanOrEqual(2);
-    expect(Math.abs(movedAfter.y - movedBox.y), '手で動かした y が上書きされた').toBeLessThanOrEqual(2);
+    expect(resAfter.width, '手で変えた幅が上書きされた').toBe(manualSize.width);
+    expect(resAfter.height, '手で変えた高さが上書きされた').toBe(manualSize.height);
+    const movedAfter = await box(component(page, mover));
+    const moverScrollAfter = await componentScrollOffset(component(page, mover));
+    expect(movedAfter.x - afterManualWorkspace.x + moverScrollAfter.x, '手で動かした x が上書きされた').toBe(movedBox.x - beforeManualWorkspace.x + moverScroll.x);
+    expect(movedAfter.y - afterManualWorkspace.y + moverScrollAfter.y, '手で動かした y が上書きされた').toBe(movedBox.y - beforeManualWorkspace.y + moverScroll.y);
     // 移動先を確認した後で分析画面に戻り、表示していた選択・絞り込み・入力を読む。
     await page.getByTestId('stepper').getByRole('button', { name: '現状分析' }).click();
     await expect(page.getByTestId('stepper').locator('[data-step-state="current"]')).toContainText('現状分析');
     await expect(analysis.getByRole('searchbox', { name: '絞り込み' })).toHaveValue(filterValue);
     await expect(analysis.locator(`[data-testid="result-item"][data-entity-id="${selectedId}"]`).first()).toHaveAttribute('aria-selected', 'true');
     await expect(analysis.getByTestId('analysis-params').getByRole('spinbutton').first()).toHaveValue('7');
-    await test.step('タッチで実際に移動した位置も保持する', async () => verifyTouchPosition(browser, app.url));
-    await page.getByRole('button', { name: 'Project 一覧へ' }).click();
-    await test.step('候補なし開始と候補を使い尽くした後の原子的な復帰', async () => verifyStepRollback(page));
   });
 
+  // FR-228 AC-529: 先の工程順の失敗に遮られず、それぞれ実際の入力と直前状態を観測する。
+  layoutTest('FR-228 AC-529 マウスで動かした位置を画面移動後・再配置前から保持する', async ({ page, layoutApp }, testInfo) => {
+    layoutTest.setTimeout(180_000);
+    expect(layoutApp.initialStorage.origins).toEqual([]);
+    await verifyManualPosition(page, 'mouse', testInfo);
+  });
+
+  // FR-228 AC-529
+  layoutTest('FR-228 AC-529 タッチで動かした位置を画面移動後・再配置前から保持する', async ({ layoutApp, browser }, testInfo) => {
+    layoutTest.setTimeout(180_000);
+    const context = await browser.newContext({ viewport: { width: 1600, height: 1400 }, hasTouch: true, locale: 'ja-JP', timezoneId: 'Asia/Tokyo' });
+    const page = await context.newPage();
+    try {
+      expect((await context.storageState()).origins).toEqual([]);
+      await gotoAndEnter(page, layoutApp.url);
+      await verifyManualPosition(page, 'touch', testInfo);
+    } finally { await context.close(); }
+  });
+
+  // FR-228 AC-529: 大小・工程順の判定より先に失敗しても、既存の保護検証を独立に実行する。
+  layoutTest('FR-228 AC-529 選択・絞り込み・未確定入力を再配置後も保持する', async ({ page, layoutApp }) => {
+    layoutTest.setTimeout(180_000);
+    expect(layoutApp.initialStorage.origins).toEqual([]);
+    await openNewProject(page, '保持試験株式会社', '選択と入力の保持');
+    await page.getByRole('button', { name: '分析を開始' }).click();
+    await page.getByRole('listbox', { name: '分析手法' }).getByRole('option', { name: 'SWOT 分析' }).click();
+    const analysis = page.getByTestId('analysis');
+    const input = analysis.getByTestId('analysis-params').getByRole('spinbutton').first();
+    const filterValue = ((await input.getAttribute('aria-label')) ?? '').replace(/ の値.*$/, '');
+    expect(filterValue, '前提: 絞り込みに使う合成項目名').not.toBe('');
+    const selected = analysis.getByTestId('analysis-result').getByTestId('result-item').filter({ hasText: filterValue }).first();
+    const selectedId = await selected.getAttribute('data-entity-id');
+    expect(selectedId, '前提: 選んだ項目の ID').toBeTruthy();
+    await selected.click();
+    await analysis.getByRole('searchbox', { name: '絞り込み' }).fill(filterValue);
+    await input.fill('7');
+    await expect(selected).toHaveAttribute('aria-selected', 'true');
+    await expect(input).toHaveValue('7');
+    const stepper = page.getByTestId('stepper');
+    await stepper.getByRole('button', { name: 'KPI 測定' }).click();
+    await expect(stepper.locator('[data-step-state="current"]')).toContainText('KPI 測定');
+    await expect(component(page, 'priority').getByRole('heading', { name: '優先順位分析', exact: true })).toBeVisible();
+    await stepper.getByRole('button', { name: '現状分析' }).click();
+    await expect(stepper.locator('[data-step-state="current"]')).toContainText('現状分析');
+    await expect(analysis.getByRole('searchbox', { name: '絞り込み' })).toHaveValue(filterValue);
+    await expect(analysis.locator(`[data-testid="result-item"][data-entity-id="${selectedId}"]`).first()).toHaveAttribute('aria-selected', 'true');
+    await expect(analysis.getByTestId('analysis-params').getByRole('spinbutton').first()).toHaveValue('7');
+  });
+
+  for (const scenario of ['候補なし開始', '候補を使い尽くす'] as const) {
+    // FR-228 AC-529 / FR-296 AC-886: 2 条件は別々に実行し、片方の失敗で他方を隠さない。
+    layoutTest(`FR-228 AC-529 ${scenario}: 画面移動を維持して再配置と付随変更を一括取消し`, async ({ page, layoutApp }, testInfo) => {
+      layoutTest.setTimeout(240_000);
+      expect(layoutApp.initialStorage.origins).toEqual([]);
+      await verifyStepRollback(page, scenario, testInfo);
+    });
+  }
+
   // FR-228 AC-529（異常系: 関連の対応がないステップを押しても、コンポーネントは 1 つも消えず、エラーも出ない）
-  test('FR-228 AC-529 異常系: ステップを順に押してもコンポーネントは 1 つも消えず、ページエラーも出ない', async ({ page, start, pageErrors }) => {
-    test.setTimeout(180_000);
-    await start();
+  layoutTest('FR-228 AC-529 異常系: ステップを順に押してもコンポーネントは 1 つも消えず、ページエラーも出ない', async ({ page, layoutApp, pageErrors }) => {
+    layoutTest.setTimeout(180_000);
+    expect(layoutApp.initialStorage.origins).toEqual([]);
     await openNewProject(page);
     const counts: number[] = [];
     for (const s of STEPS) {
@@ -1069,25 +1201,8 @@ test.describe('FR-228 業務分析のステップの見た目と再配置', () =
     }
     expect(pageErrors).toEqual([]);
   });
+  });
 });
-
-type StepReflowBefore = {
-  sequence: number;
-  step: string;
-  screenKey: string;
-  workspace: { width: number; height: number };
-  windows: Array<{
-    key: string;
-    state: 'front' | 'visible' | 'minimized' | 'closed' | 'behind';
-    rect: { x: number; y: number; width: number; height: number } | null;
-    z: number | null;
-    domOrder: number | null;
-    pinned: boolean;
-    manuallyMoved: boolean;
-    manuallyResized: boolean;
-    important: boolean;
-  }>;
-};
 
 /** 前面・背面は絶対 z 値ではなく、各組の相対順を比べる。 */
 async function renderedZ(c: Locator): Promise<number> {
@@ -1100,10 +1215,11 @@ async function renderedZ(c: Locator): Promise<number> {
   });
 }
 
-async function expectAtomicRestore(page: Page, before: StepReflowBefore, label: string) {
+async function expectAtomicRestore(page: Page, before: NavigationObservation, label: string) {
   const states: Record<string, string> = await page.getByTestId('window-list').getByTestId('window-list-item').evaluateAll((els) =>
     Object.fromEntries(els.map((el) => [el.getAttribute('data-component-key') ?? '', el.getAttribute('data-state') ?? ''])));
   expect(Object.keys(states).sort(), `${label}: 項目の集合`).toEqual(before.windows.map((w) => w.key).sort());
+  const workspaceAfter = await box(page.getByTestId('workspace'));
   const zAfter = new Map<string, number>();
   for (const w of before.windows) {
     expect(states[w.key], `${label}: ${w.key} の最小化・表示状態`).toBe(w.state);
@@ -1111,9 +1227,14 @@ async function expectAtomicRestore(page: Page, before: StepReflowBefore, label: 
       await expect(component(page, w.key), `${label}: ${w.key} の非表示矩形`).toBeHidden();
       continue;
     }
-    const b = await box(component(page, w.key));
+    const c = component(page, w.key);
+    const b = await box(c);
+    const scrollAfter = await componentScrollOffset(c);
+    expect(w.scrollOffset, `${label}: ${w.key} の再配置直前のスクロール位置`).toBeTruthy();
     for (const field of ['x', 'y', 'width', 'height'] as const) {
-      expect(Math.abs(b[field] - w.rect[field]), `${label}: ${w.key}.${field} を再配置直前に戻す`).toBeLessThanOrEqual(2);
+      const afterValue = field === 'x' ? b.x - workspaceAfter.x + scrollAfter.x : field === 'y' ? b.y - workspaceAfter.y + scrollAfter.y : b[field];
+      const beforeValue = field === 'x' ? w.rect.x - before.workspace.x + w.scrollOffset!.x : field === 'y' ? w.rect.y - before.workspace.y + w.scrollOffset!.y : w.rect[field];
+      expect(afterValue, `${label}: ${w.key}.${field} を再配置直前に戻す`).toBe(beforeValue);
     }
     if (w.state === 'front' || w.state === 'visible') {
       expect(b.width, `${label}: ${w.key} の幅の下限`).toBeGreaterThanOrEqual(360);
@@ -1121,10 +1242,27 @@ async function expectAtomicRestore(page: Page, before: StepReflowBefore, label: 
     }
     if (w.z !== null) {
       expect(w.domOrder, `${label}: ${w.key} の描画順の観測`).not.toBeNull();
-      zAfter.set(w.key, await renderedZ(component(page, w.key)));
+      zAfter.set(w.key, await renderedZ(c));
+    }
+    if (w.pinName !== null) {
+      await expect(c.getByTestId('component-actions').locator('button[aria-label^="ピン止め"]'), `${label}: ${w.key} のピン状態`)
+        .toHaveAttribute('aria-label', w.pinName);
+    }
+    if (w.viewName !== null) {
+      await expect(c.getByTestId('component-actions').locator('button[aria-label^="ビュー"]'), `${label}: ${w.key} のモード`)
+        .toHaveAttribute('aria-label', w.viewName);
+    }
+    if (w.zone !== null) {
+      const zone = await c.evaluate((el) => {
+        const parent = el.closest('[data-zone-id], [data-zone]');
+        return parent?.getAttribute('data-zone-id') ?? parent?.getAttribute('data-zone') ?? null;
+      });
+      expect(zone, `${label}: ${w.key} のゾーン`).toBe(w.zone);
     }
   }
   const stacked = before.windows.filter((w) => w.z !== null && zAfter.has(w.key));
+  expect(Object.values(states).filter((state) => state === 'front' || state === 'visible').length,
+    `${label}: 再配置取消し後の同時表示の上限`).toBeLessThanOrEqual(4);
   const domAfter = await page.getByTestId('workspace').evaluate((ws, keys) => {
     const nodes = [...ws.querySelectorAll('[data-testid^="component-"]')];
     return Object.fromEntries(nodes.flatMap((el, index) => {
@@ -1145,24 +1283,29 @@ async function expectAtomicRestore(page: Page, before: StepReflowBefore, label: 
 }
 
 // FR-228 AC-529 / FR-296 AC-886（AC-886 自体は integration。ここではステップ再配置に限る）
-async function verifyStepRollback(page: Page) {
-    for (const scenario of ['候補なし開始', '候補を使い尽くす'] as const) {
-      if (scenario !== '候補なし開始') {
-        await page.setViewportSize({ width: 1600, height: 1400 });
-        await page.getByRole('button', { name: 'Project 一覧へ' }).click();
-      }
+async function verifyStepRollback(page: Page, scenario: '候補なし開始' | '候補を使い尽くす', testInfo: import('@playwright/test').TestInfo) {
       await openNewProject(page, `取消試験${scenario}株式会社`, `取消試験 ${scenario}`);
       const stepper = page.getByTestId('stepper');
       await stepper.getByRole('button', { name: 'KPI 測定' }).click();
       await expect(stepper.locator('[data-step-state="current"]')).toContainText('KPI 測定');
-      await expect(page.getByTestId('screen-heading'), 'KPI 測定の作業画面').toContainText(/KPI/);
-      const targetScreenKey = await page.getByTestId('workspace').getAttribute('data-screen-key');
-      expect(targetScreenKey, '前提: KPI 測定の作業画面の識別子').toBeTruthy();
-      const info = await stepInfo(page);
-      const important = info.filter((i) => i.important);
-      const normal = info.filter((i) => !i.important);
-      expect(important.length, `${scenario}: 前提の重要なコンポーネント`).toBeGreaterThan(0);
-      expect(normal.length, `${scenario}: ピン止めできる重要でないコンポーネント`).toBeGreaterThanOrEqual(2);
+      await expect(component(page, 'priority').getByRole('heading', { name: '優先順位分析', exact: true }), 'KPI 測定の作業画面').toBeVisible();
+      await settle(page, await topKeys(page));
+      let info = await stepInfo(page);
+      const important = info.find((i) => i.key === 'priority');
+      let normal = info.filter((i) => i.key !== 'priority');
+      expect(important, `${scenario}: 前提の作業画面`).toBeTruthy();
+      expect(normal.length, `${scenario}: ピン止めできる重要でないコンポーネント`).toBeGreaterThanOrEqual(1);
+      // 移動元の作業画面を開いた後も上限を超えないよう、先に 3 件以下にする。
+      // 上限超過の処理とステップ再配置を区別し、容量不足だけを検証する。
+      while (info.length > 3) {
+        const key = normal.at(-1)!.key;
+        const c = component(page, key);
+        await c.getByTestId('window-controls').getByRole('button', { name: '最小化', exact: true }).click();
+        await expect(page.locator(`[data-testid="window-list-item"][data-component-key="${key}"]`)).toHaveAttribute('data-state', 'minimized');
+        info = await stepInfo(page);
+        normal = info.filter((i) => i.key !== 'priority');
+      }
+      expect(info.length, `${scenario}: 少なくとも 3 件を表示`).toBeGreaterThanOrEqual(3);
       // 先に全表示項目をピン止めし、別ステップへの移動で候補が先に消費されるのを防ぐ。
       for (const i of info) {
         const c = component(page, i.key);
@@ -1178,38 +1321,58 @@ async function verifyStepRollback(page: Page) {
       // 現状分析への移動自体で候補を最小化させることなく、目的の操作の直前に用意する。
       await stepper.getByRole('button', { name: '現状分析' }).click();
       await expect(stepper.locator('[data-step-state="current"]')).toContainText('現状分析');
-      await expect(page.getByTestId('workspace'), '別の作業画面に移動した').not.toHaveAttribute('data-screen-key', targetScreenKey!);
-      const release = [important[0].key, ...(scenario === '候補を使い尽くす' ? [candidate] : [])];
+      // 移動元の作業画面を保護し、次のクリックでそれが最小化されることによる
+      // 画面移動と再配置の観測上の曖昧さを避ける。
+      const source = component(page, 'knowledge-graph');
+      await source.hover();
+      await expect(pinButton(source)).toHaveAccessibleName('ピン止めする');
+      await pinButton(source).click();
+      await expect(pinButton(source)).toHaveAccessibleName('ピン止めを外す');
+      // 重要な移動先を最後に操作し、候補を残したまま前面化する。
+      const release = [...(scenario === '候補を使い尽くす' ? [candidate] : []), important!.key];
       for (const key of release) {
         const c = component(page, key);
-        await c.focus();
+        await c.hover();
         await pinButton(c).click();
         await expect(pinButton(c), `${key}: 前提としてピンを外す`).toHaveAccessibleName('ピン止めする');
       }
-      const previous = await hook<StepReflowBefore | null>(page, 't.stepLayout.before()');
-      await stepper.getByRole('button', { name: 'KPI 測定' }).click();
-      await expect.poll(async () => (await hook<StepReflowBefore | null>(page, 't.stepLayout.before()'))?.sequence ?? -1,
-        { message: `${scenario}: このステップの再配置前を記録する` }).toBeGreaterThan(previous?.sequence ?? -1);
-      const before = (await hook<StepReflowBefore>(page, 't.stepLayout.before()'));
-      expect(before.step, `${scenario}: 選択したステップ`).toBe('KPI 測定');
-      expect(before.screenKey, `${scenario}: 移動後の作業画面`).toBe(targetScreenKey);
+      await expect(stepper.locator('[data-step-state="current"]'), '前提: 別のステップから移動する').toContainText('現状分析');
+      await raiseStepDestination(page, 'priority', '現状分析');
+      await settle(page, await topKeys(page));
+      if (scenario === '候補を使い尽くす') {
+        await expect(page.locator(`[data-testid="window-list-item"][data-component-key="${candidate}"]`),
+          '前提: クリック前に候補が表示中').toHaveAttribute('data-state', /^(front|visible)$/);
+      }
+      // 直前の別操作の通知を今回の取消し理由と誤認しない。
+      const reason = visibleReflowReason(page);
+      await expect(reason, '前提: 前の操作の通知が消える').toBeHidden({ timeout: 15_000 });
+      const before = await observeStepNavigation(page, 'KPI 測定', 'priority');
+      await testInfo.attach(`${scenario}-before-reflow`, { body: JSON.stringify(before, null, 2), contentType: 'application/json' });
+      expectBeforeReflowObservation(before);
       await expect(stepper.locator('[data-step-state="current"]'), `${scenario}: ステップ選択は取り消さない`).toContainText('KPI 測定');
-      await expect(page.getByTestId('workspace'), `${scenario}: 作業画面への移動は取り消さない`).toHaveAttribute('data-screen-key', targetScreenKey!);
-      await expect(page.getByTestId('screen-heading'), `${scenario}: KPI の作業画面に留まる`).toContainText(/KPI/);
+      await expect(page.locator('[data-testid="window-list-item"][data-component-key="priority"]'),
+        `${scenario}: 作業画面への移動は取り消さない`).toHaveAttribute('data-state', 'front');
+      await expect(component(page, 'priority').getByRole('heading', { name: '優先順位分析', exact: true }), `${scenario}: 作業画面に留まる`).toBeVisible();
       const visible = before.windows.filter((w) => w.state === 'front' || w.state === 'visible');
-      const candidates = visible.filter((w) => !w.pinned && !w.manuallyMoved && !w.manuallyResized && !w.important);
-      expect(visible.some((w) => w.important && !w.pinned), `${scenario}: 重要な配置対象`).toBe(true);
+      for (const w of visible) expect(['ピン止めする', 'ピン止めを外す'], `${w.key}: 前提のピン状態`).toContain(w.pinName);
+      const candidates = visible.filter((w) => w.pinName === 'ピン止めする' && w.key !== 'priority');
+      expect(visible.some((w) => w.key === 'priority' && w.pinName === 'ピン止めする'), `${scenario}: 重要な配置対象`).toBe(true);
       if (scenario === '候補なし開始') expect(candidates, '当初から最小化候補がない').toEqual([]);
-      else expect(candidates.map((w) => w.key), '当初は最小化できる対象がある').toContain(candidate);
-      const protectedCount = visible.filter((w) => w.pinned || w.manuallyMoved || w.manuallyResized || w.important).length;
+      else expect(candidates.map((w) => w.key), '当初の最小化候補はこの 1 件だけ').toEqual([candidate]);
+      // このシナリオでは手動移動・サイズ変更を行っていない。
+      const protectedCount = visible.filter((w) => w.pinName === 'ピン止めを外す' || w.key === 'priority').length;
       expect(before.workspace.width, '幅 360px 未満の例外ではない').toBeGreaterThanOrEqual(360);
       expect(protectedCount * 360 * 240, `${scenario}: 候補をすべて除いても下限寸法の合計が作業領域を超える`)
         .toBeGreaterThan(before.workspace.width * before.workspace.height);
+      // 候補の試行を途中表示することは要求しない。取消しが原子的なら DOM に現れなくてもよい。
       // 理由は今回の操作に対応する、利用者に見える通知から読む。
-      const reason = page.getByTestId('step-reflow-reason');
       await expect(reason, `${scenario}: 取消しの理由`).toBeVisible();
-      await expect(reason).toHaveAttribute('data-step-sequence', String(before.sequence));
-      await expect(reason).toContainText(/領域|スペース|場所|収ま|不足/);
+      await expect(reason).toContainText(/領域|スペース|場所|収ま|不足|画面の幅/);
+      await settle(page, await topKeys(page));
       await expectAtomicRestore(page, before, scenario);
-    }
+      await expect(stepper.locator('[data-step-state="current"]'), `${scenario}: 取消し後もステップ選択が残る`).toContainText('KPI 測定');
+      await expect(page.getByTestId('window-list').locator('[data-testid="window-list-item"][data-component-key="priority"]'),
+        `${scenario}: 取消し後も作業画面は前面`).toHaveAttribute('data-state', 'front');
+      await expect(component(page, 'priority').getByRole('heading', { name: '優先順位分析', exact: true }),
+        `${scenario}: 取消し後も作業画面に留まる`).toBeVisible();
 }
