@@ -6318,7 +6318,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-529",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "cf2ed4c",
       "last_run_at": "2026-11-08T10:33:51+09:00",
       "evidence": "work/runs/202611080908/logs/system-test/E2E-326-202611081007.log",
@@ -6328,6 +6328,12 @@
           "by": "test-designer",
           "change": "追加",
           "reason": "run 202610192037: FR-228 AC-529 のケース（実装前・not_run）"
+        },
+        {
+          "at": "2026-11-08T11:04:53+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "Q-110/111 A: 下限を PARAM-134・135（360x240）に更新（旧 PARAM-085 の 240x120 廃止）。テスト修正のため再実行"
         }
       ]
     },
@@ -6575,7 +6581,7 @@
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-584",
       "canary": false,
-      "status": "pass",
+      "status": "not_run",
       "last_commit": "cf2ed4c",
       "last_run_at": "2026-11-08T10:33:51+09:00",
       "evidence": "work/runs/202611080908/logs/system-test/E2E-336-202611080955.log",
@@ -6591,6 +6597,12 @@
           "by": "test-designer",
           "change": "status -> not_run",
           "reason": "FR-012/020 画面 view3d・drawing2d・canvas の廃止と議題→論点の用語変更に合わせてテストを読み替えた（Q-062 A）。実装後に再実行"
+        },
+        {
+          "at": "2026-11-08T11:04:55+09:00",
+          "by": "test-designer",
+          "change": "status -> not_run",
+          "reason": "Q-110/111 A: 下限を PARAM-134・135（360x240）に更新（旧 PARAM-085 の 240x120 廃止）。テスト修正のため再実行"
         }
       ]
     },

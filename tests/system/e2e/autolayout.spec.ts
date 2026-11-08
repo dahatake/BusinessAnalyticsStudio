@@ -1,12 +1,12 @@
 // System Test: 情報の階層に基づく自動配置（FR-243 AC-584）と、ペルソナ別の主役・補助・詳細の分類（FR-244 AC-587）
 // 期待値は要求定義書の受入基準（docs/requirements/app-experience.md の FR-243・FR-244）だけから決める。
-// 画面の探し方は tests/system/CONTRACT.md §23。PARAM-034=240（CSS px。コンポーネントの最小の幅）。
+// 画面の探し方は tests/system/CONTRACT.md §23。下限は PARAM-134=360（CSS px。FR-243・FR-296。Q-110 A）。AC-584 本文の PARAM-034=240 は PARAM-134 以上で満たされる。
 import type { Page, Locator } from '@playwright/test';
 import { test, expect, component, selectPersona, PERSONAS } from '../support/fixtures';
 import { examplePack } from '../support/packs';
 
 const mono = examplePack('mono');
-const MIN_WIDTH = 240; // PARAM-034
+const MIN_WIDTH = 360; // PARAM-134（AC-584 本文の PARAM-034=240 以上を含意）
 
 /** §7 の表の既定の情報表現（ペルソナ → 主役。標準の検証条件はモノ） */
 const DEFAULT_PRIMARY: Record<string, string> = {
