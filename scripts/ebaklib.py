@@ -792,6 +792,11 @@ def strip_md(s: str) -> str:
     return re.sub(r"[*`]", "", s or "").strip()
 
 
+def strip_decision_md(s: str) -> str:
+    """Normalize state-field emphasis without changing literal underscores elsewhere."""
+    return re.sub(r"(?<!\w)(_{1,2})(?=\S)(.+?)(?<=\S)\1(?!\w)", r"\2", strip_md(s))
+
+
 NONE_VALUES = ("", "-", "—", "なし", "無し", "N/A", "n/a")
 
 
@@ -1091,7 +1096,7 @@ def _parse_tables(doc: RequirementsDoc) -> None:
                 vcol, ucol = t.col("値"), t.col("単位")
                 # 部分一致では「旧決定状態」などの履歴列を選んでしまう。
                 scol = next((i for i, hd in enumerate(t.header)
-                             if re.sub(r"\s+", "", strip_md(hd)) == "決定状態"), None)
+                             if re.sub(r"\s+", "", strip_decision_md(hd)) == "決定状態"), None)
                 for (ln, cells), fid in zip(t.rows, first):
                     if re.fullmatch(r"PARAM-\d{3,}", fid):
                         doc.params.setdefault(fid, {

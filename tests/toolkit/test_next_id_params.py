@@ -251,3 +251,56 @@ def test_protected_deleted_or_abandoned_ids_are_not_revived_by_rdfix_plan(fixtur
     assert states(fixture_repo) == {"PARAM-034": old_state, "FR-901": old_state}
     assert h.parse_registry_text(plan["text"])["PARAM-034"]["state"] == old_state
     assert h.parse_registry_text(plan["text"])["FR-901"]["state"] == old_state
+
+
+# Q-114 / PARAM-034・Q-111 / PARAM-085（FR-151 AC-259・FR-228 AC-529 関連）:
+# 現行列と状態の Markdown 強調が異なる場合も、sync と adopt は廃止を維持する。
+@pytest.mark.parametrize("heading", [
+    "決定状態", "**決定状態**", "__決定状態__", "_決定状態_",
+], ids=["plain-header", "star-header", "underscore-header", "single-header"])
+@pytest.mark.parametrize("decision", [
+    "廃止（Q-114）",
+    "**廃止**（Q-114）",
+    "__廃止__（Q-114）",
+    "__廃止（Q-114）__",
+    "_廃止_（Q-114）",
+], ids=["plain-state", "star-state", "underscore-state", "underscore-wrapped", "single-state"])
+@pytest.mark.parametrize("adopt", [False, True], ids=["sync", "adopt"])
+def test_markdown_decision_state_sync_and_adopt(fixture_repo, heading, decision, adopt):
+    requirements = (
+        REQUIREMENTS.replace("**決定状態**", heading)
+        .replace("**廃止**（Q-114）", decision)
+        .replace("廃止（Q-111）", decision.replace("Q-114", "Q-111"))
+        .replace("承認済み（旧案は廃止）", "__承認済み__（旧案は廃止）")
+        .replace("| 廃止予定 |", "| __廃止予定__ |")
+        .replace("| 使用中 - 旧値は廃止 |", "| __使用中__ - 旧値は廃止 |")
+        .replace("| 未廃止 |", "| __未廃止__ |")
+    )
+    (fixture_repo / "docs" / "requirements-definition.md").write_text(requirements, encoding="utf-8")
+    write_registry(fixture_repo, {} if adopt else {
+        "PARAM-034": "廃止", "PARAM-085": "使用中",
+        "PARAM-136": "廃止", "PARAM-138": "廃止",
+        "PARAM-140": "廃止", "PARAM-145": "廃止",
+    })
+
+    args = ("--sync", "--adopt") if adopt else ("--sync",)
+    output = cli(fixture_repo, *args)
+    result = states(fixture_repo)
+    assert {id_: result[id_] for id_ in (
+        "PARAM-034", "PARAM-085", "PARAM-136", "PARAM-138", "PARAM-140", "PARAM-145",
+    )} == {
+        "PARAM-034": "廃止", "PARAM-085": "廃止",
+        "PARAM-136": "使用中", "PARAM-138": "使用中",
+        "PARAM-140": "使用中", "PARAM-145": "使用中",
+    }
+    if adopt:
+        assert "adopted=0" not in output
+    else:
+        assert "PARAM-034: 廃止 -> 使用中" not in output
+        assert "PARAM-085: 使用中 -> 廃止" in output
+    doc = h.parse_requirements(fixture_repo, h.load_config(fixture_repo))
+    assert doc.params["PARAM-034"]["state"] == decision
+    registry = fixture_repo / "docs" / "id-registry.md"
+    before = registry.read_bytes()
+    assert "changed=0 adopted=0" in cli(fixture_repo, *args)
+    assert registry.read_bytes() == before

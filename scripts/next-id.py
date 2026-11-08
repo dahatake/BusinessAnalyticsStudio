@@ -192,7 +192,7 @@ def retired_in_requirements(doc: h.RequirementsDoc, id_: str) -> bool:
     param = doc.params.get(id_)
     if not param:
         return False
-    state = h.strip_md(param.get("state", ""))
+    state = h.strip_decision_md(param.get("state", ""))
     # A decision is 廃止, not e.g. 廃止予定 or 使用中 - 過去に廃止.
     return bool(re.match(r"^廃止(?=$|[\s（(：:])", state))
 
