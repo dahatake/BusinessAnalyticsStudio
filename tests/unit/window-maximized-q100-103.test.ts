@@ -180,12 +180,12 @@ describe('FR-295 AC-887 ⑧ Q-107 A: 最大化中に閉じた項目を再表示�
     st().showComponent('architecture');
     expect(st().closed['事業部門'] ?? []).toContain('architecture');
   });
-  it('FR-295 AC-887 ⑧ Q-107 最大化中に閉じた X を押すと、最大化が解けて X が再表示され、取り消されない（超過を許し、誰も最小化されない）', async () => {
+  it('FR-295 AC-887 ⑧ Q-112 最大化中に閉じた X を押すと、置き場所がないので取り消され、X は閉じたまま最大化も元へ戻る（Q-107 の「取り消さない」は上限超過だけの場合。window-q109-112.test.ts）', async () => {
     const { st, pressWindow } = await pinnedFull();
     st().setMaximized('summary');
     pressWindow('architecture', 'closed', false);
-    expect(st().maximized).toBeNull();
-    expect(st().closed['事業部門'] ?? []).not.toContain('architecture');
+    expect(st().maximized).toBe('summary');
+    expect(st().closed['事業部門'] ?? []).toContain('architecture');
     expect(st().minimized['事業部門'] ?? []).toEqual([]);
   });
 });

@@ -888,6 +888,14 @@ test.describe('FR-228 業務分析のステップの見た目と再配置', () =
       expect(i.hidden, `${i.key}: 関連しないコンポーネントが非表示になった`).toBe(false);
       for (const r of relevant) expect(i.x > r.x - 1 || i.y > r.y - 1, `${i.key}: 関連するものの後ろに並んでいない（${r.key}）`).toBe(true);
     }
+    // FR-228 の下限: 縮める先は PARAM-134（幅 360）・PARAM-135（高さ 240）。旧 PARAM-085（240×120）は廃止。下限で収まらないものは縮めず最小化される（最小化は対象外）
+    const MIN_W = 360; // PARAM-134
+    const MIN_H = 240; // PARAM-135
+    for (const i of irrelevant) {
+      if ((await component(page, i.key).getAttribute('data-minimized')) === 'true') continue;
+      expect(i.w, `${i.key}: 関連しないものの幅が PARAM-134（${MIN_W}）未満`).toBeGreaterThanOrEqual(MIN_W - 1);
+      expect(i.h, `${i.key}: 関連しないものの高さが PARAM-135（${MIN_H}）未満`).toBeGreaterThanOrEqual(MIN_H - 1);
+    }
     if (irrelevant.length && relevant.length) {
       expect(Math.max(...irrelevant.map((i) => i.w * i.h)), '関連しないものが最小の大きさでない').toBeLessThanOrEqual(Math.min(...relevant.filter((r) => r.key !== resized).map((r) => r.w * r.h)));
     }

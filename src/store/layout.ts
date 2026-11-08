@@ -113,8 +113,8 @@ interface LayoutState {
   resetCount: number;
   setPersona: (p: Persona) => void;
   hideComponent: (key: string) => void;
-  /** opts.noCancel: 最小化できる対象がなくても取り消さず上限超過を許す（最大化中に閉じた項目を再表示するとき。FR-295 AC-887 ⑧・Q-107 A） */
-  showComponent: (key: string, opts?: { noCancel?: boolean }) => void;
+  /** opts.exclude: 最小化の対象に数えないもの（最大化を解いて元に戻した A 自身。FR-296 AC-886・AC-887 Q-109 A） */
+  showComponent: (key: string, opts?: { exclude?: string }) => void;
   moveComponent: (key: string, dir: Move) => void;
   /** 向きを変える。幅が足りず最小化できる対象もないときは取り消して false（FR-296 AC-886） */
   toggleDirection: (key: string) => boolean;
@@ -144,9 +144,9 @@ interface LayoutState {
    * FR-184 の押し出しと FR-296 の最小化の対象にしない。前面に出す（raise）と外れ、FR-173 の自由配置の重なりとして扱う */
   behind: Partial<Record<Persona, string[]>>;
   setBehind: (keys: string[]) => void;
-  bringFromBehind: (key: string) => void;
+  bringFromBehind: (key: string, opts?: { exclude?: string }) => void;
   /** 前面に出した key 以外で上限（PARAM-136）を超える分を、最小化できる対象があれば 1 つ最小化する（なければ超過を許す） */
-  trimOverLimit: (key: string) => void;
+  trimOverLimit: (key: string, opts?: { exclude?: string }) => void;
   /** 取り消し用に、いまの状態を覚える */
   saveAutoUndo: () => void;
   /** 自動配置を取り消し、実行前の状態へ戻す。戻せたら true */
@@ -337,16 +337,16 @@ export const useLayout = create<LayoutState>()(
         }),
         // 一覧・左メニューから背面のものを前面に出す（FR-295 Q-083 A）。位置・大きさは背面へ回る前のまま（floats に残している）。
         // 表示中（背面を除く）が PARAM-136 を超えるときは、前面に出したもの以外で最も長く使っていない（ピン止めしていない）ものを 1 つ最小化する。上限判定の保留中は最小化しない（AC-883）
-        bringFromBehind: (key) => {
+        bringFromBehind: (key, opts) => {
           const st = get();
           const behindNow = st.behind[st.persona] ?? [];
           if (!behindNow.includes(key)) { st.raise(key); return; }
           st.raise(key); // 背面の扱いを外し、前面へ（通常の表示中）
-          get().trimOverLimit(key);
+          get().trimOverLimit(key, opts);
         },
         // 前面に出したあと、表示中（背面・最小化・閉じたものを除く）が PARAM-136 を超えるときは、key 以外で最も長く使っていない（ピン止めしていない）ものを 1 つ最小化する。
         // 最小化できる対象がなければ超過を許す（FR-296・AC-886 Q-102 A）。上限判定の保留中は最小化しない（AC-883）
-        trimOverLimit: (key) => {
+        trimOverLimit: (key, opts) => {
           const st = get();
           const off = new Set([...(st.closed[st.persona] ?? []), ...(st.parked[st.persona] ?? []), ...(st.minimized[st.persona] ?? [])]);
           const behindSet = new Set(st.behind[st.persona] ?? []);
@@ -355,7 +355,7 @@ export const useLayout = create<LayoutState>()(
           const pinnedN = shownBefore.filter((k) => pinnedSet.has(k)).length;
           const held = isLimitHeld(pinnedN, shownBefore.length - pinnedN);
           if (shownBefore.length + 1 > MAX_DEFAULT_VISIBLE && !held) {
-            const victim = pickOldest(shownBefore.filter((k) => !pinnedSet.has(k)), st.usedAt);
+            const victim = pickOldest(shownBefore.filter((k) => !pinnedSet.has(k) && k !== opts?.exclude), st.usedAt);
             if (victim !== undefined) get().setMinimized(victim, true);
           }
         },
@@ -432,14 +432,14 @@ export const useLayout = create<LayoutState>()(
             const dropped: string[] = [];
             while (layout && !fitsWidth(layout, areaSize.w) && dropped.length < (held ? 1 : Infinity)) {
               const inTree = keysOf(layout);
-              const cands = [...new Set([...inTree, ...floatKeys])].filter((k) => k !== key && (inTree.includes(k) || !off.has(k)) && !pinnedSet.has(k) && !behindSet.has(k) && !dropped.includes(k)); // 木に残る最小化中のものも、幅を空けるために外せる（従来どおり）
+              const cands = [...new Set([...inTree, ...floatKeys])].filter((k) => k !== key && k !== opts?.exclude && (inTree.includes(k) || !off.has(k)) && !pinnedSet.has(k) && !behindSet.has(k) && !dropped.includes(k)); // 木に残る最小化中のものも、幅を空けるために外せる（従来どおり）
               const victim = pickOldest(cands, st.usedAt);
               if (victim === undefined) break;
               dropped.push(victim);
               if (inTree.includes(victim)) layout = makeRoom(layout, areaSize.w, { protect: inTree.filter((k) => k !== victim), maxDrop: 1 }).layout; // 区画外の自由配置は、木から外すものがない
             }
             if (dropped.length === 0) {
-              if (layout && !fitsWidth(layout, areaSize.w) && !opts?.noCancel) {
+              if (layout && !fitsWidth(layout, areaSize.w)) {
                 // 最小化できる対象が 1 つもない: 操作（再表示）を自動のサイズ調整も含めて取り消し、直前の状態へ戻す（上限超過は許さない）
                 set({ closed: s.closed, parked: s.parked, minimized: s.minimized, layouts: s.layouts, floats: s.floats, usedAt: s.usedAt, revealed: null });
               }

@@ -32,7 +32,7 @@ import { classify } from './tiers';
 import { registerCommands } from '../commands/registry';
 import { useStepper } from '../store/stepper';
 import { useStepFlow } from '../store/stepFlow';
-import { planStepFlow, stepRelevance } from '../stepper/flow';
+import { planStepFlowFit, stepRelevance } from '../stepper/flow';
 import { useActiveWorkspace, useTaskWorkspaces } from '../store/taskWorkspaces';
 import { ZONE_META, hostRect, implicitRoles, placeByRole, zoneLayout, type ZoneName } from './zones';
 import { useImmersion } from '../store/immersion';
@@ -507,8 +507,8 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
   }, [taskWs.mode, taskWs.roles, zones, baseKeys, tierInfo]);
   const zonePlan = useMemo(() => placeByRole(zones, effectiveRoles, [...baseKeys]), [zones, effectiveRoles, baseKeys]);
   const zoneHidden = useMemo(() => new Set(zonePlan.hidden), [zonePlan]);
-  // 縮退: 幅が狭いとき、または、ピン止めの比率から求めた幅が最小の幅（PARAM-134 = MIN_WINDOW_W）を下回るときは、縦積みにする（FR-216 AC-497・AC-801。PARAM-034 の 240 は、ピン止め以外のタブ化・自動配置の境界）
-  const pinTooNarrow = width > 0 && Object.entries(pinnedMap ?? {}).some(([k, r]) => baseKeys.has(k) && r.w * width < MIN_WINDOW_W);
+  // 縮退: 幅が狭いとき、または、ピン止めの比率から求めた幅が最小の幅（PARAM-134 = MIN_WINDOW_W）・高さが最小の高さ（PARAM-135 = MIN_WINDOW_H）を下回るときは、縦積みにする（FR-216 AC-497・AC-801。Q-113 A。PARAM-034 の 240 は、ピン止め以外のタブ化・自動配置の境界）
+  const pinTooNarrow = width > 0 && Object.entries(pinnedMap ?? {}).some(([k, r]) => baseKeys.has(k) && (r.w * width < MIN_WINDOW_W || (height > 0 && r.h * height < MIN_WINDOW_H)));
   const compact = narrowWs || pinTooNarrow;
   const expandedOut = expandedKey !== null && baseKeys.has(expandedKey) ? expandedKey : null;
   const live = drag?.live ?? null;
@@ -1062,9 +1062,11 @@ export function Workspace({ screens }: { screens: readonly ScreenDefinition[] })
     for (const k of keys) if (pinSet.has(k)) pinned[k] = m.rects[k]!;
     const manual: Record<string, { w: number; h: number }> = {};
     for (const k of manualKeys ?? []) if (m.rects[k] && !pinSet.has(k)) manual[k] = { w: m.rects[k]!.w, h: m.rects[k]!.h };
-    const plan = planStepFlow({ step: useStepFlow.getState().step, keys, bounds: m.bounds, pinned, manual });
+    const { rects: plan, minimized: dropped } = planStepFlowFit({ step: useStepFlow.getState().step, keys, bounds: m.bounds, pinned, manual, usedAt: L.usedAt });
     if (L.expanded) L.setExpanded(null);
     L.setFloats(toFractions(plan, m.bounds));
+    // 下限（幅 PARAM-134・高さ PARAM-135）で収まらないときは、縮めず、最も長く使っていないものを最小化する（FR-228・FR-296。Q-111 A）
+    for (const k of dropped) L.setMinimized(k, true);
   };
   const flowSeen = useRef(flowSeq);
   useEffect(() => {
