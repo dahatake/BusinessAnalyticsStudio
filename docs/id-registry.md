@@ -1837,3 +1837,4 @@
 | E2E-469 | E2E | 使用中 | 2026-11-08T17:45:27+09:00 | run/202611081551@1ed513c | Q-115 手動位置・選択入力の保持と候補なし／候補尽くしの原子取消し |
 | SRC-057 | SRC | 使用中 | 2026-11-08T18:42:36+09:00 | run/202611081551@47a743d7 | run 202611081551 final transcription sources |
 | SRC-058 | SRC | 使用中 | 2026-11-08T18:42:36+09:00 | run/202611081551@47a743d7 | run 202611081551 final transcription sources |
+| SRC-059 | SRC | 使用中 | 2026-11-08T19:03:12+09:00 | run/202611081851@ceaa2137 | run 202611081851 current STEPS mapping and evidence |
