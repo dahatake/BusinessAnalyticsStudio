@@ -321,6 +321,23 @@ describe('FR-216 ピン止めしたコンポーネントの固定', () => {
     expect(document.querySelector('[data-stacked="0"] [data-testid="component-b"]')).not.toBeNull();
   });
 
+  // FR-216 AC-497・AC-801 Q-108 A: 縦積みへ切り替える境界は PARAM-134（360）。240〜359 のとき比率のままにせず縦積みにする
+  it('FR-216 AC-497 AC-801 Q-108 A: ピン止めの比率から求めた幅が 240〜359（PARAM-034 以上・PARAM-134 未満）のとき、縦積みへ切り替える', () => {
+    useLayout.setState({ pinned: { [persona()]: { b: { x: 0, y: 0, w: 0.25, h: 0.5 } } }, floats: { [persona()]: { b: { x: 0, y: 0, w: 0.25, h: 0.5 } } } });
+    areaW = 1200; // 0.25 × 1200 = 300（240 以上 360 未満）
+    render(wrap(<Workspace screens={screens} />));
+    expect(document.querySelector('[data-layout]')!.getAttribute('data-layout')).toBe('stacked');
+    expect(document.querySelector('[data-stacked="0"] [data-testid="component-b"]')).not.toBeNull();
+  });
+
+  it('FR-216 AC-497 AC-801 Q-108 A: ピン止めの比率から求めた幅がちょうど 360（PARAM-134）のときは縦積みにせず、比率のまま', () => {
+    useLayout.setState({ pinned: { [persona()]: { b: { x: 0, y: 0, w: 0.3, h: 0.5 } } }, floats: { [persona()]: { b: { x: 0, y: 0, w: 0.3, h: 0.5 } } } });
+    areaW = 1200; // 0.3 × 1200 = 360
+    render(wrap(<Workspace screens={screens} />));
+    expect(document.querySelector('[data-layout]')!.getAttribute('data-layout')).toBe('split');
+    expect(parseFloat((document.querySelector('[data-float="b"]') as HTMLElement).style.width)).toBeCloseTo(30);
+  });
+
   // FR-216 AC-505
   it('FR-216 AC-505 最大化・最小化・非表示から戻しても、ピン止めの状態と比率の配置が保たれ、重ならない。タブにまとめるは無効で理由が示される', () => {
     render(wrap(<Workspace screens={screens} />));

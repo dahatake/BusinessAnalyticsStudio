@@ -160,3 +160,32 @@ describe('FR-216 AC-497・AC-886 Q-101 A: 縮退の縦積みでピン止めは�
     expect(stackedCells(l, new Set(['p', 'q'])).map((c) => c.tabs)).toEqual([['p'], ['q'], ['r']]);
   });
 });
+
+describe('FR-295 AC-887 ⑧ Q-107 A: 最大化中に閉じた項目を再表示しても AC-886 の取り消しの対象にしない', () => {
+  async function pinnedFull() {
+    const m = await freshStore();
+    const st = () => m.useLayout.getState();
+    st().setPersona('事業部門');
+    const pins = ['summary', 'matrix', 'ranking'];
+    m.useLayout.setState((s) => ({
+      layouts: { ...s.layouts, [s.persona]: split('row', [...pins, 'architecture'].map((k) => leaf(k)), [0.25, 0.25, 0.25, 0.25]) },
+      pinned: { ...s.pinned, [s.persona]: Object.fromEntries(pins.map((k, i) => [k, { x: i * 0.25, y: 0, w: 0.25, h: 1 }])) },
+    }));
+    st().hideComponent('architecture');
+    m.setWorkspaceArea(3 * 360, 800); // 3 つ（下限 PARAM-134 ちょうど）で幅いっぱい。4 つ目を置く場所はない
+    return { ...m, st };
+  }
+  it('FR-295 AC-887 ⑧ 最大化中でない通常の再表示は、最小化できる対象がなく領域が足りないので取り消される（AC-886 の対照）', async () => {
+    const { st } = await pinnedFull();
+    st().showComponent('architecture');
+    expect(st().closed['事業部門'] ?? []).toContain('architecture');
+  });
+  it('FR-295 AC-887 ⑧ Q-107 最大化中に閉じた X を押すと、最大化が解けて X が再表示され、取り消されない（超過を許し、誰も最小化されない）', async () => {
+    const { st, pressWindow } = await pinnedFull();
+    st().setMaximized('summary');
+    pressWindow('architecture', 'closed', false);
+    expect(st().maximized).toBeNull();
+    expect(st().closed['事業部門'] ?? []).not.toContain('architecture');
+    expect(st().minimized['事業部門'] ?? []).toEqual([]);
+  });
+});
