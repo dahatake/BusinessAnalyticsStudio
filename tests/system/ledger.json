@@ -265,7 +265,7 @@
     "AC-568": "sha256:b7a95992b45217ae",
     "AC-571": "sha256:9874b9b2370c8c1d",
     "AC-572": "sha256:a4807895f7152c20",
-    "AC-584": "sha256:820c8e899bc144df",
+    "AC-584": "sha256:af3e9ec680e9b729",
     "AC-585": "sha256:3e38cb21f654c9a6",
     "AC-586": "sha256:d69c569d032e0362",
     "AC-587": "sha256:e77ad03e7a14c4c0",
@@ -6382,6 +6382,12 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC-529・A-65 の関連集合と工程順の具体的な対応は要求本文にないため独立に判定できず、要求担当の明文化待ち。依存しない Q-115 の手動位置・取消し・選択入力は E2E-469 で独立実行する。"
+        },
+        {
+          "at": "2026-11-08T18:16:00+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "AC-529・A-65 の5ステップと画面の対応、関連集合および工程順は承認済み要求に具体的な対応表がなく、要求担当の明文化待ち"
         }
       ]
     },
@@ -6625,7 +6631,7 @@
       "ac_ids": [
         "AC-584"
       ],
-      "title": "ピン・保留なしで5件追加し主役・上限・下限・一覧到達・再現性を検証",
+      "title": "主役の LRU・手動固定の可能／不可能・上限・下限・一覧・再現性",
       "layer": "e2e",
       "command": "node tests/system/run.mjs AC-584",
       "canary": false,
@@ -6681,6 +6687,18 @@
           "by": "test-designer",
           "change": "blocked",
           "reason": "AC-584 本文 digest の同期は文面の記録のみで、テストは未同期。主役最大と手動固定サイズの矛盾は要求担当の整合まで blocked を維持する。"
+        },
+        {
+          "at": "2026-11-08T18:15:58+09:00",
+          "by": "test-designer",
+          "change": "title: 'ピン・保留なしで5件追加し主役・上限・下限・一覧到達・再現性を検証' -> '主役の LRU・手動固定の可能／不可能・上限・下限・一覧・再現性'",
+          "reason": "d035ded の AC-584 を見直し、主役と補助の手動固定の可能例・不可能例と、主役が最古の領域不足を既存テストに追加。混在区画の LRU は未完成"
+        },
+        {
+          "at": "2026-11-08T18:15:59+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "主役が区画外で別の最小化候補が雛形の区画内にある混在条件は未実装。追加ケースは収集のみで未実行。区画内外を含む全候補の LRU 判定を実 UI で独立検証するまで保全"
         }
       ]
     },
@@ -13623,7 +13641,7 @@
       "layer": "e2e",
       "command": "node tests/system/run-q115.mjs",
       "canary": false,
-      "status": "not_run",
+      "status": "blocked",
       "last_commit": null,
       "last_run_at": null,
       "evidence": null,
@@ -13639,6 +13657,12 @@
           "by": "test-designer",
           "change": "同じ要求・同じ層の既存ケースと別に追加",
           "reason": "E2E-326 は対応表待ちで blocked。対応表に依存しない Q-115 を実装前に独立して実行する必要がある"
+        },
+        {
+          "at": "2026-11-08T18:16:01+09:00",
+          "by": "test-designer",
+          "change": "blocked",
+          "reason": "現状分析→knowledge-graph と KPI 測定→priority の2遷移先は要求で明示されず、テストの前提に根拠不足。対応表の決定待ち"
         }
       ]
     }
