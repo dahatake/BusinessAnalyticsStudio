@@ -184,6 +184,19 @@ def allocate(root: Path, cfg: dict, kind: str, count: int, note: str, dry: bool)
 REUSE_FORBIDDEN = ("削除済み", "欠番")
 
 
+def retired_in_requirements(doc: h.RequirementsDoc, id_: str) -> bool:
+    """Use the current decision state, never a parameter's historical notes."""
+    req = doc.requirements.get(id_)
+    if req:
+        return req.state == "廃止"
+    param = doc.params.get(id_)
+    if not param:
+        return False
+    state = h.strip_md(param.get("state", ""))
+    # A decision is 廃止, not e.g. 廃止予定 or 使用中 - 過去に廃止.
+    return bool(re.match(r"^廃止(?=$|[\s（(：:])", state))
+
+
 def plan_sync(root: Path, cfg: dict, adopt: bool, finalize: bool, revive: bool = True,
               dedupe: bool = False) -> dict:
     """Compute the reconciled registry without writing it.
@@ -231,8 +244,7 @@ def plan_sync(root: Path, cfg: dict, adopt: bool, finalize: bool, revive: bool =
             retired = False
         else:
             present = id_ in doc.defs
-            req = doc.requirements.get(id_)
-            retired = bool(req and req.state == "廃止")
+            retired = retired_in_requirements(doc, id_)
         new = state
         if present:
             if not revive and state in REUSE_FORBIDDEN:
@@ -260,8 +272,9 @@ def plan_sync(root: Path, cfg: dict, adopt: bool, finalize: bool, revive: bool =
         now = h.now_iso()
         added = []
         for id_ in missing:
-            req = doc.requirements.get(id_)
-            st = "廃止" if (req and req.state == "廃止") or (id_ in int_items and int_items[id_].get("状態") == "廃止") else "使用中"
+            retired = retired_in_requirements(doc, id_) or (
+                id_ in int_items and int_items[id_].get("状態") == "廃止")
+            st = "廃止" if retired else "使用中"
             kind_label = "INT" if id_.startswith("INT-") else h.id_kind(id_)
             added.append(f"| {id_} | {kind_label} | {st} | {now} | {src} | 既存の ID を取り込み |")
         out += "".join(a + "\n" for a in added)

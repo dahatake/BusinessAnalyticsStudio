@@ -1089,11 +1089,15 @@ def _parse_tables(doc: RequirementsDoc) -> None:
             first = [strip_md(r[1][0]) if r[1] else "" for r in t.rows]
             if any(re.fullmatch(r"PARAM-\d{3,}", f) for f in first):
                 vcol, ucol = t.col("値"), t.col("単位")
+                # 部分一致では「旧決定状態」などの履歴列を選んでしまう。
+                scol = next((i for i, hd in enumerate(t.header)
+                             if re.sub(r"\s+", "", strip_md(hd)) == "決定状態"), None)
                 for (ln, cells), fid in zip(t.rows, first):
                     if re.fullmatch(r"PARAM-\d{3,}", fid):
                         doc.params.setdefault(fid, {
                             "value": cells[vcol] if vcol is not None and vcol < len(cells) else "",
                             "unit": cells[ucol] if ucol is not None and ucol < len(cells) else "",
+                            "state": cells[scol] if scol is not None and scol < len(cells) else "",
                             "file": rel, "line": str(ln),
                         })
             if any(re.fullmatch(r"Q-\d{3,}", f) for f in first):
