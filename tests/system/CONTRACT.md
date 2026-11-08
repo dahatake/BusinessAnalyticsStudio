@@ -136,7 +136,7 @@
 - 各コンポーネント（component-<key>）に data-tier="primary|supporting|detail"（主役・補助・詳細）。階層は文字か形でも示す（色だけにしない。data-testid="tier-label" に「主役」「補助」「詳細」）。
 - 見出しのメニュー（component-menu。右クリックかキーボード）の menuitem「情報の階層」→ data-testid="tier-reason"（階層名と理由の文）。同じメニューで階層を選べる（menuitemradio「主役」「補助」「詳細」）。
 - 役割を持たないコンポーネントは data-tier="supporting"。同じ対象を示すコンポーネントは data-group の値が同じ。自動配置は menuitem「自動配置を実行」「自動配置を停止」「自動配置を取り消す」（メニューかコマンドパレット）。
-- AC-584 の前提の観測: 各表示中または最小化中の `component-<key>` は `data-pinned="true|false"`、`workspace` は上限判定の保留状態を `data-limit-pending="true|false"` で示す。同時表示・最小化・一覧への到達は §34 の `window-list-item` の状態と実際の矩形で確認する。新しいブラウザー文脈には保存済みレイアウトを持ち込まない。
+- AC-584 の前提の観測: 新しいブラウザー文脈には保存済みレイアウトを持ち込まず、各表示中のコンポーネントのピン操作のアクセシブルな名前でピンなしを確認する。雛形の操作を行わず、表示数・占有区画数から上限判定の保留がないことを確認する。同時表示・最小化・一覧への到達は §34 の一覧状態と実際の矩形で確認する。製品専用の観測属性を求めない。
 
 ## 23. グラフ・Twin・空間・意味的ズーム・Graph 切替（FR-235〜241。semantic-zoom.spec.ts・graph-twin-b.spec.ts・graph-view-switch.spec.ts が前提にする、3 spec 共通の契約）
 - 画面の key（`nav-<key>`・`component-<key>`）: `business-graph`（ビジネス関係グラフ）・`twin-view`（Twin ビュー）・`spatial-view`（空間ビュー）。データビュアーは既存の `data-catalog` の中の `data-testid="data-viewer"`（お手本パックの data-catalog は「Project を開くと…」の空表示で出ない。Project を開き、ユースケースを登録し、列つきの企業データカタログを取り込むと出る＝FR-104・data-viewer.spec.ts と同じ手順。項目 ID は名称キー）。上限では「拡大」は aria-disabled（FR-237）なので、再クリックせず toBeDisabled で確かめる。左メニューの文字は画面名と同じ。

@@ -2,9 +2,10 @@
 // 期待値は要求定義書の受入基準（docs/requirements/app-experience.md の FR-243・FR-244）だけから決める。
 // 画面の探し方は tests/system/CONTRACT.md §23・§34。PARAM-134=360、PARAM-135=240、PARAM-136=4。
 import type { Browser, Page, Locator } from '@playwright/test';
-import { test, expect, component, selectPersona, PERSONAS, gotoAndEnter } from '../support/fixtures';
+import { test, expect, component, selectPersona, PERSONAS, gotoAndEnter, skipOpening } from '../support/fixtures';
 import { examplePack } from '../support/packs';
 import { pinButton } from '../support/screens';
+import { layoutTest } from '../support/layout-fixture';
 
 const mono = examplePack('mono');
 const MIN_WIDTH = 360; // PARAM-134
@@ -66,7 +67,7 @@ async function settledShownLayout(page: Page): Promise<Record<string, Box>> {
   return boxes;
 }
 
-/** AC-584: 新しい context でピン操作・雛形操作を行わず、表示中のピンを利用者向けの名前で確認する。 */
+/** AC-584: ピンの UI 名を読むだけにし、前提確認自体でフォーカス・LRU・サイズを変えない。 */
 async function expectStandardLimitPrecondition(page: Page) {
   const states = await windowStates(page);
   const visible = Object.keys(states).filter((k) => ['front', 'visible'].includes(states[k]));
@@ -75,8 +76,8 @@ async function expectStandardLimitPrecondition(page: Page) {
   expect(visible.length, '前提: 表示中の数が上限以内').toBeLessThanOrEqual(MAX_VISIBLE);
   for (const k of visible) {
     const c = component(page, k);
-    await c.focus();
-    await expect(pinButton(c), `${k}: 前提としてピン止めされていない`).toHaveAccessibleName('ピン止めする');
+    const pin = c.getByTestId('component-actions').locator('button[aria-label^="ピン止め"]');
+    await expect(pin, `${k}: 前提としてピン止めされていない`).toHaveAttribute('aria-label', 'ピン止めする');
   }
 }
 
@@ -93,21 +94,28 @@ function expectNoOverlapAndMinimum(boxes: Record<string, Box>) {
 
 const tierOf = (c: Locator) => c.getAttribute('data-tier');
 
-test.describe('FR-243 コンポーネントの配置時の、情報の階層に基づく自動配置', () => {
+layoutTest.describe('FR-243 コンポーネントの配置時の、情報の階層に基づく自動配置', () => {
+  layoutTest.describe.configure({ mode: 'default' });
   // FR-243 AC-584
-  test('FR-243 AC-584 各ペルソナの配置と、5 個追加時の上限・下限・最小化・一覧・再現性', async ({ page, start, browser }) => {
-    test.setTimeout(360_000);
-    const app = await start();
+  layoutTest('FR-243 AC-584 保存レイアウトのない各ペルソナの主役・読む順序・下限と再現性', async ({ layoutApp, browser }, testInfo) => {
+    layoutTest.setTimeout(360_000);
     for (const p of PERSONAS) {
+      const context = await browser.newContext({ viewport: { width: 1600, height: 900 }, locale: 'ja-JP', timezoneId: 'Asia/Tokyo' });
+      const page = await context.newPage();
+      try {
+      expect((await context.storageState()).origins, `${p}: 保存済みレイアウトがない`).toEqual([]);
+      await gotoAndEnter(page, layoutApp.url);
       await selectPersona(page, p);
+      await expectStandardLimitPrecondition(page);
       const boxes = await settledShownLayout(page);
+      await testInfo.attach(`AC-584-${p}-geometry`, { body: JSON.stringify({ dpr: await page.evaluate(() => devicePixelRatio), boxes }, null, 2), contentType: 'application/json' });
       const keys = Object.keys(boxes);
       expect(keys.length, `${p}: 表示中のコンポーネント`).toBeGreaterThan(0);
       expect(keys.length, `${p}: 同時表示の上限`).toBeLessThanOrEqual(MAX_VISIBLE);
       const primary = DEFAULT_PRIMARY[p];
       expect(boxes[primary], `${p}: 主役 ${primary} が表示されている`).toBeTruthy();
       // 主役が最大の領域
-      for (const k of keys) if (k !== primary) expect(area(boxes[primary]), `${p}: 主役が ${k} 以上の領域`).toBeGreaterThanOrEqual(area(boxes[k]));
+      for (const k of keys) if (k !== primary) expect(area(boxes[primary]), `${p}: 主役と ${k} の外枠 ${JSON.stringify([boxes[primary], boxes[k]])}`).toBeGreaterThanOrEqual(area(boxes[k]));
       // 補助・詳細は主役の読む順序の後ろ（右か下）。主役より左上へは出ない
       for (const k of keys) {
         if (k === primary) continue;
@@ -118,7 +126,8 @@ test.describe('FR-243 コンポーネントの配置時の、情報の階層に�
       }
       expectNoOverlapAndMinimum(boxes);
       // 同じ操作を繰り返すと同じ配置（再読込後に同じペルソナを選び直す）
-      await app.reload();
+      await page.reload();
+      await skipOpening(page);
       await selectPersona(page, p);
       const again = await settledShownLayout(page);
       expect(Object.keys(again).sort()).toEqual(keys.sort());
@@ -128,14 +137,26 @@ test.describe('FR-243 コンポーネントの配置時の、情報の階層に�
         expect(Math.abs(again[k].width - boxes[k].width), `${p}: ${k} の幅`).toBeLessThanOrEqual(2);
         expect(Math.abs(again[k].height - boxes[k].height), `${p}: ${k} の高さ`).toBeLessThanOrEqual(2);
       }
+      } finally { await context.close(); }
     }
-    await verifyOverflowAndReplay(app, browser);
   });
 
+  for (const condition of [
+    { name: '上限超過', viewport: { width: 1600, height: 1400 }, shortage: false },
+    { name: '領域不足', viewport: { width: 720, height: 420 }, shortage: true },
+  ]) {
+    // FR-243 AC-584: 両条件は同じ台帳ケースだが、片方の失敗で他方が未実行にならない。
+    layoutTest(`FR-243 AC-584 ${condition.name}: 5 個追加・最小化・一覧到達・新しい文脈での再現`, async ({ layoutApp, browser }, testInfo) => {
+      layoutTest.setTimeout(240_000);
+      await verifyOverflowAndReplay(layoutApp, browser, condition, testInfo);
+    });
+  }
+
   // FR-243 AC-584（異常系: 非表示にしてから再表示した（追加した）コンポーネントも、重ならず最小の幅以上で置かれる）
-  test('FR-243 AC-584 異常系: コンポーネントを非表示にして再表示しても、重ならず最小の幅以上で、主役は最大のまま', async ({ page, start }) => {
-    await start();
+  layoutTest('FR-243 AC-584 異常系: コンポーネントを非表示にして再表示しても、重ならず最小の幅以上で、主役は最大のまま', async ({ page, layoutApp }, testInfo) => {
+    expect(layoutApp.initialStorage.origins, '前提: 保存したレイアウトがない').toEqual([]);
     await selectPersona(page, '事業部門');
+    await expectStandardLimitPrecondition(page);
     const before = await settledShownLayout(page);
     const hideKey = Object.keys(before).find((k) => k !== DEFAULT_PRIMARY['事業部門'])!;
     const target = component(page, hideKey);
@@ -145,26 +166,31 @@ test.describe('FR-243 コンポーネントの配置時の、情報の階層に�
     await page.getByTestId('dock').getByRole('button').first().click();
     await expect.poll(async () => Object.keys(await shownLayout(page)).length, { timeout: 5_000 }).toBeGreaterThanOrEqual(Object.keys(before).length);
     const after = await settledShownLayout(page);
+    await testInfo.attach('AC-584-hide-restore-geometry', { body: JSON.stringify({ dpr: await page.evaluate(() => devicePixelRatio), hidden: hideKey, before, after }, null, 2), contentType: 'application/json' });
     expectNoOverlapAndMinimum(after);
-    for (const k of Object.keys(after)) if (k !== DEFAULT_PRIMARY['事業部門']) expect(area(after[DEFAULT_PRIMARY['事業部門']])).toBeGreaterThanOrEqual(area(after[k]));
+    for (const k of Object.keys(after)) if (k !== DEFAULT_PRIMARY['事業部門']) {
+      const primary = after[DEFAULT_PRIMARY['事業部門']];
+      expect(area(primary), `主役と ${k} の外枠 ${JSON.stringify([primary, after[k]])}`).toBeGreaterThanOrEqual(area(after[k]));
+    }
   });
 
   // FR-243 AC-584: 5 回の追加、上限超過と領域不足、一覧からの到達、同一操作の再現。
   // 最初の検証の配信サーバーを再利用し、保存だけは試行ごとに分ける。
-  async function verifyOverflowAndReplay(app: { url: string }, browser: Browser) {
-    const added = ['issue-solution', 'table', 'gantt', 'architecture', 'knowledge-graph'];
-    const conditions = [
-      { name: '上限超過', viewport: { width: 1600, height: 1400 }, shortage: false },
-      { name: '領域不足', viewport: { width: 720, height: 420 }, shortage: true },
-    ];
+  async function verifyOverflowAndReplay(
+    app: { url: string }, browser: Browser,
+    condition: { name: string; viewport: { width: number; height: number }; shortage: boolean },
+    testInfo: import('@playwright/test').TestInfo,
+  ) {
+    // FR-296 の LRU と AC-584 の主役最大を同時に観測するため、主役は最後に追加する。
+    const added = ['table', 'gantt', 'architecture', 'knowledge-graph', 'issue-solution'];
     type Result = { states: Record<string, string>; boxes: Record<string, Box>; restored: string };
-    for (const condition of conditions) {
       const results: Result[] = [];
       for (let attempt = 0; attempt < 2; attempt++) {
         const context = await browser.newContext({ viewport: condition.viewport, locale: 'ja-JP', timezoneId: 'Asia/Tokyo' });
         const p = await context.newPage();
         try {
           // 新しい context は保存済みデータを共有しない。画面の起動は同じ app.url を再利用。
+          expect((await context.storageState()).origins, `${condition.name}: 保存済みレイアウトがない`).toEqual([]);
           await gotoAndEnter(p, app.url);
           await selectPersona(p, '事業部門');
           await expectStandardLimitPrecondition(p);
@@ -199,10 +225,12 @@ test.describe('FR-243 コンポーネントの配置時の、情報の階層に�
             await nav.click();
             await expect.poll(async () => (await windowStates(p))[k], { message: `${k}: 追加後に一覧に残る` })
               .toMatch(/^(front|visible|minimized)$/);
+            await settledShownLayout(p);
           }
-          const states = await windowStates(p);
-          for (const k of added) expect(states[k], `${k}: 追加したものを閉じたり背面にしたりしない`).toMatch(/^(front|visible|minimized)$/);
           const boxes = await settledShownLayout(p);
+          const states = await windowStates(p);
+          await testInfo.attach(`AC-584-${condition.name}-${attempt}`, { body: JSON.stringify({ beforeAdd, states, boxes, dpr: await p.evaluate(() => devicePixelRatio) }, null, 2), contentType: 'application/json' });
+          for (const k of added) expect(states[k], `${k}: 追加したものを閉じたり背面にしたりしない`).toMatch(/^(front|visible|minimized)$/);
           const keys = Object.keys(boxes);
           expect(keys.length, '同時表示が 0 件').toBeGreaterThan(0);
           expect(keys.length, '同時表示の上限').toBeLessThanOrEqual(MAX_VISIBLE);
@@ -225,7 +253,16 @@ test.describe('FR-243 コンポーネントの配置時の、情報の階層に�
           await item.click();
           await expect(item, '一覧から最小化した項目に到達できる').toHaveAttribute('data-state', /^(front|visible)$/);
           await expect(component(p, restored), '復元した内容').toBeVisible();
+          const accessBoxes = await settledShownLayout(p);
           const afterAccess = await windowStates(p);
+          await testInfo.attach(`AC-584-${condition.name}-${attempt}-after-access`, {
+            body: JSON.stringify({ restored, states: afterAccess, boxes: accessBoxes }, null, 2),
+            contentType: 'application/json',
+          });
+          for (const k of Object.keys(accessBoxes)) {
+            await expect(component(p, k).getByTestId('component-actions').locator('button[aria-label^="ピン止め"]'),
+              `${k}: 一覧到達後もピン止めされていない`).toHaveAttribute('aria-label', 'ピン止めする');
+          }
           expect(Object.values(afterAccess).filter((state) => state === 'front' || state === 'visible').length,
             'ピンも保留もない一覧からの到達後も上限内').toBeLessThanOrEqual(MAX_VISIBLE);
           const restoredBox = await component(p, restored).boundingBox();
@@ -246,7 +283,6 @@ test.describe('FR-243 コンポーネントの配置時の、情報の階層に�
           expect(Math.abs(first.boxes[k][field] - second.boxes[k][field]), `${condition.name}: ${k}.${field} の再現`).toBeLessThanOrEqual(2);
         }
       }
-    }
   }
 });
 
