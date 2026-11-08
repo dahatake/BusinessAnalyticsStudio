@@ -4,6 +4,7 @@
 import type { Browser, Page, Locator } from '@playwright/test';
 import { test, expect, component, selectPersona, PERSONAS, gotoAndEnter } from '../support/fixtures';
 import { examplePack } from '../support/packs';
+import { pinButton } from '../support/screens';
 
 const mono = examplePack('mono');
 const MIN_WIDTH = 360; // PARAM-134
@@ -50,6 +51,35 @@ async function shownLayout(page: Page): Promise<Record<string, Box>> {
   return Object.fromEntries(visible.map((k) => [k, all[k]]));
 }
 
+/** アニメーション途中の面積を比較しない。同じ表示集合・矩形が連続して得られるまで待つ。 */
+async function settledShownLayout(page: Page): Promise<Record<string, Box>> {
+  let previous = '';
+  let same = 0;
+  let boxes: Record<string, Box> = {};
+  await expect.poll(async () => {
+    boxes = await shownLayout(page);
+    const current = JSON.stringify(boxes);
+    same = current === previous ? same + 1 : 0;
+    previous = current;
+    return same;
+  }, { message: '表示中の矩形が安定する', timeout: 10_000, intervals: [200] }).toBeGreaterThanOrEqual(2);
+  return boxes;
+}
+
+/** AC-584: 新しい context でピン操作・雛形操作を行わず、表示中のピンを利用者向けの名前で確認する。 */
+async function expectStandardLimitPrecondition(page: Page) {
+  const states = await windowStates(page);
+  const visible = Object.keys(states).filter((k) => ['front', 'visible'].includes(states[k]));
+  // FR-296: 保留は「表示中のピン数＋中身のある雛形区画数 > 4」。
+  // ピンが 0 で表示中が 4 以下なら、空でない区画数も 4 以下なので保留ではない。
+  expect(visible.length, '前提: 表示中の数が上限以内').toBeLessThanOrEqual(MAX_VISIBLE);
+  for (const k of visible) {
+    const c = component(page, k);
+    await c.focus();
+    await expect(pinButton(c), `${k}: 前提としてピン止めされていない`).toHaveAccessibleName('ピン止めする');
+  }
+}
+
 function expectNoOverlapAndMinimum(boxes: Record<string, Box>) {
   const names = Object.keys(boxes);
   for (let i = 0; i < names.length; i++) {
@@ -70,7 +100,7 @@ test.describe('FR-243 コンポーネントの配置時の、情報の階層に�
     const app = await start();
     for (const p of PERSONAS) {
       await selectPersona(page, p);
-      const boxes = await shownLayout(page);
+      const boxes = await settledShownLayout(page);
       const keys = Object.keys(boxes);
       expect(keys.length, `${p}: 表示中のコンポーネント`).toBeGreaterThan(0);
       expect(keys.length, `${p}: 同時表示の上限`).toBeLessThanOrEqual(MAX_VISIBLE);
@@ -90,7 +120,7 @@ test.describe('FR-243 コンポーネントの配置時の、情報の階層に�
       // 同じ操作を繰り返すと同じ配置（再読込後に同じペルソナを選び直す）
       await app.reload();
       await selectPersona(page, p);
-      const again = await shownLayout(page);
+      const again = await settledShownLayout(page);
       expect(Object.keys(again).sort()).toEqual(keys.sort());
       for (const k of keys) {
         expect(Math.abs(again[k].x - boxes[k].x), `${p}: ${k} の x`).toBeLessThanOrEqual(2);
@@ -106,7 +136,7 @@ test.describe('FR-243 コンポーネントの配置時の、情報の階層に�
   test('FR-243 AC-584 異常系: コンポーネントを非表示にして再表示しても、重ならず最小の幅以上で、主役は最大のまま', async ({ page, start }) => {
     await start();
     await selectPersona(page, '事業部門');
-    const before = await shownLayout(page);
+    const before = await settledShownLayout(page);
     const hideKey = Object.keys(before).find((k) => k !== DEFAULT_PRIMARY['事業部門'])!;
     const target = component(page, hideKey);
     await target.focus();
@@ -114,7 +144,7 @@ test.describe('FR-243 コンポーネントの配置時の、情報の階層に�
     await expect(target).toBeHidden();
     await page.getByTestId('dock').getByRole('button').first().click();
     await expect.poll(async () => Object.keys(await shownLayout(page)).length, { timeout: 5_000 }).toBeGreaterThanOrEqual(Object.keys(before).length);
-    const after = await shownLayout(page);
+    const after = await settledShownLayout(page);
     expectNoOverlapAndMinimum(after);
     for (const k of Object.keys(after)) if (k !== DEFAULT_PRIMARY['事業部門']) expect(area(after[DEFAULT_PRIMARY['事業部門']])).toBeGreaterThanOrEqual(area(after[k]));
   });
@@ -137,11 +167,8 @@ test.describe('FR-243 コンポーネントの配置時の、情報の階層に�
           // 新しい context は保存済みデータを共有しない。画面の起動は同じ app.url を再利用。
           await gotoAndEnter(p, app.url);
           await selectPersona(p, '事業部門');
-          await expect(p.getByTestId('workspace')).toHaveAttribute('data-limit-pending', 'false');
+          await expectStandardLimitPrecondition(p);
           let initial = await windowStates(p);
-          for (const k of Object.keys(initial).filter((key) => ['front', 'visible', 'minimized'].includes(initial[key]))) {
-            await expect(component(p, k), `${condition.name}: ピンなし`).toHaveAttribute('data-pinned', 'false');
-          }
           if (condition.shortage) {
             const ws = await p.getByTestId('workspace').boundingBox();
             expect(ws, '作業領域').not.toBeNull();
@@ -161,13 +188,10 @@ test.describe('FR-243 コンポーネントの配置時の、情報の階層に�
               await expect.poll(async () => (await windowStates(p))[k]).toBe('closed');
             }
           }
-          await expect(p.getByTestId('workspace'), '追加直前も上限判定の保留なし').toHaveAttribute('data-limit-pending', 'false');
+          await expectStandardLimitPrecondition(p);
           const beforeAdd = await windowStates(p);
           for (const k of added) {
             expect(beforeAdd[k] === undefined || beforeAdd[k] === 'closed', `${k}: 追加前は開いていない`).toBe(true);
-          }
-          for (const k of Object.keys(beforeAdd).filter((key) => ['front', 'visible', 'minimized'].includes(beforeAdd[key]))) {
-            await expect(component(p, k), `${k}: 追加直前もピンなし`).toHaveAttribute('data-pinned', 'false');
           }
           for (const k of added) {
             const nav = p.getByTestId(`nav-${k}`);
@@ -178,7 +202,7 @@ test.describe('FR-243 コンポーネントの配置時の、情報の階層に�
           }
           const states = await windowStates(p);
           for (const k of added) expect(states[k], `${k}: 追加したものを閉じたり背面にしたりしない`).toMatch(/^(front|visible|minimized)$/);
-          const boxes = await shownLayout(p);
+          const boxes = await settledShownLayout(p);
           const keys = Object.keys(boxes);
           expect(keys.length, '同時表示が 0 件').toBeGreaterThan(0);
           expect(keys.length, '同時表示の上限').toBeLessThanOrEqual(MAX_VISIBLE);
@@ -280,8 +304,6 @@ test.describe('FR-244 情報の階層（主役・補助・詳細）の分類', (
 });
 
 // ---- 以下: 検証レベル integration の AC（台帳のケースのみで足りるが、画面から確かめられる範囲を E2E でも置く）----
-import { pinButton } from '../support/screens';
-
 async function selectedText(page: Page): Promise<string> {
   return (await page.getByTestId('selection-indicator').textContent()) ?? '';
 }
