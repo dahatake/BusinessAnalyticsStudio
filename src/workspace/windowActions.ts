@@ -12,12 +12,15 @@ export function pressWindow(key: string, state: WindowState, inTree: boolean): v
   }
   // 最大化中に、最大化の前から最小化中・非表示・背面（雛形由来を含む）だった項目、または最大化由来の背面の項目を押したときは、先に最大化を解いて
   // 背面だったものを元の配置へ戻し、そのあと押した項目を通常の遷移で前面に出す（AC-887 ②⑧・Q-100 A・Q-103 A）。最大化は残さない
-  const wasMaximized = a.maximized !== null && a.maximized !== key;
+  const prevMax = a.maximized !== null && a.maximized !== key ? a.maximized : null;
+  const wasMaximized = prevMax !== null;
   if (wasMaximized) a.setMaximized(null);
+  // 最大化を解いて元に戻した項目自身は、最小化できる対象に数えない（FR-296 AC-886・AC-887 Q-109 A）
+  const keep = prevMax !== null ? { exclude: prevMax } : undefined;
   if (state === 'behind') {
     // 背面は一覧・左メニューからの呼び出しでだけ前面に出る。背面へ回る前の位置・大きさで出し、上限を超えるときは最も長く使っていないものを最小化（FR-295 Q-083 A）
     // 最大化由来の背面は、最大化を解いた時点で元の配置へ戻っているので、前面に出す（raise）だけになる
-    a.bringFromBehind(key);
+    a.bringFromBehind(key, keep);
   } else if (state === 'visible') {
     // 背面は、一覧からの呼び出しでだけ前面に出て通常の表示中になる（raise が背面の扱いを外す。ほかの配置は動かさない。FR-295 AC-872・873）
     if (a.maximized === key) { a.setMaximized(null); return; } // 最大化中の項目（使用記録がなく表示中と求められたものを含む）は、最大化を解くだけ（AC-887）
@@ -25,10 +28,14 @@ export function pressWindow(key: string, state: WindowState, inTree: boolean): v
   } else if (inTree) {
     a.setMinimized(key, false);
     a.touch(key);
-    if (wasMaximized) useLayout.getState().trimOverLimit(key); // 最大化中からの前面化は、上限を超えるとき FR-296 の規則に従う（AC-887 ⑧）
+    if (wasMaximized) useLayout.getState().trimOverLimit(key, keep); // 最大化中からの前面化は、上限を超えるとき FR-296 の規則に従う（AC-887 ⑧）
   } else {
-    // 最大化中に閉じた項目を再表示するときは、AC-886 の取り消しの対象にせず、上限超過を許す（AC-887 ⑧・Q-107 A）
-    a.showComponent(key, wasMaximized ? { noCancel: true } : undefined);
-    if (wasMaximized) useLayout.getState().trimOverLimit(key);
+    // 最大化中に閉じた項目を再表示するとき、最大化を解いた後に置き場所がない・下限を保てないときは、AC-886 のとおり再表示を取り消し、最大化も元へ戻す。
+    // 上限（PARAM-136）の超過だけなら取り消さず、超過を許す（AC-887 ⑧・Q-107 A・Q-112 A）
+    a.showComponent(key, keep);
+    if (!wasMaximized) return;
+    const s = useLayout.getState();
+    if ((s.closed[s.persona] ?? []).includes(key)) s.setMaximized(prevMax);
+    else s.trimOverLimit(key, keep);
   }
 }
